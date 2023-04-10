@@ -1,6 +1,7 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 saveData/
+startup_tests/
 config.ini
 foofighter.db
 *.py[cod]
