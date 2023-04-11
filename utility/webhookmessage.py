@@ -17,13 +17,9 @@ class WebhookMessageWrapper:
             avatar=str(avatar)
         files=[]
         for attach in message.attachments:
-        #Retrieve files.
-            if attach.__class__.__name__ == "DummyFile":
-                this_file=attach.to_file()
-                files.append(this_file)
-            else:
-                this_file=await attach.to_file()
-                files.append(this_file)
+        #Retrieve files.W
+            this_file=await attach.to_file()
+            files.append(this_file)
         return await WebhookMessageWrapper.postWebhookMessageProxy(channel, message_content=content, display_username=name, avatar_url=avatar, embed=embeds, file=files)
     
     @staticmethod
@@ -39,10 +35,6 @@ class WebhookMessageWrapper:
             name=choice(["alpha","beta","gamma","delta","epsilon","zeta","eta","theta","iota","kappa","lambda","mu","nu","xi","omicron","pi","rho","sigma","tau","upsilon","phi","chi","psi","omega"])
         for attach in message.attachments:
         #Retrieve files.
-            if attach.__class__.__name__ == "DummyFile":
-                this_file=attach.to_file()
-                files.append(this_file)
-            else:
                 this_file=await attach.to_file()
                 files.append(this_file)
 
@@ -88,11 +80,11 @@ class WebhookMessageWrapper:
     
     @staticmethod 
     async def postMessageWithWebhook(webhook,thread,message_content, display_username, avatar_url, embed=[],file=[]):
-        if (not message_content and not file):
-            print("No content and no file")
+        if (not message_content and not file and not embed):
+            print("No content, no file, and no embed.")
             return None
-        if message_content.isspace() and not file:
-            "Empty and no file."
+        if message_content.isspace() and not file and not embed:
+            print("Empty,no file, and no embed.")
             return None
 
         newContent=message_content

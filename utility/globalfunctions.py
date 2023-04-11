@@ -57,7 +57,9 @@ def seconds_to_time_stamp(seconds_start):
 
 async def get_server_icon_color(guild: discord.Guild) -> str:
     # Get the server's icon
-    icon_bytes = await guild.icon_url_as(size=128).read()
+    if not guild.icon:
+        return 0xffffff
+    icon_bytes = await guild.icon.read()
     icon_image = Image.open(BytesIO(icon_bytes))
 
     # Resize the image to 1x1 and get the most visible average color
@@ -65,9 +67,9 @@ async def get_server_icon_color(guild: discord.Guild) -> str:
     icon_color = icon_image.getpixel((0, 0))
 
     # Convert the color to hex format
-    hex_color = "#{:02x}{:02x}{:02x}".format(icon_color[0], icon_color[1], icon_color[2])
-
-    return hex_color
+    hex_color = "{:02x}{:02x}{:02x}".format(icon_color[0], icon_color[1], icon_color[2])
+    hex=int(hex_color,16)
+    return hex
 
 
 

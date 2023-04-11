@@ -9,7 +9,7 @@ import os
 
 from queue import Queue
 from discord.ext import commands, tasks
-
+import datetime
 import random
 import string
 from database import *
@@ -49,11 +49,18 @@ class StatusMessage:
         self.ctx=ctx
         self.status_mess=None
         self.bot=bot
+        self.last_update_time=datetime.datetime.now()
+    def check_update_interval(self):
+        '''get the time between now and the last time updatew was called.'''
+        time_diff = datetime.datetime.now() - self.last_update_time
+        return time_diff.total_seconds()
     def update(self,updatetext,**kwargs):
         self.bot.statmess.update_status_message(self.id,updatetext,**kwargs)
-    async def updatew(self,updatetext, **kwargs):
-        '''Update status message code.'''
-        await self.bot.statmess.update_status_message_wait(self.id,updatetext, **kwargs)
+    async def updatew(self,updatetext, min_seconds=0, **kwargs):
+        '''Update status message asyncronously.'''
+        if self.check_update_interval()>min_seconds:
+            await self.bot.statmess.update_status_message_wait(self.id,updatetext, **kwargs)
+            self.last_update_time=datetime.datetime.now()
     def delete(self):
         '''Delete this status message.  It's job is done.'''
         self.bot.statmess.delete_status_message(self.id)
@@ -105,7 +112,7 @@ class TCBot(commands.Bot):
 
         self.database=DatabaseSingleton("Startup")
 
-        
+        self.error_channel=None
         self.statmess:StatusMessageManager=StatusMessageManager(self)
 
         self.logs=logging.getLogger("TCLogger")
@@ -120,6 +127,9 @@ class TCBot(commands.Bot):
         self.post_schedule=Queue()
         self.delete_schedule=Queue()
         self.default_error=self.on_command_error
+    def set_error_channel(self,newid):
+        if str(newid).isdigit():
+            self.error_channel=int(newid)
     async def on_close(self):
         # Close the SQLAlchemy engine
         self.database.close_out()
@@ -270,8 +280,9 @@ class TCBot(commands.Bot):
 
     async def send_error_embed(self,emb=None,content=None):
         '''send error embed to debug channel.'''
-        chan=self.get_channel(1042518240708018207)
-        await chan.send(content=content,embed=emb)
+        if self.error_channel:
+            chan=self.get_channel(self.error_channel)
+            await chan.send(content=content,embed=emb)
         
     async def send_error(self,error,title):
         just_the_string=''.join(traceback.format_exception(None, error, error.__traceback__))
@@ -300,7 +311,8 @@ class TCBot(commands.Bot):
         just_the_string=''.join(traceback.format_exception(None, error, error.__traceback__))
         er=MessageTemplates.get_error_embed(title=f"Error with {ctx.message.content}",description=f"{just_the_string},{str(error)}")
         er.add_field(name="Details",value=f"{ctx.message.content},{error}")
-        await ctx.send(embed=emb)
+        try:        await ctx.send(embed=emb)
+        except Exception as e:             self.logs.log(level=1,msg=str(e))
         await self.send_error_embed(er)
 
         

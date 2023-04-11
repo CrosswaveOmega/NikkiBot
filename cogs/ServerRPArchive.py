@@ -81,14 +81,11 @@ class ServerRPArchive(commands.Cog):
             for user in chanment:
                 print(user.name)
                 profile.add_user_to_list(user.id)
-
         self.bot.database.commit()
+
     @commands.hybrid_group(fallback="view")
     async def archive_setup(self, ctx):
         """Setup the RP archival system here."""
-
-        bot = ctx.bot
-        auth = ctx.message.author
         channel = ctx.message.channel
         guild=channel.guild
         guildid=guild.id
@@ -121,6 +118,71 @@ class ServerRPArchive(commands.Cog):
         
         await MessageTemplates.server_archive_message(ctx,"The Server Archive Channel has been set.")
 
+    @archive_setup.command(name="autosetup_archive", brief="automatically add a archive channel")
+    @app_commands.describe(role_mode= "Restrict posting in this channel without a specific 'historian' role .")
+    async def createArchiveChannel(self, ctx, role_mode:bool=True):  # Add ignore.
+        '''create a new archive channel in the same invoked category as this command,
+            and create a historian role that restricts posting for all users without it.
+        '''
+
+        bot = ctx.bot
+        auth = ctx.message.author
+        channel:discord.TextChannel = ctx.message.channel
+        guild=channel.guild
+        guildid=guild.id
+        if not(serverOwner(ctx) or serverAdmin(ctx)):
+            result="You lack permissions to use this command."
+            await MessageTemplates.server_archive_message(ctx,result)
+            return
+        
+        my_permissions= guild.me.guild_permissions
+
+        permission_check_string=""
+        if not my_permissions.manage_roles:
+            permission_check_string="I don't have the **'Manage Roles'** permission needed to create a 'Historian' role."
+        if not my_permissions.manage_channels:
+            permission_check_string="I can't make you an archive channel without the **'Manage Channels'** permission."
+        if not my_permissions.manage_roles and not my_permissions.manage_channels:
+            permission_check_string="To create an archive channel and set the proper permissions, I need the **'Manage Roles'** and **'Manage Channels'** permissions."
+        
+        if permission_check_string:
+            result=f"{permission_check_string}\n  Please update my permissions in Server Settings.  \n*You may remove the permissions after this command finishes.*"
+            await MessageTemplates.server_archive_message(ctx,result)
+            return
+
+        profile=ServerArchiveProfile.get_or_new(guildid)
+
+        #Check if history channel already exists.
+        if profile.history_channel_id:
+            if guild.get_channel(profile.history_channel_id):
+                result="You already have a set archive channel, no reason for me to make a new one."
+                await MessageTemplates.server_archive_message(ctx,result)
+                return
+
+
+
+        # create Historian role and give it to bot
+        historian_role = discord.utils.get(guild.roles, name="Historian")
+        if historian_role is None:
+            historian_role = await guild.create_role(name="Historian")
+
+        if historian_role not in guild.me.roles:
+            await guild.me.add_roles(historian_role)
+
+        # create new channel and set permissions for Historian role
+        category = channel.category
+        channel_name = "history-archive"
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite(send_messages=False), # disallow sending messages for @everyone role
+            historian_role: discord.PermissionOverwrite(send_messages=True) # allow sending messages for Historian role
+        }
+        new_channel = await guild.create_text_channel(name=channel_name, category=category, overwrites=overwrites)
+
+        profile.add_or_update(guildid,history_channel_id=new_channel.id)
+
+        bot.database.commit()
+        
+        await MessageTemplates.server_archive_message(ctx,"Created and set a new Archive channel for this server.")
 
     @archive_setup.command(
         name="add_ignore_channels",
@@ -216,7 +278,7 @@ class ServerRPArchive(commands.Cog):
     async def firstlasttimestamp(self, ctx, *args):
         """Get the last timestamp of the most recently archived message.
         """
-        mybot = ctx.bot
+        bot = ctx.bot
         auth = ctx.message.author
         channel = ctx.message.channel
         guild=channel.guild
@@ -283,17 +345,17 @@ class ServerRPArchive(commands.Cog):
     async def compileArchiveChannel(self, ctx, *args):
         """Compile all messages into archive channel.  This can be invoked with options.
             +`full` - get the full history of this server
-            +`update` -only update the current archive channel
+            +`update` -only update the current archive channel.  DEFAULT.
 
-            +`ws` - compile only webhooks
+            +`ws` - compile only webhooks/BOTS.  DEFAULT.
             +`user` - complile only users
             +`both` -compile both
-
+             
         """
-        mybot = ctx.bot
+        bot = ctx.bot
         auth = ctx.message.author
         channel = ctx.message.channel
-        guild=channel.guild
+        guild:discord.Guild=channel.guild
         guildid=guild.id
 
 
@@ -304,10 +366,6 @@ class ServerRPArchive(commands.Cog):
 
         archive_from="server"
 
-        await channel.send("KICKSTART THE FRYERS I WANT FOOOD.")
-
-
-
         timebetweenmess=2.5
         characterdelay=0.05
 
@@ -317,36 +375,48 @@ class ServerRPArchive(commands.Cog):
         for arg in args:
             if arg == 'full':   update=False
             if arg == 'update': update=True
-            if arg== 'ws':      indexbot,user=True,False
+            if arg == 'ws':      indexbot,user=True,False
             if arg == 'user':   indexbot,user=False, True
             if arg == 'both':   indexbot,user=True,True
         await channel.send(profile.history_channel_id)
         if profile.history_channel_id == 0:
-            await channel.send("Set a history channel first.")
+            await MessageTemplates.get_server_archive_embed(ctx,"Set a history channel first.")
             return False
         archive_channel=guild.get_channel(profile.history_channel_id)
+        if archive_channel==None:
+            await MessageTemplates.get_server_archive_embed(ctx,"I can't seem to access the history channel, it's gone!")
+            return False
+
+        #Make sure all permissions are there.
+        missing_permissions = []
+        my_permissions=archive_channel.permissions_for(ctx.me)
+        if not my_permissions.read_messages:          missing_permissions.append("Read Messages")
+        if not my_permissions.send_messages:          missing_permissions.append("Send Messages")
+        if not my_permissions.manage_messages:        missing_permissions.append("Manage Messages")
+        if not my_permissions.read_message_history:   missing_permissions.append("Read Message History")
+        if not my_permissions.manage_webhooks:        missing_permissions.append("Manage Webhooks")
+
+        if missing_permissions:
+            missing_permissions_str = "\n- ".join(missing_permissions)
+            result=f"I'm missing the following permissions for archive channel{archive_channel.mention}: \n- {missing_permissions_str}"
+            await MessageTemplates.get_server_archive_embed(ctx,result)
+            return False
 
 
         dynamicwait=False
+        statusMess=bot.add_status_message(ctx)
 
-        statusMess=mybot.add_status_message(ctx)
-
-        messages=[]
-        MessageTemplates(ctx.Guild,)
         await statusMess.updatew("Collecting server history...")
 
         totalcharlen=0
         if archive_from=="server":
            messages, totalcharlen=await collect_server_history(ctx,update,indexbot,user)
         
-        await statusMess.updatew("Your messages are pre-sorted.")
 
-
-        
         await statusMess.updatew("Grouping into separators, this may take a while.")
-        #CREATE LIST OF MESSAGES.
+
         lastgroup=profile.last_group_num
-        ts,group_id=await do_group(guildid,profile.last_group_num)
+        ts,group_id=await do_group(guildid,profile.last_group_num, ctx=ctx)
         fullcount=ts
         profile.update(last_group_num=group_id)
         remaining_time_float= fullcount* timebetweenmess
@@ -354,10 +424,10 @@ class ServerRPArchive(commands.Cog):
         if dynamicwait:
             remaining_time_float+=(totalcharlen*characterdelay)
 
-        await statusMess.updatew(f"This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
+        await statusMess.updatew(f"Posting! This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
         
 
-        grouped=ChannelSep.get_separators_without(guildid)
+        grouped=ChannelSep.get_unposted_separators(guildid)
         for sep in grouped:
             currjob="rem: {}".format(seconds_to_time_string(int(remaining_time_float)))
             emb,count=sep.create_embed()
@@ -373,14 +443,9 @@ class ServerRPArchive(commands.Cog):
                 for attach in amess.list_files():
                     this_file=attach.to_file()
                     files.append(this_file)
-                #print(archive_channel, c, au, av, [],files)
-                kwargs={
-                    ''
-                }
-                webhookmessagesent=await web.postWebhookMessageProxy(archive_channel, message_content=c, display_username=au, avatar_url=av, embed=[], file=files)
-                if webhookmessagesent:
 
-                    #print(webhookmessagesent)
+                webhookmessagesent=await web.postWebhookMessageProxy(archive_channel, message_content=c, display_username=au, avatar_url=av, embed=amess.get_embed(), file=files)
+                if webhookmessagesent:
                     amess.update(posted_url=webhookmessagesent.jump_url)
                     
                 if dynamicwait:
@@ -391,18 +456,18 @@ class ServerRPArchive(commands.Cog):
                 else:
                     await asyncio.sleep(timebetweenmess)
                     remaining_time_float=remaining_time_float-(timebetweenmess)
+            sep.update(all_ok=True)
             self.bot.database.commit()
             await statusMess.updatew(f"This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
         statusMess.delete()     
         self.bot.database.commit()
-        await ctx.send("I finished the archive!  ")
-        print("Done.")
+        await MessageTemplates.server_archive_message(ctx,'Archive operation sucsesfully completed.')
+        
 
 
     @commands.command( extras={"guildtask":['rp_history']})
-    async def makeCalendar(self, ctx, *args):
-        ##NEXT.  OH GOD.
-        """Create a calendar of all messages with dates into your history channel."""
+    async def makeCalendar(self, ctx):
+        """Create a calendar of all archived messages with dates in this channel."""
         bot = ctx.bot
         channel = ctx.message.channel
         guild=channel.guild
@@ -413,11 +478,12 @@ class ServerRPArchive(commands.Cog):
 
         await channel.send(profile.history_channel_id)
         if profile.history_channel_id == 0:
-            await channel.send("Set a history channel first.")
+            await MessageTemplates.get_server_archive_embed(ctx,"Set a history channel first.")
             return False
-        archive_channel=guild.get_channel(profile.history_channel_id)
+        #archive_channel=guild.get_channel(profile.history_channel_id)
 
         async def calendarMake(separator_messages, lastday=None, this_dates=["█","█","█","█","█","█","█"], current_calendar_embed_object=None, weeknumber=0):
+            ##This code is old.
             daystarts=[]
             day_count=0
             separator_count=0
@@ -446,7 +512,7 @@ class ServerRPArchive(commands.Cog):
 
             daystarts.append({"date":lastdate, "url":lastmessage.posted_url, "mcount":day_count, "sepcount":separator_count})
             ########################################## MAKING THE CALENDAR ############################3
-            #lastday=None
+
             def same_week(currdat, last):
                 '''returns true if a dateString in %Y%m%d format is part of the current week'''
                 d1 = currdat
@@ -459,13 +525,10 @@ class ServerRPArchive(commands.Cog):
                 d2 = last
                 return (d1.month== d2.month and d1.year == d2.year)
 
-            #discord.Embed(title=date.strftime("%B %Y"), colour=discord.Colour(randint(0,0xffffff)))
             print("Current Calendar Embed")
 
             for day in daystarts:
-                date=day["date"]
-                url=day["url"]
-                mcount=day["mcount"]
+                date,url,mcount=day["date"],day["url"],day["mcount"]
                 sepcount=day["sepcount"]
                 if current_calendar_embed_object==None:
                     current_calendar_embed_object=discord.Embed(title=date.strftime("%B %Y"), colour=discord.Colour(randint(0,0xffffff)))
@@ -475,7 +538,7 @@ class ServerRPArchive(commands.Cog):
                         this_dates=["█","█","█","█","█","█","█"]
                         weeknumber=weeknumber+1
                     if not same_month(lastday, date):
-                        await web.postWebhookMessageProxy(archive_channel, message_content="_ _", display_username="DateMaster", avatar_url=bot.user.avatar.url, embed=[current_calendar_embed_object])
+                        await web.postWebhookMessageProxy(channel, message_content="_ _", display_username="DateMaster", avatar_url=bot.user.avatar.url, embed=[current_calendar_embed_object])
                         current_calendar_embed_object=discord.Embed(title=date.strftime("%B %Y"), colour=discord.Colour(randint(0,0xffffff)))
                         weeknumber=0
                 else:
@@ -484,7 +547,7 @@ class ServerRPArchive(commands.Cog):
                 this_dates[date.weekday()]="[{}]({})-{}".format(strday, url, mcount)
                 lastday=date
             current_calendar_embed_object.add_field(name="Week {}".format(weeknumber), value="\n".join(this_dates), inline=True)
-            await web.postWebhookMessageProxy(archive_channel, message_content="_ _", display_username="DateMaster", avatar_url=bot.user.avatar.url, embed=[current_calendar_embed_object])
+            await web.postWebhookMessageProxy(channel, message_content="_ _", display_username="DateMaster", avatar_url=bot.user.avatar.url, embed=[current_calendar_embed_object])
 
         await calendarMake(ChannelSep.get_all_separators(guildid))
         

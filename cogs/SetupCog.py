@@ -68,11 +68,5 @@ class Setup(commands.Cog):
         if guild.system_channel!=None:
             await guild.system_channel.send("Hi, thanks for inviting me to your server! ")
 
-    @commands.hybrid_group(name="accordsetup")
-    async def setup(self, ctx: commands.Context) -> None:
-        """This group is to setup the bot in your server!
-        """
-        await self.sub_command(ctx)
-
 async def setup(bot):
     await bot.add_cog(Setup(bot))

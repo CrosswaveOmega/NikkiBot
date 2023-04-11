@@ -40,21 +40,27 @@ async def iterate_backlog(backlog,group_id):
         backlog = new_backlog
     return tosend,group_id
 
-async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, maximumwithother=200):
+async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, maximumwithother=200,ctx=None):
     # sort message list by created_at attribute
-    newlist = ArchivedRPMessage().get_messages_without(server_id)
+    newlist = ArchivedRPMessage().get_messages_without_group(server_id)
     length=len(newlist)
     # initialize variables
     tosend, charsinbacklog =  [], set()
-    group_id, cc_count, current_chana = 0, 0, None
+    cc_count, current_chana = 0, None
     firsttime = datetime.fromtimestamp(0).replace(tzinfo=timezone.utc)
     
     backlog=Queue()
+    status_mess=None
+    if ctx: status_mess=ctx.bot.add_status_message(ctx)
+    
     # iterate through the sorted message list
-    for hm in newlist:
+    for e,hm in enumerate(newlist):
+
+        if status_mess: #This will ensure that the script won't have a 'heart attack' while processing large messages.
+            await status_mess.updatew(f"Now at: {e}/{hm}, group_id:{group_id}.", min_seconds=12)
         if DEBUG_MODE: print('i',hm)
         mytime=(hm.created_at).replace(tzinfo=timezone.utc)
-        # create string to identify channel
+        # create string to identify category, channel, thread combo
         chanin = hm.get_chan_sep()
         #f"{hm.category}-{hm.channel}-{hm.thread}"
         # calculate time elapsed since first message
@@ -91,12 +97,8 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
         if current_chana is None:
             current_chana = hm.get_chan_sep()
             group_id+=1
-            # set new first time to current message time rounded down to
-            # nearest 30-minute interval
             if DEBUG_MODE: print('inb',current_chana,hm.get_chan_sep(),group_id)
             
-            firsttime = mytime - (mytime - datetime.min.replace(tzinfo=timezone.utc)) % timedelta(minutes=30)
-
         # add message to current group if it belongs to the current channel
         
         if chanin == current_chana:
@@ -111,6 +113,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
     # add remaining backlog messages to tosend list
     ts, group_id = await iterate_backlog(backlog, group_id)
     tosend += ts
+    if status_mess: status_mess.delete()
     return length, group_id
 
     

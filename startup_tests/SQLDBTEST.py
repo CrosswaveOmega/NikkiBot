@@ -224,7 +224,7 @@ def to_send_order(message_unsorted):
 def hgatgertest():
     
     s=DatabaseSingleton("START", db_name='./footester.db')
-    from cogs.ArchiveSub import create_history_pickle_dict, ChannelSep, ArchivedRPMessage, ArchivedRPFile, DummyFile, HistoryMakers, do_group
+    from cogs.ArchiveSub import create_history_pickle_dict, ChannelSep, ArchivedRPMessage, ArchivedRPFile, HistoryMakers, do_group
     guildid=1071087693481652224
 
 
@@ -258,7 +258,7 @@ def hgatgertest():
         for i in newsend:
             f.write(str(i)+"\n")
     with open('checkmeout2.txt','w+') as f:
-        seps=ChannelSep().get_separators_without(guildid)
+        seps=ChannelSep().get_unposted_separators(guildid)
         print(seps)
         for row in seps:
             print(str(row))

@@ -20,11 +20,12 @@ async def collect_server_history(ctx, update=False,bot_messages_only=True,user_m
         statusMess=bot.add_status_message(channel)
         statusMess.update("I'm getting everything in the given RP channels, this may take a moment!")
         time=profile.last_archive_time
+        if time: time=time.timestamp()
         if time==None: time=0
         last_time=datetime.fromtimestamp(time,timezone.utc)
         new_last_time=last_time.timestamp()
         
-        await channel.send("Starting at time:{}".format(last_time.now.strftime("%B %d, %Y %I:%M:%S %p")))
+        await channel.send("Starting at time:{}".format(last_time.strftime("%B %d, %Y %I:%M:%S %p")))
 
         chancount,ignored,chanlen=0,0,len(guild.text_channels)
         async def iter_hist_messages(cobj, last_time, statusMess, bot_messages_only, user_messages_only,chancount,chanlen):
@@ -40,7 +41,7 @@ async def collect_server_history(ctx, update=False,bot_messages_only=True,user_m
                 if bot_messages_only and user_messages_only:    add_check=True
                 if add_check:
                     thisMessage.content=thisMessage.clean_content
-                    new_last_time=max(thisMessage.created_at.timestamp(),last_time)
+                    new_last_time=max(thisMessage.created_at.timestamp(),last_time.timestamp())
                     characterlen+=len(thisMessage.content)
                     messages.append(thisMessage)
                     mlen+=1
@@ -90,7 +91,7 @@ async def collect_server_history(ctx, update=False,bot_messages_only=True,user_m
                 ignored+=1
 
         if statusMess!=None: statusMess.delete()
-        profile.update(last_archive_time=new_last_time)
+        profile.update(last_archive_time=(datetime.fromtimestamp(new_last_time,tz=timezone.utc)))
         bot.database.commit()
 
         return messages, totalcharlen

@@ -1,4 +1,5 @@
 from datetime import timezone
+import json
 import discord
 import io
 
@@ -45,7 +46,7 @@ class ChannelSep(Base):
     def get_chan_sep(self):
         return f"{self.category}-{self.channel}-{self.thread}"
     @staticmethod
-    def get_separators_without(server_id: int):
+    def get_unposted_separators(server_id: int):
         filter = and_(
             ChannelSep.posted_url == None,
             ChannelSep.server_id == server_id
@@ -148,8 +149,7 @@ class ChannelSep(Base):
         if iL!=None: lastm="[▲Last▲]({})".format(iL); count+=1
         if cN!=None: nextcm="[Next▼]({})".format(cN); count+=1
         if cL!=None:  lastcm="[▲Last]({})".format(cL); count+=1
-        if iN!=None and iL!=None and cN!=None and cL!=None:
-            self.update(all_ok=True)
+
         cembed.description="{} {} ░░░░░░░░░░░░░░░ {} channel {}".format(lastm, nextm, lastcm, nextcm)
         actorstr=", ".join(["`{}`".format(x) for x in charlist])
         if actorstr:
@@ -163,6 +163,7 @@ class ChannelSep(Base):
         
 
 class ArchivedRPMessage(Base):
+    '''represents an archived RP message for a specific server_id'''
     __tablename__ = 'ArchivedRPMessages'
 
     message_id = Column(Integer, primary_key=True)
@@ -175,10 +176,9 @@ class ArchivedRPMessage(Base):
     posted_url = Column(String)
     channel_sep_id = Column(Integer,ForeignKey('ChannelSeps.channel_sep_id'), nullable=True)
     server_id = Column(Integer)
-    #superkey = Column(String, ForeignKey('ChannelSeps.superkey'))
-
     #channel_sep = relationship('ChannelSeps', back_populates='messages')
     files = relationship('ArchivedRPFile', backref='archived_rp_message')
+    embed = relationship('ArchivedRPEmbed', backref='archived_rp_message_set')
     def get_chan_sep(self):
         return f"{self.category}-{self.channel}-{self.thread}"
 
@@ -208,13 +208,13 @@ class ArchivedRPMessage(Base):
         query = session.query(ArchivedRPMessage).filter_by(server_id=server_id).order_by(desc(ArchivedRPMessage.created_at)).first()
         return query
     @staticmethod
-    def get_messages_without(server_id: int):
+    def get_messages_without_group(server_id: int):
         session = DatabaseSingleton.get_session()
         return session.query(ArchivedRPMessage).filter(
             (ArchivedRPMessage.server_id == server_id) &
-            ((ArchivedRPMessage.channel_sep_id == None) | (ArchivedRPMessage.posted_url == None))
+            ((ArchivedRPMessage.channel_sep_id == None))
         ).order_by(ArchivedRPMessage.created_at).all()
-    
+
     def add_file(self, archived_rp_file):
         session = DatabaseSingleton.get_session()
         session.add(archived_rp_file)
@@ -232,6 +232,12 @@ class ArchivedRPMessage(Base):
         session = DatabaseSingleton.get_session()
         files = session.query(ArchivedRPFile).filter_by(message_id=self.message_id).all()
         return [file for file in files]
+    def get_embed(self):
+        session = DatabaseSingleton.get_session()
+        embed_attr = session.query(ArchivedRPEmbed).filter_by(message_id=self.message_id).first()
+        embeds=[]
+        if embed_attr: embeds=[embed_attr.to_embed()]
+        return embeds
     def __repr__(self):
         return f"{self.author}: {self.content} [{self.created_at}] ([{self.get_chan_sep()}]: [{self.channel_sep_id}])"
 
@@ -252,17 +258,42 @@ class ArchivedRPFile(Base):
     )
     def to_file(self):
         return discord.File(io.BytesIO(self.bytes),filename=self.filename,spoiler=self.spoiler,description=self.description)
+class ArchivedRPEmbed(Base):
+    __tablename__ = 'ArchivedRPEmbed'
 
-def create_archived_rp_file(arpm, server_id, vekwargs):
-    
+    message_id = Column(Integer, ForeignKey('ArchivedRPMessages.message_id', ondelete='CASCADE'))
+    embed_json=Column(String)
+    #archived_rp_message_set = relationship('ArchivedRPMessage', backref='embed')
+
+    __table_args__ = (
+        PrimaryKeyConstraint('message_id'),
+    )
+    def to_embed(self):
+        # Load the JSON string into a dictionary
+        embed_dict = json.loads(self.embed_json)
+
+        # Create the embed from the dictionary
+        embed = discord.Embed.from_dict(embed_dict)
+        return embed
+
+def create_archived_rp_file(arpm, file_num, vekwargs):
     session = DatabaseSingleton.get_session()
     if arpm:
-        archived_rp_file = ArchivedRPFile(message_id=arpm.message_id, file_number=server_id, **vekwargs)
-        arpm.add_file(archived_rp_file)
-        session.add(archived_rp_file)
-        session.commit()
-        return True
-    return False
+        archived_rp_file = ArchivedRPFile(message_id=arpm.message_id, file_number=file_num, **vekwargs)
+
+        return archived_rp_file
+    return None
+
+def create_archived_rp_embed(arpm, embed):
+    embed_dict = embed.to_dict()
+
+    # Dump the dictionary to a JSON string
+    json_string = json.dumps(embed_dict)
+    if arpm:
+        archived_rp_emb = ArchivedRPEmbed(message_id=arpm.message_id, embed_json=json_string)
+        return archived_rp_emb
+    return None
+
 
 def create_history_pickle_dict(message):
     history_pickle_dict = {
@@ -299,10 +330,18 @@ class HistoryMakers():
     @staticmethod
     async def get_history_message(thisMessage):
         fsize=0
+        session = DatabaseSingleton.get_session()
         hmes=create_history_pickle_dict(thisMessage)
         id=hmes['server_id']
         ms=ArchivedRPMessage().add_or_update(**hmes)
         count=0
+        if thisMessage.embeds:
+            #Only one embed.
+            embed=thisMessage.embeds[0]
+            embedv=create_archived_rp_embed(ms,embed)
+            session.add(embedv)
+            hasembed=True
+
         for attach in thisMessage.attachments:
             if 'image' in attach.content_type:
                 if attach.size+fsize<7000000:
@@ -315,22 +354,31 @@ class HistoryMakers():
                         "description": fd.description,
                         "spoiler": fd.spoiler
                     }
-                    create_archived_rp_file(ms,count,dummy_file=fdv)
+                    file=create_archived_rp_file(ms,count,dummy_file=fdv)
+                    session.add(file)
                     fsize+=attach.size
-        
+        session.commit()
         return hmes
     @staticmethod
     async def get_history_message_list(messages):
         '''add list of history messages to result.'''
         session = DatabaseSingleton.get_session()
         archived_rp_messages = []
+        archived_rp_embeds=[]
         archived_rp_files = []
         for thisMessage in messages:
             
             hmes = create_history_pickle_dict(thisMessage)
             id = hmes['server_id']
             ms = ArchivedRPMessage(**hmes)
-            
+            hasembed=False
+            if thisMessage.embeds:
+                #Only want
+                embed=thisMessage.embeds[0]
+                embedv=create_archived_rp_embed(ms,embed)
+                archived_rp_embeds.append(embedv)
+                hasembed=True
+
             filecount, fsize = 0,0
             for attach in thisMessage.attachments:
                 if 'image' in attach.content_type:
@@ -347,11 +395,12 @@ class HistoryMakers():
                         rps = create_archived_rp_file(ms, filecount, dummy_file=fdv)
                         archived_rp_files.append(rps)
                         fsize += attach.size
-            if thisMessage.content.isspace() and not filecount<=0:
+            if thisMessage.content.isspace() and not filecount<=0 and not hasembed:
                 #Skip if no content or file.
                 continue
             archived_rp_messages.append(ms)
         add_or_update_all(session,ArchivedRPMessage,archived_rp_messages)
+        add_or_update_all(session,ArchivedRPEmbed,archived_rp_embeds)
         add_or_update_all(session,ArchivedRPFile,archived_rp_files)
 
         session.commit()

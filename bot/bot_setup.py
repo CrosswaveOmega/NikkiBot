@@ -82,7 +82,7 @@ async def on_app_command_error(
 
 @bot.before_invoke
 async def add_log(ctx):
-    await ctx.channel.send(f"{ctx.invoked_with},{str(ctx.invoked_parents)}")
+    print(f"{ctx.invoked_with},{str(ctx.invoked_parents)}")
     if ctx.command.extras:
          if 'guildtask' in ctx.command.extras and ctx.guild!=None:
              taskflags[str(ctx.guild.id)]=True
@@ -131,7 +131,7 @@ async def on_ready():
     print("BOT ACTIVE")
     for x in bot.tree.walk_commands():
         print(x.name)
-
+    await bot.all_guild_startup()
     print("BOT SYNCED!")
     bot.delete_queue_message.start()
     bot.post_queue_message.start()
@@ -172,7 +172,6 @@ class Main(commands.Cog):
     @commands.command()
     async def reload(self, ctx):
         """debugging only."""
-
         bot=ctx.bot
         bot.update_ext_list()
         await bot.reload_all()
@@ -236,7 +235,7 @@ def setup(args):
             print("No config.ini file detected.")
 
             config["vital"] = {'cipher': args[1]}
-
+            config["optional"] = {'error_channel_id': 'ADD_HERE'}
             config.write(open('config.ini', 'w'))
             try:
                 print("making savedata")
@@ -265,7 +264,7 @@ async def main(args):
         intent.guilds=True
         intent.members=True
         config=setup(args)
-
+        bot.set_error_channel(config.get("optional", 'error_channel_id'))
         await bot.add_cog(Main())
         bot.set_ext_directory('./cogs')
         bot.update_ext_list()
