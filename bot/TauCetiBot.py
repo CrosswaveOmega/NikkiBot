@@ -13,23 +13,13 @@ import datetime
 import random
 import string
 from database import *
-
+from .TCTasks import TCTaskManager
+from sqlalchemy.exc import IntegrityError
 from utility import Chelp, urltomessage, MessageTemplates
 
 """ Primary Class
 
 This file is for an extended Bot Class for this Discord Bot.
-
-The Notebook is a singleton design pattern that this bot uses to store any
-persistent data that can be accessed anywhere within the bot's extensions,
-directly from the passed in bot instance.
-
-Any data saved within the Notebook is recorded within the saveData directory initalized
-upon first startup.
-
-The Notebook's data entries are split amoung instances of the NotebookPage class,
-an object with a to_dictionary object intended to save the Instances components into a dictionary
-that can be encoded into a readable JSON file.
 
 
 """
@@ -40,77 +30,15 @@ intent.message_content=True
 intent.guilds=True
 intent.members=True
 from database import DatabaseSingleton
-
-class StatusMessage:
-    '''Represents a Status Message, a quickly updatable message 
-    to get information on long operations without having to edit.'''
-    def __init__(self,id,ctx,bot=None):
-        self.id=id
-        self.ctx=ctx
-        self.status_mess=None
-        self.bot=bot
-        self.last_update_time=datetime.datetime.now()
-    def check_update_interval(self):
-        '''get the time between now and the last time updatew was called.'''
-        time_diff = datetime.datetime.now() - self.last_update_time
-        return time_diff.total_seconds()
-    def update(self,updatetext,**kwargs):
-        self.bot.statmess.update_status_message(self.id,updatetext,**kwargs)
-    async def updatew(self,updatetext, min_seconds=0, **kwargs):
-        '''Update status message asyncronously.'''
-        if self.check_update_interval()>min_seconds:
-            await self.bot.statmess.update_status_message_wait(self.id,updatetext, **kwargs)
-            self.last_update_time=datetime.datetime.now()
-    def delete(self):
-        '''Delete this status message.  It's job is done.'''
-        self.bot.statmess.delete_status_message(self.id)
-
-class StatusMessageManager:
-    '''Stores all status messages.'''
-    def __init__(self, bot):
-        self.bot=bot
-        self.statuses={}
-    def genid(self):
-        return ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase, k=9))
-    def get_message_obj(self,sid):
-        return self.statuses[sid]
-    def add_status_message(self, ctx):
-        sid=self.genid()
-        status=StatusMessage(sid,ctx,self.bot)
-        self.statuses[sid]=status
-        return sid
-    async def update_status_message_wait(self,sid,updatetext,**kwargs):
-        if sid in self.statuses:
-            last=self.statuses[sid].status_mess
-            if last!=None:
-              self.bot.schedule_for_deletion(last,4)
-            
-            pid=await self.statuses[sid].ctx.send(updatetext,**kwargs)
-            await asyncio.sleep(0.2)
-            print(pid)
-            self.statuses[sid].status_mess=pid
-    def update_status_message(self, sid, updatetext,**kwargs):
-        if sid in self.statuses:
-            last=self.statuses[sid].status_mess
-            if last!=None:
-              self.bot.schedule_for_deletion(last,4)
-            pid=self.bot.schedule_for_post(self.statuses[sid].ctx,updatetext)
-            print(pid)
-            self.statuses[sid].status_mess=pid
-    def delete_status_message(self,sid):
-        if sid in self.statuses:
-            last=self.statuses[sid].status_mess
-            if last!=None:
-              self.bot.schedule_for_deletion(last)
-            self.statuses[sid]=None
+from .StatusMessages import StatusMessageManager, StatusMessage
 
 class TCBot(commands.Bot):
     
     """TC's central bot class.  An extension of discord.py Bot class with additional functionality."""
     def __init__(self):
-        super().__init__(command_prefix=['tauceti_>',">"], help_command=Chelp(), intents=intent)
-
-        self.database=DatabaseSingleton("Startup")
+        super().__init__(command_prefix=['tc_>',">"], help_command=Chelp(), intents=intent)
+        #The Database Singleton is initalized in here.
+        self.database=None
 
         self.error_channel=None
         self.statmess:StatusMessageManager=StatusMessageManager(self)
@@ -120,13 +48,16 @@ class TCBot(commands.Bot):
 
         self.extensiondir,self.extension_list="",[]
         self.plugindir,self.plugin_list="",[]
-        self.psuedomess_dict= {}
+
         self.loaded_extensions={}
         self.loaded_plugins={}
-       
+        self.psuedomess_dict= {}   
         self.post_schedule=Queue()
         self.delete_schedule=Queue()
         self.default_error=self.on_command_error
+    def database_on(self):
+        '''turn the database on.'''
+        self.database= DatabaseSingleton("Startup")
     def set_error_channel(self,newid):
         if str(newid).isdigit():
             self.error_channel=int(newid)
@@ -135,6 +66,11 @@ class TCBot(commands.Bot):
         self.database.close_out()
 
         # Logout the bot from Discord
+                
+        self.post_queue_message.cancel()
+        self.delete_queue_message.cancel()
+        self.check_tc_tasks.cancel()
+
         await self.logout()
     def loggersetup(self):
         self.logs.setLevel(logging.INFO)
@@ -174,34 +110,99 @@ class TCBot(commands.Bot):
         '''With a passed in guild, sync all activated cogs.'''        
         def syncprint(lis):
             print(f"Sync for {guild.name} (ID {guild.id})",lis)
+        def should_skip_cog(cogname: str) -> bool:
+            """Determine whether a cog should be skipped during synchronization."""
+            return cogname == "Setup"
+
+        def add_command_to_tree(command, guild):
+            """Add a command to the commands tree for the given guild."""
+            if isinstance(command, (commands.HybridCommand, commands.HybridGroup)):
+                try:
+                    self.tree.add_command(command.app_command, guild=guild, override=True)
+                    syncprint(f"Added hybrid {command.name}")
+                except:
+                    syncprint(f"Cannot add {command.name}, case error.")
+            else:
+                try:
+                    self.tree.add_command(command, guild=guild, override=True)
+                    syncprint(f"Added {command.name}")
+                except:
+                    syncprint(f"Cannot add {command.name}, this is not a command")
+
+        async def sync_commands_tree(guild):
+            """Sync the commands tree for the given guild."""
+            print(f"Syncing commands for {guild.name} (ID {guild.id})...")
+            try:
+                await self.tree.sync(guild=guild)
+            except Exception as e:
+                print(str(e))
+
+        """Synchronize all activated cogs for a given guild."""
         for cogname, cog in self.cogs.items():
-            syncprint(cogname)
-            enabled=True
-            if cogname=="Setup": #Setup shouldn't 
-                enabled=False
-            if enabled:
-                for x in cog.walk_commands():
-                    if isinstance(x, (commands.HybridCommand, commands.HybridGroup)):
-                        try:
-                            self.tree.add_command(x.app_command,guild=guild, override=True)
-                            syncprint(f"Added hybrid{x.name}")
-                        except:
-                            syncprint(f"...can't add {x.name}")
-                        syncprint(f"Norm {x.name}")
-                for x in cog.walk_app_commands():
-                    try:
-                        self.tree.add_command(x,guild=guild, override=True)
-                        syncprint(f"Added AppCommand  {x.name}")
-                    except:
-                        syncprint(f"can't add {x.name}")
-        syncprint("Syncing...")
-        await self.tree.sync(guild=guild)
+            if should_skip_cog(cogname):
+                continue
+            for command in cog.walk_commands():
+                add_command_to_tree(command, guild)
+
+        await sync_commands_tree(guild)
 
     async def all_guild_startup(self):
         
         async for guild in self.fetch_guilds(limit=10000):
             print(f"syncing for {guild.name}")
             await self.sync_enabled_cogs_for_guild(guild)
+
+    async def audit_guilds(self):
+        '''audit guilds.'''
+        metadata=self.database.get_metadata()
+        matching_tables = []
+        matching_tables_2 =[]
+        for table_name in metadata.tables.keys():
+            table = metadata.tables[table_name]
+            if 'server_id' in table.columns.keys():
+                matching_tables.append((table_name,table))
+            if 'server_profile_id' in table.columns.keys():
+                matching_tables_2.append((table_name,table))
+
+        # print the tables found with matching column name
+        print(matching_tables)
+        
+        guilds_im_in=[]
+        for guild in self.guilds:
+            guilds_im_in.append(guild.id)
+        audit_results=ServerData.Audit(guilds_im_in)
+        to_purge=[auditme.server_id for auditme in audit_results]
+        self.logs.info(audit_results)
+        session=self.database.get_session()
+        for server_id_val in to_purge:
+            try:
+                for tab in matching_tables:
+                    table_name,table_obj=tab
+                    # loop over the table names and delete the entries
+                    count=session.query(table_obj).filter_by(server_id=server_id_val).count()
+                    self.logs.info(f"Purging in {table_name}, {server_id_val}.  {count} entries will be removed.")
+                    
+                    # Delete the records from the table where server_id equals X
+                    session.query(table_obj).filter_by(server_id=server_id_val).delete()
+                    session.commit()
+                    self.logs.info(f"Purged  {count} entries from {table_name}, {server_id_val}.")
+                for tab in matching_tables_2:
+                    table_name,table_obj=tab
+                    # loop over the table names and delete the entries
+                    count=session.query(table_obj).filter_by(server_profile_id=server_id_val).count()
+                    self.logs.info(f"Purging in {table_name}, {server_id_val}.  {count} entries will be removed.")
+                    
+                    # Delete the records from the table where server_id equals X
+                    session.query(table_obj).filter_by(server_profile_id=server_id_val).delete()
+                    session.commit()
+                    self.logs.info(f"Purged  {count} entries from {table_name}, {server_id_val}.")
+
+            except IntegrityError as e:
+                session.rollback()
+                raise e
+        
+
+
 
     async def reload_all(self):
         
@@ -219,9 +220,8 @@ class TCBot(commands.Bot):
 
         print(self.extension_list)
 
-    def genid(self):
-        return ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase, k=9))
     def pswitchload(self,pmode=False):
+        #Once could load in a list of 'plugins' seperately, decided against.
         return self.loaded_extensions
 
     async def extension_loader(self,extname,plugin=False):
@@ -257,26 +257,8 @@ class TCBot(commands.Bot):
                 tracebackstr=''.join(traceback.format_exception(None, ex, ex.__traceback__))
                 self.pswitchload(plugin)[extname]=(en,tracebackstr)
                 return tracebackstr
-
-
-
-    def schedule_for_post(self,channel,mess):
-        """Schedule a message to be posted in channel."""
-        dict={"op":'post',"pid":self.genid(),"ch":channel,"mess":mess}
-        self.post_schedule.put(dict)
-        return dict["pid"]
-        
-    def schedule_for_deletion(self, message, delafter=0):
-        """Schedule a message to be deleted later."""
-        now=discord.utils.utcnow()
-
-        dictv={"op":'delete',"m":message,"then":now,"delay":delafter}
-        self.delete_schedule.put(dictv)
-
-
-
-
-
+    def genid(self):
+        return ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase, k=9))
 
     async def send_error_embed(self,emb=None,content=None):
         '''send error embed to debug channel.'''
@@ -292,12 +274,6 @@ class TCBot(commands.Bot):
 
 
 
-    @tasks.loop(seconds=1.0)
-    async def post_queue_message(self):
-        if self.post_schedule.empty()==False:
-            dict=self.post_schedule.get()
-            m=await dict["ch"].send(dict["mess"])
-            self.psuedomess_dict[dict["pid"]]=m
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
@@ -311,11 +287,34 @@ class TCBot(commands.Bot):
         just_the_string=''.join(traceback.format_exception(None, error, error.__traceback__))
         er=MessageTemplates.get_error_embed(title=f"Error with {ctx.message.content}",description=f"{just_the_string},{str(error)}")
         er.add_field(name="Details",value=f"{ctx.message.content},{error}")
-        try:        await ctx.send(embed=emb)
-        except Exception as e:             self.logs.log(level=1,msg=str(e))
+        try:
+            await ctx.send(embed=emb)
+        except Exception as e:
+            self.logs.error(str(e))
         await self.send_error_embed(er)
 
+    def schedule_for_post(self,channel,mess):
+        """Schedule a message to be posted in channel."""
+        dict={"op":'post',"pid":self.genid(),"ch":channel,"mess":mess}
+        self.post_schedule.put(dict)
+        return dict["pid"]
         
+    def schedule_for_deletion(self, message, delafter=0):
+        """Schedule a message to be deleted later."""
+        now=discord.utils.utcnow()
+
+        dictv={"op":'delete',"m":message,"then":now,"delay":delafter}
+        self.delete_schedule.put(dictv)
+    @tasks.loop(minutes=1)
+    async def check_tc_tasks(self):
+        await TCTaskManager.run_tasks()
+    @tasks.loop(seconds=1.0)
+    async def post_queue_message(self):
+        if self.post_schedule.empty()==False:
+            dict=self.post_schedule.get()
+            m=await dict["ch"].send(dict["mess"])
+            self.psuedomess_dict[dict["pid"]]=m
+
     @tasks.loop(seconds=1.0)
     async def delete_queue_message(self):
         if self.delete_schedule.empty()==False:
@@ -344,8 +343,6 @@ class TCBot(commands.Bot):
                             await newm.delete()
                         except Exception as error:
                             await self.send_error(error, "deletion error...")
-                            
-
             else:
                 self.delete_schedule.put(message)
 

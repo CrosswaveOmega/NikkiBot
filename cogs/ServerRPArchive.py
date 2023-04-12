@@ -1,3 +1,4 @@
+from typing import Literal
 import discord
 import operator
 import io
@@ -9,7 +10,7 @@ import csv
 from datetime import datetime, timedelta, date, timezone
 from sqlalchemy import event
 
-from utility import serverOwner, serverAdmin, seconds_to_time_string, MessageTemplates
+from utility import serverOwner, serverAdmin, seconds_to_time_string, MessageTemplates, get_time_since_delta
 from utility import WebhookMessageWrapper as web, urltomessage
 from bot import TauCetiBot
 from random import randint
@@ -32,9 +33,14 @@ class ServerRPArchive(commands.Cog):
         self.bot=bot
         self.loadlock=asyncio.Lock()
         self.helptext= \
-        """This cog is intended for Discord RP servers that use Tupperbox or another proxy bot.  
-        It condences all RP messages into a single channel for the sake of chronological readability,
-        while grouping them based on time and channel sent to provide as much context as possible."""
+        """This cog is intended for Discord RP servers that use Tupperbox or another proxy bot.  It condences all RP messages (messages sent with a proxy bot such as Tupperbox) sent across a server (ignoring channels when needed) into a single server specific channel, while grouping them into blocks via a specialized algorithm based on the time and category,channel, and thread(if needed) of each rp message.
+        
+        Please note, in order to work, this command **saves a copy of every archived RP messages into a local database.**  
+        
+        ***Only messages sent by bots and webhooks will be archived!***
+
+        Get started by utilizing the archive_setup family of commands to configure your archive channel and add your ignore channels.
+        """
         self.helpdescdf="""
         **Setting Up An Archive Channel**
 
@@ -44,7 +50,7 @@ class ServerRPArchive(commands.Cog):
         
 
 
-    @commands.command(hidden=False)
+    @commands.command(hidden=True)
     async def channelcount(self, ctx):  
         '''
         Get a count of all channels in your server
@@ -61,7 +67,7 @@ class ServerRPArchive(commands.Cog):
 
 
 
-    @commands.command(enabled=False)
+    @commands.command(enabled=False, hidden=True)
     async def ignoreusers(self, ctx):
         '''
         WORK IN PROGRESS: IGNORE ARCHIVING FROM THESE USERS.
@@ -85,7 +91,7 @@ class ServerRPArchive(commands.Cog):
 
     @commands.hybrid_group(fallback="view")
     async def archive_setup(self, ctx):
-        """Setup the RP archival system here."""
+        """This family of commands is for setting up your server archive."""
         channel = ctx.message.channel
         guild=channel.guild
         guildid=guild.id
@@ -94,10 +100,10 @@ class ServerRPArchive(commands.Cog):
         await MessageTemplates.server_archive_message(ctx,"Here is your server's data.")
 
 
-    @archive_setup.command(name="set_archive_channel", brief="set your desired Archive Channel.")
+    @archive_setup.command(name="set_archive_channel", brief="set a desired Archive Channel.")
     @app_commands.describe(chanment= "The new archive channel you want to set.")
     async def setArchiveChannel(self, ctx, chanment:discord.TextChannel):  # Add ignore.
-        '''set your desired archive channel.
+        '''Use this command to set an Archive Channel.
         '''
 
         bot = ctx.bot
@@ -118,11 +124,11 @@ class ServerRPArchive(commands.Cog):
         
         await MessageTemplates.server_archive_message(ctx,"The Server Archive Channel has been set.")
 
-    @archive_setup.command(name="autosetup_archive", brief="automatically add a archive channel")
-    @app_commands.describe(role_mode= "Restrict posting in this channel without a specific 'historian' role .")
-    async def createArchiveChannel(self, ctx, role_mode:bool=True):  # Add ignore.
-        '''create a new archive channel in the same invoked category as this command,
-            and create a historian role that restricts posting for all users without it.
+    @archive_setup.command(name="autosetup_archive", brief="automatically add a archive channel in invoked category with historian role.  ")
+    async def createArchiveChannel(self, ctx):  # Add ignore.
+        '''Want to set up a new archive channel automatically?  Use this command and a new archive channel will be created in this server with a historian role that only allows the bot user from posting inside the channel.
+
+        The bot must have **Manage Channels** and **Manage Roles** to use this command.
         '''
 
         bot = ctx.bot
@@ -186,11 +192,11 @@ class ServerRPArchive(commands.Cog):
 
     @archive_setup.command(
         name="add_ignore_channels",
-        brief="start ignoring mentioned #channels while archiving"
+        brief="Add mentioned channels to this server's ignore list. Ignored channels will not be archived."
     )
     async def addToIgnoredChannels(self, ctx):  # Add ignore.
         '''
-        Adds all mentioned channels to this server's ignore list. Ignored channels will not be archived.
+        Add mentioned channels to this server's ignore list. Ignored channels will not be archived.
         '''
         bot = ctx.bot
         thismessage=ctx.message
@@ -199,15 +205,13 @@ class ServerRPArchive(commands.Cog):
         def check(m):
             return m.author==auth and m.channel == channel
         if ctx.interaction:
-            await ctx.send("Due to app command limitations, please specify all the channels you want to ignore in another message below.")
+            await ctx.send(f"Due to app command limitations, please specify all the channels you want to ignore in another message below, you have {get_time_since_delta(timedelta(minutes=15))}.")
             try:
                 msg = await bot.wait_for('message', timeout=60.0*15, check=check)
                 thismessage=msg
             except asyncio.TimeoutError:
                 await ctx.send('You took way too long.')
                 return
-            else:
-                pass
 
         guild=channel.guild
         guildid=guild.id
@@ -232,11 +236,11 @@ class ServerRPArchive(commands.Cog):
     @archive_setup.command(
         
         name="remove_ignore_channels",
-        brief="stop ignoring mentioned #channels during archival"
+        brief="emoves channels from this server's ignore list."
     )
     async def removeFromIgnoredChannels(self, ctx):  # Add card.
         '''
-        remove channels from the ignore list. Use the #channel-name format.
+        Removes channels from this server's ignore list. These channels will be archived.
         '''
         bot = ctx.bot
         thismessage=ctx.message
@@ -245,15 +249,14 @@ class ServerRPArchive(commands.Cog):
         def check(m):
             return m.author==auth and m.channel == channel
         if ctx.interaction:
-            await ctx.send("Due to app command limitations, please specify all the channels you want to stop ignoring in another message below.")
+            await ctx.send(f"Due to app command limitations, please specify all the channels you want to stop ignoring in another message below, you have {get_time_since_delta(timedelta(minutes=15))}.")
             try:
                 msg = await bot.wait_for('message', timeout=60.0*15, check=check)
                 thismessage=msg
             except asyncio.TimeoutError:
-                await channel.send('You took way too long.')
+                await ctx.send('You took way too long.')
                 return
-            else:
-                pass
+
         guild=channel.guild
         guildid=guild.id
 
@@ -277,6 +280,7 @@ class ServerRPArchive(commands.Cog):
     @commands.command()
     async def firstlasttimestamp(self, ctx, *args):
         """Get the last timestamp of the most recently archived message.
+        By default, it only indexes bot/webhook messages.
         """
         bot = ctx.bot
         auth = ctx.message.author
@@ -307,11 +311,11 @@ class ServerRPArchive(commands.Cog):
 
 
         if profile.history_channel_id == 0:
-            await channel.send("Set a history channel first.")
+            await ctx.send("Set a history channel first.")
             return False
 
-        last_time=datetime.fromtimestamp(profile.last_archive_time,timezone.utc)
-        await channel.send("timestamp:{}".format(last_time.timestamp()))
+        last_time=profile.last_archive_time
+        await ctx.send("timestamp:{}".format(last_time.timestamp()))
 
 
 
@@ -341,8 +345,11 @@ class ServerRPArchive(commands.Cog):
             await edit_if_needed(cL)
             print(f"New posted_url value for ChannelSep")
 
-    @commands.command( extras={"guildtask":['rp_history']})
-    async def compileArchiveChannel(self, ctx, *args):
+    @commands.hybrid_command(
+        name="compile_archive",
+        brief="start archiving the server.  Will only archive messages sent by bots.",
+        extras={"guildtask":['rp_history']})
+    async def compileArchiveChannel(self, ctx):
         """Compile all messages into archive channel.  This can be invoked with options.
             +`full` - get the full history of this server
             +`update` -only update the current archive channel.  DEFAULT.
@@ -356,14 +363,16 @@ class ServerRPArchive(commands.Cog):
         auth = ctx.message.author
         channel = ctx.message.channel
         guild:discord.Guild=channel.guild
+        if guild==None:
+            await ctx.send("This command will only work inside a guild.")
+            return
         guildid=guild.id
 
-
         #options.
-        update=False
+        update=True
         indexbot=True
         user=False
-
+        scope='ws'
         archive_from="server"
 
         timebetweenmess=2.5
@@ -372,13 +381,13 @@ class ServerRPArchive(commands.Cog):
 
         profile=ServerArchiveProfile.get_or_new(guildid)
         
-        for arg in args:
-            if arg == 'full':   update=False
-            if arg == 'update': update=True
-            if arg == 'ws':      indexbot,user=True,False
-            if arg == 'user':   indexbot,user=False, True
-            if arg == 'both':   indexbot,user=True,True
-        await channel.send(profile.history_channel_id)
+        #for arg in args:
+            #if arg == 'full':   update=False
+            #if arg == 'update': update=True
+        if scope == 'ws':      indexbot,user=True,False
+        if scope == 'user':   indexbot,user=False, True
+        if scope == 'both':   indexbot,user=True,True
+        #await channel.send(profile.history_channel_id)
         if profile.history_channel_id == 0:
             await MessageTemplates.get_server_archive_embed(ctx,"Set a history channel first.")
             return False
@@ -403,17 +412,18 @@ class ServerRPArchive(commands.Cog):
             return False
 
 
+        m=await ctx.send("Initial check OK!")
         dynamicwait=False
-        statusMess=bot.add_status_message(ctx)
-
-        await statusMess.updatew("Collecting server history...")
+        game=discord.Game("{}".format('archiving do not shut down...'))
+        await bot.change_presence(activity=game)
+        await m.edit(content="Collecting server history...")
 
         totalcharlen=0
         if archive_from=="server":
            messages, totalcharlen=await collect_server_history(ctx,update,indexbot,user)
         
 
-        await statusMess.updatew("Grouping into separators, this may take a while.")
+        await  m.edit(content="Grouping into separators, this may take a while.")
 
         lastgroup=profile.last_group_num
         ts,group_id=await do_group(guildid,profile.last_group_num, ctx=ctx)
@@ -423,20 +433,24 @@ class ServerRPArchive(commands.Cog):
         print(lastgroup,group_id)
         if dynamicwait:
             remaining_time_float+=(totalcharlen*characterdelay)
+        await m.edit(content=f"Posting! This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
 
-        await statusMess.updatew(f"Posting! This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
         
 
+        needed=ChannelSep.get_posted_but_incomplete(guildid)
         grouped=ChannelSep.get_unposted_separators(guildid)
-        for sep in grouped:
-            currjob="rem: {}".format(seconds_to_time_string(int(remaining_time_float)))
-            emb,count=sep.create_embed()
-            chansep=await archive_channel.send(embed=emb)
-            sep.update(posted_url=chansep.jump_url)
-            
-                    
-            await self.edit_embed_and_neighbors(sep)
-            self.bot.database.commit()
+        if needed:   grouped.insert(0,needed)
+        length=len(grouped)
+        for e,sep in enumerate(grouped):
+            if not sep.posted_url:
+                currjob="rem: {}".format(seconds_to_time_string(int(remaining_time_float)))
+                emb,count=sep.create_embed()
+                chansep=await archive_channel.send(embed=emb)
+                sep.update(posted_url=chansep.jump_url)
+                
+                        
+                await self.edit_embed_and_neighbors(sep)
+                self.bot.database.commit()
             for amess in sep.get_messages():
                 c,au,av=amess.content,amess.author,amess.avatar
                 files=[]
@@ -458,10 +472,15 @@ class ServerRPArchive(commands.Cog):
                     remaining_time_float=remaining_time_float-(timebetweenmess)
             sep.update(all_ok=True)
             self.bot.database.commit()
-            await statusMess.updatew(f"This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
-        statusMess.delete()     
+            game=discord.Game(f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
+            await bot.change_presence(activity=game)
+
+
         self.bot.database.commit()
         await MessageTemplates.server_archive_message(ctx,'Archive operation sucsesfully completed.')
+        game=discord.Game("{}".format('clear'))
+        await bot.change_presence(activity=game)
+        await m.delete()
         
 
 

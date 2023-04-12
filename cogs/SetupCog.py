@@ -66,7 +66,7 @@ class Setup(commands.Cog):
 
         await bot.tree.sync(guild=guild)
         if guild.system_channel!=None:
-            await guild.system_channel.send("Hi, thanks for inviting me to your server! ")
+            await guild.system_channel.send("Hi, thanks for inviting me to your server!")
 
 async def setup(bot):
     await bot.add_cog(Setup(bot))

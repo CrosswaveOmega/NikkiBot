@@ -3,5 +3,5 @@
 '''Database Main stores some common tables.''' 
 from .database_singleton import DatabaseSingleton
 from .database_utils import add_or_update_all
-from .database_main import ServerArchiveProfile, IgnoredChannel, IgnoredUser
+from .database_main import ServerData, ServerArchiveProfile, IgnoredChannel, IgnoredUser
 

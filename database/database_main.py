@@ -4,14 +4,78 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
 from .database_singleton import DatabaseSingleton
-from sqlalchemy import select
-
+from sqlalchemy import select, not_
+import datetime
 '''This defines a few universal tables.'''
 '''As well as a function for the singleton to collect the base it's defined within.'''
 
 
 Base = declarative_base()
+class ServerData(Base):
+    '''
+    Server Data is used as a global table for guilds the bot is in.  
+    All joined guilds will will have an entry here.
+    It keeps track of the last time any guild used a command or service,
+    so old data can be wiped for the sake of privacy.
+    '''
+    __tablename__ = "ServerData"
+    server_id=Column(Integer, primary_key=True, nullable=False, unique=True)
+
+    last_use=Column(DateTime)
+    '''the last time a guild used any command.'''
+
+    policy_agree=Column(Boolean, default=False)
+    '''
+    Server has read and acknowledged the terms of service and privacy policy before use.
+    '''
+    @classmethod
+    def get(cls, server_id):
+        """
+        Returns the entire ServerArchiveProfile entry for the specified server_id, or None if it doesn't exist.
+        """
+        session:Session = DatabaseSingleton.get_session()
+        result = session.query(ServerData).filter_by(server_id=server_id).first()
+        if result:            return result
+        else:            return None
+    
+    @staticmethod
+    def get_or_new(server_id):
+        new=ServerData.get(server_id)
+        if not new:
+            session=DatabaseSingleton.get_session()
+            new = ServerData(server_id=server_id)
+            session.add(new)
+            session.commit()
+        return new
+        
+    @classmethod
+    def Audit(cls, list_of_servers):
+        """
+        Returns all entries in ServerData with a last_use value older than 30 days,
+        and a server_id that is not in the passed-in list.
+        """
+        session = DatabaseSingleton.get_session()
+        threshold = datetime.datetime.now()-datetime.timedelta(days=30)
+
+        results = session.query(ServerData).filter(
+            ServerData.last_use < threshold,
+            not_(ServerData.server_id.in_(list_of_servers))
+        ).all()
+        return results
+
+    def update(self, **kwargs):
+        session = DatabaseSingleton.get_session()
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+
+    def update_last_time(self):
+        self.last_use=datetime.datetime.now()
+        
+
+
 class ServerArchiveProfile(Base):
+    '''utility for the server archive system.'''
     __tablename__ = "ServerArchiveProfiles"
 
     server_id = Column(Integer, primary_key=True, nullable=False, unique=True)
@@ -100,6 +164,8 @@ class ServerArchiveProfile(Base):
         return False
 
     def has_channel(self, channel_id):
+        '''make sure this channel is not in the ignore list, or is the history channel.'''
+        if self.history_channel_id==channel_id: return True
         session = DatabaseSingleton.get_session()
         channel = session.query(IgnoredChannel).filter_by(server_profile_id=self.server_id, channel_id=channel_id).first()
         return channel is not None

@@ -30,6 +30,7 @@ async def collect_server_history(ctx, update=False,bot_messages_only=True,user_m
         chancount,ignored,chanlen=0,0,len(guild.text_channels)
         async def iter_hist_messages(cobj, last_time, statusMess, bot_messages_only, user_messages_only,chancount,chanlen):
             characterlen=0
+            ignoredhere=0
             new_last_time=last_time.timestamp()
             messages=[]
             mlen=0
@@ -41,12 +42,12 @@ async def collect_server_history(ctx, update=False,bot_messages_only=True,user_m
                 if bot_messages_only and user_messages_only:    add_check=True
                 if add_check:
                     thisMessage.content=thisMessage.clean_content
-                    new_last_time=max(thisMessage.created_at.timestamp(),last_time.timestamp())
+                    new_last_time=max(thisMessage.created_at.timestamp(),new_last_time)
                     characterlen+=len(thisMessage.content)
                     messages.append(thisMessage)
                     mlen+=1
                 else:
-                    ignored=ignored+1
+                    ignoredhere=ignoredhere+1
                 if(len(messages)%10 == 0 and len(messages)>0):
                     hmes=await HistoryMakers.get_history_message_list(messages)
                     messages=[]
@@ -55,7 +56,7 @@ async def collect_server_history(ctx, update=False,bot_messages_only=True,user_m
             if messages:
                 hmes=await HistoryMakers.get_history_message_list(messages)
                 messages=[]
-            return messages, statusMess, characterlen, new_last_time
+            return messages, statusMess, characterlen, new_last_time,ignoredhere
                 
             
 
@@ -73,14 +74,17 @@ async def collect_server_history(ctx, update=False,bot_messages_only=True,user_m
                     archived.append(thread)
                 threads=threads+archived
                 for thread in threads:
-                    mess, statusMess, charlen, newtime=await iter_hist_messages(thread, last_time,statusMess, bot_messages_only, user_messages_only, chancount,chanlen)
+                    mess, statusMess, charlen, newtime, ign=await iter_hist_messages(thread, last_time,statusMess, bot_messages_only, user_messages_only, chancount,chanlen)
+                    new_last_time=max(new_last_time,newtime)
                     totalcharlen+=charlen
+                    ignored+=ign
                     messages=messages+mess
                     current_channel_count+=1
 
                             
-                chanmess, statusMess, charlen, newtime=await iter_hist_messages(chan, last_time,statusMess, bot_messages_only, user_messages_only,  chancount,chanlen)
+                chanmess, statusMess, charlen, newtime,ign=await iter_hist_messages(chan, last_time,statusMess, bot_messages_only, user_messages_only,  chancount,chanlen)
                 new_last_time=max(new_last_time,newtime)
+                ignored+=ign
                 totalcharlen+=charlen
                 messages=messages+chanmess
                 current_channel_count+=1
@@ -91,7 +95,7 @@ async def collect_server_history(ctx, update=False,bot_messages_only=True,user_m
                 ignored+=1
 
         if statusMess!=None: statusMess.delete()
-        profile.update(last_archive_time=(datetime.fromtimestamp(new_last_time,tz=timezone.utc)))
+        profile.update(last_archive_time=(datetime.fromtimestamp(int(new_last_time),tz=timezone.utc)))
         bot.database.commit()
 
         return messages, totalcharlen

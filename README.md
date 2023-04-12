@@ -11,5 +11,6 @@ Utilizes SQLAlchemy to store persistent data into a SQLLite3 database.
 **Requirements:**
  + discord.py
  + SQLAlchemy
+ + python-dateutil
 
 I'm rewriting alot of old code I wrote into something more organized and presentable.

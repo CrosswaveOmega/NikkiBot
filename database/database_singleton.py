@@ -1,5 +1,6 @@
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, MetaData, Table
 from sqlalchemy.orm import sessionmaker, Session
+
 
 import logging
 
@@ -81,6 +82,11 @@ class DatabaseSingleton:
     def execute_sql_string(self, sqlstring):
         '''Execute a SQL String.'''
         self._instance.execute_sql_string(sqlstring)
+    def get_metadata(self):
+        # get metadata of database
+        metadata = MetaData()
+        metadata.reflect(bind=self._instance.engine)
+        return metadata
 
     def load_base(self, Base):
         self._instance.load_in_base(Base)

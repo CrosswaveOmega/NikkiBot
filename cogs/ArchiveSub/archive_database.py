@@ -25,6 +25,7 @@ ArchiveSub subpackage.
 
 Base=declarative_base()
 class ChannelSep(Base):
+    '''Table for the channel separator objects.'''
     __tablename__ = 'ChannelSeps'
 
     channel_sep_id = Column(Integer,primary_key=True)
@@ -45,6 +46,15 @@ class ChannelSep(Base):
 
     def get_chan_sep(self):
         return f"{self.category}-{self.channel}-{self.thread}"
+    @staticmethod
+    def get_posted_but_incomplete(server_id: int):
+        filter = and_(
+            ChannelSep.posted_url != None,
+            ChannelSep.server_id == server_id,
+            ChannelSep.all_ok==False
+        )
+        session = DatabaseSingleton.get_session()
+        return session.query(ChannelSep).filter(filter).order_by(ChannelSep.channel_sep_id).first()
     @staticmethod
     def get_unposted_separators(server_id: int):
         filter = and_(
@@ -243,6 +253,7 @@ class ArchivedRPMessage(Base):
 
 
 class ArchivedRPFile(Base):
+    '''Represents a file uploaded with a message.'''
     __tablename__ = 'ArchivedRPFiles'
 
     message_id = Column(Integer, ForeignKey('ArchivedRPMessages.message_id', ondelete='CASCADE'))
@@ -259,6 +270,7 @@ class ArchivedRPFile(Base):
     def to_file(self):
         return discord.File(io.BytesIO(self.bytes),filename=self.filename,spoiler=self.spoiler,description=self.description)
 class ArchivedRPEmbed(Base):
+    '''represents (one) embed saved in a JSON string.'''
     __tablename__ = 'ArchivedRPEmbed'
 
     message_id = Column(Integer, ForeignKey('ArchivedRPMessages.message_id', ondelete='CASCADE'))
@@ -280,7 +292,6 @@ def create_archived_rp_file(arpm, file_num, vekwargs):
     session = DatabaseSingleton.get_session()
     if arpm:
         archived_rp_file = ArchivedRPFile(message_id=arpm.message_id, file_number=file_num, **vekwargs)
-
         return archived_rp_file
     return None
 
@@ -296,6 +307,8 @@ def create_archived_rp_embed(arpm, embed):
 
 
 def create_history_pickle_dict(message):
+    #This code once saved Discord messages into a serialized object, which is why 
+    #It's called history_pickle_dict
     history_pickle_dict = {
         'message_id': message.id,
         'author': message.author.name,

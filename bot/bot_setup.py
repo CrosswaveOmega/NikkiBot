@@ -1,3 +1,4 @@
+import datetime
 from typing import Any
 import discord
 import traceback
@@ -14,7 +15,7 @@ import sys, random
 
 
 from queue import Queue
-from utility import serverOwner, serverAdmin,MessageTemplates
+from utility import serverOwner, serverAdmin,MessageTemplates, relativedelta_sp
 
 from discord.ext import commands, tasks
 
@@ -23,15 +24,16 @@ from subprocess import Popen
 
 
 from collections import defaultdict
-
+from dateutil.relativedelta import relativedelta, MO, TU, WE, TH, FR, SA, SU
 
 from .TauCetiBot import TCBot
+from .TCTasks import TCTask
 """
 Initalizes TCBot, and defines some checks
 
 """
 
-
+from database import ServerData
 
 
 
@@ -50,10 +52,13 @@ async def is_cog_enabled(ctx):
 
 @bot.check
 async def guildcheck(ctx):
-    if ctx.command.extras:
-        if 'guildtask' in ctx.command.extras and ctx.guild!=None:
-            if taskflags[str(ctx.guild.id)]: 
-                return False
+    if ctx.guild!=None:
+        serverdata=ServerData.get_or_new(ctx.guild.id)
+        serverdata.update_last_time()
+        if ctx.command.extras:
+            if 'guildtask' in ctx.command.extras and ctx.guild!=None:
+                if taskflags[str(ctx.guild.id)]: 
+                    return False
     return True
 
 @bot.on_error
@@ -129,23 +134,43 @@ async def on_ready():
     print("Activating Bot.")
     await opening()
     print("BOT ACTIVE")
+    
+    #audit old guild data.
+    await bot.audit_guilds()
+
+
     for x in bot.tree.walk_commands():
         print(x.name)
     await bot.all_guild_startup()
     print("BOT SYNCED!")
     bot.delete_queue_message.start()
     bot.post_queue_message.start()
+    bot.check_tc_tasks.start()
 
 
     print("Setup done.")
 
+'''
+@TCTask(name="my_stask", time_interval=relativedelta_sp(weekday=[TU,WE], hour=9, minute=0))
+async def my_coroutines():
+    print("Task running at", datetime.now())
+    await asyncio.sleep(5)
+
+    print("Task done at", datetime.now())
+@TCTask(name="my_task1", time_interval=relativedelta_sp(months='var', day=23, hour=12, minute=5))
+async def my_coroutine():
+    print("Task running at", datetime.now())
+    await asyncio.sleep(5)
+
+    print("Task done at", datetime.now())
+'''
 
 
 class Main(commands.Cog):
     """ debug class
     """
 
-    
+        
     @commands.command(hidden=True)
     async def shutdown(self, ctx):  
         '''
@@ -157,15 +182,13 @@ class Main(commands.Cog):
         
         bot.post_queue_message.cancel()
         bot.delete_queue_message.cancel()
+        bot.check_tc_tasks.cancel()
 
         await ctx.channel.send("Shutting Down")
         
-        autocog=bot.get_cog("AutoCog")
-        if autocog!=None:
-            await autocog.stop_tasks()
-
         await ctx.bot.close()
         
+    
 
 
 
@@ -236,12 +259,18 @@ def setup(args):
 
             config["vital"] = {'cipher': args[1]}
             config["optional"] = {'error_channel_id': 'ADD_HERE'}
+            print("MAKE SURE TO ADD YOUR ERROR CHANNEL ID!")
             config.write(open('config.ini', 'w'))
             try:
                 print("making savedata")
                 Path("/saveData").mkdir(parents=True, exist_ok=True) #saveData
             except FileExistsError:
                 print("saveData exists already.")
+            try:
+                print("making logs")
+                Path("/logs").mkdir(parents=True, exist_ok=True) #logs
+            except FileExistsError:
+                print("logs exists already.")
 
             print("you can restart the bot now.")
         else:
@@ -256,6 +285,7 @@ def setup(args):
 
 async def main(args):
     '''Entry command.'''
+    config=setup(args)
     async with bot:
 
         intent=discord.Intents.default();
@@ -263,7 +293,7 @@ async def main(args):
         intent.message_content=True
         intent.guilds=True
         intent.members=True
-        config=setup(args)
+        bot.database_on()
         bot.set_error_channel(config.get("optional", 'error_channel_id'))
         await bot.add_cog(Main())
         bot.set_ext_directory('./cogs')
