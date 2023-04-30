@@ -23,8 +23,8 @@ ArchiveSub subpackage.
 '''
 
 
-Base=declarative_base()
-class ChannelSep(Base):
+ArchiveBase=declarative_base()
+class ChannelSep(ArchiveBase):
     '''Table for the channel separator objects.'''
     __tablename__ = 'ChannelSeps'
 
@@ -72,7 +72,7 @@ class ChannelSep(Base):
     @classmethod
     def get(cls, channel_sep_id, server_id):
         """
-        Returns the entire ServerArchiveProfile entry for the specified server_id, or None if it doesn't exist.
+        Returns the entire Channel_sep entry for the specified server_id and channel_sep_id, or None if it doesn't exist.
         """
         session:Session = DatabaseSingleton.get_session()
         result = session.query(ChannelSep).filter(channel_sep_id=channel_sep_id,server_id=server_id).first()
@@ -172,7 +172,7 @@ class ChannelSep(Base):
 
         
 
-class ArchivedRPMessage(Base):
+class ArchivedRPMessage(ArchiveBase):
     '''represents an archived RP message for a specific server_id'''
     __tablename__ = 'ArchivedRPMessages'
 
@@ -252,7 +252,7 @@ class ArchivedRPMessage(Base):
         return f"{self.author}: {self.content} [{self.created_at}] ([{self.get_chan_sep()}]: [{self.channel_sep_id}])"
 
 
-class ArchivedRPFile(Base):
+class ArchivedRPFile(ArchiveBase):
     '''Represents a file uploaded with a message.'''
     __tablename__ = 'ArchivedRPFiles'
 
@@ -269,7 +269,7 @@ class ArchivedRPFile(Base):
     )
     def to_file(self):
         return discord.File(io.BytesIO(self.bytes),filename=self.filename,spoiler=self.spoiler,description=self.description)
-class ArchivedRPEmbed(Base):
+class ArchivedRPEmbed(ArchiveBase):
     '''represents (one) embed saved in a JSON string.'''
     __tablename__ = 'ArchivedRPEmbed'
 
@@ -405,7 +405,7 @@ class HistoryMakers():
                             "description": fd.description,
                             "spoiler": fd.spoiler
                         }
-                        rps = create_archived_rp_file(ms, filecount, dummy_file=fdv)
+                        rps = create_archived_rp_file(ms, filecount, vekwargs=fdv)
                         archived_rp_files.append(rps)
                         fsize += attach.size
             if thisMessage.content.isspace() and not filecount<=0 and not hasembed:
@@ -423,7 +423,7 @@ class HistoryMakers():
         hmes=create_history_pickle_dict(thisMessage)
         return hmes
 
-DatabaseSingleton('setup').load_base(Base)
+DatabaseSingleton('setup').load_base(ArchiveBase)
 
 '''
 below should be equivalent to:

@@ -18,32 +18,47 @@ class DatabaseSingleton:
 
     class __DatabaseSingleton:
         def __init__(self, arg, db_name='./saveData/mydatabase.db'):
-            from .database_main import return_base
-            #I don't like this.  But I have to do it lest I get a circular import.
-            
-            MyBase=return_base()
-            file_handler = logging.FileHandler("./logs/sqlalchemy.log")
 
+
+            file_handler = logging.FileHandler("./logs/sqlalchemy.log")
             # create a logger and set its level to INFO
-            logger = logging.getLogger("sqlalchemy.engine")
-            logger.setLevel(logging.INFO)
+            self.logger = logging.getLogger("sqlalchemy.engine")
+            self.logger.setLevel(logging.INFO)
 
             # add the file handler to the logger
-            logger.addHandler(file_handler)
-
+            self.logger.addHandler(file_handler)
+            self.bases=[]
             self.val = arg
-            self.engine = create_engine(f'sqlite:///{db_name}', echo=False)
-            MyBase.metadata.create_all(self.engine)
+            self.database_name=db_name
+            self.connected=False
+            self.engine=None
+            self.SessionLocal: sessionmaker = None
+            self.session: Session = None
+            
 
-            SessionLocal = sessionmaker(bind=self.engine, autocommit=False, autoflush=True)
-            self.SessionLocal: sessionmaker = SessionLocal
-            self.session: Session = self.SessionLocal()
-            self.session.commit()
+        def connect_to_engine(self):
+            if not self.connected:
+                db_name=self.database_name
+                self.engine = create_engine(f'sqlite:///{db_name}', echo=False)
+                for base in self.bases:
+                    base.metadata.create_all(self.engine)
+                self.connected=True
+                SessionLocal = sessionmaker(bind=self.engine, autocommit=False, autoflush=True)
+
+
+                self.SessionLocal: sessionmaker = SessionLocal
+                self.session: Session = self.SessionLocal()
+                self.session.commit()
+
         def load_in_base(self,Base):
-            print("loading in:")
-            Base.metadata.create_all(self.engine)
-            self.session: Session = self.SessionLocal()
-            self.session.commit()
+            print("loading in: ",Base.__name__)
+            self.bases.append(Base)
+            print('done')
+            if self.connected:
+                Base.metadata.create_all(self.engine)
+                self.session: Session = self.SessionLocal()
+                self.session.commit()
+
         def start_up(self):
 
             SessionLocal = sessionmaker(bind=self.engine, autocommit=False, autoflush=True)
@@ -63,6 +78,7 @@ class DatabaseSingleton:
             if self.session is not None:
                 self.session.close()
             self.engine.dispose()
+            self.connected=False
 
         def get_session(self) -> Session:
             if not self.session:
@@ -72,12 +88,14 @@ class DatabaseSingleton:
     _instance = None
 
     def __init__(self, arg, **kwargs):
-
         if not DatabaseSingleton._instance:
             print("Running singleton 2")
             session = self.__DatabaseSingleton(arg, **kwargs)
             DatabaseSingleton._instance = session
         #If it's made, do nothing.
+        
+    def startup(self):
+        self._instance.connect_to_engine()
 
     def execute_sql_string(self, sqlstring):
         '''Execute a SQL String.'''

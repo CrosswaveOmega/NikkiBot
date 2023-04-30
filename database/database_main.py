@@ -4,14 +4,14 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
 from .database_singleton import DatabaseSingleton
-from sqlalchemy import select, not_
+from sqlalchemy import select, not_, func
 import datetime
 '''This defines a few universal tables.'''
 '''As well as a function for the singleton to collect the base it's defined within.'''
 
 
-Base = declarative_base()
-class ServerData(Base):
+Main_DB_Base = declarative_base()
+class ServerData(Main_DB_Base):
     '''
     Server Data is used as a global table for guilds the bot is in.  
     All joined guilds will will have an entry here.
@@ -74,7 +74,7 @@ class ServerData(Base):
         
 
 
-class ServerArchiveProfile(Base):
+class ServerArchiveProfile(Main_DB_Base):
     '''utility for the server archive system.'''
     __tablename__ = "ServerArchiveProfiles"
 
@@ -198,7 +198,10 @@ class ServerArchiveProfile(Base):
         session = DatabaseSingleton.get_session()
         ignoredchannels = session.query(IgnoredChannel).filter_by(server_profile_id=self.server_id).all()
         return [channel.channel_id for channel in ignoredchannels]
-
+    def count_channels(self):
+        session = DatabaseSingleton.get_session()
+        count = session.query(func.count(IgnoredChannel.channel_id)).filter_by(server_profile_id=self.server_id).scalar()
+        return count
     def list_users(self):
         session = DatabaseSingleton.get_session()
         ignoredusers = session.query(IgnoredUser).filter_by(server_profile_id=self.server_id).all()
@@ -217,7 +220,7 @@ class ServerArchiveProfile(Base):
     
     
 
-class IgnoredChannel(Base):
+class IgnoredChannel(Main_DB_Base):
     __tablename__ = "ignoredchannels"
 
     id = Column(Integer, primary_key=True)
@@ -225,7 +228,7 @@ class IgnoredChannel(Base):
     channel_id = Column(Integer)
     server_archive_profile  = relationship("ServerArchiveProfile", back_populates="channellist")
 
-class IgnoredUser(Base):
+class IgnoredUser(Main_DB_Base):
     __tablename__ = "ignoredusers"
 
     id = Column(Integer, primary_key=True)
@@ -235,5 +238,4 @@ class IgnoredUser(Base):
 
 
 
-def return_base():
-    return Base
+DatabaseSingleton('mainsetup').load_base(Main_DB_Base)

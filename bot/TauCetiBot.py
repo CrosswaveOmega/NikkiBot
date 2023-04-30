@@ -16,6 +16,8 @@ from database import *
 from .TCTasks import TCTaskManager
 from sqlalchemy.exc import IntegrityError
 from utility import Chelp, urltomessage, MessageTemplates
+from .TcGuildTaskDB import Guild_Task_Base, Guild_Task_Functions, TCGuildTask
+from .GuildSyncStatus import Guild_Sync_Base, AppGuildTreeSync, format_application_commands
 
 """ Primary Class
 
@@ -36,11 +38,12 @@ class TCBot(commands.Bot):
     
     """TC's central bot class.  An extension of discord.py Bot class with additional functionality."""
     def __init__(self):
-        super().__init__(command_prefix=['tc_>',">"], help_command=Chelp(), intents=intent)
+        super().__init__(command_prefix=['tc>',">"], help_command=Chelp(), intents=intent)
         #The Database Singleton is initalized in here.
         self.database=None
 
         self.error_channel=None
+
         self.statmess:StatusMessageManager=StatusMessageManager(self)
 
         self.logs=logging.getLogger("TCLogger")
@@ -51,16 +54,47 @@ class TCBot(commands.Bot):
 
         self.loaded_extensions={}
         self.loaded_plugins={}
+
+
         self.psuedomess_dict= {}   
         self.post_schedule=Queue()
         self.delete_schedule=Queue()
         self.default_error=self.on_command_error
+        self.bot_ready=False
+
     def database_on(self):
         '''turn the database on.'''
         self.database= DatabaseSingleton("Startup")
+        self.database.startup()
+        self.database.load_base(Base=Guild_Task_Base)
+        self.database.load_base(Base=Guild_Sync_Base)
+
     def set_error_channel(self,newid):
         if str(newid).isdigit():
             self.error_channel=int(newid)
+            print("PASS")
+            return True
+        return False
+
+    async def after_startup(self):
+        if not self.bot_ready:
+            await self.all_guild_startup()
+            print("BOT SYNCED!")
+            self.delete_queue_message.start()
+            self.post_queue_message.start()
+            
+            for g in self.guilds:
+                mytasks=TCGuildTask.get_tasks_by_server_id(g.id)
+                for t in mytasks:
+                    t.to_task(self)
+            self.bot_ready=True
+            now = datetime.datetime.now()
+            seconds_until_next_minute = (60 - now.second)%20
+            print('sleeping for ',seconds_until_next_minute)
+            await asyncio.sleep(seconds_until_next_minute)
+            self.check_tc_tasks.start()
+            # Start the coroutine
+
     async def on_close(self):
         # Close the SQLAlchemy engine
         self.database.close_out()
@@ -73,9 +107,13 @@ class TCBot(commands.Bot):
 
         await self.logout()
     def loggersetup(self):
-        self.logs.setLevel(logging.INFO)
+        if not os.path.exists('./logs/'):
+            os.makedirs('./logs/')
+
+        zehttp=logging.getLogger('discord.http')
+        zehttp.setLevel(logging.INFO)
         handler = logging.handlers.RotatingFileHandler(
-            filename='./logs/tauceti__log.log',
+            filename='./logs/discord_http.log',
             encoding='utf-8',
             maxBytes=32 * 1024 * 1024,  # 32 MiB
             backupCount=5,  # Rotate through 5 files
@@ -83,8 +121,37 @@ class TCBot(commands.Bot):
         dt_fmt = '%Y-%m-%d %H:%M:%S'
         formatter = logging.Formatter('[LINE] [{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
         handler.setFormatter(formatter)
-        self.logs.addHandler(handler)
+        zehttp.addHandler(handler)
 
+        handler2 = logging.handlers.RotatingFileHandler(
+            filename='./logs/discord.log',
+            encoding='utf-8',
+            maxBytes=7 * 1024 * 1024,  # 32 MiB
+            backupCount=5,  # Rotate through 5 files
+        )
+        dt_fmt = '%Y-%m-%d %H:%M:%S'
+        formatter2 = logging.Formatter('[LINE] [{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
+        handler2.setFormatter(formatter2)
+        discord.utils.setup_logging(level=logging.INFO,handler=handler2,root=False)
+        #SQLALCHEMY LOGGER.
+        sqlalchemy_logger = logging.getLogger('sqlalchemy.engine')
+        sqlalchemy_logger.setLevel(logging.INFO)
+        file_handler = logging.FileHandler("./logs/sqlalchemy.log")
+        sqlalchemy_logger.addHandler(file_handler)
+        #Sqlalchemylogger.
+        
+        self.logs=logging.getLogger("TCLogger")
+        self.logs.setLevel(logging.INFO)
+        handlerTC = logging.handlers.RotatingFileHandler(
+            filename='./logs/tauceti__log.log',
+            encoding='utf-8',
+            maxBytes=32 * 1024 * 1024,  # 32 MiB
+            backupCount=5,  # Rotate through 5 files
+        )
+        dt_fmt = '%Y-%m-%d %H:%M:%S'
+        formatter = logging.Formatter('[LINE] [{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
+        handlerTC.setFormatter(formatter)
+        self.logs.addHandler(handler)
     def set_ext_directory(self, dir:str):
         self.extensiondir=dir
 
@@ -105,52 +172,83 @@ class TCBot(commands.Bot):
         '''return a status message object'''
         cid=self.statmess.add_status_message(ctx)
         return self.statmess.get_message_obj(cid)
-
-    async def sync_enabled_cogs_for_guild(self,guild):
+    
+    async def sync_enabled_cogs_for_guild(self,guild, force=False):
         '''With a passed in guild, sync all activated cogs.'''        
         def syncprint(lis):
-            print(f"Sync for {guild.name} (ID {guild.id})",lis)
+            pass
+            #print(f"Sync for {guild.name} (ID {guild.id})",lis)
         def should_skip_cog(cogname: str) -> bool:
             """Determine whether a cog should be skipped during synchronization."""
-            return cogname == "Setup"
+            return False
 
         def add_command_to_tree(command, guild):
             """Add a command to the commands tree for the given guild."""
+            #print(command)
+            current_command_list=[]
             if isinstance(command, (commands.HybridCommand, commands.HybridGroup)):
                 try:
                     self.tree.add_command(command.app_command, guild=guild, override=True)
+                    
+                    if isinstance(command,commands.HybridGroup):
+                        for i in command.walk_commands():
+                            if isinstance(i.app_command,discord.app_commands.Command):
+                                current_command_list.append(i.app_command)
+                    else:
+                        current_command_list.append(command.app_command)
                     syncprint(f"Added hybrid {command.name}")
                 except:
                     syncprint(f"Cannot add {command.name}, case error.")
             else:
                 try:
                     self.tree.add_command(command, guild=guild, override=True)
+                    if isinstance(command,discord.app_commands.Group):
+                        for i in command.walk_commands():
+                            if isinstance(command,discord.app_commands.Command):
+                                current_command_list.append(command)
+                    else:
+                        current_command_list.append(command)
                     syncprint(f"Added {command.name}")
                 except:
-                    syncprint(f"Cannot add {command.name}, this is not a command")
+                    syncprint(f"Cannot add {command.name}, this is not a app command")
+            return current_command_list
 
-        async def sync_commands_tree(guild):
+        async def sync_commands_tree(guild,synced, forced=False):
             """Sync the commands tree for the given guild."""
-            print(f"Syncing commands for {guild.name} (ID {guild.id})...")
+            print(f"Checking if it's time to sync commands syncing for {guild.name} (ID {guild.id})...")
             try:
-                await self.tree.sync(guild=guild)
+                app_tree=format_application_commands(synced)
+                dbentry=AppGuildTreeSync.get(guild.id)
+                if not dbentry:
+                    dbentry=AppGuildTreeSync.add(guild.id)
+                if (not dbentry.compare_with_command_tree(app_tree)) or forced==True:
+                    print(f"Beginning command syncing for {guild.name} (ID {guild.id})...")
+                    dbentry.update(app_tree)
+                    print(dbentry.compare_with_command_tree(app_tree))
+                   # await self.tree.sync(guild=guild)
             except Exception as e:
                 print(str(e))
 
         """Synchronize all activated cogs for a given guild."""
+        synced=[]
         for cogname, cog in self.cogs.items():
             if should_skip_cog(cogname):
+                print("skipping cog ",cogname)
                 continue
             for command in cog.walk_commands():
-                add_command_to_tree(command, guild)
+                synced+=add_command_to_tree(command, guild)
+            for command in cog.walk_app_commands():
+                synced+=add_command_to_tree(command, guild)
 
-        await sync_commands_tree(guild)
+        await sync_commands_tree(guild,synced, forced=force)
+        print('sync complete')
 
-    async def all_guild_startup(self):
+
+    async def all_guild_startup(self, force=False):
         
         async for guild in self.fetch_guilds(limit=10000):
             print(f"syncing for {guild.name}")
-            await self.sync_enabled_cogs_for_guild(guild)
+            await self.sync_enabled_cogs_for_guild(guild,force=force)
 
     async def audit_guilds(self):
         '''audit guilds.'''
@@ -305,9 +403,14 @@ class TCBot(commands.Bot):
 
         dictv={"op":'delete',"m":message,"then":now,"delay":delafter}
         self.delete_schedule.put(dictv)
-    @tasks.loop(minutes=1)
+
+
+    @tasks.loop(seconds=20.0)
     async def check_tc_tasks(self):
+        '''run all TcTaskManager Tasks, fires every minute.'''
         await TCTaskManager.run_tasks()
+
+
     @tasks.loop(seconds=1.0)
     async def post_queue_message(self):
         if self.post_schedule.empty()==False:
@@ -338,7 +441,7 @@ class TCBot(commands.Bot):
                             if issubclass(type(message["m"]),discord.InteractionMessage):
                                 jumplink=message["m"].jump_url
                             else:
-                                jumplink=message["m"].url
+                                jumplink=message["m"].jump_url
                             newm=await urltomessage(jumplink,self)
                             await newm.delete()
                         except Exception as error:

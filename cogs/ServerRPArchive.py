@@ -11,8 +11,8 @@ from datetime import datetime, timedelta, date, timezone
 from sqlalchemy import event
 
 from utility import serverOwner, serverAdmin, seconds_to_time_string, MessageTemplates, get_time_since_delta
-from utility import WebhookMessageWrapper as web, urltomessage
-from bot import TauCetiBot
+from utility import WebhookMessageWrapper as web, urltomessage, relativedelta_sp
+from bot import TCBot, TCGuildTask, Guild_Task_Functions
 from random import randint
 from discord.ext import commands, tasks
 
@@ -24,31 +24,75 @@ from discord import app_commands
 
 
 from database import ServerArchiveProfile
-from .ArchiveSub import do_group, collect_server_history
+from .ArchiveSub import do_group, collect_server_history, check_channel
 from .ArchiveSub import ChannelSep
+
+
+from dateutil.relativedelta import relativedelta, MO, TU, WE, TH, FR, SA, SU
 class ServerRPArchive(commands.Cog):
     """This class is intended for Discord RP servers that use Tupperbox or another proxy application.."""
-    bot :TauCetiBot
-    def __init__(self, bot:TauCetiBot):
-        self.bot=bot
+    def __init__(self, bot):
+        self.bot:TCBot=bot
         self.loadlock=asyncio.Lock()
         self.helptext= \
         """This cog is intended for Discord RP servers that use Tupperbox or another proxy bot.  It condences all RP messages (messages sent with a proxy bot such as Tupperbox) sent across a server (ignoring channels when needed) into a single server specific channel, while grouping them into blocks via a specialized algorithm based on the time and category,channel, and thread(if needed) of each rp message.
         
-        Please note, in order to work, this command **saves a copy of every archived RP messages into a local database.**  
+        Please note, in order to work, this command **saves a copy of every archived RP message into a local database.**  
         
         ***Only messages sent by bots and webhooks will be archived!***
 
         Get started by utilizing the archive_setup family of commands to configure your archive channel and add your ignore channels.
         """
-        self.helpdescdf="""
-        **Setting Up An Archive Channel**
 
-        " • **;set_archive_channel** `#channel-name`- the first command you should execute, will set the archive channel to here.
-        
-        """
-        
+        Guild_Task_Functions.add_task_function("COMPILE",self.gtask_compile)
 
+    
+    
+
+    def cog_unload(self):
+        #Remove the task function.
+        Guild_Task_Functions.remove_task_function("COMPILE")
+        pass
+    
+    def server_profile_field_ext(self,guild):
+        '''return a dictionary for the serverprofile template message'''
+        profile=ServerArchiveProfile.get(guild.id)
+        if not profile:
+            return None
+        last_date=""
+        aid=""
+        hist_channel=profile.history_channel_id
+        if profile.last_archive_time:
+            timestamped=profile.last_archive_time.timestamp()
+            last_date=f"<t:{int(timestamped)}:f>"
+        if hist_channel: aid=f"<#{hist_channel}>"
+        if aid:
+            clist=profile.count_channels()
+            value=f"Archive Channel: {aid}\n"
+            if last_date:
+                value+=f"Last Run: {last_date}\n"
+            value+=f"Ignored Channels: {clist}\n"
+            
+            autoentry=TCGuildTask.get(guild.id,"COMPILE")
+            res=autoentry.get_status_desc()
+            if res:
+                value+=res
+            field={"name":"Server RP Archive",'value':value}
+            return field
+        return None
+
+
+
+    async def gtask_compile(self, source_message=None):
+        if not source_message: return None
+        context=await self.bot.get_context(source_message)
+        await context.channel.send("Greetings from GTASK.")
+        try:
+            await context.invoke(self.bot.get_command("compile_archive"))
+        except Exception as e:
+            er=MessageTemplates.get_error_embed(title=f"Error with AUTO",description=f"{str(e)}")
+            await source_message.channel.send(embed=er)
+            raise e
 
     @commands.command(hidden=True)
     async def channelcount(self, ctx):  
@@ -65,7 +109,33 @@ class ServerRPArchive(commands.Cog):
                 catcount+=1;
         await ctx.send("```allchannels:{}, \n Total text channels: {}, \n categories: {}.```".format(acount, ccount, catcount))
 
+    @app_commands.command(name="compile_sanity_check", description="ensure that the needed permissions for the auto channel are set")
+    async def sanity_check(self, interaction: discord.Interaction):
+        '''make a poll!'''
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        bot=ctx.bot
+        guild=ctx.guild
+        task_name="COMPILE"
+        if not(serverOwner(ctx) or serverAdmin(ctx)):
+            await MessageTemplates.server_archive_message(ctx,"You don't have permission to use this command..")
+            return False
+        
+        
 
+        
+        old=TCGuildTask.get(guild.id, task_name)
+        if old:
+            autochannel=bot.get_channel(old.target_channel_id)
+            #check if the passed in autochannel meets the standards.
+            passok, statusmessage = Guild_Task_Functions.check_auto_channel(autochannel)
+            if not passok:
+                await MessageTemplates.server_archive_message(ctx,statusmessage, ephemeral=True)
+            else:
+                await MessageTemplates.server_archive_message(ctx,"Everything should be a-ok")
+            
+        else:
+            await MessageTemplates.server_archive_message(ctx,"You never set up an auto channel!")
+        
 
     @commands.command(enabled=False, hidden=True)
     async def ignoreusers(self, ctx):
@@ -99,7 +169,6 @@ class ServerRPArchive(commands.Cog):
 
         await MessageTemplates.server_archive_message(ctx,"Here is your server's data.")
 
-
     @archive_setup.command(name="set_archive_channel", brief="set a desired Archive Channel.")
     @app_commands.describe(chanment= "The new archive channel you want to set.")
     async def setArchiveChannel(self, ctx, chanment:discord.TextChannel):  # Add ignore.
@@ -112,10 +181,15 @@ class ServerRPArchive(commands.Cog):
         guild=channel.guild
         guildid=guild.id
         if not(serverOwner(ctx) or serverAdmin(ctx)):
+            await ctx.send("You do not have permission to use this command.")
             return False
         
         profile=ServerArchiveProfile.get_or_new(guildid)
         print(profile)
+        passok, statusmessage = check_channel(chanment)
+        if not passok:
+            await MessageTemplates.server_archive_message(ctx,statusmessage)
+            return
 
         newchan_id=chanment.id
         profile.add_or_update(guildid,history_channel_id=newchan_id)
@@ -124,6 +198,87 @@ class ServerRPArchive(commands.Cog):
         
         await MessageTemplates.server_archive_message(ctx,"The Server Archive Channel has been set.")
 
+    
+    @archive_setup.command(name="enable_auto", brief="automatically archive the server every sunday at 4pm.")
+    @app_commands.describe(autochannel= "a channel where the command will run.  not same thing as the archive_channel!")
+    async def task_add(self, ctx,autochannel:discord.TextChannel):
+        """Add an automatic task."""
+        bot=ctx.bot
+        guild=ctx.guild
+        task_name="COMPILE"
+        if not(serverOwner(ctx) or serverAdmin(ctx)):
+            await MessageTemplates.server_archive_message(ctx,"You don't have permission to use this command..")
+            return False
+        
+        #check if the passed in autochannel meets the standards.
+        passok, statusmessage = Guild_Task_Functions.check_auto_channel(autochannel)
+
+        if not passok:
+            await MessageTemplates.server_archive_message(ctx,statusmessage)
+            return
+        
+        prof=ServerArchiveProfile.get(server_id=guild.id)
+        if not prof: 
+            await MessageTemplates.server_archive_message(ctx,"...you've gotta set up the archive first...")
+            return
+        if autochannel.id==prof.history_channel_id:
+            result=f"this should not be the same channel as the archive channel.  Specify a different channel such as a bot spam channel."
+            await MessageTemplates.server_archive_message(ctx,result)
+            return
+        
+        old=TCGuildTask.get(guild.id, task_name)
+        if not old:
+            message=await autochannel.send(f"**ATTEMPTING SET UP OF AUTO COMMAND {task_name}**")
+            myurl=message.jump_url
+            robj=relativedelta_sp(weekday=[SU],hour=17,minute=0,second=0)
+            new=TCGuildTask.add_guild_task(guild.id, task_name, message, robj)
+            new.to_task(bot)
+            
+            result=f"The automatic archive system is set up for <#{autochannel.id}>.  See you on Sunday at 5pm est."
+            await MessageTemplates.server_archive_message(ctx,result)
+        else:
+            old.target_channel_id=autochannel.id
+            
+            message=await autochannel.send("**ALTERING AUTO CHANNEL...**")
+            old.target_message_url=message.jump_url
+            self.bot.database.commit()   
+            result=f"Changed the auto log channel to <#{autochannel.id}>"
+            await MessageTemplates.server_archive_message(ctx,result)
+    @archive_setup.command(name="updatenextauto", brief="change the next automatic time.")
+    @app_commands.describe(newtime= "Minutes from now.")
+    async def taskautochange(self, ctx,newtime:int):
+        """set a new time for the next automatic task."""
+        bot=ctx.bot
+        guild=ctx.guild
+        task_name="COMPILE"
+        if not(serverOwner(ctx) or serverAdmin(ctx)):
+            await MessageTemplates.server_archive_message(ctx,"You don't have permission to use this command..")
+            return False
+        
+        old=TCGuildTask.get(guild.id, task_name)
+        if old:
+            old.change_next_run(self.bot,datetime.now()+timedelta(minutes=newtime))
+            result=f"Time has changed to newtime."
+            await MessageTemplates.server_archive_message(ctx,result)
+        else:
+            await MessageTemplates.server_archive_message(ctx,"I can't find the guild task.")
+    
+    @archive_setup.command(name="disable_auto", brief="stop automatically archiving")
+    async def task_remove(self, ctx):
+        """remove an automatic task."""
+        bot=ctx.bot
+        guild=ctx.guild
+        task_name="COMPILE"
+        if not(serverOwner(ctx) or serverAdmin(ctx)):
+            await MessageTemplates.server_archive_message(ctx,"You don't have permission to use this command..")
+            return False
+        message=await ctx.send("Target Message.")
+        myurl=message.jump_url
+        new=TCGuildTask.remove_guild_task(guild.id, task_name)
+        
+        result=f"the auto archive has been disabled."
+        await MessageTemplates.server_archive_message(ctx,result)
+    
     @archive_setup.command(name="autosetup_archive", brief="automatically add a archive channel in invoked category with historian role.  ")
     async def createArchiveChannel(self, ctx):  # Add ignore.
         '''Want to set up a new archive channel automatically?  Use this command and a new archive channel will be created in this server with a historian role that only allows the bot user from posting inside the channel.
@@ -329,7 +484,7 @@ class ServerRPArchive(commands.Cog):
         '''
         async def edit_if_needed(target):
             if target:
-                message=await urltomessage(target.posted_url,self.bot)
+                message=await urltomessage(target.posted_url,self.bot, partial=True)
                 
                 emb,lc=target.create_embed()
                 print(lc)
@@ -398,18 +553,11 @@ class ServerRPArchive(commands.Cog):
 
         #Make sure all permissions are there.
         missing_permissions = []
-        my_permissions=archive_channel.permissions_for(ctx.me)
-        if not my_permissions.read_messages:          missing_permissions.append("Read Messages")
-        if not my_permissions.send_messages:          missing_permissions.append("Send Messages")
-        if not my_permissions.manage_messages:        missing_permissions.append("Manage Messages")
-        if not my_permissions.read_message_history:   missing_permissions.append("Read Message History")
-        if not my_permissions.manage_webhooks:        missing_permissions.append("Manage Webhooks")
+        passok, statusmessage = check_channel(archive_channel)
 
-        if missing_permissions:
-            missing_permissions_str = "\n- ".join(missing_permissions)
-            result=f"I'm missing the following permissions for archive channel{archive_channel.mention}: \n- {missing_permissions_str}"
-            await MessageTemplates.get_server_archive_embed(ctx,result)
-            return False
+        if not passok:
+            await MessageTemplates.server_archive_message(ctx,statusmessage)
+            return
 
 
         m=await ctx.send("Initial check OK!")
@@ -475,12 +623,15 @@ class ServerRPArchive(commands.Cog):
             game=discord.Game(f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
             await bot.change_presence(activity=game)
 
-
-        self.bot.database.commit()
-        await MessageTemplates.server_archive_message(ctx,'Archive operation sucsesfully completed.')
+        await asyncio.sleep(2)
         game=discord.Game("{}".format('clear'))
         await bot.change_presence(activity=game)
+        channel=ctx.channel
+        print(channel.name, channel.id)
+
+        await MessageTemplates.server_archive_message(channel,f'Archive operation completed at <t:{int(datetime.now().timestamp())}:f>')
         await m.delete()
+        
         
 
 
@@ -495,9 +646,10 @@ class ServerRPArchive(commands.Cog):
         profile=ServerArchiveProfile.get_or_new(guildid)
         
 
-        await channel.send(profile.history_channel_id)
         if profile.history_channel_id == 0:
             await MessageTemplates.get_server_archive_embed(ctx,"Set a history channel first.")
+            return False
+        if channel.id==profile.history_channel_id:
             return False
         #archive_channel=guild.get_channel(profile.history_channel_id)
 

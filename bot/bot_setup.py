@@ -28,13 +28,14 @@ from dateutil.relativedelta import relativedelta, MO, TU, WE, TH, FR, SA, SU
 
 from .TauCetiBot import TCBot
 from .TCTasks import TCTask
+from .TcGuildTaskDB import TCGuildTask
 """
 Initalizes TCBot, and defines some checks
 
 """
 
 from database import ServerData
-
+from assets import AssetLookup
 
 
 bot = TCBot()
@@ -62,15 +63,16 @@ async def guildcheck(ctx):
     return True
 
 @bot.on_error
-async def on_error(event_method: str, /, *args: Any, **kwargs: Any):
+def on_error(event_method: str, /, *args: Any, **kwargs: Any):
+    print("Error?")
     log=logging.getLogger('discord')
     log.exception('Ignoring exception AS in %s', event_method)
     try:
         just_the_string=''.join(traceback.format_exc())
         er=MessageTemplates.get_error_embed(title=f"Error with {event_method}",description=f"{just_the_string}")
-        await bot.send_error_embed(er)
+        asyncio.create_task(bot.send_error_embed(er))
     except:
-        print("Minor issue.")
+        print("The error had an error.")
 
 
 
@@ -105,49 +107,35 @@ async def free_command(ctx):
 
 
         await ctx.send(f"ERROR, {ctx.message.content} failed!  ")
+@bot.event
+async def on_connect():
+    print("Bot connected.")
+@bot.event
+async def on_disconnect():
+    print("Bot disconnected.")
 
 @bot.event
 async def on_ready():
-    zehttp=logging.getLogger('discord.http')
-    zehttp.setLevel(logging.INFO)
-    handler = logging.handlers.RotatingFileHandler(
-        filename='./logs/discord_http.log',
-        encoding='utf-8',
-        maxBytes=32 * 1024 * 1024,  # 32 MiB
-        backupCount=5,  # Rotate through 5 files
-    )
-    dt_fmt = '%Y-%m-%d %H:%M:%S'
-    formatter = logging.Formatter('[LINE] [{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
-    handler.setFormatter(formatter)
-    zehttp.addHandler(handler)
 
-    handler2 = logging.handlers.RotatingFileHandler(
-        filename='./logs/discord.log',
-        encoding='utf-8',
-        maxBytes=7 * 1024 * 1024,  # 32 MiB
-        backupCount=5,  # Rotate through 5 files
-    )
-    dt_fmt = '%Y-%m-%d %H:%M:%S'
-    formatter2 = logging.Formatter('[LINE] [{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
-    handler2.setFormatter(formatter2)
-    discord.utils.setup_logging(level=logging.INFO,handler=handler2,root=True)
-    print("Activating Bot.")
+    print("Connection ready.")
     await opening()
     print("BOT ACTIVE")
-    
+    try:
+        if bot.error_channel==-726:
+            #Time to make a new guild.
+            from .guild_maker import new_guild
+            await new_guild(bot)
+    except Exception as e:
+        print(e)
+        await bot.close()
+
     #audit old guild data.
     await bot.audit_guilds()
 
 
     for x in bot.tree.walk_commands():
         print(x.name)
-    await bot.all_guild_startup()
-    print("BOT SYNCED!")
-    bot.delete_queue_message.start()
-    bot.post_queue_message.start()
-    bot.check_tc_tasks.start()
-
-
+    await bot.after_startup()
     print("Setup done.")
 
 '''
@@ -189,6 +177,28 @@ class Main(commands.Cog):
         await ctx.bot.close()
         
     
+
+    @commands.command()
+    async def task_add(self, ctx):
+        """debugging only."""
+        bot=ctx.bot
+        guild=ctx.guild
+        message=await ctx.send("Target Message.")
+        myurl=message.jump_url
+        robj=relativedelta_sp(weekday=[SU],hour=14,minute=44,second=0)
+        new=TCGuildTask.add_guild_task(guild.id, "COMPILE",message,robj)
+        new.to_task(bot)
+
+    @commands.command()
+    async def task_remove(self, ctx):
+        """debugging only."""
+        bot=ctx.bot
+        guild=ctx.guild
+        message=await ctx.send("Target Message.")
+        myurl=message.jump_url
+        robj=relativedelta_sp(minutes=2)
+        new=TCGuildTask.remove_guild_task(guild.id, "COMPILE")
+        
 
 
 
@@ -254,38 +264,47 @@ def setup(args):
     config = configparser.ConfigParser()
     if not os.path.exists('config.ini'):
         print("No config.ini file detected.")
-        if arglength >1:
-            print("No config.ini file detected.")
+        token,error_channel_id='',''
+        if arglength >1: token=args[1]
+        if arglength >2: error_channel_id=args[2]
+        if not token:       
+            token = input("Please enter your bot token: ")
+        if not error_channel_id: 
+            error_channel_id = input("Please enter the ID of the channel to send error messages to, or 'NEWGUILD': ")
 
-            config["vital"] = {'cipher': args[1]}
-            config["optional"] = {'error_channel_id': 'ADD_HERE'}
-            print("MAKE SURE TO ADD YOUR ERROR CHANNEL ID!")
-            config.write(open('config.ini', 'w'))
-            try:
-                print("making savedata")
-                Path("/saveData").mkdir(parents=True, exist_ok=True) #saveData
-            except FileExistsError:
-                print("saveData exists already.")
-            try:
-                print("making logs")
-                Path("/logs").mkdir(parents=True, exist_ok=True) #logs
-            except FileExistsError:
-                print("logs exists already.")
+        print("No config.ini file detected.")
 
-            print("you can restart the bot now.")
-        else:
-            print("Please restart while passing the bot token into the command line.")
+        config["vital"] = {'cipher': token}
+        config["optional"] = {'error_channel_id': error_channel_id}
+        print("MAKE SURE TO ADD YOUR ERROR CHANNEL ID!")
+        config.write(open('config.ini', 'w'))
+        try:
+            print("making savedata")
+            Path("/saveData").mkdir(parents=True, exist_ok=True) #saveData
+        except FileExistsError:
+            print("saveData exists already.")
+        try:
+            print("making logs")
+            Path("/logs").mkdir(parents=True, exist_ok=True) #logs
+        except FileExistsError:
+            print("logs exists already.")
+        AssetLookup()
+        print("you can restart the bot now.")
+
         return None
 
     else:
         # Read File
         config.read('config.ini')
+        AssetLookup()
         return config
 
 
 async def main(args):
-    '''Entry command.'''
+    '''setup and start the bot.'''
     config=setup(args)
+    if config==None: 
+        return
     async with bot:
 
         intent=discord.Intents.default();
@@ -294,7 +313,9 @@ async def main(args):
         intent.guilds=True
         intent.members=True
         bot.database_on()
-        bot.set_error_channel(config.get("optional", 'error_channel_id'))
+        outcome=bot.set_error_channel(config.get("optional", 'error_channel_id'))
+        if not outcome:
+            bot.error_channel=-726
         await bot.add_cog(Main())
         bot.set_ext_directory('./cogs')
         bot.update_ext_list()

@@ -10,6 +10,7 @@ from discord.ext import tasks
 class relativedelta_sp(relativedelta):
     """A subclass of `relativedelta` that extends its `weekday` attribute to accept a list of weekdays."""
     def __init__(self, *args, **kwargs):
+        self.kwargs=kwargs
         myw,mym= kwargs.pop("weekday", None),  kwargs.pop("months", None)
         super().__init__(*args, **kwargs)
         self._weekday =myw

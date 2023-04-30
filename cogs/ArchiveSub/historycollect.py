@@ -1,6 +1,9 @@
+import asyncio
 from datetime import datetime, timedelta, timezone
+from typing import Tuple
 from .archive_database import HistoryMakers
 from database import ServerArchiveProfile
+import discord
 from queue import Queue
 
 
@@ -52,7 +55,8 @@ async def collect_server_history(ctx, update=False,bot_messages_only=True,user_m
                     hmes=await HistoryMakers.get_history_message_list(messages)
                     messages=[]
                 if(mlen%200 == 0 and mlen>0):
-                    await statusMess.updatew(f"{mlen} messages so far in this channel, this may take a moment.   \n On channel {chancount}/{chanlen},\n {cobj.name},\n gathered <a:Loading:812758595867377686>.  This will take a while...")
+                    await asyncio.sleep(1)
+                    #await statusMess.updatew(f"{mlen} messages so far in this channel, this may take a moment.   \n On channel {chancount}/{chanlen},\n {cobj.name},\n gathered <a:Loading:812758595867377686>.  This will take a while...")
             if messages:
                 hmes=await HistoryMakers.get_history_message_list(messages)
                 messages=[]
@@ -89,7 +93,8 @@ async def collect_server_history(ctx, update=False,bot_messages_only=True,user_m
                 messages=messages+chanmess
                 current_channel_count+=1
                 if current_channel_count >current_channel_every:
-                    await statusMess.updatew(f"On channel {chancount}/{chanlen},\n {chan.name},\n gathered <a:Loading:812758595867377686>")
+                    await asyncio.sleep(1)
+                    #await statusMess.updatew(f"On channel {chancount}/{chanlen},\n {chan.name},\n gathered <a:Loading:812758595867377686>")
                     current_channel_count=0
             else:
                 ignored+=1
@@ -99,3 +104,38 @@ async def collect_server_history(ctx, update=False,bot_messages_only=True,user_m
         bot.database.commit()
 
         return messages, totalcharlen
+
+def check_channel(historychannel:discord.TextChannel) -> Tuple[bool, str]:
+    '''Check if the passed in history channel has the needed permissions to become an auto_channel.'''
+    permissions = historychannel.permissions_for(historychannel.guild.me)
+    permission_check_string=""
+    if not permissions.view_channel:
+        permission_check_string="I can't read view this channel.\n "
+    if not permissions.read_messages:
+        permission_check_string+="I can't read messages here.\n"
+    if not permissions.read_message_history:
+        permission_check_string+="I can't read message history here.\n"
+    if not permissions.send_messages:
+        permission_check_string+="I can't send messages.\n "
+    if not permissions.manage_messages:
+        permission_check_string+="I can't manage messages here.\n"
+    if not permissions.manage_webhooks:
+        permission_check_string+="I can't manage webhooks here.\n"
+    if not permissions.embed_links:
+        permission_check_string+="I can't embed links here. \n"
+    if not permissions.attach_files:
+        permission_check_string+="I can't attach files here.\n"
+    if permission_check_string:
+        result=f"I have one or more problems with the specified log channel {historychannel.mention}.  {permission_check_string}\n  Please update my permissions for this channel in particular."
+        return False, result
+    messagableperms=['add_reactions','use_external_emojis','use_external_stickers','read_message_history','manage_webhooks' ]
+    add="."
+
+    for p, v in permissions:
+        if v:
+            if p in messagableperms:
+                messagableperms.remove(p)
+    if len(messagableperms)>0:
+        add=", \n with the exception of: "+",".join(messagableperms)+"."
+        return False, add
+    return True, "Needed permissions are set in this channel"+add

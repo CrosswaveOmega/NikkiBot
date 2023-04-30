@@ -123,6 +123,7 @@ class Buttons(discord.ui.View):
 
 
 class SelectView(discord.ui.View):
+    #This is a view for the navigation buttons.
     def __init__(self, *, timeout = 180, myhelp=None):
         super().__init__(timeout=timeout)
         self.add_item(Buttons())
@@ -158,7 +159,7 @@ async def pages_of_embeds_2(ctx: commands.Context, display: List[discord.Embed])
     return pagecall, buttons
 
 
-async def pages_of_embeds(ctx: commands.Context, display: List[discord.Embed]) -> discord.Message:
+async def pages_of_embeds(ctx: commands.Context, display: List[discord.Embed], **kwargs) -> discord.Message:
     """
     Sends iteratable pages of embeds as messages.
 
@@ -175,5 +176,5 @@ async def pages_of_embeds(ctx: commands.Context, display: List[discord.Embed]) -
     """
 
     pagecall = PageClassContainer(display)
-    message = await ctx.send(content="page", embed=pagecall.make_embed(), view=Buttons(callback=pagecall))
+    message = await ctx.send(content="page", embed=pagecall.make_embed(), view=Buttons(callbacker=pagecall), **kwargs)
     return message
