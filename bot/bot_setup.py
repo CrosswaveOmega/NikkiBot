@@ -80,9 +80,12 @@ def on_error(event_method: str, /, *args: Any, **kwargs: Any):
 async def on_app_command_error(
     interaction: discord.Interaction,
     error: discord.app_commands.AppCommandError):
+    
     logger=logging.getLogger('discord')
     logger.error('Ignoring exception in app command %s', interaction.command.name, exc_info=error)
     ctx=await bot.get_context(interaction)
+    if 'guildtask' in ctx.command.extras and ctx.guild!=None:
+        taskflags[str(ctx.guild.id)]=False
     await bot.send_error(error,f"App Command {interaction.command.name}")
     await ctx.send(f"This app command failed due to {str(error)}")
     print("ERROR")

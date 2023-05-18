@@ -17,7 +17,7 @@ from discord import Webhook
 
 import random, operator
 from random import randint, seed
-from bot import TCGuildTask, Guild_Task_Functions
+from bot import TCGuildTask, Guild_Task_Functions, TCBot
 import traceback
 
 from discord import app_commands
@@ -98,16 +98,8 @@ def validate_poll_choices(n: int) -> PollChoices:
     return PollChoices(n)
 
 
-
-
-class PollingCog(commands.Cog):
-    """For Server Polls"""
-    def __init__(self, bot):
-        self.helptext='''
-        
-The Polling Feature allows users to create and participate in polls in their server or globally. 
-
-### Creating a Poll
+'''
+**Creating a Poll**
 
 To create a new poll, use the /make_poll command. 
 This will bring up an interactive UI 
@@ -116,13 +108,13 @@ number of options, the text for each option, and the duration of the poll.
 Polls can last up to seven days and 23 hours
  Note that right now, newly created polls are restricted to the server in which they are created.
 
-### Participating in a Poll
+**Participating in a Poll**
 
 After a poll has been created, the poll can be accessed through any linked message.
  These buttons are persistent views and will automatically update whenever a user votes in the poll. 
  You can vote on a poll by clicking one of the buttons associated with the poll.
 
-### Posting Polls
+**Posting Polls**
 
 Server moderators can set up a specific poll channel using the /setup_poll_channel command.
  This channel will be used to display newly created polls. 
@@ -131,16 +123,27 @@ Server moderators can set up a specific poll channel using the /setup_poll_chann
 ### Poll Results
 
 Once a poll has ended, the buttons are removed from each message and the final results are displayed. 
+'''
+
+class PollingCog(commands.Cog):
+    """For Server Polls"""
+    def __init__(self, bot:TCBot):
+        self.helptext='''
+        
+The PollingCog allows users to create and participate in polls in their server or globally. 
 
         '''
         PollTable.update_poll_status()
         self.bot=bot
-        for i in PollMessages.get_active_poll_messages():
-            p,mes=i
-            for w in mes:
-                m,u=w
-                bot.add_view(Persistent_Poll_View(p),message_id=m)
-        bot.add_view(PersistentView())        
+        try:
+            for i in PollMessages.get_active_poll_messages():
+                p,mes=i
+                for w in mes:
+                    m,u=w
+                    bot.add_view(Persistent_Poll_View(p),message_id=m)
+            bot.add_view(PersistentView())
+        except Exception as e:
+            print(e)    
         self.message_update_cleanup.start()
 
     def cog_unload(self):

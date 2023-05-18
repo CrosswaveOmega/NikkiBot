@@ -4,6 +4,25 @@ from discord.ext import commands, tasks
 import datetime
 import asyncio
 
+class StatusEditMessage:
+    def __init__(self,message):
+        self.message=message
+        self.last_update_time=datetime.datetime.now()
+    def check_update_interval(self):
+        '''get the time between now and the last time updatew was called.'''
+        time_diff = datetime.datetime.now() - self.last_update_time
+        return time_diff.total_seconds()
+
+    async def editw(self, min_seconds=0, **kwargs):
+        '''Update status message asyncronously.'''
+        if self.check_update_interval()>min_seconds:
+            try:
+                await self.message.edit(**kwargs)
+            except Exception as e:
+                print(e)
+            self.last_update_time=datetime.datetime.now()
+
+
 class StatusMessage:
     '''Represents a Status Message, a quickly updatable message 
     to get information on long operations without having to edit.'''

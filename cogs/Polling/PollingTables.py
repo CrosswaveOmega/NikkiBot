@@ -322,7 +322,7 @@ class PollChannelSubscribe(PollingBase):
                     )
                 )
             ).all()
-            poll_list.append((sub.channel_id))
+            poll_list.append((sub.channel_id, poll_ids))
             sub.latest_datetime = datetime.now()
             sub.polls_retrieved += len(poll_ids)
         session.commit()

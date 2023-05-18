@@ -4,7 +4,7 @@ import discord
 import io
 
 from typing import List, Union
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Boolean 
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Boolean, distinct, update 
 from sqlalchemy import LargeBinary, ForeignKey,PrimaryKeyConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
@@ -44,8 +44,40 @@ class ChannelSep(ArchiveBase):
         PrimaryKeyConstraint('channel_sep_id', 'server_id'),
     )
 
+    @staticmethod
+    def add_channel_sep_if_needed(message,chansepid):
+        session: Session = DatabaseSingleton.get_session()
+
+        # Check if a ChannelSep with the same server_id and channel_sep_id already exists
+        existing_channel_sep = session.query(ChannelSep).filter_by(
+            server_id=message.server_id,
+            channel_sep_id=chansepid
+        ).first()
+
+        if existing_channel_sep:
+            return existing_channel_sep
+
+        # Create a new ChannelSep entry based on the ArchivedRPMessage
+        channel_sep = ChannelSep(
+                channel_sep_id=message.channel_sep_id,
+                server_id=message.server_id,
+                channel=message.channel,
+                category=message.category,
+                thread=message.thread,
+                created_at=message.created_at
+            )
+
+        session.add(channel_sep)
+        session.commit()
+        return channel_sep
+    
     def get_chan_sep(self):
         return f"{self.category}-{self.channel}-{self.thread}"
+    @staticmethod
+    def delete_channel_seps_by_server_id(server_id: int):
+        session: Session = DatabaseSingleton.get_session()
+        session.query(ChannelSep).filter(ChannelSep.server_id == server_id).delete()
+        session.commit()
     @staticmethod
     def get_posted_but_incomplete(server_id: int):
         filter = and_(
@@ -191,6 +223,32 @@ class ArchivedRPMessage(ArchiveBase):
     embed = relationship('ArchivedRPEmbed', backref='archived_rp_message_set')
     def get_chan_sep(self):
         return f"{self.category}-{self.channel}-{self.thread}"
+    
+    @staticmethod
+    def get_archived_rp_messages_with_null_posted_url(server_id: int) -> List['ArchivedRPMessage']:
+        session:Session=DatabaseSingleton.get_session()
+        return session.query(ArchivedRPMessage).filter(
+            (ArchivedRPMessage.server_id == server_id) &
+            (ArchivedRPMessage.posted_url.is_(None))
+        ).all()
+    
+    @staticmethod
+    def get_archived_rp_messages_without_null_posted_url(server_id: int) -> List['ArchivedRPMessage']:
+        session:Session=DatabaseSingleton.get_session()
+        return session.query(ArchivedRPMessage).filter(
+            (ArchivedRPMessage.server_id == server_id) &
+            (ArchivedRPMessage.posted_url.is_not(None))
+        ).all()
+    
+    @staticmethod
+    def reset_channelsep_data(server_id: int):
+        session: Session = DatabaseSingleton.get_session()
+        stmt = update(ArchivedRPMessage).where(ArchivedRPMessage.server_id == server_id).values(
+            posted_url=None,
+            channel_sep_id=None
+        )
+        session.execute(stmt)
+        session.commit()
 
     @staticmethod
     def add_or_update(message_id, **kwargs):
@@ -204,16 +262,12 @@ class ArchivedRPMessage(ArchiveBase):
         session.commit()
 
     def update(self, **kwargs):
-        
         for key, value in kwargs.items():
             setattr(self, key, value)
-        #session.add(self)
-        #session.commit()
+
+
     @staticmethod
     def get_latest_archived_rp_message(session, server_id):
-        """
-        Returns the latest entry in the 'ArchivedRPMessage' table with the specified server ID.
-        """
         session:Session=DatabaseSingleton.get_session()
         query = session.query(ArchivedRPMessage).filter_by(server_id=server_id).order_by(desc(ArchivedRPMessage.created_at)).first()
         return query
@@ -223,6 +277,19 @@ class ArchivedRPMessage(ArchiveBase):
         return session.query(ArchivedRPMessage).filter(
             (ArchivedRPMessage.server_id == server_id) &
             ((ArchivedRPMessage.channel_sep_id == None))
+        ).order_by(ArchivedRPMessage.created_at).all()
+    @staticmethod
+    def get_unique_chan_sep_ids(server_id: int):
+        session: Session = DatabaseSingleton.get_session()
+        query = session.query(distinct(ArchivedRPMessage.channel_sep_id)).filter_by(server_id=server_id).all()
+        chan_sep_ids = [result[0] for result in query]
+        return chan_sep_ids
+    @staticmethod
+    def get_messages_in_group(server_id: int,channel_sep_id:int):
+        session = DatabaseSingleton.get_session()
+        return session.query(ArchivedRPMessage).filter(
+            (ArchivedRPMessage.server_id == server_id) &
+            ((ArchivedRPMessage.channel_sep_id == channel_sep_id))
         ).order_by(ArchivedRPMessage.created_at).all()
 
     def add_file(self, archived_rp_file):
@@ -422,6 +489,25 @@ class HistoryMakers():
     def get_history_message_sync(thisMessage,channel_sep=None):
         hmes=create_history_pickle_dict(thisMessage)
         return hmes
+    @staticmethod
+    def add_channel_sep_if_needed(target,value):
+        ChannelSep.add_channel_sep_if_needed(target,value)
+        '''
+        session=DatabaseSingleton.get_session()
+        query = select(ChannelSep).where(ChannelSep.channel_sep_id == value and ChannelSep.server_id==target.server_id)
+        if not session.query(query.exists()).scalar():
+
+            channel_sep = ChannelSep(
+                channel_sep_id=value,
+                server_id=target.server_id,
+                channel=target.channel,
+                category=target.category,
+                thread=target.thread,
+                created_at=target.created_at
+            )
+
+            session.add(channel_sep)
+            session.commit()'''
 
 DatabaseSingleton('setup').load_base(ArchiveBase)
 
@@ -437,26 +523,11 @@ BEGIN
     );
 END;
 '''
-
+"""
 
 @event.listens_for(ArchivedRPMessage.channel_sep_id, 'set')
 def update_channel_sep_id_listener(target, value, oldvalue, initiator):
+    print(value != oldvalue, value!=None, target.server_id)
     if value != oldvalue and value!=None and target.server_id:
-        session = Session.object_session(target)
-        if session is None:
-            raise exc.InvalidRequestError("Target is not attached to any session.")
-
-        query = select(ChannelSep).where(ChannelSep.channel_sep_id == value and ChannelSep.server_id==target.server_id)
-        if not session.query(query.exists()).scalar():
-
-            channel_sep = ChannelSep(
-                channel_sep_id=value,
-                server_id=target.server_id,
-                channel=target.channel,
-                category=target.category,
-                thread=target.thread,
-                created_at=target.created_at
-            )
-
-            session.add(channel_sep)
-            session.commit()
+        HistoryMakers.add_channel_sep_if_needed(target,value)
+""" 

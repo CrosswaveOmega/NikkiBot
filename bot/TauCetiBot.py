@@ -152,6 +152,7 @@ class TCBot(commands.Bot):
         formatter = logging.Formatter('[LINE] [{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
         handlerTC.setFormatter(formatter)
         self.logs.addHandler(handler)
+
     def set_ext_directory(self, dir:str):
         self.extensiondir=dir
 
@@ -225,7 +226,7 @@ class TCBot(commands.Bot):
                     print(f"Beginning command syncing for {guild.name} (ID {guild.id})...")
                     dbentry.update(app_tree)
                     print(dbentry.compare_with_command_tree(app_tree))
-                   # await self.tree.sync(guild=guild)
+                    await self.tree.sync(guild=guild)
             except Exception as e:
                 print(str(e))
 
@@ -302,20 +303,31 @@ class TCBot(commands.Bot):
 
 
 
-    async def reload_all(self):
-        
-
+    async def reload_needed(self,changed_files):
+        '''idea is to only load/unload changed files.'''
         for i, e in self.loaded_extensions.items():
             if not i in self.extension_list:
                 await self.unload_extension(i)
                 self.loaded_extensions[i]=None
 
         for ext in self.extension_list:
-            if not ext in self.loaded_extensions: await self.extension_loader(ext)
+            if not ext in self.loaded_extensions: 
+                await self.extension_loader(ext)
+            #else:                 val=await self.extension_reload(ext)
+        print(self.extension_list)
+
+
+    async def reload_all(self):
+        for i, e in self.loaded_extensions.items():
+            if not i in self.extension_list:
+                await self.unload_extension(i)
+                self.loaded_extensions[i]=None
+
+        for ext in self.extension_list:
+            if not ext in self.loaded_extensions: 
+                await self.extension_loader(ext)
             else: 
                 val=await self.extension_reload(ext)
-
-
         print(self.extension_list)
 
     def pswitchload(self,pmode=False):
@@ -355,6 +367,7 @@ class TCBot(commands.Bot):
                 tracebackstr=''.join(traceback.format_exception(None, ex, ex.__traceback__))
                 self.pswitchload(plugin)[extname]=(en,tracebackstr)
                 return tracebackstr
+            
     def genid(self):
         return ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase, k=9))
 
@@ -364,7 +377,8 @@ class TCBot(commands.Bot):
             chan=self.get_channel(self.error_channel)
             await chan.send(content=content,embed=emb)
         
-    async def send_error(self,error,title):
+    async def send_error(self,error,title="ERROR"):
+        '''Add an error to the log'''
         just_the_string=''.join(traceback.format_exception(None, error, error.__traceback__))
         er=MessageTemplates.get_error_embed(title=f"Error with {title}",description=f"{just_the_string},{str(error)}")
         er.add_field(name="Details",value=f"{title},{error}")

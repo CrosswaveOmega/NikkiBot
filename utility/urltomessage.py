@@ -47,7 +47,7 @@ async def urltomessage(link="", bot=None, partial=False)-> Optional[Union[discor
         guild_id, channel_id, message_id = tup
         guild = bot.get_guild(guild_id)
         if guild is None:
-            raise BotError("Failed to get guild {guild_id}.")
+            raise BotError(f"Failed to get guild {guild_id}.")
         channel = guild.get_channel(channel_id)
         if channel is None:
             raise BotError("Failed to get channel {channel_id}.")

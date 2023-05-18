@@ -140,7 +140,7 @@ def format_application_commands(commands):
         formatted_command = {
             'name': command.name,
             'description': command.description,
-            'parameters': [],
+            'parameters': {},
             'permissions': {}
         }
         #print(command.name)
@@ -150,7 +150,7 @@ def format_application_commands(commands):
                 'display_name': str(parameter.display_name),
                 'description': str(parameter.description),
                 'type': parameter.type.name,
-                'choices': [],
+                'choices': {},
                 'channel_types': [],
                 'required': parameter.required,
                 'autocomplete': parameter.autocomplete,
@@ -163,12 +163,12 @@ def format_application_commands(commands):
                     'name': choice.name,
                     'value': choice.value
                 }
-                formatted_parameter['choices'].append(formatted_choice)
+                formatted_parameter['choices'][str(choice.name)]=(formatted_choice)
 
             for channel_type in parameter.channel_types:
                 formatted_parameter['channel_types'].append(channel_type.name)
 
-            formatted_command['parameters'].append(formatted_parameter)
+            formatted_command['parameters'][str(parameter.name)]=(formatted_parameter)
 
         if command.default_permissions is not None:
             formatted_command['permissions']['default_permissions'] = command.default_permissions.value

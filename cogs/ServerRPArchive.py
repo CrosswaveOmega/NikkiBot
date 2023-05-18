@@ -11,8 +11,8 @@ from datetime import datetime, timedelta, date, timezone
 from sqlalchemy import event
 
 from utility import serverOwner, serverAdmin, seconds_to_time_string, MessageTemplates, get_time_since_delta
-from utility import WebhookMessageWrapper as web, urltomessage, relativedelta_sp
-from bot import TCBot, TCGuildTask, Guild_Task_Functions
+from utility import WebhookMessageWrapper as web, urltomessage, relativedelta_sp, ConfirmView
+from bot import TCBot, TCGuildTask, Guild_Task_Functions, StatusEditMessage
 from random import randint
 from discord.ext import commands, tasks
 
@@ -25,7 +25,7 @@ from discord import app_commands
 
 from database import ServerArchiveProfile
 from .ArchiveSub import do_group, collect_server_history, check_channel
-from .ArchiveSub import ChannelSep
+from .ArchiveSub import ChannelSep, ArchivedRPMessage
 
 
 from dateutil.relativedelta import relativedelta, MO, TU, WE, TH, FR, SA, SU
@@ -391,9 +391,9 @@ class ServerRPArchive(commands.Cog):
     @archive_setup.command(
         
         name="remove_ignore_channels",
-        brief="emoves channels from this server's ignore list."
+        brief="removes channels from this server's ignore list."
     )
-    async def removeFromIgnoredChannels(self, ctx):  # Add card.
+    async def removeFromIgnoredChannels(self, ctx):  
         '''
         Removes channels from this server's ignore list. These channels will be archived.
         '''
@@ -428,9 +428,59 @@ class ServerRPArchive(commands.Cog):
             return 
         self.bot.database.commit()
         await MessageTemplates.server_archive_message(ctx,"Removed channels from my ignore list.  Any messages in these channels will no longer be ignored while archiving.")
-
     
 
+    
+    @archive_setup.command(name="postcheck", description="Check number of stored archived messages that where posted.")
+    async def postcheck(self, ctx):  
+        if ctx.guild:
+            
+            mess2=ArchivedRPMessage.get_archived_rp_messages_with_null_posted_url(ctx.guild.id)
+            mess=ArchivedRPMessage.get_archived_rp_messages_without_null_posted_url(ctx.guild.id)
+            await MessageTemplates.server_archive_message(ctx,f"About {len(mess)} messages are posted, and {len(mess2)} messages are not posted.", ephemeral=True)
+        else:
+            await ctx.send("guild only.")
+
+    @commands.guild_only()
+    @commands.has_guild_permissions(administrator=True)
+    @commands.command(name="reset_archive", description="ADMIN ONLY: WILL RESET THE ARCHIVE GROUPING.")
+    async def archive_reset(self, ctx):  
+        if ctx.guild:
+            
+            profile=ServerArchiveProfile.get_or_new(ctx.guild.id)
+            if profile.history_channel_id == 0:
+                await MessageTemplates.get_server_archive_embed(ctx,"Set a history channel first.")
+                return False
+            if not(serverOwner(ctx) or serverAdmin(ctx)):
+                await MessageTemplates.server_archive_message(ctx,"You do not have permission to use this command.")
+                return False
+            confirm=ConfirmView(user=ctx.author)
+            mes=await ctx.send("Are you sure about this?",view=confirm)
+            await confirm.wait()
+            if confirm.value:
+                await mes.delete()
+                ChannelSep.delete_channel_seps_by_server_id(ctx.guild.id)
+                ArchivedRPMessage.reset_channelsep_data(ctx.guild.id)
+                profile.update(last_group_num=0)
+                confirm2=ConfirmView(user=ctx.author)
+                mes=await ctx.send("I can delete the current history channel if you want to start fresh, is that ok?",view=confirm2)
+                await confirm2.wait()
+                if confirm2.value:
+                    archive_channel=ctx.guild.get_channel(profile.history_channel_id)
+                    cloned=await archive_channel.clone()
+                    profile.update(history_channel_id=cloned.id)
+                    await archive_channel.delete()
+                await mes.delete()
+                self.bot.database.commit()
+                mess2=ArchivedRPMessage.get_archived_rp_messages_with_null_posted_url(ctx.guild.id)
+                mess=ArchivedRPMessage.get_archived_rp_messages_without_null_posted_url(ctx.guild.id)
+                await MessageTemplates.server_archive_message(ctx,
+                    f"I've reset the grouping data for this server.  When you run another compile_archive, **everything in the archive_channel will be reposted.**")
+                
+            else:
+                await mes.delete()
+        else:
+            await ctx.send("guild only.")
 
     @commands.command()
     async def firstlasttimestamp(self, ctx, *args):
@@ -473,6 +523,38 @@ class ServerRPArchive(commands.Cog):
         await ctx.send("timestamp:{}".format(last_time.timestamp()))
 
 
+    @commands.command()
+    async def setlastfirsttimestamp(self, ctx, time:int):
+        """Get the last timestamp of the most recently archived message.
+        By default, it only indexes bot/webhook messages.
+        """
+        bot = ctx.bot
+        auth = ctx.message.author
+        channel = ctx.message.channel
+        guild=channel.guild
+        guildid=guild.id
+
+
+        #options.
+        update=False
+        indexbot=True
+        user=False
+
+        if not(serverOwner(ctx) or serverAdmin(ctx)):  #Permission Check.
+            return False
+
+
+        profile=ServerArchiveProfile.get_or_new(guildid)
+
+
+        if profile.history_channel_id == 0:
+            await ctx.send("Set a history channel first.")
+            return False
+
+        profile.last_archive_time=datetime.fromtimestamp(time)
+        self.bot.database.commit()
+        await ctx.send("timestamp:{}".format(profile.last_archive_time.timestamp()))
+
 
 
         
@@ -484,7 +566,7 @@ class ServerRPArchive(commands.Cog):
         '''
         async def edit_if_needed(target):
             if target:
-                message=await urltomessage(target.posted_url,self.bot, partial=True)
+                message=await urltomessage(target.posted_url,self.bot)
                 
                 emb,lc=target.create_embed()
                 print(lc)
@@ -499,21 +581,11 @@ class ServerRPArchive(commands.Cog):
             await edit_if_needed(iL)
             await edit_if_needed(cL)
             print(f"New posted_url value for ChannelSep")
-
-    @commands.hybrid_command(
-        name="compile_archive",
+    @commands.command(
+        name="archive_compile_debug",
         brief="start archiving the server.  Will only archive messages sent by bots.",
         extras={"guildtask":['rp_history']})
-    async def compileArchiveChannel(self, ctx):
-        """Compile all messages into archive channel.  This can be invoked with options.
-            +`full` - get the full history of this server
-            +`update` -only update the current archive channel.  DEFAULT.
-
-            +`ws` - compile only webhooks/BOTS.  DEFAULT.
-            +`user` - complile only users
-            +`both` -compile both
-             
-        """
+    async def compileArchiveChannelDebug(self, ctx):
         bot = ctx.bot
         auth = ctx.message.author
         channel = ctx.message.channel
@@ -530,7 +602,7 @@ class ServerRPArchive(commands.Cog):
         scope='ws'
         archive_from="server"
 
-        timebetweenmess=2.5
+        timebetweenmess=2.0
         characterdelay=0.05
 
 
@@ -567,8 +639,9 @@ class ServerRPArchive(commands.Cog):
         await m.edit(content="Collecting server history...")
 
         totalcharlen=0
+        new_last_time=0
         if archive_from=="server":
-           messages, totalcharlen=await collect_server_history(ctx,update,indexbot,user)
+           messages, totalcharlen,new_last_time=await collect_server_history(ctx,update,indexbot,user)
         
 
         await  m.edit(content="Grouping into separators, this may take a while.")
@@ -581,15 +654,131 @@ class ServerRPArchive(commands.Cog):
         print(lastgroup,group_id)
         if dynamicwait:
             remaining_time_float+=(totalcharlen*characterdelay)
-        await m.edit(content=f"Posting! This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
+
+        print('next')
+        nogroup=ArchivedRPMessage.get_messages_without_group(guildid)
+        needed=ChannelSep.get_posted_but_incomplete(guildid)
+        grouped=ChannelSep.get_unposted_separators(guildid)
+        all=ChannelSep.get_all_separators(guildid)
+        unique_ids=ArchivedRPMessage.get_unique_chan_sep_ids(guildid)
+
+        if needed:   
+            grouped.insert(0,needed)
+        if nogroup==None:
+            nogroup=[]
+        if needed==None: needed=[]
 
         
+        print(grouped,needed)
+        await ctx.send(f'{len(nogroup)},  {len(needed)},{len(grouped)},{len(all)}, {len(unique_ids)}')
+        unposted=len(ArchivedRPMessage.get_archived_rp_messages_with_null_posted_url(guildid))
+        
+        for group in grouped:
+            group.channel_sep_id
+            messages_get=group.get_messages()
+            query2=ArchivedRPMessage.get_messages_in_group(guildid,group.channel_sep_id)
+            await ctx.send(f"{len(messages_get)},{len(query2)}")
+            unposted-=len(messages_get)
+        await ctx.send(f"Remaining:{unposted}")
+        
+
+    @commands.hybrid_command(
+        name="compile_archive",
+        brief="start archiving the server.  Will only archive messages sent by bots.",
+        extras={"guildtask":['rp_history']})
+    async def compileArchiveChannel(self, ctx):
+        """Compile all messages into archive channel.  This can be invoked with options.
+            +`full` - get the full history of this server
+            +`update` -only update the current archive channel.  DEFAULT.
+
+            +`ws` - compile only webhooks/BOTS.  DEFAULT.
+            +`user` - complile only users
+            +`both` -compile both
+             
+        """
+        bot = ctx.bot
+        auth = ctx.message.author
+        channel = ctx.message.channel
+        guild:discord.Guild=channel.guild
+        if guild==None:
+            await ctx.send("This command will only work inside a guild.")
+            return
+        guildid=guild.id
+
+        #options.
+        update=True
+        indexbot=True
+        user=False
+        scope='ws'
+        archive_from="server"
+
+        timebetweenmess=2.2
+        characterdelay=0.05
+
+
+        profile=ServerArchiveProfile.get_or_new(guildid)
+        
+        #for arg in args:
+            #if arg == 'full':   update=False
+            #if arg == 'update': update=True
+        if scope == 'ws':      indexbot,user=True,False
+        if scope == 'user':   indexbot,user=False, True
+        if scope == 'both':   indexbot,user=True,True
+        #await channel.send(profile.history_channel_id)
+        if profile.history_channel_id == 0:
+            await MessageTemplates.get_server_archive_embed(ctx,"Set a history channel first.")
+            return False
+        archive_channel=guild.get_channel(profile.history_channel_id)
+        if archive_channel==None:
+            await MessageTemplates.get_server_archive_embed(ctx,"I can't seem to access the history channel, it's gone!")
+            return False
+
+        #Make sure all permissions are there.
+        missing_permissions = []
+        passok, statusmessage = check_channel(archive_channel)
+
+        if not passok:
+            await MessageTemplates.server_archive_message(ctx,statusmessage)
+            return
+
+
+        m=await ctx.send("Initial check OK!")
+        dynamicwait=False
+        game=discord.Game("{}".format('archiving do not shut down...'))
+        await bot.change_presence(activity=game)
+        await m.edit(content="Collecting server history...")
+
+        totalcharlen=0
+        new_last_time=0
+        if archive_from=="server":
+           messages, totalcharlen,new_last_time=await collect_server_history(ctx,update,indexbot,user)
+        
+
+        await  m.edit(content="Grouping into separators, this may take a while.")
+
+        lastgroup=profile.last_group_num
+        ts,group_id=await do_group(guildid,profile.last_group_num, ctx=ctx)
+        fullcount=ts
+        profile.update(last_group_num=group_id)
+        remaining_time_float= fullcount* timebetweenmess
+        print(lastgroup,group_id)
+        if dynamicwait:
+            remaining_time_float+=(totalcharlen*characterdelay)
+
+        print('next')
 
         needed=ChannelSep.get_posted_but_incomplete(guildid)
         grouped=ChannelSep.get_unposted_separators(guildid)
-        if needed:   grouped.insert(0,needed)
+        if needed:   
+            grouped.insert(0,needed)
+        print(grouped,needed)
+        
+        await m.edit(content=f"Posting! This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
+        mt=StatusEditMessage(m)
+        print(archive_channel.name)
         length=len(grouped)
         for e,sep in enumerate(grouped):
+            print(e,sep)
             if not sep.posted_url:
                 currjob="rem: {}".format(seconds_to_time_string(int(remaining_time_float)))
                 emb,count=sep.create_embed()
@@ -620,6 +809,9 @@ class ServerRPArchive(commands.Cog):
                     remaining_time_float=remaining_time_float-(timebetweenmess)
             sep.update(all_ok=True)
             self.bot.database.commit()
+            await asyncio.sleep(2)
+            await mt.editw(min_seconds=30,content=f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
+            #await edittime.invoke_if_time(content=f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
             game=discord.Game(f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
             await bot.change_presence(activity=game)
 
@@ -630,7 +822,10 @@ class ServerRPArchive(commands.Cog):
         print(channel.name, channel.id)
 
         await MessageTemplates.server_archive_message(channel,f'Archive operation completed at <t:{int(datetime.now().timestamp())}:f>')
-        await m.delete()
+        profile.update(last_archive_time=(datetime.fromtimestamp(int(new_last_time))))
+        bot.database.commit()
+
+        #await m.delete()
         
         
 

@@ -5,7 +5,7 @@ from .archive_database import HistoryMakers
 from database import ServerArchiveProfile
 import discord
 from queue import Queue
-
+from bot import StatusEditMessage
 
 '''
 Collects all messages in non-blacklisted channels, and adds them to the database in batches of 10.
@@ -20,8 +20,9 @@ async def collect_server_history(ctx, update=False,bot_messages_only=True,user_m
         profile=ServerArchiveProfile.get_or_new(guildid)
 
         messages=[]
-        statusMess=bot.add_status_message(channel)
-        statusMess.update("I'm getting everything in the given RP channels, this may take a moment!")
+        statusMessToEdit=await channel.send("I'm getting everything in the given RP channels, this may take a moment!")
+
+        statmess=StatusEditMessage(statusMessToEdit)
         time=profile.last_archive_time
         if time: time=time.timestamp()
         if time==None: time=0
@@ -31,7 +32,7 @@ async def collect_server_history(ctx, update=False,bot_messages_only=True,user_m
         await channel.send("Starting at time:{}".format(last_time.strftime("%B %d, %Y %I:%M:%S %p")))
 
         chancount,ignored,chanlen=0,0,len(guild.text_channels)
-        async def iter_hist_messages(cobj, last_time, statusMess, bot_messages_only, user_messages_only,chancount,chanlen):
+        async def iter_hist_messages(cobj, last_time, bot_messages_only, user_messages_only,chancount,chanlen):
             characterlen=0
             ignoredhere=0
             new_last_time=last_time.timestamp()
@@ -48,6 +49,7 @@ async def collect_server_history(ctx, update=False,bot_messages_only=True,user_m
                     new_last_time=max(thisMessage.created_at.timestamp(),new_last_time)
                     characterlen+=len(thisMessage.content)
                     messages.append(thisMessage)
+                    print("ADDING")
                     mlen+=1
                 else:
                     ignoredhere=ignoredhere+1
@@ -56,11 +58,12 @@ async def collect_server_history(ctx, update=False,bot_messages_only=True,user_m
                     messages=[]
                 if(mlen%200 == 0 and mlen>0):
                     await asyncio.sleep(1)
+                    #await edittime.invoke_if_time(content=f"{mlen} messages so far in this channel, this may take a moment.   \n On channel {chancount}/{chanlen},\n {cobj.name},\n gathered <a:Loading:812758595867377686>.  This will take a while...")
                     #await statusMess.updatew(f"{mlen} messages so far in this channel, this may take a moment.   \n On channel {chancount}/{chanlen},\n {cobj.name},\n gathered <a:Loading:812758595867377686>.  This will take a while...")
             if messages:
                 hmes=await HistoryMakers.get_history_message_list(messages)
                 messages=[]
-            return messages, statusMess, characterlen, new_last_time,ignoredhere
+            return messages, characterlen, new_last_time,ignoredhere
                 
             
 
@@ -78,7 +81,7 @@ async def collect_server_history(ctx, update=False,bot_messages_only=True,user_m
                     archived.append(thread)
                 threads=threads+archived
                 for thread in threads:
-                    mess, statusMess, charlen, newtime, ign=await iter_hist_messages(thread, last_time,statusMess, bot_messages_only, user_messages_only, chancount,chanlen)
+                    mess, charlen, newtime, ign=await iter_hist_messages(thread, last_time, bot_messages_only, user_messages_only, chancount,chanlen)
                     new_last_time=max(new_last_time,newtime)
                     totalcharlen+=charlen
                     ignored+=ign
@@ -86,24 +89,25 @@ async def collect_server_history(ctx, update=False,bot_messages_only=True,user_m
                     current_channel_count+=1
 
                             
-                chanmess, statusMess, charlen, newtime,ign=await iter_hist_messages(chan, last_time,statusMess, bot_messages_only, user_messages_only,  chancount,chanlen)
+                chanmess, charlen, newtime,ign=await iter_hist_messages(chan, last_time,bot_messages_only, user_messages_only,  chancount,chanlen)
                 new_last_time=max(new_last_time,newtime)
                 ignored+=ign
                 totalcharlen+=charlen
                 messages=messages+chanmess
                 current_channel_count+=1
+                await statmess.editw(min_seconds=15,content=f"On channel {chancount}/{chanlen},\n {chan.name},\n gathered <a:Loading:812758595867377686>")
                 if current_channel_count >current_channel_every:
                     await asyncio.sleep(1)
-                    #await statusMess.updatew(f"On channel {chancount}/{chanlen},\n {chan.name},\n gathered <a:Loading:812758595867377686>")
+                    
+                    #await edittime.invoke_if_time()
                     current_channel_count=0
             else:
                 ignored+=1
 
-        if statusMess!=None: statusMess.delete()
-        profile.update(last_archive_time=(datetime.fromtimestamp(int(new_last_time),tz=timezone.utc)))
-        bot.database.commit()
-
-        return messages, totalcharlen
+        if statusMessToEdit!=None: 
+            await statusMessToEdit.delete()
+        
+        return messages, totalcharlen, new_last_time
 
 def check_channel(historychannel:discord.TextChannel) -> Tuple[bool, str]:
     '''Check if the passed in history channel has the needed permissions to become an auto_channel.'''
@@ -128,7 +132,7 @@ def check_channel(historychannel:discord.TextChannel) -> Tuple[bool, str]:
     if permission_check_string:
         result=f"I have one or more problems with the specified log channel {historychannel.mention}.  {permission_check_string}\n  Please update my permissions for this channel in particular."
         return False, result
-    messagableperms=['add_reactions','use_external_emojis','use_external_stickers','read_message_history','manage_webhooks' ]
+    messagableperms=['add_reactions','external_emojis','external_stickers','read_message_history','manage_webhooks' ]
     add="."
 
     for p, v in permissions:
@@ -136,6 +140,6 @@ def check_channel(historychannel:discord.TextChannel) -> Tuple[bool, str]:
             if p in messagableperms:
                 messagableperms.remove(p)
     if len(messagableperms)>0:
-        add=", \n with the exception of: "+",".join(messagableperms)+"."
+        add="I do not think I should archive with the following permissions disabled for that channel: "+",".join(messagableperms)+"."
         return False, add
     return True, "Needed permissions are set in this channel"+add
