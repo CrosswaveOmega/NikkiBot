@@ -150,9 +150,9 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker):
             backupCount=5,  # Rotate through 5 files
         )
         dt_fmt = '%Y-%m-%d %H:%M:%S'
-        formatter = logging.Formatter('[LINE] [{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
-        handlerTC.setFormatter(formatter)
-        self.logs.addHandler(handler)
+        formatter4 = logging.Formatter('[LINE] [{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
+        handlerTC.setFormatter(formatter4)
+        self.logs.addHandler(handlerTC)
 
     def set_ext_directory(self, dir:str):
         self.extensiondir=dir
