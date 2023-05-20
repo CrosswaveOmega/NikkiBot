@@ -18,7 +18,7 @@ from sqlalchemy.exc import IntegrityError
 from utility import Chelp, urltomessage, MessageTemplates
 from .TcGuildTaskDB import Guild_Task_Base, Guild_Task_Functions, TCGuildTask
 from .GuildSyncStatus import Guild_Sync_Base, AppGuildTreeSync, format_application_commands
-
+from .TCMixins import CogFieldList, StatusTicker
 """ Primary Class
 
 This file is for an extended Bot Class for this Discord Bot.
@@ -34,7 +34,7 @@ intent.members=True
 from database import DatabaseSingleton
 from .StatusMessages import StatusMessageManager, StatusMessage
 
-class TCBot(commands.Bot):
+class TCBot(commands.Bot, CogFieldList,StatusTicker):
     
     """TC's central bot class.  An extension of discord.py Bot class with additional functionality."""
     def __init__(self):
@@ -56,7 +56,8 @@ class TCBot(commands.Bot):
         self.loaded_plugins={}
 
 
-        self.psuedomess_dict= {}   
+        self.psuedomess_dict= {}
+        
         self.post_schedule=Queue()
         self.delete_schedule=Queue()
         self.default_error=self.on_command_error
@@ -77,12 +78,13 @@ class TCBot(commands.Bot):
         return False
 
     async def after_startup(self):
+        '''This function is called in on_ready, but only once.'''
         if not self.bot_ready:
             await self.all_guild_startup()
             print("BOT SYNCED!")
             self.delete_queue_message.start()
             self.post_queue_message.start()
-            
+            self.status_ticker.start()
             for g in self.guilds:
                 mytasks=TCGuildTask.get_tasks_by_server_id(g.id)
                 for t in mytasks:
@@ -98,14 +100,13 @@ class TCBot(commands.Bot):
     async def on_close(self):
         # Close the SQLAlchemy engine
         self.database.close_out()
-
         # Logout the bot from Discord
-                
         self.post_queue_message.cancel()
         self.delete_queue_message.cancel()
         self.check_tc_tasks.cancel()
-
+        self.status_ticker.cancel()
         await self.logout()
+
     def loggersetup(self):
         if not os.path.exists('./logs/'):
             os.makedirs('./logs/')
@@ -175,17 +176,17 @@ class TCBot(commands.Bot):
         return self.statmess.get_message_obj(cid)
     
     async def sync_enabled_cogs_for_guild(self,guild, force=False):
-        '''With a passed in guild, sync all activated cogs.'''        
+        '''With a passed in guild, sync all activated cogs for that guild.'''        
         def syncprint(lis):
             pass
             #print(f"Sync for {guild.name} (ID {guild.id})",lis)
         def should_skip_cog(cogname: str) -> bool:
             """Determine whether a cog should be skipped during synchronization."""
+            '''Not currently needed.'''
             return False
 
         def add_command_to_tree(command, guild):
             """Add a command to the commands tree for the given guild."""
-            #print(command)
             current_command_list=[]
             if isinstance(command, (commands.HybridCommand, commands.HybridGroup)):
                 try:
@@ -227,10 +228,13 @@ class TCBot(commands.Bot):
                     dbentry.update(app_tree)
                     print(dbentry.compare_with_command_tree(app_tree))
                     await self.tree.sync(guild=guild)
+                    print(f"Sync complete for {guild.name} (ID {guild.id})...")
             except Exception as e:
                 print(str(e))
 
-        """Synchronize all activated cogs for a given guild."""
+        """Gather all activated cogs for a given guild."""
+        """Note, the reason it goes one by one is because it was originally intended to activate/deactivate cogs"""
+        """On a server per server basis."""
         synced=[]
         for cogname, cog in self.cogs.items():
             if should_skip_cog(cogname):
@@ -242,11 +246,10 @@ class TCBot(commands.Bot):
                 synced+=add_command_to_tree(command, guild)
 
         await sync_commands_tree(guild,synced, forced=force)
-        print('sync complete')
+        
 
 
     async def all_guild_startup(self, force=False):
-        
         async for guild in self.fetch_guilds(limit=10000):
             print(f"syncing for {guild.name}")
             await self.sync_enabled_cogs_for_guild(guild,force=force)
@@ -418,11 +421,18 @@ class TCBot(commands.Bot):
         dictv={"op":'delete',"m":message,"then":now,"delay":delafter}
         self.delete_schedule.put(dictv)
 
-
+    @tasks.loop(seconds=10)
+    async def status_ticker(self):
+        await self.status_ticker_next()
+            
+        
+        
     @tasks.loop(seconds=20.0)
     async def check_tc_tasks(self):
         '''run all TcTaskManager Tasks, fires every minute.'''
         await TCTaskManager.run_tasks()
+        stat=TCTaskManager.get_task_status()
+        self.add_act("taskstatus",stat)
 
 
     @tasks.loop(seconds=1.0)

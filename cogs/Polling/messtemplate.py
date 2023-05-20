@@ -24,6 +24,10 @@ class PollMessageTemplates(MessageTemplates):
         return embed
 
     @staticmethod
-    async def poll_message(ctx, title: str, description: str, **kwargs):
-        message:discord.Message=await ctx.send(embed=PollMessageTemplates.get_poll_embed(title, description), **kwargs)
+    async def poll_message(ctx, description: str, title: str="Polling", ephemeral:bool=False,**kwargs):
+        embed=PollMessageTemplates.get_poll_embed(title, description)
+        if ctx.interaction and ephemeral:
+            message:discord.Message=await ctx.send(embed=embed, ephemeral=True,**kwargs)
+            return message
+        message:discord.Message=await ctx.send(embed=embed, **kwargs)
         return message

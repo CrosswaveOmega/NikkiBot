@@ -12,7 +12,7 @@ import re
 from functools import partial
 from queue import Queue
 from typing import Any, Literal, Callable, Generator, Generic, IO, Optional, TYPE_CHECKING, Tuple, TypeVar, Union
-from bot import TauCetiBot
+from bot import TauCetiBot, TCMixin
 
 import youtube_dl # type: ignore
 import itertools
@@ -64,7 +64,7 @@ class MusicPlayers():
             
         return None
     
-class MusicCog(commands.Cog):
+class MusicCog(commands.Cog,TCMixin):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot :TauCetiBot = bot
         self.helptext="""A list of music commands."""

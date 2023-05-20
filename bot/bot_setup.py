@@ -24,10 +24,9 @@ from subprocess import Popen
 
 
 from collections import defaultdict
-from dateutil.relativedelta import relativedelta, MO, TU, WE, TH, FR, SA, SU
-
+from dateutil.rrule import rrule,rrulestr, WEEKLY, SU
 from .TauCetiBot import TCBot
-from .TCTasks import TCTask
+from .TCTasks import TCTask, TCTaskManager
 from .TcGuildTaskDB import TCGuildTask
 """
 Initalizes TCBot, and defines some checks
@@ -180,6 +179,20 @@ class Main(commands.Cog):
         await ctx.bot.close()
         
     
+    @commands.command()
+    async def task_view(self, ctx):
+        """debugging only."""
+        bot=ctx.bot
+        guild=ctx.guild
+        list=TCTaskManager.task_check()
+        chunks = [list[i:i + 10] for i in range(0, len(list), 10)]
+        formatted_strings = [' '.join(chunk) for chunk in chunks]
+        for i in formatted_strings:
+            await ctx.send(i)
+            
+            
+        
+
 
     @commands.command()
     async def task_add(self, ctx):
@@ -188,13 +201,18 @@ class Main(commands.Cog):
         guild=ctx.guild
         message=await ctx.send("Target Message.")
         myurl=message.jump_url
-        robj=relativedelta_sp(weekday=[SU],hour=14,minute=44,second=0)
+        robj= rrule(
+                freq=WEEKLY,
+                byweekday=SU,
+                dtstart= datetime(2023, 1, 1, 15, 0)
+            )
         new=TCGuildTask.add_guild_task(guild.id, "COMPILE",message,robj)
         new.to_task(bot)
 
     @commands.command()
     async def task_remove(self, ctx):
         """debugging only."""
+        return
         bot=ctx.bot
         guild=ctx.guild
         message=await ctx.send("Target Message.")

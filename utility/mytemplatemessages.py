@@ -1,5 +1,5 @@
 
-from discord import Embed, Color, Guild
+from discord import Embed, Color, Guild, Message
 from discord.ext import commands
 from database import ServerArchiveProfile
 import datetime
@@ -12,12 +12,12 @@ class MessageTemplates:
     '''Class full of static methods that serve as templates for formatted embeds.'''
     @staticmethod
     def get_server_profile_embed(guild:Guild, description: str, extend_field_list=[],color=0xffffff):
-        '''create a embed to display a simple overview on your server.'''
-
+        '''create a embed to display a simple overview on any server.'''
+        '''utilizes the extend_field_list'''
         embed=Embed(title=guild.name, description=description, color=Color(color))
         for i in extend_field_list:
             embed.add_field(**i)
-
+        embed.set_thumbnail(url=guild.icon)
         embed.set_author(name=f"{AssetLookup.get_asset('name')}'s Server Profile",icon_url=AssetLookup.get_asset('embed_icon'))
         embed.set_footer(text=f"Server ID: {guild.id}")
         return embed
@@ -42,7 +42,7 @@ class MessageTemplates:
                         value=last_date)
         embed.add_field(name="Result",value=description, inline=False)
 
-        #embed.set_thumbnail(url=guild.icon)
+        embed.set_thumbnail(url=guild.icon)
         embed.set_author(name="Server RP Archive System",icon_url=embedicon)
         embed.set_footer(text=f"Server ID: {guild.id}")
         return embed
@@ -61,23 +61,22 @@ class MessageTemplates:
         await ctx.send(embed=embed,**kwargs)
 
     @staticmethod
-    async def server_profile_message(ctx:commands.Context, description: str):
+    async def server_profile_message(ctx:commands.Context, description: str, ephemeral=True, **kwargs):
+        '''
+        Return a simple overview of a server & basic data provided by the cogs.
+        '''
         hex=await get_server_icon_color(ctx.guild)
         # Get a list of all cogs loaded by the bot
-        cogs_list = ctx.bot.cogs.values()
-        extended_fields=[]
-        # Loop through each cog
-        for cog in cogs_list:
-            if hasattr(cog, 'server_profile_field_ext') and callable(getattr(cog, 'server_profile_field_ext')):
-                # Do something with the cog that has the function
-                res=cog.server_profile_field_ext(ctx.guild)
-                if res!=None:
-                    extended_fields.append(res)
-                print(f"{cog.__class__.__name__} has the function 'server_profile_fieldext'")
-            else: pass
-        return MessageTemplates.get_server_profile_embed(            ctx.guild, description,             extend_field_list=extended_fields            ,color=hex)
-        await ctx.send(embed=MessageTemplates.get_server_profile_embed(
-            ctx.guild, description, 
-            extend_field_list=extended_fields
-            ,color=hex))
+        extended_fields=ctx.bot.get_field_list()
+        embed=MessageTemplates.get_server_profile_embed(
+            ctx.guild, 
+            description,
+            extend_field_list=extended_fields,
+            color=hex)
+        if ctx.interaction and ephemeral:
+            message:Message=await ctx.send(embed=embed, ephemeral=True,**kwargs)
+            return message
+        message:Message=await ctx.send(embed=embed, **kwargs)
+        return message
+
 

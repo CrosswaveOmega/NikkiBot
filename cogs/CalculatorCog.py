@@ -14,14 +14,14 @@ import random, operator
 from random import randint, seed
 
 import traceback
-
+from bot import TCMixin
 from discord import app_commands
 from discord.app_commands import Choice
 
 from .Calculator import evaluate_expression, OutContainer, dprint, get_linenumber
 
 
-class CalculatorCog(commands.Cog):
+class CalculatorCog(commands.Cog,TCMixin):
     """A special set of commands used for calculating numbers with a special command."""
     def __init__(self, bot):
         self.helptext="special set of commands used for calculating numbers and rolling dice."

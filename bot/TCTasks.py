@@ -8,24 +8,23 @@ from dateutil import tz
 from dateutil.relativedelta import relativedelta, MO, TU, WE, TH, FR, SA, SU
 from discord.ext import tasks
 from utility import relativedelta_sp
-
+from dateutil.rrule import rrule,rrulestr, WEEKLY, SU
 class TCTask:
     """
     A special task object for running coroutines at specific timedelta intervals,
-     managed within the TCTaskManager singleton.  This was made 
+     managed within the TCTaskManager singleton.  This was made because I felt 
+     discord.tasks did not provide the control I needed.
 
     Args:
         name (str): The unique name of the task.  Used to identify the task.
-        time_interval (relativedelta_sp): An extension of dateutil.relativedelta for running the task,
-            that can take in a list of weekdays within the weekday paramete.
-            See dateutil.relativedelta for details.
+        time_interval (rrule): A dateutil.rrule for determining teh the nex
         next_run (Datetime): next date and time to run the task.
         parent_db (Class): Reference to a parent Database that the name is stored within.
         run_number( integer or None): 
     Attributes:
         name (str): The name of the task.
         id (int): The unique ID of the task.
-        time_interval (relativedelta): A relative time interval for running the task.
+        time_interval (rrule): A relative time interval for running the task.
         last_run (datetime): The datetime of the last time the task was run.
         to_run_next (datetime): The datetime of the next time the task is scheduled to run.
         is_running (bool): A flag indicating whether the task is currently running.
@@ -56,7 +55,9 @@ class TCTask:
             self.to_run_next=self.next_run()
         # Add self to the TCTaskManager upon initialization
         TCTaskManager.add_task(self)
+
     def can_i_run(self):
+        '''Check if the TCTask can be launched.'''
         if self.is_running: return False
         if datetime.now() >= self.to_run_next:
             # Update last_run time and run the function as a coroutine
@@ -66,6 +67,14 @@ class TCTask:
             time_until = self.to_run_next - datetime.now()
             print(f"{self.name} not ready. Next run in {time_until}")
             return False
+    def time_left(self):
+        '''Check if the TCTask can be launched.'''
+        if self.is_running: return f"{self.name} is running."
+        time_until = self.to_run_next - datetime.now()
+        ctr=self.next_run()
+        formatted_datetime = self.to_run_next.strftime("%b-%d-%Y %H:%M")
+        next_formatted_datetime=ctr.strftime("%b-%d-%Y %H:%M")
+        return f"{self.name} will run next on {formatted_datetime}, in {time_until}.  If right now, then {next_formatted_datetime}"
     def assign_wrapper(self,func):
         self.funct = func  # Add the coroutine function to the TCTask object
         async def wrapper(*args, **kwargs):
@@ -133,6 +142,10 @@ class TCTask:
         Returns:
             The datetime of the next time the task should be run.
         """
+        # Calculate the next future occurrence
+        next_occurrence = self.time_interval.after(datetime.now().replace(second=0, microsecond=0))
+        return next_occurrence
+
         to_run_next = datetime.now().replace(second=0, microsecond=0) + self.time_interval
         dc=0
         while to_run_next<datetime.now():
@@ -160,6 +173,7 @@ class TCTaskManager:
     def __init__(self):
         self.tasks = []
         self.to_delete=[]
+
     @classmethod
     def does_task_exist(cls, name):
         """
@@ -232,6 +246,43 @@ class TCTaskManager:
         """
         manager = cls.get_instance()
         manager.to_delete.append(name)
+
+    @classmethod
+    def task_check(cls):
+        """
+        Runs all of the TCTask objects that can be run at a specific time.
+        """
+        # Check each task to see if it's time to run
+        manager = TCTaskManager.get_instance()
+        task_string_list=[]
+        for task in manager.tasks:
+            task_string_list.append(task.time_left())
+        return task_string_list
+
+    @classmethod
+    def get_task_status(cls):
+        manager = TCTaskManager.get_instance()
+        running=scheduled=0
+        deltas=[]
+        output=""
+        for task in manager.tasks:
+            if task.is_running:
+                running+=1
+            else:
+                scheduled+=1
+                deltas.append(task.to_run_next - datetime.now())
+                
+        if running>0: output+=f"Running:{running}, "
+        if scheduled>0: output+=f"Scheduled:{scheduled}, "
+        if deltas:
+            next=min(deltas, key=lambda x: x.total_seconds())
+            days= hours=mins=""
+            if next.days>0:days=str(next.days)+"d,"
+            if (next.seconds // 3600)>0:hours=str(int(next.seconds // 3600))+"h,"
+            if ((next.seconds // 60) % 60)>0:mins=str(int((next.seconds // 60) % 60))+"m"
+            formatted_delta = "in {days}{hours}{mins}"
+            output+=formatted_delta
+        return output
 
     async def run_tasks():
         """

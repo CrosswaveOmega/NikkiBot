@@ -48,7 +48,7 @@ class AssetLookup:
             parser.write(f)
 
     @staticmethod
-    def get_fallback(asset_name: str, category: str):
+    def get_defaultfallback(asset_name: str, category: str):
         if category is None:
             for assets in DEFAULT_ASSETS.values():
                 if asset_name in assets:
@@ -56,6 +56,15 @@ class AssetLookup:
         else:
             if asset_name in DEFAULT_ASSETS.get(category, {}):
                 return DEFAULT_ASSETS[category][asset_name]
+    @staticmethod
+    def get_fallback(asset_name: str, category: Optional[str] = None):
+        if category is None:
+            if asset_name in AssetLookup._assets:
+                return AssetLookup._assets[asset_name]['default']
+        else:
+            if asset_name in  AssetLookup._assets[category]:
+                return AssetLookup._assets[category]['default']
+        return None
 
     @staticmethod
     def get_asset(asset_name: str, category: Optional[str] = None):

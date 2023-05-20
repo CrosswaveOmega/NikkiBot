@@ -9,7 +9,7 @@ from typing import Tuple
 import json
 import asyncio
 import discord
-
+from dateutil.rrule import rrule,rrulestr, WEEKLY, SU
 Guild_Task_Base = declarative_base()
 from database import DatabaseSingleton
 from .TCTasks import TCTask, TCTaskManager
@@ -195,6 +195,7 @@ class TCGuildTask(Guild_Task_Base):
             tc.assign_wrapper(lambda: self.guild_task(bot))
         else:
             raise Exception("Task is already in the manager.")
+
     def change_next_run(self,bot, next_datetime):
         '''Initalize a TCTask object with name {self.server_id}_{self.task_name}'''
         rd = self.deserialize_relativedelta(self.relativedelta_serialized)
@@ -203,13 +204,30 @@ class TCGuildTask(Guild_Task_Base):
         if  TCTaskManager.does_task_exist(thename):
             TCTaskManager.change_task_time(thename,next_datetime)
         else:
-            raise Exception("Task is not in the manager.")  
+            raise Exception("Task is not in the manager.")
+            
     def deserialize_relativedelta(self, rd_json):
-        rd_kwargs = json.loads(rd_json)
-        return relativedelta_sp(**rd_kwargs)
+        try:
+            to_return=rrulestr(rd_json)
+            return to_return
+        except Exception as e:
+            start_date = datetime(2023, 1, 1, 16, 0)
+
+            # Create a rule for weekly recurrence on Sundays
+            rule = rrule(
+                freq=WEEKLY,
+                byweekday=SU,
+                dtstart=start_date
+            )
+
+            self.relativedelta_serialized=str(rule)
+            DatabaseSingleton().commit()
+            return rule
+
 
     def serialize_relativedelta(self, rd):
-        return json.dumps(rd.kwargs)
+        return str(rd)
+
     def get_status_desc(self):
         
         next_date=f"<t:{int(self.next_run.timestamp())}:f>"

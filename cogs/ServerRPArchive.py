@@ -12,10 +12,10 @@ from sqlalchemy import event
 
 from utility import serverOwner, serverAdmin, seconds_to_time_string, MessageTemplates, get_time_since_delta
 from utility import WebhookMessageWrapper as web, urltomessage, relativedelta_sp, ConfirmView
-from bot import TCBot, TCGuildTask, Guild_Task_Functions, StatusEditMessage
+from bot import TCBot, TCGuildTask, Guild_Task_Functions, StatusEditMessage, TCMixin
 from random import randint
 from discord.ext import commands, tasks
-
+from dateutil.rrule import rrule,rrulestr, WEEKLY, SU
 from discord import Webhook
 
 
@@ -29,7 +29,7 @@ from .ArchiveSub import ChannelSep, ArchivedRPMessage
 
 
 from dateutil.relativedelta import relativedelta, MO, TU, WE, TH, FR, SA, SU
-class ServerRPArchive(commands.Cog):
+class ServerRPArchive(commands.Cog, TCMixin):
     """This class is intended for Discord RP servers that use Tupperbox or another proxy application.."""
     def __init__(self, bot):
         self.bot:TCBot=bot
@@ -54,11 +54,9 @@ class ServerRPArchive(commands.Cog):
         Guild_Task_Functions.remove_task_function("COMPILE")
         pass
     
-    def server_profile_field_ext(self,guild):
-        '''return a dictionary for the serverprofile template message'''
+    def server_profile_field_ext(self,guild:discord.Guild):
         profile=ServerArchiveProfile.get(guild.id)
-        if not profile:
-            return None
+        if not profile:  return None
         last_date=""
         aid=""
         hist_channel=profile.history_channel_id
@@ -230,7 +228,13 @@ class ServerRPArchive(commands.Cog):
         if not old:
             message=await autochannel.send(f"**ATTEMPTING SET UP OF AUTO COMMAND {task_name}**")
             myurl=message.jump_url
-            robj=relativedelta_sp(weekday=[SU],hour=17,minute=0,second=0)
+            start_date = datetime(2023, 1, 1, 15, 0)
+            robj= rrule(
+                freq=WEEKLY,
+                byweekday=SU,
+                dtstart=start_date
+            )
+
             new=TCGuildTask.add_guild_task(guild.id, task_name, message, robj)
             new.to_task(bot)
             
@@ -634,8 +638,8 @@ class ServerRPArchive(commands.Cog):
 
         m=await ctx.send("Initial check OK!")
         dynamicwait=False
-        game=discord.Game("{}".format('archiving do not shut down...'))
-        await bot.change_presence(activity=game)
+        bot.add_act(str(ctx.guild.id),'archiving server...')
+        
         await m.edit(content="Collecting server history...")
 
         totalcharlen=0
@@ -744,8 +748,7 @@ class ServerRPArchive(commands.Cog):
 
         m=await ctx.send("Initial check OK!")
         dynamicwait=False
-        game=discord.Game("{}".format('archiving do not shut down...'))
-        await bot.change_presence(activity=game)
+        bot.add_act(str(ctx.guild.id),'archiving server...')
         await m.edit(content="Collecting server history...")
 
         totalcharlen=0
@@ -812,12 +815,13 @@ class ServerRPArchive(commands.Cog):
             await asyncio.sleep(2)
             await mt.editw(min_seconds=30,content=f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
             #await edittime.invoke_if_time(content=f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
-            game=discord.Game(f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
-            await bot.change_presence(activity=game)
+            bot.add_act(str(ctx.guild.id),f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
 
         await asyncio.sleep(2)
         game=discord.Game("{}".format('clear'))
         await bot.change_presence(activity=game)
+
+        bot.remove_act(str(ctx.guild.id))
         channel=ctx.channel
         print(channel.name, channel.id)
 

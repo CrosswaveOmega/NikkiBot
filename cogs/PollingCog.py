@@ -17,7 +17,7 @@ from discord import Webhook
 
 import random, operator
 from random import randint, seed
-from bot import TCGuildTask, Guild_Task_Functions, TCBot
+from bot import TCGuildTask, Guild_Task_Functions, TCBot, TCMixin
 import traceback
 
 from discord import app_commands
@@ -125,12 +125,12 @@ Server moderators can set up a specific poll channel using the /setup_poll_chann
 Once a poll has ended, the buttons are removed from each message and the final results are displayed. 
 '''
 
-class PollingCog(commands.Cog):
+class PollingCog(commands.Cog, TCMixin):
     """For Server Polls"""
     def __init__(self, bot:TCBot):
         self.helptext='''
         
-The PollingCog allows users to create and participate in polls in their server or globally. 
+            The PollingCog allows users to create and participate in polls in their server or globally. 
 
         '''
         PollTable.update_poll_status()
@@ -149,19 +149,15 @@ The PollingCog allows users to create and participate in polls in their server o
     def cog_unload(self):
         self.message_update_cleanup.cancel()
     
-    def server_profile_field_ext(self,guild):
+    def server_profile_field_ext(self,guild:discord.Guild):
         '''return a dictionary for the serverprofile template message'''
         profile=PollChannelSubscribe.get(guild.id)
-        if not profile:
-            return None
-        
+        if not profile: return None        
         auto_log_chan=f"<#{profile.channel_id}>"
         output=f"Polling Channel:{auto_log_chan}"
         field={"name":"Server Poll System",'value':output}
         return field
 
-
-        return None
 
     async def add_poll_message(self,channel:discord.abc.Messageable,poll_id:int,ephemeral=False):
         poll=PollTable.get(poll_id)
@@ -240,26 +236,23 @@ The PollingCog allows users to create and participate in polls in their server o
     async def pollchannelmake(self, interaction,autochannel:discord.TextChannel):
         """Add an automatic task."""
         ctx: commands.Context = await self.bot.get_context(interaction)
-        bot=ctx.bot
         guild=ctx.guild
-        task_name="COMPILE"
         if not(serverOwner(ctx) or serverAdmin(ctx)):
-            #await MessageTemplates.server_archive_message(ctx,"You don't have permission to use this command..")
-            await ctx.send(("You do not have the right permissions to set this."))
+            await MessageTemplates.poll_message(ctx,"You do not have the right permissions to set this.")
             return False
         
         #check if the passed in autochannel meets the standards.
         passok, statusmessage = Guild_Task_Functions.check_auto_channel(autochannel)
 
         if not passok:
-            await ctx.send(statusmessage)
+            await MessageTemplates.poll_message(ctx,statusmessage)
             return
         
         prof=ServerArchiveProfile.get(server_id=guild.id)
         if prof: 
             if autochannel.id==prof.history_channel_id:
                 result=f"this should not be the same channel as the archive channel.  Specify a different channel such as a bot spam channel."
-                await ctx.send(result)
+                await MessageTemplates.poll_message(ctx,result)
                 return
         PollChannelSubscribe.set_or_update(server_id=guild.id,channel_id=autochannel.id)
         await MessageTemplates.poll_message(ctx, title="Poll Setup Outcome",description="I've set your polling channel up!")
@@ -308,8 +301,8 @@ The PollingCog allows users to create and participate in polls in their server o
     async def view_polls(self, ctx:commands.Context):
         '''view a list of active polls!'''
         if not ctx.guild:
-            await ctx.send("sorry, this command can only be used in servers.")
-            return
+           await MessageTemplates.poll_message(ctx,"This poll id is invalid.",ephemeral=True)
+           return
         act=PollTable.get_active_polls(ctx.guild.id)
         print(act)
         embeds=PollTable.poll_list(act)
@@ -324,10 +317,8 @@ The PollingCog allows users to create and participate in polls in their server o
             return
         result=await self.add_poll_message(ctx,poll_id,ephemeral=True)
         if result:
-            if ctx.interaction:
-                await ctx.send("This poll id is invalid.",ephemeral=True)
-            else:
-                await ctx.send("This poll id is invalid.")
+            await MessageTemplates.poll_message(ctx,"This poll id is invalid.",ephemeral=True)
+
 
         
         
@@ -339,7 +330,6 @@ The PollingCog allows users to create and participate in polls in their server o
     @app_commands.command(name="feedback")
     async def feedback_send(self, interaction: discord.Interaction):
         '''test for a feedback system'''
-
         await interaction.response.send_modal(Feedback())
 
     
