@@ -312,7 +312,7 @@ class PollingCog(commands.Cog, TCMixin):
         embeds=PollTable.poll_list(act)
         await pages_of_embeds(ctx,embeds, ephemeral=True)
         
-    @pc.command(name="link_poll", description="open a a temporary voting message that will let you vote in a poll!")
+    @pc.command(name="get_poll", description="open a a temporary voting message that will let you vote in a poll!")
     @app_commands.describe(poll_id="The ID of the poll you want to vote in.")
     async def view_poll(self,  interaction:discord.Interaction,poll_id:int):
         '''view a poll!'''
