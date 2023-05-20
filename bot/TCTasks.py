@@ -280,7 +280,7 @@ class TCTaskManager:
             if next.days>0:days=str(next.days)+"d,"
             if (next.seconds // 3600)>0:hours=str(int(next.seconds // 3600))+"h,"
             if ((next.seconds // 60) % 60)>0:mins=str(int((next.seconds // 60) % 60))+"m"
-            formatted_delta = "in {days}{hours}{mins}"
+            formatted_delta = f"next auto task in {days}{hours}{mins}"
             output+=formatted_delta
         return output
 

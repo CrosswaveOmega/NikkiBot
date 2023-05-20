@@ -159,15 +159,15 @@ class PollingCog(commands.Cog, TCMixin):
         return field
 
 
-    async def add_poll_message(self,channel:discord.abc.Messageable,poll_id:int,ephemeral=False):
-        poll=PollTable.get(poll_id)
+    async def add_poll_message(self,channel:discord.abc.Messageable,poll:PollTable,ephemeral=False):
+        
         if poll:
             emb=poll.poll_embed_view()
             if poll.is_active():
                 if not ephemeral:
                     view=Persistent_Poll_View(poll)
                     message=await channel.send(embed=emb,view=view)
-                    PollMessages.add_poll_message(poll_id,message)
+                    PollMessages.add_poll_message(poll.poll_id,message)
                 else:
                     view=Persistent_Poll_View(poll)
                     message=await channel.send(embed=emb,view=view,ephemeral=True)
@@ -177,9 +177,11 @@ class PollingCog(commands.Cog, TCMixin):
                 return ''
         else:
             return "Invalid poll id"
+
     async def poll_subscription(self):
         try:
             polllist=PollChannelSubscribe.get_new_polls()
+            print(polllist)
             for i in polllist:
                 channel_id, polls=i
                 channel=self.bot.get_channel(channel_id)
@@ -234,13 +236,12 @@ class PollingCog(commands.Cog, TCMixin):
     @app_commands.command(name="setup_poll_channel", description="admin only-Set a channel to post newly created polls in.")
     @app_commands.describe(autochannel= "The channel you want polls to be posted in.")
     async def pollchannelmake(self, interaction,autochannel:discord.TextChannel):
-        """Add an automatic task."""
+        """Add a poll channel to a server."""
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild=ctx.guild
         if not(serverOwner(ctx) or serverAdmin(ctx)):
             await MessageTemplates.poll_message(ctx,"You do not have the right permissions to set this.")
             return False
-        
         #check if the passed in autochannel meets the standards.
         passok, statusmessage = Guild_Task_Functions.check_auto_channel(autochannel)
 
@@ -265,8 +266,8 @@ class PollingCog(commands.Cog, TCMixin):
         await self.poll_subscription()
         await ctx.send("sub done.")
 
-
-    @app_commands.command(name="make_poll", description="Make a Discord Poll for this server..")
+    pc = app_commands.Group(name="polls", description="Commands for the poll system.")
+    @pc.command(name="make_poll", description="Make a Discord Poll for this server..")
     @app_commands.describe(scope="The scope of your poll, can be either 'server' or global")
     async def make_poll(self, interaction: discord.Interaction, scope:Literal['server','global']='server'):
         '''make a poll!'''
@@ -278,8 +279,9 @@ class PollingCog(commands.Cog, TCMixin):
                 ephemeral=True )
             return
 
-        poll_edit_view=PollEdit(scope=scope, server_id=ctx.guild.id)
-        await ctx.send("Please note, there's a timeout of 15 minutes.",view=poll_edit_view)
+        poll_edit_view=PollEdit(user=ctx.author, scope=scope, server_id=ctx.guild.id)
+        message=await ctx.send("Please note, there's a timeout of 15 minutes.",embed=discord.Embed(title="getting started?"),view=poll_edit_view)
+        await asyncio.sleep(2)
         await poll_edit_view.wait()
         if poll_edit_view.value==True:
 
@@ -290,16 +292,18 @@ class PollingCog(commands.Cog, TCMixin):
             newpoll.pop('hours')
             newpoll.pop('minutes')
             poll=PollTable.new_poll(made_by=ctx.author.id,end_date=new_datetime,**newpoll)
-
-            await ctx.send(f"I've made your poll!  You can find it at poll id: {poll.poll_id}",embed=poll.poll_embed_view())
+            await message.delete()
+            await MessageTemplates.poll_message(ctx,f"I've made your poll!  You can find it at poll id: {poll.poll_id}",ephemeral=True)
             await self.poll_subscription()
         else:
-            await ctx.send("Op Cancelled.")
+            await ctx.send("Op Cancelled.", ephermal=True)
+            await message.delete()
 
 
-    @commands.hybrid_command(name="get_active_polls", description="get all currently active polls.")
-    async def view_polls(self, ctx:commands.Context):
+    @pc.command(name="list_polls", description="get all currently active polls.")
+    async def view_polls(self, interaction:discord.Interaction):
         '''view a list of active polls!'''
+        ctx=await self.bot.get_context(interaction)
         if not ctx.guild:
            await MessageTemplates.poll_message(ctx,"This poll id is invalid.",ephemeral=True)
            return
@@ -308,14 +312,16 @@ class PollingCog(commands.Cog, TCMixin):
         embeds=PollTable.poll_list(act)
         await pages_of_embeds(ctx,embeds, ephemeral=True)
         
-    @commands.hybrid_command(name="link_poll", description="open a a temporary voting message that will let you vote in a poll!")
+    @pc.command(name="link_poll", description="open a a temporary voting message that will let you vote in a poll!")
     @app_commands.describe(poll_id="The ID of the poll you want to vote in.")
-    async def view_poll(self, ctx:commands.Context,poll_id:int):
+    async def view_poll(self,  interaction:discord.Interaction,poll_id:int):
         '''view a poll!'''
+        ctx=await self.bot.get_context(interaction)
         if not ctx.guild:
             await ctx.send("This command does not work in dms.")
             return
-        result=await self.add_poll_message(ctx,poll_id,ephemeral=True)
+        poll=PollTable.get(poll_id)
+        result=await self.add_poll_message(ctx,poll,ephemeral=True)
         if result:
             await MessageTemplates.poll_message(ctx,"This poll id is invalid.",ephemeral=True)
 

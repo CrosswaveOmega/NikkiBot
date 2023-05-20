@@ -30,11 +30,23 @@ class CogFieldList:
 class StatusTicker:
     status_map,status_queue={},[]
 
-    def add_act(self,key, value, activity_type:discord.ActivityType=discord.ActivityType.playing):
+    def add_act(self,key:str, value:str, activity_type:discord.ActivityType=discord.ActivityType.playing):
+        """Add an activity to the status map.
+        Args:
+            key (str): Key of status. 
+            value (str): status to be displayed.
+            activity_type (discord.ActivityType, optional): The type of status to be displayed.
+        """        
         activity = discord.Activity(type=activity_type, name=value)
         self.status_map[key] = activity
 
     def remove_act(self,key):
+        """Add an activity to the status map.
+        Args:
+            key (str): Key of status. 
+            value (str): status to be displayed.
+            activity_type (discord.ActivityType, optional): The type of status to be displayed.
+        """     
         if key in self.status_map:
             self.status_map.pop(key)
 

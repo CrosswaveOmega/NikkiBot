@@ -1,4 +1,6 @@
+from typing import Any, Coroutine
 import discord
+from discord.interactions import Interaction
 from assets import AssetLookup
 class Poll_Choice_Make(discord.ui.Modal, title='Edit your poll choices.'):
     '''This modal is for editing poll choices.'''
@@ -63,15 +65,24 @@ class Poll_Name_Make(discord.ui.Modal, title='Create a Poll'):
 
 
 class Dropdown(discord.ui.Select):
-    def __init__(self,option_kwarg,this_label="default",key=""):
-
+    def __init__(self,option_kwarg,this_label="default",key="", user=None):
+        self.user=user
         options = []
         for i in option_kwarg:
             options.append(discord.SelectOption(**i))
         
         self.key=key
         super().__init__(placeholder=this_label, min_values=1, max_values=1, options=options)
+    async def interaction_check(self, interaction: Interaction[discord.Client]):
+        if interaction.user==self.user:
+            print("OK")
+            return True
+        print("NOT OK.")
+        return False
 
+    async def on_error(self, interaction: discord.Interaction, error: Exception,item:discord.ui.Item):
+        print(str(error))
+        await interaction.response.send_message(f'Oops! Something went wrong: {str(error)}.', ephemeral=True)
     async def callback(self, interaction: discord.Interaction):
         if self.key in self.view.my_poll:
             self.view.my_poll[self.key]=int(self.values[0])
@@ -130,24 +141,36 @@ class PollEdit(discord.ui.View):
         'scope':'','server_id':''
     }
     value=False
-    def __init__(self, *, timeout=30*15,scope='server', server_id=0):
+    def __init__(self, *, user, timeout=30*15,scope='server', server_id=0):
         super().__init__(timeout=timeout)
+        self.user=user
         self.my_poll['scope']=scope
         self.my_poll['server_id']=server_id
         self.my_dropdown=Dropdown([{'label':"2", 'description':"Two Options"},
         {'label':"3", 'description':"Three Options"},
         {'label':"4", 'description':"Four Options"},
         {'label':"5", 'description':"Five Options"}],
-                                  "Number of poll choices",'choices')
+                                  "Number of poll choices",'choices',user=self.user)
         self.add_item(self.my_dropdown)
         days_list=[]
         for i in range(0,8):  days_list.append({'label':i,'description':f'last for {i} days.'})
-        self.time_dropdown=Dropdown(days_list,'Days poll will last.','days')
+        self.time_dropdown=Dropdown(days_list,'Days poll will last.','days',user=self.user )
         self.add_item(self.time_dropdown)
         hours_list=[]
         for i in range(0,24):  hours_list.append({'label':i,'description':f'last for {i} hours.'})
-        self.hours_drop=Dropdown(hours_list,'Hours poll will last.','hours')
+        self.hours_drop=Dropdown(hours_list,'Hours poll will last.','hours',user=self.user)
         self.add_item(self.hours_drop)
+
+    async def interaction_check(self, interaction: Interaction[discord.Client]):
+        if interaction.user==self.user:
+            print("OK")
+            return True
+        print("NOT OK.")
+        return False
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception,item:discord.ui.Item):
+        print(str(error))
+        await interaction.response.send_message(f'Oops! Something went wrong: {str(error)}.', ephemeral=True)
 
     @discord.ui.button(label='Edit Name and Text', style=discord.ButtonStyle.blurple)
     async def nameedit(self, interaction: discord.Interaction, button: discord.ui.Button):

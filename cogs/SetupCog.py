@@ -13,7 +13,7 @@ from queue import Queue
 from discord.ext import commands, tasks
 from discord.utils import find
 from discord import Webhook,ui
-from bot import TCMixin
+from bot import TCMixin, TCBot
 from discord import app_commands
 from discord.app_commands import Choice
 from pathlib import Path
@@ -57,8 +57,9 @@ class Setup(commands.Cog, TCMixin):
     """The component where you enable/disable other components."""
     def __init__(self, bot):
         self.helptext="This section is for enabling and disabling specific bot features for your server."
-        self.bot=bot
-        self.bot.add_act("WatchExample"," streams of numbers ",discord.ActivityType.watching)
+        self.bot:TCBot=bot
+        self.bot.add_act("WatchExample"," This space for rent.",discord.ActivityType.watching)
+        self.bot.add_act("WatchExample2"," My prefix is '>'.",discord.ActivityType.watching)
 
 
     @commands.Cog.listener()

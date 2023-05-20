@@ -67,7 +67,7 @@ class MessageTemplates:
         '''
         hex=await get_server_icon_color(ctx.guild)
         # Get a list of all cogs loaded by the bot
-        extended_fields=ctx.bot.get_field_list()
+        extended_fields=ctx.bot.get_field_list(ctx.guild)
         embed=MessageTemplates.get_server_profile_embed(
             ctx.guild, 
             description,

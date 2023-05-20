@@ -67,8 +67,7 @@ class General(commands.Cog, TCMixin):
         view2=f"Messagable: {messagable} channels.  \n Of which, {messagable-c_mess} channels have a restriction."
         desc=f"Members: {member_count}\n Channels: {channel_count}\n{view}\n{view2}"
         
-        emb=await MessageTemplates.server_profile_message(ctx, description=desc )
-        await interaction.response.send_message(embed=emb, ephemeral=True)
+        emb=await MessageTemplates.server_profile_message(ctx, description=desc,ephemeral=True )
 
 
 

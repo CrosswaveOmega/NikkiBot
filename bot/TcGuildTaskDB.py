@@ -221,7 +221,7 @@ class TCGuildTask(Guild_Task_Base):
             )
 
             self.relativedelta_serialized=str(rule)
-            DatabaseSingleton().commit()
+            DatabaseSingleton('sa').commit()
             return rule
 
 
