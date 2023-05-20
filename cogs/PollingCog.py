@@ -275,7 +275,7 @@ class PollingCog(commands.Cog, TCMixin):
         if scope=='global' and ctx.user.id!=self.bot.application.owner.id:
             await MessageTemplates.poll_message(ctx,
                 title="No permissions",
-                description="I'm sorry.  Currently, only my owner can make global polls.",
+                description="I'm sorry.  Currently, only my owner can make global polls.  This is to prevent spam.",
                 ephemeral=True )
             return
 
