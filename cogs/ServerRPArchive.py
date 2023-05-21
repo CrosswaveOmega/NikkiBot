@@ -737,8 +737,7 @@ class ServerRPArchive(commands.Cog, TCMixin):
             await MessageTemplates.get_server_archive_embed(ctx,"I can't seem to access the history channel, it's gone!")
             return False
 
-        #Make sure all permissions are there.
-        missing_permissions = []
+        
         passok, statusmessage = check_channel(archive_channel)
 
         if not passok:
@@ -761,6 +760,7 @@ class ServerRPArchive(commands.Cog, TCMixin):
 
         lastgroup=profile.last_group_num
         ts,group_id=await do_group(guildid,profile.last_group_num, ctx=ctx)
+
         fullcount=ts
         profile.update(last_group_num=group_id)
         remaining_time_float= fullcount* timebetweenmess
@@ -781,14 +781,13 @@ class ServerRPArchive(commands.Cog, TCMixin):
         print(archive_channel.name)
         length=len(grouped)
         for e,sep in enumerate(grouped):
+            #Start posting
             print(e,sep)
             if not sep.posted_url:
                 currjob="rem: {}".format(seconds_to_time_string(int(remaining_time_float)))
                 emb,count=sep.create_embed()
                 chansep=await archive_channel.send(embed=emb)
                 sep.update(posted_url=chansep.jump_url)
-                
-                        
                 await self.edit_embed_and_neighbors(sep)
                 self.bot.database.commit()
             for amess in sep.get_messages():
@@ -815,18 +814,19 @@ class ServerRPArchive(commands.Cog, TCMixin):
             await asyncio.sleep(2)
             await mt.editw(min_seconds=30,content=f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
             #await edittime.invoke_if_time(content=f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
-            bot.add_act(str(ctx.guild.id),f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
+            bot.add_act(str(ctx.guild.id)+"arch",f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
 
         await asyncio.sleep(2)
         game=discord.Game("{}".format('clear'))
         await bot.change_presence(activity=game)
 
-        bot.remove_act(str(ctx.guild.id))
+        bot.remove_act(str(ctx.guild.id)+"arch")
         channel=ctx.channel
         print(channel.name, channel.id)
-
-        await MessageTemplates.server_archive_message(channel,f'Archive operation completed at <t:{int(datetime.now().timestamp())}:f>')
         profile.update(last_archive_time=(datetime.fromtimestamp(int(new_last_time))))
+        bot.database.commit()
+        await MessageTemplates.server_archive_message(channel,f'Archive operation completed at <t:{int(datetime.now().timestamp())}:f>')
+        
         bot.database.commit()
 
         #await m.delete()

@@ -28,6 +28,7 @@ class CogFieldList:
         return extended_fields
 
 class StatusTicker:
+    '''Mixin that provides rotating bot statuses.'''
     status_map,status_queue={},[]
 
     def add_act(self,key:str, value:str, activity_type:discord.ActivityType=discord.ActivityType.playing):
@@ -52,6 +53,7 @@ class StatusTicker:
 
 
     async def status_ticker_next(self):
+        '''select the next relevant status element.'''
         if self.status_map:
             if not self.status_queue:
                 self.status_queue= list(self.status_map.keys())

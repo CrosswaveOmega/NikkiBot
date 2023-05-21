@@ -3,7 +3,10 @@ import string
 from discord.ext import commands, tasks
 import datetime
 import asyncio
+import discord
+from utility import urltomessage
 
+from queue import Queue
 class StatusEditMessage:
     def __init__(self,message):
         self.message=message
@@ -85,3 +88,56 @@ class StatusMessageManager:
             if last!=None:
               self.bot.schedule_for_deletion(last)
             self.statuses[sid]=None
+
+class StatusMessageMixin:
+    
+    psuedomess_dict= {}
+    post_schedule=Queue()
+    delete_schedule=Queue()
+    def schedule_for_post(self,channel,mess):
+        """Schedule a message to be posted in channel."""
+        dict={"op":'post',"pid":self.genid(),"ch":channel,"mess":mess}
+        self.post_schedule.put(dict)
+        return dict["pid"]
+        
+    def schedule_for_deletion(self, message, delafter=0):
+        """Schedule a message to be deleted later."""
+        now=discord.utils.utcnow()
+
+        dictv={"op":'delete',"m":message,"then":now,"delay":delafter}
+        self.delete_schedule.put(dictv)
+    async def post_queue_message_int(self):
+        if self.post_schedule.empty()==False:
+            dict=self.post_schedule.get()
+            m=await dict["ch"].send(dict["mess"])
+            self.psuedomess_dict[dict["pid"]]=m
+    
+    async def delete_queue_message_int(self):
+        if self.delete_schedule.empty()==False:
+            message=self.delete_schedule.get()
+            now=discord.utils.utcnow()
+            then=message["then"]
+            delay=message["delay"]
+            if (now-then).total_seconds()>=delay:
+                if type(message["m"])==str:
+                    if message["m"] in self.psuedomess_dict:
+                        await self.psuedomess_dict[message["m"]].delete()
+                        self.psuedomess_dict[message["m"]]=None
+                    else:
+                        self.delete_schedule.put(message)
+                elif isinstance(message["m"],discord.Message):
+                    try:
+                        await message["m"].delete()
+                    except:
+                        try:
+                            jumplink=""
+                            if issubclass(type(message["m"]),discord.InteractionMessage):
+                                jumplink=message["m"].jump_url
+                            else:
+                                jumplink=message["m"].jump_url
+                            newm=await urltomessage(jumplink,self)
+                            await newm.delete()
+                        except Exception as error:
+                            await self.send_error(error, "deletion error...")
+            else:
+                self.delete_schedule.put(message)

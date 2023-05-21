@@ -5,10 +5,10 @@ import io
 
 from typing import List, Union
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Boolean, distinct, update 
-from sqlalchemy import LargeBinary, ForeignKey,PrimaryKeyConstraint
+from sqlalchemy import LargeBinary, ForeignKey,PrimaryKeyConstraint, insert, distinct
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
-
+from sqlalchemy.orm import aliased
 from database import DatabaseSingleton, add_or_update_all
 from sqlalchemy import select,event, exc
 
@@ -71,6 +71,43 @@ class ChannelSep(ArchiveBase):
         session.commit()
         return channel_sep
     
+    @staticmethod
+    def add_channel_seps_clustered_if_needed(server_id):
+        '''intended to create new channel_seps all at once if needed.'''
+        session: Session = DatabaseSingleton.get_session()
+       
+        archived_rp_message = aliased(ArchivedRPMessage)
+        existing_channel_seps = select(distinct(ChannelSep.channel_sep_id)).where(ChannelSep.server_id == server_id)
+
+        query = insert(ChannelSep).from_select(
+            [
+                ChannelSep.channel_sep_id,
+                ChannelSep.server_id,
+                ChannelSep.channel,
+                ChannelSep.category,
+                ChannelSep.thread,
+                ChannelSep.created_at
+            ],
+            select([
+                distinct(archived_rp_message.channel_sep_id),
+                archived_rp_message.server_id,
+                archived_rp_message.channel,
+                archived_rp_message.category,
+                archived_rp_message.thread,
+                archived_rp_message.created_at
+            ]).where(
+                archived_rp_message.server_id == server_id
+            ).where(
+                ~archived_rp_message.channel_sep_id.in_(existing_channel_seps)
+            ).group_by(
+                archived_rp_message.channel_sep_id
+            )
+        )
+
+        # Execute the query
+        session.execute(query)
+        session.commit()
+
     def get_chan_sep(self):
         return f"{self.category}-{self.channel}-{self.thread}"
     @staticmethod
@@ -80,6 +117,7 @@ class ChannelSep(ArchiveBase):
         session.commit()
     @staticmethod
     def get_posted_but_incomplete(server_id: int):
+        '''retrieve all ChannelSep objects that where posted, but not done retrieving messages.'''
         filter = and_(
             ChannelSep.posted_url != None,
             ChannelSep.server_id == server_id,
@@ -89,6 +127,7 @@ class ChannelSep(ArchiveBase):
         return session.query(ChannelSep).filter(filter).order_by(ChannelSep.channel_sep_id).first()
     @staticmethod
     def get_unposted_separators(server_id: int):
+        '''retrieve all ChannelSep objects that are not posted yet.'''
         filter = and_(
             ChannelSep.posted_url == None,
             ChannelSep.server_id == server_id
@@ -490,8 +529,8 @@ class HistoryMakers():
         hmes=create_history_pickle_dict(thisMessage)
         return hmes
     @staticmethod
-    def add_channel_sep_if_needed(target,value):
-        ChannelSep.add_channel_sep_if_needed(target,value)
+    def add_channel_sep_if_needed(targetmessage,value):
+        ChannelSep.add_channel_sep_if_needed(targetmessage,value)
         '''
         session=DatabaseSingleton.get_session()
         query = select(ChannelSep).where(ChannelSep.channel_sep_id == value and ChannelSep.server_id==target.server_id)

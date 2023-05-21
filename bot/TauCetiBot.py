@@ -206,8 +206,8 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker):
                     self.tree.add_command(command, guild=guild, override=True)
                     if isinstance(command,discord.app_commands.Group):
                         for i in command.walk_commands():
-                            if isinstance(command,discord.app_commands.Command):
-                                current_command_list.append(command)
+                            if isinstance(i,discord.app_commands.Command):
+                                current_command_list.append(i)
                     else:
                         current_command_list.append(command)
                     syncprint(f"Added {command.name}")
@@ -223,7 +223,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker):
                 dbentry=AppGuildTreeSync.get(guild.id)
                 if not dbentry:
                     dbentry=AppGuildTreeSync.add(guild.id)
-                if (not dbentry.compare_with_command_tree(app_tree)) or forced==True:
+                if (dbentry.compare_with_command_tree(app_tree)!=None) or forced==True:
                     print(f"Beginning command syncing for {guild.name} (ID {guild.id})...")
                     dbentry.update(app_tree)
                     print(dbentry.compare_with_command_tree(app_tree))
