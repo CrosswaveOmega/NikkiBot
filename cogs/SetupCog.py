@@ -86,7 +86,7 @@ class Setup(commands.Cog, TCMixin):
         """get bot info for this server"""
         ctx: commands.Context = await self.bot.get_context(interaction)
         
-        pages=MessageTemplates.get_manual_list(ctx,"nikki_permissions_manual.json")
+        pages=await MessageTemplates.get_manual_list(ctx,"nikki_permissions_manual.json")
         await pages_of_embeds(ctx,pages)
         
 
