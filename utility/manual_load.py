@@ -35,6 +35,6 @@ def substitute_string(string, substring, substitute):
     return string.replace(substring, substitute)
 
 def load_manual(file:str,ctx:commands.Context):
-    subs={"$BOTID$":ctx.bot.user.id}
+    subs={"$BOTID$":str(ctx.bot.user.id)}
     jsondata=load_json_with_substitutions("./manual",file,subs)
     return jsondata
