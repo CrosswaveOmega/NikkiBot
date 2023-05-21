@@ -747,7 +747,7 @@ class ServerRPArchive(commands.Cog, TCMixin):
 
         m=await ctx.send("Initial check OK!")
         dynamicwait=False
-        bot.add_act(str(ctx.guild.id),'archiving server...')
+        bot.add_act(str(ctx.guild.id)+"arch",'archiving server...')
         await m.edit(content="Collecting server history...")
 
         totalcharlen=0
@@ -777,7 +777,8 @@ class ServerRPArchive(commands.Cog, TCMixin):
         print(grouped,needed)
         
         await m.edit(content=f"Posting! This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
-        mt=StatusEditMessage(m)
+        me=ctx.channel.send(content=f"Posting! This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
+        mt=StatusEditMessage(me)
         print(archive_channel.name)
         length=len(grouped)
         for e,sep in enumerate(grouped):
@@ -818,6 +819,7 @@ class ServerRPArchive(commands.Cog, TCMixin):
             bot.add_act(str(ctx.guild.id)+"arch",f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
 
         await asyncio.sleep(2)
+        await me.delete()
         game=discord.Game("{}".format('clear'))
         await bot.change_presence(activity=game)
 

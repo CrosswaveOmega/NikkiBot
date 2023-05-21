@@ -8,21 +8,28 @@ from utility import urltomessage
 
 from queue import Queue
 class StatusEditMessage:
-    def __init__(self,message):
+    '''edit a message at a regular interval.'''
+    def __init__(self,message:discord.Message, ctx:commands.Context):
+        self.bot=ctx.bot
         self.message=message
         self.last_update_time=datetime.datetime.now()
+        self.initial_deploy_time=datetime.datetime.now()
     def check_update_interval(self):
         '''get the time between now and the last time updatew was called.'''
         time_diff = datetime.datetime.now() - self.last_update_time
         return time_diff.total_seconds()
-
+    def check_totaltime(self):
+        '''get the time between now and the last time updatew was called.'''
+        time_diff = datetime.datetime.now() - self.initial_deploy_time
+        return time_diff.total_seconds()
     async def editw(self, min_seconds=0, **kwargs):
         '''Update status message asyncronously.'''
-        if self.check_update_interval()>min_seconds:
+        if self.check_update_interval()>min_seconds and self.message!=None:
             try:
                 await self.message.edit(**kwargs)
             except Exception as e:
                 print(e)
+                self.message=urltomessage(self.message.jump_url,self.bot)
             self.last_update_time=datetime.datetime.now()
 
 

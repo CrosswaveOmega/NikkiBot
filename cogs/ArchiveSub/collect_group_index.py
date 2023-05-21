@@ -32,7 +32,7 @@ async def iterate_backlog(backlog,group_id):
             if channelind == current_chana and running:
                 if DEBUG_MODE: print('in',current_chana,hm.get_chan_sep(),group_id)
                 hm.update(channel_sep_id=group_id)
-                #HistoryMakers.add_channel_sep_if_needed(hm,group_id)
+                HistoryMakers.add_channel_sep_if_needed(hm,group_id)
             else:
                 new_backlog.put(hm)
                 charsinotherbacklog.add(hm.author)
@@ -105,7 +105,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
         if chanin == current_chana:
             if DEBUG_MODE: print('in',current_chana,hm.get_chan_sep(),group_id)
             hm.update(channel_sep_id=group_id)
-            #HistoryMakers.add_channel_sep_if_needed(hm,group_id)
+            HistoryMakers.add_channel_sep_if_needed(hm,group_id)
             cc_count += 1
         # otherwise add message to backlog and add author to character set
         else:
@@ -115,7 +115,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
     # add remaining backlog messages to tosend list
     
     ts, group_id = await iterate_backlog(backlog, group_id)
-    ChannelSep.derive_channel_seps_mass(server_id)
+    #ChannelSep.derive_channel_seps_mass(server_id)
     tosend += ts
     if status_mess: status_mess.delete()
     return length, group_id

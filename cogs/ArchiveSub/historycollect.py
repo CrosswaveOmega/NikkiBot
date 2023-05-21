@@ -22,7 +22,7 @@ async def collect_server_history(ctx, update=False,bot_messages_only=True,user_m
         messages=[]
         statusMessToEdit=await channel.send("I'm getting everything in the given RP channels, this may take a moment!")
 
-        statmess=StatusEditMessage(statusMessToEdit)
+        statmess=StatusEditMessage(statusMessToEdit,ctx)
         time=profile.last_archive_time
         if time: time=time.timestamp()
         if time==None: time=0
