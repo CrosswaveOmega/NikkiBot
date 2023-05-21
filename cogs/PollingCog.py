@@ -272,7 +272,7 @@ class PollingCog(commands.Cog, TCMixin):
     async def make_poll(self, interaction: discord.Interaction, scope:Literal['server','global']='server'):
         '''make a poll!'''
         ctx: commands.Context = await self.bot.get_context(interaction)
-        if scope=='global' and ctx.user.id!=self.bot.application.owner.id:
+        if scope=='global' and ctx.author.id!=self.bot.application.owner.id:
             await MessageTemplates.poll_message(ctx,
                 title="No permissions",
                 description="I'm sorry.  Currently, only my owner can make global polls.  This is to prevent spam.",
