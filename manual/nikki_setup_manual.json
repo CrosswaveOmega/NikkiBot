@@ -1,0 +1,15 @@
+{
+    "embeds": [
+      {
+        "title": "Coming soon!",
+        "description": "This isn't needed right now!",
+        "color": null,
+        "fields": [
+          {
+            "name": "Eventually...",
+            "value": "this guide will be on how to setup my features based on how you want."
+          }
+        ]
+      }
+    ]
+  }

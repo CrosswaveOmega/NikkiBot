@@ -77,6 +77,8 @@ class Setup(commands.Cog, TCMixin):
     async def info(self, interaction: discord.Interaction) -> None:
         """get bot info for this server"""
         ctx: commands.Context = await self.bot.get_context(interaction)
+        pages=await MessageTemplates.get_manual_list(ctx,"nikki_setup_manual.json")
+        await pages_of_embeds(ctx,pages,ephemeral=True)
 
 
 
