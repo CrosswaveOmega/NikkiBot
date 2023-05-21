@@ -87,7 +87,7 @@ class Setup(commands.Cog, TCMixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         
         pages=await MessageTemplates.get_manual_list(ctx,"nikki_permissions_manual.json")
-        await pages_of_embeds(ctx,pages)
+        await pages_of_embeds(ctx,pages,ephemeral=True)
         
 
 
