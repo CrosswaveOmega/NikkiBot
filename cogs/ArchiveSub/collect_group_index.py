@@ -113,9 +113,10 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
             charsinbacklog.add(hm.author)
     DatabaseSingleton('voc').commit()
     # add remaining backlog messages to tosend list
+    
     ts, group_id = await iterate_backlog(backlog, group_id)
+    ChannelSep.derive_channel_seps_mass(server_id)
     tosend += ts
-    ChannelSep.add_channel_seps_clustered_if_needed(server_id)
     if status_mess: status_mess.delete()
     return length, group_id
 

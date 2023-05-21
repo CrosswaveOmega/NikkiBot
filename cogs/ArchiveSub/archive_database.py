@@ -4,7 +4,7 @@ import discord
 import io
 
 from typing import List, Union
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Boolean, distinct, update 
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Boolean, distinct, update, func
 from sqlalchemy import LargeBinary, ForeignKey,PrimaryKeyConstraint, insert, distinct
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
@@ -43,7 +43,21 @@ class ChannelSep(ArchiveBase):
     __table_args__ = (
         PrimaryKeyConstraint('channel_sep_id', 'server_id'),
     )
+    @staticmethod
+    def derive_from_archived_rp_message(message):
+        # Create a new ChannelSep entry based on the ArchivedRPMessage
+        #session: Session = DatabaseSingleton.get_session()
+        channel_sep = ChannelSep(
+                channel_sep_id=message.channel_sep_id,
+                server_id=message.server_id,
+                channel=message.channel,
+                category=message.category,
+                thread=message.thread,
+                created_at=message.created_at
+            )
+        return channel_sep
 
+        
     @staticmethod
     def add_channel_sep_if_needed(message,chansepid):
         session: Session = DatabaseSingleton.get_session()
@@ -57,57 +71,35 @@ class ChannelSep(ArchiveBase):
         if existing_channel_sep:
             return existing_channel_sep
 
-        # Create a new ChannelSep entry based on the ArchivedRPMessage
-        channel_sep = ChannelSep(
-                channel_sep_id=message.channel_sep_id,
-                server_id=message.server_id,
-                channel=message.channel,
-                category=message.category,
-                thread=message.thread,
-                created_at=message.created_at
-            )
-
+        channel_sep= ChannelSep.derive_from_archived_rp_message(message)
         session.add(channel_sep)
         session.commit()
         return channel_sep
-    
     @staticmethod
-    def add_channel_seps_clustered_if_needed(server_id):
-        '''intended to create new channel_seps all at once if needed.'''
+    def derive_channel_seps_mass(server_id: int):
         session: Session = DatabaseSingleton.get_session()
-       
-        archived_rp_message = aliased(ArchivedRPMessage)
-        existing_channel_seps = select(distinct(ChannelSep.channel_sep_id)).where(ChannelSep.server_id == server_id)
 
-        query = insert(ChannelSep).from_select(
-            [
-                ChannelSep.channel_sep_id,
-                ChannelSep.server_id,
-                ChannelSep.channel,
-                ChannelSep.category,
-                ChannelSep.thread,
-                ChannelSep.created_at
-            ],
-            select([
-                distinct(archived_rp_message.channel_sep_id),
-                archived_rp_message.server_id,
-                archived_rp_message.channel,
-                archived_rp_message.category,
-                archived_rp_message.thread,
-                archived_rp_message.created_at
-            ]).where(
-                archived_rp_message.server_id == server_id
-            ).where(
-                ~archived_rp_message.channel_sep_id.in_(existing_channel_seps)
-            ).group_by(
-                archived_rp_message.channel_sep_id
-            )
-        )
+        # Step 1: Get distinct channel_sep_ids from ChannelSeps with server_id
+        distinct_channel_sep_ids = session.query(ChannelSep.channel_sep_id).filter_by(server_id=server_id).distinct().all()
+        existing_channel_sep_ids = {id_[0] for id_ in distinct_channel_sep_ids}
 
-        # Execute the query
-        session.execute(query)
+        # Step 2: Get the first messages in ArchivedRPMessage with server_id and distinct channel_sep_ids not in ChannelSeps
+        distinct_message_ids = session.query(func.min(ArchivedRPMessage.message_id)).filter(
+            (ArchivedRPMessage.server_id == server_id) &
+            (~ArchivedRPMessage.channel_sep_id.in_(existing_channel_sep_ids))
+        ).group_by(ArchivedRPMessage.channel_sep_id).all()
+
+        # Step 3: Derive new ChannelSeps based on the first messages
+        new_channel_seps = []
+        for message_id in distinct_message_ids:
+            message = session.query(ArchivedRPMessage).get(message_id[0])
+            new_channel_sep = ChannelSep.derive_from_archived_rp_message(message)
+            session.add(new_channel_sep )
+            new_channel_seps.append(new_channel_sep)
+
         session.commit()
 
+        return new_channel_seps
     def get_chan_sep(self):
         return f"{self.category}-{self.channel}-{self.thread}"
     @staticmethod
