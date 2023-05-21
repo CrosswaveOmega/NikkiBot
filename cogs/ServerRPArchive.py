@@ -777,7 +777,7 @@ class ServerRPArchive(commands.Cog, TCMixin):
         print(grouped,needed)
         
         await m.edit(content=f"Posting! This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
-        me=ctx.channel.send(content=f"Posting! This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
+        me=await ctx.channel.send(content=f"Posting! This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
         mt=StatusEditMessage(me,ctx)
         print(archive_channel.name)
         length=len(grouped)
