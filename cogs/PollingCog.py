@@ -258,7 +258,7 @@ class PollingCog(commands.Cog, TCMixin):
         PollChannelSubscribe.set_or_update(server_id=guild.id,channel_id=autochannel.id)
         await MessageTemplates.poll_message(ctx, title="Poll Setup Outcome",description="I've set your polling channel up!")
 
-     
+    
     @app_commands.command(name="poll_channel_update", description="Force update for polling.")
     async def pollsub(self, interaction: discord.Interaction):
         '''make a poll!'''

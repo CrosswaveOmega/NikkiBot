@@ -1,0 +1,27 @@
+{
+    "embeds": [
+      {
+        "title": "Some gathered permission links.",
+        "description": "I am a multipurpose bot, and you probably only intend to use me for a few of my features.  Problem is, many of those features require more permissions than I initially requested when I joined.\nTo make it as easy as possible, I set up the following authorization links so you can quickly change my permissions for this server with a single click!",
+        "color": null,
+        "fields": [
+          {
+            "name": "Default Permissions",
+            "value": "[Default](https://discord.com/api/oauth2/authorize?client_id=$BOTID$&permissions=40585867415104&scope=bot%20applications.commands)\nAs of this writing, these are my default permissions.  **PLEASE NOTE, THIS IS THE BARE MINIMUM FOR WHAT I NEED.  Revoking any of these permissions will lead to unwanted behavior in all of my features!**"
+          },
+          {
+            "name": "ServerRPArchival",
+            "value": "[ServerArchiveMinimal](https://discord.com/api/oauth2/authorize?client_id=$BOTID$&permissions=40585867423296&scope=bot%20applications.commands)\nThe bare minimum permissions needed if you want me to archive your server RPs.  In addition to Default, manage messages is included since the bot is working with webhook messages."
+          },
+          {
+            "name": "ServerRPArchival Assisted",
+            "value": "[AssistedRPSetup](https://discord.com/api/oauth2/authorize?client_id=$BOTID$&permissions=40603315859024&scope=bot%20applications.commands)\nBecause setting up the ServerRPArchive can be a little technical for the less savvy, this link adds on `Manage Threads`, `Manage Roles`, and `Manage Channels` permissions to make setup easier."
+          },
+          {
+            "name": "Administrator mode.",
+            "value": "[For the really, really lazy.](https://discord.com/api/oauth2/authorize?client_id=$BOTID$&permissions=8&scope=bot%20applications.commands)\nIf you're really, really lazy and don't want to bother with permissions at all, then this link gives me the server administrator permissions which overrides everything and lets me do anything short of what a owner could do.\n**This is a very dangerous permission to grant.**"
+          }
+        ]
+      }
+    ]
+  }

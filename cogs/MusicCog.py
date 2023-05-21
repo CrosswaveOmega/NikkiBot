@@ -24,7 +24,7 @@ from utility import seconds_to_time_string, seconds_to_time_stamp
 from .AudioPlaybackSub import *
 logger=logging.getLogger('discord')
 class MusicPlayers():
-    '''class that stores a dictionary of all active music players.'''
+    '''class that stores a dictionary of all active music player, managed per guild.'''
     def __init__(self):
         self.players={}
     
@@ -39,6 +39,7 @@ class MusicPlayers():
         if key in self.players:
             return self.players[key]
         return None
+
     def gp(self,interaction_or_guild):
         if isinstance(interaction_or_guild, type(discord.Interaction)):
             return self.getplayer(interaction_or_guild.guild)

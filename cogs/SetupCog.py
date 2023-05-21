@@ -17,7 +17,7 @@ from bot import TCMixin, TCBot
 from discord import app_commands
 from discord.app_commands import Choice
 from pathlib import Path
-from utility import serverAdmin, serverOwner
+from utility import serverAdmin, serverOwner, load_manual, MessageTemplates
 from utility.embed_paginator import pages_of_embeds
 ''''''
 
@@ -62,6 +62,7 @@ class Setup(commands.Cog, TCMixin):
         self.bot.add_act("WatchExample2"," My prefix is '>'.",discord.ActivityType.watching)
 
 
+    nikkisetup = app_commands.Group(name="nikkisetup", description="Some general commands for helping with setting up your server.")
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         bot=self.bot
@@ -69,7 +70,26 @@ class Setup(commands.Cog, TCMixin):
         await bot.tree.sync(guild=guild)
         if guild.system_channel!=None:
             await guild.system_channel.send("Hi, thanks for inviting me to your server!  I hope to be of use!\n"+ \
-                "Please understand that some of my features may require additional permissions. I'll try to let you know which ones are needed and when.")
+                "Please understand that some of my features may require additional permissions.  "+
+                "I'll try to let you know which ones are needed and when.")
+
+    @nikkisetup.command(name="info", description="learn how to set me up!")
+    async def info(self, interaction: discord.Interaction) -> None:
+        """get bot info for this server"""
+        ctx: commands.Context = await self.bot.get_context(interaction)
+
+
+
+
+    @nikkisetup.command(name="permissions", description="get links for re-authenticating my permissions")
+    async def perms(self, interaction: discord.Interaction) -> None:
+        """get bot info for this server"""
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        
+        pages=MessageTemplates.get_manual_list(ctx,"nikki_permissions_manual.json")
+        await pages_of_embeds(ctx,pages)
+        
+
 
     @commands.command()
     async def syncall(self,ctx):

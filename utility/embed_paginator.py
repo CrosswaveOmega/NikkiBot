@@ -3,7 +3,7 @@ from discord.ext import commands
 from typing import List, Tuple
 from discord import Embed
 
-
+#My own paginator.
 class PageClassContainer():
     def __init__(self, display: List[Embed] = []):
         """

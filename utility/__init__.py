@@ -10,3 +10,4 @@ from .mytemplatemessages import MessageTemplates
 from .dateutil_sp import relativedelta_sp
 from .markdown_timestamp_util import get_time_since_delta
 from .view_confirm import ConfirmView
+from .manual_load import load_manual

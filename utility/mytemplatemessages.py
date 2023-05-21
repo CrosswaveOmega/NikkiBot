@@ -4,6 +4,7 @@ from discord.ext import commands
 from database import ServerArchiveProfile
 import datetime
 from .globalfunctions import get_server_icon_color
+from .manual_load import load_manual
 from assets import AssetLookup
 
 embedicon=None
@@ -20,6 +21,22 @@ class MessageTemplates:
         embed.set_thumbnail(url=guild.icon)
         embed.set_author(name=f"{AssetLookup.get_asset('name')}'s Server Profile",icon_url=AssetLookup.get_asset('embed_icon'))
         embed.set_footer(text=f"Server ID: {guild.id}")
+        return embed
+
+    @staticmethod
+    def get_bot_manual_embed(dictionary:dict,color=0x127a09):
+        '''create a embed to display a simple overview on any server.'''
+        '''utilizes the extend_field_list'''
+        if 'color' in dictionary: dictionary.pop('color')
+        if not 'title' in dictionary: dictionary['title']="No title"
+        if not 'description' in dictionary: dictionary['description']="N/A"
+        embed=Embed(title=dictionary['title'], description=dictionary["description"], color=Color(color))
+        for i in dictionary['fields']:
+            if 'inline' not in i:
+                embed.add_field(**i, inline=False)
+            else:
+                embed.add_field(**i)
+        embed.set_footer(text=f"{AssetLookup.get_asset('name')}'s Manual",icon_url=AssetLookup.get_asset('embed_icon'))
         return embed
 
     @staticmethod
@@ -52,7 +69,18 @@ class MessageTemplates:
         embed=Embed(title=title, description=description, color=Color(0xff0000))
         embed.set_author(name="Error Message",icon_url=embedicon)
         return embed
+    @staticmethod
+    async def get_manual_list(ctx:commands.Context, file:str, **kwargs):
+        '''
+        Return a list of manual pages.
+        '''
+        manual=load_manual(file,ctx)
+        embed_list = [MessageTemplates.get_bot_manual_embed(e) for e in manual['embeds']]
+        return embed_list
 
+
+
+        
 
     @staticmethod
     async def server_archive_message(ctx:commands.Context, description: str, **kwargs):

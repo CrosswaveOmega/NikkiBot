@@ -7,7 +7,6 @@ import logging
 import logging.handlers
 import os
 
-from queue import Queue
 from discord.ext import commands, tasks
 import datetime
 import random
@@ -32,9 +31,9 @@ intent.message_content=True
 intent.guilds=True
 intent.members=True
 from database import DatabaseSingleton
-from .StatusMessages import StatusMessageManager, StatusMessage
+from .StatusMessages import StatusMessageManager, StatusMessage, StatusMessageMixin
 
-class TCBot(commands.Bot, CogFieldList,StatusTicker):
+class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
     
     """TC's central bot class.  An extension of discord.py Bot class with additional functionality."""
     def __init__(self):
@@ -56,10 +55,8 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker):
         self.loaded_plugins={}
 
 
-        self.psuedomess_dict= {}
         
-        self.post_schedule=Queue()
-        self.delete_schedule=Queue()
+        
         self.default_error=self.on_command_error
         self.bot_ready=False
 
@@ -408,18 +405,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker):
             self.logs.error(str(e))
         await self.send_error_embed(er)
 
-    def schedule_for_post(self,channel,mess):
-        """Schedule a message to be posted in channel."""
-        dict={"op":'post',"pid":self.genid(),"ch":channel,"mess":mess}
-        self.post_schedule.put(dict)
-        return dict["pid"]
-        
-    def schedule_for_deletion(self, message, delafter=0):
-        """Schedule a message to be deleted later."""
-        now=discord.utils.utcnow()
 
-        dictv={"op":'delete',"m":message,"then":now,"delay":delafter}
-        self.delete_schedule.put(dictv)
 
     @tasks.loop(seconds=10)
     async def status_ticker(self):
@@ -437,40 +423,12 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker):
 
     @tasks.loop(seconds=1.0)
     async def post_queue_message(self):
-        if self.post_schedule.empty()==False:
-            dict=self.post_schedule.get()
-            m=await dict["ch"].send(dict["mess"])
-            self.psuedomess_dict[dict["pid"]]=m
+        await self.post_queue_message_int(self)
+        
 
     @tasks.loop(seconds=1.0)
     async def delete_queue_message(self):
-        if self.delete_schedule.empty()==False:
-            message=self.delete_schedule.get()
-            now=discord.utils.utcnow()
-            then=message["then"]
-            delay=message["delay"]
-            if (now-then).total_seconds()>=delay:
-                if type(message["m"])==str:
-                    if message["m"] in self.psuedomess_dict:
-                        await self.psuedomess_dict[message["m"]].delete()
-                        self.psuedomess_dict[message["m"]]=None
-                    else:
-                        self.delete_schedule.put(message)
-                elif isinstance(message["m"],discord.Message):
-                    try:
-                        await message["m"].delete()
-                    except:
-                        try:
-                            jumplink=""
-                            if issubclass(type(message["m"]),discord.InteractionMessage):
-                                jumplink=message["m"].jump_url
-                            else:
-                                jumplink=message["m"].jump_url
-                            newm=await urltomessage(jumplink,self)
-                            await newm.delete()
-                        except Exception as error:
-                            await self.send_error(error, "deletion error...")
-            else:
-                self.delete_schedule.put(message)
+        await self.delete_queue_message_int()
+        
 
         
