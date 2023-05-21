@@ -809,6 +809,7 @@ class ServerRPArchive(commands.Cog, TCMixin):
                 else:
                     await asyncio.sleep(timebetweenmess)
                     remaining_time_float=remaining_time_float-(timebetweenmess)
+                    await mt.editw(min_seconds=45,content=f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
             sep.update(all_ok=True)
             self.bot.database.commit()
             await asyncio.sleep(2)
