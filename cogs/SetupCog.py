@@ -104,7 +104,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         await ctx.send("Syncing...")
         await ctx.bot.all_guild_startup(True)
         await ctx.send("DONE.")
-    @commands.hybrid_command(name='getapps',description="get all my app commands for this server.")
+    @commands.hybrid_command(name='getapps',description="get all my app commands for this server, and check if you set any specific permissions.")
     async def get_apps(self,ctx):
         # Get the bot member object for this guild or the passed in guild_id
         if not ctx.guild:
@@ -138,7 +138,10 @@ class Setup(commands.Cog, TC_Cog_Mixin):
                                 value=f"<@{perm.id}>, {perm.permission}"
                             )
             except Exception as e:
-                print(e)
+                embed.add_field(
+                    name=f"User perm",
+                    value=f"<@{perm.id}>, {perm.permission}"
+                )
             embed_list.append(embed)
         if ctx.interaction:
             await pages_of_embeds(ctx,embed_list, ephemeral=True)
