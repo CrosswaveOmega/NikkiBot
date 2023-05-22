@@ -106,7 +106,6 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         await ctx.send("DONE.")
     @commands.hybrid_command(name='getapps',description="get all my app commands for this server, and check if you set any specific permissions.")
     async def get_apps(self,ctx):
-        # Get the bot member object for this guild or the passed in guild_id
         if not ctx.guild:
             await ctx.send("This command is a guild only command.")
         my_tree:discord.app_commands.CommandTree=ctx.bot.tree
@@ -139,8 +138,8 @@ class Setup(commands.Cog, TC_Cog_Mixin):
                             )
             except Exception as e:
                 embed.add_field(
-                    name=f"User perm",
-                    value=f"<@{perm.id}>, {perm.permission}"
+                    name=f"NO PERMS SET",
+                    value=f"No permissions where set."
                 )
             embed_list.append(embed)
         if ctx.interaction:
