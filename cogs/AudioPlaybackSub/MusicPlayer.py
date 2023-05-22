@@ -310,6 +310,7 @@ class MusicPlayer():
                 self.current=None
             await self.send_message(ctx, "Empty Playlist", \
                 "My playlist is expended, so I can't go to a new song.",editinter)
+            self.bot.remove_act("MusicPlay")
             self.player_condition="none"
 
     async def back(self,ctx,editinter):
@@ -427,7 +428,7 @@ class MusicPlayer():
             await asyncio.sleep(0.25)
             voice.play(aud,after=lambda e: self.bot.schedule_for_post(ctx.channel, "Error in playback: "+str(e)) if e else  asyncio.run_coroutine_threadsafe(self.player_actions("auto_next"), self.bot.loop))
             voice.is_playing()
-
+            self.bot.add_act("MusicPlay",f"{song.title}",discord.ActivityType.listening)
             await self.send_message(ctx,"play",f"**{song.title}** is now playing.  " )
     async def play_song_override(self,ctxmode:Union[discord.TextChannel,commands.Context],override):
         '''This function starts playback of the current song overridding another..'''

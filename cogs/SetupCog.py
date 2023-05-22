@@ -65,7 +65,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         self.bot:TCBot=bot
         self.bot.add_act("WatchExample"," This space for rent.",discord.ActivityType.watching)
         self.bot.add_act("WatchExample2"," My prefix is '>'.",discord.ActivityType.watching)
-        self.bot.add_act("WatchExample2"," My prefix is '>'.",discord.ActivityType.watching)
+        self.bot.add_act("listen"," webcore music.",discord.ActivityType.listening)
 
 
     nikkisetup = app_commands.Group(name="nikkisetup", description="Some general commands for helping with setting up your server.")
@@ -104,7 +104,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         await ctx.send("Syncing...")
         await ctx.bot.all_guild_startup(True)
         await ctx.send("DONE.")
-    @commands.hybrid_command(name='getapps',description="get all my app commands.")
+    @commands.hybrid_command(name='getapps',description="get all my app commands for this server.")
     async def get_apps(self,ctx):
         # Get the bot member object for this guild or the passed in guild_id
         if not ctx.guild:
@@ -114,7 +114,36 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         embed_list=[]
         for appcommand in mycommsfor:
             embed=discord.Embed(title=appcommand.name,description=appcommand.description)
-            guild_perms=appcommand.fetch
+            guild_perms=await appcommand.fetch_permissions(discord.Object(ctx.guild.id))
+            for perm in guild_perms.permissions:
+                type=perm.type #AppCommandPermissionType
+                if type==discord.AppCommandPermissionType.channel:
+                    if perm.id==(ctx.guild.id-1):
+                        embed.add_field(
+                            name="ALL CHANNELS:",value=str(perm.permission))
+                    else:
+                        embed.add_field(
+                            name=f"Channel perm",
+                            value=f"<#{perm.id}>, {perm.permission}"
+                        )
+                if type==discord.AppCommandPermissionType.role:
+                    embed.add_field(
+                            name=f"Role perm",
+                            value=f"<@&{perm.id}>, {perm.permission}"
+                        )
+                if type==discord.AppCommandPermissionType.user:
+                    embed.add_field(
+                            name=f"User perm",
+                            value=f"<@{perm.id}>, {perm.permission}"
+                        )
+            embed_list.append(embed)
+        if ctx.interaction:
+            await pages_of_embeds(ctx,embed_list, ephemeral=True)
+        else:
+            await pages_of_embeds(ctx,embed_list)
+                #print(type.name)
+
+            
 
 
 
