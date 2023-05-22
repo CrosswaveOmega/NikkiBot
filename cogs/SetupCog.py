@@ -110,11 +110,11 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         if not ctx.guild:
             await ctx.send("This command is a guild only command.")
         my_tree:discord.app_commands.CommandTree=ctx.bot.tree
-        mycommsfor:List[discord.AppCommand]=await my_tree.fetch_commands(guild=discord.Object(ctx.guild.id))
+        mycommsfor=await my_tree.fetch_commands(guild=discord.Object(ctx.guild.id))
         embed_list=[]
         for appcommand in mycommsfor:
             embed=discord.Embed(title=appcommand.name,description=appcommand.description)
-            guild_perms=await appcommand.fetch_permissions(discord.Object(ctx.guild.id))
+            guild_perms=await appcommand.fetch_permissions(guild=discord.Object(ctx.guild.id))
             for perm in guild_perms.permissions:
                 type=perm.type #AppCommandPermissionType
                 if type==discord.AppCommandPermissionType.channel:
