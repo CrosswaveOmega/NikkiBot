@@ -114,28 +114,31 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         embed_list=[]
         for appcommand in mycommsfor:
             embed=discord.Embed(title=appcommand.name,description=appcommand.description)
-            guild_perms=await appcommand.fetch_permissions(guild=discord.Object(ctx.guild.id))
-            for perm in guild_perms.permissions:
-                type=perm.type #AppCommandPermissionType
-                if type==discord.AppCommandPermissionType.channel:
-                    if perm.id==(ctx.guild.id-1):
+            try:
+                guild_perms=await appcommand.fetch_permissions(guild=discord.Object(ctx.guild.id))
+                for perm in guild_perms.permissions:
+                    type=perm.type #AppCommandPermissionType
+                    if type==discord.AppCommandPermissionType.channel:
+                        if perm.id==(ctx.guild.id-1):
+                            embed.add_field(
+                                name="ALL CHANNELS:",value=str(perm.permission))
+                        else:
+                            embed.add_field(
+                                name=f"Channel perm",
+                                value=f"<#{perm.id}>, {perm.permission}"
+                            )
+                    if type==discord.AppCommandPermissionType.role:
                         embed.add_field(
-                            name="ALL CHANNELS:",value=str(perm.permission))
-                    else:
+                                name=f"Role perm",
+                                value=f"<@&{perm.id}>, {perm.permission}"
+                            )
+                    if type==discord.AppCommandPermissionType.user:
                         embed.add_field(
-                            name=f"Channel perm",
-                            value=f"<#{perm.id}>, {perm.permission}"
-                        )
-                if type==discord.AppCommandPermissionType.role:
-                    embed.add_field(
-                            name=f"Role perm",
-                            value=f"<@&{perm.id}>, {perm.permission}"
-                        )
-                if type==discord.AppCommandPermissionType.user:
-                    embed.add_field(
-                            name=f"User perm",
-                            value=f"<@{perm.id}>, {perm.permission}"
-                        )
+                                name=f"User perm",
+                                value=f"<@{perm.id}>, {perm.permission}"
+                            )
+            except Exception as e:
+                print(e)
             embed_list.append(embed)
         if ctx.interaction:
             await pages_of_embeds(ctx,embed_list, ephemeral=True)
