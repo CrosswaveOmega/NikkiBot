@@ -71,7 +71,6 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
         '''set the error channel id.'''
         if str(newid).isdigit():
             self.error_channel=int(newid)
-            print("PASS")
             return True
         return False
 
@@ -174,7 +173,8 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
         return self.statmess.get_message_obj(cid)
     
     async def sync_enabled_cogs_for_guild(self,guild, force=False):
-        '''With a passed in guild, sync all activated cogs for that guild.'''        
+        '''With a passed in guild, sync all activated cogs for that guild.'''
+        '''Works on a guild per guild basis so that I may build '''      
         def syncprint(lis):
             pass
             #print(f"Sync for {guild.name} (ID {guild.id})",lis)

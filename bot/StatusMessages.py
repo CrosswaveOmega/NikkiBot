@@ -110,9 +110,9 @@ class StatusMessageMixin:
     def schedule_for_deletion(self, message, delafter=0):
         """Schedule a message to be deleted later."""
         now=discord.utils.utcnow()
-
         dictv={"op":'delete',"m":message,"then":now,"delay":delafter}
         self.delete_schedule.put(dictv)
+        
     async def post_queue_message_int(self):
         if self.post_schedule.empty()==False:
             dict=self.post_schedule.get()

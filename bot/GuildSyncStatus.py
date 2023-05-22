@@ -136,11 +136,12 @@ def remove_null_values(dict_obj):
 
 def format_application_commands(commands:List[discord.app_commands.Command]):
     '''This command takes in a list of discord.app_commands.Command objects, and
-    extracts the data into a dictionary to help determine if the bot should be synced to a particular
-    server or not.
+    extracts serializable data into a dictionary to help determine if a app command tree
+    should be synced to a particular server or not.
     '''
     formatted_commands = {}
     for command in commands:
+        
         formatted_command = {
             'name': command.name,
             'description': command.description,
