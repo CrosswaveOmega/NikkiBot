@@ -1,5 +1,5 @@
 import difflib
-from typing import Union
+from typing import List, Union
 from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey, DateTime, Double
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import sessionmaker, Session
@@ -12,7 +12,7 @@ from database import DatabaseSingleton
 Guild_Sync_Base = declarative_base()
 
 import json
-
+import discord
 import difflib
 '''
 All the convienence of automatic command syncing with fewer drawbacks.
@@ -134,7 +134,11 @@ def remove_null_values(dict_obj):
 
     return new_dictionary
 
-def format_application_commands(commands):
+def format_application_commands(commands:List[discord.app_commands.Command]):
+    '''This command takes in a list of discord.app_commands.Command objects, and
+    extracts the data into a dictionary to help determine if the bot should be synced to a particular
+    server or not.
+    '''
     formatted_commands = {}
     for command in commands:
         formatted_command = {

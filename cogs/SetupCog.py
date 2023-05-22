@@ -13,7 +13,7 @@ from queue import Queue
 from discord.ext import commands, tasks
 from discord.utils import find
 from discord import Webhook,ui
-from bot import TCMixin, TCBot
+from bot import TC_Cog_Mixin, TCBot
 from discord import app_commands
 from discord.app_commands import Choice
 from pathlib import Path
@@ -53,7 +53,7 @@ class SelectView(discord.ui.View):
 
 class SetupCommands(app_commands.Group):
     pass
-class Setup(commands.Cog, TCMixin):
+class Setup(commands.Cog, TC_Cog_Mixin):
     """The component where you enable/disable other components."""
     def __init__(self, bot):
         self.helptext="This section is for enabling and disabling specific bot features for your server."

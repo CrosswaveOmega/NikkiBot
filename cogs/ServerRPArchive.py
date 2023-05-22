@@ -10,9 +10,9 @@ import csv
 from datetime import datetime, timedelta, date, timezone
 from sqlalchemy import event
 
-from utility import serverOwner, serverAdmin, seconds_to_time_string, MessageTemplates, get_time_since_delta
+from utility import serverOwner, serverAdmin, seconds_to_time_string, get_time_since_delta
 from utility import WebhookMessageWrapper as web, urltomessage, relativedelta_sp, ConfirmView
-from bot import TCBot, TCGuildTask, Guild_Task_Functions, StatusEditMessage, TCMixin
+from bot import TCBot, TCGuildTask, Guild_Task_Functions, StatusEditMessage, TC_Cog_Mixin
 from random import randint
 from discord.ext import commands, tasks
 from dateutil.rrule import rrule,rrulestr, WEEKLY, SU
@@ -25,11 +25,11 @@ from discord import app_commands
 
 from database import ServerArchiveProfile
 from .ArchiveSub import do_group, collect_server_history, check_channel
-from .ArchiveSub import ChannelSep, ArchivedRPMessage
+from .ArchiveSub import ChannelSep, ArchivedRPMessage, MessageTemplates
 
 
 from dateutil.relativedelta import relativedelta, MO, TU, WE, TH, FR, SA, SU
-class ServerRPArchive(commands.Cog, TCMixin):
+class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
     """This class is intended for Discord RP servers that use Tupperbox or another proxy application.."""
     def __init__(self, bot):
         self.bot:TCBot=bot

@@ -68,6 +68,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
         self.database.load_base(Base=Guild_Sync_Base)
 
     def set_error_channel(self,newid):
+        '''set the error channel id.'''
         if str(newid).isdigit():
             self.error_channel=int(newid)
             print("PASS")

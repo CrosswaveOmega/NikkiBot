@@ -21,12 +21,17 @@ The tasks can be customized by adding coroutines to the Guild_Task_Functions cla
 
 6. **More features to come!**: The bot is constantly being updated and new features will be added as they become available.
 
-## Requirements
+## Current Requirements
 
 - discord.py
 - SQLAlchemy
 - python-dateutil
 - youtube_dl
+
+## Technical Features
+
+- Nikki is designed to be as modular as possible, with every single extension in a self contained file.
+- Experimental autosync system which only syncs app command trees if it detects a difference between dictionary representations of the app command tree.
 
 ## How to use the TCGuildTask system
 

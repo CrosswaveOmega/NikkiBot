@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime, timedelta
+from typing import Optional, Type
 from dateutil.relativedelta import *
 from dateutil.parser import parse
 from dateutil.rrule import *
@@ -16,11 +17,13 @@ class TCTask:
      discord.tasks did not provide the control I needed.
 
     Args:
-        name (str): The unique name of the task.  Used to identify the task.
-        time_interval (rrule): A dateutil.rrule for determining teh the nex
-        next_run (Datetime): next date and time to run the task.
-        parent_db (Class): Reference to a parent Database that the name is stored within.
-        run_number( integer or None): 
+        name (str): The unique name of the task. Used to identify the task.
+        time_interval (rrule): A dateutil.rrule for determining the next time to run the task.
+        id (int): The unique ID of the task.
+        next_run (Datetime): Next date and time to run the task.
+        parent_db (Type[object]): Reference to a parent Database that the name is stored within.
+        run_number (int or None): The maximum number of times the task should run, or None if unlimited.
+
     Attributes:
         name (str): The name of the task.
         id (int): The unique ID of the task.
@@ -28,12 +31,19 @@ class TCTask:
         last_run (datetime): The datetime of the last time the task was run.
         to_run_next (datetime): The datetime of the next time the task is scheduled to run.
         is_running (bool): A flag indicating whether the task is currently running.
+        parent_db (Type[object]): Optional reference to a parent Database that the name is stored within.
         running_task (Task): The asyncio.Task object representing the running task, if any.
         funct (coroutine): A passed in coroutine to be passed into the wrapper function in assign_wrapper
         wrapper (coroutine): coroutine containing func that runs the class, and then determines the next time to run the task.
     """
 
-    def __init__(self, name, time_interval, id=0, next_run=None, parent_db=None, run_number=None):
+    def __init__(
+        self,
+        name: str, time_interval: rrule, id: int = 0,
+        next_run: Optional[datetime] = None,
+        parent_db: Optional[Type[object]] = None,
+        run_number: Optional[int] = None
+    ):
         self.name = name
         self.parent_db=parent_db
         self.id = id

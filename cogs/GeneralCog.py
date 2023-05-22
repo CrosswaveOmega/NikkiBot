@@ -19,8 +19,8 @@ from discord.app_commands import Choice
 from pathlib import Path
 from utility import serverAdmin, serverOwner, MessageTemplates
 from utility.embed_paginator import pages_of_embeds
-from bot import TCMixin
-class General(commands.Cog, TCMixin):
+from bot import TC_Cog_Mixin
+class General(commands.Cog, TC_Cog_Mixin):
     """General commands"""
     def __init__(self, bot):
         self.helptext=""

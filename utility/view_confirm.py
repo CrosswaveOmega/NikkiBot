@@ -1,7 +1,9 @@
 from typing import Any, Coroutine
 import discord
 from discord.interactions import Interaction
+
 class ConfirmView(discord.ui.View):
+    '''This is a simple view for getting a yes/no answer from a user.'''
     value=False
     user=None
     def __init__(self, *, user:discord.User,timeout=30*15):

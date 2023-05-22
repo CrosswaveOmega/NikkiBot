@@ -101,7 +101,7 @@ class TCGuildTask(Guild_Task_Base):
         PrimaryKeyConstraint('server_id', 'task_name'),
     )
 
-    def __init__(self, server_id, task_name, target_message, relativedelta_obj):
+    def __init__(self, server_id, task_name, target_message, relativedelta_obj:rrule):
         self.server_id = server_id
         self.task_name = task_name
         self.target_message_url=target_message.jump_url
@@ -158,6 +158,7 @@ class TCGuildTask(Guild_Task_Base):
         result = session.query(TCGuildTask).filter_by(server_id=server_id,task_name=task_name).first()
         if result:            return result
         else:            return None
+        
     @classmethod
     def update(cls, server_id, task_name, next_run):
         """

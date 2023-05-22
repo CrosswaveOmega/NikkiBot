@@ -4,7 +4,20 @@ import json
 from discord.ext import commands, tasks
 directory="./manual"
 
-def load_json_with_substitutions(directory, filename, substitutions):
+def load_json_with_substitutions(directory:str, filename:str, substitutions:dict):
+    """
+    Load a JSON file from the given directory, apply any substitutuions to the 
+    JSON string contained within the substitutions dictionary, and load in a 
+    dictionary from the result.
+
+    Args:
+        directory (str): The directory where the JSON file is located.
+        filename (str): The name of the JSON file.
+        substitutions (dict): A dictionary containing the substitutions to be applied.
+
+    Returns:
+        dict: The parsed JSON data with substitutions applied.
+    """
     file_path = os.path.join(directory, filename)
 
     # Read the JSON file as a string
@@ -12,8 +25,9 @@ def load_json_with_substitutions(directory, filename, substitutions):
         json_string = file.read()
 
     # Perform substitutions
-    for key, value in substitutions.items():
-        json_string = json_string.replace(key, value)
+    if substitutions:
+        for key, value in substitutions.items():
+            json_string = json_string.replace(key, value)
 
     # Parse the modified JSON string
     json_data = json.loads(json_string)
@@ -21,18 +35,6 @@ def load_json_with_substitutions(directory, filename, substitutions):
     return json_data
 
 
-
-def substitute(data, substring, substitute):
-    if isinstance(data, dict):
-        return {key: substitute(data[key], substring, substitute) if isinstance(data[key], (dict, list)) else substitute_string(data[key], substring, substitute) for key in data}
-    elif isinstance(data, list):
-        return [substitute(item, substring, substitute) if isinstance(item, (dict, list)) else substitute_string(item, substring, substitute) for item in data]
-    else:
-        return substitute_string(data, substring, substitute)
-
-
-def substitute_string(string, substring, substitute):
-    return string.replace(substring, substitute)
 
 def load_manual(file:str,ctx:commands.Context):
     subs={"$BOTID$":str(ctx.bot.user.id)}

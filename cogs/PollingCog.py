@@ -17,7 +17,7 @@ from discord import Webhook
 
 import random, operator
 from random import randint, seed
-from bot import TCGuildTask, Guild_Task_Functions, TCBot, TCMixin
+from bot import TCGuildTask, Guild_Task_Functions, TCBot, TC_Cog_Mixin
 import traceback
 
 from discord import app_commands
@@ -125,7 +125,7 @@ Server moderators can set up a specific poll channel using the /setup_poll_chann
 Once a poll has ended, the buttons are removed from each message and the final results are displayed. 
 '''
 
-class PollingCog(commands.Cog, TCMixin):
+class PollingCog(commands.Cog, TC_Cog_Mixin):
     """For Server Polls"""
     def __init__(self, bot:TCBot):
         self.helptext='''

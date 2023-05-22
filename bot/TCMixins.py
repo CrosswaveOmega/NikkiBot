@@ -4,7 +4,7 @@ import random
 
 
 
-class TCMixin:
+class TC_Cog_Mixin:
     '''A mixin to define an additional function.'''
     def server_profile_field_ext(self, guild:discord.Guild)-> Dict[str, Any]:
         '''returns a dictionary that represents a single discord embed field
@@ -12,6 +12,7 @@ class TCMixin:
         return {}
 
 class CogFieldList:
+    '''This is mixed into the TCBot object'''
     def get_field_list(self, guild:discord.Guild)-> List[Dict[str, Any]]:
         '''returns a list of dictionaries that represents a single discord embed field
         with 3 key/value pairs:  name:str.  value:str.  inline:boolean'''
