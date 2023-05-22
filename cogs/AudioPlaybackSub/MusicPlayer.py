@@ -278,13 +278,16 @@ class MusicPlayer():
             await self.send_message(ctx, "Stop", f"The player has been stopped.",editinter)
 
     async def pause(self,ctx,editinter:discord.Interaction=None):
-        if self.voice.is_playing():
-            self.voice.pause()
-            if not self.override:
-                self.current.pause()
-                self.player_condition="pause"
-                await self.send_message(ctx, "Pause", \
-                f"I have paused {self.current.title}!",editinter)
+        if self.current!=None:
+            if self.voice.is_playing():
+                self.voice.pause()
+                if not self.override:
+                    if self.current:
+                        self.current.pause()
+                    self.player_condition="pause"
+                    await self.send_message(ctx, "Pause", \
+                    f"I have paused {self.current.title}!",editinter)
+            else: await self.send_message(ctx, "Not playing", "There isn't a song playing right now.",editinter)
         else: await self.send_message(ctx, "Not playing", "There isn't a song playing right now.",editinter)
 
     async def next(self,ctx,editinter,case="notauto"):
