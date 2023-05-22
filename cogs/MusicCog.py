@@ -59,7 +59,6 @@ class MusicPlayers():
     def remove_player(self,guild:discord.Guild):
         key=str(guild.id)
         if key in self.players:
-            self.players[key].grat.active=False
             ret=self.players.pop(key)
             return ret
             

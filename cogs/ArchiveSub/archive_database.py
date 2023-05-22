@@ -47,20 +47,17 @@ class ChannelSep(ArchiveBase):
     @staticmethod
     def add_channel_sep_if_needed(message,chansepid):
         session: Session = DatabaseSingleton.get_session()
-
         # Check if a ChannelSep with the same server_id and channel_sep_id already exists
         existing_channel_sep = session.query(ChannelSep).filter_by(
             server_id=message.server_id,
-            channel_sep_id=chansepid
-        ).first()
-
+            channel_sep_id=chansepid).first()
         if existing_channel_sep:
             return existing_channel_sep
-
         channel_sep= ChannelSep.derive_from_archived_rp_message(message)
         session.add(channel_sep)
         session.commit()
         return channel_sep
+
     @staticmethod
     def derive_from_archived_rp_message(message):
         # Create a new ChannelSep entry based on the ArchivedRPMessage

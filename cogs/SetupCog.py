@@ -1,3 +1,4 @@
+from typing import List
 import discord
 import operator
 import io
@@ -19,6 +20,10 @@ from discord.app_commands import Choice
 from pathlib import Path
 from utility import serverAdmin, serverOwner, load_manual, MessageTemplates
 from utility.embed_paginator import pages_of_embeds
+
+
+from discord.app_commands import AppCommand
+
 ''''''
 
 
@@ -60,6 +65,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         self.bot:TCBot=bot
         self.bot.add_act("WatchExample"," This space for rent.",discord.ActivityType.watching)
         self.bot.add_act("WatchExample2"," My prefix is '>'.",discord.ActivityType.watching)
+        self.bot.add_act("WatchExample2"," My prefix is '>'.",discord.ActivityType.watching)
 
 
     nikkisetup = app_commands.Group(name="nikkisetup", description="Some general commands for helping with setting up your server.")
@@ -70,7 +76,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         await bot.tree.sync(guild=guild)
         if guild.system_channel!=None:
             await guild.system_channel.send("Hi, thanks for inviting me to your server!  I hope to be of use!\n"+ \
-                "Please understand that some of my features may require additional permissions.  "+
+                "Please understand that some of my features may require additional permissions.  \n"+
                 "I'll try to let you know which ones are needed and when.")
 
     @nikkisetup.command(name="info", description="learn how to set me up!")
@@ -98,7 +104,23 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         await ctx.send("Syncing...")
         await ctx.bot.all_guild_startup(True)
         await ctx.send("DONE.")
-    
+    @commands.hybrid_command(name='getapps',description="get all my app commands.")
+    async def get_apps(self,ctx):
+        # Get the bot member object for this guild or the passed in guild_id
+        if not ctx.guild:
+            await ctx.send("This command is a guild only command.")
+        my_tree:discord.app_commands.CommandTree=ctx.bot.tree
+        mycommsfor:List[discord.AppCommand]=await my_tree.fetch_commands(discord.Object(ctx.guild.id))
+        embed_list=[]
+        for appcommand in mycommsfor:
+            embed=discord.Embed(title=appcommand.name,description=appcommand.description)
+            guild_perms=appcommand.fetch
+
+
+
+        
+
+
     @commands.hybrid_command(name='perm_check',description="check the bot permissions for this server or another.")
     async def permission_check(self,ctx, guild_id:int=0):
         # Get the bot member object for this guild or the passed in guild_id

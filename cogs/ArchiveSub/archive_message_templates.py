@@ -9,8 +9,6 @@ upper_ignore_limit=50
 from database import ServerArchiveProfile
 
 class ArchiveMessageTemplate(MessageTemplates):
-
-
     @staticmethod
     def get_server_archive_embed(guild:Guild, description: str, color=0xffffff):
         '''create a server archive embed.'''

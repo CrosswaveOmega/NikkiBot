@@ -151,7 +151,9 @@ class AudioContainer():
         "remaining":seconds_to_time_string(self.duration-self.seekerspot),"requested_by":self.requested_by}
         return v
 
-
+def url_basename(url):
+    path = urllib.parse.urlparse(url).path
+    return path.strip('/').split('/')[-1]
 
 async def special_playlist_download(bot, ctx, ie_result):
     ##This was included because downloading from the playlist blocked.
@@ -208,7 +210,7 @@ async def special_playlist_download(bot, ctx, ie_result):
                 'playlist_index': i + playliststart,
                 'extractor': ie_result['extractor'],
                 'webpage_url': ie_result['webpage_url'],
-                'webpage_url_basename': MessageTemplates.url_basename(ie_result['webpage_url']),
+                'webpage_url_basename': url_basename(ie_result['webpage_url']),
                 'extractor_key': ie_result['extractor_key'],
             }
 

@@ -68,6 +68,7 @@ class General(commands.Cog, TC_Cog_Mixin):
         desc=f"Members: {member_count}\n Channels: {channel_count}\n{view}\n{view2}"
         
         emb=await MessageTemplates.server_profile_message(ctx, description=desc,ephemeral=True )
+        
 
 
 
