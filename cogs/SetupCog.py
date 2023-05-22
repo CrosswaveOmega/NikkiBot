@@ -110,7 +110,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         if not ctx.guild:
             await ctx.send("This command is a guild only command.")
         my_tree:discord.app_commands.CommandTree=ctx.bot.tree
-        mycommsfor:List[discord.AppCommand]=await my_tree.fetch_commands(discord.Object(ctx.guild.id))
+        mycommsfor:List[discord.AppCommand]=await my_tree.fetch_commands(guild=discord.Object(ctx.guild.id))
         embed_list=[]
         for appcommand in mycommsfor:
             embed=discord.Embed(title=appcommand.name,description=appcommand.description)
