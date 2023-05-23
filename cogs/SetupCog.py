@@ -55,7 +55,6 @@ class SelectView(discord.ui.View):
         self.add_item(HelpSelect(myhelp))
 
 
-
 class SetupCommands(app_commands.Group):
     pass
 class Setup(commands.Cog, TC_Cog_Mixin):
@@ -66,7 +65,6 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         self.bot.add_act("WatchExample"," This space for rent.",discord.ActivityType.watching)
         self.bot.add_act("WatchExample2"," My prefix is '>'.",discord.ActivityType.watching)
         self.bot.add_act("listen"," webcore music.",discord.ActivityType.listening)
-
 
     nikkisetup = app_commands.Group(name="nikkisetup", description="Some general commands for helping with setting up your server.")
     @commands.Cog.listener()

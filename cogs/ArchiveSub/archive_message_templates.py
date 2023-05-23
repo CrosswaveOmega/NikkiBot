@@ -37,5 +37,5 @@ class ArchiveMessageTemplate(MessageTemplates):
     @staticmethod
     async def server_archive_message(ctx:commands.Context, description: str, **kwargs):
         hex=await get_server_icon_color(ctx.guild)
-        embed=MessageTemplates.get_server_archive_embed(ctx.guild, description, color=hex)
+        embed=ArchiveMessageTemplate.get_server_archive_embed(ctx.guild, description, color=hex)
         await ctx.send(embed=embed,**kwargs)
