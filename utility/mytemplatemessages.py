@@ -29,11 +29,12 @@ class MessageTemplates:
         if not 'title' in dictionary: dictionary['title']="No title"
         if not 'description' in dictionary: dictionary['description']="N/A"
         embed=Embed(title=dictionary['title'], description=dictionary["description"], color=Color(color))
-        for i in dictionary['fields']:
-            if 'inline' not in i:
-                embed.add_field(**i, inline=False)
-            else:
-                embed.add_field(**i)
+        if 'fields' in dictionary:
+            for i in dictionary['fields']:
+                if 'inline' not in i:
+                    embed.add_field(**i, inline=False)
+                else:
+                    embed.add_field(**i)
         if 'image' in dictionary:
             embed.set_image(url=dictionary['image']['url'])
         embed.set_footer(text=f"{AssetLookup.get_asset('name')}'s Manual",icon_url=AssetLookup.get_asset('embed_icon'))
