@@ -77,7 +77,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
                 "Please understand that some of my features may require additional permissions.  \n"+
                 "I'll try to let you know which ones are needed and when.")
 
-    @nikkisetup.command(name="info", description="learn how to set me up!")
+    @nikkisetup.command(name="app_permmission_info", description="learn how to set up my app commands!")
     async def info(self, interaction: discord.Interaction) -> None:
         """get bot info for this server"""
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -102,6 +102,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         await ctx.send("Syncing...")
         await ctx.bot.all_guild_startup(True)
         await ctx.send("DONE.")
+
     @commands.hybrid_command(name='getapps',description="get all my app commands for this server, and check if you set any specific permissions.")
     async def get_apps(self,ctx):
         if not ctx.guild:

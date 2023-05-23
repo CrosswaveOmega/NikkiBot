@@ -37,6 +37,7 @@ def load_json_with_substitutions(directory:str, filename:str, substitutions:dict
 
 
 def load_manual(file:str,ctx:commands.Context):
-    subs={"$BOTID$":str(ctx.bot.user.id)}
+    bot:commands.Bot=ctx.bot
+    subs={"$BOTID$":str(bot.user.id), "$APPNAME$":str(bot.application.name)}
     jsondata=load_json_with_substitutions("./manual",file,subs)
     return jsondata

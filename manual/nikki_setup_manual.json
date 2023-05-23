@@ -1,15 +1,69 @@
 {
-    "embeds": [
-      {
-        "title": "Coming soon!",
-        "description": "This isn't needed right now!",
-        "color": null,
-        "fields": [
-          {
-            "name": "Eventually...",
-            "value": "this guide will be on how to setup my features based on how you want."
-          }
-        ]
+  "embeds": [
+    {
+      "title": "Applying Application Command Permission Overrides.",
+      "description": "No, I'm not talking about the permissions *I* have, this is about the access everyone in your server has to each of my app commands(or as Discord sometimes calls them, slash commands.  It's like how they call servers 'guilds' behind the scenes.)\n\n  Unfortunately, there is no way for me to set these permissions.  At most, I can tell you what permission overrides you set for my commands in your server. \n ",
+      "color": null,
+      "fields": [
+        {
+          "name": "Why should you care?",
+          "value": "Whenever you enter a slash command for any bot, Discord will always display all of a server's added slash commands above the message bar.  \n\n**These are all of the commands that Discord itself thinks that a user can invoke.**  However, some of these slash commands are only supposed to be for server admins/moderators.  While it's easy for me to deny usage of these commands from unruly server members on my end, it would save everybody time (and me an API call) if these commands where restricted to specific users/roles on Discord's side.  When a app/slash command is restricted from a user, Discord won't show it in this list!"
+        }
+        ,{
+          "name": "Where do I even go?",
+          "value": "To my **Integration page!**\n1. Go to Server Settings.\n2. Under the \"Apps\" category, click on Integrations.\n3. Click the $APPNAME$ entry under **\"Bots and Apps.\"**\n\nNow you're on my integration page!"
+        }
+      ]
+    },
+    {
+      "title": "Command-Level Overrides vs App-Level Overrides",
+      "description": "This integration page lets you explicitly allow or deny my features to anyone (or anywhere) in your server.  This is typically called a **Permission Override**.  However, there are two groups of permission overrides that you can set in your server, and they can be confusing if you're new to Discord App Integrations.\n## Pay attention to this, if you mess up here then I may be restricted from doing anything in your server!",
+      "color": null,
+      "fields": [
+        {
+          "name": "App-Level Overrides",
+          "value": "App-Level Overrides are for allowing/denying access to ALL of my slash commands.  This is the first box in the attached image.  *You should not need to touch this area when configuring my my app commands.*"
+        },
+        {
+          "name": "Command-Level Overrides",
+          "value": "Command-Level Overrides are for allowing/denying access to specific slash commands.  This is the second box in the attached image.  This is the area that you should be modifying."
+        }
+      ],
+      "image": {
+        "url": "https://cdn.discordapp.com/attachments/1068179078357721138/1110608222320087111/example.png"
       }
-    ]
-  }
+    },
+    {
+      "title": "Configuring Permission Overrides.",
+      "description": "When you click on any command in the \"Commands\" box, you will be shown a window that will let you add up to 100 different **Command-Level Overrides** for that app/slash command.\n\n(This will also work with **App-Level Overrides.**",
+      "color": null,
+      "fields": [
+        {
+          "name": "User and Role Overrides",
+          "value": "- To explicitly  `✔️allow` a command for a user or role, click on \"Add Roles or Members\", and select the user or role.  Then click on the  `✔️`  button to `✔️allow`.  In the example below, SomeRole is set to `✔️allow.`\n- To explicitly `❌deny` a command for a user or role, click on \"Add Roles or Members\", and select the user or role.  Then click the `❌` button to `❌deny` that command to that role.  In the example, `@ everyone` is set to `❌deny.`\n - This includes the the `@ everyone` role.  To restrict a command to a few roles only, you have to ensure that the override for the `@ everyone` role is set to `❌deny.` and the roles you want to use the command to `✔️allow.`  \n  - In the example below, the overrides will ensure that only users with SomeRole can use the `/archive_setup` command."
+        },
+        {
+          "name": "Channel Overrides",
+          "value": "You can also restrict usage of a command to a select few channels only.  Add channels with the \"Add Roles or Members\" button and then set each channel to `✔️allow` or `❌deny` as you would for specific roles.\nPlease note, however, that Channel Overrides will only `❌deny` usage of a command if set.  **If `✔️allow`  is set, the Role and Member overrides will still be in effect.**"
+        }
+      ],
+      "image": {
+        "url": "https://cdn.discordapp.com/attachments/1068179078357721138/1110615052836413460/image.png"
+      }
+    },
+    {
+      "title": "The Permission Override Flow Chart.",
+      "description": "Last February, Discord modified the way it handles app command permissions.  You would not believe it, but it was for the better, since now it does not force me to specify permissions for each server every single time, I sync commands.\nIt also changed the way it handles permission overrides, and they provided a handy flow chart below, but as a SVG and not an image.  I will provide it below and attempt to explain it to you to the best of my ability.\n\n1. **Channel permissions overrides are evaluated.**\n  1. Command-Level Channel Overrides are checked.  If a command is explicitly allowed, continue to the check the user/role override checks.  If a command is explicitly denied for a channel, then that command is denied.\n  2. If there is no Command-Level Channel Override, App-Level Channel Overrides are checked if they exist.  If the app is explicitly allowed for that channel, then continue to the user/role overrides.  If the app is specifically denied, then continue to user/role checks.\n\n2. **User/Role permission overrides are evaluated.**\n  1. Command-Level overrides.\n    1. Check if there is a Command-Level override for a user.  If there is, then the command is allowed or denied based on that override.  If not, check the user's roles.\n    2. Check if any one of a user's roles has a Command-Level override set.  If any of the roles do have an override that is set to allow, then the command is allowed.  Otherwise, if all of the user's roles have a override set to deny, then the command is denied.\n    3. If there's a Command-Level override for the `@ everyone` role, then allow or deny command based on the override.\n 2. IF THERE ARE NO COMMAND-LEVEL Overrides, repeat the above for the App-Level User/Role overrides.  However, if the override is set to allow, then move on to default_member_permissions.  Denies will simply deny the command.\n\n3. **Default Member Permissions.** (The only thing I can actually update)\n  1. if the default member permissions for the command in question is null, the command is allowed.\n     1. if default Member Permissions value is 0, however, the command is denied.\n      2. If the user has all of the server permissions specified by the default member permissions value, then the command is allowed.  If not, then the command is denied.",
+      "color": null,
+      "image": {
+        "url": "https://cdn.discordapp.com/attachments/1068179078357721138/1110624241101058168/TheFlowChart.png"
+      }
+    }
+    ,
+    {
+      "title": "Why Nikki can not do this herself.",
+      "description": "Because simply put, it's not possible with my application scopes!  \n  Okay I'll explain.\n  When you added me to your server, you had to go through this whole 'An External Application $APPNAME$ wants to access your discord account' authorization process.  You might ask yourself why I would need to access your account just to be added to a server, and the simple answer is that adding bots uses the same authorization system as many auxillary applications that use your discord account for pretty much anything, including joining you to group DMS, joining VCs for you, reading your friends list, and even getting information about your dms and group dms!  \n\n Before you panic, I'd like to clarify that the more invasive/controlling scopes require direct approval by Discord's team on an app per app basis. \n\nAnyhow, these scopes are basically super permissions, and I can only use the `bot` and `application.commands` scopes.\n These scopes only permit me to be added to a server as a bot user, and the other lets me use app commands in a server.\n\nIn order to directly update this guild's Command Permissions, I need the `applications.commands.permissions.update` scope.  However, that scope will basically only let me update Command Permissions *on the behalf of a specific server administrator, and the proof has to be on the account level, not the server level.*\n \n It just adds another level of nightmare security that I don't want to set up. That's, unfortunately, why you have to do set command permission overrides yourself.  I can only alter the default member permissions on my own, and that's for every single server I'm in.",
+      "color": null
+    }
+  ]
+}

@@ -34,6 +34,8 @@ class MessageTemplates:
                 embed.add_field(**i, inline=False)
             else:
                 embed.add_field(**i)
+        if 'image' in dictionary:
+            embed.set_image(url=dictionary['image']['url'])
         embed.set_footer(text=f"{AssetLookup.get_asset('name')}'s Manual",icon_url=AssetLookup.get_asset('embed_icon'))
         return embed
 
