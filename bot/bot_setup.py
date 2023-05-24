@@ -26,7 +26,7 @@ from subprocess import Popen
 from collections import defaultdict
 from dateutil.rrule import rrule,rrulestr, WEEKLY, SU
 from .TauCetiBot import TCBot
-from .TCTasks import TCTask, TCTaskManager
+from .Tasks.TCTasks import TCTask, TCTaskManager
 from .TcGuildTaskDB import TCGuildTask
 """
 Initalizes TCBot, and defines some checks

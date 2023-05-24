@@ -1,25 +1,23 @@
 import asyncio
-from datetime import datetime, timedelta
-from typing import Optional, Type
-from dateutil.relativedelta import *
+from datetime import datetime
+from typing import Dict, Optional, Type
+
 from dateutil.parser import parse
 from dateutil.rrule import *
 from dateutil import tz
 
-from dateutil.relativedelta import relativedelta, MO, TU, WE, TH, FR, SA, SU
-from discord.ext import tasks
-from utility import relativedelta_sp
+import discord
 from dateutil.rrule import rrule,rrulestr, WEEKLY, SU
 class TCTask:
     """
     A special task object for running coroutines at specific timedelta intervals,
      managed within the TCTaskManager singleton.  This was made because I felt 
-     discord.tasks did not provide the control I needed.
+     discord.tasks did not provide the needed logic.
 
     Args:
         name (str): The unique name of the task. Used to identify the task.
         time_interval (rrule): A dateutil.rrule for determining the next time to run the task.
-        id (int): The unique ID of the task.
+        id (int): The unique ID of the task.  deprecated.
         next_run (Datetime): Next date and time to run the task.
         parent_db (Type[object]): Reference to a parent Database that the name is stored within.
         run_number (int or None): The maximum number of times the task should run, or None if unlimited.
@@ -77,6 +75,7 @@ class TCTask:
             time_until = self.to_run_next - datetime.now()
             print(f"{self.name} not ready. Next run in {time_until}")
             return False
+
     def time_left(self):
         '''Check if the TCTask can be launched.'''
         if self.is_running: return f"{self.name} is running."
@@ -86,6 +85,7 @@ class TCTask:
         next_formatted_datetime=ctr.strftime("%b-%d-%Y %H:%M")
         return f"{self.name} will run next on {formatted_datetime}, in {time_until}.  If right now, then {next_formatted_datetime}"
     def assign_wrapper(self,func):
+        '''create the asyncronous wrapper with the passed in func.  '''
         self.funct = func  # Add the coroutine function to the TCTask object
         async def wrapper(*args, **kwargs):
             """
@@ -99,9 +99,6 @@ class TCTask:
             Args:
                 *args: Positional arguments to pass to the coroutine function.
                 **kwargs: Keyword arguments to pass to the coroutine function.
-
-            Returns:
-                None.
             """
             # Check if it's time to run the function
             if datetime.now() >= self.to_run_next:
@@ -119,10 +116,10 @@ class TCTask:
                         print("To be removed.")
                         remove_check=True
                 if self.parent_db:
-                    s,t=self.name.split("_")
                     try:
-                        self.parent_db.update(int(s),t,self.to_run_next)
-                    except:
+                        self.parent_db.parent_callback(self.name,self.to_run_next)
+                    except Exception as e:
+                        print(e)
                         remove_check=True
                 if remove_check:
                     TCTaskManager.add_tombstone(self.name)
@@ -133,7 +130,8 @@ class TCTask:
                 print(f"{self.name} not ready. Next run in {time_until}")
         self.wrapper=wrapper
         return wrapper
-    def __call__(self, func):
+
+    def __call__(self):
         """
         Decorator for wrapping a coroutine function with the TCTask scheduling logic.
 
@@ -143,7 +141,8 @@ class TCTask:
         Returns:
             The wrapped coroutine function.
         """
-        return self.assign_wrapper(func)
+        
+        return self.wrapper()
 
     def next_run(self):
         """
@@ -156,21 +155,14 @@ class TCTask:
         next_occurrence = self.time_interval.after(datetime.now().replace(second=0, microsecond=0))
         return next_occurrence
 
-        to_run_next = datetime.now().replace(second=0, microsecond=0) + self.time_interval
-        dc=0
-        while to_run_next<datetime.now():
-            dc+=1
-            to_run_next=(datetime.now().replace(second=0, microsecond=0)+ relativedelta(weeks=dc))+self.time_interval
-            print(datetime.now(),self.to_run_next)
-        return to_run_next
-
 
 class TCTaskManager:
     """
-    A singleton class that manages TCTask objects.
+    Manager class for every TCTask object.
 
     Attributes:
-        tasks (list): A list of all TCTask objects managed by the manager.
+        tasks (dict): A dictionary of all TCTask objects managed by the manager.
+        to_delete(list): a list of TCTask object to delete, since.
     """
     _instance = None
 
@@ -181,7 +173,7 @@ class TCTaskManager:
         return cls._instance
 
     def __init__(self):
-        self.tasks = []
+        self.tasks: Dict[str, TCTask] ={}
         self.to_delete=[]
 
     @classmethod
@@ -195,9 +187,8 @@ class TCTaskManager:
             True if a task is already there, False if no matching task was found.
         """
         manager = cls.get_instance()
-        for task in manager.tasks:
-            if task.name == name:
-                return True
+        if name in manager.tasks:
+            return True
         return False    
     @classmethod
     def change_task_time(cls, name,datetime):
@@ -210,10 +201,9 @@ class TCTaskManager:
             True if a task is already there, False if no matching task was found.
         """
         manager = cls.get_instance()
-        for task in manager.tasks:
-            if task.name == name:
-                task.to_run_next=datetime
-                return True
+        if name in manager.tasks:
+            manager.tasks[name].to_run_next=datetime
+            return True
         return False
 
     @classmethod
@@ -227,7 +217,7 @@ class TCTaskManager:
         """
         print(f"added task {task.name}")
         manager = cls.get_instance()
-        manager.tasks.append(task)
+        manager.tasks[task.name]=(task)
 
     @classmethod
     def remove_task(cls, name):
@@ -240,11 +230,10 @@ class TCTaskManager:
             True if a task was removed, False if no matching task was found.
         """
         manager = cls.get_instance()
-        for task in manager.tasks:
-            if task.name == name:
-                print(f"removing task {task.name}")
-                manager.tasks.remove(task)
-                return True
+        if name in manager.tasks:
+            print(f"removing task {name}")
+            manager.tasks.pop(name)
+            return True
         return False
 
     @classmethod
@@ -265,7 +254,7 @@ class TCTaskManager:
         # Check each task to see if it's time to run
         manager = TCTaskManager.get_instance()
         task_string_list=[]
-        for task in manager.tasks:
+        for key, task in manager.tasks.items():
             task_string_list.append(task.time_left())
         return task_string_list
 
@@ -275,7 +264,7 @@ class TCTaskManager:
         running=scheduled=0
         deltas=[]
         output=""
-        for task in manager.tasks:
+        for key, task in manager.tasks.items():
             if task.is_running:
                 running+=1
             else:
@@ -300,14 +289,13 @@ class TCTaskManager:
         """
         # Check each task to see if it's time to run
         manager = TCTaskManager.get_instance()
-
-        for task in manager.tasks:
-            if task.name in manager.to_delete and task.is_running==False:
-                TCTaskManager.remove_task(task.name)
-                    
-                    
+        for name in manager.to_delete:
+            task=manager.tasks[name]
+            if task.is_running==False:  TCTaskManager.remove_task(task.name)
+        manager.to_delete=[]
+        for key, task in manager.tasks.items():
             if task.can_i_run():
-                asyncio.create_task(task.wrapper())
+                asyncio.create_task(task())
 
         # Wait for 1 second before checking again
         await asyncio.sleep(1)

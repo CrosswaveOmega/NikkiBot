@@ -23,7 +23,7 @@ from utility import seconds_to_time_string, seconds_to_time_stamp
 
 from .AudioPlaybackSub import *
 logger=logging.getLogger('discord')
-class MusicPlayers():
+"""class MusicPlayers():
     '''class that stores a dictionary of all active music player, managed per guild.'''
     def __init__(self):
         self.players={}
@@ -34,7 +34,8 @@ class MusicPlayers():
             newplayer=MusicPlayer(bot,guild)
             self.players[key]=newplayer
 
-    def getplayer(self,guild:discord.Guild):
+    def getplayer(self,guild:discord.Guild)->MusicPlayer:
+        '''get a music player object.'''
         key=str(guild.id)
         if key in self.players:
             return self.players[key]
@@ -47,22 +48,22 @@ class MusicPlayers():
             return self.getplayer(interaction_or_guild)
 
     def allplayers(self):
-        """An iterator that walks through all the music players.
+        '''An iterator that walks through all the music players.
         Yields
         ------
         Union[:class:`.MusicPlayer`, :class:`None`]
             A command or group from the cog.
-        """
+        '''
         for gid,play in self.players.items():
             yield play
     
-    def remove_player(self,guild:discord.Guild):
+    def remove_player(self,guild:discord.Guild)->MusicPlayer:
+        '''remove a music player for the passed in discord Guild'''
         key=str(guild.id)
         if key in self.players:
             ret=self.players.pop(key)
             return ret
-            
-        return None
+        return None"""
     
 class MusicCog(commands.Cog,TC_Cog_Mixin):
     def __init__(self, bot:TCBot) -> None:
@@ -71,7 +72,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         self.last_player_message,self.timeoutcountdown=None,discord.utils.utcnow()
         self.song_add_queue, self.songcanadd=Queue(),True
         self.lock = asyncio.Lock()
-        self.musicplayers=MusicPlayers()
+
         self.get_ctx=None
 
         self.helpdesc="""
@@ -121,13 +122,13 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         '''Fire every 1/20th of a second, download the data for a song in the queue,
          and add to the playlist.  Also check if it's time to disconnect and remove a musicplayer.'''
         toremove=[]
-        for i in self.musicplayers.allplayers():
+        for i in MusicManager.all_players():
             await i.countusers()
             await i.songadd()
             removeif=await i.autodisconnect()
             if removeif:
                 toremove.append(i.guild)
-        for i in toremove: self.musicplayers.remove_player(i)
+        for i in toremove: MusicManager.remove_player(i)
 
 
     
@@ -185,10 +186,11 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         
         
         if isinstance(voice, type(None)) or not voice.is_connected():
-            self.musicplayers.add_player(self.bot,guild)
+            #Add a music player
+            MusicManager.add_player(self.bot,guild)
             await interaction.user.voice.channel.connect()
             await MessageTemplatesMusic.music_msg(ctx, "Connected", "I'm connected to **Voice Channel!**")
-            await self.musicplayers.getplayer(guild).setvoiceandctx(interaction)
+            await MusicManager.get(guild).setvoiceandctx(interaction)
         elif interaction.user.voice.channel != ctx.voice_client.channel: await MessageTemplatesMusic.music_msg(ctx, "Connected to another", "I'm connected to another **Voice Channel** already!")
         else: 
             vc_name=voice.channel.name
@@ -211,9 +213,9 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
             await MessageTemplatesMusic.music_msg(ctx, "Connected to another", "I'm connected to another voice channel at the moment...")
         else:
             await MessageTemplatesMusic.music_msg(ctx, "Disconnected", f"I am now disconnected from {vc_name}, bye-bye!")
-            if self.musicplayers.getplayer(guild)!=None:
-                self.musicplayers.getplayer(guild).reset()
-                self.musicplayers.remove_player(guild)
+            if MusicManager.get(guild)!=None:
+                MusicManager.get(guild).reset()
+                MusicManager.remove_player(guild)
             await voice.disconnect()
             
     @mp.command(name="reconnect", description="Nikki disconnects and reconnects from Voice Channel")
@@ -233,7 +235,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
              await MessageTemplatesMusic.music_msg(ctx, "Connected to another", "I'm connected to another voice channel at the moment...")
         else:
             await MessageTemplatesMusic.music_msg(ctx, "Disconnected", f"I am now disconnected from {vc_name}, bye-bye!")
-            self.musicplayers.getplayer(guild).reset()
+            MusicManager.get(guild).reset()
 
             await voice.disconnect()
 
@@ -252,33 +254,33 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         voice = discord.utils.get(self.bot.voice_clients, guild=interaction.guild)
 
         if isinstance(voice, type(None)) or not voice.is_connected():
-            self.musicplayers.add_player(self.bot,guild)
+            MusicManager.add_player(self.bot,guild)
             await interaction.user.voice.channel.connect()
-            await self.musicplayers.getplayer(guild).setvoiceandctx(interaction)
+            await MusicManager.get(guild).setvoiceandctx(interaction)
             await MessageTemplatesMusic.music_msg(ctx, "Connected", f"I'm now connected to {interaction.user.voice.channel.name}!")
             
         elif await self.connection_check(interaction, ctx, 3):
-            #await MessageTemplatesMusic.music_msg(ctx, "Connected to another", "I'm connected to another Voice Channel.")
+            await MessageTemplatesMusic.music_msg(ctx, "Connected to another", "I'm connected to another Voice Channel.")
             return
 
-        if self.musicplayers.getplayer(guild).voice==None or self.musicplayers.getplayer(guild).channel==None:
-            await self.musicplayers.getplayer(guild).setvoiceandctx(interaction)
+        if MusicManager.get(guild).voice==None or MusicManager.get(guild).channel==None:
+            await MusicManager.get(guild).setvoiceandctx(interaction)
         if url:
-            song:AudioContainer=await self.musicplayers.getplayer(guild).playlist_actions("add_url",(url,ctx.author))
+            song:AudioContainer=await MusicManager.get(guild).playlist_actions("add_url",(url,ctx.author))
             if song==None:
-                await self.musicplayers.getplayer(guild).send_message(ctx, 
+                await MusicManager.get(guild).send_message(ctx, 
                 "something went wrong...", 
                 f"OW!  I hit my head trying to get the **{url}** video, are you sure it's a valid URL?")
                 return   
-            if self.musicplayers.getplayer(guild).player_condition!="play":              
-                await self.musicplayers.getplayer(guild).player_actions("play",ctx)
+            if MusicManager.get(guild).player_condition!="play":              
+                await MusicManager.get(guild).player_actions("play",ctx)
             else:
-                length=len(self.musicplayers.getplayer(guild).songs)
-                await self.musicplayers.getplayer(guild).send_message(ctx, "Play", f"There's already something playing, \
+                length=len(MusicManager.get(guild).songs)
+                await MusicManager.get(guild).send_message(ctx, "Play", f"There's already something playing, \
                     so I'll just add {song.link_markdown()} to my playlist at spot{length}.")
         else:
-            if len(self.musicplayers.getplayer(guild).songs)>0:
-                await self.musicplayers.getplayer(guild).player_actions("play",ctx)
+            if len(MusicManager.get(guild).songs)>0:
+                await MusicManager.get(guild).player_actions("play",ctx)
                 #await ctx.send("processed", ephemeral=True)
             else:
                 await ctx.send("There is nothing available I can play.", ephemeral=True)
@@ -292,8 +294,6 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
            Return True if Either of these conditions are satisfied (and the command should not run),
            and False if they are both 
            '''
-        #ctx: commands.Context = await self.bot.get_context(interaction)
-        #
         if (mode==3 or mode==1):
             if isinstance(interaction.user.voice, type(None)) and (mode==3 or mode==1):
                 await MessageTemplatesMusic.music_msg(ctx, "You aren't connected", "You are not connected to any Voice Channel, I can't do anything.")
@@ -303,6 +303,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
                 await MessageTemplatesMusic.music_msg(ctx, "Not connected", "I'm not connected to your **Voice Channel!**")
                 return True
         return False
+
     @mp.command(name="pause", description="Pause current song in Voice Channel")
     async def pause(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -310,18 +311,17 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
         voice = discord.utils.get(self.bot.voice_clients, guild=interaction.guild)
-        await self.musicplayers.getplayer(guild).player_actions("pause",ctx)
+        await MusicManager.get(guild).player_actions("pause",ctx)
 
     async def mycallback(self, interaction: discord.Interaction, action:str):
-        #Callback for player buttons.
+        '''Callback for player buttons.'''
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild:discord.Guild=interaction.guild
-        
         if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
-        await self.musicplayers.getplayer(guild).player_actions(action,editinter=interaction)
+        await MusicManager.get(guild).player_actions(action,editinter=interaction)
         self.timeoutcountdown=discord.utils.utcnow()
-        #await self.send_player(interaction)
+
 
     async def send_player(self, interaction: discord.Interaction):
         if self.last_player_message!=None:
@@ -342,12 +342,12 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         
         if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
-        if not self.musicplayers.getplayer(guild).current:
-            await self.musicplayers.getplayer(guild).send_message(ctx, "No music", "I'm not playing any music right now.")
+        if not MusicManager.get(guild).current:
+            await MusicManager.get(guild).send_message(ctx, "No music", "I'm not playing any music right now.")
             await self.send_player(interaction)
             return
-        data = self.musicplayers.getplayer(guild).current
-        await self.musicplayers.getplayer(guild).send_message(ctx, "Now Playing", f"I am currently playing {data.title}!")
+        data = MusicManager.get(guild).current
+        await MusicManager.get(guild).send_message(ctx, "Now Playing", f"I am currently playing {data.title}!")
         await self.send_player(interaction)
         
 
@@ -359,7 +359,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
 
-        await self.musicplayers.getplayer(guild).player_actions("play",ctx) #Just a stand in for play.
+        await MusicManager.get(guild).player_actions("play",ctx) #Just a stand in for play.
 
     
 
@@ -372,19 +372,19 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
         if action=='none':
-            self.musicplayers.getplayer(guild).repeat = False
-            self.musicplayers.getplayer(guild).repeatone = False
-            await self.musicplayers.getplayer(guild).send_message(ctx, "Repeat", "I've turned **repeat** mode off.")
+            MusicManager.get(guild).repeat = False
+            MusicManager.get(guild).repeatone = False
+            await MusicManager.get(guild).send_message(ctx, "Repeat", "I've turned **repeat** mode off.")
         if action=='all':
-            self.musicplayers.getplayer(guild).repeat = True
-            self.musicplayers.getplayer(guild).repeatone = False
-            await self.musicplayers.getplayer(guild).send_message(ctx, "Repeat", "I've turned **repeat** mode on.")
+            MusicManager.get(guild).repeat = True
+            MusicManager.get(guild).repeatone = False
+            await MusicManager.get(guild).send_message(ctx, "Repeat", "I've turned **repeat** mode on.")
         if action=='one':
-            self.musicplayers.getplayer(guild).repeat = False
-            self.musicplayers.getplayer(guild).repeatone = True
-            await self.musicplayers.getplayer(guild).send_message(ctx, "Repeat", "I've turned **repeat one** mode on.")
-        if self.musicplayers.getplayer(guild).repeat: pass #await self.musicplayers.getplayer(guild).send_message(ctx, "Repeat", "I've turned **repeat** mode on.")
-        else: await self.musicplayers.getplayer(guild).send_message(ctx, "Repeat", "I've turned **repeat** mode off.")
+            MusicManager.get(guild).repeat = False
+            MusicManager.get(guild).repeatone = True
+            await MusicManager.get(guild).send_message(ctx, "Repeat", "I've turned **repeat one** mode on.")
+        if MusicManager.get(guild).repeat: pass #await MusicManager.get(guild).send_message(ctx, "Repeat", "I've turned **repeat** mode on.")
+        else: await MusicManager.get(guild).send_message(ctx, "Repeat", "I've turned **repeat** mode off.")
 
     @mp.command(name="next", description="Play next song from Playlist")
     async def next(self, interaction: discord.Interaction):
@@ -393,7 +393,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         
         if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
-        await self.musicplayers.getplayer(guild).player_actions("next",ctx)
+        await MusicManager.get(guild).player_actions("next",ctx)
 
     @mp.command(name="back", description="Play last song.")
     async def back(self, interaction: discord.Interaction):
@@ -402,20 +402,20 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         
         if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
-        await self.musicplayers.getplayer(guild).player_actions("back",ctx)
+        await MusicManager.get(guild).player_actions("back",ctx)
     
     
     
     def make_playlist_embeds(self, interaction):
         """MAKE EMBED LIST BASED ON ALL SONGS IN QUEUE"""
         guild:discord.Guild=interaction.guild
-        if self.musicplayers.getplayer(guild).songs:
+        if MusicManager.get(guild).songs:
             duration=0.0
-            processing=self.musicplayers.getplayer(guild).processsize #Check size of songs still getting the data from.
+            processing=MusicManager.get(guild).processsize #Check size of songs still getting the data from.
             pstr=""
             if processing>0:
                 pstr=f"{processing}"
-            for song in self.musicplayers.getplayer(guild).songs:  duration+=song.duration
+            for song in MusicManager.get(guild).songs:  duration+=song.duration
             embeds=[]
             def resetdata(current=None):
                 if current==None: return (0,[])
@@ -429,7 +429,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
                 off, titles=current
                 playlist = ''.join(f'**{idv}:** [{song.title}]({song.url})-{song.duration}\n' for idv, song in titles)
                 print(playlist)
-                emb=self.musicplayers.getplayer(guild).get_music_embed("pl",f"**Playlist**\n{playlist}")
+                emb=MusicManager.get(guild).get_music_embed("pl",f"**Playlist**\n{playlist}")
                 if pstr: emb.add_field(name="Still Processing",value=f"I'm still processing {pstr} songs!")
                 emb.set_footer(text=f"{seconds_to_time_string(duration)}")
                 return emb
@@ -440,7 +440,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
                 off=off+1
                 return (off,titles)
             
-            embeds=speciallistsplitter(self.musicplayers.getplayer(guild).songs,resetdata,splitcond,transform,addtransform)
+            embeds=speciallistsplitter(MusicManager.get(guild).songs,resetdata,splitcond,transform,addtransform)
             return embeds
     
     
@@ -453,13 +453,13 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
 
-        if self.musicplayers.getplayer(guild).songs:
-            pagecall=PlaylistPageContainer(interaction, self) #Page container for playlist
+        if MusicManager.get(guild).songs:
+            pagecall=PlaylistPageContainer(interaction, self, MusicManager.get(guild)) #Page container for playlist
             buttons=PlaylistButtons(callback=pagecall) #buttons for playlist
             last_set=await ctx.send(embed=pagecall.make_embed(),view=buttons)
 
         else: await MessageTemplatesMusic.music_msg(ctx, "Empty Playlist", 
-        f"My **playlist** is currently empty, and I'm processing {self.musicplayers.getplayer(guild).processsize} songs.")
+        f"My **playlist** is currently empty, and I'm processing {MusicManager.get(guild).processsize} songs.")
 
     
     @mp.command(name="playlistadd", description="Add a song or playlist to Playlist")
@@ -476,7 +476,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
             if result_type in ('playlist', 'multi_video'):
                 await self.playlistcopy(ctx,url,ie)
             else:
-                opres=await self.musicplayers.getplayer(guild).player_actions("add_url",(url,ctx.author))
+                opres=await MusicManager.get(guild).player_actions("add_url",(url,ctx.author))
                 if opres==None:
                     await MessageTemplatesMusic.music_msg(ctx, "something went wrong...", f"I couldn't find the **{url}** video... are you sure it's a valid url?")
                     return
@@ -534,11 +534,11 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
                 for i, item in enumerate(urls):
                     url=item
                     song=AudioContainer(url,thisMessage.author.name)
-                    self.musicplayers.getplayer(ctx.guild).song_add_queue.put(song)
-                    self.musicplayers.getplayer(ctx.guild).processsize+=1
+                    MusicManager.get(ctx.guild).song_add_queue.put(song)
+                    MusicManager.get(ctx.guild).processsize+=1
                     total+=1  
         stat.delete()  
-        await self.musicplayers.getplayer(ctx.guild).send_message(ctx, "Playlist", f"I added all {total} tracks to my processing queue! \
+        await MusicManager.get(ctx.guild).send_message(ctx, "Playlist", f"I added all {total} tracks to my processing queue! \
             They'll be added to the playlist once I finish downloading the data.")
 
 
@@ -576,11 +576,11 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
                 for i, item in enumerate(video):
                     url="https://youtu.be/"+item['id']
                     song=AudioContainer(url,ctx.author.name)
-                    self.musicplayers.getplayer(ctx.guild).song_add_queue.put(song)
-                    self.musicplayers.getplayer(ctx.guild).processsize+=1
+                    MusicManager.get(ctx.guild).song_add_queue.put(song)
+                    MusicManager.get(ctx.guild).processsize+=1
                     total+=1                   
                 stat.delete()
-        await self.musicplayers.getplayer(ctx.guild).send_message(ctx, "Playlist", f"I added all {total} tracks to my processing queue! \
+        await MusicManager.get(ctx.guild).send_message(ctx, "Playlist", f"I added all {total} tracks to my processing queue! \
              They'll be added to the playlist once I finish downloading the data.")
 
         #self.songs.append(song)
@@ -599,7 +599,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
 
-        result=await self.musicplayers.getplayer(guild).playlist_actions("jumpto",spot)
+        result=await MusicManager.get(guild).playlist_actions("jumpto",spot)
         
         if result=="ERR!&outofrange&ERR!":
             await MessageTemplatesMusic.music_msg(ctx, "something went wrong...", f"The provided spot is out of range of my playlist!")
@@ -616,7 +616,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
 
-        result=await self.musicplayers.getplayer(guild).playlist_actions("removespot",spot)
+        result=await MusicManager.get(guild).playlist_actions("removespot",spot)
         
         if result=="ERR!&outofrange&ERR!":
             await MessageTemplatesMusic.music_msg(ctx, "something went wrong...", f"The provided spot is out of range of my playlist!")
@@ -632,7 +632,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
 
-        res=await self.musicplayers.getplayer(guild).playlist_actions("clear")
+        res=await MusicManager.get(guild).playlist_actions("clear")
         if res=='done':
             await MessageTemplatesMusic.music_msg(ctx, "Clear Playlist", "I cleared out my playlist.")
         else: await MessageTemplatesMusic.music_msg(ctx, "Empty Playlist", "My playlist is already empty.")
@@ -645,7 +645,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         
         if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
-        res=await self.musicplayers.getplayer(guild).playlist_actions("shuffle")
+        res=await MusicManager.get(guild).playlist_actions("shuffle")
         if res=="done":
             await MessageTemplatesMusic.music_msg(ctx, "Shuffle", "I've shuffled my playlist!")
         else: await MessageTemplatesMusic.music_msg(ctx, "?",f"{res}")
@@ -684,7 +684,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
         
-        songs=self.musicplayers.getplayer(guild).songs;
+        songs=MusicManager.get(guild).songs;
         list=[]
         for s in songs:
             i=s.to_dict()
@@ -716,8 +716,8 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
             title,url=i["title"],i["url"]
             #print(f"title:{title},url:{url}")
             song=AudioContainer(url,author.name)
-            self.musicplayers.getplayer(guild).song_add_queue.put(song)
-            self.musicplayers.getplayer(guild).processsize+=1
+            MusicManager.get(guild).song_add_queue.put(song)
+            MusicManager.get(guild).processsize+=1
         await MessageTemplatesMusic.music_msg(ctx, "Playlist", f"Loaded size {len(playlist)} playlist `{playlistname}` into processing queue.  Please wait.")'''
 
 async def setup(bot: commands.Bot) -> None:

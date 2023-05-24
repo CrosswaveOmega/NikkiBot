@@ -12,7 +12,7 @@ import datetime
 import random
 import string
 from database import *
-from .TCTasks import TCTaskManager
+from .Tasks.TCTasks import TCTaskManager
 from sqlalchemy.exc import IntegrityError
 from utility import Chelp, urltomessage, MessageTemplates
 from .TcGuildTaskDB import Guild_Task_Base, Guild_Task_Functions, TCGuildTask
@@ -416,7 +416,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
         
     @tasks.loop(seconds=20.0)
     async def check_tc_tasks(self):
-        '''run all TcTaskManager Tasks, fires every minute.'''
+        '''run all TcTaskManager Tasks, fires every 20 seconds..'''
         await TCTaskManager.run_tasks()
         stat=TCTaskManager.get_task_status()
         self.add_act("taskstatus",stat)

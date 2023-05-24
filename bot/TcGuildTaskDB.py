@@ -3,21 +3,19 @@ from sqlalchemy import PrimaryKeyConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from datetime import datetime
-from dateutil.relativedelta import relativedelta
-from utility import urltomessage, relativedelta_sp
-from typing import Tuple
-import json
+from typing import Optional, Tuple
+
+
 import asyncio
 import discord
 from dateutil.rrule import rrule,rrulestr, WEEKLY, SU
 Guild_Task_Base = declarative_base()
 from database import DatabaseSingleton
-from .TCTasks import TCTask, TCTaskManager
+from .Tasks.TCTasks import TCTask, TCTaskManager
 
 class Guild_Task_Functions:
     '''This class is a fancy dictionary that stores coroutines.'''
     _instance = None
-    
 
     @classmethod
     def get_instance(cls):
@@ -87,7 +85,7 @@ class Guild_Task_Functions:
 
 
 class TCGuildTask(Guild_Task_Base):
-    '''table to store data for Automatic guild tasks.'''
+    '''SQLAlchemy Table that stores data for Guild Tasks.'''
     __tablename__ = 'tcguild_task'
     server_id = Column(Integer, nullable=False)
     task_name = Column(String, nullable=False)
@@ -101,7 +99,7 @@ class TCGuildTask(Guild_Task_Base):
         PrimaryKeyConstraint('server_id', 'task_name'),
     )
 
-    def __init__(self, server_id, task_name, target_message, relativedelta_obj:rrule):
+    def __init__(self, server_id:int, task_name:str, target_message:discord.Message, relativedelta_obj:rrule):
         self.server_id = server_id
         self.task_name = task_name
         self.target_message_url=target_message.jump_url
@@ -110,7 +108,7 @@ class TCGuildTask(Guild_Task_Base):
         self.relativedelta_serialized = self.serialize_relativedelta(relativedelta_obj)
         
     @staticmethod
-    def add_guild_task(server_id,task_name,target_message,rdelta):
+    def add_guild_task(server_id:int,task_name:str,target_message:discord.Message,rdelta:rrule):
         '''add a new TCGuildTask entry, using the server_id and task_name.'''
         '''server_id is the guild id, task_name is the name of the task.'''
         print(server_id,task_name,target_message.jump_url,rdelta)
@@ -124,7 +122,7 @@ class TCGuildTask(Guild_Task_Base):
         return new
     
     @classmethod
-    def remove_guild_task(cls, server_id, task_name=None):
+    def remove_guild_task(cls, server_id:int, task_name:Optional[str]=None):
         """
         Deletes TCGuildTask entries with the specified server_id and task_name,
         or all entries with the specified server_id if no task_name is specified.
@@ -152,13 +150,20 @@ class TCGuildTask(Guild_Task_Base):
     @classmethod
     def get(cls, server_id, task_name):
         """
-        Returns the entire TCGuildTask entry for the specified server_id and task_name, or None if it doesn't exist.
+        Returns the TCGuildTask entry for the specified server_id and task_name, or None if it doesn't exist.
         """
         session:Session = DatabaseSingleton.get_session()
         result = session.query(TCGuildTask).filter_by(server_id=server_id,task_name=task_name).first()
-        if result:            return result
-        else:            return None
-        
+        if result: return result
+        else:      return None
+    @classmethod
+    def parent_callback(cls, guildtaskname:str, next_run:datetime):
+        """
+        callback for whenever a task is done.
+        """
+        s,t=guildtaskname.split("_")
+        cls.update(int(s),t,next_run)
+
     @classmethod
     def update(cls, server_id, task_name, next_run):
         """
@@ -182,7 +187,7 @@ class TCGuildTask(Guild_Task_Base):
                 self.task_name, source_message=source_message)
         except Exception as e:
             await bot.send_error(e,"AUTO COMMAND ERROR.")
-        await asyncio.sleep(4)
+        await asyncio.sleep(2)
         print("Task done at", datetime.now(),"excution ok.")
 
     def to_task(self,bot):
@@ -198,7 +203,7 @@ class TCGuildTask(Guild_Task_Base):
             raise Exception("Task is already in the manager.")
 
     def change_next_run(self,bot, next_datetime):
-        '''Initalize a TCTask object with name {self.server_id}_{self.task_name}'''
+        '''change the next time the task is going to run'''
         rd = self.deserialize_relativedelta(self.relativedelta_serialized)
         thename=f"{self.server_id}_{self.task_name}"
         print(thename,rd,self.target_message_url)

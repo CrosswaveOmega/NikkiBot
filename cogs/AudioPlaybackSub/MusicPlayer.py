@@ -20,74 +20,14 @@ from .AudioContainer import AudioContainer
 
 '''this code is for the music player, and it's interactions.'''
 
-class PlayerButtons(discord.ui.View):
-    '''buttons for the audio player.'''
-    def __init__(self, *, timeout=180, inter=None, callback=None):
-        super().__init__(timeout=timeout)
-        self.callbacker=callback
-        self.inter=inter
-    @discord.ui.button(emoji='⏹️', label="stop",style=discord.ButtonStyle.blurple) # or .primary
-    async def exit_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.mycallback( self.inter,"stop")
-        await interaction.response.edit_message(content="Stop pressed",view=self)
-    @discord.ui.button(emoji='⏮️',label="back",style=discord.ButtonStyle.blurple) # or .primary
-    async def back_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.mycallback(self.inter,"back")
-        await interaction.response.edit_message(content="back pressed",view=self)
-    @discord.ui.button(emoji='⏸',label="pause",style=discord.ButtonStyle.blurple) # or .primary
-    async def pause_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.mycallback( self.inter,"pause")
-        await interaction.response.edit_message(content="Pause pressed",view=self)
-    @discord.ui.button(emoji='▶️',label="play",style=discord.ButtonStyle.blurple) # or .primary
-    async def play_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.mycallback( self.inter,"play")
-        await interaction.response.edit_message(content="Play pressed",view=self)
-    @discord.ui.button(emoji='⏭️',label="skip",style=discord.ButtonStyle.blurple) # or .primary
-    async def next_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.mycallback(self.inter,"next")
-        await interaction.response.edit_message(content="Next pressed",view=self)
-
-
-class PlaylistButtons(discord.ui.View):
-    '''buttons for the playlist operation.'''
-    def __init__(self, *, timeout=180, callback=None):
-        super().__init__(timeout=timeout)
-        self.callbacker=callback
-    @discord.ui.button(emoji='*️⃣', label="exit",style=discord.ButtonStyle.blurple) # or .primary
-    async def exit_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.playlistcallback(interaction,self,"exit")
-    
-    @discord.ui.button(emoji='↩️',label="first",style=discord.ButtonStyle.blurple) # or .primary
-    async def first_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.playlistcallback(interaction,self,"first")
-    
-    @discord.ui.button(emoji='⬅️',label="back",style=discord.ButtonStyle.blurple) # or .primary
-    async def back_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.playlistcallback(interaction,self,"back")
-    
-    @discord.ui.button(emoji='➡️',label="next",style=discord.ButtonStyle.blurple) # or .primary
-    async def next_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.playlistcallback(interaction,self,"next")
-    
-    @discord.ui.button(emoji='↪️',label="final",style=discord.ButtonStyle.blurple) # or .primary
-    async def last_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.playlistcallback(interaction,self,"last")
-    
-    @discord.ui.button(emoji='🔀',label="shuffle",style=discord.ButtonStyle.blurple) # or .primary
-    async def shuffle_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.playlistcallback(interaction,self,"shuffle")
-
-    async def on_timeout(self) -> None:
-        await self.callbacker.playlistcallback(None,self,"exit")
-        return await super().on_timeout()
-
 class PlaylistPageContainer(PageClassContainer):
     #Class to extend.
-    def __init__(self,inter,musiccomm):
+    def __init__(self,inter,musiccomm, player):
         self.this_interaction=inter
         self.guild=inter.guild
         self.musiccom=musiccomm
         self.last_inter=None
+        self.player=player
         display=self.musiccom.make_playlist_embeds(inter)
 
         super(PlaylistPageContainer,self).__init__(display)
@@ -101,7 +41,7 @@ class PlaylistPageContainer(PageClassContainer):
             await self.last_inter.response.edit_message(view=ve)
         else:
             if result =="shuffle":
-                await self.musiccom.musicplayers.getplayer(self.guild).playlist_actions("shuffle")
+                await self.player.playlist_actions("shuffle")
                 self.display=self.musiccom.make_playlist_embeds(self.this_interaction)
             if result == "next":
                 self.spot = self.spot + self.perpage
@@ -373,8 +313,8 @@ class MusicPlayer():
                 if song.state=="Error":
                     print("error")
                     if self.channel!=None:
-                        await self.send_message(self.channel,str(song.error_value))
-                    await self.bot.send_error(self.error_value,"Adding URL.")
+                        await self.send_message(self.channel,str(song.error_value), desc="Error...")
+                    await self.bot.send_error(song.error_value,"Adding URL.")
                     return None
 
                 res=await self.playlist_actions("add",song)
