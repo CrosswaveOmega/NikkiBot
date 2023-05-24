@@ -128,6 +128,7 @@ class AudioContainer():
         timeat=int(self.timeat)
         if self.playing:
             timeat=int(self.timeat+(discord.utils.utcnow()-self.started_at).total_seconds())
+            print(timeat)
         return timeat
 
     def get_timestamp(self):

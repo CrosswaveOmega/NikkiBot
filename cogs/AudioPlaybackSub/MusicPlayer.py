@@ -173,16 +173,13 @@ class MusicPlayer():
         embed=self.get_music_embed(title,desc)
         if editinter==None:
             if self.lastm!=None:
-                await self.lastm.add_reaction("✂")
-                self.bot.schedule_for_deletion(self.lastm,60)
+                await self.lastm.delete()
             mymess=self.messages.copy()
             for i in mymess:
-                self.messages.remove(i)
-                await i.add_reaction("✂")
-                self.bot.schedule_for_deletion(i,60)
-                
+                await i.delete()
             m=await ctx.send(embed=embed)
-            #self.lastm=m
+            self.lastm=m
+            self.messages=[]
             self.messages.append(m)
         else:
             await editinter.edit_original_response(embed=embed)
@@ -369,6 +366,7 @@ class MusicPlayer():
             song = self.current
             if voice.is_playing():
                 voice.pause()
+            song.playing=True
             aud=discord.FFmpegPCMAudio(song.source, **self.FFMPEG_OPTIONS)
             await asyncio.sleep(0.25)
             voice.play(aud,after=lambda e: self.bot.schedule_for_post(ctx.channel, "Error in playback: "+str(e)) if e else  asyncio.run_coroutine_threadsafe(self.player_actions("auto_next"), self.bot.loop))
