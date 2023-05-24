@@ -3,7 +3,7 @@
 Nikki Bot is a personal multipurpose, experimental Discord bot written using the discord.py library.
 
 Support Server: https://discord.gg/zrHrkqkD5a
-
+Invite Link: https://discord.com/api/oauth2/authorize?client_id=1069780327502975006&permissions=40581639556672&scope=applications.commands%20bot
 
 ## Features
 
