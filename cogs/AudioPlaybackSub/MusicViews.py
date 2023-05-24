@@ -8,23 +8,23 @@ class PlayerButtons(discord.ui.View):
         self.inter=inter
     @discord.ui.button(emoji='⏹️', label="stop",style=discord.ButtonStyle.red) # or .primary
     async def exit_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.mycallback( self.inter,"stop")
+        await self.callbacker.player_button_call( self.inter,"stop")
         await interaction.response.edit_message(content="Stop pressed",view=self)
     @discord.ui.button(emoji='⏮️',label="back",style=discord.ButtonStyle.blurple) # or .primary
     async def back_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.mycallback(self.inter,"back")
+        await self.callbacker.player_button_call(self.inter,"back")
         await interaction.response.edit_message(content="back pressed",view=self)
     @discord.ui.button(emoji='⏸',label="pause",style=discord.ButtonStyle.blurple) # or .primary
     async def pause_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.mycallback( self.inter,"pause")
+        await self.callbacker.player_button_call( self.inter,"pause")
         await interaction.response.edit_message(content="Pause pressed",view=self)
     @discord.ui.button(emoji='▶️',label="play",style=discord.ButtonStyle.blurple) # or .primary
     async def play_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.mycallback( self.inter,"play")
+        await self.callbacker.player_button_call( self.inter,"play")
         await interaction.response.edit_message(content="Play pressed",view=self)
     @discord.ui.button(emoji='⏭️',label="skip",style=discord.ButtonStyle.blurple) # or .primary
     async def next_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.mycallback(self.inter,"next")
+        await self.callbacker.player_button_call(self.inter,"next")
         await interaction.response.edit_message(content="Next pressed",view=self)
 
 

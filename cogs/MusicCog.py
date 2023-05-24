@@ -102,20 +102,10 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
             " • **/mp playlistshuffle** - shuffle the playlist once shuffling"
         """
         self.song_add_processer.start()
-        self.timeoutbutton.start()
 
     def cog_unload(self):
         self.song_add_processer.cancel()
-        self.timeoutbutton.cancel()
-        
-    @tasks.loop(seconds=1)
-    async def timeoutbutton(self):
-        """delete the player buttons if it's been longer than 3 minutes without a press."""
-        if self.last_player_message!=None:
-            elapsed=(discord.utils.utcnow()-self.timeoutcountdown).total_seconds()
-            if elapsed>=180:
-                await self.last_player_message.delete()
-                self.last_player_message=None
+
 
     @tasks.loop(seconds=0.05)
     async def song_add_processer(self):
@@ -179,7 +169,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild:discord.Guild=interaction.guild
         
-        if await self.connection_check(interaction,ctx,1):
+        if await connection_check(interaction,ctx,1):
             return
 
         voice = discord.utils.get(self.bot.voice_clients, guild=interaction.guild)
@@ -248,7 +238,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
     async def play(self, interaction: discord.Interaction, url:str=""):
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild:discord.Guild=interaction.guild
-        if await self.connection_check(interaction,ctx,1):
+        if await connection_check(interaction,ctx,1):
             return
 
         voice = discord.utils.get(self.bot.voice_clients, guild=interaction.guild)
@@ -259,7 +249,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
             await MusicManager.get(guild).setvoiceandctx(interaction)
             await MessageTemplatesMusic.music_msg(ctx, "Connected", f"I'm now connected to {interaction.user.voice.channel.name}!")
             
-        elif await self.connection_check(interaction, ctx, 3):
+        elif await connection_check(interaction, ctx, 3):
             await MessageTemplatesMusic.music_msg(ctx, "Connected to another", "I'm connected to another Voice Channel.")
             return
 
@@ -288,39 +278,15 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
     
 
 
-    async def connection_check(self, interaction: discord.Interaction,ctx:commands.Context, mode:int=3)->bool:
-        '''Check if the calling user is connected to a voice channel, 
-           and check if the bot is not currently connected to their same voice channel.
-           Return True if Either of these conditions are satisfied (and the command should not run),
-           and False if they are both 
-           '''
-        if (mode==3 or mode==1):
-            if isinstance(interaction.user.voice, type(None)) and (mode==3 or mode==1):
-                await MessageTemplatesMusic.music_msg(ctx, "You aren't connected", "You are not connected to any Voice Channel, I can't do anything.")
-                return True
-        if (mode==3 or mode==2):
-            if interaction.user.voice.channel != ctx.voice_client.channel and (mode==3 or mode==2):
-                await MessageTemplatesMusic.music_msg(ctx, "Not connected", "I'm not connected to your **Voice Channel!**")
-                return True
-        return False
-
     @mp.command(name="pause", description="Pause current song in Voice Channel")
     async def pause(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild:discord.Guild=interaction.guild
-        if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
+        if await connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
         voice = discord.utils.get(self.bot.voice_clients, guild=interaction.guild)
         await MusicManager.get(guild).player_actions("pause",ctx)
 
-    async def mycallback(self, interaction: discord.Interaction, action:str):
-        '''Callback for player buttons.'''
-        ctx: commands.Context = await self.bot.get_context(interaction)
-        guild:discord.Guild=interaction.guild
-        if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
-            return
-        await MusicManager.get(guild).player_actions(action,editinter=interaction)
-        self.timeoutcountdown=discord.utils.utcnow()
 
 
     async def send_player(self, interaction: discord.Interaction):
@@ -331,8 +297,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         guild:discord.Guild=interaction.guild
         
         newm=await ctx.send("Player message, will be rendered useless after 3 minutes.",
-        view=PlayerButtons(inter=interaction,callback=self))
-        self.timeoutcountdown=discord.utils.utcnow()
+        view=PlayerButtons(inter=interaction,callback=MusicManager.get(guild)))
         self.last_player_message=newm
     
     @mp.command(name="nowplaying", description="View the song currently playing, and send player buttons.")
@@ -340,7 +305,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild:discord.Guild=interaction.guild
         
-        if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
+        if await connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
         if not MusicManager.get(guild).current:
             await MusicManager.get(guild).send_message(ctx, "No music", "I'm not playing any music right now.")
@@ -356,7 +321,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild:discord.Guild=interaction.guild
         
-        if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
+        if await connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
 
         await MusicManager.get(guild).player_actions("play",ctx) #Just a stand in for play.
@@ -369,7 +334,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild:discord.Guild=interaction.guild
         
-        if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
+        if await connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
         if action=='none':
             MusicManager.get(guild).repeat = False
@@ -391,7 +356,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild:discord.Guild=interaction.guild
         
-        if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
+        if await connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
         await MusicManager.get(guild).player_actions("next",ctx)
 
@@ -400,7 +365,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild:discord.Guild=interaction.guild
         
-        if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
+        if await connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
         await MusicManager.get(guild).player_actions("back",ctx)
     
@@ -450,7 +415,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         guild:discord.Guild=interaction.guild
         
         
-        if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
+        if await connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
 
         if MusicManager.get(guild).songs:
@@ -467,7 +432,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
     async def playlistadd(self, interaction: discord.Interaction, url: str):
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild:discord.Guild=interaction.guild
-        if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
+        if await connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
         ydlops={"extract_flat":"in_playlist","skip_download":True,"forcejson":True}
         with youtube_dl.YoutubeDL(ydlops) as ydl:
@@ -495,7 +460,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
             regex = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
             url = re.findall(regex, string)
             return [x[0] for x in url]
-        if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
+        if await connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
         ydlops={"extract_flat":"in_playlist","skip_download":True,"forcejson":True}
         total=0
@@ -549,7 +514,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild:discord.Guild=interaction.guild
         
-        if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
+        if await connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
         await self.playlistcopy(ctx,url,None)
 
@@ -596,7 +561,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild:discord.Guild=interaction.guild
         
-        if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
+        if await connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
 
         result=await MusicManager.get(guild).playlist_actions("jumpto",spot)
@@ -613,7 +578,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild:discord.Guild=interaction.guild
         
-        if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
+        if await connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
 
         result=await MusicManager.get(guild).playlist_actions("removespot",spot)
@@ -629,7 +594,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild:discord.Guild=interaction.guild
         
-        if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
+        if await connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
 
         res=await MusicManager.get(guild).playlist_actions("clear")
@@ -643,7 +608,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild:discord.Guild=interaction.guild
         
-        if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
+        if await connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
         res=await MusicManager.get(guild).playlist_actions("shuffle")
         if res=="done":
@@ -681,7 +646,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         
         await ctx.send("Coming soon.")
         '''
-        if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
+        if await connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
         
         songs=MusicManager.get(guild).songs;
@@ -706,7 +671,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         
         await ctx.send("Coming soon.")
         '''
-        if await self.connection_check(interaction,ctx): #if it's true, then it shouldn't run.
+        if await connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
         author=ctx.author
        

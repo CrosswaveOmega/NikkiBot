@@ -17,7 +17,7 @@ from assets import AssetLookup
 from utility import  seconds_to_time_string, seconds_to_time_stamp
 from utility import PageClassContainer
 from .AudioContainer import AudioContainer
-
+from .MusicUtils import connection_check
 '''this code is for the music player, and it's interactions.'''
 
 class PlaylistPageContainer(PageClassContainer):
@@ -82,8 +82,15 @@ class MusicPlayer():
              {"before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
              "options": "-vn -bufsize 5M -nostats -loglevel 0"}
 
+    async def player_button_call(self, interaction: discord.Interaction, action:str):
+        '''Callback for player buttons.'''
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        guild:discord.Guild=interaction.guild
+        if await connection_check(interaction,ctx): #if it's true, then it shouldn't run.
+            return
+        await self.player_actions(action,editinter=interaction)
+
     async def countusers(self):
-        #count users and add to mood.
         voice = discord.utils.get(self.bot.voice_clients, guild=self.guild)
         if voice!=None:
             vc=voice.channel
