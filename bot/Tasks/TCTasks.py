@@ -260,6 +260,7 @@ class TCTaskManager:
 
     @classmethod
     def get_task_status(cls):
+        '''get a small string that shows the current number of scheduled and running tasks.'''
         manager = TCTaskManager.get_instance()
         running=scheduled=0
         deltas=[]

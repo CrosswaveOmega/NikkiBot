@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List
 import discord
 import traceback
 import asyncio
@@ -105,6 +105,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
         await self.logout()
 
     def loggersetup(self):
+        '''Setup the loggers.'''
         if not os.path.exists('./logs/'):
             os.makedirs('./logs/')
 
@@ -154,8 +155,6 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
     def set_ext_directory(self, dir:str):
         self.extensiondir=dir
 
-    
-
     def update_ext_list(self):
         '''Update the internal exension list.'''
         self.extension_list=[]
@@ -173,8 +172,9 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
         return self.statmess.get_message_obj(cid)
     
     async def sync_enabled_cogs_for_guild(self,guild, force=False):
-        '''With a passed in guild, sync all activated cogs for that guild.'''
-        '''Works on a guild per guild basis so that I may build '''      
+        '''With a passed in guild, sync all activated cogs for that guild.
+        Works on a guild per guild basis in the case that I need to provide
+        code to sync different app commands between guilds.'''
         def syncprint(lis):
             pass
             #print(f"Sync for {guild.name} (ID {guild.id})",lis)
@@ -184,7 +184,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
             return False
 
         def add_command_to_tree(command, guild):
-            """Add a command to the commands tree for the given guild."""
+            #Add a command to the commands tree for the given guild.
             current_command_list=[]
             if isinstance(command, (commands.HybridCommand, commands.HybridGroup)):
                 try:
@@ -213,15 +213,17 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
                     syncprint(f"Cannot add {command.name}, this is not a app command")
             return current_command_list
 
-        async def sync_commands_tree(guild,synced, forced=False):
-            """Sync the commands tree for the given guild."""
-            print(f"Checking if it's time to sync commands syncing for {guild.name} (ID {guild.id})...")
+        async def sync_commands_tree(guild:discord.Guild,synced:List[discord.app_commands.Command], forced=False):
+            #Build a dictionary representation of all app commands to be synced, check if 
+            #the dictionary is different from a loaded version from before, and then 
+            #sync the commands tree for the given guild, updating the dictionary.
+            print(f"Checking if it's time to sync commands for {guild.name} (ID {guild.id})...")
             try:
                 app_tree=format_application_commands(synced)
                 dbentry=AppGuildTreeSync.get(guild.id)
                 if not dbentry:
                     dbentry=AppGuildTreeSync.add(guild.id)
-                if (dbentry.compare_with_command_tree(app_tree)!=None) or forced==True:
+                if (not dbentry.compare_with_command_tree(app_tree)) or forced==True:
                     print(f"Beginning command syncing for {guild.name} (ID {guild.id})...")
                     dbentry.update(app_tree)
                     print(dbentry.compare_with_command_tree(app_tree))
@@ -230,14 +232,21 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
             except Exception as e:
                 print(str(e))
 
-        """Gather all activated cogs for a given guild."""
-        """Note, the reason it goes one by one is because it was originally intended to activate/deactivate cogs"""
-        """On a server per server basis."""
+        #Gather all activated cogs for a given guild.
+        #Note, the reason it goes one by one is because it was originally intended 
+        #to activate/deactivate cogs on a server per server basis.
+        
         synced=[]
+
         for cogname, cog in self.cogs.items():
             if should_skip_cog(cogname):
                 print("skipping cog ",cogname)
                 continue
+            if hasattr(cog,'ctx_menus'):
+                print(cogname)
+                for name,cmenu in cog.ctx_menus.items():
+                    print(cmenu.name)
+                    self.tree.add_command(cmenu, guild=guild, override=True)
             for command in cog.walk_commands():
                 synced+=add_command_to_tree(command, guild)
             for command in cog.walk_app_commands():
@@ -248,9 +257,13 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
 
 
     async def all_guild_startup(self, force=False):
-        async for guild in self.fetch_guilds(limit=10000):
-            print(f"syncing for {guild.name}")
-            await self.sync_enabled_cogs_for_guild(guild,force=force)
+        try:
+            async for guild in self.fetch_guilds(limit=10000):
+                print(f"syncing for {guild.name}")
+                await self.sync_enabled_cogs_for_guild(guild,force=force)
+        except Exception as e:
+            print(e)
+            raise Exception()
 
     async def audit_guilds(self):
         '''audit guilds.'''
@@ -288,7 +301,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
                     self.logs.info(f"Purged  {count} entries from {table_name}, {server_id_val}.")
                 for tab in matching_tables_2:
                     table_name,table_obj=tab
-                    # loop over the table names and delete the entries
+                    # loop over the table names and count the number of entries to be deleted.
                     count=session.query(table_obj).filter_by(server_profile_id=server_id_val).count()
                     self.logs.info(f"Purging in {table_name}, {server_id_val}.  {count} entries will be removed.")
                     
@@ -333,12 +346,12 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
 
     def pswitchload(self,pmode=False):
         #Once could load in a list of 'plugins' seperately, decided against.
+        #since it just caused problems.
         return self.loaded_extensions
 
     async def extension_loader(self,extname,plugin=False):
         """Load an extension and add it to the internal loaded extension dictionary."""
-        
-        print("LOADING", extname)
+        print("STARTING LOAD FOR:", extname)
         self.pswitchload(plugin)[extname]=("settingup",None)
         try:
             print("LOADING", extname)
@@ -379,7 +392,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
             await chan.send(content=content,embed=emb)
         
     async def send_error(self,error,title="ERROR"):
-        '''Add an error to the log'''
+        '''Add an error to the internal log and the log channel.'''
         just_the_string=''.join(traceback.format_exception(None, error, error.__traceback__))
         er=MessageTemplates.get_error_embed(title=f"Error with {title}",description=f"{just_the_string},{str(error)}")
         er.add_field(name="Details",value=f"{title},{error}")

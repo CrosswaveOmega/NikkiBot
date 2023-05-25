@@ -19,13 +19,27 @@ from discord.app_commands import Choice
 from pathlib import Path
 from utility import serverAdmin, serverOwner, MessageTemplates
 from utility.embed_paginator import pages_of_embeds
-from bot import TC_Cog_Mixin
+from bot import TC_Cog_Mixin, super_context_menu
+
 class General(commands.Cog, TC_Cog_Mixin):
     """General commands"""
     def __init__(self, bot):
         self.helptext=""
         self.bot=bot
+        self.add_all_context_menus()
 
+    @super_context_menu(name="Supercool")
+    async def coooler(self, interaction: discord.Interaction, message: discord.Message) -> None:
+        await interaction.response.send_message(
+            content="This command does nothing, it's to demonstrate context menu commands.",
+            ephemeral=True)
+        
+    @super_context_menu(name="UserName")
+    async def userexample(self, interaction: discord.Interaction, user: discord.Member) -> None:
+        await interaction.response.send_message(
+            content=f"This user is named {user.display_name}",
+            ephemeral=True)
+        
     @app_commands.command(name="server_info", description="view the server data")
     async def info(self, interaction: discord.Interaction) -> None:
         """get bot info for this server"""

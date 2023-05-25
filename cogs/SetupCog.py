@@ -103,7 +103,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         await ctx.bot.all_guild_startup(True)
         await ctx.send("DONE.")
 
-    @commands.hybrid_command(name='getapps',description="get all my app commands for this server, and check if you set any specific permissions.")
+    @commands.hybrid_command(name='getapps',description="get all my app commands for this server, and check if you set any specific overrides.")
     async def get_apps(self,ctx):
         if not ctx.guild:
             await ctx.send("This command is a guild only command.")

@@ -16,6 +16,8 @@ import discord
 import difflib
 '''
 All the convienence of automatic command syncing with fewer drawbacks.
+During a sync, format_application_commands will take in a list of AppCommand.Command objects, 
+and create a dictionary of the serialized attributes of AppCommand.Command.
 
 '''
 
@@ -23,7 +25,7 @@ from collections.abc import Mapping
 
 
 
-def dict_diff(dict1, dict2):
+def dict_diff_recursive(dict1, dict2):
     """
     Recursively compare two dictionaries and return the differences.
     This is for debugging.
@@ -38,7 +40,7 @@ def dict_diff(dict1, dict2):
             val2 = dict2.get(key)
             if val1 != val2:
                 if isinstance(val1, Mapping) and isinstance(val2, Mapping):
-                    nested_diff = dict_diff(val1, val2)
+                    nested_diff = dict_diff_recursive(val1, val2)
                     if nested_diff:
                         diff[key] = nested_diff
                 else:
@@ -51,6 +53,33 @@ def dict_diff(dict1, dict2):
 
     return None
 
+def dict_diff(dict1, dict2):
+    """
+    Iteratively compare two non-nested dictionaries and return the differences.
+    This is for debugging.
+    """
+    if isinstance(dict1, Mapping) and isinstance(dict2, Mapping):
+
+        keys = set(list(dict1.keys()) + list(dict2.keys()))
+        same=total= max(len(keys),1)
+        diff = {}
+        for key in keys:
+            val1 = dict1.get(key)
+            val2 = dict2.get(key)
+            if val1 != val2:
+                print(same)
+                diff[key] = (val1, val2)
+                same-=1
+        samescore=same/total
+        if diff:
+            return diff, samescore*100.0
+        return None, samescore*100.0
+
+
+    elif dict1 != dict2:
+        return (dict1, dict2), 0.0
+
+    return None, 100.0
 class AppGuildTreeSync(Guild_Sync_Base):
     '''table to store data for Automatic guild tasks.'''
     __tablename__ = 'apptree_guild_sync'
@@ -108,8 +137,8 @@ class AppGuildTreeSync(Guild_Sync_Base):
 
         try:
             #This is preferrable to an API call.
-            difference = dict_diff(arr1, arr2)
-            print(f"Differences found: {difference}")
+            difference, simscore = dict_diff(arr1, arr2)
+            print(f"Differences found: {difference}\n simularity score:{round(simscore,1)}")
             if difference==None:
                 return True
             return False
@@ -134,6 +163,23 @@ def remove_null_values(dict_obj):
 
     return new_dictionary
 
+def denest_dict(d: dict) -> dict:
+    """
+    Recursively denests a nested dictionary by merging each nested dictionary into the parent dictionary.
+
+    Parameters:
+    d: A nested dictionary to be denested.
+
+    Returns:
+    A denested dictionary with each nested dictionary's key-value pairs merged into the parent dictionary.
+    """
+    out = {}
+    for key, value in d.items():
+        if isinstance(value, dict):
+            out.update({f"{key}->{nested_key}": nested_value for nested_key, nested_value in denest_dict(value).items()})
+        else:
+            out[key] = value
+    return out
 def format_application_commands(commands:List[discord.app_commands.Command]):
     '''This command takes in a list of discord.app_commands.Command objects, and
     extracts serializable data into a dictionary to help determine if a app command tree
@@ -182,4 +228,5 @@ def format_application_commands(commands:List[discord.app_commands.Command]):
         formatted_command['permissions']['nsfw'] = command.nsfw
 
         formatted_commands[command.name]=(formatted_command)
-    return formatted_commands
+    den=denest_dict(formatted_commands)
+    return den
