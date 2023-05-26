@@ -1,5 +1,5 @@
 import difflib
-from typing import List, Union
+from typing import Any, Dict, List, Tuple, Union
 from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey, DateTime, Double
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import sessionmaker, Session
@@ -123,7 +123,7 @@ class AppGuildTreeSync(Guild_Sync_Base):
         self.lastsyncdate=datetime.datetime.utcnow()
         session.commit()
 
-    def compare_with_command_tree(self, command_tree: dict) -> bool:
+    def compare_with_command_tree(self, command_tree: dict) -> Tuple[bool,float]:
         """
         Compares the current `lastsyncdata` with a passed in `command_tree`.
         Returns `True` if they are the same, `False` otherwise.
@@ -140,8 +140,8 @@ class AppGuildTreeSync(Guild_Sync_Base):
             difference, simscore = dict_diff(arr1, arr2)
             print(f"Differences found: {difference}\n simularity score:{round(simscore,1)}")
             if difference==None:
-                return True
-            return False
+                return True, simscore
+            return False, simscore
             
         except Exception as e:
             print(e)
@@ -163,7 +163,7 @@ def remove_null_values(dict_obj):
 
     return new_dictionary
 
-def denest_dict(d: dict) -> dict:
+def denest_dict(d: dict)->Dict[str, Any]:
     """
     Recursively denests a nested dictionary by merging each nested dictionary into the parent dictionary.
 
@@ -180,10 +180,16 @@ def denest_dict(d: dict) -> dict:
         else:
             out[key] = value
     return out
-def format_application_commands(commands:List[discord.app_commands.Command]):
+def format_application_commands(commands:List[discord.app_commands.Command])->Dict[str, Any]:
     '''This command takes in a list of discord.app_commands.Command objects, and
     extracts serializable data into a dictionary to help determine if a app command tree
     should be synced to a particular server or not.
+    
+    Parameters:
+    commands: List of added application commands.
+
+    Returns:
+    Dictionary of serialized attributes from commands.
     '''
     formatted_commands = {}
     for command in commands:

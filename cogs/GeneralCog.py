@@ -26,7 +26,7 @@ class General(commands.Cog, TC_Cog_Mixin):
     def __init__(self, bot):
         self.helptext=""
         self.bot=bot
-        self.add_all_context_menus()
+        self.init_context_menus()
 
     @super_context_menu(name="Supercool")
     async def coooler(self, interaction: discord.Interaction, message: discord.Message) -> None:

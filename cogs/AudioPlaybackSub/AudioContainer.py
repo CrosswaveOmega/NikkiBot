@@ -77,6 +77,7 @@ class AudioContainer():
         self.title, self.duration,self.url= info["title"], info["duration"], info["webpage_url"]
         self.source=info["url"]
         self.state="Ok"
+
     def get_song_discord(self):
         '''Get a song from a discord file url.'''
         info={}

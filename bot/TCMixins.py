@@ -15,12 +15,33 @@ MISSING: Any = discord.utils.MISSING
 
 ctx_comms={}
 class NonContextMenu:
-    '''A simple class that lets me define ContextMenus in cogs.'''
+
+    """
+    A simple class that stores initalization parameters for ContextMenus in cogs.
+
+    Attributes 
+    ------------
+
+    callname: :class:`str`
+            The name of the function in the cog that will be initalized as the
+            Context Menu's callback.  This is also the key in the self.ctx_menus dictionary.
+    initalizer: :class:`dict`
+            A dictionary that stores the other initalization parameters for 
+            the context menu.
+            name: :class:`str`
+                The name of the context menu.
+            nsfw: :class:`bool`
+                Whether the command is NSFW and should only work in NSFW channels.
+                Defaults to ``False``.
+            auto_locale_strings: :class: bool
+            extras: :class:`dict`
+                A dictionary that can be used to store extraneous data.
+                The library will not touch any values or keys within this dictionary."""
     def __init__(
         self,
         *,
         name,
-        callback,
+        callback:str,
         nsfw: bool = False,
         auto_locale_strings: bool = True,
         extras: Dict[Any, Any] = MISSING,
@@ -36,7 +57,8 @@ class NonContextMenu:
         return str(self.initalizer)
 
 class TC_Cog_Mixin:
-    '''A mixin to define additional functions, including the the ability to add on 
+    '''
+    A mixin to define additional functions, including the the ability to add on 
     context menus via decorator inside a cog.
     '''
     def __init__(self):
@@ -46,13 +68,17 @@ class TC_Cog_Mixin:
         with 3 key/value pairs:  name:str.  value:str.  inline:boolean'''
         return {}
 
-    def add_all_context_menus(self):
-        '''Add All Context Menus to the cog's self.ctx_menus dictionary.'''
+    def init_context_menus(self):
+        '''Initalize context menus for this cog specified added via the @super_context_menu decorator.
+        All Context Menus will be added to the self.ctx_menus dictionary added to the cog by this function.'''
         name=self.__class__.__name__
+        #Check if the cog's class name is inside the ctx_comms dict
         if name in ctx_comms:
             self.ctx_menus={}
             for v in ctx_comms[name]:
                 if not v.callname in self.ctx_menus:
+                    #Check if the cog has a function by the name of
+                    #v.callname
                     if hasattr(self,v.callname):
                         caller=getattr(self,v.callname)
                         cmenu=ContextMenu(
@@ -62,7 +88,7 @@ class TC_Cog_Mixin:
 
 
     def add_context_menu(self, name:str, ctx_menu:ContextMenu):
-        '''add a context menu with name to the '''
+        '''add a context menu with name to the ctx_menus dictionary.'''
         self.ctx_menus[name]=ctx_menu
 
 
@@ -121,6 +147,7 @@ def super_context_menu(
             raise TypeError('context menu function must be a coroutine function')
 
         cls_name = func.__qualname__.split(".")[0]  # Get the name of the class
+        #Add class entry to ctx_comms if needed.
         if cls_name not in ctx_comms:
             ctx_comms[cls_name] = []
         functionname=func.__name__
@@ -132,6 +159,7 @@ def super_context_menu(
             auto_locale_strings=auto_locale_strings,
             extras=extras,
         )
+        #Add the Not Context menu to ctx_comms
         ctx_comms[cls_name].append(ctx_menu)
         return func
 

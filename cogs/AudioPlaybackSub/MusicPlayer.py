@@ -96,7 +96,6 @@ class MusicPlayer():
             vc=voice.channel
             if vc!=None:
                 mem=vc.members
-                print("ACTIVE",len(mem)/5)
                 send=len(mem)/2
         else:
             pass

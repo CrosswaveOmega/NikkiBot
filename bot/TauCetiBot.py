@@ -220,10 +220,11 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
             print(f"Checking if it's time to sync commands for {guild.name} (ID {guild.id})...")
             try:
                 app_tree=format_application_commands(synced)
-                dbentry=AppGuildTreeSync.get(guild.id)
+                dbentry:AppGuildTreeSync=AppGuildTreeSync.get(guild.id)
                 if not dbentry:
                     dbentry=AppGuildTreeSync.add(guild.id)
-                if (not dbentry.compare_with_command_tree(app_tree)) or forced==True:
+                same, diffscore=dbentry.compare_with_command_tree(app_tree)
+                if (not same) or forced==True:
                     print(f"Beginning command syncing for {guild.name} (ID {guild.id})...")
                     dbentry.update(app_tree)
                     print(dbentry.compare_with_command_tree(app_tree))
@@ -234,10 +235,8 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
 
         #Gather all activated cogs for a given guild.
         #Note, the reason it goes one by one is because it was originally intended 
-        #to activate/deactivate cogs on a server per server basis.
-        
+        #to activate/deactivate cogs on a server per server basis.        
         synced=[]
-
         for cogname, cog in self.cogs.items():
             if should_skip_cog(cogname):
                 print("skipping cog ",cogname)
