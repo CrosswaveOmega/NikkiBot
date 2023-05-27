@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import os
 import random
 from typing import Any, Callable, List
 import urllib 
@@ -66,7 +67,6 @@ class AudioContainer():
                 info = res
         
         dump=json.dumps(info, indent=3, sort_keys=True)
-
         logs.info(dump)
         self.json_dict=info
         self.title, self.duration,self.url= info["title"], info["duration"], info["webpage_url"]
@@ -86,11 +86,13 @@ class AudioContainer():
             else:                         # Just a video
                 info = res
         self.json_dict=info
+        dump=json.dumps(self.json_dict, indent=3, sort_keys=True)
+        logs.info(dump)
         self.title, self.duration,self.url= info["title"], info["duration"], info["webpage_url"]
         self.source=info["url"]
         self.state="Ok"
 
-    def get_song_file(self):
+    def get_song_remote_file(self):
         '''Get a song from a file url.'''
         info={}
         options={"format": "bestaudio","noplaylist": "True",'format_sort':["hasaud"]}
@@ -101,13 +103,38 @@ class AudioContainer():
         # Find the duration of the audio stream from the ffprobe output
         duration_match = re.search(r"duration=([\d\.]+)", output)
         total_length = float(duration_match.group(1))
-
         print("Total Length: "+str(total_length) +" seconds")
-        
         self.title, self.duration,self.url= "Your Song", total_length, self.query
-        
         self.source=self.query
         self.state="Ok"
+    def get_song_local_file(self):
+        '''Get a song from a file url.'''
+        info={}
+        options={"format": "bestaudio","noplaylist": "True",'format_sort':["hasaud"]}
+        
+
+        directory_name = "saveData/music"
+        file_name=self.query.replace("local:","")
+        # Check if the directory already exists
+        if not os.path.exists(directory_name):
+            # If it doesn't exist, create it
+            os.makedirs(directory_name)
+        # Check if the file exists in the directory
+        file_path = os.path.join(directory_name, file_name)
+        if os.path.exists(file_path):
+            print("File found at:", file_path)
+            # Find the duration of the audio stream from the ffprobe output
+            duration_cmd = "ffprobe -i "+file_path+" -show_format -v quiet"
+            output = subprocess.check_output(duration_cmd, shell=True, stderr=subprocess.STDOUT).decode("utf-8")
+            duration_match = re.search(r"duration=([\d\.]+)", output)
+            total_length = float(duration_match.group(1))
+            print("Total Length: "+str(total_length) +" seconds")
+            self.title, self.duration,self.url= "Your Song", total_length, file_path
+            self.source=file_path
+            self.state="Ok"
+        else:
+            self.state="Error"
+
     def is_audio_link(self, link):
         regex = r'.*\.(mp3|wav|ogg|aac|m4a|flac|wma|alac|ape|opus|webm|amr|pcm|aiff|au|raw|ac3|eac3|dts|flv|mkv|mka|mov|avi|mpg|mpeg)$'
         if re.match(regex, link):
@@ -124,9 +151,11 @@ class AudioContainer():
             elif "soundcloud" in self.query: #It's a soundcloud Link
                 self.get_song_soundcloud()
             elif 'discordapp' in self.query:
-                self.get_song_file()
+                self.get_song_remote_file()
+            elif 'local:' in self.query:
+                self.get_song_local_file()
             elif self.is_audio_link(self.query):
-                self.get_song_file()
+                self.get_song_remote_file()
 
             else: #No idea what it is, do a search.
                 self.get_song_youtube(search=True)

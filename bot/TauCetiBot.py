@@ -436,7 +436,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
 
     @tasks.loop(seconds=1.0)
     async def post_queue_message(self):
-        await self.post_queue_message_int(self)
+        await self.post_queue_message_int()
         
 
     @tasks.loop(seconds=1.0)

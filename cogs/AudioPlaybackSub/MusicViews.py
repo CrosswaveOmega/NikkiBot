@@ -2,7 +2,7 @@ import discord
 
 class PlayerButtons(discord.ui.View):
     '''buttons for the audio player.'''
-    def __init__(self, *, timeout=15, inter=None, callback=None):
+    def __init__(self, *, timeout=None, inter=None, callback=None):
         super().__init__(timeout=timeout)
         self.callbacker=callback
         self.inter=inter

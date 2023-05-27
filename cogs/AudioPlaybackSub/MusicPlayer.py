@@ -127,7 +127,8 @@ class MusicPlayer():
         if self.internal_message_log:
             front=self.internal_message_log.pop()
             embed=self.get_music_embed('wham',front)
-            mess=await self.get_ctx.send(embed=embed)
+            if self.channel:
+                mess=await self.channel.send(embed=embed)
             
 
 
@@ -376,9 +377,10 @@ class MusicPlayer():
             song = self.current
             if voice.is_playing():
                 voice.pause()
-            song.playing=True
+            
             aud=discord.FFmpegPCMAudio(song.source, **self.FFMPEG_OPTIONS)
             await asyncio.sleep(0.25)
+            song.start()
             voice.play(aud,after=lambda e: self.bot.schedule_for_post(ctx.channel, "Error in playback: "+str(e)) if e else  asyncio.run_coroutine_threadsafe(self.player_actions("auto_next"), self.bot.loop))
             voice.is_playing()
             self.bot.add_act("MusicPlay",f"{song.title}",discord.ActivityType.listening)
