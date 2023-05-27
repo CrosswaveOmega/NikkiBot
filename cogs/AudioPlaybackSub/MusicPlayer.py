@@ -82,7 +82,7 @@ class MusicPlayer():
         self.FFMPEG_OPTIONS =\
              {"before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
              "options": "-vn -bufsize 5M -nostats -loglevel 0"}
-        self.FFMPEGFILE_OPTIONS =\
+        self.FFMPEG_FILEOPTIONS =\
              {"options": "-vn -loglevel 0"}
 
 
