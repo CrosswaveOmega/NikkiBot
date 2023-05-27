@@ -2,30 +2,30 @@ import discord
 
 class PlayerButtons(discord.ui.View):
     '''buttons for the audio player.'''
-    def __init__(self, *, timeout=180, inter=None, callback=None):
+    def __init__(self, *, timeout=15, inter=None, callback=None):
         super().__init__(timeout=timeout)
         self.callbacker=callback
         self.inter=inter
     @discord.ui.button(emoji='⏹️', label="stop",style=discord.ButtonStyle.red) # or .primary
     async def exit_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.player_button_call( self.inter,"stop")
-        await interaction.response.edit_message(content="Stop pressed",view=self)
+        await self.callbacker.player_button_call( interaction,"stop")
+        await interaction.response.defer()#(content="Stop pressed",view=self)
     @discord.ui.button(emoji='⏮️',label="back",style=discord.ButtonStyle.blurple) # or .primary
     async def back_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.player_button_call(self.inter,"back")
-        await interaction.response.edit_message(content="back pressed",view=self)
+        await self.callbacker.player_button_call(interaction,"back")
+        await interaction.response.defer()#(content="back pressed",view=self)
     @discord.ui.button(emoji='⏸',label="pause",style=discord.ButtonStyle.blurple) # or .primary
     async def pause_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.player_button_call( self.inter,"pause")
-        await interaction.response.edit_message(content="Pause pressed",view=self)
+        await self.callbacker.player_button_call( interaction,"pause")
+        await interaction.response.defer()#(content="Pause pressed",view=self)
     @discord.ui.button(emoji='▶️',label="play",style=discord.ButtonStyle.blurple) # or .primary
     async def play_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.player_button_call( self.inter,"play")
-        await interaction.response.edit_message(content="Play pressed",view=self)
+        await self.callbacker.player_button_call( interaction,"play")
+        await interaction.response.defer()#(content="Play pressed",view=self)
     @discord.ui.button(emoji='⏭️',label="skip",style=discord.ButtonStyle.blurple) # or .primary
     async def next_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await self.callbacker.player_button_call(self.inter,"next")
-        await interaction.response.edit_message(content="Next pressed",view=self)
+        await self.callbacker.player_button_call(interaction,"next")
+        await interaction.response.defer()#(content="Next pressed",view=self)
 
 
 class PlaylistButtons(discord.ui.View):

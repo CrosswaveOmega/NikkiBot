@@ -256,7 +256,9 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         if MusicManager.get(guild).voice==None or MusicManager.get(guild).channel==None:
             await MusicManager.get(guild).setvoiceandctx(interaction)
         if url:
+            attempt=await ctx.send("attempting to add")
             song:AudioContainer=await MusicManager.get(guild).playlist_actions("add_url",(url,ctx.author))
+            await attempt.delete()
             if song==None:
                 await MusicManager.get(guild).send_message(ctx, 
                 "something went wrong...", 

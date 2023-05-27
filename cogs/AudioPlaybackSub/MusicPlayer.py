@@ -14,10 +14,11 @@ from queue import Queue
 from typing import  Union
 
 from assets import AssetLookup
-from utility import  seconds_to_time_string, seconds_to_time_stamp
+from utility import  seconds_to_time_string, seconds_to_time_stamp, urltomessage
 from utility import PageClassContainer
 from .AudioContainer import AudioContainer
 from .MusicUtils import connection_check
+from .MusicViews import PlayerButtons
 '''this code is for the music player, and it's interactions.'''
 
 class PlaylistPageContainer(PageClassContainer):
@@ -82,9 +83,9 @@ class MusicPlayer():
              {"before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
              "options": "-vn -bufsize 5M -nostats -loglevel 0"}
 
-    async def player_button_call(self, interaction: discord.Interaction, action:str):
+    async def player_button_call(self, interaction:discord.Interaction, action:str):
         '''Callback for player buttons.'''
-        ctx: commands.Context = await self.bot.get_context(interaction)
+        ctx: commands.Context = await self.bot.get_context(interaction.message)
         guild:discord.Guild=interaction.guild
         if await connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
@@ -176,9 +177,17 @@ class MusicPlayer():
                     await self.lastm.delete()
                 except Exception as e:
                     print(e)
+                    try:
+                        jurl=self.lastm.jump_url
+                        mep=urltomessage(jurl,self.bot,partial=True)
+                        await mep.delete()
+                    except Exception as ep:
+                        print(ep)
             #mymess=self.messages.copy()
             #for i in mymess:   await i.delete()
-            m=await ctx.send(embed=embed)
+            m=await ctx.send(embed=embed, view=PlayerButtons(
+                callback=self
+            ))
             self.lastm=m
             #self.messages=[]
             #self.messages.append(m)
@@ -421,7 +430,7 @@ class MusicPlayer():
             song=self.current
             title,url,duration=song.title,song.url,seconds_to_time_stamp(song.duration)
             timeat=seconds_to_time_stamp(song.gettime())
-            fieldval=f"{title}\n [{url}]({url})\n{timeat}/{duration}\nRequested by: {song.requested_by}"
+            fieldval=f"{title}\n {url} \n{timeat}/{duration}\nRequested by: {song.requested_by}"
             inline=True
             if len(title)>=32: inline=False
             embed.add_field(name="Now Playing",value=fieldval, inline=inline)
