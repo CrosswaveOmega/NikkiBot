@@ -122,18 +122,24 @@ class AudioContainer():
         # Check if the file exists in the directory
         file_path = os.path.join(directory_name, file_name)
         if os.path.exists(file_path):
-            print("File found at:", file_path)
-            # Find the duration of the audio stream from the ffprobe output
-            duration_cmd = "ffprobe -i "+file_path+" -show_format -v quiet"
-            output = subprocess.check_output(duration_cmd, shell=True, stderr=subprocess.STDOUT).decode("utf-8")
-            duration_match = re.search(r"duration=([\d\.]+)", output)
-            total_length = float(duration_match.group(1))
-            print("Total Length: "+str(total_length) +" seconds")
-            self.title, self.duration,self.url= "Your Song", total_length, file_path
-            self.source=file_path
-            self.state="Ok"
+            pass
         else:
-            raise Exception("NOT FOUND.")
+             # Select a random file from the directory
+            all_files = os.listdir(directory_name)
+            random_file = random.choice(all_files)
+            file_path = os.path.join(directory_name, random_file)
+            print("File not found. Using random file:", random_file)
+
+        print("File found at:", file_path)
+        # Find the duration of the audio stream from the ffprobe output
+        duration_cmd = "ffprobe -i "+file_path+" -show_format -v quiet"
+        output = subprocess.check_output(duration_cmd, shell=True, stderr=subprocess.STDOUT).decode("utf-8")
+        duration_match = re.search(r"duration=([\d\.]+)", output)
+        total_length = float(duration_match.group(1))
+        print("Total Length: "+str(total_length) +" seconds")
+        self.title, self.duration,self.url= "Your Song", total_length, file_path
+        self.source=file_path
+        self.state="Ok"
 
     def is_audio_link(self, link):
         regex = r'.*\.(mp3|wav|ogg|aac|m4a|flac|wma|alac|ape|opus|webm|amr|pcm|aiff|au|raw|ac3|eac3|dts|flv|mkv|mka|mov|avi|mpg|mpeg)$'
