@@ -173,13 +173,12 @@ class MusicPlayer():
         if editinter==None:
             if self.lastm!=None:
                 await self.lastm.delete()
-            mymess=self.messages.copy()
-            for i in mymess:
-                await i.delete()
+            #mymess=self.messages.copy()
+            #for i in mymess:   await i.delete()
             m=await ctx.send(embed=embed)
             self.lastm=m
-            self.messages=[]
-            self.messages.append(m)
+            #self.messages=[]
+            #self.messages.append(m)
         else:
             await editinter.edit_original_response(embed=embed)
 
