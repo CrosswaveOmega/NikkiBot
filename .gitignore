@@ -158,3 +158,4 @@ bot/TcTaskDB.py
 assets.conf
 config2.ini
 channel_related_permission_list.txt
+file.json

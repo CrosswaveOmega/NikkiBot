@@ -6,12 +6,14 @@ import urllib
 import discord
 import subprocess
 import re
+import logging
 
 import yt_dlp # type: ignore
 import itertools
-
+import json
 from utility import MessageTemplates, seconds_to_time_string, seconds_to_time_stamp
 
+logs=logging.getLogger("TCLogger")
 
 def speciallistsplitter(objects:List[Any], resetdata:Callable, splitcond:Callable,transformation:Callable, addtransformation:Callable):
     '''Used in MusicCog.  '''
@@ -43,6 +45,8 @@ class AudioContainer():
         self.requested_by=requested_by
         self.title="TITLE UNRETRIEVED"
         self.duration, self.timeat=0,0
+        self.json_dict={}
+        self.thumbnail=None
         self.started_at:datetime.datetime=discord.utils.utcnow()
         self.seekerspot=0.0
         self.source=None
@@ -51,7 +55,7 @@ class AudioContainer():
     def get_song_youtube(self,search=False):
         '''Get a song from a youtube url.'''
         info={}
-        options={"format": "bestaudio", "noplaylist": "True", 'youtube_include_dash_manifest': False}
+        options={"format": "bestaudio", "noplaylist": "True", 'youtube_include_dash_manifest': False, 'format_sort':["hasaud"]}
         with yt_dlp.YoutubeDL(options) as ydl:
             res=None
             if search:  res = ydl.extract_info(f"ytsearch:{self.query}", download=False)
@@ -60,31 +64,40 @@ class AudioContainer():
                 info = res['entries'][0]
             else:                         # Just a video
                 info = res
+        
+        dump=json.dumps(info, indent=3, sort_keys=True)
+
+        logs.info(dump)
+        self.json_dict=info
         self.title, self.duration,self.url= info["title"], info["duration"], info["webpage_url"]
-        self.source=info["formats"][0]["url"]
+        self.thumbnail=info['thumbnail']
+        self.source=info["url"]
+        print(self.source)
         self.state="Ok"
 
     def get_song_soundcloud(self):
         '''Get a song from a soundcloud url.'''
         info={}
-        options={"format": "bestaudio","noplaylist": "True"}
+        options={"format": "bestaudio","noplaylist": "True",'format_sort':["hasaud"]}
         with yt_dlp.YoutubeDL(options) as ydl:
             res = ydl.extract_info(f"{self.url}", download=False)
             if 'entries' in res:          # a playlist or a list of videos
                 info = res['entries'][0]
             else:                         # Just a video
                 info = res
+        self.json_dict=info
         self.title, self.duration,self.url= info["title"], info["duration"], info["webpage_url"]
         self.source=info["url"]
         self.state="Ok"
 
-    def get_song_discord(self):
-        '''Get a song from a discord file url.'''
+    def get_song_file(self):
+        '''Get a song from a file url.'''
         info={}
-        options={"format": "bestaudio","noplaylist": "True"}
+        options={"format": "bestaudio","noplaylist": "True",'format_sort':["hasaud"]}
         
         duration_cmd = "ffprobe -i "+self.query+" -show_format -v quiet"
         output = subprocess.check_output(duration_cmd, shell=True, stderr=subprocess.STDOUT).decode("utf-8")
+        
         # Find the duration of the audio stream from the ffprobe output
         duration_match = re.search(r"duration=([\d\.]+)", output)
         total_length = float(duration_match.group(1))
@@ -95,6 +108,12 @@ class AudioContainer():
         
         self.source=self.query
         self.state="Ok"
+    def is_audio_link(self, link):
+        regex = r'.*\.(mp3|wav|ogg|aac|m4a|flac|wma|alac|ape|opus|webm|amr|pcm|aiff|au|raw|ac3|eac3|dts|flv|mkv|mka|mov|avi|mpg|mpeg)$'
+        if re.match(regex, link):
+            return True
+        else:
+            return False
 
 
     def get_song(self):
@@ -105,7 +124,10 @@ class AudioContainer():
             elif "soundcloud" in self.query: #It's a soundcloud Link
                 self.get_song_soundcloud()
             elif 'discordapp' in self.query:
-                self.get_song_discord()
+                self.get_song_file()
+            elif self.is_audio_link(self.query):
+                self.get_song_file()
+
             else: #No idea what it is, do a search.
                 self.get_song_youtube(search=True)
 
