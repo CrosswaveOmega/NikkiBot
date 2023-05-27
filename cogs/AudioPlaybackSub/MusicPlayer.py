@@ -149,7 +149,9 @@ class MusicPlayer():
                         if self.channel!=None:
                             await self.send_message_internal(self.channel,"disconnected",
                             f"I'm leaving {voice.channel.name} now because I'm the only one in it.")
+
                         await voice.disconnect()
+                        self.bot.remove_act("MusicPlay")
                         return True
                 else:
                     self.timeidle=0
