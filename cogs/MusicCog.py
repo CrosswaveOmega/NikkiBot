@@ -14,7 +14,7 @@ from queue import Queue
 from typing import Any, Literal, Callable, Generator, Generic, IO, Optional, TYPE_CHECKING, Tuple, TypeVar, Union
 from bot import TCBot, TC_Cog_Mixin
 
-import youtube_dl # type: ignore
+import yt_dlp # type: ignore
 import itertools
 
 from assets import AssetLookup
@@ -435,7 +435,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         if await connection_check(interaction,ctx): #if it's true, then it shouldn't run.
             return
         ydlops={"extract_flat":"in_playlist","skip_download":True,"forcejson":True}
-        with youtube_dl.YoutubeDL(ydlops) as ydl:
+        with yt_dlp.YoutubeDL(ydlops) as ydl:
             ie = ydl.extract_info(f"{url}", download=False, process=False)
             result_type = ie.get('_type', 'video')
             if result_type in ('playlist', 'multi_video'):
@@ -474,7 +474,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         
         await MessageTemplatesMusic.music_msg(ctx, "Playlist", f"Please wait, I'm downloading all your server specific music tracks!")
         stat=self.bot.add_status_message(ctx)
-        with youtube_dl.YoutubeDL(ydlops) as ydl:
+        with yt_dlp.YoutubeDL(ydlops) as ydl:
             e=0
             async for thisMessage in channel.history(limit=messagecount):
                 e+=1
@@ -525,7 +525,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         total=0
         ydlops={"extract_flat":"in_playlist","skip_download":True,"forcejson":True}
         self.get_ctx=ctx.channel
-        with youtube_dl.YoutubeDL(ydlops) as ydl:
+        with yt_dlp.YoutubeDL(ydlops) as ydl:
             internetres=initial
             if internetres==None:
                 internetres = ydl.extract_info(f"{url}", download=False, process=False)

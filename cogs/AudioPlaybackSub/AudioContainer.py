@@ -7,7 +7,7 @@ import discord
 import subprocess
 import re
 
-import youtube_dl # type: ignore
+import yt_dlp # type: ignore
 import itertools
 
 from utility import MessageTemplates, seconds_to_time_string, seconds_to_time_stamp
@@ -52,7 +52,7 @@ class AudioContainer():
         '''Get a song from a youtube url.'''
         info={}
         options={"format": "bestaudio", "noplaylist": "True", 'youtube_include_dash_manifest': False}
-        with youtube_dl.YoutubeDL(options) as ydl:
+        with yt_dlp.YoutubeDL(options) as ydl:
             res=None
             if search:  res = ydl.extract_info(f"ytsearch:{self.query}", download=False)
             else:       res = ydl.extract_info(f"{self.query}", download=False)
@@ -68,7 +68,7 @@ class AudioContainer():
         '''Get a song from a soundcloud url.'''
         info={}
         options={"format": "bestaudio","noplaylist": "True"}
-        with youtube_dl.YoutubeDL(options) as ydl:
+        with yt_dlp.YoutubeDL(options) as ydl:
             res = ydl.extract_info(f"{self.url}", download=False)
             if 'entries' in res:          # a playlist or a list of videos
                 info = res['entries'][0]

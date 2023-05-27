@@ -26,7 +26,7 @@ The tasks can be customized by adding coroutines to the Guild_Task_Functions cla
 - discord.py
 - SQLAlchemy
 - python-dateutil
-- youtube_dl
+- ~~youtube_dl~~ yt_dlp
 
 ## Technical Features
 

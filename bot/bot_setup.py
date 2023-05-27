@@ -140,20 +140,6 @@ async def on_ready():
     await bot.after_startup()
     print("Setup done.")
 
-'''
-@TCTask(name="my_stask", time_interval=relativedelta_sp(weekday=[TU,WE], hour=9, minute=0))
-async def my_coroutines():
-    print("Task running at", datetime.now())
-    await asyncio.sleep(5)
-
-    print("Task done at", datetime.now())
-@TCTask(name="my_task1", time_interval=relativedelta_sp(months='var', day=23, hour=12, minute=5))
-async def my_coroutine():
-    print("Task running at", datetime.now())
-    await asyncio.sleep(5)
-
-    print("Task done at", datetime.now())
-'''
 
 
 class Main(commands.Cog):
