@@ -311,11 +311,11 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
             return
         if not MusicManager.get(guild).current:
             await MusicManager.get(guild).send_message(ctx, "No music", "I'm not playing any music right now.")
-            await self.send_player(interaction)
+            #await self.send_player(interaction)
             return
         data = MusicManager.get(guild).current
         await MusicManager.get(guild).send_message(ctx, "Now Playing", f"I am currently playing {data.title}!")
-        await self.send_player(interaction)
+        #await self.send_player(interaction)
         
 
     @mp.command(name="resume", description="Resume current song in Voice Channel")
