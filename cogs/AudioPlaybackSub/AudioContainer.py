@@ -137,7 +137,7 @@ class AudioContainer():
         duration_match = re.search(r"duration=([\d\.]+)", output)
         total_length = int(round(float(duration_match.group(1))))
         print("Total Length: "+str(total_length) +" seconds")
-        self.title, self.duration,self.url= "Your Song", total_length, file_path
+        self.title, self.duration,self.url= "Your Song", total_length, "./"+file_path
         self.source="./"+file_path
         self.state="Ok"
 

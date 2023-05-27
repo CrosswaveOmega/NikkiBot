@@ -180,7 +180,7 @@ class MusicPlayer():
                     print(e)
                     try:
                         jurl=self.lastm.jump_url
-                        mep=urltomessage(jurl,self.bot,partial=True)
+                        mep=await urltomessage(jurl,self.bot,partial=True)
                         await mep.delete()
                     except Exception as ep:
                         print(ep)
