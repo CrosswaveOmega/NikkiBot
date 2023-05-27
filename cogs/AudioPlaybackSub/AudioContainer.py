@@ -135,7 +135,7 @@ class AudioContainer():
         duration_cmd = "ffprobe -i "+file_path+" -show_format -v quiet"
         output = subprocess.check_output(duration_cmd, shell=True, stderr=subprocess.STDOUT).decode("utf-8")
         duration_match = re.search(r"duration=([\d\.]+)", output)
-        total_length = float(duration_match.group(1))
+        total_length = int(duration_match.group(1))
         print("Total Length: "+str(total_length) +" seconds")
         self.title, self.duration,self.url= "Your Song", total_length, file_path
         self.source=file_path
