@@ -82,6 +82,9 @@ class MusicPlayer():
         self.FFMPEG_OPTIONS =\
              {"before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
              "options": "-vn -bufsize 5M -nostats -loglevel 0"}
+        self.FFMPEGFILE_OPTIONS =\
+             {"options": "-vn -loglevel 0"}
+
 
     async def player_button_call(self, interaction:discord.Interaction, action:str):
         '''Callback for player buttons.'''
@@ -379,6 +382,8 @@ class MusicPlayer():
                 voice.pause()
             
             aud=discord.FFmpegPCMAudio(song.source, **self.FFMPEG_OPTIONS)
+            if song.type=='file':
+                aud=discord.FFmpegPCMAudio(song.source, **self.FFMPEG_FILEOPTIONS)
             await asyncio.sleep(0.25)
             song.start()
             voice.play(aud,after=lambda e: self.bot.schedule_for_post(ctx.channel, "Error in playback: "+str(e)) if e else  asyncio.run_coroutine_threadsafe(self.player_actions("auto_next"), self.bot.loop))

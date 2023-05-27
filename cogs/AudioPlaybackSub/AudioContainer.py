@@ -46,6 +46,7 @@ class AudioContainer():
         self.requested_by=requested_by
         self.title="TITLE UNRETRIEVED"
         self.duration, self.timeat=0,0
+        self.type="stream"
         self.json_dict={}
         self.thumbnail=None
         self.started_at:datetime.datetime=discord.utils.utcnow()
@@ -139,6 +140,7 @@ class AudioContainer():
         print("Total Length: "+str(total_length) +" seconds")
         self.title, self.duration,self.url= "Your Song", total_length, "./"+file_path
         self.source="./"+file_path
+        self.type='file'
         self.state="Ok"
 
     def is_audio_link(self, link):
