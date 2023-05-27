@@ -175,7 +175,7 @@ class Main(commands.Cog):
         guild=ctx.guild
         list=TCTaskManager.task_check()
         chunks = [", ".join(list[i:i + 10]) for i in range(0, len(list), 10)]
-        formatted_strings = ['\n'.join(chunk) for chunk in chunks]
+        formatted_strings = [chunk for chunk in chunks]
         for i in formatted_strings:
             await ctx.send(i)
             
