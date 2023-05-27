@@ -102,7 +102,7 @@ class AudioContainer():
         
         # Find the duration of the audio stream from the ffprobe output
         duration_match = re.search(r"duration=([\d\.]+)", output)
-        total_length = int(duration_match.group(1))
+        total_length = int(round(duration_match.group(1)))
         print("Total Length: "+str(total_length) +" seconds")
         self.title, self.duration,self.url= "Your Song", total_length, self.query
         self.source=self.query
