@@ -133,7 +133,7 @@ class AudioContainer():
             self.source=file_path
             self.state="Ok"
         else:
-            self.state="Error"
+            raise Exception("NOT FOUND.")
 
     def is_audio_link(self, link):
         regex = r'.*\.(mp3|wav|ogg|aac|m4a|flac|wma|alac|ape|opus|webm|amr|pcm|aiff|au|raw|ac3|eac3|dts|flv|mkv|mka|mov|avi|mpg|mpeg)$'
