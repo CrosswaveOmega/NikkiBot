@@ -255,7 +255,7 @@ class TCTaskManager:
         manager = TCTaskManager.get_instance()
         task_string_list=[]
         for key, task in manager.tasks.items():
-            task_string_list.append(task.time_left())
+            task_string_list.append(task.time_left()+"\n")
         return task_string_list
 
     @classmethod
