@@ -172,7 +172,10 @@ class MusicPlayer():
         embed=self.get_music_embed(title,desc)
         if editinter==None:
             if self.lastm!=None:
-                await self.lastm.delete()
+                try:
+                    await self.lastm.delete()
+                except Exception as e:
+                    print(e)
             #mymess=self.messages.copy()
             #for i in mymess:   await i.delete()
             m=await ctx.send(embed=embed)
@@ -392,7 +395,6 @@ class MusicPlayer():
         #Get song, and add to queue.  BLOCKING OPERATION.
         song.get_song()        
         if song.state=="Error":
-            
             self.internal_message_log.append(f"I'm so sorry, {song.title} gave me a weird error: {str(song.error_value)}")
         elif song.state=="Ok": 
             self.songs.append(song)
@@ -438,7 +440,7 @@ class MusicPlayer():
         if self.voice!=None:
             voicelat="{:.4f}".format(self.voice.latency)
             avglat="{:.4f}".format(self.voice.average_latency)
-            voice_status=f"{self.voice.endpoint},latency:{voicelat},average_latency:{avglat}"
+            voice_status=f"{self.voice.endpoint},\nlatency:{voicelat},\navg_latency:{avglat}"
             embed.add_field(name="VOICE STATUS:",value=voice_status,inline=True)
         return embed
     
