@@ -19,6 +19,7 @@ from utility import PageClassContainer
 from .AudioContainer import AudioContainer
 from .MusicUtils import connection_check
 from .MusicViews import PlayerButtons
+from .MusicPlayer_Mixins import PlaylistMixin, PlayerMixin
 '''this code is for the music player, and it's interactions.'''
 
 class PlaylistPageContainer(PageClassContainer):
@@ -60,7 +61,7 @@ class PlaylistPageContainer(PageClassContainer):
             emb=self.make_embed()
             await self.last_inter.response.edit_message(embed=emb,view=view)
 
-class MusicPlayer():
+class MusicPlayer(PlaylistMixin, PlayerMixin):
     """The class which plays songs."""
     def __init__(self, bot,guild:discord.Guild=None):
         self.bot, self.guild = bot, guild
@@ -77,6 +78,8 @@ class MusicPlayer():
         self.lastm:discord.Message=None
         self.messages=[]
         self.internal_message_log=[]
+        self.setup_actions()
+        self.setup_playlist_actions()
         
         self.processsize=0
         self.FFMPEG_OPTIONS =\
@@ -161,11 +164,13 @@ class MusicPlayer():
 
 
     def reset(self):
+        '''reset the player.'''
         self.songs, self.songhist,self.current= [], [],None
         self.repeat,self.shuffle=False, False
         self.lastm=None
     
     async def setvoiceandctx(self,interaction: discord.Interaction):
+        '''Set an internal Voice Client and Message Channel from the passed in interaction.'''
         self.channel,self.voice=None,None
         try:
             ctx: commands.Context = await self.bot.get_context(interaction)
@@ -175,7 +180,7 @@ class MusicPlayer():
             self.channel,self.voice=None,None
 
     async def send_message_internal(self, ctx, title, desc,  editinter: discord.Interaction=None):
-        """private send message command."""
+        """Send or edit a player message."""
         embed=self.get_music_embed(title,desc)
         if editinter==None:
             if self.lastm!=None:
@@ -200,8 +205,8 @@ class MusicPlayer():
         else:
             await editinter.edit_original_response(embed=embed)
 
-    async def send_message(self, ctx_to_try, title, desc,  editinter: discord.Interaction=None):
-        """if exception, try stored."""
+    async def send_message(self, ctx_to_try:commands.Context, title:str, desc:str,  editinter: discord.Interaction=None):
+        """Send a message through the ctx_to_try"""
         try:
             await self.send_message_internal(ctx_to_try,title,desc,editinter)
         except:
@@ -210,163 +215,9 @@ class MusicPlayer():
             else:
                 print("Music player never set a voice and channel!")
 
-    async def play(self, ctx, editinter: discord.Interaction=None):
-        '''Start playing a song.'''
-        voice=self.voice
-        if self.current==None:
-            self.player_condition="play"
-            await self.play_song(ctx)
-        else:
-            if voice.is_paused():
-                self.player_condition="play"
-                self.current.resume()
-                voice.resume()
-                data = self.current
-                await self.send_message(ctx, "Resume", f"{data.title} is resuming!",editinter)
-            else:
-                data = self.current
-                await self.send_message(ctx, "Resume", f"{data.title} is already playing!",editinter)
-                
-    async def stop(self,ctx,editinter:discord.Interaction=None):
-        if self.current!=None:
-            self.current.stop()
-            self.player_condition="stop"
-            self.voice.stop()
-            if self.repeat:
-                self.songs.append(self.current)
-            self.current=None
-            await self.send_message(ctx, "Stop", f"The player has been stopped.",editinter)
-
-    async def pause(self,ctx,editinter:discord.Interaction=None):
-        if self.current!=None:
-            if self.voice.is_playing():
-                self.voice.pause()
-                if not self.override:
-                    if self.current:
-                        self.current.pause()
-                    self.player_condition="pause"
-                    await self.send_message(ctx, "Pause", \
-                    f"I have paused {self.current.title}!",editinter)
-            else: await self.send_message(ctx, "Not playing", "There isn't a song playing right now.",editinter)
-        else: await self.send_message(ctx, "Not playing", "There isn't a song playing right now.",editinter)
-
-    async def next(self,ctx,editinter,case="notauto"):
-        
-        if self.repeatone and case=="auto":
-            if self.current!=None: self.songs.insert(0,self.current)
-        elif self.repeat:
-            if self.current!=None:
-                self.current.stop()
-                self.songs.append(self.current)
-        elif self.current!=None:
-            self.current.stop()
-            if len(self.songhist)>=16: self.songhist.pop(0)
-            self.songhist.append(self.current)
-        
-        if self.songs: await self.play_song(ctx)
-        else:
-            if self.current!=None:
-                self.current.stop()
-                self.current=None
-            await self.send_message(ctx, "Empty Playlist", \
-                "My playlist is expended, so I can't go to a new song.",editinter)
-            self.bot.remove_act("MusicPlay")
-            self.player_condition="none"
-
-    async def back(self,ctx,editinter):
-        if self.current!=None:
-            self.songs.insert(0,self.current)
-        if self.repeat:
-            back=self.songs.pop()
-            self.songs.insert(0,back)
-        else:
-            if self.songhist:
-                torepeat=self.songhist.pop()
-                self.songs.insert(0,torepeat)
-        if self.songs: await self.play_song(ctx)
-        else: 
-            await self.send_message(ctx, "Empty Playlist", \
-                "There's nothing to go back to!",editinter)
-            self.player_condition="none"
-
-    async def player_actions(self, action="", ctxmode=None, editinter: discord.Interaction=None):
-        """Dispatch a player action based on action.
-        action=[play,stop,pause,next,auto_next]
-         ctxmode: command context if available."""
-        ctx, voice=self.channel, self.voice
-        if ctxmode: ctx=ctxmode
-        if self.override!=True:
-            if action=="play":
-                await self.play(ctx,editinter)
-            if action=="stop":
-                await self.stop(ctx,editinter)
-            if action=="pause":
-                await self.pause(ctx,editinter)
-            if action=="next":
-                await self.next(ctx,editinter)
-            if action=="back":
-                await self.back(ctx,editinter)
-            if action=="auto_next":
-                if self.player_condition in ["none","play"]:
-                    await self.next(ctx,editinter,case="auto")
-        if action=="auto_over":
-            self.override=False
-            if self.player_condition in ["none","play"]:
-                await self.next(ctx,editinter,case="auto")
-    
-    
-    async def playlist_actions(self,action, param=None):
-        """add has param AudioContainer, add_url has param url, removespot has param int"""
-        if action=="add": #param is type AudioContainer, add to playlist and shuffle if shuffle is on.
-            if param:
-                #logger.info("adding song...")
-                song=param;
-                self.songs.append(song)
-                if self.shuffle: random.shuffle(self.songs)
-                return song
-        elif action=="add_url": #param is url to be added.
-            if param:
-                url,author=param
-                song=AudioContainer(url,author.name)
-                song.get_song()
-                
-                if song.state=="Error":
-                    print("error")
-                    if self.channel!=None:
-                        await self.send_message(self.channel,str(song.error_value), desc="Error...")
-                    await self.bot.send_error(song.error_value,"Adding URL.")
-                    return None
-
-                res=await self.playlist_actions("add",song)
-                return res
-        elif action=="removespot": #Remove a song from spot in playlist.
-            if param:
-                spot=param
-                if spot<0 or spot>=len(self.songs):
-                   return "ERR!&outofrange&ERR!"
-                removedsong=self.songs.pop(spot)
-                return removedsong
-        elif action=="jumpto": #Remove a song from spot in playlist.
-            if param:
-                spot=param
-                if spot<0 or spot>=len(self.songs):
-                   return "ERR!&outofrange&ERR!"
-                removedsong=self.songs.pop(spot)
-                self.songs.insert(0,removedsong)
-                return removedsong
-        elif action=="shuffle": #Shuffle the playlist once.
-            random.shuffle(self.songs)
-            return "done"
-        elif action=="clear":# Clear the playlist.
-            await self.player_actions("stop")
-            if self.songs:
-                self.songs, self.current = [], None
-                return 'done'
-            else: return 'emptyalready'
-        return "Playlist Command Error"
 
     async def play_song(self,ctxmode:Union[discord.TextChannel,commands.Context]):
-        '''This function starts playback of the current song.'''
+        '''Start playback of the current song.'''
         voice,ctx = self.voice,ctxmode  #discord.utils.get(self.bot.voice_clients, guild=interaction.guild)
         if self.songs:
             self.current = self.songs.pop(0)
@@ -388,7 +239,9 @@ class MusicPlayer():
                 aud=discord.FFmpegPCMAudio(song.source, **self.FFMPEG_FILEOPTIONS)
             await asyncio.sleep(0.25)
             song.start()
-            voice.play(aud,after=lambda e: self.bot.schedule_for_post(ctx.channel, "Error in playback: "+str(e)) if e else  asyncio.run_coroutine_threadsafe(self.player_actions("auto_next"), self.bot.loop))
+            voice.play(aud,
+                       after=lambda e: self.bot.schedule_for_post(ctx.channel, "Error in playback: "+str(e)) if e else  asyncio.run_coroutine_threadsafe(self.player_actions("auto_next"), 
+                        self.bot.loop))
             voice.is_playing()
             self.bot.add_act("MusicPlay",f"{song.title}",discord.ActivityType.listening)
             await self.send_message(ctx,"play",f"**{song.title}** is now playing.  " )
@@ -410,14 +263,14 @@ class MusicPlayer():
         voice.play(aud,after=lambda e: self.bot.schedule_for_post(ctx.channel, "Error in playback: "+str(e)) if e else asyncio.run_coroutine_threadsafe(self.player_actions("auto_over"), self.bot.loop))
 
     def musicplayeradd(self,song:AudioContainer):
-        #Get song, and add to queue.  BLOCKING OPERATION.
+        '''Get song, and add to queue.  BLOCKING OPERATION.'''
         song.get_song()        
         if song.state=="Error":
             self.internal_message_log.append(f"I'm so sorry, {song.title} gave me a weird error: {str(song.error_value)}")
         elif song.state=="Ok": 
             self.songs.append(song)
 
-    def get_music_embed(self, title: str, description: str):
+    def get_music_embed(self, title: str, description: str)->discord.Embed:
         """Format a status embed and return"""
         embed=discord.Embed(title="", description=description,color=Colour(0x68ff72))
         myname=AssetLookup.get_asset("name")

@@ -13,7 +13,7 @@ import yt_dlp # type: ignore
 import itertools
 import json
 from utility import MessageTemplates, seconds_to_time_string, seconds_to_time_stamp
-
+import mutagen
 logs=logging.getLogger("TCLogger")
 
 def speciallistsplitter(objects:List[Any], resetdata:Callable, splitcond:Callable,transformation:Callable, addtransformation:Callable):
@@ -106,6 +106,9 @@ class AudioContainer():
         total_length = int(round(float(duration_match.group(1))))
         print("Total Length: "+str(total_length) +" seconds")
         self.title, self.duration,self.url= "Your Song", total_length, self.query
+        mdata=mutagen.File(self.query)
+        if mdata:
+            self.title=mdata.get('title')
         self.source=self.query
         self.state="Ok"
     def get_song_local_file(self):
@@ -138,8 +141,11 @@ class AudioContainer():
         duration_match = re.search(r"duration=([\d\.]+)", output)
         total_length = int(round(float(duration_match.group(1))))
         print("Total Length: "+str(total_length) +" seconds")
+        mdata=mutagen.File(file_path)
         self.title, self.duration,self.url= "Your Song", total_length, "./"+file_path
         self.source="./"+file_path
+        if mdata:
+            self.title=mdata.get('title')
         self.type='file'
         self.state="Ok"
 

@@ -41,9 +41,10 @@ def seconds_to_time_string(seconds_start):
         )
     return retme
 
-def seconds_to_time_stamp(seconds_start):
+def seconds_to_time_stamp(seconds_init):
     '''return string of d:h:m:s'''
     return_string=""
+    seconds_start=int(round(seconds_init))
     seconds=seconds_start%60
     minutes_r=(seconds_start-seconds)//60
     minutes=minutes_r%60
