@@ -1,7 +1,4 @@
 import asyncio
-import datetime
-import random
-import urllib 
 
 import discord
 import logging
@@ -23,47 +20,7 @@ from utility import seconds_to_time_string, seconds_to_time_stamp
 
 from .AudioPlaybackSub import *
 logger=logging.getLogger('discord')
-"""class MusicPlayers():
-    '''class that stores a dictionary of all active music player, managed per guild.'''
-    def __init__(self):
-        self.players={}
-    
-    def add_player(self,bot,guild:discord.Guild):
-        key=str(guild.id)
-        if not key in self.players:
-            newplayer=MusicPlayer(bot,guild)
-            self.players[key]=newplayer
 
-    def getplayer(self,guild:discord.Guild)->MusicPlayer:
-        '''get a music player object.'''
-        key=str(guild.id)
-        if key in self.players:
-            return self.players[key]
-        return None
-
-    def gp(self,interaction_or_guild):
-        if isinstance(interaction_or_guild, type(discord.Interaction)):
-            return self.getplayer(interaction_or_guild.guild)
-        if isinstance(interaction_or_guild,type(discord.Guild)):
-            return self.getplayer(interaction_or_guild)
-
-    def allplayers(self):
-        '''An iterator that walks through all the music players.
-        Yields
-        ------
-        Union[:class:`.MusicPlayer`, :class:`None`]
-            A command or group from the cog.
-        '''
-        for gid,play in self.players.items():
-            yield play
-    
-    def remove_player(self,guild:discord.Guild)->MusicPlayer:
-        '''remove a music player for the passed in discord Guild'''
-        key=str(guild.id)
-        if key in self.players:
-            ret=self.players.pop(key)
-            return ret
-        return None"""
     
 class MusicCog(commands.Cog,TC_Cog_Mixin):
     def __init__(self, bot:TCBot) -> None:
@@ -508,6 +465,42 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         await MusicManager.get(ctx.guild).send_message(ctx, "Playlist", f"I added all {total} tracks to my processing queue! \
             They'll be added to the playlist once I finish downloading the data.")
 
+    @app_commands.command(name="radioadd", description="add a audio file to my radio")
+    @app_commands.describe(file="An audio file")
+    async def radioadd(self, interaction: discord.Interaction, file: discord.Attachment):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        guild:discord.Guild=interaction.guild
+        filesize=round(file.size/1000000,2)
+        
+        Bytelimit = 25 
+        if filesize >= Bytelimit:
+            await MessageTemplatesMusic.music_msg(ctx,'filecheck',f"This file is {filesize} megabytes large, my upper limit is 25mb!")
+            return
+        if round(get_audio_directory()/1000000,2)+filesize>512:
+            await MessageTemplatesMusic.music_msg(ctx,'filecheck',f"Uploading this file will exceed my radio folder's capacity!")
+            return
+       
+        directory_name=get_audio_directory()
+        regex = r'.*\.(mp3|wav|ogg|aac|m4a|flac|wma|alac|ape|opus|webm)$'
+        if not re.match(regex, file.filename):
+            await MessageTemplatesMusic.music_msg(ctx,'filecheck',f"This is not a valid audio file.")
+            return 
+        filepath=f"{directory_name}/{file.filename}"
+        profile=UserMusicProfile.get_or_new(interaction.user.id)
+        if profile.check_existing_upload(filepath):
+            await MessageTemplatesMusic.music_msg(ctx,'filecheck',f"This is already uploaded.")
+            return
+        if profile.check_upload_limit():
+            await MessageTemplatesMusic.music_msg(ctx,'filecheck',f"You've hit the upper limit of uploadable songs.")
+            return
+        profile.add_song(filepath,filesize)
+        await file.save(filepath)
+        await MessageTemplatesMusic.music_msg(ctx,'filecheck',f"Uploaded {file.filename} to my radio folder!")
+        await ctx.bot.get_channel(ctx.bot.error_channel).send(f"Uploaded {file.filename} into the radio folder.")
+
+        
+        
+        
 
     
     @mp.command(name="playlistcopy", description="get multiple songs from youtube playlist")

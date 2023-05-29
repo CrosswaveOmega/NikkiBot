@@ -4,6 +4,8 @@ saveData/
 startup_tests/
 config.ini
 foofighter.db
+alembic
+alembic.ini
 *.py[cod]
 *$py.class
 

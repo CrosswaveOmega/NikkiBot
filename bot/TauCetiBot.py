@@ -63,9 +63,10 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
     def database_on(self):
         '''turn the database on.'''
         self.database= DatabaseSingleton("Startup")
-        self.database.startup()
         self.database.load_base(Base=Guild_Task_Base)
         self.database.load_base(Base=Guild_Sync_Base)
+        self.database.startup()
+
 
     def set_error_channel(self,newid):
         '''set the error channel id.'''
@@ -77,6 +78,14 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
     async def after_startup(self):
         '''This function is called in on_ready, but only once.'''
         if not self.bot_ready:
+
+            self.database_on()
+            self.update_ext_list()
+            await self.reload_all()
+
+            #audit old guild data.
+            await self.audit_guilds()
+
             await self.all_guild_startup()
             print("BOT SYNCED!")
             self.delete_queue_message.start()
@@ -359,7 +368,8 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
             return "LOADOK"
         except Exception as ex:
             en=str(ex)
-            print(en)
+            back=traceback.format_exception(None, ex, ex.__traceback__)
+            print("ENOK",back)
             tracebackstr=''.join(traceback.format_exception(None, ex, ex.__traceback__))
             self.pswitchload(plugin)[extname]=(en,tracebackstr)
             return tracebackstr

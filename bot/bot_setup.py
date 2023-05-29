@@ -130,13 +130,6 @@ async def on_ready():
     except Exception as e:
         print(e)
         await bot.close()
-
-    #audit old guild data.
-    await bot.audit_guilds()
-
-
-    for x in bot.tree.walk_commands():
-        print(x.name)
     await bot.after_startup()
     print("Setup done.")
 
@@ -322,14 +315,13 @@ async def main(args):
         intent.message_content=True
         intent.guilds=True
         intent.members=True
-        bot.database_on()
+        
         outcome=bot.set_error_channel(config.get("optional", 'error_channel_id'))
         if not outcome:
             bot.error_channel=-726
         await bot.add_cog(Main())
         bot.set_ext_directory('./cogs')
-        bot.update_ext_list()
-        await bot.reload_all()
+
         if (config!=None):
             await bot.start(config.get("vital", 'cipher'))
              

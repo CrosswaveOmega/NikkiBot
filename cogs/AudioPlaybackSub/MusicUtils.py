@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands, tasks
 from .MessageTemplates_EXT import MessageTemplatesMusic
-
+import os
 async def connection_check(interaction: discord.Interaction,ctx:commands.Context, mode:int=3)->bool:
     '''Check if the calling user is connected to a voice channel, 
         and check if the bot is not currently connected to their same voice channel.
@@ -17,3 +17,21 @@ async def connection_check(interaction: discord.Interaction,ctx:commands.Context
             await MessageTemplatesMusic.music_msg(ctx, "Not connected", "I'm not connected to your **Voice Channel!**")
             return True
     return False
+def get_audio_directory():
+    directory_name = "saveData/music"
+
+    # Check if the directory already exists
+    if not os.path.exists(directory_name):
+        # If it doesn't exist, create it
+        os.makedirs(directory_name)
+    return directory_name
+
+def get_directory_size():
+    total_size = 0
+    directory=get_audio_directory()
+    for dirpath, dirnames, filenames in os.walk(directory):
+        for filename in filenames:
+            filepath = os.path.join(dirpath, filename)
+            total_size += os.path.getsize(filepath)
+
+    return total_size
