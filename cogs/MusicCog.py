@@ -476,7 +476,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         if filesize >= Bytelimit:
             await MessageTemplatesMusic.music_msg(ctx,'filecheck',f"This file is {filesize} megabytes large, my upper limit is 25mb!")
             return
-        if round(get_audio_directory()/1000000,2)+filesize>512:
+        if round(get_directory_size()/1000000,2)+filesize>512:
             await MessageTemplatesMusic.music_msg(ctx,'filecheck',f"Uploading this file will exceed my radio folder's capacity!")
             return
        
