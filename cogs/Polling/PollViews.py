@@ -9,8 +9,6 @@ class PollVoteButton(discord.ui.Button['PollVoteButton']):
             print(user.id,button_id)
             outcome,poll=PollTable.vote(button_id,user.id)
             print("next")
-            #poll=PollTable.get(p)
-            #await interaction.edit_original_response(embed=poll.poll_embed_view())
             await interaction.response.edit_message(embed=poll.poll_embed_view())
         async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
             await interaction.response.send_message(f'Error: {str(error)}', ephemeral=True)

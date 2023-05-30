@@ -211,13 +211,7 @@ class Main(commands.Cog):
         bot=ctx.bot
         bot.update_ext_list()
         await bot.reload_all()
-        for x in bot.tree.walk_commands():
-            print(x.name)
-        #await bot.tree.sync()
-        print("BOT SYNCED!")
-        for x in bot.tree.walk_commands():
-            print(x.name)
-        embed=discord.Embed(title="Loaded Extensions")
+        embed=discord.Embed(title="Reloaded Loaded Extensions")
         for i, v in bot.loaded_extensions.items():
             ex,val=v
             embed.add_field(name=i,value=ex,inline=True)

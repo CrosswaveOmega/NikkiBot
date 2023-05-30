@@ -53,10 +53,6 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
 
         self.loaded_extensions={}
         self.loaded_plugins={}
-
-
-        
-        
         self.default_error=self.on_command_error
         self.bot_ready=False
 
@@ -339,11 +335,10 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
         print(self.extension_list)
 
 
-    async def reload_all(self):
+    async def reload_all(self,resync=False):
         for i, e in self.loaded_extensions.items():
-            if not i in self.extension_list:
-                await self.unload_extension(i)
-                self.loaded_extensions[i]=None
+            await self.unload_extension(i)
+            self.loaded_extensions[i]=None
 
         for ext in self.extension_list:
             if not ext in self.loaded_extensions: 
@@ -351,6 +346,8 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
             else: 
                 val=await self.extension_reload(ext)
         print(self.extension_list)
+        if resync:
+            await self.all_guild_startup()
 
     def pswitchload(self,pmode=False):
         #Once could load in a list of 'plugins' seperately, decided against.

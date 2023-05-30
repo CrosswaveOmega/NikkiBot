@@ -52,7 +52,7 @@ class DatabaseSingleton:
 
         def load_in_base(self,Base):
             print("loading in: ",Base.__name__)
-            self.bases.append(Base)
+            if not Base in self.bases: self.bases.append(Base)
             print('done')
             if self.connected:
                 Base.metadata.create_all(self.engine)
