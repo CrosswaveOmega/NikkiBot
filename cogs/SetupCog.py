@@ -21,7 +21,7 @@ from pathlib import Path
 from utility import serverAdmin, serverOwner, load_manual, MessageTemplates
 from utility.embed_paginator import pages_of_embeds
 
-
+from assets import AssetLookup
 from discord.app_commands import AppCommand
 
 ''''''
@@ -84,7 +84,13 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         pages=await MessageTemplates.get_manual_list(ctx,"nikki_setup_manual.json")
         await pages_of_embeds(ctx,pages,ephemeral=True)
 
-
+    @app_commands.command(name="add_ticker", description="Owner Only, add a command to the ticker.", extras={"homeonly":True})
+    #@app_commands.guilds(discord.Object(id=AssetLookup.get_asset('homeguild')))
+    async def add_ticker(self, interaction: discord.Interaction, name:str, text:str) -> None:
+        """get bot info for this server"""
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        bot=ctx.bot
+        bot.add_act(name,text,discord.ActivityType.playing)
 
 
     @nikkisetup.command(name="permissions", description="get links for re-authenticating my permissions")

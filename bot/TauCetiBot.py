@@ -11,6 +11,7 @@ from discord.ext import commands, tasks
 import datetime
 import random
 import string
+from assets import AssetLookup
 from database import *
 from .Tasks.TCTasks import TCTaskManager
 from sqlalchemy.exc import IntegrityError
@@ -191,8 +192,14 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
         def add_command_to_tree(command, guild):
             #Add a command to the commands tree for the given guild.
             current_command_list=[]
+            if command.extras:
+                if command.extras.get("homeonly"):
+                    print("yes")
+                    if guild.id!=int(AssetLookup.get_asset('homeguild')):
+                        return []
             if isinstance(command, (commands.HybridCommand, commands.HybridGroup)):
                 try:
+                    
                     self.tree.add_command(command.app_command, guild=guild, override=True)
                     
                     if isinstance(command,commands.HybridGroup):
