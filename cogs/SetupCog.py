@@ -91,6 +91,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         bot=ctx.bot
         bot.add_act(name,text,discord.ActivityType.playing)
+        await ctx.send("done",ephemeral=True)
 
 
     @nikkisetup.command(name="permissions", description="get links for re-authenticating my permissions")
