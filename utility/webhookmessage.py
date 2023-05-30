@@ -53,7 +53,7 @@ class WebhookMessageWrapper:
         async with aiohttp.ClientSession() as session:
             webhook = Webhook.from_url(webhookurl, session=session)
             
-            mess=await WebhookMessageWrapper.postWebhookMessageProxy(webhook,**kwargs)
+            mess=await WebhookMessageWrapper.postMessageWithWebhook(webhook,**kwargs)
             return mess
 
     @staticmethod
