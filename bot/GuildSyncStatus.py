@@ -255,7 +255,11 @@ def format_application_commands(commands:List[Union[discord.app_commands.Command
     Returns:
     Dictionary of serialized attributes from commands.
     '''
-    formatted_commands = {}
+    formatted_commands = {
+        'chat':{},
+        'context_user':{},
+        'context_message':{}
+    }
     for command in commands:
         if isinstance(command,discord.app_commands.Command):
             #Serializing a Command
@@ -269,7 +273,7 @@ def format_application_commands(commands:List[Union[discord.app_commands.Command
                     'nsfw': command.nsfw
                 }
             }
-            formatted_commands[command.name] = formatted_command
+            formatted_commands['chat'][command.name] = formatted_command
 
         else:
             #Serializing a ContextMenu
@@ -282,7 +286,10 @@ def format_application_commands(commands:List[Union[discord.app_commands.Command
                 },
                 'type': str(command.type)
             }
-            formatted_commands[command.name] = formatted_command
+            if command.type==discord.AppCommandType.message:
+                formatted_commands['context_message'][command.name] = formatted_command
+            if command.type==discord.AppCommandType.user:
+                formatted_commands['context_user'][command.name] = formatted_command
     den=formatted_commands
     if slimdown:
         den=remove_null_values(den)
