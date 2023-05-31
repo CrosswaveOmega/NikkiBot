@@ -113,7 +113,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         treedict=await ctx.bot.get_tree_dict(ctx.guild)
         await ctx.send("Tree retrieved.")
         file_object = io.StringIO()
-        json.dump(treedict, file_object, indent=4,default=str)
+        json.dump(treedict, file_object, indent=4, sort_keys=True,default=str)
         file_object.seek(0)
         await ctx.send(file=discord.File(file_object, filename="yourtree.json"))
 
