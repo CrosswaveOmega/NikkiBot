@@ -164,7 +164,9 @@ def remove_null_values(dictionary):
             new_value = remove_null_values(value)
             if new_value:
                 new_dict[key] = new_value
-        elif value is not None and value != "" and value is not False and value is not []:
+        elif value==discord.utils.MISSING:
+            pass
+        elif value is not None and value != "" and value is not False and value !=[]:
             new_dict[key] = value
     return new_dict
 

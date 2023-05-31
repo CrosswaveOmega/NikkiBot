@@ -84,6 +84,8 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         await pages_of_embeds(ctx,pages,ephemeral=True)
 
     @app_commands.command(name="add_ticker", description="Owner Only, add a command to the ticker.", extras={"homeonly":True})
+    @app_commands.describe(name='the name of the ticker entry')
+    @app_commands.describe(text='the text of the ticker entry')
     #@app_commands.guilds(discord.Object(id=AssetLookup.get_asset('homeguild')))
     async def add_ticker(self, interaction: discord.Interaction, name:str, text:str) -> None:
         """get bot info for this server"""
