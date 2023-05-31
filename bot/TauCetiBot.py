@@ -248,23 +248,18 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
                 print("skipping cog ",cogname)
                 continue
             if hasattr(cog,'ctx_menus'):
-                print(cogname)
                 for name,cmenu in cog.ctx_menus.items():
-                    print(cmenu.name)
                     self.tree.add_command(cmenu, guild=guild, override=True)
             for command in cog.walk_commands():
                 synced+=add_command_to_tree(command, guild)
             for command in cog.walk_app_commands():
                 synced+=add_command_to_tree(command, guild)
-
         await sync_commands_tree(guild, forced=force)
         
-    async def get_tree_dict(self,guild):
-        synced=build_app_command_list(self.tree,guild)
-        app_tree=format_application_commands(synced,nestok=True, slimdown=True)
-        return app_tree
+
 
     async def all_guild_startup(self, force=False):
+        '''fetch all available guilds, and sync the command tree.'''
         try:
             async for guild in self.fetch_guilds(limit=10000):
                 print(f"syncing for {guild.name}")
@@ -272,7 +267,12 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
         except Exception as e:
             print(e)
             raise Exception()
-
+        
+    async def get_tree_dict(self,guild):
+        synced=build_app_command_list(self.tree,guild)
+        app_tree=format_application_commands(synced,nestok=True, slimdown=True)
+        return app_tree
+    
     async def audit_guilds(self):
         '''audit guilds.'''
         metadata=self.database.get_metadata()
