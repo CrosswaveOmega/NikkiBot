@@ -135,10 +135,10 @@ class AppGuildTreeSync(Guild_Sync_Base):
         try:
             #This is preferrable to an API call.
             difference, same,total,simscore = dict_diff(oldtree, newtree)
-            debug, score=f"Differences found: {difference}", f"All {total} are identical!"
+            debug, score=f"Differences found: {difference}", f"{total-same} keys out of {total} are different, simularity is {round(simscore,2)}%"
 
             if difference==None:
-                score=f"{total-same} keys out of {total} are different, simularity is {round(simscore,2)}%"
+                score=f"All {total} are identical!"
                 return True, debug, score
             return False, debug, score
             
