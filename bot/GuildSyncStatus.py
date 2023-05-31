@@ -252,7 +252,7 @@ def format_application_commands(commands:List[Union[discord.app_commands.Command
     Dictionary of serialized attributes from commands.
     '''
     formatted_commands = {
-        'chat':{},
+        'chat_commands':{},
         'context_user':{},
         'context_message':{}
     }
