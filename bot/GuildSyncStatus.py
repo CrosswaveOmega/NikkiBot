@@ -61,13 +61,18 @@ def dict_diff(dict1, dict2):
     if isinstance(dict1, Mapping) and isinstance(dict2, Mapping):
         keys = set(list(dict1.keys()) + list(dict2.keys()))
         same = total= max(len(keys),1)
-        diff = {}
+        diff = {'add':[],'del':[]}
         for key in keys:
             val1 = dict1.get(key)
             val2 = dict2.get(key)
             if val1 != val2:
                 #print(same)
-                diff[key] = (val1, val2)
+                if val2==None:
+                    diff['del'].append(key)
+                elif val1==None:
+                    diff['add'].append(key)
+                else:
+                    diff[key] = (val1, val2)
                 same-=1
         samescore=same/total
         if diff:
