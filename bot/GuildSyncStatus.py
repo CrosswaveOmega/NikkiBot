@@ -198,13 +198,7 @@ def build_app_command_list(tree:discord.app_commands.CommandTree, guild=None)->L
     '''
     current_command_list=[]
     to_walk= Queue()
-    #Add in Context Menus
-    for command in tree.walk_commands(guild=guild, type=discord.AppCommandType.message):
-        current_command_list.append(command)
-    for command in tree.walk_commands(guild=guild, type=discord.AppCommandType.user):
-        current_command_list.append(command)
-    #Add in chat_commands
-    for command in tree.walk_commands(guild=guild):
+    for command in tree.get_commands(guild=guild):
         if isinstance(command,discord.app_commands.Group):
             to_walk.put(command)
         else:
@@ -221,7 +215,7 @@ def build_app_command_list(tree:discord.app_commands.CommandTree, guild=None)->L
 
 
 def format_parameters(parameters:List[discord.app_commands.Parameter])->Dict[str,Any]:
-    '''Serialize all parameters into a dictionary.'''
+    '''Serialize all parameter attributes into a dictionary.'''
     params={}
     for parameter in parameters:
         param_name=str(parameter.name)
@@ -273,7 +267,12 @@ def format_application_commands(commands:List[Union[discord.app_commands.Command
                     'nsfw': command.nsfw
                 }
             }
-            formatted_commands['chat'][command.name] = formatted_command
+            if command.parent:
+                if not formatted_commands['chat'][str(command.parent)]:
+                    formatted_commands['chat'][str(command.parent)]={}
+                formatted_commands['chat'][str(command.parent)][command.name] = formatted_command
+            else:
+                formatted_commands['chat'][command.name] = formatted_command
 
         else:
             #Serializing a ContextMenu
