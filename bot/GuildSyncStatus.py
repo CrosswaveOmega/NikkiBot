@@ -268,7 +268,7 @@ def format_application_commands(commands:List[Union[discord.app_commands.Command
                 }
             }
             if command.parent:
-                if not formatted_commands['chat'][str(command.parent)]:
+                if not str(command.parent) in formatted_commands['chat']:
                     formatted_commands['chat'][str(command.parent)]={}
                 formatted_commands['chat'][str(command.parent)][command.name] = formatted_command
             else:
