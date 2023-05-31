@@ -164,7 +164,7 @@ def remove_null_values(dictionary):
             new_value = remove_null_values(value)
             if new_value:
                 new_dict[key] = new_value
-        elif value is not None and value != "" and value is not False:
+        elif value is not None and value != "" and value is not False and value is not []:
             new_dict[key] = value
     return new_dict
 
@@ -268,9 +268,9 @@ def format_application_commands(commands:List[Union[discord.app_commands.Command
                 }
             }
             if command.parent:
-                if not str(command.parent) in formatted_commands['chat']:
-                    formatted_commands['chat'][str(command.parent)]={}
-                formatted_commands['chat'][str(command.parent)][command.name] = formatted_command
+                if not str(command.parent.name) in formatted_commands['chat']:
+                    formatted_commands['chat'][str(command.parent.name)]={}
+                formatted_commands['chat'][str(command.parent.name)][command.name] = formatted_command
             else:
                 formatted_commands['chat'][command.name] = formatted_command
 
