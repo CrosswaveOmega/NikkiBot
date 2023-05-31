@@ -270,11 +270,11 @@ def format_application_commands(commands:List[Union[discord.app_commands.Command
                 }
             }
             if command.parent:
-                if not str(command.parent.name) in formatted_commands['chat']:
-                    formatted_commands['chat'][str(command.parent.name)]={}
-                formatted_commands['chat'][str(command.parent.name)][command.name] = formatted_command
+                if not str(command.parent.name) in formatted_commands['chat_commands']:
+                    formatted_commands['chat_commands'][str(command.parent.name)]={}
+                formatted_commands['chat_commands'][str(command.parent.name)][command.name] = formatted_command
             else:
-                formatted_commands['chat'][command.name] = formatted_command
+                formatted_commands['chat_commands'][command.name] = formatted_command
 
         else:
             #Serializing a ContextMenu
