@@ -1,4 +1,5 @@
 
+from typing import List
 from discord import Embed, Color, Guild, Message
 from discord.ext import commands
 from .globalfunctions import get_server_icon_color
@@ -53,6 +54,25 @@ class MessageTemplates:
         manual=load_manual(file,ctx)
         embed_list = [MessageTemplates.get_bot_manual_embed(e) for e in manual['embeds']]
         return embed_list
+
+    @staticmethod
+    async def server_profile_embed_list(ctx:commands.Context, description: List[str], ephemeral=True, **kwargs):
+        '''
+        Return a simple overview of a server & basic data provided by the cogs.
+        '''
+        hex=await get_server_icon_color(ctx.guild)
+        # Get a list of all cogs loaded by the bot
+        extended_fields=ctx.bot.get_field_list(ctx.guild)
+        embeds=[]
+        for d in description:
+            embed=MessageTemplates.get_server_profile_embed(
+                ctx.guild, 
+                d,
+                extend_field_list=extended_fields,
+                color=hex)
+            embeds.append(embed)
+        return embeds
+
 
 
     @staticmethod

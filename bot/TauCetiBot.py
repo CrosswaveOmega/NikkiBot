@@ -17,7 +17,7 @@ from .Tasks.TCTasks import TCTaskManager
 from sqlalchemy.exc import IntegrityError
 from utility import Chelp, urltomessage, MessageTemplates
 from .TcGuildTaskDB import Guild_Task_Base, Guild_Task_Functions, TCGuildTask
-from .GuildSyncStatus import Guild_Sync_Base, AppGuildTreeSync, format_application_commands
+from .GuildSyncStatus import Guild_Sync_Base, AppGuildTreeSync, format_application_commands, build_app_command_list
 from .TCMixins import CogFieldList, StatusTicker
 """ Primary Class
 
@@ -181,9 +181,9 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
         '''With a passed in guild, sync all activated cogs for that guild.
         Works on a guild per guild basis in the case that I need to provide
         code to sync different app commands between guilds.'''
-        def syncprint(lis):
+        def syncprint(*lis):
             pass
-            #print(f"Sync for {guild.name} (ID {guild.id})",lis)
+            if False:  print(f"Sync for {guild.name} (ID {guild.id})",*lis)
         def should_skip_cog(cogname: str) -> bool:
             """Determine whether a cog should be skipped during synchronization."""
             '''Not currently needed.'''
@@ -199,51 +199,45 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
                         return []
             if isinstance(command, (commands.HybridCommand, commands.HybridGroup)):
                 try:
-                    
                     self.tree.add_command(command.app_command, guild=guild, override=True)
-                    
-                    if isinstance(command,commands.HybridGroup):
-                        for i in command.walk_commands():
-                            if isinstance(i.app_command,discord.app_commands.Command):
-                                current_command_list.append(i.app_command)
-                    else:
-                        current_command_list.append(command.app_command)
                     syncprint(f"Added hybrid {command.name}")
                 except:
                     syncprint(f"Cannot add {command.name}, case error.")
             else:
                 try:
                     self.tree.add_command(command, guild=guild, override=True)
-                    if isinstance(command,discord.app_commands.Group):
-                        for i in command.walk_commands():
-                            if isinstance(i,discord.app_commands.Command):
-                                current_command_list.append(i)
-                    else:
-                        current_command_list.append(command)
                     syncprint(f"Added {command.name}")
                 except:
                     syncprint(f"Cannot add {command.name}, this is not a app command")
             return current_command_list
 
-        async def sync_commands_tree(guild:discord.Guild,synced:List[discord.app_commands.Command], forced=False):
+        async def sync_commands_tree(guild:discord.Guild, forced=False):
             #Build a dictionary representation of all app commands to be synced, check if 
             #the dictionary is different from a loaded version from before, and then 
             #sync the commands tree for the given guild, updating the dictionary.
             print(f"Checking if it's time to sync commands for {guild.name} (ID {guild.id})...")
             try:
+                #SQLAlchemy is used to handle database connections.
+                synced=build_app_command_list(self.tree,guild)
                 app_tree=format_application_commands(synced)
                 dbentry:AppGuildTreeSync=AppGuildTreeSync.get(guild.id)
                 if not dbentry:
                     dbentry=AppGuildTreeSync.add(guild.id)
-                same, diffscore=dbentry.compare_with_command_tree(app_tree)
+                same, diffscore,score=dbentry.compare_with_command_tree(app_tree)
+                print(f"Check Results: {guild.name} (ID {guild.id}):{score}")
+                self.logs.info(f"Check Results: {guild.name} (ID {guild.id}):\n differences{diffscore} \n{score}")
+                #Check if it's time to edit
                 if (not same) or forced==True:
-                    print(f"Beginning command syncing for {guild.name} (ID {guild.id})...")
+                    print(f"Updating serialized command tree for {guild.name} (ID {guild.id})...")
                     dbentry.update(app_tree)
-                    print(dbentry.compare_with_command_tree(app_tree))
+                    same,diffscore,score=dbentry.compare_with_command_tree(app_tree)
+                    print(f"Starting sync for {guild.name} (ID {guild.id})...")
                     await self.tree.sync(guild=guild)
                     print(f"Sync complete for {guild.name} (ID {guild.id})...")
             except Exception as e:
                 print(str(e))
+                res=str(traceback.format_exception(None, e, e.__traceback__))
+                print(res)
 
         #Gather all activated cogs for a given guild.
         #Note, the reason it goes one by one is because it was originally intended 
@@ -263,9 +257,12 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
             for command in cog.walk_app_commands():
                 synced+=add_command_to_tree(command, guild)
 
-        await sync_commands_tree(guild,synced, forced=force)
+        await sync_commands_tree(guild, forced=force)
         
-
+    async def get_tree_dict(self,guild):
+        synced=build_app_command_list(self.tree,guild)
+        app_tree=format_application_commands(synced,nestok=True, slimdown=True)
+        return app_tree
 
     async def all_guild_startup(self, force=False):
         try:

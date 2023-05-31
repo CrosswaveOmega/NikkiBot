@@ -1,4 +1,4 @@
-import difflib
+import logging
 from typing import Any, Dict, List, Tuple, Union
 from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey, DateTime, Double
 from sqlalchemy.orm import relationship
@@ -8,12 +8,12 @@ from sqlalchemy import select, not_, func
 import datetime
 
 from database import DatabaseSingleton
+from queue import Queue
 
 Guild_Sync_Base = declarative_base()
 
 import json
 import discord
-import difflib
 '''
 All the convienence of automatic command syncing with fewer drawbacks.
 During a sync, format_application_commands will take in a list of AppCommand.Command objects, 
@@ -24,7 +24,7 @@ and create a dictionary of the serialized attributes of AppCommand.Command.
 from collections.abc import Mapping
 
 
-
+logger=logging.getLogger("TCLogger")
 def dict_diff_recursive(dict1, dict2):
     """
     Recursively compare two dictionaries and return the differences.
@@ -59,29 +59,26 @@ def dict_diff(dict1, dict2):
     This is for debugging.
     """
     if isinstance(dict1, Mapping) and isinstance(dict2, Mapping):
-
         keys = set(list(dict1.keys()) + list(dict2.keys()))
-        same=total= max(len(keys),1)
+        same = total= max(len(keys),1)
         diff = {}
         for key in keys:
             val1 = dict1.get(key)
             val2 = dict2.get(key)
             if val1 != val2:
-                print(same)
+                #print(same)
                 diff[key] = (val1, val2)
                 same-=1
         samescore=same/total
         if diff:
-            return diff, samescore*100.0
-        return None, samescore*100.0
-
-
+            return diff, same,total,samescore*100.0
+        return None, same,total,samescore*100.0
     elif dict1 != dict2:
-        return (dict1, dict2), 0.0
+        return (dict1, dict2), 0,1,0.0
+    return None, 1,1,100.0
 
-    return None, 100.0
 class AppGuildTreeSync(Guild_Sync_Base):
-    '''table to store data for Automatic guild tasks.'''
+    '''table to store serialized command trees to help with the autosync system.'''
     __tablename__ = 'apptree_guild_sync'
     server_id = Column(Integer, primary_key=True, nullable=False, unique=True)
     lastsyncdata = Column(Text, nullable=True)
@@ -123,50 +120,58 @@ class AppGuildTreeSync(Guild_Sync_Base):
         self.lastsyncdate=datetime.datetime.utcnow()
         session.commit()
 
-    def compare_with_command_tree(self, command_tree: dict) -> Tuple[bool,float]:
+    def compare_with_command_tree(self, command_tree: dict) -> Tuple[bool,str,str]:
         """
         Compares the current `lastsyncdata` with a passed in `command_tree`.
-        Returns `True` if they are the same, `False` otherwise.
+        Returns `True` if they are the same, `False` otherwise along with a 'simularity score.'
         """
         
-        string1 = (self.lastsyncdata)
-        string2 = (json.dumps(command_tree, default=str))
+        oldsync = (self.lastsyncdata)
+        newsync = (json.dumps(command_tree, default=str))
         
-        arr1 = json.loads(string1)
-        arr2 = json.loads(string2)
+        oldtree = json.loads(oldsync)
+        newtree = json.loads(newsync)
 
         try:
             #This is preferrable to an API call.
-            difference, simscore = dict_diff(arr1, arr2)
-            print(f"Differences found: {difference}\n simularity score:{round(simscore,1)}")
+            difference, same,total,simscore = dict_diff(oldtree, newtree)
+            debug, score=f"Differences found: {difference}", f"All {total} are identical!"
+
             if difference==None:
-                return True, simscore
-            return False, simscore
+                score=f"{total-same} keys out of {total} are different, simularity is {round(simscore,2)}%"
+                return True, debug, score
+            return False, debug, score
             
         except Exception as e:
             print(e)
 
-        return string1 == string2
+        return oldsync == newsync, 0.0
 
-def remove_null_values(dict_obj):
-    #There's probably a better way.
-    new_dictionary={}
-    for key, value in list(dict_obj.items()):
-        if value is not None:
-            new_dictionary[key]=value
-        elif isinstance(value, list):
-            if value:
-                new_dictionary[key]=value
-        elif isinstance(value, dict):
-            if value:
-                new_dictionary[key]=value
 
-    return new_dictionary
+def remove_null_values(dictionary):
+    """
+    Remove all null, empty, or false values from the parent dictionary each nested dictionary into the parent dictionary.
+    This is to more easily check nested elements.
+    Parameters:
+    d: A nested dictionary to be cleared.
+
+    Returns:
+    A nested dictionary with all empty values eliminated.
+    """
+    new_dict = {}
+    for key, value in dictionary.items():
+        if isinstance(value, dict):
+            new_value = remove_null_values(value)
+            if new_value:
+                new_dict[key] = new_value
+        elif value is not None and value != "" and value is not False:
+            new_dict[key] = value
+    return new_dict
 
 def denest_dict(d: dict)->Dict[str, Any]:
     """
     Recursively denests a nested dictionary by merging each nested dictionary into the parent dictionary.
-
+    This is to more easily check nested elements.
     Parameters:
     d: A nested dictionary to be denested.
 
@@ -180,59 +185,107 @@ def denest_dict(d: dict)->Dict[str, Any]:
         else:
             out[key] = value
     return out
-def format_application_commands(commands:List[discord.app_commands.Command])->Dict[str, Any]:
-    '''This command takes in a list of discord.app_commands.Command objects, and
+
+def build_app_command_list(tree:discord.app_commands.CommandTree, guild=None)->List[discord.app_commands.Command]:
+    '''This function takes in a discord.app_commands.CommandTree objects, and
+    extracts each app command into a list so that format_application_commands may be used.
+    
+    Parameters:
+    tree: a CommandTree instance
+
+    Returns:
+    List of discord.app_commands.Command objects.
+    '''
+    current_command_list=[]
+    to_walk= Queue()
+    #Add in Context Menus
+    for command in tree.walk_commands(guild=guild, type=discord.AppCommandType.message):
+        current_command_list.append(command)
+    for command in tree.walk_commands(guild=guild, type=discord.AppCommandType.user):
+        current_command_list.append(command)
+    #Add in chat_commands
+    for command in tree.walk_commands(guild=guild):
+        if isinstance(command,discord.app_commands.Group):
+            to_walk.put(command)
+        else:
+            current_command_list.append(command)
+    while not to_walk.empty():
+        group = to_walk.get()
+        for i in group.walk_commands():
+            if isinstance(i, discord.app_commands.Command):
+                current_command_list.append(i)
+            elif isinstance(i, discord.app_commands.Group):
+                to_walk.put(i)
+
+    return current_command_list
+
+
+def format_parameters(parameters:List[discord.app_commands.Parameter])->Dict[str,Any]:
+    '''Serialize all parameters into a dictionary.'''
+    params={}
+    for parameter in parameters:
+        param_name=str(parameter.name)
+        formatted_parameter = {
+            'name': param_name,
+            'display_name': str(parameter.display_name),
+            'description': str(parameter.description),
+            'type': parameter.type.name,
+            'choices': {
+                str(c.name): 
+                {'name': c.name, 'value': c.value} for c in parameter.choices},
+            'channel_types': [channel_type.name for channel_type in parameter.channel_types],
+            'required': parameter.required,
+            'autocomplete': parameter.autocomplete,
+            'min_value': parameter.min_value,
+            'max_value': parameter.max_value,
+            'default': parameter.default if parameter.default is not discord.utils.MISSING else None
+        }
+        params[param_name]=formatted_parameter
+    return params
+
+def format_application_commands(commands:List[Union[discord.app_commands.Command,discord.app_commands.ContextMenu]], nestok=False, slimdown=False)->Dict[str, Any]:
+    '''This function takes in a list of discord.app_commands.Command objects, and
     extracts serializable data into a dictionary to help determine if a app command tree
     should be synced to a particular server or not.
     
     Parameters:
-    commands: List of added application commands.
-
+    commands: List of application commands.
+    nestok: if this function should return a nested dictionary, default False
+    slimdown: if this function should not include false, null, or empty values in the returned dictionary, default False
     Returns:
     Dictionary of serialized attributes from commands.
     '''
     formatted_commands = {}
     for command in commands:
-        
-        formatted_command = {
-            'name': command.name,
-            'description': command.description,
-            'parameters': {},
-            'permissions': {}
-        }
-        #print(command.name)
-        for parameter in command.parameters:
-            formatted_parameter = {
-                'name': str(parameter.name),
-                'display_name': str(parameter.display_name),
-                'description': str(parameter.description),
-                'type': parameter.type.name,
-                'choices': {},
-                'channel_types': [],
-                'required': parameter.required,
-                'autocomplete': parameter.autocomplete,
-                'min_value': parameter.min_value,
-                'max_value': parameter.max_value,
-                'default': parameter.default
-            }
-            for choice in parameter.choices:
-                formatted_choice = {
-                    'name': choice.name,
-                    'value': choice.value
+        if isinstance(command,discord.app_commands.Command):
+            #Serializing a Command
+            formatted_command = {
+                'name': command.name,
+                'description': command.description,
+                'parameters': format_parameters(command.parameters),
+                'permissions': {
+                    'default_permissions': command.default_permissions.value if command.default_permissions is not None else None,
+                    'guild_only': command.guild_only,
+                    'nsfw': command.nsfw
                 }
-                formatted_parameter['choices'][str(choice.name)]=(formatted_choice)
+            }
+            formatted_commands[command.name] = formatted_command
 
-            for channel_type in parameter.channel_types:
-                formatted_parameter['channel_types'].append(channel_type.name)
-
-            formatted_command['parameters'][str(parameter.name)]=(formatted_parameter)
-
-        if command.default_permissions is not None:
-            formatted_command['permissions']['default_permissions'] = command.default_permissions.value
-
-        formatted_command['permissions']['guild_only'] = command.guild_only
-        formatted_command['permissions']['nsfw'] = command.nsfw
-
-        formatted_commands[command.name]=(formatted_command)
-    den=denest_dict(formatted_commands)
+        else:
+            #Serializing a ContextMenu
+            formatted_command = {
+                'name': command.name,
+                'permissions': {
+                    'default_permissions': command.default_permissions.value if command.default_permissions is not None else None,
+                    'guild_only': command.guild_only,
+                    'nsfw': command.nsfw
+                },
+                'type': str(command.type)
+            }
+            formatted_commands[command.name] = formatted_command
+    den=formatted_commands
+    if slimdown:
+        den=remove_null_values(den)
+    if not nestok:
+        den=denest_dict(formatted_commands)
     return den

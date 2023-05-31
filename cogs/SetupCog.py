@@ -55,8 +55,7 @@ class SelectView(discord.ui.View):
         self.add_item(HelpSelect(myhelp))
 
 
-class SetupCommands(app_commands.Group):
-    pass
+    
 class Setup(commands.Cog, TC_Cog_Mixin):
     """The component where you enable/disable other components."""
     def __init__(self, bot):
@@ -100,7 +99,24 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         
         pages=await MessageTemplates.get_manual_list(ctx,"nikki_permissions_manual.json")
         await pages_of_embeds(ctx,pages,ephemeral=True)
+    
+    @nikkisetup.command(name="get_tree_json", description="return a JSON representation of my command tree for this server")
+    async def mytree(self, interaction: discord.Interaction) -> None:
+        """get bot info for this server"""
+        ctx: commands.Context = await self.bot.get_context(interaction)
         
+        if not ctx.guild:
+            await ctx.send("you can only use this in a guild.")
+            return
+        await ctx.send("Getting tree...")
+        treedict=await ctx.bot.get_tree_dict(ctx.guild)
+        await ctx.send("Tree retrieved.")
+        file_object = io.StringIO()
+        json.dump(treedict, file_object, indent=4,default=str)
+        file_object.seek(0)
+        await ctx.send(file=discord.File(file_object, filename="yourtree.json"))
+
+
 
 
     @commands.command()

@@ -82,6 +82,33 @@ class General(commands.Cog, TC_Cog_Mixin):
         desc=f"Members: {member_count}\n Channels: {channel_count}\n{view}\n{view2}"
         
         emb=await MessageTemplates.server_profile_message(ctx, description=desc,ephemeral=True )
+
+    @app_commands.command(name="server_emoji_info", description="Print out all emojis in this server")
+    @app_commands.guild_only()
+    async def emojiinfo(self, interaction: discord.Interaction) -> None:
+        """get bot info for this server"""
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        guild = ctx.guild
+        member_count = guild.member_count
+        if guild:
+            emojis=[]
+            
+            for emoji in guild.emojis:
+                emoji_format = f"`<:{emoji.name}:{emoji.id}>`"
+                if emoji.animated:
+                    emoji_format = f"`<a:{emoji.name}:{emoji.id}>`"
+                emojis.append(emoji_format)
+            num_emojis = len(emojis)
+            emoji_strings = [
+            ' '.join([emoji for emoji in emojis[i:i+25]])
+            for i in range(0, num_emojis, 25)
+            ]
+            elist=await MessageTemplates.server_profile_embed_list(ctx,emoji_strings)
+            await pages_of_embeds(ctx,elist,ephemeral=True)
+
+            
+        else:
+            await ctx.send("Guild not found.",ephemeral=True)
         
 
 
