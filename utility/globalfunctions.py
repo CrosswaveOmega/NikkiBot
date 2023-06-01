@@ -10,6 +10,37 @@ from discord.ext import commands, tasks
 
 from discord import Webhook,ui
 
+import hashlib
+import base64
+
+def hash_string_64(string_to_hash, hashlen=5):
+    # Convert the string to bytes
+    encoded_string = string_to_hash.encode('utf-8')
+
+    # Hash the bytes using SHA-256
+    hash_bytes = hashlib.sha256(encoded_string).digest()
+
+    # Encode the hashed bytes as base64
+    encoded_hash = base64.b64encode(hash_bytes)
+
+    # Convert the base64 string to a string with 64 different characters
+    char_set = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789%-"
+    base_len = len(char_set)
+    num_chars = hashlen
+    num_bits = num_chars * 6
+    hash_int = int.from_bytes(hash_bytes, byteorder='big')
+    chars = []
+    for i in range(num_chars):
+        offset = i * 6
+        index = (hash_int >> offset) & 0x3f
+        chars.append(char_set[index])
+    encoded_chars = ''.join(chars)
+
+    return encoded_chars
+
+# Example usage
+hash_str = hash_string_64("Hello, world!")
+print(hash_str)
 
 '''Utility functions here to assist.'''
 

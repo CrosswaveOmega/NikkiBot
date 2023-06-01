@@ -17,7 +17,10 @@ from .Tasks.TCTasks import TCTaskManager
 from sqlalchemy.exc import IntegrityError
 from utility import Chelp, urltomessage, MessageTemplates
 from .TcGuildTaskDB import Guild_Task_Base, Guild_Task_Functions, TCGuildTask
-from .GuildSyncStatus import Guild_Sync_Base, AppGuildTreeSync, format_application_commands, build_app_command_list
+from .GuildSyncStatus import(
+    Guild_Sync_Base, AppGuildTreeSync,
+    build_and_format_app_commands, SpecialAppSync
+    )
 from .TCMixins import CogFieldList, StatusTicker
 """ Primary Class
 
@@ -34,7 +37,7 @@ intent.members=True
 from database import DatabaseSingleton
 from .StatusMessages import StatusMessageManager, StatusMessage, StatusMessageMixin
 
-class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
+class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialAppSync):
     
     """TC's central bot class.  An extension of discord.py Bot class with additional functionality."""
     def __init__(self):
@@ -177,102 +180,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
         cid=self.statmess.add_status_message(ctx)
         return self.statmess.get_message_obj(cid)
     
-    async def sync_enabled_cogs_for_guild(self,guild, force=False):
-        '''With a passed in guild, sync all activated cogs for that guild.
-        Works on a guild per guild basis in the case that I need to provide
-        code to sync different app commands between guilds.'''
-        def syncprint(*lis):
-            pass
-            if False:  print(f"Sync for {guild.name} (ID {guild.id})",*lis)
-        def should_skip_cog(cogname: str) -> bool:
-            """Determine whether a cog should be skipped during synchronization."""
-            '''Not currently needed.'''
-            return False
 
-        def add_command_to_tree(command, guild):
-            #Add a command to the commands tree for the given guild.
-            current_command_list=[]
-            if command.extras:
-                if command.extras.get("homeonly"):
-                    print("yes")
-                    if guild.id!=int(AssetLookup.get_asset('homeguild')):
-                        return []
-            if isinstance(command, (commands.HybridCommand, commands.HybridGroup)):
-                try:
-                    self.tree.add_command(command.app_command, guild=guild, override=True)
-                    syncprint(f"Added hybrid {command.name}")
-                except:
-                    syncprint(f"Cannot add {command.name}, case error.")
-            else:
-                try:
-                    self.tree.add_command(command, guild=guild, override=True)
-                    syncprint(f"Added {command.name}")
-                except:
-                    syncprint(f"Cannot add {command.name}, this is not a app command")
-            return current_command_list
-
-        async def sync_commands_tree(guild:discord.Guild, forced=False):
-            #Build a dictionary representation of all app commands to be synced, check if 
-            #the dictionary is different from a loaded version from before, and then 
-            #sync the commands tree for the given guild, updating the dictionary.
-            print(f"Checking if it's time to sync commands for {guild.name} (ID {guild.id})...")
-            try:
-                #SQLAlchemy is used to handle database connections.
-                synced=build_app_command_list(self.tree,guild)
-                app_tree=format_application_commands(synced)
-                dbentry:AppGuildTreeSync=AppGuildTreeSync.get(guild.id)
-                if not dbentry:
-                    dbentry=AppGuildTreeSync.add(guild.id)
-                same, diffscore,score=dbentry.compare_with_command_tree(app_tree)
-                print(f"Check Results: {guild.name} (ID {guild.id}):{score}")
-                self.logs.info(f"Check Results: {guild.name} (ID {guild.id}):\n differences{diffscore} \n{score}")
-                #Check if it's time to edit
-                if (not same) or forced==True:
-                    print(f"Updating serialized command tree for {guild.name} (ID {guild.id})...")
-                    dbentry.update(app_tree)
-                    same,diffscore,score=dbentry.compare_with_command_tree(app_tree)
-                    print(f"Starting sync for {guild.name} (ID {guild.id})...")
-                    await self.tree.sync(guild=guild)
-                    print(f"Sync complete for {guild.name} (ID {guild.id})...")
-            except Exception as e:
-                print(str(e))
-                res=str(traceback.format_exception(None, e, e.__traceback__))
-                print(res)
-
-        #Gather all activated cogs for a given guild.
-        #Note, the reason it goes one by one is because it was originally intended 
-        #to activate/deactivate cogs on a server per server basis.        
-        synced=[]
-        for cogname, cog in self.cogs.items():
-            if should_skip_cog(cogname):
-                print("skipping cog ",cogname)
-                continue
-            if hasattr(cog,'ctx_menus'):
-                for name,cmenu in cog.ctx_menus.items():
-                    self.tree.add_command(cmenu, guild=guild, override=True)
-            for command in cog.walk_commands():
-                synced+=add_command_to_tree(command, guild)
-            for command in cog.walk_app_commands():
-                synced+=add_command_to_tree(command, guild)
-        await sync_commands_tree(guild, forced=force)
-        
-
-
-    async def all_guild_startup(self, force=False):
-        '''fetch all available guilds, and sync the command tree.'''
-        try:
-            async for guild in self.fetch_guilds(limit=10000):
-                print(f"syncing for {guild.name}")
-                await self.sync_enabled_cogs_for_guild(guild,force=force)
-        except Exception as e:
-            print(e)
-            raise Exception()
-        
-    async def get_tree_dict(self,guild):
-        synced=build_app_command_list(self.tree,guild)
-        app_tree=format_application_commands(synced,nestok=True, slimdown=True)
-        return app_tree
-    
     async def audit_guilds(self):
         '''audit guilds.'''
         metadata=self.database.get_metadata()
@@ -290,6 +198,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin):
         
         guilds_im_in=[]
         for guild in self.guilds:
+            print(guild.id)
             guilds_im_in.append(guild.id)
         audit_results=ServerData.Audit(guilds_im_in)
         to_purge=[auditme.server_id for auditme in audit_results]

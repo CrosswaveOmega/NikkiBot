@@ -4,9 +4,11 @@ import configparser
 from typing import Optional
 DEFAULT_ASSETS = {
     "main":{
-        "name": "TCBOT"
+        "name": "TCBOT",
+        'homeguild': 0
     },
     "urls":{
+        'generic': "https://example.com/image.png",
         'default': "https://example.com/image.png",
         'embed_icon':'https://example.com/image.png'
     }
@@ -40,11 +42,19 @@ class AssetLookup:
             AssetLookup.save_assets(config_path)
 
     @staticmethod
-    def save_assets(conf_path: str):
+    def set_asset(asset_name: str, value: str, category: Optional[str] = None):
+        if category is not None:
+            AssetLookup._assets.setdefault(category, {})
+            AssetLookup._assets[category][asset_name] = value
+        else:
+            for assets in AssetLookup._assets.values():
+                assets[asset_name] = value
+    @staticmethod
+    def save_assets(config_path="assets.conf"):
         parser = configparser.ConfigParser()
         for section, assets in AssetLookup._assets.items():
             parser[section] = assets
-        with open(conf_path, 'w') as f:
+        with open(config_path, 'w') as f:
             parser.write(f)
 
     @staticmethod
@@ -76,5 +86,7 @@ class AssetLookup:
                     return assets[asset_name]
         fallback = AssetLookup.get_fallback(asset_name, category)
         if fallback is None:
-            raise ValueError(f"No asset found for '{asset_name}' in category '{category}'")
+            default=AssetLookup.get_defaultfallback(asset_name,category)
+            if default is None:
+                raise ValueError(f"No asset found for '{asset_name}' in category '{category}'")
         return fallback

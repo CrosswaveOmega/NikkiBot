@@ -1,7 +1,7 @@
 import configparser
 import discord
 import aiohttp
-
+from assets import AssetLookup
 '''
 To make it even easier, this script is for creating a local home guild for newly initalized bots.
 
@@ -52,6 +52,8 @@ async def new_guild(bot):
     config.read('config.ini')
     config["vital"] = {'cipher': config.get("vital", 'cipher')}
     config["optional"] = {'error_channel_id': error_channel_id}
+    AssetLookup.set_asset('homeguild',guild.id,'main')
+    AssetLookup.save_assets()
     print(f"Error_channel={error_channel_id}")
     config.write(open('config.ini', 'w'))
     # Give the admin role to the bot owner when they join the server

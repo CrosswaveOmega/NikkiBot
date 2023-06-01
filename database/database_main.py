@@ -236,6 +236,39 @@ class IgnoredUser(Main_DB_Base):
     user_id = Column(Integer)
     server_archive_profile  = relationship("ServerArchiveProfile", back_populates="ignoredauthors")
 
+class Users_DoNotTrack(Main_DB_Base):
+    __tablename__ = "dntusers"
+    user_id = Column(Integer, primary_key=True)
+    reason = Column(Text, default='self')
+
+    @staticmethod
+    def check_entry(user_id: int) -> bool:
+        session = DatabaseSingleton.get_session()
+        entry = session.query(Users_DoNotTrack).filter(Users_DoNotTrack.user_id == user_id).first()
+        return entry is not None
+
+    @staticmethod
+    def add_entry(user_id: int, reason: str) -> None:
+        session = DatabaseSingleton.get_session()
+        entry = Users_DoNotTrack(user_id=user_id, reason=reason)
+        session.add(entry)
+        session.commit()
+
+    @staticmethod
+    def delete_entry(user_id: int, reason: str) -> bool:
+        session = DatabaseSingleton.get_session()
+        entry = session.query(Users_DoNotTrack).filter(
+            Users_DoNotTrack.user_id == user_id,
+            Users_DoNotTrack.reason == reason
+        ).first()
+
+        if entry:
+            session.delete(entry)
+            session.commit()
+            return True
+        else:
+            return False
+
 
 
 DatabaseSingleton('mainsetup').load_base(Main_DB_Base)

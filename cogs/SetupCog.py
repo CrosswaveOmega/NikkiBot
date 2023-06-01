@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Literal
 import discord
 import operator
 import io
@@ -23,7 +23,7 @@ from utility.embed_paginator import pages_of_embeds
 
 from assets import AssetLookup
 from discord.app_commands import AppCommand
-
+from database import Users_DoNotTrack
 ''''''
 
 
@@ -120,9 +120,32 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         await ctx.send(file=discord.File(file_object, filename="yourtree.json"))
 
 
-
+    @app_commands.command(name='nikki_ignore_me', description="WORK IN PROGRESS: USE THIS COMMAND IF YOU WANT ME TO IGNORE YOU.")
+    @app_commands.describe(condition="set this to on if you want me to listen to you, ignore if you want me to ignore you, .")
+    async def ignoreme(self, interaction: discord.Interaction, condition:Literal['on','ignore']='on') -> None:
+        """get bot info for this server"""
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        user=interaction.user
+        if condition=='on':
+            if Users_DoNotTrack.check_entry(user.id):
+                result=Users_DoNotTrack.delete_entry(user.id,'self')
+                if result:
+                    await ctx.send("Okay!  I'll stop ignoring you.",ephemeral=True)
+                else:
+                    await ctx.send("I'm sorry, but it appears I can't respond due to an administrative override.",ephemeral=True)
+            else:
+                await ctx.send("But I'm not ignoring you!",ephemeral=True)
+        else:
+            if Users_DoNotTrack.check_entry(user.id):
+                await ctx.send("I'm already ignoring you.",ephemeral=True)
+            else:
+                Users_DoNotTrack.add_entry(user.id,'self')
+                await ctx.send("Understood.  I will start ignoring you.",ephemeral=True)
+        
+        
 
     @commands.command()
+    @commands.is_owner()
     async def syncall(self,ctx):
         await ctx.send("Syncing...")
         await ctx.bot.all_guild_startup(True)

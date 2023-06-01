@@ -21,8 +21,8 @@ This script defines Tables that are used exclusively within the context of the S
 ArchiveSub subpackage.
 
 '''
-
-
+from assets import AssetLookup
+from utility import hash_string_64
 ArchiveBase=declarative_base()
 class ChannelSep(ArchiveBase):
     '''Table for the channel separator objects.'''
@@ -427,12 +427,18 @@ def create_history_pickle_dict(message):
         'posted_url': None,
         'server_id': message.channel.guild.id
     }
-
-    if message.author.avatar != None:
-        if type(message.author.avatar) == str:
-            history_pickle_dict['avatar'] = message.author.avatar.url
-        else:
-            history_pickle_dict['avatar'] = message.author.avatar.url
+    if not message.author.bot:
+        hash, int=hash_string_64(message.author.name)
+        name_list = ["Alice", "Bob", "Charlie", "David", "Eve"]
+        random_name = name_list[int % len(name_list)]
+        history_pickle_dict['author']=f"{random_name}_{hash}"
+        history_pickle_dict['avatar']=AssetLookup.get_asset('generic', 'urls')
+    else:
+        if message.author.avatar != None:
+            if type(message.author.avatar) == str:
+                history_pickle_dict['avatar'] = message.author.avatar.url
+            else:
+                history_pickle_dict['avatar'] = message.author.avatar.url
 
     channel = message.channel
     if channel.type == discord.ChannelType.public_thread:
