@@ -22,7 +22,7 @@ The tasks can be customized by adding coroutines to the Guild_Task_Functions cla
 6. **More features to come!**: The bot is constantly being updated and new features will be added as they become available.
 
 ## Current Requirements
-
+Python 3.11 or higher!
 - discord.py
 - SQLAlchemy
 - python-dateutil
