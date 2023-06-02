@@ -33,9 +33,8 @@ Initalizes TCBot, and defines some checks
 
 """
 
-from database import ServerData
+import database.database_main as dbmain
 from assets import AssetLookup
-
 
 bot = TCBot()
 
@@ -47,13 +46,21 @@ async def opening():
 
 
 @bot.check
-async def is_cog_enabled(ctx):
+async def is_cog_enabled(ctx:commands.Context):
+    return True
+
+@bot.check
+async def user_wants_ignore(ctx:commands.Context):
+    '''ignore commands if the user doesn't want them.'''
+    uid=ctx.author.id
+    if dbmain.Users_DoNotTrack.check_entry(uid):
+        return False
     return True
 
 @bot.check
 async def guildcheck(ctx):
     if ctx.guild!=None:
-        serverdata=ServerData.get_or_new(ctx.guild.id)
+        serverdata=dbmain.ServerData.get_or_new(ctx.guild.id)
         serverdata.update_last_time()
         if ctx.command.extras:
             if 'guildtask' in ctx.command.extras and ctx.guild!=None:
@@ -72,8 +79,6 @@ def on_error(event_method: str, /, *args: Any, **kwargs: Any):
         asyncio.create_task(bot.send_error_embed(er))
     except:
         print("The error had an error.")
-
-
 
 @bot.tree.error
 async def on_app_command_error(

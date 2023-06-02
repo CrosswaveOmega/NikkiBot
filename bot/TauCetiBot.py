@@ -34,14 +34,35 @@ intent.presences=True
 intent.message_content=True
 intent.guilds=True
 intent.members=True
-from database import DatabaseSingleton
+from database import DatabaseSingleton, Users_DoNotTrack
 from .StatusMessages import StatusMessageManager, StatusMessage, StatusMessageMixin
+
+from discord import Interaction
+from discord.app_commands import CommandTree
+
+class TreeOverride(CommandTree):
+  #I need to do this just to get a global check on app_commands...
+  async def interaction_check(self, interaction: Interaction) -> bool:
+      '''Don't fire if the user wants to be ignored, but ensure that the user can
+      unignore themselves later.'''
+      if interaction.command:
+          if interaction.command.extras:
+              if 'nocheck' in interaction.command.extras:
+                  return True
+      uid=interaction.user.id
+      if Users_DoNotTrack.check_entry(uid):
+          return False
+      return True
+    # Add your Code here.
+    # return False to not proceed the interaction
+    # return True to proceed the interaction
+
 
 class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialAppSync):
     
     """TC's central bot class.  An extension of discord.py Bot class with additional functionality."""
     def __init__(self):
-        super().__init__(command_prefix=['tc>',">"], help_command=Chelp(), intents=intent)
+        super().__init__(command_prefix=['tc>',">"], tree_cls=TreeOverride,help_command=Chelp(), intents=intent)
         #The Database Singleton is initalized in here.
         self.database=None
 

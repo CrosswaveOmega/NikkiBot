@@ -120,9 +120,11 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         await ctx.send(file=discord.File(file_object, filename="yourtree.json"))
 
 
-    @app_commands.command(name='nikki_ignore_me', description="WORK IN PROGRESS: USE THIS COMMAND IF YOU WANT ME TO IGNORE YOU.")
+    @app_commands.command(name='nikki_ignore_me',
+                           description="WORK IN PROGRESS: USE THIS COMMAND IF YOU WANT ME TO IGNORE YOU.",
+                           extras={"nocheck":True})
     @app_commands.describe(condition="set this to on if you want me to listen to you, ignore if you want me to ignore you, .")
-    async def ignoreme(self, interaction: discord.Interaction, condition:Literal['on','ignore']='on') -> None:
+    async def ignoreme(self, interaction: discord.Interaction, condition:Literal['on','off']='on') -> None:
         """get bot info for this server"""
         ctx: commands.Context = await self.bot.get_context(interaction)
         user=interaction.user
