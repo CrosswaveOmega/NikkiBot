@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from discord.ext import commands, tasks
 
 from discord import Webhook,ui
+import site
 from discord.utils import escape_markdown
 import hashlib
 import base64
@@ -41,14 +42,19 @@ def hash_string_64(string_to_hash, hashlen=5):
     return encoded_chars
 
 def replace_working_directory(string):
-    # Get the working directory path and ignore the case
+    '''This function is for '''
     cwd = os.getcwd()  # Replace backslashes for regex
     
     parent_dir = os.path.dirname(cwd)
-
-
+    replaced_string=string
+    for rawsite in site.getsitepackages():
+        sites = os.path.dirname(rawsite)
+        print(sites)
+        # Use regex to replace all instances of the working directory in the string
+        replaced_string = re.sub(re.escape(sites), 'site', string, flags=re.IGNORECASE)
     # Use regex to replace all instances of the working directory in the string
-    replaced_string = re.sub(re.escape(parent_dir), '..', string, flags=re.IGNORECASE)
+    replaced_string = re.sub(re.escape(parent_dir), '..', replaced_string, flags=re.IGNORECASE)
+
     print(replaced_string)
     return escape_markdown(replaced_string)
 
