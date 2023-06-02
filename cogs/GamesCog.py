@@ -34,14 +34,21 @@ class MenuButton(discord.ui.Button['MenuButton']):
 
 
 class GameMenu(discord.ui.View):
-    def __init__(self):
+    def __init__(self,em=False):
         super().__init__(timeout=None)
         self.my_menu={'fire':{'a':True,'b':True,'c':True},'special':True}
         self.chain=[]
         self.level=0
         buttons=['fire','special','exit']
+        
         self.reload()
+        if em:
+            self.tem=discord.ui.TextInput(label='none')
+            self.add_item(self.tem)
 
+    async def caller(self,interaction):
+        print('Call')
+        await interaction.responce.send_message(self.texinp.value)
     def reload(self):
         print(self.chain)
         menu=self.my_menu
@@ -80,6 +87,11 @@ class Games(commands.Cog, TC_Cog_Mixin):
     async def menutest(self, interaction: discord.Interaction) -> None:
         ctx: commands.Context = await self.bot.get_context(interaction)
         await ctx.send(view=GameMenu())
+    
+    @app_commands.command(name="throw_error", description="Testing for a game menu.")
+    async def menutest(self, interaction: discord.Interaction) -> None:
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        await ctx.send(view=GameMenu(True))
        
         
 

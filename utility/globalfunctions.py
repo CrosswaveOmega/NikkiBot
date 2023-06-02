@@ -1,4 +1,6 @@
 
+import os
+import re
 import discord
 from io import BytesIO
 from PIL import Image, ImageDraw
@@ -9,7 +11,7 @@ from datetime import datetime, timedelta
 from discord.ext import commands, tasks
 
 from discord import Webhook,ui
-
+from discord.utils import escape_markdown
 import hashlib
 import base64
 
@@ -38,9 +40,17 @@ def hash_string_64(string_to_hash, hashlen=5):
 
     return encoded_chars
 
-# Example usage
-hash_str = hash_string_64("Hello, world!")
-print(hash_str)
+def replace_working_directory(string):
+    # Get the working directory path and ignore the case
+    cwd = os.getcwd()  # Replace backslashes for regex
+    
+    parent_dir = os.path.dirname(cwd)
+
+
+    # Use regex to replace all instances of the working directory in the string
+    replaced_string = re.sub(re.escape(parent_dir), '..', string, flags=re.IGNORECASE)
+    print(replaced_string)
+    return escape_markdown(replaced_string)
 
 '''Utility functions here to assist.'''
 

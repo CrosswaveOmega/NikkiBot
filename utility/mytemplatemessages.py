@@ -1,5 +1,5 @@
 
-from typing import List
+from typing import List, Union
 from discord import Embed, Color, Guild, Message
 from discord.ext import commands
 from .globalfunctions import get_server_icon_color
@@ -46,6 +46,17 @@ class MessageTemplates:
         embed=Embed(title=title, description=description, color=Color(0xff0000))
         embed.set_author(name="Error Message",icon_url=embedicon)
         return embed
+    
+    @staticmethod
+    def get_paged_error_embed(title: str, description: Union[str,List[str]]):
+        pageme=commands.Paginator(prefix="",suffix="",max_size=4096)
+        for p in description.split('\n'):pageme.add_line(p)
+        embeds=[]
+        for page in pageme.pages:
+            embed=Embed(title=title, description=page, color=Color(0xff0000))
+            embed.set_author(name="Error Message",icon_url=embedicon)
+            embeds.append(embed)
+        return embeds
     @staticmethod
     async def get_manual_list(ctx:commands.Context, file:str, **kwargs):
         '''

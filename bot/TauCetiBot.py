@@ -15,7 +15,7 @@ from assets import AssetLookup
 from database import *
 from .Tasks.TCTasks import TCTaskManager
 from sqlalchemy.exc import IntegrityError
-from utility import Chelp, urltomessage, MessageTemplates
+from utility import Chelp, urltomessage, MessageTemplates, replace_working_directory
 from .TcGuildTaskDB import Guild_Task_Base, Guild_Task_Functions, TCGuildTask
 from .GuildSyncStatus import(
     Guild_Sync_Base, AppGuildTreeSync,
@@ -312,10 +312,12 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         
     async def send_error(self,error,title="ERROR"):
         '''Add an error to the internal log and the log channel.'''
-        just_the_string=''.join(traceback.format_exception(None, error, error.__traceback__))
-        er=MessageTemplates.get_error_embed(title=f"Error with {title}",description=f"{just_the_string},{str(error)}")
-        er.add_field(name="Details",value=f"{title},{error}")
-        await self.send_error_embed(er)
+        stack=traceback.format_exception(None, error, error.__traceback__)
+        just_the_string=("".join([f"{replace_working_directory(s)}" for e, s in enumerate(stack)]))
+        #just_the_string=''.join(stack)
+        er=MessageTemplates.get_paged_error_embed(title=f"Error with {title}",description=f"{just_the_string},{str(error)}")
+        er[-1].add_field(name="Details",value=f"{title},{error}")
+        for e in er: await self.send_error_embed(e)
 
 
 
@@ -327,16 +329,14 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         
         command :discord.ext.commands.command = ctx.command
         log.error('Ignoring exception in command %s', command, exc_info=error)
+        
         emb=MessageTemplates.get_error_embed(title=f"Error with {ctx.message.content}",description=f"{str(error)}")
         
-        just_the_string=''.join(traceback.format_exception(None, error, error.__traceback__))
-        er=MessageTemplates.get_error_embed(title=f"Error with {ctx.message.content}",description=f"{just_the_string},{str(error)}")
-        er.add_field(name="Details",value=f"{ctx.message.content},{error}")
+        await self.send_error(error,title=f"Error with {ctx.message.content}")
         try:
             await ctx.send(embed=emb)
         except Exception as e:
             self.logs.error(str(e))
-        await self.send_error_embed(er)
 
 
 
