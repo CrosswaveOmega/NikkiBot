@@ -9,6 +9,6 @@ from .globalfunctions import(
 
 from .mytemplatemessages import MessageTemplates
 from .dateutil_sp import relativedelta_sp
-from .string_format_functions import get_time_since_delta
-from .view_confirm import ConfirmView
+from .string_format_functions import get_time_since_delta, explain_rrule
+from .views import ConfirmView, RRuleView
 from .manual_load import load_manual

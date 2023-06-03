@@ -205,6 +205,23 @@ class TCTaskManager:
             manager.tasks[name].to_run_next=datetime
             return True
         return False
+    
+    @classmethod
+    def change_task_interval(cls, name,new_rrule):
+        """
+        Check if a TCTask object with the specified name is in the list of tasks.
+        Args:
+            name (str): The name of the TCTask object to find in the list of tasks.
+
+        Returns:
+            True if a task is already there, False if no matching task was found.
+        """
+        manager = cls.get_instance()
+        if name in manager.tasks:
+            manager.tasks[name].time_interval=new_rrule
+            manager.tasks[name].to_run_next=manager.tasks[name].next_run()
+            return manager.tasks[name].to_run_next
+        return False
 
     @classmethod
     def add_task(cls, task):

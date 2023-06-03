@@ -211,7 +211,21 @@ class TCGuildTask(Guild_Task_Base):
             TCTaskManager.change_task_time(thename,next_datetime)
         else:
             raise Exception("Task is not in the manager.")
-            
+        
+    def change_rrule(self,bot, new_rrule):
+        '''change the rrule for this task.'''
+        rd = self.serialize_relativedelta(new_rrule)
+        thename=f"{self.server_id}_{self.task_name}"
+        print(thename,rd,self.target_message_url)
+        if  TCTaskManager.does_task_exist(thename):
+            res=TCTaskManager.change_task_interval(thename,new_rrule)
+            if res:
+                self.relativedelta_serialized=rd
+                self.next_run=res
+            DatabaseSingleton.get_session().commit()
+        else:
+            raise Exception("Task is not in the manager.")
+             
     def deserialize_relativedelta(self, rd_json):
         try:
             to_return=rrulestr(rd_json)

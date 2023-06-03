@@ -10,8 +10,8 @@ import csv
 from datetime import datetime, timedelta, date, timezone
 from sqlalchemy import event
 
-from utility import serverOwner, serverAdmin, seconds_to_time_string, get_time_since_delta
-from utility import WebhookMessageWrapper as web, urltomessage, relativedelta_sp, ConfirmView
+from utility import serverOwner, serverAdmin, seconds_to_time_string, get_time_since_delta, explain_rrule
+from utility import WebhookMessageWrapper as web, urltomessage, relativedelta_sp, ConfirmView, RRuleView
 from bot import TCBot, TCGuildTask, Guild_Task_Functions, StatusEditMessage, TC_Cog_Mixin
 from random import randint
 from discord.ext import commands, tasks
@@ -264,6 +264,37 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             old.change_next_run(self.bot,datetime.now()+timedelta(minutes=newtime))
             result=f"Time has changed to newtime."
             await MessageTemplates.server_archive_message(ctx,result)
+        else:
+            await MessageTemplates.server_archive_message(ctx,"I can't find the guild task.")
+    @archive_setup.command(name="change_auto_interval", brief="change how often I archive the server.")
+    async def taskautorule(self, ctx):
+        """set a new time for the next automatic task."""
+        bot=ctx.bot
+        guild=ctx.guild
+        task_name="COMPILE"
+        if not(serverOwner(ctx) or serverAdmin(ctx)):
+            await MessageTemplates.server_archive_message(ctx,"You don't have permission to use this command..")
+            return False
+        
+        old=TCGuildTask.get(guild.id, task_name)
+        if old:
+            view = RRuleView(ctx.author)
+            message=await ctx.send("Understood!  Please use the view below to change the recurrence rules for archiving.\n"+\
+                                   "Think of it like setting up a repeating event on your iPhone/Android.", view=view,  ephemeral=True)
+            await asyncio.sleep(2)
+            await view.wait()
+            if view.value=='TIMEOUT':
+                await ctx.send("Sorry, you hit a timeout, try again later.")
+            elif view.value:
+                await ctx.send(f"`{str(view.value)}`")
+                old.change_rrule(self.bot,view.value)
+                desc,sent=explain_rrule(view.value)
+                result=f"I've changed the recurrence settings! \n {sent}"
+                await MessageTemplates.server_archive_message(ctx,result)
+            else:
+                await ctx.send("I see.  I'll stop changing your ")
+            #await message.delete()
+
         else:
             await MessageTemplates.server_archive_message(ctx,"I can't find the guild task.")
     
