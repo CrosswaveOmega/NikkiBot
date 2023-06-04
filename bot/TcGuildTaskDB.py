@@ -1,3 +1,4 @@
+import gui
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy import PrimaryKeyConstraint
 from sqlalchemy.ext.declarative import declarative_base
@@ -58,30 +59,30 @@ class Guild_Task_Functions:
     def add_task_function(cls, name, func):
         instance = cls.get_instance()
         if name in instance.guildfunctions:
-            print(f"Task function with name '{name}' already exists.")
+            gui.gprint(f"Task function with name '{name}' already exists.")
         else:
             instance.guildfunctions[name] = func
-            print(f"Task function with name '{name}' added.")
+            gui.gprint(f"Task function with name '{name}' added.")
 
     @classmethod
     def remove_task_function(cls, name):
         instance = cls.get_instance()
         if name in instance.guildfunctions:
             del instance.guildfunctions[name]
-            print(f"Task function with name '{name}' removed.")
+            gui.gprint(f"Task function with name '{name}' removed.")
         else:
-            print(f"Task function with name '{name}' does not exist.")
+            gui.gprint(f"Task function with name '{name}' does not exist.")
 
     @classmethod
     async def execute_task_function(cls, name, **kwargs):
         instance = cls.get_instance()
-        print(name)
+        gui.gprint(name)
         if name in instance.guildfunctions:
-            print(f"Executing task function with name '{name}', kwargs{kwargs}.")
+            gui.gprint(f"Executing task function with name '{name}', kwargs{kwargs}.")
             await instance.guildfunctions[name](**kwargs)
-            print(f"Successful execution task function with name '{name}'.")
+            gui.gprint(f"Successful execution task function with name '{name}'.")
         else:
-            print(f"Task function with name '{name}' does not exist.")
+            gui.gprint(f"Task function with name '{name}' does not exist.")
 
 
 class TCGuildTask(Guild_Task_Base):
@@ -111,7 +112,7 @@ class TCGuildTask(Guild_Task_Base):
     def add_guild_task(server_id:int,task_name:str,target_message:discord.Message,rdelta:rrule):
         '''add a new TCGuildTask entry, using the server_id and task_name.'''
         '''server_id is the guild id, task_name is the name of the task.'''
-        print(server_id,task_name,target_message.jump_url,rdelta)
+        gui.gprint(server_id,task_name,target_message.jump_url,rdelta)
         new=TCGuildTask.get(server_id,task_name)
         if not new:
             session=DatabaseSingleton.get_session()
@@ -173,7 +174,7 @@ class TCGuildTask(Guild_Task_Base):
         task = session.query(TCGuildTask).filter_by(server_id=server_id, task_name=task_name).first()
         if task:
             task.next_run = next_run
-            print(f"UPDATED {task.next_run}")
+            gui.gprint(f"UPDATED {task.next_run}")
             session.commit()
         else:
             raise Exception(f"No TCGuildTask entry found for server_id={server_id} and task_name={task_name}")
@@ -188,16 +189,16 @@ class TCGuildTask(Guild_Task_Base):
         except Exception as e:
             await bot.send_error(e,"AUTO COMMAND ERROR.")
         await asyncio.sleep(2)
-        print("Task done at", datetime.now(),"excution ok.")
+        gui.gprint("Task done at", datetime.now(),"excution ok.")
 
     def to_task(self,bot):
         '''Initalize a TCTask object with name {self.server_id}_{self.task_name}'''
         rd = self.deserialize_relativedelta(self.relativedelta_serialized)
         thename=f"{self.server_id}_{self.task_name}"
-        print(thename,rd,self.target_message_url)
+        gui.gprint(thename,rd,self.target_message_url)
         if not TCTaskManager.does_task_exist(thename):
             tc=TCTask(name=thename, time_interval=rd, next_run=self.next_run,parent_db=TCGuildTask)
-            print(self.next_run)
+            gui.gprint(self.next_run)
             tc.assign_wrapper(lambda: self.guild_task(bot))
         else:
             raise Exception("Task is already in the manager.")
@@ -206,7 +207,7 @@ class TCGuildTask(Guild_Task_Base):
         '''change the next time the task is going to run'''
         rd = self.deserialize_relativedelta(self.relativedelta_serialized)
         thename=f"{self.server_id}_{self.task_name}"
-        print(thename,rd,self.target_message_url)
+        gui.gprint(thename,rd,self.target_message_url)
         if  TCTaskManager.does_task_exist(thename):
             TCTaskManager.change_task_time(thename,next_datetime)
         else:
@@ -216,7 +217,7 @@ class TCGuildTask(Guild_Task_Base):
         '''change the rrule for this task.'''
         rd = self.serialize_relativedelta(new_rrule)
         thename=f"{self.server_id}_{self.task_name}"
-        print(thename,rd,self.target_message_url)
+        gui.gprint(thename,rd,self.target_message_url)
         if  TCTaskManager.does_task_exist(thename):
             res=TCTaskManager.change_task_interval(thename,new_rrule)
             if res:

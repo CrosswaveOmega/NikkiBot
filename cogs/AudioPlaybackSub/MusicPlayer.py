@@ -1,3 +1,4 @@
+import gui
 import asyncio
 import datetime
 import random
@@ -110,7 +111,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
 
     async def songadd(self):
         if self.song_add_queue.empty()==False:
-            print("Adding song.")
+            gui.gprint("Adding song.")
             if self.songcanadd:
                 self.songcanadd, got= False, False
                 try:
@@ -122,13 +123,13 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
                     
                     self.processsize-=1
                     if self.song_add_queue.empty():
-                        print("COMPLETED.")
+                        gui.gprint("COMPLETED.")
                         if self.get_ctx!=None:
                             mess=await self.get_ctx.send("All songs have been processed.")
                             self.bot.schedule_for_deletion(mess,20)
                 except:
                     if got: self.processsize-=1
-                    print("PROCESSING ERROR")
+                    gui.gprint("PROCESSING ERROR")
                 self.songcanadd=True
         if self.internal_message_log:
             front=self.internal_message_log.pop()
@@ -147,7 +148,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
             if voice.channel!=None:
                 if len(voice.channel.members)<=1:
                     self.timeidle+=1
-                    print(self.timeidle)
+                    gui.gprint(self.timeidle)
                     if self.timeidle>=120:
                         if self.channel!=None:
                             await self.send_message_internal(self.channel,"disconnected",
@@ -187,13 +188,13 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
                 try:
                     await self.lastm.delete()
                 except Exception as e:
-                    print(e)
+                    gui.gprint(e)
                     try:
                         jurl=self.lastm.jump_url
                         mep=await urltomessage(jurl,self.bot,partial=True)
                         await mep.delete()
                     except Exception as ep:
-                        print(ep)
+                        gui.gprint(ep)
             #mymess=self.messages.copy()
             #for i in mymess:   await i.delete()
             m=await ctx.send(embed=embed, view=PlayerButtons(
@@ -213,7 +214,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
             if self.channel!=None:
                 await self.send_message_internal(self.channel,title,desc,None)
             else:
-                print("Music player never set a voice and channel!")
+                gui.gprint("Music player never set a voice and channel!")
 
 
     async def play_song(self,ctxmode:Union[discord.TextChannel,commands.Context]):
@@ -224,7 +225,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
             if self.current.state!="Ok":
                 self.current.get_song()
                 if self.current.state=="Error":
-                    print("error")
+                    gui.gprint("error")
                     await self.send_message(ctx,str(song.error_value))
                     await self.bot.send_error(self.error_value,"Adding URL.")
                     self.current=None

@@ -15,6 +15,7 @@ from assets import AssetLookup
 from database import *
 from .Tasks.TCTasks import TCTaskManager
 from sqlalchemy.exc import IntegrityError
+import gui
 from utility import Chelp, urltomessage, MessageTemplates, replace_working_directory
 from .TcGuildTaskDB import Guild_Task_Base, Guild_Task_Functions, TCGuildTask
 from .GuildSyncStatus import(
@@ -39,6 +40,7 @@ from .StatusMessages import StatusMessageManager, StatusMessage, StatusMessageMi
 
 from discord import Interaction
 from discord.app_commands import CommandTree
+import gui
 
 class TreeOverride(CommandTree):
   #I need to do this just to get a global check on app_commands...
@@ -61,7 +63,7 @@ class TreeOverride(CommandTree):
 class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialAppSync):
     
     """TC's central bot class.  An extension of discord.py Bot class with additional functionality."""
-    def __init__(self):
+    def __init__(self, guimode=False):
         super().__init__(command_prefix=['tc>',">"], tree_cls=TreeOverride,help_command=Chelp(), intents=intent)
         #The Database Singleton is initalized in here.
         self.database=None
@@ -75,7 +77,10 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
 
         self.extensiondir,self.extension_list="",[]
         self.plugindir,self.plugin_list="",[]
-
+        self.guimode=guimode
+        self.gui=None
+        if guimode:
+            self.gui=gui.Gui()
         self.loaded_extensions={}
         self.loaded_plugins={}
         self.default_error=self.on_command_error
@@ -99,7 +104,11 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
     async def after_startup(self):
         '''This function is called in on_ready, but only once.'''
         if not self.bot_ready:
-
+            #if self.guimode:   self.gui.run(self.loop) #update_every_second()
+            if self.guimode:
+                self.gui.run(self.loop)
+                pass
+                #self.gthread=gui.Gui.run(self.gui)
             self.database_on()
             self.update_ext_list()
             await self.reload_all()
@@ -108,7 +117,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
             await self.audit_guilds()
 
             await self.all_guild_startup()
-            print("BOT SYNCED!")
+            gui.gprint("BOT SYNCED!")
             self.delete_queue_message.start()
             self.post_queue_message.start()
             self.status_ticker.start()
@@ -119,12 +128,13 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
             self.bot_ready=True
             now = datetime.datetime.now()
             seconds_until_next_minute = (60 - now.second)%20
-            print('sleeping for ',seconds_until_next_minute)
+            gui.gprint('sleeping for ',seconds_until_next_minute)
             await asyncio.sleep(seconds_until_next_minute)
             self.check_tc_tasks.start()
             # Start the coroutine
 
-    async def on_close(self):
+    async def close(self):
+        gui.gprint("Signing off.")
         # Close the SQLAlchemy engine
         self.database.close_out()
         # Logout the bot from Discord
@@ -132,7 +142,10 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         self.delete_queue_message.cancel()
         self.check_tc_tasks.cancel()
         self.status_ticker.cancel()
-        await self.logout()
+        if self.gui:  
+            await self.gui.kill()
+            self.gthread.join()
+        await super().close()
 
     def loggersetup(self):
         '''Setup the loggers.'''
@@ -189,10 +202,10 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         '''Update the internal exension list.'''
         self.extension_list=[]
         for filename in os.listdir(self.extensiondir):
-            print(filename)
+            gui.gprint(filename)
             if filename.endswith('.py'):
                 extensionname=f'cogs.{filename[:-3]}'
-                print(extensionname)
+                gui.gprint(extensionname)
                 self.extension_list.append(extensionname)
 
 
@@ -214,12 +227,12 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
             if 'server_profile_id' in table.columns.keys():
                 matching_tables_2.append((table_name,table))
 
-        # print the tables found with matching column name
-        print(matching_tables)
+        # gui.gprint the tables found with matching column name
+        gui.gprint(matching_tables)
         
         guilds_im_in=[]
         for guild in self.guilds:
-            print(guild.id)
+            gui.gprint(guild.id)
             guilds_im_in.append(guild.id)
         audit_results=ServerData.Audit(guilds_im_in)
         to_purge=[auditme.server_id for auditme in audit_results]
@@ -266,7 +279,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
             if not ext in self.loaded_extensions: 
                 await self.extension_loader(ext)
             #else:                 val=await self.extension_reload(ext)
-        print(self.extension_list)
+        gui.gprint(self.extension_list)
 
 
     async def reload_all(self,resync=False):
@@ -279,7 +292,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
                 await self.extension_loader(ext)
             else: 
                 val=await self.extension_reload(ext)
-        print(self.extension_list)
+        gui.gprint(self.extension_list)
         if resync:
             await self.all_guild_startup()
 
@@ -290,17 +303,17 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
 
     async def extension_loader(self,extname,plugin=False):
         """Load an extension and add it to the internal loaded extension dictionary."""
-        print("STARTING LOAD FOR:", extname)
+        gui.gprint("STARTING LOAD FOR:", extname)
         self.pswitchload(plugin)[extname]=("settingup",None)
         try:
-            print("LOADING", extname)
+            gui.gprint("LOADING", extname)
             await self.load_extension(extname)
             self.pswitchload(plugin)[extname]=("running",None)
             return "LOADOK"
         except Exception as ex:
             en=str(ex)
             back=traceback.format_exception(None, ex, ex.__traceback__)
-            print("ENOK",back)
+            gui.gprint("ENOK",back)
             tracebackstr=''.join(traceback.format_exception(None, ex, ex.__traceback__))
             self.pswitchload(plugin)[extname]=(en,tracebackstr)
             return tracebackstr
@@ -371,12 +384,19 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
     async def check_tc_tasks(self):
         '''run all TcTaskManager Tasks, fires every 20 seconds..'''
         await TCTaskManager.run_tasks()
-        stat=TCTaskManager.get_task_status()
+        stat, panel=TCTaskManager.get_task_status()
+        gui.DataStore.set('schedule',panel)
         self.add_act("taskstatus",stat)
 
 
     @tasks.loop(seconds=1.0)
     async def post_queue_message(self):
+        #gui.gprint(self.latency)
+        if self.guimode:
+            gui.DataStore.add_value('latency',self.latency)
+            #await self.gui.update_every_second()
+            
+            
         await self.post_queue_message_int()
         
 

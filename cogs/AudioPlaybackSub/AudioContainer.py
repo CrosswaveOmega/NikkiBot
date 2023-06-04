@@ -1,3 +1,4 @@
+import gui
 import asyncio
 import datetime
 import os
@@ -34,7 +35,6 @@ def speciallistsplitter(objects:List[Any], resetdata:Callable, splitcond:Callabl
 class AudioContainer():
     """This class groups all featurs of playing audio into one neat package. """
     def __init__(self, url,requested_by:str="Unknown"):
-        print("K")
         info={}
 
         self.state="uninit"
@@ -73,7 +73,7 @@ class AudioContainer():
         self.title, self.duration,self.url= info["title"], info["duration"], info["webpage_url"]
         self.thumbnail=info['thumbnail']
         self.source=info["url"]
-        print(self.source)
+        gui.gprint(self.source)
         self.state="Ok"
 
     def get_song_soundcloud(self):
@@ -104,7 +104,7 @@ class AudioContainer():
         # Find the duration of the audio stream from the ffprobe output
         duration_match = re.search(r"duration=([\d\.]+)", output)
         total_length = int(round(float(duration_match.group(1))))
-        print("Total Length: "+str(total_length) +" seconds")
+        gui.gprint("Total Length: "+str(total_length) +" seconds")
         self.title, self.duration,self.url= "Your Song", total_length, self.query
         mdata=mutagen.File(self.query)
         if mdata:
@@ -132,15 +132,15 @@ class AudioContainer():
             all_files = os.listdir(directory_name)
             random_file = random.choice(all_files)
             file_path = os.path.join(directory_name, random_file)
-            print("File not found. Using random file:", random_file)
+            gui.gprint("File not found. Using random file:", random_file)
 
-        print("File found at:", file_path)
+        gui.gprint("File found at:", file_path)
         # Find the duration of the audio stream from the ffprobe output
         duration_cmd = "ffprobe -i "+file_path+" -show_format -v quiet"
         output = subprocess.check_output(duration_cmd, shell=True, stderr=subprocess.STDOUT).decode("utf-8")
         duration_match = re.search(r"duration=([\d\.]+)", output)
         total_length = int(round(float(duration_match.group(1))))
-        print("Total Length: "+str(total_length) +" seconds")
+        gui.gprint("Total Length: "+str(total_length) +" seconds")
         mdata=mutagen.File(file_path)
         self.title, self.duration,self.url= "Your Song", total_length, "./"+file_path
         self.source="./"+file_path
@@ -194,7 +194,7 @@ class AudioContainer():
         timeat=int(self.timeat)
         if self.playing:
             timeat=int(self.timeat+(discord.utils.utcnow()-self.started_at).total_seconds())
-            print(timeat)
+            gui.gprint(timeat)
         return timeat
 
     def get_timestamp(self):
@@ -249,7 +249,7 @@ async def special_playlist_download(bot, ctx, ie_result):
             else:
                 entries = ie_entries[playliststart:playlistend]
             n_entries = len(entries)
-            print('[%s] playlist %s: Collected %d video ids (downloading %d of them)' %
+            gui.gprint('[%s] playlist %s: Collected %d video ids (downloading %d of them)' %
                     (ie_result['extractor'], playlist, n_all_entries, n_entries))
 
         else:  # iterable
@@ -264,7 +264,7 @@ async def special_playlist_download(bot, ctx, ie_result):
 
         for i, entry in enumerate(entries, 1):
             if i%50==0:
-                print('[download] Downloading video %s of %s' % (i, n_entries))
+                gui.gprint('[download] Downloading video %s of %s' % (i, n_entries))
             # This __x_forwarded_for_ip thing is a bit ugly but requires
             # minimal changes
             if x_forwarded_for:
@@ -284,7 +284,7 @@ async def special_playlist_download(bot, ctx, ie_result):
             entry_result = entry
             playlist_results.append(entry_result)
         ie_result['entries'] = playlist_results
-        # print(status,'[download] Finished downloading playlist: %s' % playlist)
+        # gui.gprint(status,'[download] Finished downloading playlist: %s' % playlist)
         #bot.delete_status_message(status)
         return ie_result
     else:

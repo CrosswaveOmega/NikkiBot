@@ -1,3 +1,4 @@
+import gui
 from typing import List
 import discord
 
@@ -103,7 +104,7 @@ class CalculatorCog(commands.Cog,TC_Cog_Mixin):
     @app_commands.command(name="calculatorhelp")
     async def helper_calc(self, interaction: discord.Interaction):
         """  get help for the calculator function."""
-        print("OK.")
+        gui.gprint("OK.")
         helpsS='''Calc is a powerful command, so it requires some knowhow to use to it's fullest.
                  Example expression:
         `"((50)+((5d8reroll<3)+(8d8keep4)+sum(2d4)+(4+(3*(10-2*3+4+5-4*4+4[1,2,3]):+2))+8d8!>=5))"`
@@ -250,8 +251,8 @@ def operateTest(expr, verb=6):
     string=""
     for i,c in enumerate(cho):
         string=string+f"[{i}]:"+c+" \n"
-    print("NOW:\n"+string)
-    print(value)
+    gui.gprint("NOW:\n"+string)
+    gui.gprint(value)
     return float(value)
 
 if __name__ == "__main__": #testing
@@ -284,11 +285,11 @@ if __name__ == "__main__": #testing
     #assert operateTest(expression3) == answer3
     #assert operateTest(expression4) == answer4
     for a, e in toeval:
-        print("GO",e,a)
+        gui.gprint("GO",e,a)
         thisresult=operateTest(e)
-        print(thisresult,a)
+        gui.gprint(thisresult,a)
         assert round(thisresult,4)==round(float(a),4)
-    print(operateTest("sum(5d50)"))
+    gui.gprint(operateTest("sum(5d50)"))
 
             
 async def setup(bot):

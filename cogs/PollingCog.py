@@ -1,3 +1,4 @@
+import gui
 import asyncio
 import discord
 from discord.ext import commands
@@ -143,7 +144,7 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
                     bot.add_view(Persistent_Poll_View(p),message_id=m)
             bot.add_view(PersistentView())
         except Exception as e:
-            print(e)    
+            gui.gprint(e)    
         self.message_update_cleanup.start()
 
     def cog_unload(self):
@@ -181,7 +182,7 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
     async def poll_subscription(self):
         try:
             polllist=PollChannelSubscribe.get_new_polls()
-            print(polllist)
+            gui.gprint(polllist)
             for i in polllist:
                 channel_id, polls=i
                 channel=self.bot.get_channel(channel_id)
@@ -198,17 +199,17 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
             PollTable.update_poll_status()
             for i in PollMessages.get_active_poll_messages():
                 poll,mes=i
-                print(mes)
+                gui.gprint(mes)
                 for w in mes:
                     m,u=w
-                    print(u)
+                    gui.gprint(u)
                     if poll.change_vote:
                         embed=poll.poll_embed_view()
                         message=await urltomessage(u,self.bot, partial=True)
                         try:
                             await message.edit(embed=embed)
                         except Exception as e:
-                            print(e)
+                            gui.gprint(e)
                             PollMessages.remove_poll_message(m)
                 if poll.change_vote:
                     poll.change_vote=False
@@ -224,7 +225,7 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
             PollMessages.remove_invalid_poll_messages()
         except Exception as e:
             await self.bot.send_error(e, f"Message update cleanup error.")
-            print(str(e))
+            gui.gprint(str(e))
         
     
     @commands.command()
@@ -308,7 +309,7 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
            await MessageTemplates.poll_message(ctx,"This poll id is invalid.",ephemeral=True)
            return
         act=PollTable.get_active_polls(ctx.guild.id)
-        print(act)
+        gui.gprint(act)
         embeds=PollTable.poll_list(act)
         await pages_of_embeds(ctx,embeds, ephemeral=True)
         

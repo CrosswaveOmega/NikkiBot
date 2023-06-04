@@ -1,4 +1,4 @@
-
+import gui
 import inspect
 import discord
 from discord.app_commands import ContextMenu, locale_str
@@ -178,7 +178,7 @@ class CogFieldList:
                 res=cog.server_profile_field_ext(guild)
                 if res:
                     extended_fields.append(res)
-                print(f"{cog.__class__.__name__} has the function 'server_profile_fieldext'")
+                gui.gprint(f"{cog.__class__.__name__} has the function 'server_profile_fieldext'")
             else: pass
         return extended_fields
 

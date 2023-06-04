@@ -1,5 +1,6 @@
 from typing import Optional, Tuple, Union
 import discord
+import gui
 import operator
 import asyncio
 import csv
@@ -60,7 +61,7 @@ async def urltomessage(link="", bot=None, partial=False)-> Optional[Union[discor
         except discord.errors.NotFound:
             raise BotError("Failed to get message {message_id}, it does not appear to exist.")
     except Exception as e:
-        print(e)
+        gui.gprint(e)
         if bot:
             await bot.send_error(e,"URL_TO_MESSAGE_ERROR")
         return None

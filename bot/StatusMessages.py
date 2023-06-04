@@ -1,3 +1,4 @@
+import gui
 import random
 import string
 from discord.ext import commands, tasks
@@ -28,7 +29,7 @@ class StatusEditMessage:
             try:
                 await self.message.edit(**kwargs)
             except Exception as e:
-                print(e)
+                gui.gprint(e)
                 self.message=urltomessage(self.message.jump_url,self.bot)
             self.last_update_time=datetime.datetime.now()
 
@@ -79,7 +80,7 @@ class StatusMessageManager:
             
             pid=await self.statuses[sid].ctx.send(updatetext,**kwargs)
             await asyncio.sleep(0.2)
-            print(pid)
+            gui.gprint(pid)
             self.statuses[sid].status_mess=pid
     def update_status_message(self, sid, updatetext,**kwargs):
         if sid in self.statuses:
@@ -87,7 +88,7 @@ class StatusMessageManager:
             if last!=None:
               self.bot.schedule_for_deletion(last,4)
             pid=self.bot.schedule_for_post(self.statuses[sid].ctx,updatetext)
-            print(pid)
+            gui.gprint(pid)
             self.statuses[sid].status_mess=pid
     def delete_status_message(self,sid):
         if sid in self.statuses:

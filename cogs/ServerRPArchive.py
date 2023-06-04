@@ -1,3 +1,4 @@
+import gui
 from typing import Literal
 import discord
 import operator
@@ -11,7 +12,7 @@ from datetime import datetime, timedelta, date, timezone
 from sqlalchemy import event
 
 from utility import serverOwner, serverAdmin, seconds_to_time_string, get_time_since_delta, explain_rrule
-from utility import WebhookMessageWrapper as web, urltomessage, relativedelta_sp, ConfirmView, RRuleView
+from utility import WebhookMessageWrapper as web, urltomessage, ConfirmView, RRuleView
 from bot import TCBot, TCGuildTask, Guild_Task_Functions, StatusEditMessage, TC_Cog_Mixin
 from random import randint
 from discord.ext import commands, tasks
@@ -46,9 +47,6 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
         Guild_Task_Functions.add_task_function("COMPILE",self.gtask_compile)
 
-    
-    
-
     def cog_unload(self):
         #Remove the task function.
         Guild_Task_Functions.remove_task_function("COMPILE")
@@ -57,8 +55,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
     def server_profile_field_ext(self,guild:discord.Guild):
         profile=ServerArchiveProfile.get(guild.id)
         if not profile:  return None
-        last_date=""
-        aid=""
+        last_date=aid=""
         hist_channel=profile.history_channel_id
         if profile.last_archive_time:
             timestamped=profile.last_archive_time.timestamp()
@@ -109,7 +106,6 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
     @app_commands.command(name="compile_sanity_check", description="ensure that the needed permissions for the auto channel are set")
     async def sanity_check(self, interaction: discord.Interaction):
-        '''make a poll!'''
         ctx: commands.Context = await self.bot.get_context(interaction)
         bot=ctx.bot
         guild=ctx.guild
@@ -117,10 +113,6 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         if not(serverOwner(ctx) or serverAdmin(ctx)):
             await MessageTemplates.server_archive_message(ctx,"You don't have permission to use this command..")
             return False
-        
-        
-
-        
         old=TCGuildTask.get(guild.id, task_name)
         if old:
             autochannel=bot.get_channel(old.target_channel_id)
@@ -153,11 +145,13 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         chanment=ctx.message.mentions
         if len(chanment)>=1:
             for user in chanment:
-                print(user.name)
+                gui.gprint(user.name)
                 profile.add_user_to_list(user.id)
         self.bot.database.commit()
 
     @commands.hybrid_group(fallback="view")
+    @app_commands.default_permissions(manage_messages=True,manage_channels=True)
+    @commands.has_permissions(manage_messages=True,manage_channels=True)
     async def archive_setup(self, ctx):
         """This family of commands is for setting up your server archive."""
         channel = ctx.message.channel
@@ -183,7 +177,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             return False
         
         profile=ServerArchiveProfile.get_or_new(guildid)
-        print(profile)
+        gui.gprint(profile)
         passok, statusmessage = check_channel(chanment)
         if not passok:
             await MessageTemplates.server_archive_message(ctx,statusmessage)
@@ -604,18 +598,18 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 message=await urltomessage(target.posted_url,self.bot)
                 
                 emb,lc=target.create_embed()
-                print(lc)
+                gui.gprint(lc)
                 target.update(neighbor_count=lc)
                 await message.edit(embeds=[emb])
-        print(target, target.posted_url)
+        gui.gprint(target, target.posted_url)
         if target.posted_url:
             iL=target.get_neighbor(False,False,False)
             cL=target.get_neighbor(True,False,False)
-            print(iL,cL,target)
+            gui.gprint(iL,cL,target)
 
             await edit_if_needed(iL)
             await edit_if_needed(cL)
-            print(f"New posted_url value for ChannelSep")
+            gui.gprint(f"New posted_url value for ChannelSep")
     @commands.command(
         name="archive_compile_debug",
         brief="start archiving the server.  Will only archive messages sent by bots.",
@@ -686,11 +680,11 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         fullcount=ts
         profile.update(last_group_num=group_id)
         remaining_time_float= fullcount* timebetweenmess
-        print(lastgroup,group_id)
+        gui.gprint(lastgroup,group_id)
         if dynamicwait:
             remaining_time_float+=(totalcharlen*characterdelay)
 
-        print('next')
+        gui.gprint('next')
         nogroup=ArchivedRPMessage.get_messages_without_group(guildid)
         needed=ChannelSep.get_posted_but_incomplete(guildid)
         grouped=ChannelSep.get_unposted_separators(guildid)
@@ -704,7 +698,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         if needed==None: needed=[]
 
         
-        print(grouped,needed)
+        gui.gprint(grouped,needed)
         await ctx.send(f'{len(nogroup)},  {len(needed)},{len(grouped)},{len(all)}, {len(unique_ids)}')
         unposted=len(ArchivedRPMessage.get_archived_rp_messages_with_null_posted_url(guildid))
         
@@ -795,26 +789,26 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         fullcount=ts
         profile.update(last_group_num=group_id)
         remaining_time_float= fullcount* timebetweenmess
-        print(lastgroup,group_id)
+        gui.gprint(lastgroup,group_id)
         if dynamicwait:
             remaining_time_float+=(totalcharlen*characterdelay)
 
-        print('next')
+        gui.gprint('next')
 
         needed=ChannelSep.get_posted_but_incomplete(guildid)
         grouped=ChannelSep.get_unposted_separators(guildid)
         if needed:   
             grouped.insert(0,needed)
-        print(grouped,needed)
+        gui.gprint(grouped,needed)
         
         await m.edit(content=f"Posting! This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
         me=await ctx.channel.send(content=f"Posting! This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
         mt=StatusEditMessage(me,ctx)
-        print(archive_channel.name)
+        gui.gprint(archive_channel.name)
         length=len(grouped)
         for e,sep in enumerate(grouped):
             #Start posting
-            print(e,sep)
+            gui.gprint(e,sep)
             if not sep.posted_url:
                 currjob="rem: {}".format(seconds_to_time_string(int(remaining_time_float)))
                 emb,count=sep.create_embed()
@@ -856,7 +850,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
         bot.remove_act(str(ctx.guild.id)+"arch")
         channel=ctx.channel
-        print(channel.name, channel.id)
+        gui.gprint(channel.name, channel.id)
         profile.update(last_archive_time=(datetime.fromtimestamp(int(new_last_time))))
         bot.database.commit()
         await MessageTemplates.server_archive_message(channel,f'Archive operation completed at <t:{int(datetime.now().timestamp())}:f>')
@@ -884,6 +878,16 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             return False
         if channel.id==profile.history_channel_id:
             return False
+        archive_channel=guild.get_channel(profile.history_channel_id)
+        if archive_channel==None:
+            await MessageTemplates.get_server_archive_embed(ctx,"I can't seem to access the history channel, it's gone!")
+            return False
+
+        thread=discord.utils.get(archive_channel.threads, name="Message Calendar")
+        if thread:
+            await thread.delete()
+        new_thread=await archive_channel.create_thread(name="Message Calendar", auto_archive_duration=10080, type=discord.ChannelType.public_thread )
+
         #archive_channel=guild.get_channel(profile.history_channel_id)
 
         async def calendarMake(separator_messages, lastday=None, this_dates=["█","█","█","█","█","█","█"], current_calendar_embed_object=None, weeknumber=0):
@@ -909,7 +913,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                     lastdate=newdate.date()
                     day_count=0
                     separator_count=0
-                print((lastdate-newdate.date()).days)
+                gui.gprint((lastdate-newdate.date()).days)
                 lastmessage=thisMessage
                 day_count=day_count+curr_count
                 separator_count=separator_count+1
@@ -929,7 +933,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 d2 = last
                 return (d1.month== d2.month and d1.year == d2.year)
 
-            print("Current Calendar Embed")
+            gui.gprint("Current Calendar Embed")
 
             for day in daystarts:
                 date,url,mcount=day["date"],day["url"],day["mcount"]
@@ -942,7 +946,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                         this_dates=["█","█","█","█","█","█","█"]
                         weeknumber=weeknumber+1
                     if not same_month(lastday, date):
-                        await web.postWebhookMessageProxy(channel, message_content="_ _", display_username="DateMaster", avatar_url=bot.user.avatar.url, embed=[current_calendar_embed_object])
+                        await web.postWebhookMessageProxy(new_thread, message_content="_ _", display_username="DateMaster", avatar_url=bot.user.avatar.url, embed=[current_calendar_embed_object])
                         current_calendar_embed_object=discord.Embed(title=date.strftime("%B %Y"), colour=discord.Colour(randint(0,0xffffff)))
                         weeknumber=0
                 else:
@@ -951,7 +955,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 this_dates[date.weekday()]="[{}]({})-{}".format(strday, url, mcount)
                 lastday=date
             current_calendar_embed_object.add_field(name="Week {}".format(weeknumber), value="\n".join(this_dates), inline=True)
-            await web.postWebhookMessageProxy(channel, message_content="_ _", display_username="DateMaster", avatar_url=bot.user.avatar.url, embed=[current_calendar_embed_object])
+            await web.postWebhookMessageProxy(new_thread, message_content="_ _", display_username="DateMaster", avatar_url=bot.user.avatar.url, embed=[current_calendar_embed_object])
 
         await calendarMake(ChannelSep.get_all_separators(guildid))
         

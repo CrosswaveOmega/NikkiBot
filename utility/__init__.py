@@ -8,7 +8,7 @@ from .globalfunctions import(
      seconds_to_time_string, seconds_to_time_stamp, get_server_icon_color, hash_string_64, replace_working_directory)
 
 from .mytemplatemessages import MessageTemplates
-from .dateutil_sp import relativedelta_sp
+
 from .string_format_functions import get_time_since_delta, explain_rrule
 from .views import ConfirmView, RRuleView
 from .manual_load import load_manual

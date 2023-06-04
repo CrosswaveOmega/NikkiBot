@@ -1,6 +1,7 @@
 from random import randint, choice
-from typing import List
+from typing import List, Tuple, Union
 import discord
+import gui
 import aiohttp
 from discord import Webhook
 default_webhook_name='BotHook'
@@ -8,7 +9,7 @@ class WebhookMessageWrapper:
     
 
     @staticmethod
-    async def postwebhookcopy_channel(channel, message:discord.Message, embeds=List[discord.Embed]):
+    async def postwebhookcopy_channel(channel, message:discord.Message, embeds=List[discord.Embed])->discord.WebhookMessage:
         content=message.content
         name=message.author.name
         avatar=message.author.avatar
@@ -23,7 +24,7 @@ class WebhookMessageWrapper:
         return await WebhookMessageWrapper.postWebhookMessageProxy(channel, message_content=content, display_username=name, avatar_url=avatar, embed=embeds, file=files)
     
     @staticmethod
-    async def postCopyWithWebhook(webhook,thread,  message:discord.Message, embeds=List[discord.Embed],noauthor=False):
+    async def postCopyWithWebhook(webhook,thread,  message:discord.Message, embeds=List[discord.Embed],noauthor=False)->discord.WebhookMessage:
         content=message.content
         name=message.author.name
         avatar=message.author.avatar
@@ -42,7 +43,7 @@ class WebhookMessageWrapper:
     
     
     @staticmethod
-    async def postMessageAsWebhookWithURL(webhookurl, **kwargs):
+    async def postMessageAsWebhookWithURL(webhookurl, **kwargs)->discord.WebhookMessage:
         """posts a message as a webhook
         :param message_content: content of message
         :param display_username: name to display of webhook
@@ -57,7 +58,7 @@ class WebhookMessageWrapper:
             return mess
 
     @staticmethod
-    async def getWebhookInChannel(text_channel:discord.TextChannel):
+    async def getWebhookInChannel(text_channel:discord.TextChannel)->Tuple[discord.Webhook,Union[discord.Thread,None]]:
         thread=None
         tlist=[discord.ChannelType.news_thread, discord.ChannelType.public_thread, discord.ChannelType.private_thread]
         if text_channel.type in tlist:
@@ -79,12 +80,12 @@ class WebhookMessageWrapper:
         return webhook, thread
     
     @staticmethod 
-    async def postMessageWithWebhook(webhook,thread,message_content, display_username, avatar_url, embed=[],file=[]):
+    async def postMessageWithWebhook(webhook,thread,message_content, display_username, avatar_url, embed=[],file=[])->discord.WebhookMessage:
         if (not message_content and not file and not embed):
-            print("No content, no file, and no embed.")
+            gui.gprint("No content, no file, and no embed.")
             return None
         if message_content.isspace() and not file and not embed:
-            print("Empty,no file, and no embed.")
+            gui.gprint("Empty,no file, and no embed.")
             return None
 
         newContent=message_content
@@ -104,7 +105,7 @@ class WebhookMessageWrapper:
                 mess=await webhook.send(content=newContent, username="CaptainHook",avatar_url=avatar_url, embeds=embed, files=file, wait=True) 
                 return mess
     @staticmethod
-    async def postWebhookMessageProxy(channel,**kwargs):
+    async def postWebhookMessageProxy(channel,**kwargs)->discord.WebhookMessage:
         """posts a message as a webhook
         :param message_content: content of message
         :param display_username: name to display of webhook

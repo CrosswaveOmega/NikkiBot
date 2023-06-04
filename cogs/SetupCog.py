@@ -38,7 +38,7 @@ class HelpSelect(discord.ui.Select):
         for i, v in self.cogs.items():
             options.append(discord.SelectOption(label=v.qualified_name,description="This is cog {}".format(v.qualified_name)))
            
-            print(i)
+            
 
         super().__init__(placeholder="Select a cog",max_values=1,min_values=1,options=options)
     async def callback(self, interaction: discord.Interaction):
@@ -194,7 +194,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
             await pages_of_embeds(ctx,embed_list, ephemeral=True)
         else:
             await pages_of_embeds(ctx,embed_list)
-                #print(type.name)
+                #gui.gprint(type.name)
 
             
 
@@ -301,7 +301,6 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         def format_channel_mentions(channels_part1, max_channels=10):
             #Format channel mentions, simplify by removing categories.
             categories = [c.id for c in channels_part1 if c.type == discord.ChannelType.category]
-            print(categories)
             channels= [c for c in channels_part1 \
                 if c.type == discord.ChannelType.category or c.category_id not in categories]
 
@@ -309,7 +308,6 @@ class Setup(commands.Cog, TC_Cog_Mixin):
             if len(channels) > max_channels:
                 channel_mentions.append(f"and {len(channels) - max_channels} more...")
             formattedstring= ", ".join(channel_mentions)
-            print(formattedstring)
             return formattedstring
 
 

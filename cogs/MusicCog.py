@@ -1,3 +1,4 @@
+import gui
 import asyncio
 
 import discord
@@ -352,7 +353,6 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
             def transform(current):
                 off, titles=current
                 playlist = ''.join(f'**{idv}:** [{song.title}]({song.url})-{song.duration}\n' for idv, song in titles)
-                print(playlist)
                 emb=MusicManager.get(guild).get_music_embed("pl",f"**Playlist**\n{playlist}")
                 if pstr: emb.add_field(name="Still Processing",value=f"I'm still processing {pstr} songs!")
                 emb.set_footer(text=f"{seconds_to_time_string(duration)}")
@@ -674,7 +674,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         playlist=profile.load_playlist(playlistname)
         for i in (playlist):
             title,url=i["title"],i["url"]
-            #print(f"title:{title},url:{url}")
+            #gui.gprint(f"title:{title},url:{url}")
             song=AudioContainer(url,author.name)
             MusicManager.get(guild).song_add_queue.put(song)
             MusicManager.get(guild).processsize+=1

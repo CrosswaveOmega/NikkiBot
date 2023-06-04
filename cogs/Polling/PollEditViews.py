@@ -1,3 +1,4 @@
+import gui
 from typing import Any, Coroutine
 import discord
 from discord.interactions import Interaction
@@ -75,13 +76,11 @@ class Dropdown(discord.ui.Select):
         super().__init__(placeholder=this_label, min_values=1, max_values=1, options=options)
     async def interaction_check(self, interaction: Interaction[discord.Client]):
         if interaction.user==self.user:
-            print("OK")
             return True
-        print("NOT OK.")
         return False
 
     async def on_error(self, interaction: discord.Interaction, error: Exception,item:discord.ui.Item):
-        print(str(error))
+        gui.gprint(str(error))
         await interaction.response.send_message(f'Oops! Something went wrong: {str(error)}.', ephemeral=True)
     async def callback(self, interaction: discord.Interaction):
         if self.key in self.view.my_poll:
@@ -163,13 +162,11 @@ class PollEdit(discord.ui.View):
 
     async def interaction_check(self, interaction: Interaction[discord.Client]):
         if interaction.user==self.user:
-            print("OK")
             return True
-        print("NOT OK.")
         return False
 
     async def on_error(self, interaction: discord.Interaction, error: Exception,item:discord.ui.Item):
-        print(str(error))
+        gui.gprint(str(error))
         await interaction.response.send_message(f'Oops! Something went wrong: {str(error)}.', ephemeral=True)
 
     @discord.ui.button(label='Edit Name and Text', style=discord.ButtonStyle.blurple)
@@ -180,11 +177,9 @@ class PollEdit(discord.ui.View):
         name_modal=Poll_Name_Make()
         await interaction.response.send_modal(name_modal)
         await name_modal.wait()
-        print("DONE.",name_modal.done)
         if name_modal.done!=None:
             self.my_poll['poll_name']=name_modal.done['poll_name']
             self.my_poll['poll_text']=name_modal.done['poll_text']
-            print(self.my_poll)
             emb=format_poll_embed(self.my_poll)
             await interaction.edit_original_response(
                 content="Name has been edited.",
@@ -200,12 +195,10 @@ class PollEdit(discord.ui.View):
         choice_modal=Poll_Choice_Make(scope='NA',choices=int(self.my_poll['choices']))
         await interaction.response.send_modal(choice_modal)
         await choice_modal.wait()
-        print("DONE.",choice_modal.done)
         if choice_modal.done!=None:
             for i in choice_modal.done['choices']:
                 c,e=i
                 self.my_poll[f'choice_{c}']=e
-            print(self.my_poll)
             await interaction.edit_original_response(
                 content="Choices_edited",
                 embed=format_poll_embed(self.my_poll,"Updated the poll choices."))

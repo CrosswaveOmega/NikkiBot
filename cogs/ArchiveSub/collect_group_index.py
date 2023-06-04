@@ -1,3 +1,4 @@
+import gui
 from datetime import datetime, timedelta, timezone
 from .archive_database import ArchivedRPMessage, ChannelSep, HistoryMakers
 from database import DatabaseSingleton
@@ -14,7 +15,7 @@ DEBUG_MODE=False
 async def iterate_backlog(backlog,group_id):
     tosend = []
     while backlog.empty()==False:
-        if DEBUG_MODE: print(F"Backlog Pass {group_id}:")
+        if DEBUG_MODE: gui.gprint(F"Backlog Pass {group_id}:")
         new_backlog=Queue()
         charsinotherbacklog = set()
         current_chana = None
@@ -27,16 +28,16 @@ async def iterate_backlog(backlog,group_id):
                 current_chana = 'CHARA_DID_A_SPLIT'
             if current_chana is None:
                 group_id += 1
-                if DEBUG_MODE: print('inb',current_chana,hm.get_chan_sep(),group_id)
+                if DEBUG_MODE: gui.gprint('inb',current_chana,hm.get_chan_sep(),group_id)
                 current_chana = channelind
             if channelind == current_chana and running:
-                if DEBUG_MODE: print('in',current_chana,hm.get_chan_sep(),group_id)
+                if DEBUG_MODE: gui.gprint('in',current_chana,hm.get_chan_sep(),group_id)
                 hm.update(channel_sep_id=group_id)
                 HistoryMakers.add_channel_sep_if_needed(hm,group_id)
             else:
                 new_backlog.put(hm)
                 charsinotherbacklog.add(hm.author)
-        if DEBUG_MODE: print("Pass complete.")
+        if DEBUG_MODE: gui.gprint("Pass complete.")
         DatabaseSingleton('voc').commit()
         backlog = new_backlog
     return tosend,group_id
@@ -59,7 +60,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
 
         if status_mess: #This will ensure that the script won't have a 'heart attack' while processing large messages.
             await status_mess.updatew(f"Now at: {e}/{hm}, group_id:{group_id}.", min_seconds=12)
-        if DEBUG_MODE: print('i',hm)
+        if DEBUG_MODE: gui.gprint('i',hm)
         mytime=(hm.created_at).replace(tzinfo=timezone.utc)
         # create string to identify category, channel, thread combo
         chanin = hm.get_chan_sep()
@@ -98,12 +99,12 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
         if current_chana is None:
             current_chana = hm.get_chan_sep()
             group_id+=1
-            if DEBUG_MODE: print('inb',current_chana,hm.get_chan_sep(),group_id)
+            if DEBUG_MODE: gui.gprint('inb',current_chana,hm.get_chan_sep(),group_id)
             
         # add message to current group if it belongs to the current channel
         
         if chanin == current_chana:
-            if DEBUG_MODE: print('in',current_chana,hm.get_chan_sep(),group_id)
+            if DEBUG_MODE: gui.gprint('in',current_chana,hm.get_chan_sep(),group_id)
             hm.update(channel_sep_id=group_id)
             HistoryMakers.add_channel_sep_if_needed(hm,group_id)
             cc_count += 1

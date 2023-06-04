@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime
 from typing import Dict, Optional, Type
-
+import gui
 from dateutil.parser import parse
 from dateutil.rrule import *
 from dateutil import tz
@@ -72,8 +72,8 @@ class TCTask:
             return True
         else:
             # Print the time until next run
-            time_until = self.to_run_next - datetime.now()
-            print(f"{self.name} not ready. Next run in {time_until}")
+            #time_until = self.to_run_next - datetime.now()
+            #gui.gprint(f"{self.name} not ready. Next run in {time_until}")
             return False
 
     def time_left(self):
@@ -84,6 +84,18 @@ class TCTask:
         formatted_datetime = self.to_run_next.strftime("%b-%d-%Y %H:%M")
         next_formatted_datetime=ctr.strftime("%b-%d-%Y %H:%M")
         return f"{self.name} will run next on {formatted_datetime}, in {time_until}.  If right now, then {next_formatted_datetime}"
+    def time_left_short(self):
+        '''Check if the TCTask can be launched.'''
+        if self.is_running: return f"{self.name}: RUNNING\n"
+        next = self.to_run_next - datetime.now()
+        ctr=self.next_run()
+        days= hours=mins=""
+        if next.days>0:days=str(next.days)+"d,"
+        if (next.seconds // 3600)>0:hours=str(int(next.seconds // 3600))+"h,"
+        if ((next.seconds // 60) % 60)>0:mins=str(int((next.seconds // 60) % 60))+"m"
+        formatted_delta = f"{days}{hours}{mins}"
+        return f"{self.name}: {formatted_delta}\n"
+    
     def assign_wrapper(self,func):
         '''create the asyncronous wrapper with the passed in func.  '''
         self.funct = func  # Add the coroutine function to the TCTask object
@@ -113,21 +125,21 @@ class TCTask:
                 if self.limited:
                     self.run_number-=1
                     if self.run_number<=0:
-                        print("To be removed.")
                         remove_check=True
                 if self.parent_db:
                     try:
                         self.parent_db.parent_callback(self.name,self.to_run_next)
                     except Exception as e:
-                        print(e)
+                        gui.gprint(e)
                         remove_check=True
                 if remove_check:
                     TCTaskManager.add_tombstone(self.name)
                 self.is_running=False
             else:
+                pass
                 # Print the time until next run
-                time_until = self.to_run_next - datetime.now()
-                print(f"{self.name} not ready. Next run in {time_until}")
+                #time_until = self.to_run_next - datetime.now()
+                #gui.gprint(f"{self.name} not ready. Next run in {time_until}")
         self.wrapper=wrapper
         return wrapper
 
@@ -232,7 +244,7 @@ class TCTaskManager:
             task (TCTask): The TCTask object to add to the list of tasks.
 
         """
-        print(f"added task {task.name}")
+        gui.gprint(f"added task {task.name}")
         manager = cls.get_instance()
         manager.tasks[task.name]=(task)
 
@@ -248,7 +260,7 @@ class TCTaskManager:
         """
         manager = cls.get_instance()
         if name in manager.tasks:
-            print(f"removing task {name}")
+            gui.gprint(f"removing task {name}")
             manager.tasks.pop(name)
             return True
         return False
@@ -281,8 +293,9 @@ class TCTaskManager:
         manager = TCTaskManager.get_instance()
         running=scheduled=0
         deltas=[]
-        output=""
+        output=output2=""
         for key, task in manager.tasks.items():
+            output2+=task.time_left_short()
             if task.is_running:
                 running+=1
             else:
@@ -299,7 +312,7 @@ class TCTaskManager:
             if ((next.seconds // 60) % 60)>0:mins=str(int((next.seconds // 60) % 60))+"m"
             formatted_delta = f"next auto task in {days}{hours}{mins}"
             output+=formatted_delta
-        return output
+        return output, output2
 
     async def run_tasks():
         """

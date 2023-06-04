@@ -49,7 +49,6 @@ async def collect_server_history(ctx, update=False,bot_messages_only=True,user_m
                     new_last_time=max(thisMessage.created_at.timestamp(),new_last_time)
                     characterlen+=len(thisMessage.content)
                     messages.append(thisMessage)
-                    print("ADDING")
                     mlen+=1
                 else:
                     ignoredhere=ignoredhere+1
@@ -74,7 +73,6 @@ async def collect_server_history(ctx, update=False,bot_messages_only=True,user_m
         for chan in guild.text_channels:
             chancount+=1
             if profile.has_channel(chan.id)==False and chan.permissions_for(guild.me).view_channel==True and chan.permissions_for(guild.me).read_message_history==True:
-                print(chan.name, "id",chan.id," Message Len:",len(messages))
                 threads=chan.threads
                 archived=[]
                 async for thread in chan.archived_threads():

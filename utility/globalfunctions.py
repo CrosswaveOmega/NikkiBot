@@ -15,6 +15,7 @@ import site
 from discord.utils import escape_markdown
 import hashlib
 import base64
+import gui
 
 def hash_string_64(string_to_hash, hashlen=5):
     # Convert the string to bytes
@@ -49,13 +50,13 @@ def replace_working_directory(string):
     replaced_string=string
     for rawsite in site.getsitepackages():
         sites = os.path.dirname(rawsite)
-        print(sites)
+        gui.gprint(sites)
         # Use regex to replace all instances of the working directory in the string
         replaced_string = re.sub(re.escape(sites), 'site', string, flags=re.IGNORECASE)
     # Use regex to replace all instances of the working directory in the string
     replaced_string = re.sub(re.escape(parent_dir), '..', replaced_string, flags=re.IGNORECASE)
 
-    print(replaced_string)
+    gui.gprint(replaced_string)
     return escape_markdown(replaced_string)
 
 '''Utility functions here to assist.'''
@@ -123,6 +124,6 @@ async def get_server_icon_color(guild: discord.Guild) -> str:
 
 
 if __name__ == "__main__": #testing
-    print(seconds_to_time_string(130))
+    gui.gprint(seconds_to_time_string(130))
 
 

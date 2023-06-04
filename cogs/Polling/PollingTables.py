@@ -99,7 +99,6 @@ class PollTable(PollingBase):
         votes_a = votes_b = votes_c = votes_d = votes_e = 0
         for data in poll_data:
             choice = data.choice
-            print(choice)
             if choice == 'A':
                 votes_a += 1
             elif choice == 'B':

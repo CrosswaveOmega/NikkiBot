@@ -1,3 +1,4 @@
+import gui
 from typing import Any, Coroutine
 import discord
 import operator
@@ -25,7 +26,7 @@ from bot import TC_Cog_Mixin, super_context_menu
 
 class MenuButton(discord.ui.Button['MenuButton']):
         def __init__(self,*args, **kwargs):
-            print("init")
+            gui.gprint("init")
             super().__init__(**kwargs)
         async def callback(self, interaction):
             await self.view.confirm(interaction,self)
@@ -44,10 +45,10 @@ class GameMenu(discord.ui.View):
         self.reload()
 
     async def caller(self,interaction):
-        print('Call')
+        gui.gprint('Call')
         await interaction.responce.send_message(self.texinp.value)
     def reload(self):
-        print(self.chain)
+        gui.gprint(self.chain)
         menu=self.my_menu
         for i in self.chain:  menu=menu[i]
         if menu==True: return 'end'
@@ -60,12 +61,12 @@ class GameMenu(discord.ui.View):
         return 'done'
     async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
         '''Make sure the my_poll dictionary is filled out, and return.'''
-        print("ok jrtr", button.custom_id)
+        gui.gprint("ok jrtr", button.custom_id)
         if button.custom_id=='back':
             if len(self.chain)>0:
                 self.chain.pop()
         else: self.chain.append(button.custom_id)
-        print(self.chain)
+        gui.gprint(self.chain)
         reload_status=self.reload()
         if reload_status=='end':
               await interaction.response.edit_message(content=str(self.chain),view=None)

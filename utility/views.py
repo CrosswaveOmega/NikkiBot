@@ -2,7 +2,7 @@ from typing import Any, Coroutine
 import discord
 from discord.interactions import Interaction
 from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY, MO, TU, WE, TH, FR, SA, SU
-
+import gui
 
 from datetime import datetime, timedelta
 import time
@@ -21,7 +21,7 @@ class ConfirmView(discord.ui.View):
             return True
         return False
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
-        print(str(error))
+        gui.gprint(str(error))
         await interaction.response.send_message(f'Oops! Something went wrong: {str(error)}.', ephemeral=True)
 
     @discord.ui.button(label='Confirm', style=discord.ButtonStyle.green)
@@ -105,7 +105,7 @@ class WeekdayButton(discord.ui.Button):
         else:
             self.style = discord.ButtonStyle.grey
             self.view.dtvals['days'].remove(self.custom_id)
-        print(self.value,  self.view.dtvals['days'], interaction)
+        gui.gprint(self.value,  self.view.dtvals['days'], interaction)
         await interaction.response.edit_message(view=self.view, embed=self.view.emb())
 
 def create_rrule(dtvals):
@@ -145,7 +145,7 @@ def create_rrule_embed(dtvals):
     # Generate the next four timestamps
     timestamps = []
     
-    print("here")
+    gui.gprint("here")
     now = datetime.now()
     for _ in range(4):
         next_timestamp = rrule_obj.after(now)
@@ -185,7 +185,7 @@ class RRuleView(discord.ui.View):
     ])
     async def frequency_select(self, interaction: discord.Interaction,select: discord.ui.Select):
         value=select.values[0]
-        print(value)
+        gui.gprint(value)
         lastval=self.dtvals["freq"]
         if value=='daily':
             self.dtvals["freq"]=DAILY
@@ -212,7 +212,7 @@ class RRuleView(discord.ui.View):
     async def create_weekday_buttons(self,inter:discord.Interaction):
         for weekday in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]:
             val=False
-            print(weekday)
+            gui.gprint(weekday)
             if weekday in self.dtvals['days']:
                 val=True
             button = WeekdayButton(label=weekday, custom_id=weekday,myvalue=val)
@@ -235,7 +235,7 @@ class RRuleView(discord.ui.View):
         name_modal=TimeSetModal(deftime=default)
         await interaction.response.send_modal(name_modal)
         await name_modal.wait()
-        print("DONE.",name_modal.done)
+        gui.gprint("DONE.",name_modal.done)
         if name_modal.done!=None:
             timev=name_modal.done
             try:
@@ -263,7 +263,7 @@ class RRuleView(discord.ui.View):
         name_modal=IntervalModal(deftime=self.dtvals['interval'])
         await interaction.response.send_modal(name_modal)
         await name_modal.wait()
-        print("DONE.",name_modal.done)
+        gui.gprint("DONE.",name_modal.done)
         if name_modal.done!=None:
             timev=name_modal.done
             try:
@@ -307,5 +307,5 @@ class RRuleView(discord.ui.View):
 
     async def on_error(self, interaction,error, item):
         # Handle any errors that occur during the interaction
-        print(error)
+        gui.gprint(error)
         await interaction.response.send_message(f"An error occurred: {error}")

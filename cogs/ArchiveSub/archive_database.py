@@ -571,7 +571,6 @@ END;
 
 @event.listens_for(ArchivedRPMessage.channel_sep_id, 'set')
 def update_channel_sep_id_listener(target, value, oldvalue, initiator):
-    print(value != oldvalue, value!=None, target.server_id)
     if value != oldvalue and value!=None and target.server_id:
         HistoryMakers.add_channel_sep_if_needed(target,value)
 """ 

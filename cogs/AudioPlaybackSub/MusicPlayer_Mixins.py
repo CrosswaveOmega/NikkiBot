@@ -181,7 +181,6 @@ class PlaylistMixin:
         song.get_song()
 
         if song.state == "Error":
-            print("error")
             if self.channel is not None:
                 await self.send_message(self.channel, str(song.error_value), desc="Error...")
             await self.bot.send_error(song.error_value, "Adding URL.")
@@ -257,7 +256,6 @@ class PlaylistMixin:
         song.get_song()
 
         if song.state == "Error":
-            print("error")
             if self.channel is not None:
                 await self.send_message(self.channel, str(song.error_value), desc="Error...")
             await self.bot.send_error(song.error_value, "Adding URL.")

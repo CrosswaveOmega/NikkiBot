@@ -1,3 +1,4 @@
+import gui
 from typing import List
 
 from random import randint, seed
@@ -15,7 +16,7 @@ List of DataBit objects, and evaluating that list of DataBits via the order of o
 
 def defaultOutput(str):
     '''default output function.'''
-    print(str)
+    gui.gprint(str)
 
 
 

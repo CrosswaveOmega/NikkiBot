@@ -8,7 +8,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import select, not_, func
 import datetime
 from assets import *
-
+import gui
 
 from discord.ext import commands
 from database import DatabaseSingleton
@@ -71,7 +71,7 @@ def dict_diff(dict1, dict2):
             val1 = dict1.get(key)
             val2 = dict2.get(key)
             if val1 != val2:
-                #print(same)
+                #gui.gprint(same)
                 if val2==None:
                     if not delit:
                         delit=True
@@ -158,7 +158,7 @@ class AppGuildTreeSync(Guild_Sync_Base):
             return False, debug, score
             
         except Exception as e:
-            print(e)
+            gui.gprint(e)
 
         return oldsync == newsync, 0.0
 
@@ -376,7 +376,7 @@ def format_application_commands(commands:List[Union[discord.app_commands.Command
         den=remove_null_values(den)
     if not nestok:
         den=denest_dict(formatted_commands)
-    #for i, v in den.items(): print(i,v)
+    #for i, v in den.items(): gui.gprint(i,v)
     return den
 
 
@@ -387,7 +387,7 @@ class SpecialAppSync:
         '''Build a dictionary representation of all app commands to be synced, check if 
         the dictionary is different from a loaded version from before, and then 
         sync the commands tree for the given guild, updating the dictionary.'''
-        print(f"Checking if it's time to sync commands for {guild.name} (ID {guild.id})...")
+        gui.gprint(f"Checking if it's time to sync commands for {guild.name} (ID {guild.id})...")
         try:
             #SQLAlchemy is used to handle database connections.
             #synced=build_app_command_list(self.tree,guild)
@@ -396,20 +396,20 @@ class SpecialAppSync:
             if not dbentry:
                 dbentry=AppGuildTreeSync.add(guild.id)
             same, diffscore,score=dbentry.compare_with_command_tree(app_tree)
-            print(f"Check Results: {guild.name} (ID {guild.id}):{score}")
+            gui.gprint(f"Check Results: {guild.name} (ID {guild.id}):{score}")
             self.logs.info(f"Check Results: {guild.name} (ID {guild.id}):\n differences{diffscore} \n{score}")
             #Check if it's time to edit
             if (not same) or forced==True:
-                print(f"Updating serialized command tree for {guild.name} (ID {guild.id})...")
+                gui.gprint(f"Updating serialized command tree for {guild.name} (ID {guild.id})...")
                 dbentry.update(app_tree)
                 same,diffscore,score=dbentry.compare_with_command_tree(app_tree)
-                print(f"Starting sync for {guild.name} (ID {guild.id})...")
+                gui.gprint(f"Starting sync for {guild.name} (ID {guild.id})...")
                 await self.tree.sync(guild=guild)
-                print(f"Sync complete for {guild.name} (ID {guild.id})...")
+                gui.gprint(f"Sync complete for {guild.name} (ID {guild.id})...")
         except Exception as e:
-            print(str(e))
+            gui.gprint(str(e))
             res=str(traceback.format_exception(None, e, e.__traceback__))
-            print(res)
+            gui.gprint(res)
 
     async def sync_enabled_cogs_for_guild(self,guild, force=False):
         '''With a passed in guild, sync all activated cogs for that guild.
@@ -417,7 +417,7 @@ class SpecialAppSync:
         code to sync different app commands between guilds.'''
         def syncprint(*lis):
             pass
-            if False:  print(f"Sync for {guild.name} (ID {guild.id})",*lis)
+            if False:  gui.gprint(f"Sync for {guild.name} (ID {guild.id})",*lis)
         def should_skip_cog(cogname: str) -> bool:
             """Determine whether a cog should be skipped during synchronization."""
             '''Not currently needed.'''
@@ -427,7 +427,7 @@ class SpecialAppSync:
             #Add a command to the command tree for the given guild.
             if command.extras:
                 if command.extras.get("homeonly"):
-                    print("yes")
+                    gui.gprint("yes")
                     if guild.id!=int(AssetLookup.get_asset('homeguild')):
                         return 
             if isinstance(command, (commands.HybridCommand, commands.HybridGroup)):
@@ -449,7 +449,7 @@ class SpecialAppSync:
         #to activate/deactivate cogs on a server per server basis.        
         for cogname, cog in self.cogs.items():
             if should_skip_cog(cogname):
-                print("skipping cog ",cogname)
+                gui.gprint("skipping cog ",cogname)
                 continue
             if hasattr(cog,'ctx_menus'):
                 for name,cmenu in cog.ctx_menus.items():
@@ -465,15 +465,15 @@ class SpecialAppSync:
     async def all_guild_startup(self, force=False,sync_only=False, no_sync=False):
         '''fetch all available guilds, and sync the command tree.'''
         try:
-            print(self.guilds)
+            gui.gprint(self.guilds)
             async for guild in self.fetch_guilds(limit=10000):
-                print(f"syncing for {guild.name}")
+                gui.gprint(f"syncing for {guild.name}")
                 if not sync_only:
                     await self.sync_enabled_cogs_for_guild(guild,force=force)
                 if no_sync==False or sync_only:
                     await self.sync_commands_tree(guild, forced=force)
         except Exception as e:
-            print(e)
+            gui.gprint(e)
             raise Exception()
         
     async def get_tree_dict(self,guild):

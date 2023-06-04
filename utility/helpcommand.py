@@ -3,7 +3,7 @@ import asyncio
 import itertools
 from opcode import hasconst
 from random import randint
-
+import gui
 import discord
 from discord.ext import commands
 from discord.ext.commands import Paginator
@@ -28,7 +28,7 @@ class HelpSelect(discord.ui.Select):
         for i, v in self.cogs.items():
             options.append(discord.SelectOption(label=v.qualified_name,description="This is cog {}".format(v.qualified_name)))
            
-            print(i)
+            gui.gprint(i)
 
         super().__init__(placeholder="Select an option",max_values=1,min_values=1,options=options)
     async def callback(self, interaction: discord.Interaction):
@@ -51,15 +51,15 @@ class Chelp(HelpCommand):
         super().__init__(**options)
 
     async def prepare_help_command(self, ctx, command):
-        print("Help command prepared.")
+        gui.gprint("Help command prepared.")
         await super().prepare_help_command(ctx, command)
 
     async def send_bot_help(self, mapping):
         ctx = self.context
         bot = ctx.bot
         channel = ctx.channel
-        print("SEND")
-        print(mapping)
+        gui.gprint("SEND")
+        gui.gprint(mapping)
         cogs = bot.cogs
         guild=ctx.message.channel.guild
 
@@ -77,7 +77,7 @@ class Chelp(HelpCommand):
 
         for i, ve in comcount.items():
             v=cogs[i]
-            print(i)
+            gui.gprint(i)
             helpdesc="NO DESCRIPTION!"
             if hasattr(v,"helptext"):
                 helpdesc=v.helptext
@@ -100,10 +100,10 @@ class Chelp(HelpCommand):
         #await super().send_bot_help(mapping)
     async def send_command_help(self, command):
         ctx = self.context
-        print(ctx.channel.name)
+        gui.gprint(ctx.channel.name)
         bot = ctx.bot
         channel = ctx.channel
-        print("Fired.")
+        gui.gprint("Fired.")
         embed=discord.Embed(title="Help: {}".format(command.name),
         colour=discord.Colour(0x7289da),
         description="All commands")
@@ -115,7 +115,7 @@ class Chelp(HelpCommand):
         await super().send_command_help(command)
 
     async def send_group_help(self, group):
-        print("Fired.")
+        gui.gprint("Fired.")
         ctx = self.context
         bot = ctx.bot
         channel = ctx.channel
@@ -142,7 +142,7 @@ class Chelp(HelpCommand):
         embed=discord.Embed(title="Help",
         colour=discord.Colour(0x7289da),
         description="Cog_Help")
-        print(cog)
+        gui.gprint(cog)
         commandSTR=""
         embed.title=cog.qualified_name
         addcommands=True

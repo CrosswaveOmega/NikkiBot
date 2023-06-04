@@ -15,13 +15,14 @@ import sys, random
 
 
 from queue import Queue
-from utility import serverOwner, serverAdmin,MessageTemplates, relativedelta_sp
+from utility import serverOwner, serverAdmin,MessageTemplates
 
 from discord.ext import commands, tasks
 
 from discord import Webhook
 from subprocess import Popen
 
+import gui
 
 from collections import defaultdict
 from dateutil.rrule import rrule,rrulestr, WEEKLY, SU
@@ -36,13 +37,13 @@ Initalizes TCBot, and defines some checks
 import database.database_main as dbmain
 from assets import AssetLookup
 
-bot = TCBot()
+bot = TCBot(guimode=True)
 
 
 taskflags=defaultdict(bool)
 
 async def opening():
-    print("OK.")
+    gui.gprint("OK.")
 
 
 @bot.check
@@ -70,7 +71,7 @@ async def guildcheck(ctx):
 
 @bot.on_error
 def on_error(event_method: str, /, *args: Any, **kwargs: Any):
-    print("Error?")
+    gui.gprint("Error?")
     log=logging.getLogger('discord')
     log.exception('Ignoring exception AS in %s', event_method)
     try:
@@ -78,7 +79,7 @@ def on_error(event_method: str, /, *args: Any, **kwargs: Any):
         er=MessageTemplates.get_error_embed(title=f"Error with {event_method}",description=f"{just_the_string}")
         asyncio.create_task(bot.send_error_embed(er))
     except:
-        print("The error had an error.")
+        gui.gprint("The error had an error.")
 
 @bot.tree.error
 async def on_app_command_error(
@@ -92,16 +93,16 @@ async def on_app_command_error(
         taskflags[str(ctx.guild.id)]=False
     await bot.send_error(error,f"App Command {interaction.command.name}")
     await ctx.send(f"This app command failed due to {str(error)}")
-    print("ERROR")
+    gui.gprint("ERROR")
 
 @bot.before_invoke
 async def add_log(ctx):
-    print(f"{ctx.invoked_with},{str(ctx.invoked_parents)}")
+    gui.gprint(f"{ctx.invoked_with},{str(ctx.invoked_parents)}")
     if ctx.command.extras:
          if 'guildtask' in ctx.command.extras and ctx.guild!=None:
              taskflags[str(ctx.guild.id)]=True
 
-    print(f"Firing {ctx.command.name}")
+    gui.gprint(f"Firing {ctx.command.name}")
 
     
 
@@ -116,28 +117,27 @@ async def free_command(ctx):
         await ctx.send(f"ERROR, {ctx.message.content} failed!  ")
 @bot.event
 async def on_connect():
-    print("Bot connected.")
+    gui.gprint("Bot connected.")
 @bot.event
 async def on_disconnect():
-    print("Bot disconnected.")
+    gui.gprint("Bot disconnected.")
 
 @bot.event
 async def on_ready():
 
-    print("Connection ready.")
+    gui.gprint("Connection ready.")
     await opening()
-    print("BOT ACTIVE")
+    gui.gprint("BOT ACTIVE")
     try:
         if bot.error_channel==-726:
             #Time to make a new guild.
             from .guild_maker import new_guild
             await new_guild(bot)
     except Exception as e:
-        print(e)
+        gui.gprint(e)
         await bot.close()
     await bot.after_startup()
-    print("Setup done.")
-
+    gui.gprint("Setup done.")
 
 
 class Main(commands.Cog):
@@ -200,13 +200,7 @@ class Main(commands.Cog):
     async def task_remove(self, ctx):
         """debugging only."""
         return
-        bot=ctx.bot
-        guild=ctx.guild
-        message=await ctx.send("Target Message.")
-        myurl=message.jump_url
-        robj=relativedelta_sp(minutes=2)
-        new=TCGuildTask.remove_guild_task(guild.id, "COMPILE")
-        
+
 
 
 
@@ -234,7 +228,7 @@ class Main(commands.Cog):
             ex,val=v
             embed.add_field(name=i,value=ex,inline=True)
             if val:
-                print(f"{ex}\n{val}")
+                gui.gprint(f"{ex}\n{val}")
                 #exepemb=discord.Embed(title=f"Error={i}", description=f"{ex}\n{val}")
                 #await ctx.send(embed=exepemb)
         await ctx.send(embed=embed)
@@ -265,7 +259,7 @@ def setup(args):
     arglength=len(args)
     config = configparser.ConfigParser()
     if not os.path.exists('config.ini'):
-        print("No config.ini file detected.")
+        gui.gprint("No config.ini file detected.")
         token,error_channel_id='',''
         if arglength >1: token=args[1]
         if arglength >2: error_channel_id=args[2]
@@ -274,24 +268,24 @@ def setup(args):
         if not error_channel_id: 
             error_channel_id = input("Please enter the ID of the channel to send error messages to, or 'NEWGUILD': ")
 
-        print("No config.ini file detected.")
+        gui.gprint("No config.ini file detected.")
 
         config["vital"] = {'cipher': token}
         config["optional"] = {'error_channel_id': error_channel_id}
-        print("MAKE SURE TO ADD YOUR ERROR CHANNEL ID!")
+        gui.gprint("MAKE SURE TO ADD YOUR ERROR CHANNEL ID!")
         config.write(open('config.ini', 'w'))
         try:
-            print("making savedata")
+            gui.gprint("making savedata")
             Path("/saveData").mkdir(parents=True, exist_ok=True) #saveData
         except FileExistsError:
-            print("saveData exists already.")
+            gui.gprint("saveData exists already.")
         try:
-            print("making logs")
+            gui.gprint("making logs")
             Path("/logs").mkdir(parents=True, exist_ok=True) #logs
         except FileExistsError:
-            print("logs exists already.")
+            gui.gprint("logs exists already.")
         AssetLookup()
-        print("you can restart the bot now.")
+        gui.gprint("you can restart the bot now.")
 
         return None
 
@@ -320,6 +314,8 @@ async def main(args):
             bot.error_channel=-726
         await bot.add_cog(Main())
         bot.set_ext_directory('./cogs')
+        gui.DataStore.initialize("./saveData/ds.sqlite")
+        gui.DataStore.initialize_default_values()
 
         if (config!=None):
             await bot.start(config.get("vital", 'cipher'))

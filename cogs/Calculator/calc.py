@@ -36,7 +36,6 @@ class ExpressionTreeNode:
         return len(self.children)
     def get_bounds(self,spl,depth=0):
         ve=str(self)
-        print(depth,ve)
         splitup=ve.split(spl)
         sa,sb="",""
         if len(splitup)>0:sa=splitup[0]
@@ -150,8 +149,6 @@ def evaluate_expression(expr: str, *args, outputFunc):
     #boolA, boolB = check_parentheses(stri)
     node=parse_expression(stri)
     result=node.parse_children(node,outputFunc)
-
-    print(result)
     final_result = str(result)
     outputFunc.outFunc(final_result, verb=0)
 

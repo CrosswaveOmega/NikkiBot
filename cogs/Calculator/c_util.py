@@ -1,3 +1,4 @@
+import gui
 from inspect import currentframe,getframeinfo
 
 DEBUG_MODE=False
@@ -23,11 +24,11 @@ def get_linenumber_rec():
 printMode=True
 
 def dprint(*args):
-    '''print a debug print statement'''
+    '''gui.gprint a debug gui.gprint statement'''
     if printMode:
         line,lineback=get_linenumber()
         info = getframeinfo(line)
-        print(f"{info.function}-{info.lineno},{args}")
+        gui.gprint(f"{info.function}-{info.lineno},{args}")
 
 
 
