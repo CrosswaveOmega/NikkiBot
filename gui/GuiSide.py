@@ -28,14 +28,6 @@ class Gui:
         labels.pack()
         self.label_dict['con'] = labels
 
-        label1 = tk.Label(framestack, text="Label 1")
-        label1.pack()
-        self.label_dict['4'] = label1
-
-        label2 = tk.Label(framestack, text="Label 2")
-        label2.pack()
-        self.label_dict['3'] = label2
-
         frame = tk.Frame(framestack)
         frame.pack()
         labo1 = tk.Label(frame, text="Latency")
@@ -67,14 +59,13 @@ class Gui:
             if key in self.label_dict:
                 self.label_dict[key]['text'] = str(value)
                 self.window.update()
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.4)
 
     async def update_every_second(self):
         while self.runok:
             await self.update_gui_labels()
-            await asyncio.sleep(1)
             self.window.update()
-            await asyncio.sleep(.1)
+            await asyncio.sleep(5)
         else:
             self.window.destroy()
 
