@@ -112,9 +112,12 @@ async def free_command(ctx):
         taskflags[str(ctx.guild.id)]=False
 
     if ctx.command_failed:
-
-
         await ctx.send(f"ERROR, {ctx.message.content} failed!  ")
+
+@bot.event
+async def on_app_command_completion(interaction:discord.Interaction, command:discord.app_commands.Command):
+    gui.gprint('app command complete: ', command.name)
+
 @bot.event
 async def on_connect():
     gui.gprint(f"{datetime.datetime.now()}: Bot connected.")

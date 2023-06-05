@@ -297,7 +297,7 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
             await MessageTemplates.poll_message(ctx,f"I've made your poll!  You can find it at poll id: {poll.poll_id}",ephemeral=True)
             await self.poll_subscription()
         else:
-            await ctx.send("Op Cancelled.", ephermal=True)
+            await ctx.send("Op Cancelled.", ephemeral=True)
             await message.delete()
 
 
@@ -327,7 +327,10 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
             await MessageTemplates.poll_message(ctx,"This poll id is invalid.",ephemeral=True)
 
 
-        
+    @app_commands.command(name="ping")
+    async def pings(self, interaction: discord.Interaction):
+        '''just check if my app commands work...'''
+        await interaction.response.send_message('pong')    
         
     @commands.hybrid_command(name="persistent_view")
     async def constant_view(self, ctx):

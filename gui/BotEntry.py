@@ -21,7 +21,7 @@ class DataStore:
             'con': True,
             'tasknum': 0,
             'schedule': [],
-            'commands': []
+            'commands': "invoked commands will go here later."
         }
         for k, v in default_values.items():
             DataStore.add_value(k,v)
@@ -42,11 +42,6 @@ class DataStore:
     @staticmethod
     def set(key, value):
         DataStore.add_value(key,value)
-
-    @staticmethod
-    def update_value(key, value):
-        if key in DataStore.db:
-            DataStore.add_value(key,value)
 
     @staticmethod
     def remove_value(key):

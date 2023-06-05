@@ -6,21 +6,42 @@ from queue import Queue
 from .BotEntry import DataStore
 import threading
 from datetime import datetime
-queued = Queue()
+import tkinter.font as font
 
+queued = Queue()
+def special_string_split(string, max_length):
+    words = string.split()  # Split the string into individual words
+    result = []
+    current_entry = ""
+    for word in words:
+        if len(current_entry) + len(word) <= max_length:
+            current_entry += word + " "  
+        else:
+            result.append(current_entry.strip())  
+            current_entry = word + " "  
+    result.append(current_entry.strip())
+
+    return result
 current_list=[]
 def gprint(*args, **kwargs):
     print(*args, **kwargs)
     s=""
-    for arg in args:    s+=str(arg)
-    sp=str(s).split('\n')
-    for se in sp:    queued.put(str(se))
+    for arg in args:    
+        s+=str(arg)
+    lines=f'•{str(s)}'.split('\n')
+    splitted_lines = []
+    for line in lines:
+        splitted_lines.extend(special_string_split(line, 80))  # Apply special_string_split to each line
 
+    for entry in splitted_lines:
+        queued.put(str(entry))
 
+MAX_SIZE=20
 
 class Gui:
     def __init__(self):
         self.window = tk.Tk()
+        fontv=font.Font(size=8)
         self.window.title("Nikki Panel")
         self.runok = True
         #self.window.geometry("512x400")
@@ -57,15 +78,17 @@ class Gui:
         latency_label = tk.Label(framestack, text="Latency")
         latency_label.grid(row=4, column=1)
         self.label_dict['latency'] = latency_label
+        labo1 = tk.Label(framestack, text="TaskNum")
+        labo1.grid(row=3, column=0)
         
         tasknum_label = tk.Label(framestack, text="Task Number")
-        tasknum_label.grid(row=3, column=0)
+        tasknum_label.grid(row=3, column=1)
         self.label_dict['tasknum'] = tasknum_label
 
-        self.major_events = tk.Text(self.window, wrap='word', font=('Arial', 6),width=64,height=32)
-        self.major_events.grid(row=0, column=0)
-
-        schedule_label = tk.Label(self.window, text="Schedule")
+        self.major_events = tk.Text(self.window, wrap='word', font=fontv,height=MAX_SIZE+2)
+        self.major_events.grid(row=1, column=0,columnspan=4)
+        
+        schedule_label = tk.Label(self.window, text="Schedule", font=fontv)
         schedule_label.grid(row=0, column=3, sticky='e')
         self.label_dict['schedule'] = schedule_label
         
@@ -80,13 +103,12 @@ class Gui:
 
     async def kill(self):
         self.runok=False
-        self.window.destroy()
 
     async def update_gui_labels(self):
        self.label_dict['time']['text']=datetime.now().strftime("%H:%M:%S.%f")[:-4]
        if not queued.empty():
             value =queued.get(block=False)
-            if len(self.current_list)>16:
+            if len(self.current_list)>MAX_SIZE:
                self.current_list.pop(0)
             self.current_list.append(value)
             outputlog='\n'.join(self.current_list)

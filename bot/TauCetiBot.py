@@ -43,8 +43,8 @@ from discord.app_commands import CommandTree
 import gui
 
 class TreeOverride(CommandTree):
-  #I need to do this just to get a global check on app_commands...
-  async def interaction_check(self, interaction: Interaction) -> bool:
+    #I need to do this just to get a global check on app_commands...
+    async def interaction_check(self, interaction: Interaction) -> bool:
       '''Don't fire if the user wants to be ignored, but ensure that the user can
       unignore themselves later.'''
       if interaction.command:
@@ -55,9 +55,15 @@ class TreeOverride(CommandTree):
       if Users_DoNotTrack.check_entry(uid):
           return False
       return True
-    # Add your Code here.
-    # return False to not proceed the interaction
-    # return True to proceed the interaction
+
+    async def _call(self, interaction: Interaction):
+        #because there's no global before invoke for app commands.
+        if not await self.interaction_check(interaction):
+            interaction.command_failed = True
+            return
+        if interaction.command:
+            gui.gprint("app command call: ",interaction.command.name)
+        await super()._call(interaction)
 
 
 class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialAppSync):
@@ -393,7 +399,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
     async def post_queue_message(self):
         #gui.gprint(self.latency)
         if self.guimode:
-            gui.DataStore.add_value('latency',self.latency)
+            gui.DataStore.add_value('latency',round(self.latency,7))
             #await self.gui.update_every_second()
             
             
