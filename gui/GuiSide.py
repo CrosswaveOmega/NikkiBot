@@ -103,6 +103,7 @@ class Gui:
 
     async def kill(self):
         self.runok=False
+        self.window.destroy()
 
     async def update_gui_labels(self):
        self.label_dict['time']['text']=datetime.now().strftime("%H:%M:%S.%f")[:-4]
