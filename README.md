@@ -19,7 +19,10 @@ The tasks can be customized by adding coroutines to the Guild_Task_Functions cla
 
 5. **Server Polling System**: A work in progress feature that allows users to create and respond to global and server specific polls.
 
-6. **More features to come!**: The bot is constantly being updated and new features will be added as they become available.
+6. **Optional GUI Panel**: A Tkinter GUI Window displays basic status about the running bot within a desktop window.
+
+7. **More features to come!**: The bot is constantly being updated and new features will be added as they become available.
+
 
 ## Current Requirements
 Python 3.11 or higher!

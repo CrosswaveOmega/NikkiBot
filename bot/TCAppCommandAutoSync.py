@@ -20,8 +20,11 @@ import json
 import discord
 '''
 All the convienence of automatic command syncing with fewer drawbacks.
-During a sync, format_application_commands will take in a list of AppCommand.Command objects, 
-and create a dictionary of the serialized attributes of AppCommand.Command.
+Nikki generates a serializable dictionary of each guild specific CommandTree and
+compares it with a stored CommandTree dictionary generated during a previous instance,
+only syncing when a difference between a tree generated now and a tree generated before is found.
+This is to avoid excessive api calls.
+
 
 '''
 
@@ -57,12 +60,14 @@ def dict_diff_recursive(dict1, dict2):
 
     return None
 
-def dict_diff(dict1, dict2):
+
+
+def dict_diff(dict1: Dict, dict2: Dict) -> Tuple[Dict, int, int, float]:
     """
     Iteratively compare two non-nested dictionaries and return the differences.
     This is for debugging.
     """
-    if isinstance(dict1, Mapping) and isinstance(dict2, Mapping):
+    if isinstance(dict1, dict) and isinstance(dict2, dict):
         keys = set(list(dict1.keys()) + list(dict2.keys()))
         same = total= max(len(keys),1)
         diff = {}
@@ -93,7 +98,7 @@ def dict_diff(dict1, dict2):
     return None, 1,1,100.0
 
 class AppGuildTreeSync(Guild_Sync_Base):
-    '''table to store serialized command trees to help with the autosync system.'''
+    '''table to store serialized command trees for each guild to help with the autosync system.'''
     __tablename__ = 'apptree_guild_sync'
     server_id = Column(Integer, primary_key=True, nullable=False, unique=True)
     lastsyncdata = Column(Text, nullable=True)
@@ -166,7 +171,7 @@ class AppGuildTreeSync(Guild_Sync_Base):
 def remove_null_values(dictionary):
     """
     Remove all null, empty, or false values from the parent dictionary each nested dictionary into the parent dictionary.
-    This is to create a compressed output file for debugging.
+    This is to create a simplified output file for debugging.
     Parameters:
     d: A nested dictionary to be cleared.
     Returns:
@@ -183,11 +188,7 @@ def remove_null_values(dictionary):
         elif value is not None and value != "" and value is not False and value !=[]:
             new_dict[key] = value
     return new_dict
-def is_list_of_dicts(element):
-    if isinstance(element, list) and all(isinstance(elem, dict) for elem in element):
-        return True
-    else:
-        return False
+
 def denest_dict(d: dict)->Dict[str, Any]:
     """
     Recursively denests a nested dictionary by merging each nested dictionary into the parent dictionary.
@@ -245,7 +246,9 @@ def build_and_format_app_commands(tree:discord.app_commands.CommandTree, guild=N
     
     Parameters:
     tree: a CommandTree instance
-
+    guild: Guild to generate tree for.
+    nestok: if this function should return a nested dictionary, default False
+    slimdown: if this function should not include false, null, or empty values in the returned dictionary, default False
     Returns:
     Dictionary of serialized attributes from app commands.
     '''
@@ -270,115 +273,6 @@ def build_and_format_app_commands(tree:discord.app_commands.CommandTree, guild=N
     if not nestok:
         den=denest_dict(formatted_commands)
     return den
-
-def format_parameters(parameters:List[discord.app_commands.Parameter])->Dict[str,Any]:
-    '''DEPRECATED
-    Serialize a list of parameters into a dictionary, and return it.'''
-    params={}
-    for parameter in parameters:
-        param_name=str(parameter.name)
-        formatted_parameter = {
-            'name': param_name,
-            'display_name': str(parameter.display_name),
-            'description': parameter.description if parameter.description is not discord.utils.MISSING else None,
-            'type': parameter.type.name,
-            'choices': {
-                str(c.name): 
-                {'name': c.name, 'value': c.value} for c in parameter.choices},
-            'channel_types': [channel_type.name for channel_type in parameter.channel_types],
-            'required': parameter.required,
-            'autocomplete': parameter.autocomplete,
-            'min_value': parameter.min_value,
-            'max_value': parameter.max_value,
-            'default': parameter.default if parameter.default is not discord.utils.MISSING else None
-        }
-        params[param_name]=formatted_parameter
-    return params
-
-
-def format_one_command(command:Union[discord.app_commands.Command,discord.app_commands.ContextMenu]):
-    '''DEPRECATED'''
-    if isinstance(command,discord.app_commands.Command):
-        #Serializing a Command
-        formatted_command = {
-            'name': command.name,
-            'description': command.description if command.description is not discord.utils.MISSING else None,
-            'parameters': format_parameters(command.parameters),
-            'permissions': {
-                'default_permissions': command.default_permissions.value if command.default_permissions is not None else None,
-                'guild_only': command.guild_only,
-                'nsfw': command.nsfw
-            }
-        }
-        parents=[]
-        if command.parent:
-            parent=command.parent
-            parents.append(parent.name)
-            if parent.parent:
-                parent=parent.parent
-                parents.append(parent.name)
-                #Discord does not allow you to go deeper than this.
-        
-        return 'chat_commands',formatted_command, parents
-
-
-    else:
-        #Serializing a ContextMenu
-        formatted_command = {
-            'name': command.name,
-            'permissions': {
-                'default_permissions': command.default_permissions.value if command.default_permissions is not None else None,
-                'guild_only': command.guild_only,
-                'nsfw': command.nsfw
-            },
-            'type': str(command.type)
-        }
-        typestr='context_message'
-        if command.type==discord.AppCommandType.user:
-            typestr= 'context_user'
-        return typestr, formatted_command,[]
-            
-def format_application_commands(commands:List[Union[discord.app_commands.Command,discord.app_commands.Group,discord.app_commands.ContextMenu]], nestok=False, slimdown=False)->Dict[str, Any]:
-    '''This function takes in a list of discord.app_commands Command, Group, and ContextMenu objects, converts
-    each into a dictionary with the to_dict function, and reformats the dictionary in such a way that each 
-    dictionary is guaranteed to be the same between generations.
-    
-    Parameters:
-    commands: List of application commands.
-    nestok: if this function should return a nested dictionary, default False
-    slimdown: if this function should not include false, null, or empty values in the returned dictionary, default False
-    Returns:
-    Dictionary of serialized attributes from commands.
-    '''
-    formatted_commands = {
-        'chat_commands':{},
-        'context_user':{},
-        'context_message':{}
-    }
-    for command in commands:
-        di=command.to_dict() #I really wish this was in the docs...
-        typev,name=di['type'],di['name']
-        typestr='chat_commands'
-        if typev==2:
-            typestr='context_user'
-        elif typev==3:
-            typestr='context_message'
-        formatted_commands[typestr][name]=di
-        # command_type, formatted_command, parents=format_one_command(command)
-        # current_dict=formatted_commands[command_type]
-        # for parent in parents:
-        #     current_dict.setdefault(parent, {})
-        #     current_dict = current_dict[parent]
-        # current_dict[command.name] = formatted_command
-
-    den=formatted_commands
-    if slimdown:
-        den=remove_null_values(den)
-    if not nestok:
-        den=denest_dict(formatted_commands)
-    #for i, v in den.items(): gui.gprint(i,v)
-    return den
-
 
 class SpecialAppSync:
     '''Mixin that defines custom syncing logic.'''

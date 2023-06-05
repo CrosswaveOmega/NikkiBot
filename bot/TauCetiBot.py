@@ -18,7 +18,7 @@ from sqlalchemy.exc import IntegrityError
 import gui
 from utility import Chelp, urltomessage, MessageTemplates, replace_working_directory
 from .TcGuildTaskDB import Guild_Task_Base, Guild_Task_Functions, TCGuildTask
-from .GuildSyncStatus import(
+from .TCAppCommandAutoSync import(
     Guild_Sync_Base, AppGuildTreeSync,
     build_and_format_app_commands, SpecialAppSync
     )
@@ -144,7 +144,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         self.status_ticker.cancel()
         if self.gui:  
             await self.gui.kill()
-            self.gthread.join()
+            
         await super().close()
 
     def loggersetup(self):

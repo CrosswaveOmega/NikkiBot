@@ -1,12 +1,17 @@
 
 import subprocess
-
+import asyncio
+from queue import Queue
 class DataStore:
     db = None
     init=None
+    lock=None
+    cqueue=None
     @staticmethod
     def initialize(database=None):
        DataStore.db={}
+       DataStore.lock=asyncio.Lock()
+       DataStore.cqueue=Queue()
         
 
     @staticmethod
@@ -18,21 +23,30 @@ class DataStore:
             'schedule': [],
             'commands': []
         }
-        DataStore.db.update(default_values)
+        for k, v in default_values.items():
+            DataStore.add_value(k,v)
+        #DataStore.db.update(default_values)
 
         
     @staticmethod
     def add_value(key, value):
+        old=None
+        if key in DataStore.db:
+            old=DataStore.db[key]
+        
         DataStore.db[key] = value
+        if old!=value:
+            DataStore.cqueue.put_nowait((key,value))
+
 
     @staticmethod
     def set(key, value):
-        DataStore.db[key] = value
+        DataStore.add_value(key,value)
 
     @staticmethod
     def update_value(key, value):
         if key in DataStore.db:
-            DataStore.db[key] = value
+            DataStore.add_value(key,value)
 
     @staticmethod
     def remove_value(key):

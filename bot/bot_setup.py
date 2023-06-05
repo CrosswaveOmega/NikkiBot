@@ -117,10 +117,10 @@ async def free_command(ctx):
         await ctx.send(f"ERROR, {ctx.message.content} failed!  ")
 @bot.event
 async def on_connect():
-    gui.gprint("Bot connected.")
+    gui.gprint(f"{datetime.datetime.now()}: Bot connected.")
 @bot.event
 async def on_disconnect():
-    gui.gprint("Bot disconnected.")
+    gui.gprint(f"{datetime.datetime.now()}: Bot disconnected.")
 
 @bot.event
 async def on_ready():
