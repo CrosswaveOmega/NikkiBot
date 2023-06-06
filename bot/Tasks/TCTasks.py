@@ -5,7 +5,7 @@ import gui
 from dateutil.parser import parse
 from dateutil.rrule import *
 from dateutil import tz
-
+from queue import PriorityQueue
 import discord
 from dateutil.rrule import rrule,rrulestr, WEEKLY, SU
 class TCTask:
@@ -75,7 +75,9 @@ class TCTask:
             #time_until = self.to_run_next - datetime.now()
             #gui.gprint(f"{self.name} not ready. Next run in {time_until}")
             return False
-
+    def get_total_seconds_until(self):
+        if self.is_running: return 0
+        return int((self.to_run_next-datetime.now()).total_seconds())
     def time_left(self):
         '''Check if the TCTask can be launched.'''
         if self.is_running: return f"{self.name} is running."
@@ -115,6 +117,7 @@ class TCTask:
             # Check if it's time to run the function
             if datetime.now() >= self.to_run_next:
                 # Update last_run time and run the function as a coroutine
+                TCTaskManager.set_running(self.name)
                 self.last_run = datetime.now()
                 self.is_running=True
                 self.running_task = asyncio.create_task(func(*args, **kwargs))
@@ -135,6 +138,7 @@ class TCTask:
                 if remove_check:
                     TCTaskManager.add_tombstone(self.name)
                 self.is_running=False
+                TCTaskManager.set_standby(self.name)
             else:
                 pass
                 # Print the time until next run
@@ -176,6 +180,7 @@ class TCTaskManager:
         tasks (dict): A dictionary of all TCTask objects managed by the manager.
         to_delete(list): a list of TCTask object to delete, since.
     """
+    #TODO: SPEED IT UP.
     _instance = None
 
     @classmethod
@@ -187,6 +192,8 @@ class TCTaskManager:
     def __init__(self):
         self.tasks: Dict[str, TCTask] ={}
         self.to_delete=[]
+        self.myqueue=PriorityQueue()
+        
 
     @classmethod
     def does_task_exist(cls, name):
@@ -276,6 +283,28 @@ class TCTaskManager:
         manager.to_delete.append(name)
 
     @classmethod
+    def set_running(cls, name):
+        """
+        Set task name into running mode, don't re add to the priority queue
+        Args:
+            name (str): The name of the task to be ran.
+        """
+        manager = cls.get_instance()
+        gui.gprint(name, " is running")
+        #manager.to_delete.append(name)
+
+    @classmethod
+    def set_standby(cls, name):
+        """
+        Set task name into standby mode, readd to priority queue
+        Args:
+            name (str): The name of the task to standby
+        """
+        manager = cls.get_instance()
+        gui.gprint(name, " is standby")
+        #manager.to_delete.append(name)
+
+    @classmethod
     def task_check(cls):
         """
         Runs all of the TCTask objects that can be run at a specific time.
@@ -294,7 +323,8 @@ class TCTaskManager:
         running=scheduled=0
         deltas=[]
         output=output2=""
-        for key, task in manager.tasks.items():
+        sorted_dict = sorted( manager.tasks.items(), key=lambda x: x[1].get_total_seconds_until())
+        for key, task in sorted_dict:
             output2+=task.time_left_short()
             if task.is_running:
                 running+=1

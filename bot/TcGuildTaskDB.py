@@ -107,12 +107,19 @@ class TCGuildTask(Guild_Task_Base):
         self.target_channel_id=target_message.channel.id
         self.task_id=f"{self.server_id}_{self.task_name}"
         self.relativedelta_serialized = self.serialize_relativedelta(relativedelta_obj)
-        
+    @property
+    def name(self):
+        return f"{self.server_id}_{self.task_name}"
+    def __repr__(self):
+        return str(self)
+    def __str__(self): 
+        stri=f"{self.name}, channel:{self.target_channel_id}\n{self.relativedelta_serialized}\n"
+        return stri
     @staticmethod
     def add_guild_task(server_id:int,task_name:str,target_message:discord.Message,rdelta:rrule):
         '''add a new TCGuildTask entry, using the server_id and task_name.'''
         '''server_id is the guild id, task_name is the name of the task.'''
-        gui.gprint(server_id,task_name,target_message.jump_url,rdelta)
+        
         new=TCGuildTask.get(server_id,task_name)
         if not new:
             session=DatabaseSingleton.get_session()
@@ -120,6 +127,7 @@ class TCGuildTask(Guild_Task_Base):
                 target_message=target_message,relativedelta_obj=rdelta)
             session.add(new)
             session.commit()
+        gui.gprint(new)
         return new
     
     @classmethod
@@ -174,7 +182,7 @@ class TCGuildTask(Guild_Task_Base):
         task = session.query(TCGuildTask).filter_by(server_id=server_id, task_name=task_name).first()
         if task:
             task.next_run = next_run
-            gui.gprint(f"UPDATED {task.next_run}")
+            gui.gprint(f"{task},UPDATED {task.next_run}")
             session.commit()
         else:
             raise Exception(f"No TCGuildTask entry found for server_id={server_id} and task_name={task_name}")
@@ -189,16 +197,15 @@ class TCGuildTask(Guild_Task_Base):
         except Exception as e:
             await bot.send_error(e,"AUTO COMMAND ERROR.")
         await asyncio.sleep(2)
-        gui.gprint("Task done at", datetime.now(),"excution ok.")
+        gui.gprint(f"{self.name} Task done at", datetime.now(),"excution ok.")
 
     def to_task(self,bot):
         '''Initalize a TCTask object with name {self.server_id}_{self.task_name}'''
         rd = self.deserialize_relativedelta(self.relativedelta_serialized)
-        thename=f"{self.server_id}_{self.task_name}"
-        gui.gprint(thename,rd,self.target_message_url)
-        if not TCTaskManager.does_task_exist(thename):
-            tc=TCTask(name=thename, time_interval=rd, next_run=self.next_run,parent_db=TCGuildTask)
-            gui.gprint(self.next_run)
+        #thename=f"{self.server_id}_{self.task_name}"
+        gui.gprint("adding task for ",str(self))
+        if not TCTaskManager.does_task_exist(self.name):
+            tc=TCTask(name=self.name, time_interval=rd, next_run=self.next_run,parent_db=TCGuildTask)
             tc.assign_wrapper(lambda: self.guild_task(bot))
         else:
             raise Exception("Task is already in the manager.")
@@ -207,7 +214,7 @@ class TCGuildTask(Guild_Task_Base):
         '''change the next time the task is going to run'''
         rd = self.deserialize_relativedelta(self.relativedelta_serialized)
         thename=f"{self.server_id}_{self.task_name}"
-        gui.gprint(thename,rd,self.target_message_url)
+        gui.gprint("changing next run for ",str(self))
         if  TCTaskManager.does_task_exist(thename):
             TCTaskManager.change_task_time(thename,next_datetime)
         else:
@@ -217,7 +224,7 @@ class TCGuildTask(Guild_Task_Base):
         '''change the rrule for this task.'''
         rd = self.serialize_relativedelta(new_rrule)
         thename=f"{self.server_id}_{self.task_name}"
-        gui.gprint(thename,rd,self.target_message_url)
+        gui.gprint("changing rrule for ",str(self))
         if  TCTaskManager.does_task_exist(thename):
             res=TCTaskManager.change_task_interval(thename,new_rrule)
             if res:

@@ -36,7 +36,7 @@ def gprint(*args, **kwargs):
     for entry in splitted_lines:
         queued.put(str(entry))
 
-MAX_SIZE=20
+MAX_SIZE=52
 
 class Gui:
     def __init__(self):
@@ -84,9 +84,22 @@ class Gui:
         tasknum_label = tk.Label(framestack, text="Task Number")
         tasknum_label.grid(row=3, column=1)
         self.label_dict['tasknum'] = tasknum_label
-
-        self.major_events = tk.Text(self.window, wrap='word', font=fontv,height=MAX_SIZE+2)
-        self.major_events.grid(row=1, column=0,columnspan=4)
+        rootframe=tk.Frame(self.window)
+        #canvas = tk.Canvas(rootframe)
+        scrollbar = tk.Scrollbar(rootframe, orient="vertical")
+        
+        self.major_events = tk.Text(rootframe, padx=10,wrap='word', font=fontv)
+        #scrollable_frame = ttk.Frame(canvas)
+        
+        self.major_events.pack(side='left',fill="y", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        scrollbar.config(
+            command=self.major_events.yview
+        )
+        self.major_events.config(
+            yscrollcommand=scrollbar.set
+        )
+        rootframe.grid(row=1, column=0,columnspan=4)
         
         schedule_label = tk.Label(self.window, text="Schedule", font=fontv)
         schedule_label.grid(row=0, column=3, sticky='e')
@@ -111,10 +124,15 @@ class Gui:
             value =queued.get(block=False)
             if len(self.current_list)>MAX_SIZE:
                self.current_list.pop(0)
+            else:
+                pass
+                #self.major_events.configure(height=len(self.current_list))
             self.current_list.append(value)
             outputlog='\n'.join(self.current_list)
+            
             self.major_events.delete('1.0', 'end')
             self.major_events.insert('end', outputlog)
+            self.major_events.yview_moveto(1.0)
        if not DataStore.cqueue.empty():
            key, value =DataStore.cqueue.get(block=False)
            if key in self.label_dict:

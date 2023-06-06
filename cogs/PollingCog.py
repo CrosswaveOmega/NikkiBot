@@ -342,12 +342,6 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
         '''test for a feedback system'''
         await interaction.response.send_modal(Feedback())
 
-    
-    
-    
-    
-
-
             
 async def setup(bot):
     await bot.add_cog(PollingCog(bot))

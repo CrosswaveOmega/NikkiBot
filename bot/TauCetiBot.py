@@ -158,18 +158,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         if not os.path.exists('./logs/'):
             os.makedirs('./logs/')
 
-        zehttp=logging.getLogger('discord.http')
-        zehttp.setLevel(logging.INFO)
-        handler = logging.handlers.RotatingFileHandler(
-            filename='./logs/discord_http.log',
-            encoding='utf-8',
-            maxBytes=32 * 1024 * 1024,  # 32 MiB
-            backupCount=5,  # Rotate through 5 files
-        )
-        dt_fmt = '%Y-%m-%d %H:%M:%S'
-        formatter = logging.Formatter('[LINE] [{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
-        handler.setFormatter(formatter)
-        zehttp.addHandler(handler)
+
 
         handler2 = logging.handlers.RotatingFileHandler(
             filename='./logs/discord.log',
@@ -200,6 +189,18 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         formatter4 = logging.Formatter('[LINE] [{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
         handlerTC.setFormatter(formatter4)
         self.logs.addHandler(handlerTC)
+        zehttp=logging.getLogger('discord.http')
+        zehttp.setLevel(logging.INFO)
+        handler = logging.handlers.RotatingFileHandler(
+            filename='./logs/discord_http.log',
+            encoding='utf-8',
+            maxBytes=32 * 1024 * 1024,  # 32 MiB
+            backupCount=5,  # Rotate through 5 files
+        )
+        dt_fmt = '%Y-%m-%d %H:%M:%S'
+        formatter = logging.Formatter('[LINE] [{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
+        handler.setFormatter(formatter)
+        zehttp.addHandler(handler)
 
     def set_ext_directory(self, dir:str):
         self.extensiondir=dir
