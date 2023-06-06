@@ -47,7 +47,7 @@ class TCTask:
         self.id = id
         self.time_interval = time_interval
         self.last_run = None
-
+        self.status='created'
         self.running_task = None
         self.is_running=False
         self.funct=None
@@ -64,6 +64,8 @@ class TCTask:
         # Add self to the TCTaskManager upon initialization
         TCTaskManager.add_task(self)
 
+    def __lt__(self,other):
+        return self.to_run_next<other.to_run_next
     def can_i_run(self):
         '''Check if the TCTask can be launched.'''
         if self.is_running: return False
@@ -72,8 +74,6 @@ class TCTask:
             return True
         else:
             # Print the time until next run
-            #time_until = self.to_run_next - datetime.now()
-            #gui.gprint(f"{self.name} not ready. Next run in {time_until}")
             return False
     def get_total_seconds_until(self):
         if self.is_running: return 0
@@ -95,7 +95,7 @@ class TCTask:
         if next.days>0:days=str(next.days)+"d,"
         if (next.seconds // 3600)>0:hours=str(int(next.seconds // 3600))+"h,"
         if ((next.seconds // 60) % 60)>0:mins=str(int((next.seconds // 60) % 60))+"m"
-        formatted_delta = f"{days}{hours}{mins}"
+        formatted_delta = f"{days}{hours}{mins},{next.seconds%60}s"
         return f"{self.name}: {formatted_delta}\n"
     
     def assign_wrapper(self,func):
@@ -193,7 +193,7 @@ class TCTaskManager:
         self.tasks: Dict[str, TCTask] ={}
         self.to_delete=[]
         self.myqueue=PriorityQueue()
-        
+
 
     @classmethod
     def does_task_exist(cls, name):
@@ -254,6 +254,7 @@ class TCTaskManager:
         gui.gprint(f"added task {task.name}")
         manager = cls.get_instance()
         manager.tasks[task.name]=(task)
+        TCTaskManager.set_standby(task.name)
 
     @classmethod
     def remove_task(cls, name):
@@ -291,6 +292,7 @@ class TCTaskManager:
         """
         manager = cls.get_instance()
         gui.gprint(name, " is running")
+        manager.tasks[name].status='running'
         #manager.to_delete.append(name)
 
     @classmethod
@@ -302,6 +304,11 @@ class TCTaskManager:
         """
         manager = cls.get_instance()
         gui.gprint(name, " is standby")
+        to_add=manager.tasks[name]
+        if ((to_add.status!='standby')) and (not (name in manager.to_delete)):
+
+            manager.myqueue.put(to_add)
+            to_add.status='standby'
         #manager.to_delete.append(name)
 
     @classmethod
@@ -354,9 +361,16 @@ class TCTaskManager:
             task=manager.tasks[name]
             if task.is_running==False:  TCTaskManager.remove_task(task.name)
         manager.to_delete=[]
-        for key, task in manager.tasks.items():
-            if task.can_i_run():
+        while not manager.myqueue.empty():
+            if manager.myqueue.queue[0].can_i_run():
+                task=manager.myqueue.get()
                 asyncio.create_task(task())
+            else:
+                break
+        #queue[0]
+        #for key, task in manager.tasks.items():
+            #if task.can_i_run():
+                #asyncio.create_task(task())
 
         # Wait for 1 second before checking again
         await asyncio.sleep(1)
