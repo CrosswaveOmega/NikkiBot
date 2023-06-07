@@ -3,6 +3,7 @@
 Nikki Bot is a personal multipurpose, experimental Discord bot written using the discord.py library.
 
 Support Server: https://discord.gg/zrHrkqkD5a
+
 Invite Link: https://discord.com/api/oauth2/authorize?client_id=1069780327502975006&permissions=40581639556672&scope=applications.commands%20bot
 
 ## Features
@@ -32,9 +33,8 @@ Python 3.11 or higher!
 - ~~youtube_dl~~ yt_dlp
 
 ## Technical Features
-
-- Nikki is designed to be as modular as possible, with every single extension in a self contained file.
-- Experimental autosync system which only syncs app command trees if it detects a difference between dictionary representations of the app command tree.
+-
+- Experimental autosync system which only syncs app command trees if it detects a difference between saved dictionary representations of the App Command Tree.
 
 ## How to use the TCGuildTask system
 
