@@ -226,7 +226,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
                 self.current.get_song()
                 if self.current.state=="Error":
                     gui.gprint("error")
-                    await self.send_message(ctx,str(song.error_value))
+                    await self.send_message(ctx,str(self.current.error_value))
                     await self.bot.send_error(self.error_value,"Adding URL.")
                     self.current=None
                     asyncio.run_coroutine_threadsafe(self.player_actions("auto_next"), self.bot.loop)
