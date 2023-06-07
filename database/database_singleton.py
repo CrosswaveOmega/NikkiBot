@@ -1,8 +1,8 @@
 import gui
-from sqlalchemy import create_engine, text, MetaData, Table
+from sqlalchemy import create_engine, text, MetaData, Table, inspect
 from sqlalchemy.orm import sessionmaker, Session
 
-
+from sqlalchemy.orm import registry
 import logging
 
 '''
@@ -12,7 +12,6 @@ at any given time.
 This way, it can be accessed from anywhere, and not just through the Bot object.
 
 '''
-
 class DatabaseSingleton:
     """A singleton storage class that stores the database engine and connection objects."""
 
@@ -52,7 +51,7 @@ class DatabaseSingleton:
                 self.session.commit()
 
         def load_in_base(self,Base):
-            print("loading in: ",Base.__name__)
+            print("loading in: ",Base.__name__,Base)
             if not Base in self.bases: self.bases.append(Base)
             print('done')
             if self.connected:
@@ -69,6 +68,71 @@ class DatabaseSingleton:
 
         def print_arg(self):
             print(self.val)
+
+        def compare_db(self):
+            '''compare current metadata with sqlalchemy metadata'''
+            def merge_metadata(*original_metadata) -> MetaData:
+                merged = MetaData()
+
+                for original_metadatum in original_metadata:
+                    for table in original_metadatum.tables.values():
+                        table.to_metadata(merged)
+
+                return merged
+
+            insp = inspect(self.engine)
+            
+            db_meta = MetaData()
+            db_meta.reflect(bind=self.engine)
+
+            mt = [base.metadata for base in self.bases]
+            merged = merge_metadata(*mt)
+            
+            # Get the tables from the metadata objects
+            tables1 = db_meta.tables
+            tables2 = merged.tables
+
+            # Compare tables
+            result=""
+            for table_name in set(tables1) | set(tables2):
+                table1 = tables1.get(table_name)
+                table2 = tables2.get(table_name)
+                if table1 is None:
+                    result+=(f"Table '{table_name}' is missing from remote.\n")
+                    continue
+                if table2 is None:
+                    result+=(f"Table '{table_name}' is missing from local.\n")
+                    continue
+
+                columns1 = insp.get_columns(table_name, schema=table1.schema)
+
+                columns2 = [
+                    {
+                        'name': column.name,
+                        'type': column.type,
+                        'nullable': column.nullable,
+                        'origcol':column
+                    }
+                    for column in table2.columns
+                ]
+
+                column_names1 = set(column['name'] for column in columns1)
+                column_names2 = set(column['name'] for column in columns2)
+
+                missing_columns_table2 = column_names1 - column_names2
+                missing_columns_table1 = column_names2 - column_names1
+
+                # Print missing columns
+                if missing_columns_table2:
+                    result+=(f"Missing columns in local '{table_name}': {', '.join(missing_columns_table2)}\n")
+                if missing_columns_table1:
+                    result+=(f"Missing columns in remote '{table_name}': {', '.join(missing_columns_table1)}\n")
+            return result
+
+
+
+
+
 
 
         def execute_sql_string(self, string):

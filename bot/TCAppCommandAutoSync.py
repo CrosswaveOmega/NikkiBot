@@ -275,7 +275,7 @@ def build_and_format_app_commands(tree:discord.app_commands.CommandTree, guild=N
     return den
 
 class SpecialAppSync:
-    '''Mixin that defines custom syncing logic.'''
+    '''Mixin that defines custom command tree syncing logic.'''
     
     async def sync_commands_tree(self, guild:discord.Guild, forced=False):
         '''Build a dictionary representation of all app commands to be synced, check if 
@@ -305,7 +305,7 @@ class SpecialAppSync:
             res=str(traceback.format_exception(None, e, e.__traceback__))
             gui.gprint(res)
 
-    async def sync_enabled_cogs_for_guild(self,guild, force=False):
+    async def add_enabled_cogs_into_guild(self,guild, force=False):
         '''With a passed in guild, sync all activated cogs for that guild.
         Works on a guild per guild basis in case I need to eventually provide
         code to sync different app commands between guilds.'''
@@ -353,17 +353,14 @@ class SpecialAppSync:
             for command in cog.walk_app_commands():
                 add_command_to_tree(command, guild)
 
-        
-
-
     async def all_guild_startup(self, force=False,sync_only=False, no_sync=False):
         '''fetch all available guilds, and sync the command tree.'''
         try:
             gui.gprint(self.guilds)
-            async for guild in self.fetch_guilds(limit=10000):
+            for guild in self.guilds:
                 gui.gprint(f"syncing for {guild.name}")
                 if not sync_only:
-                    await self.sync_enabled_cogs_for_guild(guild,force=force)
+                    await self.add_enabled_cogs_into_guild(guild,force=force)
                 if no_sync==False or sync_only:
                     await self.sync_commands_tree(guild, forced=force)
         except Exception as e:

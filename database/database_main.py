@@ -28,6 +28,7 @@ class ServerData(Main_DB_Base):
     '''
     Server has read and acknowledged the terms of service and privacy policy before use.
     '''
+
     @classmethod
     def get(cls, server_id):
         """

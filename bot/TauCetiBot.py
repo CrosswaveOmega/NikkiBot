@@ -67,8 +67,7 @@ class TreeOverride(CommandTree):
 
 
 class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialAppSync):
-    
-    """TC's central bot class.  An extension of discord.py Bot class with additional functionality."""
+    """A new central bot class.  An extension of discord.py's Bot class with additional functionality."""
     def __init__(self, guimode=False):
         super().__init__(command_prefix=['tc>',">"], tree_cls=TreeOverride,help_command=Chelp(), intents=intent)
         #The Database Singleton is initalized in here.
@@ -157,9 +156,6 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         '''Setup the loggers.'''
         if not os.path.exists('./logs/'):
             os.makedirs('./logs/')
-
-
-
         handler2 = logging.handlers.RotatingFileHandler(
             filename='./logs/discord.log',
             encoding='utf-8',
@@ -285,7 +281,8 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         for ext in self.extension_list:
             if not ext in self.loaded_extensions: 
                 await self.extension_loader(ext)
-            #else:                 val=await self.extension_reload(ext)
+            else:
+                val=await self.extension_reload(ext)
         gui.gprint(self.extension_list)
 
 
@@ -365,14 +362,11 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        '''internal command logger.'''
+        '''this function logs errors for prefix commands.'''
         log=logging.getLogger('discord')
-        
         command :discord.ext.commands.command = ctx.command
         log.error('Ignoring exception in command %s', command, exc_info=error)
-        
         emb=MessageTemplates.get_error_embed(title=f"Error with {ctx.message.content}",description=f"{str(error)}")
-        
         await self.send_error(error,title=f"Error with {ctx.message.content}")
         try:
             await ctx.send(embed=emb)

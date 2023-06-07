@@ -180,7 +180,24 @@ class Main(commands.Cog):
         for i in formatted_strings:
             await ctx.send(i)
             
-            
+       
+    @commands.command()
+    async def database_debug(self, ctx):
+        """debugging only."""
+        bot=ctx.bot
+        guild=ctx.guild
+        result=bot.database.get_instance().compare_db()
+        pageme=commands.Paginator(prefix="",suffix="",max_size=4096)
+        for p in result.split('\n'):pageme.add_line(p)
+        embeds=[]
+        for page in pageme.pages:
+            embed=discord.Embed(title='res', description=page, color=discord.Color(0xff0000))
+            embed.set_author(name="DATABASE STATUS:")
+            embeds.append(embed)
+        for i in embeds:
+            await ctx.send(embed=i)
+    
+                     
         
 
 
