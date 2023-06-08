@@ -32,6 +32,13 @@ class General(commands.Cog, TC_Cog_Mixin):
         self.bot=bot
         self.init_context_menus()
 
+    @commands.command() 
+    async def hashtest(self,ctx,string:str, length:int=5):
+        hlist=hash.get_hash_sets()
+        for i in hlist:
+            has,hint=hash.hash_string(string_to_hash=string,hashlen=length, hashset=i)
+            await ctx.send(f"{has}\n{hint}")
+
     @commands.command()
     async def create_rruleview(self, ctx):
         """THIS FUNCTION IS FOR TESTING THE RRULE GENERATING VIEW."""
@@ -102,7 +109,7 @@ class General(commands.Cog, TC_Cog_Mixin):
         
         emb=await MessageTemplates.server_profile_message(ctx, description=desc,ephemeral=True )
 
-    @app_commands.command(name="server_emoji_info", description="Print out all emojis in this server")
+    @app_commands.command(name="server_emoji_info", description="Print out all emoji embeddings for this server.")
     @app_commands.guild_only()
     async def emojiinfo(self, interaction: discord.Interaction) -> None:
         """get bot info for this server"""

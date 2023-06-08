@@ -8,6 +8,20 @@ from dateutil import tz
 from queue import PriorityQueue
 import discord
 from dateutil.rrule import rrule,rrulestr, WEEKLY, SU
+
+class TCTaskRef:
+    __slots__=[
+        'name'
+    ]
+    def __init__(self,name):
+        self.name=name
+
+    def get_task(self):
+        return TCTaskManager.get_task(self.name)
+    def __lt__(self,other):
+        me=self.get_task()
+        return self.get_task().to_run_next<other.get_task().to_run_next
+
 class TCTask:
     """
     A special task object for running coroutines at specific timedelta intervals,
@@ -64,8 +78,8 @@ class TCTask:
         # Add self to the TCTaskManager upon initialization
         TCTaskManager.add_task(self)
 
-    def __lt__(self,other):
-        return self.to_run_next<other.to_run_next
+    def get_ref(self):
+        return TCTaskRef(self.name)
     def can_i_run(self):
         '''Check if the TCTask can be launched.'''
         if self.is_running: return False
@@ -194,7 +208,20 @@ class TCTaskManager:
         self.to_delete=[]
         self.myqueue=PriorityQueue()
 
+    @classmethod
+    def get_task(cls, name):
+        """
+        Check if a TCTask object with the specified name is in the list of tasks.
+        Args:
+            name (str): The name of the TCTask object to find in the list of tasks.
 
+        Returns:
+            True if a task is already there, False if no matching task was found.
+        """
+        manager = cls.get_instance()
+        if name in manager.tasks:
+            return manager.tasks[name]
+        return None
     @classmethod
     def does_task_exist(cls, name):
         """
@@ -307,14 +334,14 @@ class TCTaskManager:
         to_add=manager.tasks[name]
         if ((to_add.status!='standby')) and (not (name in manager.to_delete)):
 
-            manager.myqueue.put(to_add)
+            manager.myqueue.put(to_add.get_ref())
             to_add.status='standby'
         #manager.to_delete.append(name)
 
     @classmethod
     def task_check(cls):
         """
-        Runs all of the TCTask objects that can be run at a specific time.
+        Check how much time left each task has.
         """
         # Check each task to see if it's time to run
         manager = TCTaskManager.get_instance()
@@ -362,8 +389,8 @@ class TCTaskManager:
             if task.is_running==False:  TCTaskManager.remove_task(task.name)
         manager.to_delete=[]
         while not manager.myqueue.empty():
-            if manager.myqueue.queue[0].can_i_run():
-                task=manager.myqueue.get()
+            if manager.myqueue.queue[0].get_task().can_i_run():
+                task=manager.myqueue.get().get_task()
                 asyncio.create_task(task())
             else:
                 break

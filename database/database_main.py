@@ -10,7 +10,7 @@ import datetime
 '''As well as a function for the singleton to collect the base it's defined within.'''
 
 
-Main_DB_Base = declarative_base()
+Main_DB_Base = declarative_base(name="Main DB Base")
 class ServerData(Main_DB_Base):
     '''
     Server Data is used as a global table for guilds the bot is in.  
@@ -23,6 +23,9 @@ class ServerData(Main_DB_Base):
 
     last_use=Column(DateTime)
     '''the last time a guild used any command.'''
+
+    #my_channel=Column(Integer, nullable=True)
+    #'''the bot's personal fallback channel.'''
 
     policy_agree=Column(Boolean, default=False)
     '''

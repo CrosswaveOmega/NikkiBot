@@ -15,7 +15,8 @@ import sys, random
 
 
 from queue import Queue
-from utility import serverOwner, serverAdmin,MessageTemplates
+
+from utility import serverOwner, serverAdmin,MessageTemplates,formatutil
 
 from discord.ext import commands, tasks
 
@@ -29,6 +30,7 @@ from dateutil.rrule import rrule,rrulestr, WEEKLY, SU
 from .TauCetiBot import TCBot
 from .Tasks.TCTasks import TCTask, TCTaskManager
 from .TcGuildTaskDB import TCGuildTask
+from .errorformat import client_error_message
 """
 Initalizes TCBot, and defines some checks
 
@@ -92,8 +94,27 @@ async def on_app_command_error(
     if 'guildtask' in ctx.command.extras and ctx.guild!=None:
         taskflags[str(ctx.guild.id)]=False
     await bot.send_error(error,f"App Command {interaction.command.name}")
-    await ctx.send(f"This app command failed due to {str(error)}")
-    gui.gprint("ERROR")
+    errormess=client_error_message(error, name=f"App Command {interaction.command.name}")
+    emb=MessageTemplates.get_error_embed(title=f"Error with {ctx.message.content}",description=f"{errormess}")
+    try:
+        await ctx.send(embed=emb)
+    except Exception as e:
+        bot.logs.error(str(e))
+
+@bot.event
+async def on_command_error(ctx, error):
+    '''this function logs errors for prefix commands.'''
+    log=logging.getLogger('discord')
+    command :discord.ext.commands.command = ctx.command
+    log.error('Ignoring exception in command %s', command, exc_info=error)
+    errormess=client_error_message(error, name=f" Command {command.name}")
+    emb=MessageTemplates.get_error_embed(title=f"Error with {ctx.message.content}",description=f"{errormess}")
+    await bot.send_error(error,title=f"Error with {ctx.message.content}")
+    try:
+        await ctx.send(embed=emb)
+    except Exception as e:
+        bot.logs.error(str(e))
+
 
 @bot.before_invoke
 async def add_log(ctx):

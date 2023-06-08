@@ -22,8 +22,8 @@ ArchiveSub subpackage.
 
 '''
 from assets import AssetLookup
-from utility import hash_string_64
-ArchiveBase=declarative_base()
+from utility import hash_string
+ArchiveBase=declarative_base(name="Archive System Base")
 class ChannelSep(ArchiveBase):
     '''Table for the channel separator objects.'''
     __tablename__ = 'ChannelSeps'
@@ -428,7 +428,7 @@ def create_history_pickle_dict(message):
         'server_id': message.channel.guild.id
     }
     if not message.author.bot:
-        hash, int=hash_string_64(message.author.name)
+        hash, int=hash_string(message.author.name)
         name_list = ["Alice", "Bob", "Charlie", "David", "Eve"]
         random_name = name_list[int % len(name_list)]
         history_pickle_dict['author']=f"{random_name}_{hash}"

@@ -14,7 +14,7 @@ from discord.ext import commands
 from database import DatabaseSingleton
 from queue import Queue
 
-Guild_Sync_Base = declarative_base()
+Guild_Sync_Base = declarative_base(name="Guild AppCommand Cache Sync")
 
 import json
 import discord

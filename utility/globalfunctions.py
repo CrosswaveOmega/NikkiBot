@@ -12,35 +12,9 @@ from discord.ext import commands, tasks
 
 from discord import Webhook,ui
 import site
-from discord.utils import escape_markdown
-import hashlib
-import base64
 import gui
+from discord.utils import escape_markdown
 
-def hash_string_64(string_to_hash, hashlen=5):
-    # Convert the string to bytes
-    encoded_string = string_to_hash.encode('utf-8')
-
-    # Hash the bytes using SHA-256
-    hash_bytes = hashlib.sha256(encoded_string).digest()
-
-    # Encode the hashed bytes as base64
-    encoded_hash = base64.b64encode(hash_bytes)
-
-    # Convert the base64 string to a string with 64 different characters
-    char_set = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789%-"
-    base_len = len(char_set)
-    num_chars = hashlen
-    num_bits = num_chars * 6
-    hash_int = int.from_bytes(hash_bytes, byteorder='big')
-    chars = []
-    for i in range(num_chars):
-        offset = i * 6
-        index = (hash_int >> offset) & 0x3f
-        chars.append(char_set[index])
-    encoded_chars = ''.join(chars)
-
-    return encoded_chars
 
 def replace_working_directory(string):
     '''This function is for '''
@@ -50,13 +24,11 @@ def replace_working_directory(string):
     replaced_string=string
     for rawsite in site.getsitepackages():
         sites = os.path.dirname(rawsite)
-        gui.gprint(sites)
         # Use regex to replace all instances of the working directory in the string
         replaced_string = re.sub(re.escape(sites), 'site', string, flags=re.IGNORECASE)
     # Use regex to replace all instances of the working directory in the string
     replaced_string = re.sub(re.escape(parent_dir), '..', replaced_string, flags=re.IGNORECASE)
 
-    gui.gprint(replaced_string)
     return escape_markdown(replaced_string)
 
 '''Utility functions here to assist.'''

@@ -11,7 +11,7 @@ import csv
 from datetime import datetime, timedelta, date, timezone
 from sqlalchemy import event
 
-from utility import serverOwner, serverAdmin, seconds_to_time_string, get_time_since_delta, explain_rrule
+from utility import serverOwner, serverAdmin, seconds_to_time_string, get_time_since_delta, formatutil
 from utility import WebhookMessageWrapper as web, urltomessage, ConfirmView, RRuleView
 from bot import TCBot, TCGuildTask, Guild_Task_Functions, StatusEditMessage, TC_Cog_Mixin
 from random import randint
@@ -151,6 +151,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
     @commands.hybrid_group(fallback="view")
     @app_commands.default_permissions(manage_messages=True,manage_channels=True)
+    @commands.guild_only()
     @commands.has_permissions(manage_messages=True,manage_channels=True)
     async def archive_setup(self, ctx):
         """This family of commands is for setting up your server archive."""
@@ -282,7 +283,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             elif view.value:
                 await ctx.send(f"`{str(view.value)}`")
                 old.change_rrule(self.bot,view.value)
-                desc,sent=explain_rrule(view.value)
+                desc,sent=formatutil.explain_rrule(view.value)
                 result=f"I've changed the recurrence settings! \n {sent}"
                 await MessageTemplates.server_archive_message(ctx,result)
             else:
@@ -299,7 +300,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         guild=ctx.guild
         task_name="COMPILE"
         if not(serverOwner(ctx) or serverAdmin(ctx)):
-            await MessageTemplates.server_archive_message(ctx,"You don't have permission to use this command..")
+            await MessageTemplates.server_archive_message(ctx,"You don't have permission to use this command.")
             return False
         message=await ctx.send("Target Message.")
         myurl=message.jump_url
@@ -308,7 +309,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         result=f"the auto archive has been disabled."
         await MessageTemplates.server_archive_message(ctx,result)
     
-    @archive_setup.command(name="autosetup_archive", brief="automatically add a archive channel in invoked category with historian role.  ")
+    @archive_setup.command(name="autosetup_archive", brief="the bot will create a new archive channel.")
+    @app_commands.checks.bot_has_permissions(manage_channels=True,manage_roles=True)
+    @commands.bot_has_guild_permissions(manage_channels=True,manage_roles=True)
     async def createArchiveChannel(self, ctx):  # Add ignore.
         '''Want to set up a new archive channel automatically?  Use this command and a new archive channel will be created in this server with a historian role that only allows the bot user from posting inside the channel.
 
@@ -389,7 +392,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         def check(m):
             return m.author==auth and m.channel == channel
         if ctx.interaction:
-            await ctx.send(f"Due to app command limitations, please specify all the channels you want to ignore in another message below, you have {get_time_since_delta(timedelta(minutes=15))}.")
+            await ctx.send(f"Due to app command limitations, please specify all the channels you want to ignore in another message below, you have {formatutil.get_time_since_delta(timedelta(minutes=15))}.")
             try:
                 msg = await bot.wait_for('message', timeout=60.0*15, check=check)
                 thismessage=msg
@@ -433,7 +436,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         def check(m):
             return m.author==auth and m.channel == channel
         if ctx.interaction:
-            await ctx.send(f"Due to app command limitations, please specify all the channels you want to stop ignoring in another message below, you have {get_time_since_delta(timedelta(minutes=15))}.")
+            await ctx.send(f"Due to app command limitations, please specify all the channels you want to stop ignoring in another message below, you have {formatutil.get_time_since_delta(timedelta(minutes=15))}.")
             try:
                 msg = await bot.wait_for('message', timeout=60.0*15, check=check)
                 thismessage=msg

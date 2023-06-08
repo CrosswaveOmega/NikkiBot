@@ -359,22 +359,6 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
 
 
 
-
-    @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):
-        '''this function logs errors for prefix commands.'''
-        log=logging.getLogger('discord')
-        command :discord.ext.commands.command = ctx.command
-        log.error('Ignoring exception in command %s', command, exc_info=error)
-        emb=MessageTemplates.get_error_embed(title=f"Error with {ctx.message.content}",description=f"{str(error)}")
-        await self.send_error(error,title=f"Error with {ctx.message.content}")
-        try:
-            await ctx.send(embed=emb)
-        except Exception as e:
-            self.logs.error(str(e))
-
-
-
     @tasks.loop(seconds=10)
     async def status_ticker(self):
         await self.status_ticker_next()

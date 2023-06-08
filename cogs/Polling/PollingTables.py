@@ -7,7 +7,7 @@ import discord
 from database import DatabaseSingleton
 
 
-PollingBase = declarative_base()
+PollingBase = declarative_base(name="Polling System Base")
 
 class PollTable(PollingBase):
     __tablename__ = 'poll_table'

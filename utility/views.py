@@ -6,7 +6,7 @@ import gui
 
 from datetime import datetime, timedelta
 import time
-from .string_format_functions import explain_rrule
+from .formatutil import explain_rrule
 
 class ConfirmView(discord.ui.View):
     '''This is a simple view for getting a yes/no answer from a user.'''

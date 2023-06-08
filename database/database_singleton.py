@@ -1,8 +1,9 @@
 import gui
-from sqlalchemy import create_engine, text, MetaData, Table, inspect
+from sqlalchemy import create_engine, text, MetaData, Table, inspect, Column
 from sqlalchemy.orm import sessionmaker, Session
 
 from sqlalchemy.orm import registry
+
 import logging
 
 '''
@@ -12,6 +13,17 @@ at any given time.
 This way, it can be accessed from anywhere, and not just through the Bot object.
 
 '''
+
+def generate_column_definition(column, engine):
+    column_name = column.name
+    column_type = column.type.compile(engine.dialect)
+    column_attributes = [str(attr) for attr in column.constraints]
+    column_definition = f"{column_name} {column_type}"
+    if column_attributes:
+        column_definition += " " + " ".join(column_attributes)
+    return column_definition
+
+# Generate the ALTER TABLE statemen
 class DatabaseSingleton:
     """A singleton storage class that stores the database engine and connection objects."""
 
@@ -49,6 +61,7 @@ class DatabaseSingleton:
                 self.SessionLocal: sessionmaker = SessionLocal
                 self.session: Session = self.SessionLocal()
                 self.session.commit()
+                self.compare_db()
 
         def load_in_base(self,Base):
             print("loading in: ",Base.__name__,Base)
@@ -94,6 +107,7 @@ class DatabaseSingleton:
 
             # Compare tables
             result=""
+            session=self.get_session()
             for table_name in set(tables1) | set(tables2):
                 table1 = tables1.get(table_name)
                 table2 = tables2.get(table_name)
@@ -127,6 +141,12 @@ class DatabaseSingleton:
                     result+=(f"Missing columns in local '{table_name}': {', '.join(missing_columns_table2)}\n")
                 if missing_columns_table1:
                     result+=(f"Missing columns in remote '{table_name}': {', '.join(missing_columns_table1)}\n")
+                    for miss in missing_columns_table1:
+                        col:Column=table2.columns[miss]
+
+                        alter_table_stmt = text(f"ALTER TABLE {table_name} ADD COLUMN {generate_column_definition(col,self.engine)};")
+                        session.execute(alter_table_stmt)
+                        session.commit()
             return result
 
 

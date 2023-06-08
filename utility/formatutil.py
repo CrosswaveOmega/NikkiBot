@@ -1,12 +1,22 @@
+from typing import List
 from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY, MO, TU, WE, TH, FR, SA, SU
 from datetime import datetime, timedelta
-
+'''
+A set of functions to format text.
+'''
 def get_time_since_delta(delta: timedelta) -> str:
     now = datetime.utcnow()
     timestamp = int((now + delta).timestamp())
     return f"<t:{timestamp}:R>"
 
+def permission_print( permlist:List[str]):
+    missing = [perm.replace('_', ' ').replace('guild', 'server').title() for perm in permlist]
 
+    if len(missing) > 2:
+        fmt = '{}, and {}'.format(", ".join(missing[:-1]), missing[-1])
+    else:
+        fmt = ' and '.join(missing)
+    return fmt
 
 def explain_rrule(rrule_obj:rrule):
     freq_mapping = {

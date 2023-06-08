@@ -2,7 +2,7 @@ from sqlalchemy import Column, ForeignKey, Integer, String, Double
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, Session
 from database import DatabaseSingleton
-MusicBase = declarative_base()
+MusicBase = declarative_base(name="Music System Base")
 
 
 class UserMusicProfile(MusicBase):

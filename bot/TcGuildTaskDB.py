@@ -10,7 +10,7 @@ from typing import Optional, Tuple
 import asyncio
 import discord
 from dateutil.rrule import rrule,rrulestr, WEEKLY, SU
-Guild_Task_Base = declarative_base()
+Guild_Task_Base = declarative_base(name="Guild Scheduled Task Base")
 from database import DatabaseSingleton
 from .Tasks.TCTasks import TCTask, TCTaskManager
 
