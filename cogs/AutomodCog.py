@@ -60,12 +60,6 @@ class AutomodCog(commands.Cog, TC_Cog_Mixin):
         pass
         
 
-
-
-    @app_commands.command(name="automodplaceholder", description="placeholder for future automod config commands.")
-    async def automodp(self, interaction: discord.Interaction) -> None:
-        ctx: commands.Context = await self.bot.get_context(interaction)
-        await ctx.send("There's a badge for this.")
     @app_commands.command(name="automodadd", description="this command adds in an automod rule that prevents invites.")
     @app_commands.describe(modchannel='The moderation channel to be notified of this rule in.')
     @app_commands.checks.bot_has_permissions(manage_guild=True)

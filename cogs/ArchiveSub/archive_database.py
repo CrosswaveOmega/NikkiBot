@@ -1,4 +1,4 @@
-from datetime import timezone
+from datetime import timezone, datetime
 import json
 import discord
 import io
@@ -24,6 +24,50 @@ ArchiveSub subpackage.
 from assets import AssetLookup
 from utility import hash_string
 ArchiveBase=declarative_base(name="Archive System Base")
+
+class ChannelArchiveStatus(ArchiveBase):
+    __tablename__='ChannelArchiveStatus'
+    server_id=Column(Integer,primary_key=True)
+    channel_id=Column(Integer,primary_key=True)
+    thread_parent_id=Column(Integer,nullable=True)
+    stored=Column(Integer,default=0)
+    active_count=Column(Integer,default=0)
+    latest_archive=Column(DateTime)
+    @staticmethod
+    def get_by_tc(channel):
+        server_id=channel.guild.id
+        channel_id=channel.id
+        new=ChannelArchiveStatus.get(server_id,channel_id)
+        if not new:
+            session=DatabaseSingleton.get_session()
+            new = ChannelArchiveStatus(server_id=server_id,channel_id=channel_id)
+            if channel.type!=discord.ChannelType.text:
+                if channel.parent!=None:
+                    new.thread_parent_id=channel.parent.id
+                
+
+            #new.latest_archive=datetime.fromtimestamp(0,tz=timezone.utc)
+            session.add(new)
+            session.commit()
+        return new
+
+    @staticmethod
+    def get(server_id, channel_id):
+        session = DatabaseSingleton.get_session()
+        return session.query(ChannelArchiveStatus).filter_by(server_id=server_id, channel_id=channel_id).first()
+
+    def increment(self,date):
+        self.stored += 1
+        self.latest_archive = date
+    def mod_active(self,incr):
+        self.active_count+=incr
+    def __str__(self):
+        return f"{self.stored},{self.latest_archive_date}"
+
+    def update_latest_date(self, date):
+        session = DatabaseSingleton.get_session()
+        session.commit()
+
 class ChannelSep(ArchiveBase):
     '''Table for the channel separator objects.'''
     __tablename__ = 'ChannelSeps'
@@ -402,8 +446,6 @@ def create_archived_rp_file(arpm, file_num, vekwargs):
 
 def create_archived_rp_embed(arpm, embed):
     embed_dict = embed.to_dict()
-
-    # Dump the dictionary to a JSON string
     json_string = json.dumps(embed_dict)
     if arpm:
         archived_rp_emb = ArchivedRPEmbed(message_id=arpm.message_id, embed_json=json_string)

@@ -781,7 +781,10 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         totalcharlen=0
         new_last_time=0
         if archive_from=="server":
-           messages, totalcharlen,new_last_time=await collect_server_history(ctx,update,indexbot,user)
+           messages, totalcharlen,new_last_time=await collect_server_history(ctx,
+                                                                             update=update,
+                                                                             bot_messages_only=indexbot,
+                                                                             user_messages_only=user)
         
 
         await  m.edit(content="Grouping into separators, this may take a while.")
@@ -853,7 +856,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
         bot.remove_act(str(ctx.guild.id)+"arch")
         channel=ctx.channel
-        gui.gprint(channel.name, channel.id)
+        gui.gprint(channel.name, channel.id,datetime.fromtimestamp(int(new_last_time)),(datetime.fromtimestamp(int(new_last_time), tz=timezone.utc)))
         profile.update(last_archive_time=(datetime.fromtimestamp(int(new_last_time))))
         bot.database.commit()
         await MessageTemplates.server_archive_message(channel,f'Archive operation completed at <t:{int(datetime.now().timestamp())}:f>')
