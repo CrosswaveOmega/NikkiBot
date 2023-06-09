@@ -172,7 +172,7 @@ async def collect_server_history(ctx, **kwargs):
 
         if statusMessToEdit!=None: 
             await statusMessToEdit.delete()
-        await bot.database.commit()
+        bot.database.commit()
         return messages, arch_ctx.character_len, arch_ctx.latest_time
 
 def check_channel(historychannel:discord.TextChannel) -> Tuple[bool, str]:
