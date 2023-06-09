@@ -1,3 +1,4 @@
+import gui
 import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Tuple
@@ -50,7 +51,6 @@ async def iter_hist_messages(cobj:discord.TextChannel, actx:ArchiveContext):
     messages=[]
     mlen=0
     carch=ChannelArchiveStatus.get_by_tc(cobj)
-    print(actx.last_stored_time, type(actx.last_stored_time))
     timev=actx.last_stored_time
     if carch.latest_archive==None:timev=None
     async for thisMessage in cobj.history(after=timev):
@@ -64,6 +64,7 @@ async def iter_hist_messages(cobj:discord.TextChannel, actx:ArchiveContext):
             messages.append(thisMessage)
             carch.increment(thisMessage.created_at)
             actx.total_archived+=1
+            gui.gprint('now:',actx.total_archived)
             mlen+=1
         else:
             actx.total_ignored+=1
