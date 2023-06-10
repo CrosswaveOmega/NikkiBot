@@ -146,8 +146,8 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
                        "If your account was created after either of the dates below, you should be able to claim your username.\n"+\
                        "If you don't get a notification though, either **close out and restart the desktop app**, or **refresh the web browser.**\n" +\
                        "If it doesn't show up, however, please let me know via the `/nopomelo` command, because discord isn't being clear about eligability.\n"+\
-                       "Nitro will only matter if you've subscribed before March 1st,"+\
-                       f"\n Nitro users:{nitro_pom}\n Normal users:{user_pom}")
+                       "Nitro will only matter if you've subscribed to Nitro before March 1st."+\
+                       f"\n ***Nitro users:**{nitro_pom}\n **Normal users:**{user_pom}")
         if user.discriminator=="0":
             await ctx.send("It looks like you claimed a pomelo already, nice work!")
             return
