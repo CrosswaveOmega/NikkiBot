@@ -131,7 +131,7 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
             await ctx.send("Tag not found.")
 
         
-    @app_commands.command(name='username_pomelo',description="Check if you are eligable for a new username.",extras={'global':True})
+    @app_commands.command(name='username_pomelo',description="Check if you are eligable for the new discord username.",extras={'global':True})
     @app_commands.guild_only()
     async def amipomelo(self,interaction:discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -142,11 +142,11 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
         nitro_deadline=get_last_day_of_string_date(nitro_pom)
         user_deadline=get_last_day_of_string_date(user_pom)
         await ctx.send(f"Using my sources, I'll check if you can claim a new username, or as it's called internally, a **Pomelo username**."+\
-                       "I don't get one because I'm a bot, and bots are cool.\n"+\
-                       "If your account was created after either of the dates below, you can claim your username.\n"+\
-                       "You may need to restart the app.\n" +\
-                       "If it doesn't show up, however, please let me know via the /nopomelo command, since reports are innacurate.\n"+\
-                       "Nitro will only matter if you've subscribed before March 1st, and there are reports that discord is ignoring nitro status anyhow."+\
+                       "I can't get a pomelo because I'm a bot, and bots are cool.\n"+\
+                       "If your account was created after either of the dates below, you should be able to claim your username.\n"+\
+                       "If you don't get a notification though, either **close out and restart the desktop app**, or **refresh the web browser.**\n" +\
+                       "If it doesn't show up, however, please let me know via the `/nopomelo` command, because discord isn't being clear about eligability.\n"+\
+                       "Nitro will only matter if you've subscribed before March 1st,"+\
                        f"\n Nitro users:{nitro_pom}\n Normal users:{user_pom}")
         if user.discriminator==0:
             await ctx.send("It looks like you already claimed a pomelo username!  Nice work.")
