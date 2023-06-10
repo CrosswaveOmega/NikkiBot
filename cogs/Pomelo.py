@@ -148,8 +148,8 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
                        "If it doesn't show up, however, please let me know via the `/nopomelo` command, because discord isn't being clear about eligability.\n"+\
                        "Nitro will only matter if you've subscribed before March 1st,"+\
                        f"\n Nitro users:{nitro_pom}\n Normal users:{user_pom}")
-        if user.discriminator==0:
-            await ctx.send("It looks like you already claimed a pomelo username!  Nice work.")
+        if user.discriminator=="0":
+            await ctx.send("It looks like you claimed a pomelo already, nice work!")
             return
         if user.created_at<=user_deadline:
             await ctx.send("You should be able to claim a pomelo username!")
@@ -159,7 +159,7 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
             else:
                 await ctx.send("You can not claim a pomelo username yet, even though you are nitro.")
         else:
-            await ctx.send("You can't claim a pomelo username yet...")
+            await ctx.send("I don't think you can't claim a pomelo username yet.")
      
         
     @app_commands.command(name='nopomelo',description="use this if I got it wrong and you can't pomelo yourself.",extras={'global':True})
