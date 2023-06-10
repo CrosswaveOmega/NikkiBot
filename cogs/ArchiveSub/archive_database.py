@@ -4,7 +4,7 @@ import discord
 import io
 
 from typing import List, Union
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Boolean, distinct, update, func
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Boolean, Text, distinct, update, func
 from sqlalchemy import LargeBinary, ForeignKey,PrimaryKeyConstraint, insert, distinct
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
@@ -284,8 +284,6 @@ class ChannelSep(ArchiveBase):
         return f"{self.channel_sep_id}: [{self.get_chan_sep()}]"
 
 
-        
-
 class ArchivedRPMessage(ArchiveBase):
     '''represents an archived RP message for a specific server_id'''
     __tablename__ = 'ArchivedRPMessages'
@@ -300,6 +298,7 @@ class ArchivedRPMessage(ArchiveBase):
     posted_url = Column(String)
     channel_sep_id = Column(Integer,ForeignKey('ChannelSeps.channel_sep_id'), nullable=True)
     server_id = Column(Integer)
+    is_active = Column(Boolean, default=False)
     #channel_sep = relationship('ChannelSeps', back_populates='messages')
     files = relationship('ArchivedRPFile', backref='archived_rp_message')
     embed = relationship('ArchivedRPEmbed', backref='archived_rp_message_set')
@@ -471,7 +470,7 @@ def create_history_pickle_dict(message):
     }
     if not message.author.bot:
         hash, int=hash_string(message.author.name)
-        name_list = ["Alice", "Bob", "Charlie", "David", "Eve"]
+        name_list = AssetLookup.get_asset('blanknames')
         random_name = name_list[int % len(name_list)]
         history_pickle_dict['author']=f"{random_name}_{hash}"
         history_pickle_dict['avatar']=AssetLookup.get_asset('generic', 'urls')
@@ -533,7 +532,7 @@ class HistoryMakers():
         archived_rp_embeds=[]
         archived_rp_files = []
         for thisMessage in messages:
-            
+            mes=discord.Message
             hmes = create_history_pickle_dict(thisMessage)
             id = hmes['server_id']
             ms = ArchivedRPMessage(**hmes)

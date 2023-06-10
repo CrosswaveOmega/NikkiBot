@@ -12,6 +12,7 @@ at any given time.
 
 This way, it can be accessed from anywhere, and not just through the Bot object.
 
+It also can add new columns to the engine if they're missing.
 '''
 
 def generate_column_definition(column, engine):
@@ -142,8 +143,9 @@ class DatabaseSingleton:
                 if missing_columns_table1:
                     result+=(f"Missing columns in remote '{table_name}': {', '.join(missing_columns_table1)}\n")
                     for miss in missing_columns_table1:
+                        #Add missing columns to remote.
+                        #WARNING: UNSTABLE
                         col:Column=table2.columns[miss]
-
                         alter_table_stmt = text(f"ALTER TABLE {table_name} ADD COLUMN {generate_column_definition(col,self.engine)};")
                         session.execute(alter_table_stmt)
                         session.commit()

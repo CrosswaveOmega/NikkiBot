@@ -613,6 +613,17 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await edit_if_needed(iL)
             await edit_if_needed(cL)
             gui.gprint(f"New posted_url value for ChannelSep")
+            
+    @commands.Cog.listener()
+    async def on_message(self,message):
+        pass
+    @commands.Cog.listener()
+    async def on_message_edit(self,message):
+        pass
+    @commands.Cog.listener()
+    async def on_message_delete(self,message):
+        pass
+    
     @commands.command(
         name="archive_compile_debug",
         brief="start archiving the server.  Will only archive messages sent by bots.",

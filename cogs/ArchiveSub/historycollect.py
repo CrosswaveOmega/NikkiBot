@@ -95,7 +95,7 @@ async def lazy_grab(cobj:discord.TextChannel, actx:ArchiveContext):
             actx.alter_latest_time(thisMessage.created_at.timestamp())
             actx.character_len+=len(thisMessage.content)
             messages.append(thisMessage)
-            carch.increment(thisMessage.created_at.timestamp())
+            carch.increment(thisMessage.created_at)
             actx.total_archived+=1
             mlen+=1
         else:

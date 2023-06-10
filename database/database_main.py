@@ -88,6 +88,8 @@ class ServerArchiveProfile(Main_DB_Base):
     history_channel_id = Column(Integer)
     last_group_num= Column(Integer, default=0)
     status = Column(Text)
+    archive_scope =Column(Text,default='ws')
+    archive_dynamic = Column(Boolean,default=False)
 
     channellist = relationship("IgnoredChannel", back_populates="server_archive_profile")
     ignoredauthors = relationship("IgnoredUser", back_populates="server_archive_profile")

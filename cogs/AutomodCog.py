@@ -95,6 +95,9 @@ class AutomodCog(commands.Cog, TC_Cog_Mixin):
         actionb=AutoModRuleAction(
             channel_id=modchannel.id
         )
+        actionc=AutoModRuleAction(
+            duration=timedelta(hours=3)
+        )
         #creating an automod rule
         await guild.create_automod_rule(
             #The name of the automodrule

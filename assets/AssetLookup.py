@@ -1,11 +1,17 @@
 import os
 import configparser
-
+import json
+import gui
 from typing import Optional
+
 DEFAULT_ASSETS = {
     "main":{
         "name": "TCBOT",
         'homeguild': 0
+    },
+    "lists":{
+        'default':[],
+        'blanknames':["Alice", "Bob", "Charlie", "David", "Eve",'Aspen', 'Avery', 'Blake', 'Charlie', 'Chris', 'Ellis', 'Emerson', 'Frankie', 'Gray', 'Harper', 'Hayden', 'Indigo', 'Jamie', 'Kendall', 'Lane', 'Parker', 'River', 'Robin', 'Sage', 'Scout', 'Sidney', 'Skylar', 'Taylor', 'Terry', 'Tyler', 'Wren', 'Ash', 'Bay', 'Emory', 'Harley', 'Hollis', 'Jessie', 'Marley', 'Nat', 'Payton', 'Sky', 'Stevie', 'Tracy', 'Whitney', 'Winter', 'Cam', 'Casey', 'Dana', 'Finley', 'Pat', 'Quinn', 'Riley', 'Rowan', 'Ryan', 'Arin', 'Blaine', 'Cary', 'Darcy', 'Devan', 'Kerry', 'Sean', 'Teagan', 'Arian', 'Ariel', 'Asher', 'Eden', 'Eli', 'Gabriel', 'Sam', 'Zion', 'Ira', 'Jayden', 'Jordan', 'Yael', 'Jules', 'Dominique', 'Noel', 'Remy', 'Alex', 'Nico', 'Phoenix', 'Kris', 'Blair', 'Kamryn', 'Cameron', 'Leslie', 'Morgan', 'Reese', 'Ali', 'Amal', 'Logan', 'Rory', 'Tristan', 'Lee', 'Kai', 'Armani', 'Luca', 'Akira', 'Aki', 'Kim', 'Adrian', 'Val', 'Sasha', 'Amari', 'Max', 'Asha', 'Dakota']
     },
     "urls":{
         'generic': "https://example.com/image.png",
@@ -17,7 +23,6 @@ DEFAULT_ASSETS = {
 
 class AssetLookup:
     _assets = {}
-    
     def __init__(self):
         self.load_assets()
     
@@ -32,14 +37,17 @@ class AssetLookup:
             # Check if default assets are present, and add them if they're not
             for section, assets in DEFAULT_ASSETS.items():
                 if section not in AssetLookup._assets:
+                    gui.gprint(f"section {section} not found in assets.conf")
                     AssetLookup._assets[section] = assets
                 else:
                     for asset, default_value in assets.items():
                         if asset not in AssetLookup._assets[section]:
+                            gui.gprint(f"asset {asset} not found in section{section}")
                             AssetLookup._assets[section][asset] = default_value
         else:
             AssetLookup._assets = DEFAULT_ASSETS
             AssetLookup.save_assets(config_path)
+
 
     @staticmethod
     def set_asset(asset_name: str, value: str, category: Optional[str] = None):
@@ -89,4 +97,5 @@ class AssetLookup:
             default=AssetLookup.get_defaultfallback(asset_name,category)
             if default is None:
                 raise ValueError(f"No asset found for '{asset_name}' in category '{category}'")
+            
         return fallback

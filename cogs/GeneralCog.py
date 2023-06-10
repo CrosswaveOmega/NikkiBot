@@ -65,7 +65,7 @@ class General(commands.Cog, TC_Cog_Mixin):
         await interaction.response.send_message(
             content=f"This user is named {user.display_name}",
             ephemeral=True)
-        
+
     @app_commands.command(name="server_info", description="view the server data")
     async def info(self, interaction: discord.Interaction) -> None:
         """get bot info for this server"""

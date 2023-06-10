@@ -201,7 +201,15 @@ class Main(commands.Cog):
         for i in formatted_strings:
             await ctx.send(i)
             
-       
+              
+    @commands.command()
+    async def assetlookuptest(self, ctx):
+        """debugging only."""
+        bot=ctx.bot
+        guild=ctx.guild
+        AssetLookup.save_assets()
+        names=AssetLookup.get_asset("blanknames")
+                     
     @commands.command()
     async def database_debug(self, ctx):
         """debugging only."""
