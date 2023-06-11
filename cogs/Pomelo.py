@@ -101,7 +101,7 @@ async def is_cyclic_mod(dictionary, start_key, value):
 
 async def dynamic_tag_get(dictionary,text, maxsize=2000):
     value = text
-    value=value.replace("\\n","\n")
+    
     gui.gprint(dictionary['taglist'])
     for deep in range(32):
         matches = re.findall(r'\[([^\[\]]+)\]', value)
@@ -116,6 +116,7 @@ async def dynamic_tag_get(dictionary,text, maxsize=2000):
             if len(new)+len(value)<maxsize:
                 value = value.replace('[' + key_to_replace + ']', new)
                 await asyncio.sleep(0.01)
+    value=value.replace("\\n","\n")
     return value
 
 
