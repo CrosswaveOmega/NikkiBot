@@ -79,7 +79,7 @@ async def is_cyclic_mod(dictionary, start_key, value):
     while stack:
         key, vt = stack.pop()
         value=vt['text']
-        visited.add(key)
+        
 
         while True:
             await asyncio.sleep(0.01)
@@ -94,6 +94,7 @@ async def is_cyclic_mod(dictionary, start_key, value):
 
             if not new_keys:
                 break  # No more new keys found in the value
+        visited.add(key)
 
     return False  # No cycle detected
 
@@ -238,21 +239,27 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
         nitro_deadline=get_last_day_of_string_date(nitro_pom)
         user_deadline=get_last_day_of_string_date(user_pom)
         output=await dynamic_tag_get(self.db,"[pomeloinfo]\n[pomwave]")
-        await ctx.send(output)
         
-        if user.discriminator=="0":
-            await ctx.send("It looks like you claimed a pomelo already, nice work!")
-            return
-        if user.created_at<=user_deadline:
-            await ctx.send("You should be able to claim a pomelo username!")
-        elif is_member_nitro(ctx.author):
-            if user.created_at<=nitro_deadline:
-                await ctx.send("I think you might be a nitro user \n You should be able to claim a pomelo username!")
+        havepom=upom=nipom=nopom=0
+        for user in ctx.guild.members:
+            if user.discriminator=="0":
+                havepom+=1
             else:
-                await ctx.send("You can not claim a pomelo username yet, even though you are nitro.")
-        else:
-            await ctx.send("I don't think you can't claim a pomelo username yet.")
-     
+                if user.created_at<=user_deadline:
+                    upom+=1
+                if is_member_nitro(user):
+                    if user.created_at<=nitro_deadline:
+                        nipom+=1
+                nopom+=1
+        embed=discord.Embed(title=f"Server Pomelo Status", description='', color=discord.Color(0x00787f))
+        embed.add_field(name="Already have Pomelo",value=havepom)
+        embed.add_field(name="Could have pomelo",value=upom)
+        embed.add_field(name="Could have pomelo because Nitro",value=nipom)
+        embed.add_field(name="Can't get Pomelo Yet", value=nopom)
+        await ctx.send(output,embed=embed)
+        
+        
+        
 
     @app_commands.command(name='username_pomelo',description="Check if you are eligable for the new discord username.",extras={'global':True})
     @app_commands.guild_only()
