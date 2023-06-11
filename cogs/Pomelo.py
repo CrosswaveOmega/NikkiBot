@@ -101,6 +101,7 @@ async def is_cyclic_mod(dictionary, start_key, value):
 
 async def dynamic_tag_get(dictionary,text, maxsize=2000):
     value = text
+    gui.gprint(dictionary['taglist'])
     for deep in range(32):
         matches = re.findall(r'\[([^\[\]]+)\]', value)
         keys_to_replace = [match for match in matches if match in dictionary['taglist']]
@@ -208,6 +209,22 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
             await utility.pages_of_embeds(ctx,embeds)
             await ctx.send(f"Tags:\n{tags}")
         else:
+            taglist=[]
+            for i, v in self.db.items():
+                if i!='taglist':
+                    taglist.append(i)
+            self.db.update({'taglist':taglist})
+            if taglist:
+                tags = '\n'.join(taglist)
+                pageme=commands.Paginator(prefix="",suffix="",max_size=2000)
+                for i in taglist:
+                    pageme.add_line(i)
+                embeds=[]
+                for e,page in enumerate(pageme.pages):
+                    embed=discord.Embed(title=f"Tags: {e+1}", description=page, color=discord.Color(0x00787f))
+                    embeds.append(embed)
+                await utility.pages_of_embeds(ctx,embeds)
+                await ctx.send(f"Tags:\n{tags}")
             await ctx.send("No tags found.")
 
     @tags.command(name='get', description='get a tag')
