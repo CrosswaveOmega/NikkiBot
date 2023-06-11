@@ -51,7 +51,7 @@ async def is_cyclic(dictionary, start_key):
     while stack:
         key, vt = stack.pop()
         value=vt['text']
-        visited.add(key)
+        
 
         while True:
             await asyncio.sleep(0.01)
@@ -70,6 +70,7 @@ async def is_cyclic(dictionary, start_key):
             # Check if there are any new keys introduced in the updated value
             new_keys = [k for k in taglist if f'[{k}]' in value and k!='taglist']
             stack.extend((k, dictionary[k]) for k in new_keys)
+        visited.add(key)
     return False  # No cycle detected
 
 async def is_cyclic_mod(dictionary, start_key, value):
