@@ -126,6 +126,11 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
         self.helptext=""
         self.bot=bot
         self.db = SqliteDict("./saveData/tags.sqlite")
+        taglist=[]
+        for i, v in self.db.items():
+            if i!='taglist':
+                taglist.append(i)
+        self.db.update({'taglist':taglist})
 
     def cog_unload(self):
         self.db.close()
@@ -150,8 +155,9 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
         if cycle_check:
             await ctx.send("This value will cause a recursive loop!")
             return
-        self.db['taglist'].append(tagname)
+        taglist.append(tagname)
         self.db.update(tag)
+        self.db.update({'taglist':taglist})
         self.db.commit()
         await ctx.send(text)
     @tags.command(name='delete', description='delete a tag')
@@ -197,7 +203,7 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
     @tags.command(name='list', description='list all tags')
     async def listtags(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
-        taglist = self.db.get('taglist', [])
+        taglist = self.db.get('taglist')
         if taglist:
             tags = '\n'.join(taglist)
             pageme=commands.Paginator(prefix="",suffix="",max_size=2000)
@@ -208,24 +214,8 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
                 embed=discord.Embed(title=f"Tags: {e+1}", description=page, color=discord.Color(0x00787f))
                 embeds.append(embed)
             await utility.pages_of_embeds(ctx,embeds)
-            await ctx.send(f"Tags:\n{tags}")
+
         else:
-            taglist=[]
-            for i, v in self.db.items():
-                if i!='taglist':
-                    taglist.append(i)
-            self.db.update({'taglist':taglist})
-            if taglist:
-                tags = '\n'.join(taglist)
-                pageme=commands.Paginator(prefix="",suffix="",max_size=2000)
-                for i in taglist:
-                    pageme.add_line(i)
-                embeds=[]
-                for e,page in enumerate(pageme.pages):
-                    embed=discord.Embed(title=f"Tags: {e+1}", description=page, color=discord.Color(0x00787f))
-                    embeds.append(embed)
-                await utility.pages_of_embeds(ctx,embeds)
-                await ctx.send(f"Tags:\n{tags}")
             await ctx.send("No tags found.")
 
     @tags.command(name='get', description='get a tag')
