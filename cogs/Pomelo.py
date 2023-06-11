@@ -113,7 +113,7 @@ async def dynamic_tag_get(dictionary,text, maxsize=2000):
         for key_to_replace in keys_to_replace:
             new=dictionary[key_to_replace]['text']
             if len(new)+len(value)<maxsize:
-                value = value.replace('[' + key_to_replace + ']', )
+                value = value.replace('[' + key_to_replace + ']', new)
                 await asyncio.sleep(0.01)
     return value
 
