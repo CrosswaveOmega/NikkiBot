@@ -530,7 +530,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             if oldscope==mode:
                 await ctx.send("This is the same as my current setting.")
             steps=["# Warning! \n  **Before** you use this command, please make sure you've used my `add_ignore_channels` command on all channels you don't want me reposting into my log!"\
-                   +"\n Are all channels set to ignore?"
+                   +"\n Did you check this?"
             ]
             for r in steps:
                 confirm=ConfirmView(user=ctx.author)

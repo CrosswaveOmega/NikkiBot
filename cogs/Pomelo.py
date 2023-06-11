@@ -83,7 +83,9 @@ async def is_cyclic_mod(dictionary, start_key, value):
 
         while True:
             await asyncio.sleep(0.01)
+            gui.gprint(key)
             if key in visited:
+                gui.gprint(key,visited)
                 return True  # Cycle detected
 
             # Check if there are any new keys introduced in the value
@@ -225,6 +227,33 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
             await ctx.send("Tag not found.")
 
         
+    @app_commands.command(name='guild_pomelo',description="check pomelo status of entire guild.",extras={'global':True})
+    @app_commands.guild_only()
+    async def allpomelo(self,interaction:discord.Interaction):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+
+        user=interaction.user
+        nitro_pom=self.db.get('nitropom')['text']
+        user_pom=self.db.get('userpom')['text']
+        nitro_deadline=get_last_day_of_string_date(nitro_pom)
+        user_deadline=get_last_day_of_string_date(user_pom)
+        output=await dynamic_tag_get(self.db,"[pomeloinfo]\n[pomwave]")
+        await ctx.send(output)
+        
+        if user.discriminator=="0":
+            await ctx.send("It looks like you claimed a pomelo already, nice work!")
+            return
+        if user.created_at<=user_deadline:
+            await ctx.send("You should be able to claim a pomelo username!")
+        elif is_member_nitro(ctx.author):
+            if user.created_at<=nitro_deadline:
+                await ctx.send("I think you might be a nitro user \n You should be able to claim a pomelo username!")
+            else:
+                await ctx.send("You can not claim a pomelo username yet, even though you are nitro.")
+        else:
+            await ctx.send("I don't think you can't claim a pomelo username yet.")
+     
+
     @app_commands.command(name='username_pomelo',description="Check if you are eligable for the new discord username.",extras={'global':True})
     @app_commands.guild_only()
     async def amipomelo(self,interaction:discord.Interaction):
@@ -241,7 +270,7 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
                        "If you don't get a notification though, either **close out and restart the desktop app**, or **refresh the web browser.**\n" +\
                        "If it doesn't show up, however, please let me know via the `/nopomelo` command, because discord isn't being clear about eligability.\n"+\
                        "Nitro will only matter if you've subscribed to Nitro before March 1st."+\
-                       f"\n ***Nitro users:**{nitro_pom}\n **Normal users:**{user_pom}")
+                       f"\n **Nitro users:**{nitro_pom}\n **Normal users:**{user_pom}")
         if user.discriminator=="0":
             await ctx.send("It looks like you claimed a pomelo already, nice work!")
             return
