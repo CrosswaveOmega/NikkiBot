@@ -216,9 +216,9 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         tag = self.db.get(tagname, {})
         if tag:
-            if is_cyclic(self.db,tagname):
-                await ctx.send(f"WARNING!  Tag {tagname} is cyclic!")
-                return
+            #if is_cyclic(self.db,tagname):
+            #    await ctx.send(f"WARNING!  Tag {tagname} is cyclic!")
+            #    return
             text = tag.get('text')
             output=await dynamic_tag_get(self.db,text)
             to_send=f"Tag '{tagname}':\n {output}"
