@@ -208,10 +208,19 @@ class ServerArchiveProfile(Main_DB_Base):
         session = DatabaseSingleton.get_session()
         count = session.query(func.count(IgnoredChannel.channel_id)).filter_by(server_profile_id=self.server_id).scalar()
         return count
+
     def list_users(self):
         session = DatabaseSingleton.get_session()
         ignoredusers = session.query(IgnoredUser).filter_by(server_profile_id=self.server_id).all()
         return [user.user_id for user in ignoredusers]
+    def get_details(self):
+        scopes={
+            'ws':"Bots and Webhooks Only",
+            'user':"User Messages Only",
+            'both': "Will archive everything."
+        }
+        string=f"**Archive Scope:**{scopes.get(self.archive_scope)}\n**Active Collect:**{self.archive_dynamic}"
+        return string
     def __repr__(self):
         session = DatabaseSingleton.get_session()
         result = session.query(ServerArchiveProfile).filter_by(server_id=self.server_id).first()

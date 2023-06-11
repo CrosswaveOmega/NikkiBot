@@ -17,8 +17,8 @@ from sqlalchemy import desc, asc, and_
 
 '''
 
-This script defines Tables that are used exclusively within the context of the ServerRPArchive Cog and it's
-ArchiveSub subpackage.
+This script defines Tables that are used exclusively within the 
+context of the ServerRPArchive Cog and it's ArchiveSub subpackage.
 
 '''
 from assets import AssetLookup
@@ -346,9 +346,22 @@ class ArchivedRPMessage(ArchiveBase):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+    @staticmethod
+    def get(server_id: int,message_id:int):
+        '''get result from database.'''
+        session = DatabaseSingleton.get_session()
+        result= session.query(ArchivedRPMessage).filter(
+            (ArchivedRPMessage.server_id == server_id) &
+            ((ArchivedRPMessage.message_id == message_id))
+        ).order_by(ArchivedRPMessage.created_at).first()
+        if result:
+            if result.is_active:
+                return 2, result
+            return 1,result
+        return 0,result
 
     @staticmethod
-    def get_latest_archived_rp_message(session, server_id):
+    def get_latest_archived_rp_message(server_id):
         session:Session=DatabaseSingleton.get_session()
         query = session.query(ArchivedRPMessage).filter_by(server_id=server_id).order_by(desc(ArchivedRPMessage.created_at)).first()
         return query
@@ -493,11 +506,20 @@ def create_history_pickle_dict(message):
 
 class HistoryMakers():
     @staticmethod
-    async def get_history_message(thisMessage):
+    async def get_history_message(thisMessage,active=False):
         fsize=0
         session = DatabaseSingleton.get_session()
         hmes=create_history_pickle_dict(thisMessage)
         id=hmes['server_id']
+        if active: hmes['is_active']=True
+        filecount,fchecksize=0,0
+        for attach in thisMessage.attachments:
+            if 'image' in attach.content_type:
+                if attach.size+fchecksize<7000000:
+                    filecount+=1
+                    fchecksize+=attach.size
+        if thisMessage.content.isspace() and not filecount<=0 and not thisMessage.embeds:
+            return 'skip'
         ms=ArchivedRPMessage().add_or_update(**hmes)
         count=0
         if thisMessage.embeds:

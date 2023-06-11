@@ -22,12 +22,22 @@ from discord import Webhook
 
 
 from discord import app_commands
+from discord.app_commands import Choice
 
 
 from database import ServerArchiveProfile
-from .ArchiveSub import do_group, collect_server_history, check_channel
-from .ArchiveSub import ChannelSep, ArchivedRPMessage, MessageTemplates
-
+from .ArchiveSub import do_group, collect_server_history, check_channel, ArchiveContext
+from .ArchiveSub import ChannelSep, ArchivedRPMessage, MessageTemplates, HistoryMakers
+from collections import defaultdict
+class ToChoice(commands.Converter):
+    async def convert(self, ctx, argument):
+        if not ctx.interaction:
+            print(type(argument))
+            if type(argument)==str:
+                choice=Choice(name="fallback",value=argument)
+                return choice
+        else:
+            return argument
 
 from dateutil.relativedelta import relativedelta, MO, TU, WE, TH, FR, SA, SU
 class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
@@ -44,6 +54,8 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
         Get started by utilizing the archive_setup family of commands to configure your archive channel and add your ignore channels.
         """
+        self.guild_cache= defaultdict(int)
+        self.guild_db_cache= defaultdict(lambda: None)
 
         Guild_Task_Functions.add_task_function("COMPILE",self.gtask_compile)
 
@@ -147,6 +159,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             for user in chanment:
                 gui.gprint(user.name)
                 profile.add_user_to_list(user.id)
+        self.guild_db_cache[str(ctx.guild.id)]=profile
         self.bot.database.commit()
 
     @commands.hybrid_group(fallback="view")
@@ -186,7 +199,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
         newchan_id=chanment.id
         profile.add_or_update(guildid,history_channel_id=newchan_id)
-
+        self.guild_db_cache[str(ctx.guild.id)]=profile
         bot.database.commit()
         
         await MessageTemplates.server_archive_message(ctx,"The Server Archive Channel has been set.")
@@ -372,7 +385,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         new_channel = await guild.create_text_channel(name=channel_name, category=category, overwrites=overwrites)
 
         profile.add_or_update(guildid,history_channel_id=new_channel.id)
-
+        self.guild_db_cache[str(ctx.guild.id)]=profile
         bot.database.commit()
         
         await MessageTemplates.server_archive_message(ctx,"Created and set a new Archive channel for this server.")
@@ -415,6 +428,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await MessageTemplates.server_archive_message(ctx,"You mentioned no channels...")
             return 
         self.bot.database.commit()
+        self.guild_db_cache[str(ctx.guild.id)]=profile
         await MessageTemplates.server_archive_message(ctx,"Added channels to my ignore list.  Any messages in these channels will be ignored while archiving.")
 
         
@@ -457,11 +471,85 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 profile.remove_channel(chan.id)
         else:
             await MessageTemplates.server_archive_message(ctx,"You mentioned no channels.")
-            return 
+            return
+        self.guild_db_cache[str(ctx.guild.id)]=profile
         self.bot.database.commit()
         await MessageTemplates.server_archive_message(ctx,"Removed channels from my ignore list.  Any messages in these channels will no longer be ignored while archiving.")
     
-
+    
+    @archive_setup.command(name="set_scope", description="Configure the archive scope, the bot will archive messages only if the authors are in this scope.")
+    @app_commands.choices(
+    scope=[ # param name
+        Choice(name="Only Archive Bot Messages", value="ws"),
+        Choice(name="Only Archive User Messages", value="user"),
+        Choice(name="Archive All Messages", value="both")
+    ]
+    )
+    async def set_scope(self, ctx,scope: ToChoice):  
+        if ctx.guild:
+            scopes={
+                'ws':"Bots and Webhook Messages Only",
+                'user':"User Messages Only",
+                'both': "every message, reguardless of sender."
+            }
+            print(scope)
+            profile=ServerArchiveProfile.get_or_new( ctx.guild.id)
+            oldscope=profile.archive_scope
+            if not oldscope: oldscope='ws'
+            print(oldscope)
+            if scope not in ['ws','user','both']:
+                await ctx.send(f"The specified scope {scope} is invalid.")
+            steps=['# Warning! \n  Changing the archive scope can cause issues if you already have messages within my log!'+\
+                   "\nAre you sure about this?",
+                    f"You are?  Alright, so just to be clear, you want me \nto begin archiving**{scopes[scope]}**"+\
+                    f"instead of archiving **{scopes[oldscope]}**\nIs that correct?",
+                    f"I need one final confirmation before I change the setting.  \n You are sure you want to change the archive scope?"
+            ]
+            for r in steps:
+                confirm=ConfirmView(user=ctx.author)
+                mes=await ctx.send(r,view=confirm)
+                await confirm.wait()
+                if not confirm.value:
+                    await MessageTemplates.server_archive_message(ctx,f"Very well, scope changed aborted.", ephemeral=True)
+                confirm.clear_items()
+                await mes.edit(view=confirm)
+            
+            profile.update(archive_scope=scope)
+            self.guild_db_cache[str(ctx.guild.id)]=profile
+            await MessageTemplates.server_archive_message(ctx,f"Ok then, I've changed the archive scope.", ephemeral=True)
+        else:
+            await ctx.send("guild only.")
+    @archive_setup.command(name="set_active_collect", description="Nikki can store rp messages in her database when they are sent, use this to enable that setting.")
+    @app_commands.describe(
+            mode="True if Nikki should store RP messages in her database when recieved, False otherwise.")
+    async def set_active(self, ctx, mode:bool=False):  
+        if ctx.guild:
+            
+            profile=ServerArchiveProfile.get_or_new( ctx.guild.id)
+            oldscope=profile.archive_dynamic
+            if oldscope==mode:
+                await ctx.send("This is the same as my current setting.")
+            steps=["# Warning! \n  **Before** you use this command, please make sure you've used my `add_ignore_channels` command on all channels you don't want me reposting into my log!"\
+                   +"\n Are all channels set to ignore?"
+            ]
+            for r in steps:
+                confirm=ConfirmView(user=ctx.author)
+                mes=await ctx.send(r,view=confirm)
+                await confirm.wait()
+                if not confirm.value:
+                    await MessageTemplates.server_archive_message(ctx,f"Very well, scope changed aborted.", ephemeral=True)
+                confirm.clear_items()
+                await mes.edit(view=confirm)
+            
+            profile.update(archive_dynamic=mode)
+            self.guild_db_cache[str(ctx.guild.id)]=profile
+            if mode==True:
+                self.guild_cache[str(ctx.guild.id)]=2
+            else:
+                self.guild_cache[str(ctx.guild.id)]=1
+            await MessageTemplates.server_archive_message(ctx,f"Alright, I've changed my active gather mode.", ephemeral=True)
+        else:
+            await ctx.send("guild only.")
     
     @archive_setup.command(name="postcheck", description="Check number of stored archived messages that where posted.")
     async def postcheck(self, ctx):  
@@ -613,15 +701,77 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await edit_if_needed(iL)
             await edit_if_needed(cL)
             gui.gprint(f"New posted_url value for ChannelSep")
-            
+
+    #####################################FOR ACTIVE MODE##################################
+    def guild_check(self,guildid):
+        if self.guild_cache[str(guildid)]==0:
+            profile=ServerArchiveProfile.get(guildid)
+            if not profile: 
+                print('unset')
+                self.guild_cache[str(guildid)]=1
+                return 1
+            if profile.archive_dynamic==True:
+                print("Set")
+                self.guild_cache[str(guildid)]=2
+            else:
+                self.guild_cache[str(guildid)]=1
+        return self.guild_cache[str(guildid)]
     @commands.Cog.listener()
-    async def on_message(self,message):
+    async def on_message(self,message:discord.Message):
+        
+        if not message.guild: return
+        guildid=message.guild.id
+
+        if self.guild_check(guildid)==2:
+            profile= self.guild_db_cache[str(guildid)]
+            if not profile: 
+                profile=profile=ServerArchiveProfile.get(guildid)
+                self.guild_db_cache[str(guildid)]=profile
+            
+            actx=ArchiveContext(self.bot,profile=profile)
+            if not actx.evaluate_add(message):
+                gui.gprint("scope failure.")
+                return
+            if not actx.evaluate_channel(message):
+                gui.gprint("channel failure.")
+                return
+            gui.gprint("Message added.")
+            await HistoryMakers.get_history_message(message,active=True)
+
         pass
     @commands.Cog.listener()
     async def on_message_edit(self,message):
+        if not message.guild: return
+        guildid=message.guild.id
+
+        if self.guild_check(guildid)==2:
+            profile= self.guild_db_cache[str(guildid)]
+            if not profile: 
+                profile=profile=ServerArchiveProfile.get(guildid)
+                self.guild_db_cache[str(guildid)]=profile
+            if not profile: return
+            if profile.archive_dynamic==True:
+                m,e=ArchivedRPMessage.get(server_id=guildid,message_id=message.id)
+                if m!=0:
+                    e.update(content=message.clean_conent)
+                    self.bot.database.commit()
         pass
     @commands.Cog.listener()
     async def on_message_delete(self,message):
+        if not message.guild: return
+        guildid=message.guild.id
+        if self.guild_check(guildid)==2:
+            profile= self.guild_db_cache[str(guildid)]
+            if not profile: 
+                profile=profile=ServerArchiveProfile.get(guildid)
+                self.guild_db_cache[str(guildid)]=profile
+            if not profile: return
+            if profile.archive_dynamic==True:
+                m,entry=ArchivedRPMessage.get(server_id=guildid,message_id=message.id)
+                if m==2: #It was found, and is currently set to 'active'
+                    session=self.bot.database.get_session()
+                    session.delete(entry)
+                    session.commit()
         pass
     
     @commands.command(
@@ -793,9 +943,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         new_last_time=0
         if archive_from=="server":
            messages, totalcharlen,new_last_time=await collect_server_history(ctx,
-                                                                             update=update,
-                                                                             bot_messages_only=indexbot,
-                                                                             user_messages_only=user)
+                                                                             update=update)
         
 
         await  m.edit(content="Grouping into separators, this may take a while.")
@@ -867,11 +1015,12 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
         bot.remove_act(str(ctx.guild.id)+"arch")
         channel=ctx.channel
-        gui.gprint(channel.name, channel.id,datetime.fromtimestamp(int(new_last_time)),(datetime.fromtimestamp(int(new_last_time), tz=timezone.utc)))
-        profile.update(last_archive_time=(datetime.fromtimestamp(int(new_last_time))))
+        latest=ArchivedRPMessage.get_latest_archived_rp_message(ctx.guild.id)
+        gui.gprint(discord.utils.utcnow(),latest.created_at, profile.last_archive_time,datetime.fromtimestamp(int(new_last_time)))
+        profile.update(last_archive_time=datetime.fromtimestamp(int(new_last_time)))
         bot.database.commit()
         await MessageTemplates.server_archive_message(channel,f'Archive operation completed at <t:{int(datetime.now().timestamp())}:f>')
-        
+        self.guild_db_cache[str(guildid)]=profile
         bot.database.commit()
 
         #await m.delete()

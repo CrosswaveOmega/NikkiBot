@@ -23,7 +23,9 @@ class ConfirmView(discord.ui.View):
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         gui.gprint(str(error))
         await interaction.response.send_message(f'Oops! Something went wrong: {str(error)}.', ephemeral=True)
-
+    async def on_timeout(self) -> None:
+        self.value=False
+        self.stop()
     @discord.ui.button(label='Confirm', style=discord.ButtonStyle.green)
     async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
         '''Make sure the my_poll dictionary is filled out, and return.'''

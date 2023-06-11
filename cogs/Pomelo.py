@@ -1,6 +1,7 @@
+import asyncio
 import discord
 from discord.ext import commands, tasks
-
+import re
 
 from discord import app_commands
 import gui
@@ -8,7 +9,7 @@ from sqlitedict import SqliteDict
 
 from dateutil.relativedelta import relativedelta
 from datetime import datetime, timezone
-
+import utility
 from bot import TCBot, TCGuildTask, Guild_Task_Functions, StatusEditMessage, TC_Cog_Mixin
 def get_last_day_of_month(year, month):
     next_month = datetime(year, month, 1,tzinfo=timezone.utc) + relativedelta(months=1)
@@ -43,6 +44,74 @@ def is_member_nitro(member:discord.Member):
     gui.print(c1,c2,c3)
     return c1 or c2 or c3
 
+async def is_cyclic(dictionary, start_key):
+    visited = set()  # To keep track of visited keys
+    stack = [(start_key, dictionary[start_key])]  # Start with the initial key-value pair
+    taglist=dictionary['taglist']
+    while stack:
+        key, vt = stack.pop()
+        value=vt['text']
+        visited.add(key)
+
+        while True:
+            await asyncio.sleep(0.01)
+            if key in visited:
+                return True  # Cycle detected
+
+            # Find all instances of key in value
+            matches = re.findall(r'\[([^\[\]]+)\]', value)
+            keys_to_replace = [match for match in matches if match in taglist]
+            if not keys_to_replace:
+                break  # No more instances of key found
+
+            # Replace key with its corresponding value in value
+            value = value.replace(f"[{key}]", dictionary.get(key, {'text':''})['text'], 1)
+
+            # Check if there are any new keys introduced in the updated value
+            new_keys = [k for k in taglist if f'[{k}]' in value and k!='taglist']
+            stack.extend((k, dictionary[k]) for k in new_keys)
+    return False  # No cycle detected
+
+async def is_cyclic_mod(dictionary, start_key, value):
+    visited = set()  # To keep track of visited keys
+    stack = [(start_key, value)]  # Start with the initial key-value pair
+    taglist=dictionary['taglist']
+    while stack:
+        key, vt = stack.pop()
+        value=vt['text']
+        visited.add(key)
+
+        while True:
+            await asyncio.sleep(0.01)
+            if key in visited:
+                return True  # Cycle detected
+
+            # Check if there are any new keys introduced in the value
+            new_keys = [k for k in taglist if f'[{k}]' in value and k != 'taglist']
+            stack.extend((k, dictionary[k]) for k in new_keys)
+
+            if not new_keys:
+                break  # No more new keys found in the value
+
+    return False  # No cycle detected
+
+async def dynamic_tag_get(dictionary,text, maxsize=2000):
+    value = text
+    for deep in range(32):
+        matches = re.findall(r'\[([^\[\]]+)\]', value)
+        keys_to_replace = [match for match in matches if match in dictionary['taglist']]
+
+        if not keys_to_replace:
+            return value
+        if len(keys_to_replace)<=0:
+            return value
+        for key_to_replace in keys_to_replace:
+            new=dictionary[key_to_replace]['text']
+            if len(new)+len(value)<maxsize:
+                value = value.replace('[' + key_to_replace + ']', )
+                await asyncio.sleep(0.01)
+    return value
+
 
 
 class Pomelo(commands.Cog, TC_Cog_Mixin):
@@ -59,17 +128,22 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
     @app_commands.describe(tagname='tagname to add')
     @app_commands.describe(text='text of the tag.')
     async def create(self,interaction:discord.Interaction,tagname:str,text:str):
-
         ctx: commands.Context = await self.bot.get_context(interaction)
         taglist=self.db.setdefault('taglist',[])
         if tagname in taglist:
-            await ctx.send("Tag is already in list list.")
+            await ctx.send("Tag is already in list.")
             return
         tag={tagname:{
             'tagname':tagname,
             'user':interaction.user.id,
-            'text':text}
+            'text':text,
+            'lastupdate':discord.utils.utcnow()
             }
+            }
+        cycle_check=await is_cyclic_mod(self.db,tagname,tag[tagname])
+        if cycle_check:
+            await ctx.send("This value will cause a recursive loop!")
+            return
         self.db['taglist'].append(tagname)
         self.db.update(tag)
         self.db.commit()
@@ -100,7 +174,12 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
         
         if tag:
             if tag.get('user') == interaction.user.id:
+                cycle_check=await is_cyclic_mod(self.db,tagname,{'text':newtext})
+                if cycle_check:
+                    await ctx.send("This value will cause a recursive loop!")
+                    return
                 tag['text'] = newtext
+                tag['lastupdate']=discord.utils.utcnow()
                 self.db[tagname] = tag
                 self.db.commit()
                 await ctx.send(f"Tag '{tagname}' edited.")
@@ -110,11 +189,19 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
             await ctx.send("Tag not found.")
 
     @tags.command(name='list', description='list all tags')
-    async def list(self, interaction: discord.Interaction):
+    async def listtags(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
         taglist = self.db.get('taglist', [])
         if taglist:
             tags = '\n'.join(taglist)
+            pageme=commands.Paginator(prefix="",suffix="",max_size=2000)
+            for i in taglist:
+                pageme.add_line(i)
+            embeds=[]
+            for e,page in enumerate(pageme.pages):
+                embed=discord.Embed(title=f"Tags: {e+1}", description=page, color=discord.Color(0x00787f))
+                embeds.append(embed)
+            await utility.pages_of_embeds(ctx,embeds)
             await ctx.send(f"Tags:\n{tags}")
         else:
             await ctx.send("No tags found.")
@@ -125,8 +212,15 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         tag = self.db.get(tagname, {})
         if tag:
+            if is_cyclic(self.db,tagname):
+                await ctx.send(f"WARNING!  Tag {tagname} is cyclic!")
+                return
             text = tag.get('text')
-            await ctx.send(f"Tag '{tagname}':\n {text}")
+            output=await dynamic_tag_get(self.db,text)
+            to_send=f"Tag '{tagname}':\n {output}"
+            if len(to_send)>2000:
+                to_send=to_send[:1950]+"tag size limit."
+            await ctx.send(to_send)
         else:
             await ctx.send("Tag not found.")
 

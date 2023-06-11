@@ -215,7 +215,7 @@ class Main(commands.Cog):
         """debugging only."""
         bot=ctx.bot
         guild=ctx.guild
-        result=bot.database.get_instance().compare_db()
+        result=bot.database.database_check()
         pageme=commands.Paginator(prefix="",suffix="",max_size=4096)
         for p in result.split('\n'):pageme.add_line(p)
         embeds=[]

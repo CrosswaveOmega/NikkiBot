@@ -12,7 +12,8 @@ at any given time.
 
 This way, it can be accessed from anywhere, and not just through the Bot object.
 
-It also can add new columns to the engine if they're missing.
+It also can add new columns to the engine if they're missing,
+but that's the extent of database alterations.
 '''
 
 def generate_column_definition(column, engine):
@@ -33,7 +34,7 @@ class DatabaseSingleton:
         def __init__(self, arg, db_name='./saveData/mydatabase.db'):
 
 
-            file_handler = logging.FileHandler("./logs/sqlalchemy.log")
+            file_handler = logging.FileHandler("./logs/sqlalchemy.log", encoding='utf-8')
             # create a logger and set its level to INFO
             self.logger = logging.getLogger("sqlalchemy.engine")
             self.logger.setLevel(logging.INFO)
@@ -62,7 +63,8 @@ class DatabaseSingleton:
                 self.SessionLocal: sessionmaker = SessionLocal
                 self.session: Session = self.SessionLocal()
                 self.session.commit()
-                self.compare_db()
+                result=self.compare_db()
+                gui.gprint(result)
 
         def load_in_base(self,Base):
             print("loading in: ",Base.__name__,Base)
@@ -180,7 +182,8 @@ class DatabaseSingleton:
             session = self.__DatabaseSingleton(arg, **kwargs)
             DatabaseSingleton._instance = session
         #If it's made, do nothing.
-        
+    def database_check(self):
+        return self._instance.compare_db()
     def startup(self):
         self._instance.connect_to_engine()
 

@@ -64,6 +64,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
         mytime=(hm.created_at).replace(tzinfo=timezone.utc)
         # create string to identify category, channel, thread combo
         chanin = hm.get_chan_sep()
+        hm.is_active=False
         #f"{hm.category}-{hm.channel}-{hm.thread}"
         # calculate time elapsed since first message
         timedel = mytime - firsttime

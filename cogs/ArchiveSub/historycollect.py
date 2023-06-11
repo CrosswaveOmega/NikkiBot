@@ -8,21 +8,22 @@ import discord
 from queue import Queue
 from bot import StatusEditMessage
 import utility.formatutil as futil
+from discord import ChannelType as ct
 '''
 Collects all messages in non-blacklisted channels, and adds them to the database in batches of 10.
 
 '''
 BATCH_SIZE=10
 class ArchiveContext:
-    def __init__(self, bot, status_mess="", last_stored_time=None, update=False, bot_messages_only=False,
-                 user_messages_only=False, total_archived=0,channel_count=0, channel_spot=0, character_len=0, latest_time=None,
+    def __init__(self, bot, status_mess=None, last_stored_time=None, update=False, 
+                 profile=None, total_archived=0,channel_count=0, channel_spot=0, character_len=0, latest_time=None,
                  total_ignored=0):
         self.bot = bot
         self.status_mess = status_mess
         self.last_stored_time = last_stored_time
         self.update = update
-        self.bot_messages_only = bot_messages_only
-        self.user_messages_only = user_messages_only
+        self.profile=profile
+        self.scope=profile.archive_scope
         self.channel_count = channel_count
         self.total_archived=total_archived
         self.channel_spot = channel_spot
@@ -31,13 +32,23 @@ class ArchiveContext:
         self.total_ignored = total_ignored
     def evaluate_add(self,thisMessage):
         add_check=False
-        if self.bot_messages_only and self.user_messages_only:
-            add_check=True
-        elif self.bot_messages_only: 
+        if self.scope=='both': add_check=True
+        elif self.scope=='ws': 
             add_check= (thisMessage.author.bot) and (thisMessage.author.id != self.bot.user.id)
-        elif self.user_messages_only: 
+        elif self.scope=='user': 
             add_check= not (thisMessage.author.bot)
         return add_check
+    def evaluate_channel(self,thisMessage):
+        guild=thisMessage.channel.guild
+        chan=thisMessage.channel
+        if chan.type in [ct.public_thread,ct.private_thread,ct.news_thread]:
+             chan=chan.parent
+        gui.gprint(chan.id,self.profile.has_channel(chan.id))
+        if self.profile.has_channel(chan.id)==False \
+             and chan.permissions_for(guild.me).view_channel==True\
+             and chan.permissions_for(guild.me).read_message_history==True:
+                return True
+        return False
     def alter_latest_time(self,new):
         self.latest_time=max(new,self.latest_time)
     async def edit_mess(self,pre='',cname=""):
@@ -137,7 +148,7 @@ async def collect_server_history(ctx, **kwargs):
 
         chanlen=len(guild.text_channels)
 
-        arch_ctx=ArchiveContext(bot=bot,status_mess=statmess,last_stored_time=last_time,latest_time=new_last_time,channel_count=chanlen,**kwargs)    
+        arch_ctx=ArchiveContext(bot=bot,profile=profile,status_mess=statmess,last_stored_time=last_time,latest_time=new_last_time,channel_count=chanlen,**kwargs)    
 
         current_channel_count=0
         current_channel_every=max(chanlen//50,1)

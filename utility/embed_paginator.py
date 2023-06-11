@@ -3,7 +3,15 @@ from discord.ext import commands
 from typing import List, Tuple
 from discord import Embed
 
-#My own paginator.
+#This is a container for pages of embeds.
+
+class PageSelect(discord.ui.Select):
+    def __init__(self, option_pass):
+        options=option_pass
+        super().__init__(placeholder="Select an option",max_values=1,min_values=1,options=options)
+    async def callback(self, interaction: discord.Interaction):
+        #if self.values[0] == "Option 1":
+        await self.view.selectcall(interaction,self)
 class PageClassContainer():
     def __init__(self, display: List[Embed] = []):
         """
@@ -20,7 +28,17 @@ class PageClassContainer():
         self.maxpages = ((self.length - 1) // self.perpage) + 1
         self.custom_callbacks = {}
         self.page = (self.spot // self.perpage) + 1
-    
+    def generate_select(self):
+        selectlist=[]
+        for e,i in enumerate(self.display):
+            selectlist.append(
+                discord.SelectOption(
+                label=f"{i.title}, Page: {e}",description="Go to page {e}",value=e
+                )
+            )
+        s=PageSelect(selectlist)
+        return s
+            
     def make_embed(self) -> Embed:
         """
         Create an Embed object with the current page's content.
@@ -59,7 +77,7 @@ class PageClassContainer():
         - call: the callback function to be called
         """
         self.custom_callbacks[name] = call
-    async def mycallback(self, interaction: discord.Interaction, view: discord.ui.View, result: str) -> None:
+    async def mycallback(self, interaction: discord.Interaction, view: discord.ui.View, result: str, goto:int=0) -> None:
         """
         Callback function for the UI button interaction.
 
@@ -82,6 +100,8 @@ class PageClassContainer():
                 self.spot = 0
             elif result == "last":
                 self.spot = self.largest_spot
+            elif result == 'goto':
+                self.spot=goto % self.length
             
             emb = self.make_embed()
             await interaction.response.edit_message(embed=emb, view=view)
@@ -90,7 +110,22 @@ class Buttons(discord.ui.View):
     def __init__(self, *, timeout: int = 180, callbacker: PageClassContainer) -> None:
         super().__init__(timeout=timeout)
         self.callbacker = callbacker
+        self.pageselect=None
 
+    async def selectcall(self,interaction,select:PageSelect):
+        await self.callbacker.mycallback(interaction, self, "goto",select.values[0].value)
+    # All button
+    @discord.ui.button(emoji='🔢', label="pages", style=discord.ButtonStyle.blurple)
+    async def pagebutton_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        # Call mycallback method of the callbacker object with "exit" argument
+        newselect=await self.callbacker.generate_select()
+        if not self.pageselect:
+            self.pageselect=newselect
+            self.add_item(self.pageselect)
+        else:
+            self.remove_item(self.pageselect)
+            self.pagebutton_button=None
+        await self.callbacker.mycallback(interaction, self, "pass")
     # Exit button
     @discord.ui.button(emoji='⏹️', label="exit", style=discord.ButtonStyle.blurple)
     async def exit_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
@@ -176,5 +211,5 @@ async def pages_of_embeds(ctx: commands.Context, display: List[discord.Embed], *
     """
 
     pagecall = PageClassContainer(display)
-    message = await ctx.send(content="page", embed=pagecall.make_embed(), view=Buttons(callbacker=pagecall), **kwargs)
+    message = await ctx.send(embed=pagecall.make_embed(), view=Buttons(callbacker=pagecall), **kwargs)
     return message

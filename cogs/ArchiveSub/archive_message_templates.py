@@ -27,7 +27,10 @@ class ArchiveMessageTemplate(MessageTemplates):
         embed.add_field(name="Archive Channel",value=aid)
         embed.add_field(name="Last Archive Date",
                         value=last_date)
+
         embed.add_field(name="Result",value=description, inline=False)
+        
+        embed.add_field(name="Archive Details",value=profile.get_details(), inline=False)
 
         embed.set_thumbnail(url=guild.icon)
         embed.set_author(name="Server RP Archive System",icon_url=AssetLookup.get_asset('embed_icon'))

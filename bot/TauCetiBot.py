@@ -131,6 +131,8 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
                 for t in mytasks:
                     t.to_task(self)
             self.bot_ready=True
+            dbcheck=self.database.database_check()
+            gui.gprint(dbcheck)
             now = datetime.datetime.now()
             seconds_until_next_minute = (60 - now.second)%20
             gui.gprint('sleeping for ',seconds_until_next_minute)
@@ -169,7 +171,9 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         #SQLALCHEMY LOGGER.
         sqlalchemy_logger = logging.getLogger('sqlalchemy.engine')
         sqlalchemy_logger.setLevel(logging.INFO)
-        file_handler = logging.FileHandler("./logs/sqlalchemy.log")
+        file_handler = logging.FileHandler("./logs/sqlalchemy.log"
+            ,encoding='utf-8'
+        )
         sqlalchemy_logger.addHandler(file_handler)
         #Sqlalchemylogger.
         
@@ -231,7 +235,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
                 matching_tables_2.append((table_name,table))
 
         # gui.gprint the tables found with matching column name
-        gui.gprint(matching_tables)
+        gui.gprint(", ".join( f[0] for f in matching_tables))
         
         guilds_im_in=[]
         for guild in self.guilds:
