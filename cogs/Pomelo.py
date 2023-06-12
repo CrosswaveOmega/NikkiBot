@@ -4,11 +4,12 @@ from discord.ext import commands, tasks
 import re
 
 from discord import app_commands
-import gui
+
 from sqlitedict import SqliteDict
 
 from dateutil.relativedelta import relativedelta
 from datetime import datetime, timezone
+import gui
 import utility
 from bot import TCBot, TCGuildTask, Guild_Task_Functions, StatusEditMessage, TC_Cog_Mixin
 def get_last_day_of_month(year, month):
@@ -33,7 +34,7 @@ def is_user_nitro(user:discord.User):
         c2=user.avatar.is_animated()
     c3=user.banner != None
     gui.print(c1,c2,c3)
-    return c1 or c2 or c3
+    return c2 or c3
 
 
 def is_member_nitro(member:discord.Member):
@@ -44,60 +45,44 @@ def is_member_nitro(member:discord.Member):
     gui.print(c1,c2,c3)
     return c1 or c2 or c3
 
-async def is_cyclic(dictionary, start_key):
-    visited = set()  # To keep track of visited keys
-    stack = [(start_key, dictionary[start_key])]  # Start with the initial key-value pair
-    taglist=dictionary['taglist']
+
+def is_cyclic_i(dictionary, start_key):
+    '''Determine if the passed in key will render a recursive reference somewhere.'''
+    stack = [(start_key, set())]
+
     while stack:
-        key, vt = stack.pop()
-        value=vt['text']
+        key, visited = stack.pop()
         
-
-        while True:
-            await asyncio.sleep(0.01)
-            if key in visited:
-                return True  # Cycle detected
-
-            # Find all instances of key in value
-            matches = re.findall(r'\[([^\[\]]+)\]', value)
-            keys_to_replace = [match for match in matches if match in taglist]
-            if not keys_to_replace:
-                break  # No more instances of key found
-
-            # Replace key with its corresponding value in value
-            value = value.replace(f"[{key}]", dictionary.get(key, {'text':''})['text'], 1)
-
-            # Check if there are any new keys introduced in the updated value
-            new_keys = [k for k in taglist if f'[{k}]' in value and k!='taglist']
-            stack.extend((k, dictionary[k]) for k in new_keys)
+        if key in visited:
+            return True
+        
         visited.add(key)
-    return False  # No cycle detected
+        value = dictionary[key]['text']
+        matches = re.findall(r'\[([^\[\]]+)\]', value)
+        keys_to_check = [match for match in matches if match in dictionary['taglist']]
+        
+        for next_key in keys_to_check:
+            stack.append((next_key, visited.copy()))
 
-async def is_cyclic_mod(dictionary, start_key, value):
-    visited = set()  # To keep track of visited keys
-    stack = [(start_key, value)]  # Start with the initial key-value pair
-    taglist=dictionary['taglist']
+    return False
+
+def is_cyclic_mod(dictionary, start_key, valuestart):
+    #Check if a key should be added.
+    stack = [(start_key, set())]
+
     while stack:
-        key, vt = stack.pop()
-        value=vt['text']
-        
-
-        while True:
-            await asyncio.sleep(0.01)
-            gui.gprint(key)
-            if key in visited:
-                gui.gprint(key,visited)
-                return True  # Cycle detected
-
-            # Check if there are any new keys introduced in the value
-            new_keys = [k for k in taglist if f'[{k}]' in value and k != 'taglist']
-            stack.extend((k, dictionary[k]) for k in new_keys)
-
-            if not new_keys:
-                break  # No more new keys found in the value
+        key, visited = stack.pop()
+        if key in visited:
+            return True
         visited.add(key)
-
-    return False  # No cycle detected
+        value=''
+        if key==start_key: value=valuestart
+        else: value = dictionary[key]['text']
+        matches = re.findall(r'\[([^\[\]]+)\]', value)
+        keys_to_check = [match for match in matches if match in dictionary['taglist']or match==start_key]
+        for next_key in keys_to_check:
+            stack.append((next_key, visited.copy()))
+    return False
 
 async def dynamic_tag_get(dictionary,text, maxsize=2000):
     value = text
@@ -121,7 +106,7 @@ async def dynamic_tag_get(dictionary,text, maxsize=2000):
 
 
 
-class Pomelo(commands.Cog, TC_Cog_Mixin):
+class Pomelo(commands.Cog):
     """Pomelo!"""
     def __init__(self, bot):
         self.helptext=""
@@ -187,9 +172,12 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
         
         if tag:
             if tag.get('user') == interaction.user.id:
-                cycle_check=await is_cyclic_mod(self.db,tagname,{'text':newtext})
+                old_text=tag['text']
+                self.db[tagname]['text']=newtext
+                cycle_check=await is_cyclic_mod(self.db,tagname)
                 if cycle_check:
                     await ctx.send("This value will cause a recursive loop!")
+                    self.db[tagname]['text']=old_text
                     return
                 tag['text'] = newtext
                 tag['lastupdate']=discord.utils.utcnow()
@@ -225,9 +213,9 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         tag = self.db.get(tagname, {})
         if tag:
-            #if is_cyclic(self.db,tagname):
-            #    await ctx.send(f"WARNING!  Tag {tagname} is cyclic!")
-            #    return
+            if is_cyclic_i(self.db,tagname):
+                await ctx.send(f"WARNING!  Tag {tagname} is cyclic!")
+                return
             text = tag.get('text')
             output=await dynamic_tag_get(self.db,text)
             to_send=f"Tag '{tagname}':\n {output}"
@@ -295,7 +283,7 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
             await ctx.send("You should be able to claim a pomelo username!")
         elif is_member_nitro(ctx.author):
             if user.created_at<=nitro_deadline:
-                await ctx.send("I think you might be a nitro user \n You should be able to claim a pomelo username!")
+                await ctx.send("Despite having an account made after the nitro wave, the Nitro waves are bugged.  I don't know if you can get a Pomelo as of now.")
             else:
                 await ctx.send("You can not claim a pomelo username yet, even though you are nitro.")
         else:
@@ -341,25 +329,43 @@ class Pomelo(commands.Cog, TC_Cog_Mixin):
                 await channel.send(f"Normal user cannot get pomelo: {user.created_at}, {nitro_pom}")
                 return
             await ctx.send("It doesn't look like I was wrong though.")
-            
 
-
-     
-        
-        
-
-        
-        
-
-
-
-
-
-        
-    
-    
+    @commands.command()
+    async def tagcycletest(self,ctx):
+        '''Test the tag render.'''
+        cases = [{
+            'taglist':['A','B','C','D'],
+            'A': {'text':'[B] [C] [D]','out':False},
+            'B': {'text':'[C]','out':False},
+            'C': {'text':'[D]','out':False},
+            'D': {'text':'','out':False}
+        },
+        {
+            'taglist':['A','B','C','D','E','F','G'],
+            'A': {'text':'[B] [C] [D]','out':False},
+            'B': {'text':'[C]','out':False},
+            'C': {'text':'[D]','out':False},
+            'D': {'text':'','out':False},
+            'G': {'text':'[E]','out':True},
+            'E': {'text':'[F]','out':True},
+            'F': {'text':'[E]','out':True}
+        }]
+        for emdata,data in enumerate(cases):
+            await ctx.send(f"Pass number {emdata}")
+            assert is_cyclic_mod(data,'A',{'text':'[B]'})==False
+            assert is_cyclic_mod(data,'G',{'text':'[G]'})==True
+            for i, v in data.items():
+                if i=='taglist': continue
+                text=v['text']
+                print(i,v)
+                result=is_cyclic_i(data,i)
+                assert result==v['out']
+            await ctx.send("pass complete")
+                
+              
 
 
 
 async def setup(bot):
     await bot.add_cog(Pomelo(bot))
+
