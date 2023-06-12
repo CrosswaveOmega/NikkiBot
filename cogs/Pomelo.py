@@ -12,6 +12,31 @@ from datetime import datetime, timezone
 import gui
 import utility
 from bot import TCBot, TCGuildTask, Guild_Task_Functions, StatusEditMessage, TC_Cog_Mixin
+import numpy as np
+
+import aiohttp
+import asyncio
+import json
+from collections import Counter
+async def fetch_json(url):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            return await response.json()
+async def main():
+    url = "https://arewepomeloyet.com/api/v1/pomelos"  # Replace with the actual URL of the JSON file
+    json_data = await fetch_json(url)
+    last_pomelo=json_data['lastPomeloAt']
+    stats=json_data['stats']
+
+    return stats
+
+def get_average(json_data):
+    X = [[datetime.strptime(d['date'], "%Y-%m").timestamp()] for d in json_data]
+    y = [d['totalCount'] for d in json_data]
+    average_timestamp = np.mean([X[i][0] for i in range(len(json_data)) if y[i] > np.mean(y)])
+    return datetime.fromtimestamp(average_timestamp)
+
+
 def get_last_day_of_month(year, month):
     next_month = datetime(year, month, 1,tzinfo=timezone.utc) + relativedelta(months=1)
     last_day = next_month - relativedelta(days=1)
@@ -172,12 +197,11 @@ class Pomelo(commands.Cog):
         
         if tag:
             if tag.get('user') == interaction.user.id:
-                old_text=tag['text']
-                self.db[tagname]['text']=newtext
-                cycle_check=await is_cyclic_mod(self.db,tagname)
+
+                cycle_check=await is_cyclic_mod(self.db,tagname,newtext)
                 if cycle_check:
                     await ctx.send("This value will cause a recursive loop!")
-                    self.db[tagname]['text']=old_text
+
                     return
                 tag['text'] = newtext
                 tag['lastupdate']=discord.utils.utcnow()
@@ -267,6 +291,7 @@ class Pomelo(commands.Cog):
         user=interaction.user
         nitro_pom=self.db.get('nitropom')['text']
         user_pom=self.db.get('userpom')['text']
+        wave=self.db.get('pwave')['text']
         nitro_deadline=get_last_day_of_string_date(nitro_pom)
         user_deadline=get_last_day_of_string_date(user_pom)
         await ctx.send(f"Using my sources, I'll check if you can claim a new username, or as it's called internally, a **Pomelo username**."+\
@@ -275,7 +300,7 @@ class Pomelo(commands.Cog):
                        "If you don't get a notification though, either **close out and restart the desktop app**, or **refresh the web browser.**\n" +\
                        "If it doesn't show up, however, please let me know via the `/nopomelo` command, because discord isn't being clear about eligability.\n"+\
                        "Nitro will only matter if you've subscribed to Nitro before March 1st."+\
-                       f"\n **Nitro users:**{nitro_pom}\n **Normal users:**{user_pom}")
+                       f"\n **Wave: {wave}**\n**Nitro users:**{nitro_pom}\n **Normal users:**{user_pom}")
         if user.discriminator=="0":
             await ctx.send("It looks like you claimed a pomelo already, nice work!")
             return
