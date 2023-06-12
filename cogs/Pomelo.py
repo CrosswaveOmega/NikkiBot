@@ -292,14 +292,14 @@ class Pomelo(commands.Cog):
         nitro_pom=self.db.get('nitropom')['text']
         user_pom=self.db.get('userpom')['text']
         wave=self.db.get('pwave')['text']
+        note=self.db.get('pomeloinfo')['text']
         nitro_deadline=get_last_day_of_string_date(nitro_pom)
         user_deadline=get_last_day_of_string_date(user_pom)
         await ctx.send(f"Using my sources, I'll check if you can claim a new username, or as it's called internally, a **Pomelo username**."+\
-                       "I can't get a pomelo because I'm a bot, and bots are cool.\n"+\
                        "If your account was created after either of the dates below, you should be able to claim your username.\n"+\
                        "If you don't get a notification though, either **close out and restart the desktop app**, or **refresh the web browser.**\n" +\
-                       "If it doesn't show up, however, please let me know via the `/nopomelo` command, because discord isn't being clear about eligability.\n"+\
-                       "Nitro will only matter if you've subscribed to Nitro before March 1st."+\
+                       "If it doesn't show up, however, please let me know via the `/nopomelo` command, because discord isn't being clear about it's rollout.\n"+\
+                       f"{note}"+\
                        f"\n **Wave: {wave}**\n**Nitro users:**{nitro_pom}\n **Normal users:**{user_pom}")
         if user.discriminator=="0":
             await ctx.send("It looks like you claimed a pomelo already, nice work!")
