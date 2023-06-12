@@ -162,7 +162,7 @@ class Pomelo(commands.Cog):
             'lastupdate':discord.utils.utcnow()
             }
             }
-        cycle_check=await is_cyclic_mod(self.db,tagname,tag[tagname])
+        cycle_check= is_cyclic_mod(self.db,tagname,tag[tagname])
         if cycle_check:
             await ctx.send("This value will cause a recursive loop!")
             return
@@ -198,7 +198,7 @@ class Pomelo(commands.Cog):
         if tag:
             if tag.get('user') == interaction.user.id:
 
-                cycle_check=await is_cyclic_mod(self.db,tagname,newtext)
+                cycle_check=is_cyclic_mod(self.db,tagname,newtext)
                 if cycle_check:
                     await ctx.send("This value will cause a recursive loop!")
 
