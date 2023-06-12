@@ -162,7 +162,7 @@ class Pomelo(commands.Cog):
             'lastupdate':discord.utils.utcnow()
             }
             }
-        cycle_check= is_cyclic_mod(self.db,tagname,tag[tagname])
+        cycle_check= is_cyclic_mod(self.db,tagname,text)
         if cycle_check:
             await ctx.send("This value will cause a recursive loop!")
             return
