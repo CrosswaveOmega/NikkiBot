@@ -4,6 +4,7 @@ from discord import Embed, Color, Guild, Message
 from discord.ext import commands
 from .globalfunctions import get_server_icon_color
 from .manual_load import load_manual
+from .views import ConfirmView
 from assets import AssetLookup
 
 embedicon=None
@@ -20,6 +21,23 @@ class MessageTemplates:
         embed.set_thumbnail(url=guild.icon)
         embed.set_author(name=f"{AssetLookup.get_asset('name')}'s Server Profile",icon_url=AssetLookup.get_asset('embed_icon'))
         embed.set_footer(text=f"Server ID: {guild.id}")
+        return embed
+    @staticmethod
+    def get_tag_edit_embed(title:str, description: str, tag=None,color=0x127a09):
+        '''create a embed to display a simple overview on any server.'''
+        '''utilizes the extend_field_list'''
+        tagres=""
+        if tag!=None:
+                
+            to_send=tag['text']
+            if len(to_send)>2000:
+                to_send=to_send[:1950]+"...tag size limit."
+            tagres=f"{tag['tagname']}\n{to_send}"
+        embed=Embed(title=title, description=tagres, color=Color(color))
+        embed.add_field(name="Result",value=description,inline=False)
+        embed.set_thumbnail(url=AssetLookup.get_asset('embed_icon'))
+        embed.set_author(name=f"{AssetLookup.get_asset('name')}'s Tag systen",icon_url=AssetLookup.get_asset('embed_icon'))
+
         return embed
 
     @staticmethod
@@ -83,6 +101,33 @@ class MessageTemplates:
                 color=hex)
             embeds.append(embed)
         return embeds
+
+    @staticmethod
+    async def confirm(ctx:commands.Context, description: str, ephemeral=True, **kwargs):
+        '''
+        Send a quick yes/no message
+        '''
+        confirm=ConfirmView(user=ctx.author)
+        mes=await ctx.send(description,view=confirm)
+        await confirm.wait()
+        confirm.clear_items()
+        await mes.edit(view=confirm)
+        return confirm.value
+    @staticmethod
+    async def tag_message(ctx:commands.Context, description: str, tag:dict=None,title='Tags',ephemeral=True, **kwargs):
+        '''
+        Return a simple overview of a server & basic data provided by the cogs.
+        '''
+        print(tag)
+        embed=MessageTemplates.get_tag_edit_embed(
+            title, 
+            description,
+            tag=tag)
+        if ctx.interaction and ephemeral:
+            message:Message=await ctx.send(embed=embed, ephemeral=True,**kwargs)
+            return message
+        message:Message=await ctx.send(embed=embed, **kwargs)
+        return message
 
 
 

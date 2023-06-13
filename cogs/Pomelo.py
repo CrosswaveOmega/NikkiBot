@@ -11,30 +11,9 @@ from dateutil.relativedelta import relativedelta
 from datetime import datetime, timezone
 import gui
 import utility
+from utility import MessageTemplates
 from bot import TCBot, TCGuildTask, Guild_Task_Functions, StatusEditMessage, TC_Cog_Mixin
 import numpy as np
-
-import aiohttp
-import asyncio
-import json
-from collections import Counter
-async def fetch_json(url):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            return await response.json()
-async def main():
-    url = "https://arewepomeloyet.com/api/v1/pomelos"  # Replace with the actual URL of the JSON file
-    json_data = await fetch_json(url)
-    last_pomelo=json_data['lastPomeloAt']
-    stats=json_data['stats']
-
-    return stats
-
-def get_average(json_data):
-    X = [[datetime.strptime(d['date'], "%Y-%m").timestamp()] for d in json_data]
-    y = [d['totalCount'] for d in json_data]
-    average_timestamp = np.mean([X[i][0] for i in range(len(json_data)) if y[i] > np.mean(y)])
-    return datetime.fromtimestamp(average_timestamp)
 
 
 def get_last_day_of_month(year, month):
@@ -73,10 +52,10 @@ def is_member_nitro(member:discord.Member):
 
 def is_cyclic_i(dictionary, start_key):
     '''Determine if the passed in key will render a recursive reference somewhere.'''
-    stack = [(start_key, set())]
+    stack = [(start_key, set(), [start_key])]
 
     while stack:
-        key, visited = stack.pop()
+        key, visited, steps = stack.pop()
         
         if key in visited:
             return True
@@ -87,18 +66,20 @@ def is_cyclic_i(dictionary, start_key):
         keys_to_check = [match for match in matches if match in dictionary['taglist']]
         
         for next_key in keys_to_check:
-            stack.append((next_key, visited.copy()))
+            steps2=steps.copy()
+            steps2.append(next_key)
+            stack.append((next_key, visited.copy(),steps2))
 
     return False
 
 def is_cyclic_mod(dictionary, start_key, valuestart):
     #Check if a key should be added.
-    stack = [(start_key, set())]
+    stack = [(start_key, set(),[start_key])]
 
     while stack:
-        key, visited = stack.pop()
+        key, visited,steps = stack.pop()
         if key in visited:
-            return True
+            return True,steps
         visited.add(key)
         value=''
         if key==start_key: value=valuestart
@@ -106,8 +87,10 @@ def is_cyclic_mod(dictionary, start_key, valuestart):
         matches = re.findall(r'\[([^\[\]]+)\]', value)
         keys_to_check = [match for match in matches if match in dictionary['taglist']or match==start_key]
         for next_key in keys_to_check:
-            stack.append((next_key, visited.copy()))
-    return False
+            steps2=steps.copy()
+            steps2.append(next_key)
+            stack.append((next_key, visited.copy(),steps2))
+    return False,0
 
 async def dynamic_tag_get(dictionary,text, maxsize=2000):
     value = text
@@ -162,15 +145,27 @@ class Pomelo(commands.Cog):
             'lastupdate':discord.utils.utcnow()
             }
             }
-        cycle_check= is_cyclic_mod(self.db,tagname,text)
+        cycle_check,steps= is_cyclic_mod(self.db,tagname,text)
         if cycle_check:
-            await ctx.send("This value will cause a recursive loop!")
+            await MessageTemplates.tag_message(
+                ctx,
+                f"The text will expand infinitely at keys {str(steps)}.",
+                tag=tag[tagname],
+                title="Tag creation error.",
+                ephemeral=False
+            )
             return
         taglist.append(tagname)
         self.db.update(tag)
         self.db.update({'taglist':taglist})
         self.db.commit()
-        await ctx.send(text)
+        await MessageTemplates.tag_message(
+            ctx,
+            f"Tag {tagname} created, access it with /tags get",
+            tag=tag[tagname],
+            title="Tag created",
+            ephemeral=False
+        )
     @tags.command(name='delete', description='delete a tag')
     @app_commands.describe(tagname='tagname to delete')
     async def delete(self, interaction: discord.Interaction, tagname: str):
@@ -181,12 +176,22 @@ class Pomelo(commands.Cog):
             return
         tag = self.db.get(tagname, {})
         if tag.get('user') == interaction.user.id:
-            self.db.pop(tagname)
+            tag=self.db.pop(tagname)
             taglist.remove(tagname)
             self.db.commit()
-            await ctx.send(f"Tag '{tagname}' deleted.")
+            await MessageTemplates.tag_message(
+                ctx,
+                f"Tag {tagname} Deleted, access it with /tags get",
+                tag=tag,
+                title="Tag deleted.",
+                ephemeral=False
+            )
         else:
-            await ctx.send("You don't have permission to delete this tag.")
+            await MessageTemplates.tag_message(
+                ctx,
+                f"You don't have permission to delete this tag.",
+                title="Tag delete error."
+            )
 
     @tags.command(name='edit', description='edit a tag')
     @app_commands.describe(tagname='tagname to edit')
@@ -198,10 +203,15 @@ class Pomelo(commands.Cog):
         if tag:
             if tag.get('user') == interaction.user.id:
 
-                cycle_check=is_cyclic_mod(self.db,tagname,newtext)
+                cycle_check,steps= is_cyclic_mod(self.db,tagname,newtext)
                 if cycle_check:
-                    await ctx.send("This value will cause a recursive loop!")
-
+                    await MessageTemplates.tag_message(
+                        ctx,
+                        f"The text will expand infinitely at keys {str(steps)}.",
+                        tag=tag,
+                        title="Tag edit error.",
+                        ephemeral=False
+                    )
                     return
                 tag['text'] = newtext
                 tag['lastupdate']=discord.utils.utcnow()
@@ -209,27 +219,48 @@ class Pomelo(commands.Cog):
                 self.db.commit()
                 await ctx.send(f"Tag '{tagname}' edited.")
             else:
-                await ctx.send("You don't have permission to edit this tag.")
+                await MessageTemplates.tag_message(
+                        ctx,
+                        f"You don't have permission to edit this tag.",
+                        title="Tag edit error."
+                    )
         else:
-            await ctx.send("Tag not found.")
+            await MessageTemplates.tag_message(
+                ctx, f"Tag not found",  title="Tag edit error."
+            )
 
     @tags.command(name='list', description='list all tags')
     async def listtags(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
         taglist = self.db.get('taglist')
         if taglist:
-            tags = '\n'.join(taglist)
-            pageme=commands.Paginator(prefix="",suffix="",max_size=2000)
-            for i in taglist:
-                pageme.add_line(i)
-            embeds=[]
-            for e,page in enumerate(pageme.pages):
-                embed=discord.Embed(title=f"Tags: {e+1}", description=page, color=discord.Color(0x00787f))
-                embeds.append(embed)
-            await utility.pages_of_embeds(ctx,embeds)
+            # Loop through the dictionary and create an Embed object for each set of key-value pairs
+            embed_list,e=[],0
+            for t in taglist:
+                key, value = t,self.db.get(t)['text']
+                # Check if the Embed list is empty or if the last Embed object has 4 fields already
+                if not embed_list or len(embed_list[-1].fields) == 4:
+                    # If so, create a new Embed object
+                    embed = discord.Embed(title=f"Tags: {e+1}", color=discord.Color(0x00787f))
+                    # Add the first field to the new Embed object
+                    if len(value)>1010:
+                        value=value[:1010]
+                        value+="..."
+
+                    embed.add_field(name=key, value=value, inline=False)
+                    # Add the new Embed object to the list
+                    embed_list.append(embed)
+                    e+=1
+                else:
+                    # If not, add the current key-value pair as a new field to the last Embed object
+                    embed_list[-1].add_field(name=key, value=value, inline=False)
+
+            await utility.pages_of_embeds(ctx,embed_list)
 
         else:
-            await ctx.send("No tags found.")
+            await MessageTemplates.tag_message(
+                ctx, f"No tags found"
+            )
 
     @tags.command(name='get', description='get a tag')
     @app_commands.describe(tagname='tagname to get')
@@ -242,13 +273,36 @@ class Pomelo(commands.Cog):
                 return
             text = tag.get('text')
             output=await dynamic_tag_get(self.db,text)
-            to_send=f"Tag '{tagname}':\n {output}"
+            to_send=f"{output}"
             if len(to_send)>2000:
                 to_send=to_send[:1950]+"tag size limit."
             await ctx.send(to_send)
         else:
-            await ctx.send("Tag not found.")
+            await MessageTemplates.tag_message(
+                ctx, f"Tag not found."
+            )
 
+    @tags.command(name='getraw', description="get a tag's raw text")
+    @app_commands.describe(tagname='tagname to get')
+    async def getraw(self, interaction: discord.Interaction, tagname: str):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        tag = self.db.get(tagname, {})
+        if tag:
+            if is_cyclic_i(self.db,tagname):
+                await ctx.send(f"WARNING!  Tag {tagname} is cyclic!")
+                return
+            text = tag.get('text')
+            output=text
+            await MessageTemplates.tag_message(
+                ctx, f"Displaying raw tag text.",
+                tag=tag,
+                title='Raw Tag Text.'
+            )
+
+        else:
+            await MessageTemplates.tag_message(
+                ctx, f"Tag not found."
+            )
         
     @app_commands.command(name='guild_pomelo',description="check pomelo status of entire guild.",extras={'global':True})
     @app_commands.guild_only()

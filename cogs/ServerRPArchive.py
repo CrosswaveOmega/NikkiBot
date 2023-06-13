@@ -196,7 +196,10 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         if not passok:
             await MessageTemplates.server_archive_message(ctx,statusmessage)
             return
-
+        if profile.history_channel_id:
+            choice=await MessageTemplates.confirm(ctx,"Are you sure you want to change your archive channel?")
+            if not choice:
+                await MessageTemplates.server_archive_message(ctx,"The Server Archive Channel has been set.")
         newchan_id=chanment.id
         profile.add_or_update(guildid,history_channel_id=newchan_id)
         self.guild_db_cache[str(ctx.guild.id)]=profile
@@ -207,7 +210,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
     
     @archive_setup.command(name="enable_auto", brief="automatically archive the server every sunday at 4pm.")
     @app_commands.describe(autochannel= "a channel where the command will run.  not same thing as the archive_channel!")
-    async def task_add(self, ctx,autochannel:discord.TextChannel):
+    async def enable_auto(self, ctx,autochannel:discord.TextChannel):
         """Add an automatic task."""
         bot=ctx.bot
         guild=ctx.guild
@@ -258,7 +261,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await MessageTemplates.server_archive_message(ctx,result)
     @archive_setup.command(name="updatenextauto", brief="change the next automatic time.")
     @app_commands.describe(newtime= "Minutes from now.")
-    async def taskautochange(self, ctx,newtime:int):
+    async def updatenextauto(self, ctx,newtime:int):
         """set a new time for the next automatic task."""
         bot=ctx.bot
         guild=ctx.guild
@@ -275,7 +278,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         else:
             await MessageTemplates.server_archive_message(ctx,"I can't find the guild task.")
     @archive_setup.command(name="change_auto_interval", brief="change how often I archive the server.")
-    async def taskautorule(self, ctx):
+    async def change_auto_interval(self, ctx):
         """set a new time for the next automatic task."""
         bot=ctx.bot
         guild=ctx.guild
@@ -306,8 +309,8 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         else:
             await MessageTemplates.server_archive_message(ctx,"I can't find the guild task.")
     
-    @archive_setup.command(name="disable_auto", brief="stop automatically archiving")
-    async def task_remove(self, ctx):
+    @archive_setup.command(name="disable_auto", brief="stop automatically archiving the server")
+    async def disable_auto(self, ctx):
         """remove an automatic task."""
         bot=ctx.bot
         guild=ctx.guild
@@ -325,7 +328,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
     @archive_setup.command(name="autosetup_archive", brief="the bot will create a new archive channel.")
     @app_commands.checks.bot_has_permissions(manage_channels=True,manage_roles=True)
     @commands.bot_has_guild_permissions(manage_channels=True,manage_roles=True)
-    async def createArchiveChannel(self, ctx):  # Add ignore.
+    async def autosetup_archive(self, ctx):  # Add ignore.
         '''Want to set up a new archive channel automatically?  Use this command and a new archive channel will be created in this server with a historian role that only allows the bot user from posting inside the channel.
 
         The bot must have **Manage Channels** and **Manage Roles** to use this command.
@@ -394,7 +397,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         name="add_ignore_channels",
         brief="Add mentioned channels to this server's ignore list. Ignored channels will not be archived."
     )
-    async def addToIgnoredChannels(self, ctx):  # Add ignore.
+    async def add_ignore_channels(self, ctx):  # Add ignore.
         '''
         Add mentioned channels to this server's ignore list. Ignored channels will not be archived.
         '''
@@ -439,7 +442,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         name="remove_ignore_channels",
         brief="removes channels from this server's ignore list."
     )
-    async def removeFromIgnoredChannels(self, ctx):  
+    async def remove_ignore_channels(self, ctx):  
         '''
         Removes channels from this server's ignore list. These channels will be archived.
         '''
@@ -645,8 +648,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
     @commands.command()
     async def setlastfirsttimestamp(self, ctx, time:int):
-        """Get the last timestamp of the most recently archived message.
-        By default, it only indexes bot/webhook messages.
+        """Set the timestamp to begin archiving at.
         """
         bot = ctx.bot
         auth = ctx.message.author
@@ -678,10 +680,10 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
 
         
-    async def edit_embed_and_neighbors(self, target):
+    async def edit_embed_and_neighbors(self, target:ChannelSep):
         '''
         This code checks if the target ChannelSep object has a 
-        posted_url attribute, and then edits it's 
+        posted_url attribute, and then edits it's neighbors.
         
         '''
         async def edit_if_needed(target):
@@ -704,6 +706,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
     #####################################FOR ACTIVE MODE##################################
     def guild_check(self,guildid):
+        '''Check if a guild is in the guild cache.'''
         if self.guild_cache[str(guildid)]==0:
             profile=ServerArchiveProfile.get(guildid)
             if not profile: 
@@ -933,8 +936,8 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await MessageTemplates.server_archive_message(ctx,statusmessage)
             return
 
-
-        m=await ctx.send("Initial check OK!")
+        m2=await ctx.send("archiving...")
+        m=await ctx.channel.send("Initial check OK!")
         dynamicwait=False
         bot.add_act(str(ctx.guild.id)+"arch",'archiving server...')
         await m.edit(content="Collecting server history...")
@@ -966,8 +969,8 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             grouped.insert(0,needed)
         gui.gprint(grouped,needed)
         
-        await m.edit(content=f"Posting! This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
-        me=await ctx.channel.send(content=f"Posting! This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
+        await m.edit(content=f"It will take {seconds_to_time_string(int(remaining_time_float))} to post in the archive channel.")
+        me=await ctx.channel.send(content=f"<a:LetWalk:1118184074239021209> This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
         mt=StatusEditMessage(me,ctx)
         gui.gprint(archive_channel.name)
         length=len(grouped)
@@ -1019,6 +1022,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         gui.gprint(discord.utils.utcnow(),latest.created_at, profile.last_archive_time,datetime.fromtimestamp(int(new_last_time)))
         profile.update(last_archive_time=datetime.fromtimestamp(int(new_last_time)))
         bot.database.commit()
+        await m2.delete()
         await MessageTemplates.server_archive_message(channel,f'Archive operation completed at <t:{int(datetime.now().timestamp())}:f>')
         self.guild_db_cache[str(guildid)]=profile
         bot.database.commit()

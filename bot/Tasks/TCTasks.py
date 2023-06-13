@@ -5,10 +5,16 @@ import gui
 from dateutil.parser import parse
 from dateutil.rrule import *
 from dateutil import tz
-from queue import PriorityQueue
+
 import discord
 from dateutil.rrule import rrule,rrulestr, WEEKLY, SU
+import heapq
+from queue import PriorityQueue
 
+class AutoRebalancePriorityQueue(PriorityQueue):
+    def rebalance(self):
+        with self.mutex:
+            heapq.heapify(self.queue)
 class TCTaskRef:
     __slots__=[
         'name'
@@ -80,13 +86,18 @@ class TCTask:
 
     def get_ref(self):
         return TCTaskRef(self.name)
+
     def can_i_run(self):
         '''Check if the TCTask can be launched.'''
         if self.is_running: return False
         if datetime.now() >= self.to_run_next:
+            #time_until = self.to_run_next - datetime.now()
+            #gui.gprint(f"{self.name} not ready. Next run in {time_until}")
             # Update last_run time and run the function as a coroutine
             return True
         else:
+            #time_until = self.to_run_next - datetime.now()
+            #gui.gprint(f"{self.name} not ready. Next run in {time_until}")
             # Print the time until next run
             return False
     def get_total_seconds_until(self):
@@ -111,7 +122,17 @@ class TCTask:
         if ((next.seconds // 60) % 60)>0:mins=str(int((next.seconds // 60) % 60))+"m"
         formatted_delta = f"{days}{hours}{mins},{next.seconds%60}s"
         return f"{self.name}: {formatted_delta}\n"
-    
+    def time_left_shorter(self):
+        '''Check if the TCTask can be launched.'''
+        if self.is_running: return f"RUNNING\n"
+        next = self.to_run_next - datetime.now()
+        ctr=self.next_run()
+        days= hours=mins=""
+        if next.days>0:days=str(next.days)+"d,"
+        if (next.seconds // 3600)>0:hours=str(int(next.seconds // 3600))+"h,"
+        if ((next.seconds // 60) % 60)>0:mins=str(int((next.seconds // 60) % 60))+"m"
+        formatted_delta = f"{days}{hours}{mins},{next.seconds%60}s"
+        return f"{formatted_delta}\n"
     def assign_wrapper(self,func):
         '''create the asyncronous wrapper with the passed in func.  '''
         self.funct = func  # Add the coroutine function to the TCTask object
@@ -206,7 +227,7 @@ class TCTaskManager:
     def __init__(self):
         self.tasks: Dict[str, TCTask] ={}
         self.to_delete=[]
-        self.myqueue=PriorityQueue()
+        self.myqueue=AutoRebalancePriorityQueue()
 
     @classmethod
     def get_task(cls, name):
@@ -249,6 +270,7 @@ class TCTaskManager:
         manager = cls.get_instance()
         if name in manager.tasks:
             manager.tasks[name].to_run_next=datetime
+            manager.myqueue.rebalance()
             return True
         return False
     
@@ -266,6 +288,7 @@ class TCTaskManager:
         if name in manager.tasks:
             manager.tasks[name].time_interval=new_rrule
             manager.tasks[name].to_run_next=manager.tasks[name].next_run()
+            manager.myqueue.rebalance()
             return manager.tasks[name].to_run_next
         return False
 
@@ -389,6 +412,7 @@ class TCTaskManager:
             if task.is_running==False:  TCTaskManager.remove_task(task.name)
         manager.to_delete=[]
         while not manager.myqueue.empty():
+            gui.DataStore.set("queuenext",manager.myqueue.queue[0].get_task().time_left_shorter())
             if manager.myqueue.queue[0].get_task().can_i_run():
                 task=manager.myqueue.get().get_task()
                 asyncio.create_task(task())
@@ -401,4 +425,3 @@ class TCTaskManager:
 
         # Wait for 1 second before checking again
         await asyncio.sleep(1)
-

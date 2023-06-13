@@ -28,7 +28,7 @@ class PageClassContainer():
         self.maxpages = ((self.length - 1) // self.perpage) + 1
         self.custom_callbacks = {}
         self.page = (self.spot // self.perpage) + 1
-    def generate_select(self):
+    async def generate_select(self):
         selectlist=[]
         for e,i in enumerate(self.display):
             selectlist.append(

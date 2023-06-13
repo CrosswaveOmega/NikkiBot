@@ -69,7 +69,10 @@ class Gui:
         labels = tk.Label(framestack, text="Label s")
         labels.grid(row=1, column=0)
         self.label_dict['con'] = labels
-
+        # Use grid layout manager for labels label in framestack
+        queuenext = tk.Label(framestack, text="Firsttimevalue")
+        queuenext.grid(row=1, column=1)
+        self.label_dict['queuenext'] = queuenext
         
         labo1 = tk.Label(framestack, text="Latency")
         labo1.grid(row=4, column=0)

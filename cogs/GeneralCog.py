@@ -120,9 +120,9 @@ class General(commands.Cog, TC_Cog_Mixin):
             emojis=[]
             
             for emoji in guild.emojis:
-                emoji_format = f"`<:{emoji.name}:{emoji.id}>`"
+                emoji_format = f"<:{emoji.name}:{emoji.id}>`<:{emoji.name}:{emoji.id}>`"
                 if emoji.animated:
-                    emoji_format = f"`<a:{emoji.name}:{emoji.id}>`"
+                    emoji_format = f"<a:{emoji.name}:{emoji.id}>`<a:{emoji.name}:{emoji.id}>`"
                 emojis.append(emoji_format)
             num_emojis = len(emojis)
             emoji_strings = [

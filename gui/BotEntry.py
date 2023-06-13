@@ -19,6 +19,7 @@ class DataStore:
         default_values = {
             'latency': 0.04,
             'con': True,
+            'queuenext':"s",
             'tasknum': 0,
             'schedule': [],
             'commands': "invoked commands will go here later."
