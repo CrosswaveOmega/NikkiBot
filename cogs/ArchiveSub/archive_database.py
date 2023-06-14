@@ -57,14 +57,16 @@ class ChannelArchiveStatus(ArchiveBase):
     def get(server_id, channel_id):
         session = DatabaseSingleton.get_session()
         return session.query(ChannelArchiveStatus).filter_by(server_id=server_id, channel_id=channel_id).first()
-    async def get_first_and_last(self,channel:discord.TextChannel):
-        async for thisMessage in channel.history(oldest_first=True, limit=1):
-            print(thisMessage.created_at,thisMessage.created_at.tzinfo)
-            self.first_message_time=thisMessage.created_at
-        async for thisMessage in channel.history(oldest_first=False, limit=1):
-            print(thisMessage.created_at,thisMessage.created_at.tzinfo)
-            self.last_message_time=thisMessage.created_at
-        
+    async def get_first_and_last(self,channel:discord.TextChannel, force=False):
+        if self.first_message_time==None or force:
+            async for thisMessage in channel.history(oldest_first=True, limit=1):
+                print(thisMessage.created_at,thisMessage.created_at.tzinfo)
+                self.first_message_time=thisMessage.created_at
+        if self.last_message_time==None or force:
+            async for thisMessage in channel.history(oldest_first=False, limit=1):
+                print(thisMessage.created_at,thisMessage.created_at.tzinfo)
+                self.last_message_time=thisMessage.created_at
+            
         
     def increment(self,date):
         self.stored += 1

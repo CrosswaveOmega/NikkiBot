@@ -743,7 +743,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
         pass
     @commands.Cog.listener()
-    async def on_message_edit(self,message):
+    async def on_message_edit(self,before,message):
         if not message.guild: return
         guildid=message.guild.id
 

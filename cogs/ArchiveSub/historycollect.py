@@ -106,8 +106,10 @@ async def lazy_grab(cobj:discord.TextChannel, actx:ArchiveContext):
     
     messages=[]
     mlen=0
+    
     carch=ChannelArchiveStatus.get_by_tc(cobj)
-    async for thisMessage in cobj.history(limit=100,oldest_first=True,after=carch.latest_archive):
+    await carch.get_first_and_last(cobj)
+    async for thisMessage in cobj.history(limit=100,oldest_first=True,after=carch.last_message_time):
         #if(thisMessage.created_at<=actx.last_stored_time and actx.update): break 
         add_check=actx.evaluate_add(thisMessage)
 
