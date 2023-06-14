@@ -1,3 +1,4 @@
+from typing import Literal
 import discord
 import operator
 import io
@@ -19,7 +20,7 @@ from discord import Webhook,ui
 from discord import app_commands
 from discord.app_commands import Choice
 from pathlib import Path
-from utility import MessageTemplates, RRuleView
+from utility import MessageTemplates, RRuleView, formatutil
 from utility.embed_paginator import pages_of_embeds
 from bot import TC_Cog_Mixin, super_context_menu
 
@@ -109,28 +110,52 @@ class General(commands.Cog, TC_Cog_Mixin):
         
         emb=await MessageTemplates.server_profile_message(ctx, description=desc,ephemeral=True )
 
-    @app_commands.command(name="server_emoji_info", description="Print out all emoji embeddings for this server.")
+    @app_commands.command(name="emojis", description="Print out all emojis I have access to.")
     @app_commands.guild_only()
-    async def emojiinfo(self, interaction: discord.Interaction) -> None:
+    async def emojiinfo(self, interaction: discord.Interaction, scope:Literal['server', 'all']='all') -> None:
         """get bot info for this server"""
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild = ctx.guild
         member_count = guild.member_count
+
         if guild:
             emojis=[]
+            to_use=ctx.bot.emojis
+            if scope=='server':
+                to_use=ctx.guild.emojis
             
-            for emoji in guild.emojis:
+            for emoji in to_use:
                 emoji_format = f"<:{emoji.name}:{emoji.id}>`<:{emoji.name}:{emoji.id}>`"
                 if emoji.animated:
                     emoji_format = f"<a:{emoji.name}:{emoji.id}>`<a:{emoji.name}:{emoji.id}>`"
                 emojis.append(emoji_format)
             num_emojis = len(emojis)
             emoji_strings = [
-            ' '.join([emoji for emoji in emojis[i:i+25]])
+            ' \n'.join([emoji for emoji in emojis[i:i+25]])
             for i in range(0, num_emojis, 25)
             ]
             elist=await MessageTemplates.server_profile_embed_list(ctx,emoji_strings)
             await pages_of_embeds(ctx,elist,ephemeral=True)
+
+            
+        else:
+            await ctx.send("Guild not found.",ephemeral=True)
+    @app_commands.command(name="progress_test", description="Test out the progress bar.")
+    @app_commands.guild_only()
+    async def emojiinfo(self, interaction: discord.Interaction, total:int=10,width:int=5) -> None:
+        """get bot info for this server"""
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        guild = ctx.guild
+        member_count = guild.member_count
+
+        if guild:
+            pager=commands.Paginator(prefix="",suffix="")
+            for i in range(total+1):
+                percent=round((i/total)*100.0,2)
+                bar=formatutil.progress_bar(i,total,width=width)
+                pager.add_line(f"{percent}%:{bar}")
+            for p in pager.pages:
+                await ctx.send(p)
 
             
         else:

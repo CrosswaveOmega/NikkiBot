@@ -9,6 +9,6 @@ from .globalfunctions import(
 
 from .mytemplatemessages import MessageTemplates
 from .hash import get_hash_sets,hash_string
-from .formatutil import get_time_since_delta, permission_print, explain_rrule
+from .formatutil import get_time_since_delta, permission_print, explain_rrule, progress_bar
 from .views import ConfirmView, RRuleView
 from .manual_load import load_manual

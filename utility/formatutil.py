@@ -92,3 +92,31 @@ def explain_rrule(rrule_obj:rrule):
     sentence += f". \n It will run next on {', '.join(next_occurrences)}."
 
     return description, sentence
+
+
+bar_emoji={'1e':'<a:emptyleft:1118209186917011566>'
+,'1h':'<a:halfleft:1118209195683094639>'
+,'1f':'<a:fullleft:1118209191845318806>'
+,'e':'<a:emptymiddle:1118209505973522584>'
+,'h':'<a:halfmiddle:1118209197486645269>'
+,'f':'<a:fullmiddle:1118209193221029982>'
+,'2e':'<a:emptyright:1118209190553460866>'
+,'2h':'<a:halfright:1118209198967238716>'
+,'2f':'<a:fullright:1118209194257031230>'
+}
+
+def progress_bar(current, total, width=5):
+    if current>total:
+        current=total
+    fraction = float(current / total)
+    filled_width = int(fraction * width)
+    half_width = int(fraction * width * 2) % 2
+    empty_width = width - filled_width - half_width
+    bar = f"{'f' * filled_width}{'h' * half_width}{'e' * empty_width}"
+    if len(bar) > 1:
+        middle="".join(bar_emoji[i] for i in bar[1:-1])
+        bar = f"{bar_emoji['1'+bar[0]]}{middle}{bar_emoji['2'+bar[-1]]}"
+    else:
+        bar = f"{bar_emoji['1e']}{bar_emoji['2e']}"
+    return bar
+
