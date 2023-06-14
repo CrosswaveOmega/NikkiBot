@@ -1020,7 +1020,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         channel=ctx.channel
         latest=ArchivedRPMessage.get_latest_archived_rp_message(ctx.guild.id)
         gui.gprint(discord.utils.utcnow(),latest.created_at, profile.last_archive_time,datetime.fromtimestamp(int(new_last_time)))
-        profile.update(last_archive_time=datetime.fromtimestamp(int(new_last_time)))
+        profile.update(last_archive_time=latest.created_at)
         bot.database.commit()
         await m2.delete()
         await MessageTemplates.server_archive_message(channel,f'Archive operation completed at <t:{int(datetime.now().timestamp())}:f>')

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 A set of functions to format text.
 '''
 def get_time_since_delta(delta: timedelta) -> str:
-    now = datetime.utcnow()
+    now = datetime.now()
     timestamp = int((now + delta).timestamp())
     return f"<t:{timestamp}:R>"
 

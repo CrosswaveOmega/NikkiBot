@@ -11,7 +11,7 @@ from assets import *
 import gui
 
 from discord.ext import commands
-from database import DatabaseSingleton
+from database import DatabaseSingleton, AwareDateTime
 from queue import Queue
 
 Guild_Sync_Base = declarative_base(name="Guild AppCommand Cache Sync")
@@ -102,12 +102,12 @@ class AppGuildTreeSync(Guild_Sync_Base):
     __tablename__ = 'apptree_guild_sync'
     server_id = Column(Integer, primary_key=True, nullable=False, unique=True)
     lastsyncdata = Column(Text, nullable=True)
-    lastsyncdate = Column(DateTime, default=datetime.datetime.utcnow())
+    lastsyncdate = Column(AwareDateTime, default=datetime.datetime.now())
 
     def __init__(self, server_id: int, command_tree: dict=None):
         self.server_id = server_id
         self.lastsyncdata = json.dumps(command_tree,default=str)
-        self.lastsyncdate=datetime.datetime.utcnow()
+        self.lastsyncdate=datetime.datetime.now()
 
     @classmethod
     def get(cls, server_id):
@@ -137,7 +137,7 @@ class AppGuildTreeSync(Guild_Sync_Base):
         """
         session:Session = DatabaseSingleton.get_session()
         self.lastsyncdata = json.dumps(command_tree, default=str)
-        self.lastsyncdate=datetime.datetime.utcnow()
+        self.lastsyncdate=datetime.datetime.now()
         session.commit()
 
     def compare_with_command_tree(self, command_tree: dict) -> Tuple[bool,str,str]:

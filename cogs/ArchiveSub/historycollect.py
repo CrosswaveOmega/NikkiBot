@@ -62,10 +62,20 @@ async def iter_hist_messages(cobj:discord.TextChannel, actx:ArchiveContext):
     messages=[]
     mlen=0
     carch=ChannelArchiveStatus.get_by_tc(cobj)
+    await carch.get_first_and_last(cobj)
     timev=actx.last_stored_time
-    if carch.latest_archive==None:timev=None
-    async for thisMessage in cobj.history(after=timev):
-        if(thisMessage.created_at<=actx.last_stored_time and actx.update): break 
+    if carch.first_message_time!=None:
+        
+        #print(carch.first_message_time.replace(tzinfo=timezone.utc))
+        #print(carch.first_message_time,carch.first_message_time.tzinfo,actx.last_stored_time,actx.last_stored_time.tzinfo)
+        
+        if carch.first_message_time>actx.last_stored_time:
+            timev=carch.first_message_time
+    else:
+        timev=None
+    #if carch.latest_archive==None:timev=None
+    async for thisMessage in cobj.history(after=timev, oldest_first=True):
+        #if(thisMessage.created_at<=actx.last_stored_time and actx.update): break 
         add_check=actx.evaluate_add(thisMessage)
 
         if add_check:

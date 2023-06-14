@@ -9,6 +9,30 @@ import datetime
 '''This defines a few universal tables.'''
 '''As well as a function for the singleton to collect the base it's defined within.'''
 
+from sqlalchemy import types
+
+
+class AwareDateTime(types.TypeDecorator):
+    impl = types.DateTime
+    cache_ok=True
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            #print("ADD",value)
+            # Convert the datetime to UTC if it's aware
+            if value.utcoffset() is not None:
+                value = value.astimezone(datetime.timezone.utc)
+        #print("result",value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            #print("add",value)
+            # Convert the datetime to local timezone if it's naive
+            if value.utcoffset() is None:
+                value = value.replace(tzinfo=datetime.timezone.utc).astimezone()
+        #print("result",value)
+        return value
+
 
 Main_DB_Base = declarative_base(name="Main DB Base")
 class ServerData(Main_DB_Base):
@@ -21,7 +45,7 @@ class ServerData(Main_DB_Base):
     __tablename__ = "ServerData"
     server_id=Column(Integer, primary_key=True, nullable=False, unique=True)
 
-    last_use=Column(DateTime)
+    last_use=Column(AwareDateTime)
     '''the last time a guild used any command.'''
 
     #my_channel=Column(Integer, nullable=True)
@@ -84,7 +108,7 @@ class ServerArchiveProfile(Main_DB_Base):
 
     server_id = Column(Integer, primary_key=True, nullable=False, unique=True)
     servername = Column(Text)
-    last_archive_time = Column(DateTime)
+    last_archive_time = Column(AwareDateTime)
     history_channel_id = Column(Integer)
     last_group_num= Column(Integer, default=0)
     status = Column(Text)

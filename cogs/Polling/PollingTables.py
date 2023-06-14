@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship, joinedload
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 import discord
-from database import DatabaseSingleton
+from database import DatabaseSingleton, AwareDateTime
 
 
 PollingBase = declarative_base(name="Polling System Base")
@@ -20,8 +20,8 @@ class PollTable(PollingBase):
     choice_c = Column(String, nullable=True)
     choice_d = Column(String, nullable=True)
     choice_e = Column(String, nullable=True)
-    start_date = Column(DateTime, default=datetime.now())
-    end_date = Column(DateTime, nullable=True)
+    start_date = Column(AwareDateTime, default=datetime.now())
+    end_date = Column(AwareDateTime, nullable=True)
     active= Column(Boolean, default=True)
     result_a = Column(Integer, default=0)
     result_b = Column(Integer, default=0)
@@ -280,7 +280,7 @@ class PollChannelSubscribe(PollingBase):
     __tablename__ = 'poll_channel_sub'
     channel_id = Column(Integer, nullable=False)
     server_id = Column(Integer, primary_key=True)
-    latest_datetime = Column(DateTime, default=datetime.fromtimestamp(5092))
+    latest_datetime = Column(AwareDateTime, default=datetime.fromtimestamp(5092))
     polls_retrieved= Column(Integer, default=0)
 
     @staticmethod

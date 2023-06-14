@@ -9,7 +9,7 @@ from sqlalchemy import LargeBinary, ForeignKey,PrimaryKeyConstraint, insert, dis
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import aliased
-from database import DatabaseSingleton, add_or_update_all
+from database import DatabaseSingleton, AwareDateTime,add_or_update_all
 from sqlalchemy import select,event, exc
 
 from sqlalchemy.ext.declarative import declarative_base
@@ -32,7 +32,9 @@ class ChannelArchiveStatus(ArchiveBase):
     thread_parent_id=Column(Integer,nullable=True)
     stored=Column(Integer,default=0)
     active_count=Column(Integer,default=0)
-    latest_archive=Column(DateTime)
+    first_message_time=Column(AwareDateTime(timezone=True),nullable=True)
+    last_message_time=Column(AwareDateTime(timezone=True),nullable=True)
+    latest_archive_time=Column(AwareDateTime(timezone=True),nullable=True)
     @staticmethod
     def get_by_tc(channel):
         server_id=channel.guild.id
@@ -55,14 +57,26 @@ class ChannelArchiveStatus(ArchiveBase):
     def get(server_id, channel_id):
         session = DatabaseSingleton.get_session()
         return session.query(ChannelArchiveStatus).filter_by(server_id=server_id, channel_id=channel_id).first()
-
+    async def get_first_and_last(self,channel:discord.TextChannel):
+        async for thisMessage in channel.history(oldest_first=True, limit=1):
+            print(thisMessage.created_at,thisMessage.created_at.tzinfo)
+            self.first_message_time=thisMessage.created_at
+        async for thisMessage in channel.history(oldest_first=False, limit=1):
+            print(thisMessage.created_at,thisMessage.created_at.tzinfo)
+            self.last_message_time=thisMessage.created_at
+        
+        
     def increment(self,date):
         self.stored += 1
-        self.latest_archive = date
+        print(self.last_message_time.tzinfo,date.tzinfo)
+        if self.last_message_time<=date:
+            self.last_message_time=date
+        
+        self.latest_archive_time = date
     def mod_active(self,incr):
         self.active_count+=incr
     def __str__(self):
-        return f"{self.stored},{self.latest_archive_date}"
+        return f"{self.stored},{self.first_message_time},{self.latest_archive_time},{self.last_message_time}"
 
     def update_latest_date(self, date):
         session = DatabaseSingleton.get_session()
@@ -81,7 +95,7 @@ class ChannelSep(ArchiveBase):
     all_ok=Column(Boolean, default=False)
     neighbor_count=Column(Integer, default=0)
 
-    created_at = Column(DateTime)
+    created_at = Column(AwareDateTime)
     posted_url = Column(String, nullable=True, default=None)
 
     __table_args__ = (
@@ -258,7 +272,7 @@ class ChannelSep(ArchiveBase):
         else:
             cembed.add_field(name="Channel", value=self.channel, inline=True)
         cembed.timestamp= self.created_at
-        utcdate=self.created_at.replace(tzinfo=timezone.utc);
+        utcdate=self.created_at.astimezone(timezone.utc);
         cembed.set_footer(text=utcdate.strftime("%m-%d-%Y, %I:%M %p"))
         charlist=self.get_authors()
         lastm="██████"
@@ -291,7 +305,7 @@ class ArchivedRPMessage(ArchiveBase):
     message_id = Column(Integer, primary_key=True)
     author = Column(String);    avatar = Column(String)
     content = Column(String)
-    created_at = Column(DateTime)
+    created_at = Column(AwareDateTime)
     channel = Column(String);    
     category = Column(String);    
     thread = Column(String, nullable=True)

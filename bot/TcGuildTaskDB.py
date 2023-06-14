@@ -11,7 +11,7 @@ import asyncio
 import discord
 from dateutil.rrule import rrule,rrulestr, WEEKLY, SU
 Guild_Task_Base = declarative_base(name="Guild Scheduled Task Base")
-from database import DatabaseSingleton
+from database import DatabaseSingleton, AwareDateTime
 from .Tasks.TCTasks import TCTask, TCTaskManager
 
 class Guild_Task_Functions:
