@@ -146,7 +146,7 @@ class Pomelo(commands.Cog):
         self.userdb.update(tag)
         self.userdb.commit()
         try:
-            await interaction.user.send("I'll notify you once your pomelo wave hits!")
+            await interaction.user.send(f" Alright {interaction.user.name}, I'll notify you once your pomelo wave hits!")
             await ctx.send("Dismiss me",ephemeral=True)
         except Exception as e:
             await ctx.send("I appreciate the enthusiasm, but I need permission to DM you.")
@@ -232,12 +232,13 @@ class Pomelo(commands.Cog):
         nitro_deadline=get_last_day_of_string_date(nitro_pom)
         user_deadline=get_last_day_of_string_date(user_pom)
         havepom=upom=nipom=nopom=0
-        output=f"It looks like you made your account before{user_pom}"
+        
 
         for i, v in self.userdb.items():
             if v['account_creation']<=user_deadline:
                 user=self.bot.get_user(v['user'])
                 try:
+                    output=f"{user.name}, you made your account before {user_pom}"
                     await user.send(f"{output}, you can claim a pomelo username now!")
                     self.userdb.pop(i)
                 except Exception as e:
