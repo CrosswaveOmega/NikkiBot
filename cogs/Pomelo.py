@@ -120,14 +120,47 @@ class Pomelo(commands.Cog):
         self.helptext=""
         self.bot=bot
         self.db = SqliteDict("./saveData/tags.sqlite")
+        
+        self.userdb = SqliteDict("./saveData/users.sqlite")
         taglist=[]
         for i, v in self.db.items():
             if i!='taglist':
                 taglist.append(i)
         self.db.update({'taglist':taglist})
 
+
     def cog_unload(self):
         self.db.close()
+        self.userdb.close()
+    usernames = app_commands.Group(name="username_notify", description="Nikki will alert you when you can get a pomelo username.")
+    @usernames.command(name='subscribe', description='Nikki will alert you when you can get a pomelo username.')
+    async def usersub(self,interaction:discord.Interaction):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        userid=str(interaction.user.id)
+
+        tag={userid:{
+            'user':interaction.user.id,
+            'account_creation':interaction.user.created_at
+            }
+        }
+        self.userdb.update(tag)
+        self.userdb.commit()
+        try:
+            await interaction.user.send("I'll notify you once your pomelo wave hits!")
+        except Exception as e:
+            await ctx.send("I appreciate the enthusiasm, but I need permission to DM you.")
+    @usernames.command(name='unsubscribe', description='remove yourself')
+    async def userunsub(self, interaction: discord.Interaction):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        userid=interaction.user.id
+        tag = self.db.get(str(userid), False)
+        if tag:
+            tag=self.db.pop(str(userid))
+
+            self.db.commit()
+            await ctx.send("Ok, you're unsubscribed.")
+        else:
+            await ctx.send("You never used subscribe, though?")
     tags = app_commands.Group(name="tags", description="Tag commands")
     @tags.command(name='create', description='create a tag')
     @app_commands.describe(tagname='tagname to add')
@@ -192,6 +225,23 @@ class Pomelo(commands.Cog):
                 f"You don't have permission to delete this tag.",
                 title="Tag delete error."
             )
+    async def userpass(self):
+        nitro_pom=self.db.get('nitropom')['text']
+        user_pom=self.db.get('userpom')['text']
+        nitro_deadline=get_last_day_of_string_date(nitro_pom)
+        user_deadline=get_last_day_of_string_date(user_pom)
+        havepom=upom=nipom=nopom=0
+        output=f"It looks like you made your account before{user_pom}"
+
+        for i, v in self.userdb.items():
+            if v['account_creation']<=user_deadline:
+                user=self.bot.get_user(v['user'])
+                try:
+                    await user.send(f"{output}, you can claim a pomelo username now!")
+                    self.userdb.pop(i)
+                except Exception as e:
+                    gui.gprint(e)
+
 
     @tags.command(name='edit', description='edit a tag')
     @app_commands.describe(tagname='tagname to edit')
@@ -218,6 +268,9 @@ class Pomelo(commands.Cog):
                 self.db[tagname] = tag
                 self.db.commit()
                 await ctx.send(f"Tag '{tagname}' edited.")
+                if tagname=='userpom':
+                    await self.userpass()
+
             else:
                 await MessageTemplates.tag_message(
                         ctx,
