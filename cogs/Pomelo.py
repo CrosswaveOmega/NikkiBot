@@ -239,7 +239,7 @@ class Pomelo(commands.Cog):
                 user=self.bot.get_user(v['user'])
                 try:
                     output=f"{user.name}, you made your account before {user_pom}"
-                    await user.send(f"{output}, you can claim a pomelo username now!")
+                    await user.send(f"{output}, you can claim a pomelo username now!\n  You might need to restart the Desktop app though.")
                     self.userdb.pop(i)
                 except Exception as e:
                     gui.gprint(e)
