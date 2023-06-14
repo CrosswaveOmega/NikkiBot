@@ -147,6 +147,7 @@ class Pomelo(commands.Cog):
         self.userdb.commit()
         try:
             await interaction.user.send("I'll notify you once your pomelo wave hits!")
+            await ctx.send("Dismiss me",ephemeral=True)
         except Exception as e:
             await ctx.send("I appreciate the enthusiasm, but I need permission to DM you.")
     @usernames.command(name='unsubscribe', description='remove yourself')
