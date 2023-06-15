@@ -16,7 +16,7 @@ from utility import WebhookMessageWrapper as web, urltomessage, ConfirmView, RRu
 from bot import TCBot, TCGuildTask, Guild_Task_Functions, StatusEditMessage, TC_Cog_Mixin
 from random import randint
 from discord.ext import commands, tasks
-from dateutil.rrule import rrule,rrulestr, WEEKLY, SU
+from dateutil.rrule import rrule,rrulestr, WEEKLY, SU, MINUTELY
 from discord import Webhook
 
 
@@ -26,8 +26,18 @@ from discord.app_commands import Choice
 
 
 from database import ServerArchiveProfile
-from .ArchiveSub import do_group, collect_server_history, check_channel, ArchiveContext
-from .ArchiveSub import ChannelSep, ArchivedRPMessage, MessageTemplates, HistoryMakers
+from .ArchiveSub import do_group
+from .ArchiveSub import (
+  collect_server_history,
+  check_channel,
+  ArchiveContext,
+  collect_server_history_lazy,
+  setup_lazy_grab,
+  lazy_archive,
+  LazyContext
+
+) 
+from .ArchiveSub import ChannelSep, ArchivedRPMessage, MessageTemplates, HistoryMakers, ChannelArchiveStatus
 from collections import defaultdict
 class ToChoice(commands.Converter):
     async def convert(self, ctx, argument):
@@ -58,6 +68,8 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         self.guild_db_cache= defaultdict(lambda: None)
 
         Guild_Task_Functions.add_task_function("COMPILE",self.gtask_compile)
+        
+        Guild_Task_Functions.add_task_function("LAZYARCHIVE",self.gtask_lazy)
 
     def cog_unload(self):
         #Remove the task function.
@@ -89,6 +101,23 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         return None
 
 
+
+
+    async def gtask_lazy(self, source_message=None):
+        if not source_message: return None
+        context=await self.bot.get_context(source_message)
+        #await context.channel.send("Greetings from GTASK.")
+        try:
+            result=await lazy_archive(self,context)
+            if result==False:
+                TCGuildTask.get(context.guild.id, "LAZYARCHIVE").remove_after=True
+            await source_message.delete()
+        except Exception as e:
+            er=MessageTemplates.get_error_embed(title=f"Error with AUTO",description=f"{str(e)}")
+            await source_message.channel.send(embed=er)
+            TCGuildTask.get(context.guild.id, "LAZYARCHIVE").remove_after=True
+            raise e
+        
 
     async def gtask_compile(self, source_message=None):
         if not source_message: return None
@@ -493,7 +522,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             scopes={
                 'ws':"Bots and Webhook Messages Only",
                 'user':"User Messages Only",
-                'both': "every message, reguardless of sender."
+                'both': "Every message, reguardless of sender"
             }
             print(scope)
             profile=ServerArchiveProfile.get_or_new( ctx.guild.id)
@@ -504,8 +533,8 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 await ctx.send(f"The specified scope {scope} is invalid.")
             steps=['# Warning! \n  Changing the archive scope can cause issues if you already have messages within my log!'+\
                    "\nAre you sure about this?",
-                    f"You are?  Alright, so just to be clear, you want me \nto begin archiving**{scopes[scope]}**"+\
-                    f"instead of archiving **{scopes[oldscope]}**\nIs that correct?",
+                    f"You are?  Alright, so just to be clear, you want me \nto begin archiving **{scopes[scope]}**"+\
+                    f"instead of archiving **{scopes[oldscope]}.**\nIs that correct?",
                     f"I need one final confirmation before I change the setting.  \n You are sure you want to change the archive scope?"
             ]
             for r in steps:
@@ -561,6 +590,61 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             mess2=ArchivedRPMessage.get_archived_rp_messages_with_null_posted_url(ctx.guild.id)
             mess=ArchivedRPMessage.get_archived_rp_messages_without_null_posted_url(ctx.guild.id)
             await MessageTemplates.server_archive_message(ctx,f"About {len(mess)} messages are posted, and {len(mess2)} messages are not posted.", ephemeral=True)
+        else:
+            await ctx.send("guild only.")
+    @commands.guild_only()
+    @commands.has_guild_permissions(administrator=True)
+    @commands.command(name="lazymode", description="supposed to be for bigger tasks.",enabled=False,hidden=True)
+    async def setup_lazy_archive(self, ctx,autochannel:discord.TextChannel):  
+        if ctx.guild:
+
+            bot=ctx.bot
+            guild=ctx.guild
+            profile=ServerArchiveProfile.get_or_new(guild.id)
+            if profile.history_channel_id == 0:
+                await MessageTemplates.get_server_archive_embed(ctx,"Set a history channel first.")
+                return False
+            archive_channel=guild.get_channel(profile.history_channel_id)
+            if archive_channel==None:
+                await ctx.send("I can't seem to access the history channel, it's gone!")
+                return False
+            passok, statusmessage = check_channel(archive_channel)
+
+            if not passok:
+                await MessageTemplates.server_archive_message(ctx,statusmessage)
+                return  
+            if not(serverOwner(ctx) or serverAdmin(ctx)):
+                await MessageTemplates.server_archive_message(ctx,"You do not have permission to use this command.")
+                return False
+            if LazyContext.get(guild.id)!=None:
+                LazyContext.remove(guild.id)
+                #await MessageTemplates.server_archive_message(ctx,"There already is a running lazy archive.")
+                #return False
+            confirm=ConfirmView(user=ctx.author)
+            mes=await ctx.send("Lazy archive mode WILL take a long time to finish, please make sure you set all your parameters.",view=confirm)
+            await confirm.wait()
+            if confirm.value:
+                await mes.delete()
+                task_name="LAZYARCHIVE"
+                message=await autochannel.send(f"**ATTEMPTING SET UP OF AUTO COMMAND {task_name}**")
+                myurl=message.jump_url
+                start_date = datetime(2023, 1, 1, 15, 0)
+                robj= rrule(
+                    freq=MINUTELY,
+                    interval=1,
+                    dtstart=start_date
+                )
+
+
+                await setup_lazy_grab(ctx)
+                totaltime=ChannelArchiveStatus.get_total_unarchived_time(guild.id)
+                result=f"I've set up the lazy archive system for <#{autochannel.id}>!  You've got a combined {totaltime}(this is not how long this will take.) worth of messages to be compiled."
+                new=TCGuildTask.add_guild_task(guild.id, task_name, message, robj)
+                new.to_task(bot)
+                LazyContext.create(guild.id)
+                await MessageTemplates.server_archive_message(ctx,result)
+            else:
+                await mes.delete()
         else:
             await ctx.send("guild only.")
 
@@ -778,10 +862,10 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         pass
     
     @commands.command(
-        name="archive_compile_debug",
-        brief="start archiving the server.  Will only archive messages sent by bots.",
+        name="archive_compile_lazy",
+        brief="start archiving the server.  ",
         extras={"guildtask":['rp_history']})
-    async def compileArchiveChannelDebug(self, ctx):
+    async def compileArchiveChannelLazy(self, ctx):
         bot = ctx.bot
         auth = ctx.message.author
         channel = ctx.message.channel
@@ -880,7 +964,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
     @commands.hybrid_command(
         name="compile_archive",
-        brief="start archiving the server.  Will only archive messages sent by bots.",
+        brief="start archiving the server.  Will only archive messages based on defined archive scope.",
         extras={"guildtask":['rp_history']})
     async def compileArchiveChannel(self, ctx):
         """Compile all messages into archive channel.  This can be invoked with options.
@@ -914,12 +998,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
         profile=ServerArchiveProfile.get_or_new(guildid)
         
-        #for arg in args:
-            #if arg == 'full':   update=False
-            #if arg == 'update': update=True
-        if scope == 'ws':      indexbot,user=True,False
-        if scope == 'user':   indexbot,user=False, True
-        if scope == 'both':   indexbot,user=True,True
+
         #await channel.send(profile.history_channel_id)
         if profile.history_channel_id == 0:
             await MessageTemplates.get_server_archive_embed(ctx,"Set a history channel first.")
@@ -945,8 +1024,10 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         totalcharlen=0
         new_last_time=0
         if archive_from=="server":
-           messages, totalcharlen,new_last_time=await collect_server_history(ctx,
-                                                                             update=update)
+           messages, totalcharlen,new_last_time=await collect_server_history(
+               ctx,
+               update=update
+               )
         
 
         await  m.edit(content="Grouping into separators, this may take a while.")
@@ -1003,11 +1084,11 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 else:
                     await asyncio.sleep(timebetweenmess)
                     remaining_time_float=remaining_time_float-(timebetweenmess)
-                    await mt.editw(min_seconds=45,content=f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
+                    await mt.editw(min_seconds=45,content=f"<a:LetWalk:1118184074239021209> Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
             sep.update(all_ok=True)
             self.bot.database.commit()
             await asyncio.sleep(2)
-            await mt.editw(min_seconds=30,content=f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
+            await mt.editw(min_seconds=30,content=f"<a:LetWalk:1118184074239021209> Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
             #await edittime.invoke_if_time(content=f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
             bot.add_act(str(ctx.guild.id)+"arch",f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
 

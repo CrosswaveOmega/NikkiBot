@@ -173,7 +173,8 @@ class TCTask:
                 if remove_check:
                     TCTaskManager.add_tombstone(self.name)
                 self.is_running=False
-                TCTaskManager.set_standby(self.name)
+                if not remove_check:
+                    TCTaskManager.set_standby(self.name)
             else:
                 pass
                 # Print the time until next run

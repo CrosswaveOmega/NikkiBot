@@ -14,6 +14,7 @@ Collects all messages in non-blacklisted channels, and adds them to the database
 
 '''
 BATCH_SIZE=10
+LAZYGRAB_LIMIT=1000
 class ArchiveContext:
     def __init__(self, bot, status_mess=None, last_stored_time=None, update=False, 
                  profile=None, total_archived=0,channel_count=0, channel_spot=0, character_len=0, latest_time=None,
@@ -108,8 +109,7 @@ async def lazy_grab(cobj:discord.TextChannel, actx:ArchiveContext):
     mlen=0
     
     carch=ChannelArchiveStatus.get_by_tc(cobj)
-    await carch.get_first_and_last(cobj)
-    async for thisMessage in cobj.history(limit=100,oldest_first=True,after=carch.last_message_time):
+    async for thisMessage in cobj.history(limit=LAZYGRAB_LIMIT,oldest_first=True,after=carch.latest_archive_time):
         #if(thisMessage.created_at<=actx.last_stored_time and actx.update): break 
         add_check=actx.evaluate_add(thisMessage)
 
@@ -118,6 +118,8 @@ async def lazy_grab(cobj:discord.TextChannel, actx:ArchiveContext):
             actx.alter_latest_time(thisMessage.created_at.timestamp())
             actx.character_len+=len(thisMessage.content)
             messages.append(thisMessage)
+            
+            gui.gprint('now:',actx.total_archived)
             carch.increment(thisMessage.created_at)
             actx.total_archived+=1
             mlen+=1
@@ -135,6 +137,107 @@ async def lazy_grab(cobj:discord.TextChannel, actx:ArchiveContext):
         hmes=await HistoryMakers.get_history_message_list(messages)
         messages=[]
     return messages
+async def collect_server_history_lazy(ctx, **kwargs):
+        #Collect from desired channels to a point.
+        bot=ctx.bot
+        channel = ctx.message.channel
+        guild=channel.guild
+        guildid=guild.id
+        profile=ServerArchiveProfile.get_or_new(guildid)
+
+        messages=[]
+        statusMessToEdit=await channel.send("I'm getting everything in the given RP channels, this may take a moment!")
+
+        statmess=StatusEditMessage(statusMessToEdit,ctx)
+        time=profile.last_archive_time
+        print(time)
+        #await channel.send("Starting at time:{}".format(time.strftime("%B %d, %Y %I:%M:%S %p")))
+
+        if time: time=time.timestamp()
+        if time==None: time=1431518400
+        last_time=datetime.fromtimestamp(time,timezone.utc)
+        new_last_time=last_time.timestamp()
+        
+        #await channel.send("Starting at time:{}".format(last_time.strftime("%B %d, %Y %I:%M:%S %p")))
+
+        chanlen=len(guild.text_channels)
+
+        arch_ctx=ArchiveContext(
+            bot=bot,profile=profile,
+            status_mess=statmess,
+            last_stored_time=last_time,latest_time=new_last_time,
+            channel_count=chanlen,**kwargs)
+        channels=ChannelArchiveStatus.get_all(guildid,outdated=True)
+        grabstat=False
+        for c in channels:
+            channel=guild.get_channel_or_thread(c.channel_id)
+            if channel:
+                gui.gprint("Channel",channel)
+                await lazy_grab(channel,arch_ctx)
+                await statmess.editw(min_seconds=10,content=f"{ChannelArchiveStatus.get_total_unarchived_time(guildid)}")
+                grabstat=True
+        await statmess.editw(min_seconds=0,content=f"{ChannelArchiveStatus.get_total_unarchived_time(guildid)}")
+        #await statmess.delete()
+        return grabstat
+            
+
+async def setup_lazy_grab(ctx, **kwargs):
+        #Collect from desired channels to a point.
+        bot=ctx.bot
+        channel = ctx.message.channel
+        guild=channel.guild
+        guildid=guild.id
+        profile=ServerArchiveProfile.get_or_new(guildid)
+        statusMessToEdit=await channel.send("Counting up channels.")
+        statmess=StatusEditMessage(statusMessToEdit,ctx)
+        chanlen=len(guild.text_channels)
+        
+        arch_ctx=ArchiveContext(
+            bot=bot,profile=profile,
+            status_mess=statmess,
+            last_stored_time=None,latest_time=None,
+            channel_count=chanlen,**kwargs)    
+
+
+
+        current_channel_count,total_channels=0,0
+        current_channel_every=max(chanlen//50,1)
+
+        
+        for chan in guild.text_channels:
+            total_channels+=1
+            if profile.has_channel(chan.id)==False and chan.permissions_for(guild.me).view_channel==True and chan.permissions_for(guild.me).read_message_history==True:
+                threads=chan.threads
+                archived=[]
+                async for thread in chan.archived_threads():
+                    archived.append(thread)
+                threads=threads+archived
+                for thread in threads:
+                    tarch=ChannelArchiveStatus.get_by_tc(thread)
+                    await tarch.get_first_and_last(thread,force=True)
+                carch=ChannelArchiveStatus.get_by_tc(chan)
+                await carch.get_first_and_last(chan,force=True)
+                bar=futil.progress_bar(
+                    total_channels,
+                    chanlen,
+                    width=8
+                )
+                await statmess.editw(
+                    min_seconds=3,
+                    content=f"{bar}"
+                    )
+                if current_channel_count >current_channel_every:
+                    await asyncio.sleep(1)
+                    #await edittime.invoke_if_time()
+                    current_channel_count=0
+        bar=futil.progress_bar(
+            total_channels,
+            chanlen,
+            width=8
+        )
+        await statmess.editw(0,content=bar)
+        
+
 async def collect_server_history(ctx, **kwargs):
         #Collect from desired channels to a point.
         bot=ctx.bot
@@ -160,7 +263,11 @@ async def collect_server_history(ctx, **kwargs):
 
         chanlen=len(guild.text_channels)
 
-        arch_ctx=ArchiveContext(bot=bot,profile=profile,status_mess=statmess,last_stored_time=last_time,latest_time=new_last_time,channel_count=chanlen,**kwargs)    
+        arch_ctx=ArchiveContext(
+            bot=bot,profile=profile,
+            status_mess=statmess,
+            last_stored_time=last_time,latest_time=new_last_time,
+            channel_count=chanlen,**kwargs)    
 
         current_channel_count=0
         current_channel_every=max(chanlen//50,1)
@@ -187,6 +294,7 @@ async def collect_server_history(ctx, **kwargs):
                 #totalcharlen+=charlen
                 messages=messages+chanmess
                 current_channel_count+=1
+                
                 await arch_ctx.edit_mess(f"",chan.name)
                 if current_channel_count >current_channel_every:
                     await asyncio.sleep(1)

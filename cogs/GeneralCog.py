@@ -142,7 +142,7 @@ class General(commands.Cog, TC_Cog_Mixin):
             await ctx.send("Guild not found.",ephemeral=True)
     @app_commands.command(name="progress_test", description="Test out the progress bar.")
     @app_commands.guild_only()
-    async def emojiinfo(self, interaction: discord.Interaction, total:int=10,width:int=5) -> None:
+    async def progresstest(self, interaction: discord.Interaction, total:int=10,width:int=5) -> None:
         """get bot info for this server"""
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild = ctx.guild

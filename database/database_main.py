@@ -10,7 +10,8 @@ import datetime
 '''As well as a function for the singleton to collect the base it's defined within.'''
 
 from sqlalchemy import types
-
+from utility import filter_trace_stack
+import traceback
 
 class AwareDateTime(types.TypeDecorator):
     impl = types.DateTime
@@ -20,6 +21,13 @@ class AwareDateTime(types.TypeDecorator):
             #print("ADD",value)
             # Convert the datetime to UTC if it's aware
             if value.utcoffset() is not None:
+
+                #print("ADD",self,value,value.tzinfo)
+                #form=traceback.format_stack()
+                #print(form)
+                #out=filter_trace_stack(form)
+                #print(out)
+
                 value = value.astimezone(datetime.timezone.utc)
         #print("result",value)
         return value
@@ -55,7 +63,6 @@ class ServerData(Main_DB_Base):
     '''
     Server has read and acknowledged the terms of service and privacy policy before use.
     '''
-
     @classmethod
     def get(cls, server_id):
         """

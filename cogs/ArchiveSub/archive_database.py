@@ -4,7 +4,7 @@ import discord
 import io
 
 from typing import List, Union
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Boolean, Text, distinct, update, func
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Boolean, Text, distinct, or_, update, func
 from sqlalchemy import LargeBinary, ForeignKey,PrimaryKeyConstraint, insert, distinct
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
@@ -46,9 +46,6 @@ class ChannelArchiveStatus(ArchiveBase):
             if channel.type!=discord.ChannelType.text:
                 if channel.parent!=None:
                     new.thread_parent_id=channel.parent.id
-                
-
-            #new.latest_archive=datetime.fromtimestamp(0,tz=timezone.utc)
             session.add(new)
             session.commit()
         return new
@@ -57,20 +54,49 @@ class ChannelArchiveStatus(ArchiveBase):
     def get(server_id, channel_id):
         session = DatabaseSingleton.get_session()
         return session.query(ChannelArchiveStatus).filter_by(server_id=server_id, channel_id=channel_id).first()
+    @staticmethod
+    def get_all(server_id, outdated=False):
+        session = DatabaseSingleton.get_session()
+        if outdated:
+            filter = and_(
+                ChannelArchiveStatus.server_id == server_id,
+                ChannelArchiveStatus.latest_archive_time < ChannelArchiveStatus.last_message_time
+                
+            )
+            query=session.query(ChannelArchiveStatus).filter(filter).all()
+            return query
+        query=session.query(ChannelArchiveStatus).filter_by(server_id=server_id).all()
+        return query
+    @staticmethod
+    def get_total_unarchived_time(server_id):
+        session = DatabaseSingleton.get_session()
+        query=session.query(ChannelArchiveStatus).filter_by(server_id=server_id).all()
+        if not query: return (datetime.now()-datetime.now())
+        outcome=[s.get_time_between() for s in query]
+        res=(datetime.now()-datetime.now())
+        for o in outcome:res+=o
+        return res
     async def get_first_and_last(self,channel:discord.TextChannel, force=False):
         if self.first_message_time==None or force:
             async for thisMessage in channel.history(oldest_first=True, limit=1):
                 print(thisMessage.created_at,thisMessage.created_at.tzinfo)
                 self.first_message_time=thisMessage.created_at
+                #self.latest_archive_time=thisMessage.created_at
+                
         if self.last_message_time==None or force:
             async for thisMessage in channel.history(oldest_first=False, limit=1):
                 print(thisMessage.created_at,thisMessage.created_at.tzinfo)
                 self.last_message_time=thisMessage.created_at
-            
+    def get_time_between(self):
+        if self.latest_archive_time==None:
+            if self.first_message_time==None:
+                return(datetime.now()-datetime.now())
+            return self.last_message_time-self.first_message_time
+        return self.last_message_time-self.latest_archive_time
         
     def increment(self,date):
         self.stored += 1
-        print(self.last_message_time.tzinfo,date.tzinfo)
+        #print(self.last_message_time.tzinfo,date.tzinfo)
         if self.last_message_time<=date:
             self.last_message_time=date
         
@@ -185,14 +211,17 @@ class ChannelSep(ArchiveBase):
         session = DatabaseSingleton.get_session()
         return session.query(ChannelSep).filter(filter).order_by(ChannelSep.channel_sep_id).first()
     @staticmethod
-    def get_unposted_separators(server_id: int):
+    def get_unposted_separators(server_id: int,limit:int=None):
         '''retrieve all ChannelSep objects that are not posted yet.'''
         filter = and_(
             ChannelSep.posted_url == None,
             ChannelSep.server_id == server_id
         )
         session = DatabaseSingleton.get_session()
-        return session.query(ChannelSep).filter(filter).order_by(ChannelSep.channel_sep_id).all()
+        if limit==None:
+            return session.query(ChannelSep).filter(filter).order_by(ChannelSep.channel_sep_id).all()
+        else:
+            return session.query(ChannelSep).filter(filter).order_by(ChannelSep.channel_sep_id).limit(limit).all()
     @staticmethod
     def get_all_separators(server_id: int):
         filter =            ChannelSep.server_id == server_id
@@ -584,20 +613,23 @@ class HistoryMakers():
 
             filecount, fsize = 0,0
             for attach in thisMessage.attachments:
-                if 'image' in attach.content_type:
-                    if attach.size + fsize < 7000000:
-                        filecount += 1
-                        fd = await attach.to_file()
-                        bytes = await attach.read()
-                        fdv = {
-                            "filename": fd.filename,
-                            "bytes": bytes,
-                            "description": fd.description,
-                            "spoiler": fd.spoiler
-                        }
-                        rps = create_archived_rp_file(ms, filecount, vekwargs=fdv)
-                        archived_rp_files.append(rps)
-                        fsize += attach.size
+                try:
+                    if 'image' in attach.content_type:
+                        if attach.size + fsize < 7000000:
+                            filecount += 1
+                            fd = await attach.to_file()
+                            bytes = await attach.read()
+                            fdv = {
+                                "filename": fd.filename,
+                                "bytes": bytes,
+                                "description": fd.description,
+                                "spoiler": fd.spoiler
+                            }
+                            rps = create_archived_rp_file(ms, filecount, vekwargs=fdv)
+                            archived_rp_files.append(rps)
+                            fsize += attach.size
+                except Exception as e:
+                    print(e)
             if thisMessage.content.isspace() and not filecount<=0 and not hasembed:
                 #Skip if no content or file.
                 continue

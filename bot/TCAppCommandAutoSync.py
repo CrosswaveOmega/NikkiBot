@@ -103,7 +103,7 @@ class AppGuildTreeSync(Guild_Sync_Base):
     server_id = Column(Integer, primary_key=True, nullable=False, unique=True)
     lastsyncdata = Column(Text, nullable=True)
     lastsyncdate = Column(AwareDateTime, default=datetime.datetime.now())
-
+    donotsync=Column(Boolean,default=False)
     def __init__(self, server_id: int, command_tree: dict=None):
         self.server_id = server_id
         self.lastsyncdata = json.dumps(command_tree,default=str)
@@ -130,6 +130,18 @@ class AppGuildTreeSync(Guild_Sync_Base):
         session.add(toAdd)
         session.commit()
         return toAdd
+    @classmethod
+    def setdonotsync(cls, server_id):
+        """
+        Add a new AppGuildTreeSync entry for the specified server_id.
+        """
+        session:Session = DatabaseSingleton.get_session()
+        result = session.query(AppGuildTreeSync).filter_by(server_id=server_id).first()
+        if result:
+            result.donotsync =True           
+            return result
+        else:            
+            return None
     def update(self, command_tree: dict):
         """
         Updates the `lastsyncdata` attribute of the current `AppGuildTreeSync` instance with a new serialized
@@ -358,6 +370,10 @@ class SpecialAppSync:
         try:
             gui.gprint(self.guilds)
             for guild in self.guilds:
+                entry=AppGuildTreeSync.get(server_id=guild.id)
+                if entry:
+                    if entry.donotsync:
+                        continue
                 gui.gprint(f"syncing for {guild.name}")
                 if not sync_only:
                     await self.add_enabled_cogs_into_guild(guild,force=force)

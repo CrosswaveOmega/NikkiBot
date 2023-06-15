@@ -95,6 +95,7 @@ class TCGuildTask(Guild_Task_Base):
     task_id = Column(String)
     relativedelta_serialized = Column(String)
     next_run = Column(DateTime, default=datetime.now())
+    remove_after=False
 
     __table_args__ = (
         PrimaryKeyConstraint('server_id', 'task_name'),
@@ -198,6 +199,8 @@ class TCGuildTask(Guild_Task_Base):
             await bot.send_error(e,"AUTO COMMAND ERROR.")
         await asyncio.sleep(2)
         gui.gprint(f"{self.name} Task done at", datetime.now(),"excution ok.")
+        if self.remove_after:
+            TCGuildTask.remove_guild_task(self.server_id,self.task_name)
 
     def to_task(self,bot):
         '''Initalize a TCTask object with name {self.server_id}_{self.task_name}'''

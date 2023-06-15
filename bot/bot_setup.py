@@ -30,7 +30,9 @@ from dateutil.rrule import rrule,rrulestr, WEEKLY, SU
 from .TauCetiBot import TCBot
 from .Tasks.TCTasks import TCTask, TCTaskManager
 from .TcGuildTaskDB import TCGuildTask
+from .TCAppCommandAutoSync import AppGuildTreeSync
 from .errorformat import client_error_message
+
 """
 Initalizes TCBot, and defines some checks
 
@@ -250,8 +252,33 @@ class Main(commands.Cog):
         """debugging only."""
         return
 
+    @commands.command(hidden=True)
+    async def purge_guild_data(self, ctx,guildid:int):
 
+        """debugging only."""
+        profile=dbmain.ServerData.get(guildid)
+        if profile:
+            profile.last_use=datetime.datetime.fromtimestamp(800000)
+            ctx.bot.database.commit()
+            await ctx.bot.audit_guilds(override_for=guildid)
+            await ctx.send("Data purged.")
+        return
+    
+    @commands.command(hidden=True)
+    @commands.guild_only()
+    async def do_not_sync(self, ctx):
 
+        """debugging only."""
+        profile=AppGuildTreeSync.get(ctx.guild.id)
+        if profile:
+            AppGuildTreeSync.setdonotsync(ctx.guild.id)
+            await ctx.send(f"{profile.donotsync} Sync disabled.")
+            ctx.bot.database.commit()
+            ctx.bot.tree.clear_commands(guild=ctx.guild)
+            await ctx.bot.tree.sync(guild=ctx.guild)
+            synced = []
+            await ctx.send("Sync disabled.")
+        return
 
     @commands.command()
     async def reload(self, ctx):

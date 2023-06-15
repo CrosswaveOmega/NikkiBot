@@ -222,7 +222,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         return self.statmess.get_message_obj(cid)
     
 
-    async def audit_guilds(self):
+    async def audit_guilds(self,override_for:int=None):
         '''audit guilds.'''
         metadata=self.database.get_metadata()
         matching_tables = []
@@ -239,8 +239,9 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         
         guilds_im_in=[]
         for guild in self.guilds:
-            gui.gprint(guild.id)
-            guilds_im_in.append(guild.id)
+            gui.gprint(guild.id,override_for)
+            if guild.id!=override_for:
+                guilds_im_in.append(guild.id)
         audit_results=ServerData.Audit(guilds_im_in)
         to_purge=[auditme.server_id for auditme in audit_results]
         self.logs.info(audit_results)

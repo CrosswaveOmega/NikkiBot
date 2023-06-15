@@ -17,7 +17,7 @@ from discord.utils import escape_markdown
 
 
 def replace_working_directory(string):
-    '''This function is for '''
+    '''This function is for replacing the current working directory with a shorthand'''
     cwd = os.getcwd()  # Replace backslashes for regex
     
     parent_dir = os.path.dirname(cwd)
@@ -31,6 +31,26 @@ def replace_working_directory(string):
 
     return escape_markdown(replaced_string)
 
+def filter_trace_stack(stack):
+    '''This function is for filtering call stacks'''
+    cwd = os.getcwd()  # Replace backslashes for regex
+    print("Call stack:")
+    newlines=[]
+    
+    parent_dir = os.path.dirname(cwd)
+    print(cwd)
+    print(parent_dir)
+    for line in stack:
+        print(line)
+        #print(line.strip(),print(parent_dir))
+        if parent_dir.upper() in line.upper().strip() and not '.venv' in line.strip():
+            newlines.append(line) 
+            print("AS",line.strip())
+    replaced_string="\n".join(newlines)
+
+    return escape_markdown(replaced_string)
+
+'''Utility functions here to assist.'''
 '''Utility functions here to assist.'''
 
 def the_string_numerizer(num,thestring,comma=False, force=False, have_s=True):

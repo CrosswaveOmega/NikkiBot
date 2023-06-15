@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from typing import List, Tuple
 from discord import Embed
-
+import gui
 #This is a container for pages of embeds.
 
 class PageSelect(discord.ui.Select):
@@ -48,7 +48,10 @@ class PageClassContainer():
         """
         self.page = (self.spot // self.perpage) + 1
         key = ""
-        emb = self.display[self.page - 1]
+        gui.gprint(len(self.display),self.page)
+        emb=Embed(title="No Pages")
+        if len(self.display)>0:
+            emb = self.display[self.page - 1]
         emb.set_author(
             name=" Page {}/{}, {} total".format(self.page, self.maxpages, self.length)
         )

@@ -141,7 +141,7 @@ class Gui:
            if key in self.label_dict:
                 self.label_dict[key]['text'] = str(value)
                 self.window.update()
-                #await asyncio.sleep(0.4)
+                await asyncio.sleep(0.1)
 
 
     async def update_every_second(self):

@@ -5,6 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 import discord
 from database import DatabaseSingleton, AwareDateTime
+from utility import hash
 
 
 PollingBase = declarative_base(name="Polling System Base")
@@ -12,6 +13,7 @@ PollingBase = declarative_base(name="Polling System Base")
 class PollTable(PollingBase):
     __tablename__ = 'poll_table'
     poll_id = Column(Integer, primary_key=True)
+    poll_hex = Column(String,nullable=False,unique=True)
     poll_name = Column(String)
     poll_text = Column(String)
     choices = Column(Integer, default=2)
@@ -44,6 +46,8 @@ class PollTable(PollingBase):
                          choice_e=choice_e, 
                          start_date=start_date, end_date=end_date, 
                          made_by=made_by, scope=scope, change_vote=False, server_id=server_id)
+        name,x=hash.hash_string(str(poll.poll_id),7,hash.Hashsets.hex)
+        poll.poll_hex=name
         session.add(poll)
         session.commit()
         return poll
@@ -52,7 +56,24 @@ class PollTable(PollingBase):
     def get(cls, poll_id):
         session= DatabaseSingleton.get_session()
         result = session.query(PollTable).filter_by(poll_id=poll_id).first()
-        if result:            return result
+        if result:
+            if result.poll_hex==None:
+                name,x=hash.hash_string(str(result.poll_id),7,hash.Hashsets.hex)
+                result.poll_hex=name
+                session.commit()
+            return result
+        else:            return None
+    
+    @classmethod
+    def get_by_hex(cls, poll_id):
+        session= DatabaseSingleton.get_session()
+        result = session.query(PollTable).filter_by(poll_hex=poll_id).first()
+        if result:
+            if result.poll_hex==None:
+                name,x=hash.hash_string(str(result.poll_id),7,hash.Hashsets.hex)
+                result.poll_hex=name
+                session.commit()
+            return result
         else:            return None
 
     def poll_buttons(poll):
@@ -189,7 +210,12 @@ class PollTable(PollingBase):
         for pi in poll_ids:
             poll_id,pollname=pi
             poll = session.query(PollTable).get(poll_id)
+            
             if poll is not None:
+                if poll.poll_hex==None:
+                    name,x=hash.hash_string(str(poll.poll_id),7,hash.Hashsets.hex)
+                    poll.poll_hex=name
+                session.commit()
                 polls.append(poll)
         embeds = []
         for i in range(0, len(polls), 5):
@@ -197,7 +223,7 @@ class PollTable(PollingBase):
             description="Below is a list of currently active polls.  To grab one of them to vote, use the `/link_poll` command with the poll id. "
             )
             for poll in polls[i:i+5]:
-                name = f"{poll.poll_name}, id:(`{poll.poll_id}`)"
+                name = f"{poll.poll_name}, id:(`{poll.poll_id}`), hex:(`{poll.poll_hex}`)"
                 value = f"{poll.poll_text}\n\n"
                 embed.add_field(name=name, value=value, inline=False)
             embeds.append(embed)
