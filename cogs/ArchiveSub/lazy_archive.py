@@ -3,10 +3,7 @@ import json
 import discord
 import io
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Boolean, Text, distinct, or_, update, func
-from sqlalchemy import LargeBinary, ForeignKey,PrimaryKeyConstraint, insert, distinct
-from sqlalchemy.orm import relationship
-from sqlalchemy.orm import Session
-from sqlalchemy.orm import aliased
+
 from database import DatabaseSingleton, AwareDateTime,add_or_update_all
 from sqlalchemy import select,event, exc
 
@@ -38,7 +35,7 @@ class LazyContext(LazyBase):
         return f"<LazyContext(server_id={self.server_id}, state={self.state})>"
 
     @staticmethod
-    def create(server_id):
+    def create(server_id,flags):
         session = DatabaseSingleton.get_session()
         lazy_context = LazyContext(server_id=server_id)
         session.add(lazy_context)
@@ -75,6 +72,8 @@ class LazyContext(LazyBase):
         session = DatabaseSingleton.get_session()
         session.commit()
         return self.state
+    def __repr__(self):
+        return f"{self.server_id}, {self.state},{self.message_count},{self.archived_so_far}"
 
 DatabaseSingleton('setup').load_base(LazyBase)
 
@@ -95,15 +94,9 @@ from .archive_database import ChannelSep, ArchivedRPMessage, ChannelArchiveStatu
 from .historycollect import collect_server_history_lazy
 
 async def lazy_archive(self, ctx):
-        """Compile all messages into archive channel.  This can be invoked with options.
-            +`full` - get the full history of this server
-            +`update` -only update the current archive channel.  DEFAULT.
-
-            +`ws` - compile only webhooks/BOTS.  DEFAULT.
-            +`user` - complile only users
-            +`both` -compile both
-             
+        """Equivalient to compile_archive, but does each step in subsequent calls of itself.             
         """
+        MESSAGES_PER_POST_CALL=100
         bot = ctx.bot
         channel = ctx.message.channel
         guild:discord.Guild=channel.guild
@@ -117,6 +110,9 @@ async def lazy_archive(self, ctx):
         if lazycontext.state=='setup':
             lazycontext.next_state()
         elif lazycontext.state=='collecting':
+            if lazycontext.collected:
+                lazycontext.next_state()
+                return True
             still_collecting=await collect_server_history_lazy(
                 ctx,
                 update=True
@@ -126,6 +122,9 @@ async def lazy_archive(self, ctx):
                 lazycontext.next_state()
         
         elif lazycontext.state=='grouping':
+            if lazycontext.grouped:
+                lazycontext.next_state()
+                return True
             lastgroup=profile.last_group_num
             ts,group_id=await do_group(guildid,profile.last_group_num, ctx=ctx)
             lazycontext.message_count=ts
@@ -133,53 +132,60 @@ async def lazy_archive(self, ctx):
             await ctx.send("Grouping phase completed.")
             lazycontext.next_state()
         elif lazycontext.state=='posting':
+            if lazycontext.posting:
+                lazycontext.next_state()
+                return True
             archive_channel=guild.get_channel(profile.history_channel_id)
             timebetweenmess=2.2
             characterdelay=0.05
             fullcount=lazycontext.message_count
             remaining_time_float= fullcount* timebetweenmess
-
-            needed=ChannelSep.get_posted_but_incomplete(guildid)
-            grouped=ChannelSep.get_unposted_separators(guildid,limit=5)
-            if len(grouped)<=0:
-                await ctx.send(f"All {fullcount} messages posted. ")
-                lazycontext.next_state()
-                return True
-            me=await ctx.channel.send(content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count}")
+            archived_this_session=0
+            me=await ctx.channel.send(content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count}.  Will archive at least {MESSAGES_PER_POST_CALL-archived_this_session} messages if available.")
             mt=StatusEditMessage(me,ctx)
-            gui.gprint(archive_channel.name)
-            length=len(grouped)
-            for e,sep in enumerate(grouped):
-                #Start posting
-                gui.gprint(e,sep)
-                if not sep.posted_url:
-                    currjob="rem: {}".format(seconds_to_time_string(int(remaining_time_float)))
-                    emb,count=sep.create_embed()
-                    chansep=await archive_channel.send(embed=emb)
-                    sep.update(posted_url=chansep.jump_url)
-                    await self.edit_embed_and_neighbors(sep)
+            while archived_this_session<=MESSAGES_PER_POST_CALL:
+                needed=ChannelSep.get_posted_but_incomplete(guildid)
+                grouped=ChannelSep.get_unposted_separators(guildid,limit=5)
+                if len(grouped)<=0:
+                    await ctx.send(f"All {fullcount} messages posted. ")
+                    lazycontext.next_state()
+                    return True
+                
+                gui.gprint(archive_channel.name)
+                length=len(grouped)
+                for e,sep in enumerate(grouped):
+                    #Start posting
+                    gui.gprint(e,sep)
+                    if not sep.posted_url:
+                        currjob="rem: {}".format(seconds_to_time_string(int(remaining_time_float)))
+                        emb,count=sep.create_embed()
+                        chansep=await archive_channel.send(embed=emb)
+                        sep.update(posted_url=chansep.jump_url)
+                        await self.edit_embed_and_neighbors(sep)
+                        self.bot.database.commit()
+                    for amess in sep.get_messages():
+                        c,au,av=amess.content,amess.author,amess.avatar
+                        files=[]
+                        for attach in amess.list_files():
+                            this_file=attach.to_file()
+                            files.append(this_file)
+
+                        webhookmessagesent=await web.postWebhookMessageProxy(archive_channel, message_content=c, display_username=au, avatar_url=av, embed=amess.get_embed(), file=files)
+                        if webhookmessagesent:
+                            amess.update(posted_url=webhookmessagesent.jump_url)
+                            
+
+                        await asyncio.sleep(timebetweenmess)
+                        remaining_time_float=remaining_time_float-(timebetweenmess)
+                        lazycontext.increment_count()
+                        archived_this_session+=1
+                        await mt.editw(min_seconds=45,content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count}.  Will archive at least {MESSAGES_PER_POST_CALL-archived_this_session} messages if available.")
+                    sep.update(all_ok=True)
                     self.bot.database.commit()
-                for amess in sep.get_messages():
-                    c,au,av=amess.content,amess.author,amess.avatar
-                    files=[]
-                    for attach in amess.list_files():
-                        this_file=attach.to_file()
-                        files.append(this_file)
-
-                    webhookmessagesent=await web.postWebhookMessageProxy(archive_channel, message_content=c, display_username=au, avatar_url=av, embed=amess.get_embed(), file=files)
-                    if webhookmessagesent:
-                        amess.update(posted_url=webhookmessagesent.jump_url)
-                        
-
-                    await asyncio.sleep(timebetweenmess)
-                    remaining_time_float=remaining_time_float-(timebetweenmess)
-                    lazycontext.increment_count()
-                    await mt.editw(min_seconds=45,content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count}")
-                sep.update(all_ok=True)
-                self.bot.database.commit()
-                await asyncio.sleep(2)
-                await mt.editw(min_seconds=30,content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count}")
+                    await asyncio.sleep(2)
+                    await mt.editw(min_seconds=5,content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count} Will archive at least {MESSAGES_PER_POST_CALL-archived_this_session} messages if available.")
             await me.delete()
         elif lazycontext.state=='done':
             LazyContext.remove(guildid)
+            return False
         return True

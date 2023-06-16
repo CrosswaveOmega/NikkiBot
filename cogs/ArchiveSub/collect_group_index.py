@@ -113,6 +113,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
         else:
             backlog.put(hm)
             charsinbacklog.add(hm.author)
+    #Commit to database.
     DatabaseSingleton('voc').commit()
     # add remaining backlog messages to tosend list
     

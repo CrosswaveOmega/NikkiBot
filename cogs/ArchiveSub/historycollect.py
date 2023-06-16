@@ -119,7 +119,6 @@ async def lazy_grab(cobj:discord.TextChannel, actx:ArchiveContext):
             actx.character_len+=len(thisMessage.content)
             messages.append(thisMessage)
             
-            gui.gprint('now:',actx.total_archived)
             carch.increment(thisMessage.created_at)
             actx.total_archived+=1
             mlen+=1
@@ -127,18 +126,21 @@ async def lazy_grab(cobj:discord.TextChannel, actx:ArchiveContext):
             actx.total_ignored+=1
         if(len(messages)%BATCH_SIZE == 0 and len(messages)>0):
             hmes=await HistoryMakers.get_history_message_list(messages)
+            gui.gprint('now:',actx.total_archived)
             messages=[]
         if(mlen%200 == 0 and mlen>0):
             await asyncio.sleep(1)
             await actx.edit_mess(cobj.name)
-            #await edittime.invoke_if_time(content=f"{mlen} messages so far in this channel, this may take a moment.   \n On channel {chancount}/{chanlen},\n {cobj.name},\n gathered <a:Loading:812758595867377686>.  This will take a while...")
-            #await statusMess.updatew(f"{mlen} messages so far in this channel, this may take a moment.   \n On channel {chancount}/{chanlen},\n {cobj.name},\n gathered <a:Loading:812758595867377686>.  This will take a while...")
+            
     if messages:
         hmes=await HistoryMakers.get_history_message_list(messages)
+        
+        gui.gprint('now:',actx.total_archived)
         messages=[]
+
     return messages
 async def collect_server_history_lazy(ctx, **kwargs):
-        #Collect from desired channels to a point.
+        #Get at most LAZYGRAB_LIMIT messages from all channels in guild
         bot=ctx.bot
         channel = ctx.message.channel
         guild=channel.guild
@@ -170,6 +172,7 @@ async def collect_server_history_lazy(ctx, **kwargs):
         channels=ChannelArchiveStatus.get_all(guildid,outdated=True)
         grabstat=False
         for c in channels:
+            gui.print(c)
             channel=guild.get_channel_or_thread(c.channel_id)
             if channel:
                 gui.gprint("Channel",channel)

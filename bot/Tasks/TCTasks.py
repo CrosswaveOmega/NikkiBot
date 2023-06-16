@@ -409,9 +409,11 @@ class TCTaskManager:
         # Check each task to see if it's time to run
         manager = TCTaskManager.get_instance()
         for name in manager.to_delete:
-            task=manager.tasks[name]
+            task=manager.tasks.get(name,None)
+            if task==None: continue
             if task.is_running==False:  TCTaskManager.remove_task(task.name)
         manager.to_delete=[]
+        
         while not manager.myqueue.empty():
             gui.DataStore.set("queuenext",manager.myqueue.queue[0].get_task().time_left_shorter())
             if manager.myqueue.queue[0].get_task().can_i_run():

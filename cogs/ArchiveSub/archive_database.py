@@ -6,7 +6,7 @@ import io
 from typing import List, Union
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Boolean, Text, distinct, or_, update, func
 from sqlalchemy import LargeBinary, ForeignKey,PrimaryKeyConstraint, insert, distinct
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, column_property
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import aliased
 from database import DatabaseSingleton, AwareDateTime,add_or_update_all
@@ -60,7 +60,10 @@ class ChannelArchiveStatus(ArchiveBase):
         if outdated:
             filter = and_(
                 ChannelArchiveStatus.server_id == server_id,
+                or_(
+                ChannelArchiveStatus.latest_archive_time==None,
                 ChannelArchiveStatus.latest_archive_time < ChannelArchiveStatus.last_message_time
+                )
                 
             )
             query=session.query(ChannelArchiveStatus).filter(filter).all()
@@ -125,11 +128,18 @@ class ChannelSep(ArchiveBase):
 
     created_at = Column(AwareDateTime)
     posted_url = Column(String, nullable=True, default=None)
+    message_count = Column(Integer,default=0)
 
     __table_args__ = (
         PrimaryKeyConstraint('channel_sep_id', 'server_id'),
     )
-
+    def update_message_count(self):
+        session:Session=DatabaseSingleton.get_session()
+        count= session.query(func.count(ArchivedRPMessage.id)).filter(
+            (ArchivedRPMessage.server_id == self.server_id) &
+            (ArchivedRPMessage.channel_sep_id == self.channel_sep_id)
+        ).scalar()
+        self.message_count=count
     @staticmethod
     def add_channel_sep_if_needed(message,chansepid):
         session: Session = DatabaseSingleton.get_session()
@@ -138,6 +148,7 @@ class ChannelSep(ArchiveBase):
             server_id=message.server_id,
             channel_sep_id=chansepid).first()
         if existing_channel_sep:
+            existing_channel_sep.update_message_count()
             return existing_channel_sep
         channel_sep= ChannelSep.derive_from_archived_rp_message(message)
         session.add(channel_sep)
@@ -227,6 +238,15 @@ class ChannelSep(ArchiveBase):
         filter =            ChannelSep.server_id == server_id
         session = DatabaseSingleton.get_session()
         return session.query(ChannelSep).filter(filter).order_by(ChannelSep.created_at).all()
+    @staticmethod
+    def get_all_update_count(server_id: int):
+        filter = ChannelSep.server_id == server_id
+        session = DatabaseSingleton.get_session()
+        for csep in session.query(ChannelSep).filter(filter).order_by(ChannelSep.created_at).all():
+            if csep.message_count==None:
+                csep.update_message_count()
+        session.commit()
+        return 
     
     @classmethod
     def get(cls, channel_sep_id, server_id):
@@ -430,7 +450,14 @@ class ArchivedRPMessage(ArchiveBase):
             (ArchivedRPMessage.server_id == server_id) &
             ((ArchivedRPMessage.channel_sep_id == channel_sep_id))
         ).order_by(ArchivedRPMessage.created_at).all()
-
+    @staticmethod
+    def count_all(server_id: int):
+        session = DatabaseSingleton.get_session()
+        session:Session=DatabaseSingleton.get_session()
+        count= session.query(func.count(ArchivedRPMessage.id)).filter(
+            (ArchivedRPMessage.server_id == server_id) 
+        ).scalar()
+        return count
     def add_file(self, archived_rp_file):
         session = DatabaseSingleton.get_session()
         session.add(archived_rp_file)

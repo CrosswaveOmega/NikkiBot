@@ -104,12 +104,13 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
 
     async def gtask_lazy(self, source_message=None):
+        '''This is the Guild task for the Lazy Archive Mode, intended for massive servers.'''
         if not source_message: return None
         context=await self.bot.get_context(source_message)
-        #await context.channel.send("Greetings from GTASK.")
         try:
             result=await lazy_archive(self,context)
             if result==False:
+                gui.gprint("Done.")
                 TCGuildTask.get(context.guild.id, "LAZYARCHIVE").remove_after=True
             await source_message.delete()
         except Exception as e:
@@ -594,8 +595,8 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await ctx.send("guild only.")
     @commands.guild_only()
     @commands.has_guild_permissions(administrator=True)
-    @commands.command(name="lazymode", description="supposed to be for bigger tasks.",enabled=False,hidden=True)
-    async def setup_lazy_archive(self, ctx,autochannel:discord.TextChannel):  
+    @commands.command(name="lazymode", description="For big, unarchived servers.")
+    async def setup_lazy_archive(self, ctx,autochannel:discord.TextChannel, *args):  
         if ctx.guild:
 
             bot=ctx.bot
@@ -608,6 +609,12 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             if archive_channel==None:
                 await ctx.send("I can't seem to access the history channel, it's gone!")
                 return False
+            if profile.last_archive_time!=None:
+                await MessageTemplates.server_archive_message(ctx,"There's no reason for you to use lazy mode, this server is already archived.")
+                mes=await ctx.send("Continue anyways?",view=confirm)
+                await confirm.wait()
+                if not confirm.value:
+                    return False
             passok, statusmessage = check_channel(archive_channel)
 
             if not passok:
@@ -638,10 +645,15 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
                 await setup_lazy_grab(ctx)
                 totaltime=ChannelArchiveStatus.get_total_unarchived_time(guild.id)
+                
+                lz=LazyContext.create(guild.id)
+                if 'nocollect' in args:
+                    lz.collected=True
+                    lz.message_count=ArchivedRPMessage.count_all(guild.id)
                 result=f"I've set up the lazy archive system for <#{autochannel.id}>!  You've got a combined {totaltime}(this is not how long this will take.) worth of messages to be compiled."
                 new=TCGuildTask.add_guild_task(guild.id, task_name, message, robj)
                 new.to_task(bot)
-                LazyContext.create(guild.id)
+                bot.database.commit()
                 await MessageTemplates.server_archive_message(ctx,result)
             else:
                 await mes.delete()
@@ -678,6 +690,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                     profile.update(history_channel_id=cloned.id)
                     await archive_channel.delete()
                 await mes.delete()
+
                 self.bot.database.commit()
                 mess2=ArchivedRPMessage.get_archived_rp_messages_with_null_posted_url(ctx.guild.id)
                 mess=ArchivedRPMessage.get_archived_rp_messages_without_null_posted_url(ctx.guild.id)
