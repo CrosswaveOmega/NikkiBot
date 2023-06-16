@@ -256,7 +256,7 @@ class Main(commands.Cog):
     async def purge_guild_data(self, ctx,guildid:int):
 
         """debugging only."""
-        profile=dbmain.ServerData.get(guildid)
+        profile=dbmain.ServerData.get_or_new(guildid)
         if profile:
             profile.last_use=datetime.datetime.fromtimestamp(800000)
             ctx.bot.database.commit()

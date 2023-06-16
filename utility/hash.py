@@ -39,7 +39,6 @@ class Hashsets(Enum):
     def __str__(self) -> str:
         return self.name
 
-
 def get_hash_sets():
     '''get a list of all hashsets'''
     list=[i for i, v in hashsets.items()]
