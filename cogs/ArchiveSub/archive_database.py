@@ -537,9 +537,10 @@ def create_archived_rp_embed(arpm, embed):
     return None
 
 
-def create_history_pickle_dict(message):
+def create_history_pickle_dict(message, over=None):
     #This code once saved Discord messages into a serialized object, which is why 
     #It's called history_pickle_dict
+
     history_pickle_dict = {
         'message_id': message.id,
         'author': message.author.name,
@@ -553,6 +554,8 @@ def create_history_pickle_dict(message):
         'posted_url': None,
         'server_id': message.channel.guild.id
     }
+    if over:
+        history_pickle_dict['created_at']=over['created_at']
     if not message.author.bot:
         hash, int=hash_string(message.author.name)
         name_list = AssetLookup.get_asset('blanknames')
@@ -625,9 +628,14 @@ class HistoryMakers():
         archived_rp_messages = []
         archived_rp_embeds=[]
         archived_rp_files = []
-        for thisMessage in messages:
+        for thisMessage_v in messages:
+            thisMessage=thisMessage_v
+            over=None
+            if isinstance(thisMessage_v,dict):
+                thisMessage=thisMessage_v['m']
+                over=thisMessage_v
             mes=discord.Message
-            hmes = create_history_pickle_dict(thisMessage)
+            hmes = create_history_pickle_dict(thisMessage,over)
             id = hmes['server_id']
             ms = ArchivedRPMessage(**hmes)
             hasembed=False
