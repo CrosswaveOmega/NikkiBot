@@ -136,7 +136,7 @@ async def lazy_archive(self, ctx):
                 lazycontext.next_state()
                 return True
             archive_channel=guild.get_channel(profile.history_channel_id)
-            timebetweenmess=2.2
+            timebetweenmess=2.0
             characterdelay=0.05
             fullcount=lazycontext.message_count
             remaining_time_float= fullcount* timebetweenmess

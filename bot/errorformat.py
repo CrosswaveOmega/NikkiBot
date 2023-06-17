@@ -3,8 +3,11 @@ from discord.ext import commands
 from utility import formatutil
 def client_error_message(error_main, name='command'):
     error=error_main
+    
     if isinstance(error,commands.HybridCommandError):
         error=error.original
+    if isinstance(error,discord.ext.commands.errors.CommandNotFound):
+        return f"`{name}` is not a valid command, sorry."
     if isinstance(error, discord.app_commands.BotMissingPermissions) or isinstance(error,commands.BotMissingPermissions):
         # Handle the specific error
         

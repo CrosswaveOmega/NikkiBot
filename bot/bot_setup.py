@@ -106,10 +106,17 @@ async def on_app_command_error(
 @bot.event
 async def on_command_error(ctx, error):
     '''this function logs errors for prefix commands.'''
+    gui.gprint(error)
     log=logging.getLogger('discord')
+    
     command :discord.ext.commands.command = ctx.command
     log.error('Ignoring exception in command %s', command, exc_info=error)
-    errormess=client_error_message(error, name=f" Command {command.name}")
+    errormess=("Command not found I think...")
+    if ctx.command:
+        errormess=client_error_message(error, name=f" Command {command.name}")
+    else:
+        errormess=client_error_message(error, name=f"{ctx.message.content}")
+    gui.gprint(errormess)
     emb=MessageTemplates.get_error_embed(title=f"Error with {ctx.message.content}",description=f"{errormess}")
     await bot.send_error(error,title=f"Error with {ctx.message.content}")
     try:
