@@ -64,7 +64,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
     backlog=Queue()
     status_mess=None
     if ctx: 
-        statusmess=ctx.channel.send("STATMESS")
+        statusmess=await ctx.channel.send("STATMESS")
         status_mess=StatusEditMessage(statusmess,ctx)
     now=datetime.now()
     # iterate through the sorted message list
