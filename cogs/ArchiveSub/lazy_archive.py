@@ -35,7 +35,7 @@ class LazyContext(LazyBase):
         return f"<LazyContext(server_id={self.server_id}, state={self.state})>"
 
     @staticmethod
-    def create(server_id,flags):
+    def create(server_id):
         session = DatabaseSingleton.get_session()
         lazy_context = LazyContext(server_id=server_id)
         session.add(lazy_context)
