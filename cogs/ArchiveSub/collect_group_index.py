@@ -135,7 +135,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
     ts, group_id = await iterate_backlog(backlog, group_id)
     #ChannelSep.derive_channel_seps_mass(server_id)
     tosend += ts
-    if status_mess: await status_mess.delete()
+    if status_mess: await statusmess.delete()
     return length, group_id
 
     
