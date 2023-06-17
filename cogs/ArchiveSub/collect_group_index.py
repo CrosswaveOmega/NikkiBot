@@ -1,3 +1,4 @@
+import asyncio
 import gui
 from datetime import datetime, timedelta, timezone
 from .archive_database import ArchivedRPMessage, ChannelSep, HistoryMakers
@@ -39,6 +40,7 @@ async def iterate_backlog(backlog,group_id):
                 charsinotherbacklog.add(hm.author)
         if DEBUG_MODE: gui.gprint("Pass complete.")
         DatabaseSingleton('voc').commit()
+        await asyncio.sleep(0.1)
         backlog = new_backlog
     return tosend,group_id
 
@@ -88,6 +90,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
             DatabaseSingleton('voc').commit()
             
             ts, group_id = await iterate_backlog(backlog, group_id)
+            await asyncio.sleep(0.5)
             tosend += ts
             # reset backlog and character set
             backlog, charsinbacklog = Queue(), set()
