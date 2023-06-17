@@ -135,7 +135,7 @@ class ChannelSep(ArchiveBase):
     )
     def update_message_count(self):
         session:Session=DatabaseSingleton.get_session()
-        count= session.query(func.count(ArchivedRPMessage.id)).filter(
+        count= session.query(func.count(ArchivedRPMessage.message_id)).filter(
             (ArchivedRPMessage.server_id == self.server_id) &
             (ArchivedRPMessage.channel_sep_id == self.channel_sep_id)
         ).scalar()
