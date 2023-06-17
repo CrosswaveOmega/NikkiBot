@@ -610,6 +610,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 return False
             if profile.last_archive_time!=None:
                 await MessageTemplates.server_archive_message(ctx,"There's no reason for you to use lazy mode, this server is already archived.")
+                confirm=ConfirmView(user=ctx.author)
                 mes=await ctx.send("Continue anyways?",view=confirm)
                 await confirm.wait()
                 if not confirm.value:
