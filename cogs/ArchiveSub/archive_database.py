@@ -454,8 +454,8 @@ class ArchivedRPMessage(ArchiveBase):
     def count_all(server_id: int):
         session = DatabaseSingleton.get_session()
         session:Session=DatabaseSingleton.get_session()
-        count= session.query(func.count(ArchivedRPMessage)).filter(
-            (ArchivedRPMessage.server_id == server_id) 
+        count= session.query(func.count(ArchivedRPMessage.message_id)).filter(
+                (ArchivedRPMessage.server_id == server_id) 
         ).scalar()
         return count
     def add_file(self, archived_rp_file):
