@@ -133,7 +133,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
     DatabaseSingleton('voc').commit()
     # add remaining backlog messages to tosend list
     
-    ts, group_id = await iterate_backlog(backlog, group_id)W
+    ts, group_id = await iterate_backlog(backlog, group_id)
     #ChannelSep.derive_channel_seps_mass(server_id)
     tosend += ts
 
