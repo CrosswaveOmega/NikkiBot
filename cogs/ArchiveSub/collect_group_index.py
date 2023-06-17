@@ -73,7 +73,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
                 await asyncio.sleep(0.5)
                 now=datetime.now()
         if status_mess: #This will ensure that the script won't have a 'heart attack' while processing large messages.
-            await status_mess.editw(f"Now at: {e}/{length}, group_id:{group_id}.", min_seconds=20)
+            await status_mess.editw(min_seconds=20,content=f"Now at: {e}/{length}, group_id:{group_id}.")
         if DEBUG_MODE: gui.gprint('i',hm)
         mytime=(hm.created_at).replace(tzinfo=timezone.utc)
         # create string to identify category, channel, thread combo
@@ -135,7 +135,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
     ts, group_id = await iterate_backlog(backlog, group_id)
     #ChannelSep.derive_channel_seps_mass(server_id)
     tosend += ts
-    if status_mess: status_mess.delete()
+    if status_mess: await status_mess.delete()
     return length, group_id
 
     
