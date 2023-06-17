@@ -132,14 +132,8 @@ async def lazy_archive(self, ctx):
             if lazycontext.grouped:
                 lazycontext.next_state()
                 return True
-            lastgroup=profile.last_group_num
-            ts,group_id=await do_group(guildid,profile.last_group_num, ctx=ctx,glim=64)
-            profile.update(last_group_num=group_id)
-            await ctx.send(f"{lastgroup}->{group_id}")
-            if ts!=-5:
-                
-                await ctx.send("Grouping phase completed.")
-                lazycontext.next_state()
+
+            lazycontext.next_state()
         elif lazycontext.state=='posting':
             if lazycontext.posting:
                 lazycontext.next_state()
@@ -153,6 +147,10 @@ async def lazy_archive(self, ctx):
             me=await ctx.channel.send(content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count}, will take{seconds_to_time_string(remaining_time_float)}, Will archive at least {MESSAGES_PER_POST_CALL-archived_this_session} messages if available.")
             mt=StatusEditMessage(me,ctx)
             while archived_this_session<=MESSAGES_PER_POST_CALL:
+                lastgroup=profile.last_group_num
+                ts,group_id=await do_group(guildid,profile.last_group_num, ctx=ctx,glim=5)
+                profile.update(last_group_num=group_id)
+                await ctx.send(f"{lastgroup}->{group_id}")
                 needed=ChannelSep.get_posted_but_incomplete(guildid)
                 grouped=ChannelSep.get_unposted_separators(guildid,limit=5)
                 if len(grouped)<=0:
