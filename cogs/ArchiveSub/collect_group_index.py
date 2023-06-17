@@ -11,23 +11,21 @@ Groups the collected history messages into "ChannelSep" objects, that store the 
 server message.
 
 '''
-DEBUG_MODE=True
+DEBUG_MODE=False
 
 async def iterate_backlog(backlog,group_id):
     tosend = []
     now=datetime.now()
-
     while backlog.empty()==False:
         if DEBUG_MODE: gui.gprint(F"Backlog Pass {group_id}:")
         new_backlog=Queue()
         charsinotherbacklog = set()
         current_chana = None
         running = True
+        if (datetime.now()-now).total_seconds()>1:
+            await asyncio.sleep(0.1)
+            now=datetime.now()
         while backlog.empty()==False:
-            if (datetime.now()-now).total_seconds()>2:
-                await asyncio.sleep(0.5)
-                now=datetime.now()
-                
             hm=backlog.get()
             channelind = hm.get_chan_sep()
             if hm.author in charsinotherbacklog and hm.get_chan_sep() == current_chana:
@@ -46,6 +44,7 @@ async def iterate_backlog(backlog,group_id):
                 charsinotherbacklog.add(hm.author)
         if DEBUG_MODE: gui.gprint("Pass complete.")
         DatabaseSingleton('voc').commit()
+        
 
         backlog = new_backlog
     return tosend,group_id
@@ -71,10 +70,12 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
     now=datetime.now()
     # iterate through the sorted message list
     for e,hm in enumerate(newlist):
-        if (datetime.now()-now).total_seconds()>2:
-                await asyncio.sleep(0.5)
+        if (datetime.now()-now).total_seconds()>1:
+                gui.gprint(f"Now at: {e}/{length}, group_id:{group_id}.")
+                await asyncio.sleep(0.1)
                 now=datetime.now()
         if status_mess: #This will ensure that the script won't have a 'heart attack' while processing large messages.
+            gui.gprint(f"Now at: {e}/{length}, group_id:{group_id}.")
             await status_mess.editw(min_seconds=20,content=f"Now at: {e}/{length}, group_id:{group_id}.")
         if DEBUG_MODE: gui.gprint('i',hm)
         mytime=(hm.created_at).replace(tzinfo=timezone.utc)
@@ -104,7 +105,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
             DatabaseSingleton('voc').commit()
             
             ts, group_id = await iterate_backlog(backlog, group_id)
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.1)
             tosend += ts
             # reset backlog and character set
             backlog, charsinbacklog = Queue(), set()
