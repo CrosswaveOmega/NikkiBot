@@ -431,12 +431,12 @@ class ArchivedRPMessage(ArchiveBase):
         query = session.query(ArchivedRPMessage).filter_by(server_id=server_id).order_by(desc(ArchivedRPMessage.created_at)).first()
         return query
     @staticmethod
-    def get_messages_without_group(server_id: int):
+    def get_messages_without_group(server_id: int, upperlim=None):
         session = DatabaseSingleton.get_session()
         return session.query(ArchivedRPMessage).filter(
             (ArchivedRPMessage.server_id == server_id) &
             ((ArchivedRPMessage.channel_sep_id == None))
-        ).order_by(ArchivedRPMessage.created_at).all()
+        ).order_by(ArchivedRPMessage.created_at).limit(upperlim).all()
     @staticmethod
     def get_unique_chan_sep_ids(server_id: int):
         session: Session = DatabaseSingleton.get_session()

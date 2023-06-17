@@ -49,10 +49,10 @@ async def iterate_backlog(backlog,group_id):
         backlog = new_backlog
     return tosend,group_id
 
-async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, maximumwithother=200,ctx=None,glimit=999999999):
+async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, maximumwithother=200,ctx=None,glimit=999999999,upperlim=None):
     # sort message list by created_at attribute
     print("Running ok.")
-    newlist =ArchivedRPMessage().get_messages_without_group(server_id)
+    newlist =ArchivedRPMessage().get_messages_without_group(server_id,upperlim=upperlim)
     #await asyncio.gather(
     #                    asyncio.to_thread(ArchivedRPMessage().get_messages_without_group,server_id)
     #                )

@@ -148,7 +148,7 @@ async def lazy_archive(self, ctx):
             mt=StatusEditMessage(me,ctx)
             while archived_this_session<=MESSAGES_PER_POST_CALL:
                 lastgroup=profile.last_group_num
-                ts,group_id=await do_group(guildid,profile.last_group_num, ctx=ctx,glim=5)
+                ts,group_id=await do_group(guildid,profile.last_group_num, ctx=ctx,glim=8,upperlim=2000)
                 profile.update(last_group_num=group_id)
                 await ctx.send(f"{lastgroup}->{group_id}")
                 needed=ChannelSep.get_posted_but_incomplete(guildid)
