@@ -4,14 +4,14 @@ from datetime import datetime, timedelta, timezone
 from .archive_database import ArchivedRPMessage, ChannelSep, HistoryMakers
 from database import DatabaseSingleton
 from queue import Queue
-
+from bot import StatusEditMessage
 '''
 
 Groups the collected history messages into "ChannelSep" objects, that store the location and time of each set of 
 server message.
 
 '''
-DEBUG_MODE=False
+DEBUG_MODE=True
 
 async def iterate_backlog(backlog,group_id):
     tosend = []
@@ -57,13 +57,15 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
     
     backlog=Queue()
     status_mess=None
-    if ctx: status_mess=ctx.bot.add_status_message(ctx)
+    if ctx: 
+        statusmess=ctx.channel.send("STATMESS")
+        status_mess=StatusEditMessage(statusmess,ctx)
     
     # iterate through the sorted message list
     for e,hm in enumerate(newlist):
 
         if status_mess: #This will ensure that the script won't have a 'heart attack' while processing large messages.
-            await status_mess.updatew(f"Now at: {e}/{hm}, group_id:{group_id}.", min_seconds=5)
+            await status_mess.editw(f"Now at: {e}/{length}, group_id:{group_id}.", min_seconds=12)
         if DEBUG_MODE: gui.gprint('i',hm)
         mytime=(hm.created_at).replace(tzinfo=timezone.utc)
         # create string to identify category, channel, thread combo
