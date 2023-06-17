@@ -3,7 +3,7 @@ from discord import Embed, Color, Guild
 from discord.ext import commands
 
 from utility import MessageTemplates, get_server_icon_color
-
+from bot import TCGuildTask
 from assets import AssetLookup
 upper_ignore_limit=50
 from database import ServerArchiveProfile
@@ -30,8 +30,17 @@ class ArchiveMessageTemplate(MessageTemplates):
 
         embed.add_field(name="Result",value=description, inline=False)
         
-        embed.add_field(name="Archive Details",value=profile.get_details(), inline=False)
-
+        embed.add_field(name="Archive Details",value=profile.get_details(), inline=True)
+        autoval=""
+        tasks=["COMPILE","LAZYARCHIVE"]
+        for t in tasks:
+            autoentry=TCGuildTask.get(guild.id,t)
+            if autoentry:
+                res=autoentry.get_status_desc()
+                if res: 
+                    autoval+=res
+        if autoval:
+            embed.add_field(name="Automatic Task Data",value=autoval)
         embed.set_thumbnail(url=guild.icon)
         embed.set_author(name="Server RP Archive System",icon_url=AssetLookup.get_asset('embed_icon'))
         embed.set_footer(text=f"Server ID: {guild.id}")

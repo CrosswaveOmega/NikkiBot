@@ -24,6 +24,7 @@ class LazyContext(LazyBase):
     __tablename__ = 'lazy_context'
 
     server_id = Column(String, primary_key=True)
+    active_id = Column(String, nullable=True)
     collected = Column(Boolean, default=False)
     grouped = Column(Boolean, default=False)
     posting = Column(Boolean, default=False)
@@ -38,6 +39,7 @@ class LazyContext(LazyBase):
     def create(server_id):
         session = DatabaseSingleton.get_session()
         lazy_context = LazyContext(server_id=server_id)
+        lazy_context.active_id=server_id
         session.add(lazy_context)
         session.commit()
         return lazy_context
@@ -96,7 +98,8 @@ from .historycollect import collect_server_history_lazy
 async def lazy_archive(self, ctx):
         """Equivalient to compile_archive, but does each step in subsequent calls of itself.             
         """
-        MESSAGES_PER_POST_CALL=100
+        MESSAGES_PER_POST_CALL=150
+        #roughly five minutes worth of messages
         bot = ctx.bot
         channel = ctx.message.channel
         guild:discord.Guild=channel.guild
@@ -106,6 +109,9 @@ async def lazy_archive(self, ctx):
         lazycontext=LazyContext.get(guildid)
         if not lazycontext:
             return False
+        if lazycontext.active_id:
+            guildid=lazycontext.active_id
+            profile=ServerArchiveProfile.get_or_new(guildid)
 
         if lazycontext.state=='setup':
             lazycontext.next_state()
@@ -135,13 +141,13 @@ async def lazy_archive(self, ctx):
             if lazycontext.posting:
                 lazycontext.next_state()
                 return True
-            archive_channel=guild.get_channel(profile.history_channel_id)
+            archive_channel=bot.get_channel(profile.history_channel_id)
             timebetweenmess=2.0
             characterdelay=0.05
-            fullcount=lazycontext.message_count
+            fullcount=lazycontext.message_count-lazycontext.archived_so_far
             remaining_time_float= fullcount* timebetweenmess
             archived_this_session=0
-            me=await ctx.channel.send(content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count}.  Will archive at least {MESSAGES_PER_POST_CALL-archived_this_session} messages if available.")
+            me=await ctx.channel.send(content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count}, will take{seconds_to_time_string(remaining_time_float)}, Will archive at least {MESSAGES_PER_POST_CALL-archived_this_session} messages if available.")
             mt=StatusEditMessage(me,ctx)
             while archived_this_session<=MESSAGES_PER_POST_CALL:
                 needed=ChannelSep.get_posted_but_incomplete(guildid)
@@ -179,11 +185,11 @@ async def lazy_archive(self, ctx):
                         remaining_time_float=remaining_time_float-(timebetweenmess)
                         lazycontext.increment_count()
                         archived_this_session+=1
-                        await mt.editw(min_seconds=45,content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count}.  Will archive at least {MESSAGES_PER_POST_CALL-archived_this_session} messages if available.")
+                        await mt.editw(min_seconds=45,content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count}, will take{seconds_to_time_string(remaining_time_float)}.\nWill archive at least {MESSAGES_PER_POST_CALL-archived_this_session} messages if available.")
                     sep.update(all_ok=True)
                     self.bot.database.commit()
                     await asyncio.sleep(2)
-                    await mt.editw(min_seconds=5,content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count} Will archive at least {MESSAGES_PER_POST_CALL-archived_this_session} messages if available.")
+                    await mt.editw(min_seconds=5,content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count},will take{seconds_to_time_string(remaining_time_float)}.\nWill archive at least {MESSAGES_PER_POST_CALL-archived_this_session} messages if available.")
             await me.delete()
         elif lazycontext.state=='done':
             LazyContext.remove(guildid)

@@ -93,9 +93,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             value+=f"Ignored Channels: {clist}\n"
             
             autoentry=TCGuildTask.get(guild.id,"COMPILE")
-            res=autoentry.get_status_desc()
-            if res:
-                value+=res
+            if autoentry:
+                res=autoentry.get_status_desc()
+                if res:      value+=res
             field={"name":"Server RP Archive",'value':value}
             return field
         return None
@@ -638,7 +638,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 start_date = datetime(2023, 1, 1, 15, 0)
                 robj= rrule(
                     freq=MINUTELY,
-                    interval=1,
+                    interval=10,
                     dtstart=start_date
                 )
 
