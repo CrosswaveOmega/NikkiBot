@@ -119,7 +119,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
             if group_id>glimit:
                 
                 DatabaseSingleton('voc').commit()
-                ts, group_id = iterate_backlog(backlog, group_id)
+                ts, group_id = await iterate_backlog(backlog, group_id)
                 tosend += ts
                 print('done')
                 return -5, group_id
