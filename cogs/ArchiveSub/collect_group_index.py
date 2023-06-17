@@ -49,7 +49,7 @@ async def iterate_backlog(backlog,group_id):
         backlog = new_backlog
     return tosend,group_id
 
-async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, maximumwithother=200,ctx=None):
+async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, maximumwithother=200,ctx=None,glimit=999999999):
     # sort message list by created_at attribute
     print("Running ok.")
     newlist =ArchivedRPMessage().get_messages_without_group(server_id)
@@ -116,6 +116,13 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
         if current_chana is None:
             current_chana = hm.get_chan_sep()
             group_id+=1
+            if group_id>glimit:
+                
+                DatabaseSingleton('voc').commit()
+                ts, group_id = iterate_backlog(backlog, group_id)
+                tosend += ts
+                print('done')
+                return -5, group_id
             if DEBUG_MODE: gui.gprint('inb',current_chana,hm.get_chan_sep(),group_id)
             
         # add message to current group if it belongs to the current channel

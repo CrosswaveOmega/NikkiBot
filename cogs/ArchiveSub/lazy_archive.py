@@ -116,6 +116,7 @@ async def lazy_archive(self, ctx):
             lazycontext.next_state()
         elif lazycontext.state=='collecting':
             if lazycontext.collected:
+                lazycontext.message_count=ArchivedRPMessage.count_all(server_id=guildid)
                 lazycontext.next_state()
                 return True
             still_collecting=await collect_server_history_lazy(
@@ -124,6 +125,7 @@ async def lazy_archive(self, ctx):
             )
             if not still_collecting:
                 await ctx.send("Gather phase completed.")
+                
                 lazycontext.next_state()
         
         elif lazycontext.state=='grouping':
@@ -131,11 +133,13 @@ async def lazy_archive(self, ctx):
                 lazycontext.next_state()
                 return True
             lastgroup=profile.last_group_num
-            ts,group_id=await do_group(guildid,profile.last_group_num, ctx=ctx)
-            lazycontext.message_count=ts
+            ts,group_id=await do_group(guildid,profile.last_group_num, ctx=ctx,glim=64)
             profile.update(last_group_num=group_id)
-            await ctx.send("Grouping phase completed.")
-            lazycontext.next_state()
+            await ctx.send(f"{lastgroup}->{group_id}")
+            if ts!=-5:
+                
+                await ctx.send("Grouping phase completed.")
+                lazycontext.next_state()
         elif lazycontext.state=='posting':
             if lazycontext.posting:
                 lazycontext.next_state()
