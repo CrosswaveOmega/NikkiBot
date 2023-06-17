@@ -59,7 +59,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
     for e,hm in enumerate(newlist):
 
         if status_mess: #This will ensure that the script won't have a 'heart attack' while processing large messages.
-            await status_mess.updatew(f"Now at: {e}/{hm}, group_id:{group_id}.", min_seconds=12)
+            await status_mess.updatew(f"Now at: {e}/{hm}, group_id:{group_id}.", min_seconds=5)
         if DEBUG_MODE: gui.gprint('i',hm)
         mytime=(hm.created_at).replace(tzinfo=timezone.utc)
         # create string to identify category, channel, thread combo
