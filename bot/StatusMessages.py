@@ -27,7 +27,7 @@ class StatusEditMessage:
         '''Update status message asyncronously.'''
         if self.check_update_interval()>min_seconds and self.message!=None:
             try:
-                gui.gprint(**kwargs)
+                #gui.gprint(**kwargs)
                 await self.message.edit(**kwargs)
             except Exception as e:
                 gui.gprint(e)
