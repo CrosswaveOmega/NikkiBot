@@ -104,14 +104,13 @@ async def lazy_archive(self, ctx):
         channel = ctx.message.channel
         guild:discord.Guild=channel.guild
         guildid=guild.id
-        profile=ServerArchiveProfile.get_or_new(guildid)
 
         lazycontext=LazyContext.get(guildid)
         if not lazycontext:
             return False
         if lazycontext.active_id:
-            guildid=lazycontext.active_id
-            profile=ServerArchiveProfile.get_or_new(guildid)
+            guildid=int(lazycontext.active_id)
+        profile=ServerArchiveProfile.get_or_new(guildid)
 
         if lazycontext.state=='setup':
             lazycontext.next_state()
