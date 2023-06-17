@@ -454,7 +454,7 @@ class ArchivedRPMessage(ArchiveBase):
     def count_all(server_id: int):
         session = DatabaseSingleton.get_session()
         session:Session=DatabaseSingleton.get_session()
-        count= session.query(func.count(ArchivedRPMessage.id)).filter(
+        count= session.query(func.count(ArchivedRPMessage)).filter(
             (ArchivedRPMessage.server_id == server_id) 
         ).scalar()
         return count

@@ -164,7 +164,6 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 await MessageTemplates.server_archive_message(ctx,statusmessage, ephemeral=True)
             else:
                 await MessageTemplates.server_archive_message(ctx,"Everything should be a-ok")
-            
         else:
             await MessageTemplates.server_archive_message(ctx,"You never set up an auto channel!")
         
@@ -661,7 +660,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await ctx.send("guild only.")
 
     @commands.guild_only()
-    @commands.has_guild_permissions(administrator=True)
+    @commands.has_guild_permissions(manage_channels=True,manage_messages=True)
     @commands.command(name="reset_archive", description="ADMIN ONLY: WILL RESET THE ARCHIVE GROUPING.")
     async def archive_reset(self, ctx):  
         if ctx.guild:
@@ -701,6 +700,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 await mes.delete()
         else:
             await ctx.send("guild only.")
+
 
     @commands.command()
     async def firstlasttimestamp(self, ctx, *args):

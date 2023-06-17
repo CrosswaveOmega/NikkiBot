@@ -201,8 +201,6 @@ class RRuleView(discord.ui.View):
         if self.dtvals["freq"] is None:
             await interaction.response.edit_message(content="Invalid selection.", embed=self.emb())
         else:
-            
-
             if self.dtvals["freq"] == WEEKLY:
                 await interaction.response.edit_message(content=f"Frequency set to {select.values[0]}.  Please make sure to select the days you want to run on below!", embed=self.emb())
                 if lastval!=WEEKLY:
