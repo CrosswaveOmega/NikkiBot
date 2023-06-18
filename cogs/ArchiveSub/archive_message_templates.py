@@ -38,7 +38,7 @@ class ArchiveMessageTemplate(MessageTemplates):
             if autoentry:
                 res=autoentry.get_status_desc()
                 if res: 
-                    autoval+=res
+                    autoval+=t+":"+res+'\n'
         if autoval:
             embed.add_field(name="Automatic Task Data",value=autoval)
         embed.set_thumbnail(url=guild.icon)
