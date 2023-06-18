@@ -172,7 +172,7 @@ async def lazy_archive(self, ctx):
                     lastgroup=profile.last_group_num
                     ts,group_id=await do_group(guildid,profile.last_group_num, ctx=ctx,upperlim=thelim)
                     profile.update(last_group_num=group_id)
-                    await ctx.channel.send(f"{lastgroup}->{group_id}")
+                    await ctx.channel.send(f"group has changed: {lastgroup}->{group_id}")
 
                     grouped=ChannelSep.get_unposted_separators(guildid,limit=8)
                 bot.add_act(str(guildid)+"lazyarch",f"This session has an upper limit of {MESSAGES_PER_POST_CALL-archived_this_session} messages.")
