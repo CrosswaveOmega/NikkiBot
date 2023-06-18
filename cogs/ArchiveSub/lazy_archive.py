@@ -111,7 +111,7 @@ async def lazy_archive(self, ctx):
         if lazycontext.active_id:
             guildid=int(lazycontext.active_id)
         profile=ServerArchiveProfile.get_or_new(guildid)
-
+        gui.gprint(lazycontext.state)
         if lazycontext.state=='setup':
             lazycontext.next_state()
         elif lazycontext.state=='collecting':
@@ -132,6 +132,8 @@ async def lazy_archive(self, ctx):
             if lazycontext.grouped:
                 lazycontext.next_state()
                 return True
+            lazycontext.message_count=ArchivedRPMessage.count_all(server_id=guildid)
+            bot.database.get_session().commit()
 
             lazycontext.next_state()
         elif lazycontext.state=='posting':
@@ -148,11 +150,11 @@ async def lazy_archive(self, ctx):
             mt=StatusEditMessage(me,ctx)
             while archived_this_session<=MESSAGES_PER_POST_CALL:
                 lastgroup=profile.last_group_num
-                ts,group_id=await do_group(guildid,profile.last_group_num, ctx=ctx,glimit=8,upperlim=2000)
+                ts,group_id=await do_group(guildid,profile.last_group_num, ctx=ctx,glimit=8,upperlim=1000)
                 profile.update(last_group_num=group_id)
-                await ctx.send(f"{lastgroup}->{group_id}")
+                await ctx.channel.send(f"{lastgroup}->{group_id}")
                 needed=ChannelSep.get_posted_but_incomplete(guildid)
-                grouped=ChannelSep.get_unposted_separators(guildid,limit=5)
+                grouped=ChannelSep.get_unposted_separators(guildid,limit=8)
                 if len(grouped)<=0:
                     await ctx.send(f"All {fullcount} messages posted. ")
                     lazycontext.next_state()

@@ -26,6 +26,10 @@ async def iterate_backlog(backlog,group_id):
             await asyncio.sleep(0.1)
             now=datetime.now()
         while backlog.empty()==False:
+            if (datetime.now()-now).total_seconds()>1:
+                gui.gprint(F"Backlog Pass {group_id}:")
+                await asyncio.sleep(0.1)
+                now=datetime.now()
             hm=backlog.get()
             channelind = hm.get_chan_sep()
             if hm.author in charsinotherbacklog and hm.get_chan_sep() == current_chana:
@@ -57,6 +61,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
     #                    asyncio.to_thread(ArchivedRPMessage().get_messages_without_group,server_id)
     #                )
     length=len(newlist)
+    old_group_id=group_id
     # initialize variables
     tosend, charsinbacklog =  [], set()
     cc_count, current_chana = 0, None
@@ -116,8 +121,8 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
         if current_chana is None:
             current_chana = hm.get_chan_sep()
             group_id+=1
-            if group_id>glimit:
-                
+            if (group_id-old_group_id)>glimit:
+                #early termination, for lazygrab
                 DatabaseSingleton('voc').commit()
                 ts, group_id = await iterate_backlog(backlog, group_id)
                 tosend += ts
