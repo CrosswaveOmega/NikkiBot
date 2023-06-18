@@ -175,11 +175,14 @@ async def lazy_archive(self, ctx):
                     await ctx.channel.send(f"{lastgroup}->{group_id}")
 
                     grouped=ChannelSep.get_unposted_separators(guildid,limit=8)
-                
+                bot.add_act(str(guildid)+"lazyarch",f"This session has an upper limit of {MESSAGES_PER_POST_CALL-archived_this_session} messages.")
+                allgroups=profile.last_group_num
+                    
                 gui.gprint(archive_channel.name)
                 length=len(grouped)
                 for e,sep in enumerate(grouped):
                     #Start posting
+                    bot.add_act(str(guildid)+"lazyarch",f"groupid on {sep.channel_sep_id}/{allgroups}.\n  at least {MESSAGES_PER_POST_CALL-archived_this_session} more will be archived.")
                     gui.gprint(e,sep)
                     if not sep.posted_url:
                         currjob="rem: {}".format(seconds_to_time_string(int(remaining_time_float)))
@@ -205,10 +208,12 @@ async def lazy_archive(self, ctx):
                         lazycontext.increment_count()
                         archived_this_session+=1
                         await mt.editw(min_seconds=45,content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count}, will take{seconds_to_time_string(remaining_time_float)}.\nWill archive at least {MESSAGES_PER_POST_CALL-archived_this_session} messages if available.")
+                        
                     sep.update(all_ok=True)
                     self.bot.database.commit()
                     await asyncio.sleep(2)
                     await mt.editw(min_seconds=5,content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count},will take{seconds_to_time_string(remaining_time_float)}.\nWill archive at least {MESSAGES_PER_POST_CALL-archived_this_session} messages if available.")
+                bot.remove_act(str(guildid)+"lazyarch")
             await me.delete()
         elif lazycontext.state=='done':
             LazyContext.remove(guildid)
