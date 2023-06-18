@@ -33,7 +33,7 @@ class LazyContext(LazyBase):
     state = Column(String, default="setup")
 
     def __repr__(self):
-        return f"<LazyContext(server_id={self.server_id},active={self.active_id}, state={self.state},message_count={self.message_count}, archived={self.archived_so_far})>"
+        return f"LazyContext({self.server_id},active={self.active_id}, state={self.state},message_count={self.message_count}, archived={self.archived_so_far})"
 
     @staticmethod
     def create(server_id):
@@ -74,8 +74,6 @@ class LazyContext(LazyBase):
         session = DatabaseSingleton.get_session()
         session.commit()
         return self.state
-    def __repr__(self):
-        return f"{self.server_id}, {self.state},{self.message_count},{self.archived_so_far}"
 
 DatabaseSingleton('setup').load_base(LazyBase)
 
@@ -106,10 +104,8 @@ async def lazy_archive(self, ctx):
         guildid=guild.id
 
         lazycontext=LazyContext.get(guildid)
-        if not lazycontext:
-            return False
-        if lazycontext.active_id:
-            guildid=int(lazycontext.active_id)
+        if not lazycontext:    return False
+        if lazycontext.active_id:   guildid=int(lazycontext.active_id)
         profile=ServerArchiveProfile.get_or_new(guildid)
         gui.gprint(lazycontext.state)
         if lazycontext.state=='setup':
