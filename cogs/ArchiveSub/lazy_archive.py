@@ -148,6 +148,7 @@ async def lazy_archive(self, ctx):
                 
                 needed=ChannelSep.get_posted_but_incomplete(guildid)
                 grouped=ChannelSep.get_unposted_separators(guildid,limit=8)
+                gui.gprint(f"Group length: {len(grouped)}")
                 if len(grouped)<=0:
                     #Limit by day
                     session=DatabaseSingleton.get_session()
