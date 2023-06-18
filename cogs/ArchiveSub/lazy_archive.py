@@ -33,7 +33,7 @@ class LazyContext(LazyBase):
     state = Column(String, default="setup")
 
     def __repr__(self):
-        return f"<LazyContext(server_id={self.server_id}, state={self.state})>"
+        return f"<LazyContext(server_id={self.server_id},active={self.active_id}, state={self.state},message_count={self.message_count}, archived={self.archived_so_far})>"
 
     @staticmethod
     def create(server_id):

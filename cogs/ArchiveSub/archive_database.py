@@ -458,6 +458,14 @@ class ArchivedRPMessage(ArchiveBase):
                 (ArchivedRPMessage.server_id == server_id) 
         ).scalar()
         return count
+    @staticmethod
+    def count_all_without_group(server_id: int):
+        session = DatabaseSingleton.get_session()
+        session:Session=DatabaseSingleton.get_session()
+        count= session.query(func.count(ArchivedRPMessage.message_id)).filter(
+                (ArchivedRPMessage.server_id == server_id) & (ArchivedRPMessage.channel_sep_id == None)
+        ).scalar()
+        return count
     def add_file(self, archived_rp_file):
         session = DatabaseSingleton.get_session()
         session.add(archived_rp_file)
