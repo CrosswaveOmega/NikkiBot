@@ -97,7 +97,17 @@ async def lazy_archive(self, ctx):
         """Equivalient to compile_archive, but does each step in subsequent calls of itself.             
         """
         MESSAGES_PER_POST_CALL=150
+        CHANNEL_SEPS_PER_CLUSTER=5
+        MAX_TOTAL_SECONDS=15*60
+        
         #roughly five minutes worth of messages
+        started_at=discord.utils.utcnow()
+        def upper_time_limit(ext=0):
+            delta=discord.utils.utcnow()-started_at
+            remaining=MAX_TOTAL_SECONDS-delta.total_seconds()
+            if ext>remaining:
+               return max(remaining+ext,0)
+            return max(remaining,0)
         bot = ctx.bot
         channel = ctx.message.channel
         guild:discord.Guild=channel.guild
@@ -142,12 +152,13 @@ async def lazy_archive(self, ctx):
             fullcount=lazycontext.message_count-lazycontext.archived_so_far
             remaining_time_float= fullcount* timebetweenmess
             archived_this_session=0
-            me=await ctx.channel.send(content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count}, will take{seconds_to_time_string(remaining_time_float)}, Will archive at least {MESSAGES_PER_POST_CALL-archived_this_session} messages if available.")
+            me=await ctx.channel.send(content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count}, will take {seconds_to_time_string(upper_time_limit())} this session.")
             mt=StatusEditMessage(me,ctx)
-            while archived_this_session<=MESSAGES_PER_POST_CALL:
+            #archived_this_session<=MESSAGES_PER_POST_CALL
+            while upper_time_limit()>0:
                 
                 needed=ChannelSep.get_posted_but_incomplete(guildid)
-                grouped=ChannelSep.get_unposted_separators(guildid,limit=8)
+                grouped=ChannelSep.get_unposted_separators(guildid,limit=CHANNEL_SEPS_PER_CLUSTER)
                 gui.gprint(f"Group length: {len(grouped)}")
                 if len(grouped)<=0:
                     #Limit by day
@@ -174,16 +185,21 @@ async def lazy_archive(self, ctx):
                     ts,group_id=await do_group(guildid,profile.last_group_num, ctx=ctx,upperlim=thelim)
                     profile.update(last_group_num=group_id)
                     await ctx.channel.send(f"group has changed: {lastgroup}->{group_id}")
-
-                    grouped=ChannelSep.get_unposted_separators(guildid,limit=8)
-                bot.add_act(str(guildid)+"lazyarch",f"This session has an upper limit of {MESSAGES_PER_POST_CALL-archived_this_session} messages.")
+                    grouped=ChannelSep.get_unposted_separators(guildid,limit=CHANNEL_SEPS_PER_CLUSTER)
+                bot.add_act(str(guildid)+"lazyarch",f"Time={seconds_to_time_string(upper_time_limit())}")
                 allgroups=profile.last_group_num
-                    
+                message_total=0
                 gui.gprint(archive_channel.name)
                 length=len(grouped)
+                for sep in grouped: message_total+=sep.message_count
+                #Time between each message
+                total_time_for_cluster=message_total*timebetweenmess
+                #time between each delay.
+                total_time_for_cluster+=(length*2)
+
                 for e,sep in enumerate(grouped):
                     #Start posting
-                    bot.add_act(str(guildid)+"lazyarch",f"groupid on {sep.channel_sep_id}/{allgroups}.\n  at least {MESSAGES_PER_POST_CALL-archived_this_session} more will be archived.")
+                    bot.add_act(str(guildid)+"lazyarch",f"groupid on {sep.channel_sep_id}/{allgroups}.\n  at least {seconds_to_time_string(upper_time_limit(total_time_for_cluster))} remaining.")
                     gui.gprint(e,sep)
                     if not sep.posted_url:
                         currjob="rem: {}".format(seconds_to_time_string(int(remaining_time_float)))
@@ -208,12 +224,12 @@ async def lazy_archive(self, ctx):
                         remaining_time_float=remaining_time_float-(timebetweenmess)
                         lazycontext.increment_count()
                         archived_this_session+=1
-                        await mt.editw(min_seconds=45,content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count}, will take{seconds_to_time_string(remaining_time_float)}.\nWill archive at least {MESSAGES_PER_POST_CALL-archived_this_session} messages if available.")
+                        await mt.editw(min_seconds=45,content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count}, remaining session time is at least {seconds_to_time_string(upper_time_limit(total_time_for_cluster))}")
                         
                     sep.update(all_ok=True)
                     self.bot.database.commit()
                     await asyncio.sleep(2)
-                    await mt.editw(min_seconds=5,content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count},will take{seconds_to_time_string(remaining_time_float)}.\nWill archive at least {MESSAGES_PER_POST_CALL-archived_this_session} messages if available.")
+                    await mt.editw(min_seconds=5,content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count},remaining session time is at least {seconds_to_time_string(upper_time_limit(total_time_for_cluster))}")
                 bot.remove_act(str(guildid)+"lazyarch")
             await me.delete()
         elif lazycontext.state=='done':
