@@ -21,7 +21,7 @@ def load_json_with_substitutions(directory:str, filename:str, substitutions:dict
     file_path = os.path.join(directory, filename)
 
     # Read the JSON file as a string
-    with open(file_path, 'r') as file:
+    with open(file_path, 'r', encoding='utf-8') as file:
         json_string = file.read()
 
     # Perform substitutions

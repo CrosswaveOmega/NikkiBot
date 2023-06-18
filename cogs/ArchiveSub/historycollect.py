@@ -255,9 +255,9 @@ async def collect_server_history(ctx, **kwargs):
         statmess=StatusEditMessage(statusMessToEdit,ctx)
         time=profile.last_archive_time
         print(time)
-        await channel.send("Starting at time:{}".format(time.strftime("%B %d, %Y %I:%M:%S %p")))
-
-        if time: time=time.timestamp()
+        if time:
+            await channel.send("Starting at time:{}".format(time.strftime("%B %d, %Y %I:%M:%S %p")))
+            time=time.timestamp()
         if time==None: time=1431518400
         last_time=datetime.fromtimestamp(time,timezone.utc)
         new_last_time=last_time.timestamp()

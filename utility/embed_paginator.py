@@ -6,11 +6,15 @@ import gui
 #This is a container for pages of embeds.
 
 class PageSelect(discord.ui.Select):
-    def __init__(self, option_pass):
+    def __init__(self, option_pass, page):
         options=option_pass
-        super().__init__(placeholder="Select an option",max_values=1,min_values=1,options=options)
+        super().__init__(placeholder=f"Select an option (you are page {page})",max_values=1,min_values=1,options=options)
     async def callback(self, interaction: discord.Interaction):
         #if self.values[0] == "Option 1":
+        value=self.values[0]
+        for f in self.options:
+            if f.value==value:   f.default=True
+            else:   f.default=False
         await self.view.selectcall(interaction,self)
 class PageClassContainer():
     def __init__(self, display: List[Embed] = []):
@@ -36,7 +40,7 @@ class PageClassContainer():
                 label=f"{i.title}, Page: {e}",description="Go to page {e}",value=e
                 )
             )
-        s=PageSelect(selectlist)
+        s=PageSelect(selectlist, self.page)
         return s
             
     def make_embed(self) -> Embed:
@@ -116,7 +120,7 @@ class Buttons(discord.ui.View):
         self.pageselect=None
 
     async def selectcall(self,interaction,select:PageSelect):
-        await self.callbacker.mycallback(interaction, self, "goto",select.values[0].value)
+        await self.callbacker.mycallback(interaction, self, "goto",int(select.values[0]))
     # All button
     @discord.ui.button(emoji='🔢', label="pages", style=discord.ButtonStyle.blurple)
     async def pagebutton_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:

@@ -169,6 +169,7 @@ class RRuleView(discord.ui.View):
     timedef=datetime.now().replace(second=0).strftime("%H:%M")
     def __init__(self, user):
         super().__init__()
+        self.value=None
         self.user = user
         self.dtvals={'freq':None,
                                 'days':[],
@@ -187,7 +188,12 @@ class RRuleView(discord.ui.View):
     ])
     async def frequency_select(self, interaction: discord.Interaction,select: discord.ui.Select):
         value=select.values[0]
-        gui.gprint(value)
+        for f in select.options:
+            if f.value==value:
+                f.default=True
+            else:
+                f.default=False
+        #select.placeholder=f"Select Frequency: on{value}"
         lastval=self.dtvals["freq"]
         if value=='daily':
             self.dtvals["freq"]=DAILY
@@ -199,20 +205,19 @@ class RRuleView(discord.ui.View):
             self.dtvals['freq']=None
 
         if self.dtvals["freq"] is None:
-            await interaction.response.edit_message(content="Invalid selection.", embed=self.emb())
+            await interaction.response.edit_message(content="Invalid selection.", embed=self.emb(), view=self)
         else:
             if self.dtvals["freq"] == WEEKLY:
-                await interaction.response.edit_message(content=f"Frequency set to {select.values[0]}.  Please make sure to select the days you want to run on below!", embed=self.emb())
+                await interaction.response.edit_message(content=f"Frequency set to {select.values[0]}.  Please make sure to select the days you want to run on below!", embed=self.emb(),view=self)
                 if lastval!=WEEKLY:
                     await self.create_weekday_buttons(interaction)
             else:
-                await interaction.response.edit_message(content=f"Frequency set to {select.values[0]}.", embed=self.emb())
+                await interaction.response.edit_message(content=f"Frequency set to {select.values[0]}.", embed=self.emb(),view=self)
                 await self.destroy_weekday_buttons(interaction)
 
     async def create_weekday_buttons(self,inter:discord.Interaction):
         for weekday in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]:
             val=False
-            gui.gprint(weekday)
             if weekday in self.dtvals['days']:
                 val=True
             button = WeekdayButton(label=weekday, custom_id=weekday,myvalue=val)
@@ -263,7 +268,6 @@ class RRuleView(discord.ui.View):
         name_modal=IntervalModal(deftime=self.dtvals['interval'])
         await interaction.response.send_modal(name_modal)
         await name_modal.wait()
-        gui.gprint("DONE.",name_modal.done)
         if name_modal.done!=None:
             timev=name_modal.done
             try:

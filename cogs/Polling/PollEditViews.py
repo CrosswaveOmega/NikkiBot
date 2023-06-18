@@ -83,10 +83,14 @@ class Dropdown(discord.ui.Select):
         gui.gprint(str(error))
         await interaction.response.send_message(f'Oops! Something went wrong: {str(error)}.', ephemeral=True)
     async def callback(self, interaction: discord.Interaction):
+        value=self.values[0]
+        for f in self.options:
+            if f.value==value:   f.default=True
+            else:   f.default=False
         if self.key in self.view.my_poll:
-            self.view.my_poll[self.key]=int(self.values[0])
-        outcome=f"Updated {self.key} to {self.values[0]}."
-        await interaction.response.edit_message(content=f'{self.values[0]}',embed=format_poll_embed(self.view.my_poll, outcome))
+            self.view.my_poll[self.key]=int(value)
+        outcome=f"Updated {self.key} to {value}."
+        await interaction.response.edit_message(content=f'{value}',embed=format_poll_embed(self.view.my_poll, outcome))
 
 
 def format_poll_embed(poll_dict, op_status=''):

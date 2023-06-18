@@ -333,7 +333,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 result=f"I've changed the recurrence settings! \n {sent}"
                 await MessageTemplates.server_archive_message(ctx,result)
             else:
-                await ctx.send("I see.  I'll stop changing your ")
+                await ctx.send("I see.  I'll stop.")
             #await message.delete()
 
         else:
