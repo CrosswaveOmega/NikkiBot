@@ -145,16 +145,36 @@ async def lazy_archive(self, ctx):
             me=await ctx.channel.send(content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count}, will take{seconds_to_time_string(remaining_time_float)}, Will archive at least {MESSAGES_PER_POST_CALL-archived_this_session} messages if available.")
             mt=StatusEditMessage(me,ctx)
             while archived_this_session<=MESSAGES_PER_POST_CALL:
-                lastgroup=profile.last_group_num
-                ts,group_id=await do_group(guildid,profile.last_group_num, ctx=ctx,glimit=8,upperlim=1000)
-                profile.update(last_group_num=group_id)
-                await ctx.channel.send(f"{lastgroup}->{group_id}")
+                
                 needed=ChannelSep.get_posted_but_incomplete(guildid)
                 grouped=ChannelSep.get_unposted_separators(guildid,limit=8)
                 if len(grouped)<=0:
-                    await ctx.send(f"All {fullcount} messages posted. ")
-                    lazycontext.next_state()
-                    return True
+                    #Limit by day
+                    session=DatabaseSingleton.get_session()
+                    query = session.query(func.date(ArchivedRPMessage.created_at), func.count()).\
+                    filter((ArchivedRPMessage.server_id == guildid)&(ArchivedRPMessage.channel_sep_id == None)).\
+                    group_by(func.date(ArchivedRPMessage.created_at))
+                    message_counts = query.first()
+                    
+                    gui.gprint(message_counts)
+                    if message_counts==None:
+                        await ctx.send(f"All {fullcount} messages posted. ")
+                        lazycontext.next_state()
+                        return True
+                    thelim=0
+                    day, count = message_counts
+                    gui.gprint(f"Day: {day} Count: {count}")
+                    if count>0:  thelim=count
+                    if thelim<=0:
+                        await ctx.send(f"All {fullcount} messages posted. ")
+                        lazycontext.next_state()
+                        return True
+                    lastgroup=profile.last_group_num
+                    ts,group_id=await do_group(guildid,profile.last_group_num, ctx=ctx,upperlim=thelim)
+                    profile.update(last_group_num=group_id)
+                    await ctx.channel.send(f"{lastgroup}->{group_id}")
+
+                    grouped=ChannelSep.get_unposted_separators(guildid,limit=8)
                 
                 gui.gprint(archive_channel.name)
                 length=len(grouped)

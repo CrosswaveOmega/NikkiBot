@@ -55,7 +55,7 @@ async def iterate_backlog(backlog,group_id):
 
 async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, maximumwithother=200,ctx=None,glimit=999999999,upperlim=None):
     # sort message list by created_at attribute
-    print("Running ok.")
+    gui.gprint("Starting run.")
     newlist =ArchivedRPMessage().get_messages_without_group(server_id,upperlim=upperlim)
     #await asyncio.gather(
     #                    asyncio.to_thread(ArchivedRPMessage().get_messages_without_group,server_id)
@@ -127,7 +127,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
                 ts, group_id = await iterate_backlog(backlog, group_id)
                 tosend += ts
                 print('done')
-                return -5, group_id
+                return tosend, group_id
             if DEBUG_MODE: gui.gprint('inb',current_chana,hm.get_chan_sep(),group_id)
             
         # add message to current group if it belongs to the current channel
