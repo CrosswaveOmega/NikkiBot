@@ -387,9 +387,10 @@ class Pomelo(commands.Cog):
                 return
             text = tag.get('text')
             output=text
+            print(tag)
             await MessageTemplates.tag_message(
                 ctx, f"Displaying raw tag text.",
-                tag=f"```{tag}```",
+                tag=f"```{text}```",
                 title='Raw Tag Text.'
             )
 
