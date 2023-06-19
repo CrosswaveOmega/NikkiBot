@@ -92,6 +92,27 @@ def is_cyclic_mod(dictionary, start_key, valuestart):
             stack.append((next_key, visited.copy(),steps2))
     return False,0
 
+async def process_text(extracted_text,page):
+    result = await page.evaluate(extracted_text)
+    return result
+
+async def execute_javascript(tagtext, browser):
+    result:str=tagtext
+    
+    page = await browser.new_page()
+    start,end="<js:{", "}>"
+    pattern = r"<js\:\{(.*?)\}>"
+    matches = re.finditer(pattern, tagtext)
+    for match in reversed(list(matches)):
+        extracted_text = match.group(1)
+        print(extracted_text)
+        processed_text = await process_text(extracted_text,page)
+        print(result)
+        result=result.replace(f"{start}{extracted_text}{end}",processed_text,1)
+    await page.close()
+    return result
+              
+
 async def dynamic_tag_get(dictionary,text, maxsize=2000):
     value = text
     
@@ -101,14 +122,15 @@ async def dynamic_tag_get(dictionary,text, maxsize=2000):
         keys_to_replace = [match for match in matches if match in dictionary['taglist']]
 
         if not keys_to_replace:
-            return value
+            break
         if len(keys_to_replace)<=0:
-            return value
+            break
         for key_to_replace in keys_to_replace:
             new=dictionary[key_to_replace]['text']
             if len(new)+len(value)<maxsize:
                 value = value.replace('[' + key_to_replace + ']', new)
                 await asyncio.sleep(0.01)
+
     value=value.replace("\\n","\n")
     return value
 
@@ -120,7 +142,6 @@ class Pomelo(commands.Cog):
         self.helptext=""
         self.bot=bot
         self.db = SqliteDict("./saveData/tags.sqlite")
-        
         self.userdb = SqliteDict("./saveData/users.sqlite")
         taglist=[]
         for i, v in self.db.items():
@@ -130,6 +151,7 @@ class Pomelo(commands.Cog):
 
 
     def cog_unload(self):
+        
         self.db.close()
         self.userdb.close()
     usernames = app_commands.Group(name="username_notify", description="Nikki will alert you when you can get a pomelo username.")
@@ -321,6 +343,7 @@ class Pomelo(commands.Cog):
     @app_commands.describe(tagname='tagname to get')
     async def get(self, interaction: discord.Interaction, tagname: str):
         ctx: commands.Context = await self.bot.get_context(interaction)
+       
         tag = self.db.get(tagname, {})
         if tag:
             if is_cyclic_i(self.db,tagname):
@@ -329,9 +352,25 @@ class Pomelo(commands.Cog):
             text = tag.get('text')
             output=await dynamic_tag_get(self.db,text)
             to_send=f"{output}"
-            if len(to_send)>2000:
-                to_send=to_send[:1950]+"tag size limit."
-            await ctx.send(to_send)
+            print(re.search(r"<js\:\{(.*?)\}>", to_send))
+            pattern_exists = bool(re.search(r"<js\:\{(.*?)\}>", to_send))
+            if pattern_exists:
+                mes=await ctx.send('Javascript running')
+                if not self.bot.browser_on:
+                    mes=await mes.edit(content='Activating advanced utility...')
+                    await self.bot.open_browser()
+                    mes=await mes.edit(content='Javascript running')
+                browser=await self.bot.get_browser()
+                
+                to_send = await execute_javascript(to_send,browser)
+                if len(to_send)>2000:
+                    to_send=to_send[:1950]+"tag size limit."
+                
+                await mes.edit(content=to_send)
+            else:
+                if len(to_send)>2000:
+                    to_send=to_send[:1950]+"tag size limit."
+                await ctx.send(to_send)
         else:
             await MessageTemplates.tag_message(
                 ctx, f"Tag not found."
@@ -370,7 +409,8 @@ class Pomelo(commands.Cog):
         nitro_deadline=get_last_day_of_string_date(nitro_pom)
         user_deadline=get_last_day_of_string_date(user_pom)
         output=await dynamic_tag_get(self.db,"[pomeloinfo]\n[pomwave]")
-        
+
+            
         havepom=upom=nipom=nopom=0
         for user in ctx.guild.members:
             if user.discriminator=="0":
@@ -501,5 +541,5 @@ class Pomelo(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(Pomelo(bot))
-
+    pc=Pomelo(bot)
+    await bot.add_cog(pc)

@@ -37,7 +37,7 @@ intent.guilds=True
 intent.members=True
 from database import DatabaseSingleton, Users_DoNotTrack
 from .StatusMessages import StatusMessageManager, StatusMessage, StatusMessageMixin
-
+from .PlaywrightAPI import PlaywrightMixin
 from discord import Interaction
 from discord.app_commands import CommandTree
 import gui
@@ -66,13 +66,14 @@ class TreeOverride(CommandTree):
         await super()._call(interaction)
 
 
-class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialAppSync):
+class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialAppSync,PlaywrightMixin):
     """A new central bot class.  An extension of discord.py's Bot class with additional functionality."""
     def __init__(self, guimode=False):
         super().__init__(command_prefix=['tc>',">"], tree_cls=TreeOverride,help_command=Chelp(), intents=intent)
         #The Database Singleton is initalized in here.
         self.database=None
 
+        
         self.error_channel=None
 
         self.statmess:StatusMessageManager=StatusMessageManager(self)
@@ -133,6 +134,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
             self.bot_ready=True
             dbcheck=self.database.database_check()
             gui.gprint(dbcheck)
+            await self.start_player()
             now = datetime.datetime.now()
             seconds_until_next_minute = (60 - now.second)%20
             gui.gprint('sleeping for ',seconds_until_next_minute)
@@ -141,7 +143,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
             # Start the coroutine
 
     async def close(self):
-        gui.gprint("Signing off.")
+        print("Signing off.")
         # Close the SQLAlchemy engine
         self.database.close_out()
         # Logout the bot from Discord
@@ -149,8 +151,22 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         self.delete_queue_message.cancel()
         self.check_tc_tasks.cancel()
         self.status_ticker.cancel()
+
+            
         if self.gui:  
             await self.gui.kill()
+        if self.playapi:
+            try:
+                try:  await asyncio.wait_for(self.close_browser(), timeout=8)
+                except Exception as ex:
+                    print('rt',ex)
+                print("done closing.")
+                self.playapi.stop()
+                print()
+            except Exception as e:
+                #l=logging.getLogger("TCLogger")
+                self.logs.error('here',str(e))
+        print("close done?")
             
         await super().close()
 

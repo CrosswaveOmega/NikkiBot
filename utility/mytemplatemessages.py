@@ -24,8 +24,7 @@ class MessageTemplates:
         return embed
     @staticmethod
     def get_tag_edit_embed(title:str, description: str, tag=None,color=0x127a09):
-        '''create a embed to display a simple overview on any server.'''
-        '''utilizes the extend_field_list'''
+        '''This is for the tag system.'''
         tagres=""
         if tag!=None:
                 
@@ -36,7 +35,7 @@ class MessageTemplates:
         embed=Embed(title=title, description=tagres, color=Color(color))
         embed.add_field(name="Result",value=description,inline=False)
         embed.set_thumbnail(url=AssetLookup.get_asset('embed_icon'))
-        embed.set_author(name=f"{AssetLookup.get_asset('name')}'s Tag systen",icon_url=AssetLookup.get_asset('embed_icon'))
+        embed.set_author(name=f"{AssetLookup.get_asset('name')}'s Tag system",icon_url=AssetLookup.get_asset('embed_icon'))
 
         return embed
 
@@ -71,8 +70,7 @@ class MessageTemplates:
         for p in description.split('\n'):pageme.add_line(p)
         embeds=[]
         for page in pageme.pages:
-            embed=Embed(title=title, description=page, color=Color(0xff0000))
-            embed.set_author(name="Error Message",icon_url=embedicon)
+            embed=MessageTemplates.get_error_embed(title,page)
             embeds.append(embed)
         return embeds
     @staticmethod

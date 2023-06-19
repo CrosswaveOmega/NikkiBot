@@ -3,9 +3,10 @@ from discord.ext import commands
 from typing import List, Tuple
 from discord import Embed
 import gui
-#This is a container for pages of embeds.
 
+'''This is for returning pages of embeds'''
 class PageSelect(discord.ui.Select):
+    '''Simple Dropdown Menu that '''
     def __init__(self, option_pass, page):
         options=option_pass
         super().__init__(placeholder=f"Select an option (you are page {page})",max_values=1,min_values=1,options=options)
@@ -37,8 +38,8 @@ class PageClassContainer():
         for e,i in enumerate(self.display):
             selectlist.append(
                 discord.SelectOption(
-                label=f"{i.title}, Page: {e}",description="Go to page {e}",value=e
-                )
+                label=f"{i.title}, Page: {e}",description="Go to page {e}",value=e,
+                default=True if self.page-1==e else False)
             )
         s=PageSelect(selectlist, self.page)
         return s
@@ -113,7 +114,7 @@ class PageClassContainer():
             emb = self.make_embed()
             await interaction.response.edit_message(embed=emb, view=view)
 
-class Buttons(discord.ui.View):
+class EmbedPageButtons(discord.ui.View):
     def __init__(self, *, timeout: int = 180, callbacker: PageClassContainer) -> None:
         super().__init__(timeout=timeout)
         self.callbacker = callbacker
@@ -132,6 +133,7 @@ class Buttons(discord.ui.View):
         else:
             self.remove_item(self.pageselect)
             self.pagebutton_button=None
+            self.pageselect=None
         await self.callbacker.mycallback(interaction, self, "pass")
     # Exit button
     @discord.ui.button(emoji='⏹️', label="exit", style=discord.ButtonStyle.blurple)
@@ -168,17 +170,17 @@ class SelectView(discord.ui.View):
     #This is a view for the navigation buttons.
     def __init__(self, *, timeout = 180, myhelp=None):
         super().__init__(timeout=timeout)
-        self.add_item(Buttons())
+        self.add_item(EmbedPageButtons())
 
 
 
 
 
 
-async def pages_of_embeds_2(ctx: commands.Context, display: List[discord.Embed]) -> Tuple[PageClassContainer, Buttons]:
+async def pages_of_embeds_2(ctx: commands.Context, display: List[discord.Embed]) -> Tuple[PageClassContainer, EmbedPageButtons]:
     """
-    Creates a PageClassContainer and a Buttons object and returns them as a tuple. 
-    This function is similar to pages_of_embeds() but returns the Buttons object along with the PageClassContainer.
+    Creates a PageClassContainer and a EmbedPageButtons object and returns them as a tuple. 
+    This function is similar to pages_of_embeds() but returns the EmbedPageButtons object along with the PageClassContainer.
 
     Parameters:
     -----------
@@ -192,12 +194,12 @@ async def pages_of_embeds_2(ctx: commands.Context, display: List[discord.Embed])
     A tuple containing:
     pagecall: PageClassContainer
         An instance of PageClassContainer containing the `display` list.
-    buttons: Buttons
-        An instance of the Buttons class with a reference to the `pagecall` instance.
+    buttons: EmbedPageButtons
+        An instance of the EmbedPageButtons class with a reference to the `pagecall` instance.
     """
     pagecall = PageClassContainer(display)
 
-    buttons = Buttons(callback=pagecall)
+    buttons = EmbedPageButtons(callback=pagecall)
     return pagecall, buttons
 
 
@@ -218,5 +220,5 @@ async def pages_of_embeds(ctx: commands.Context, display: List[discord.Embed], *
     """
 
     pagecall = PageClassContainer(display)
-    message = await ctx.send(embed=pagecall.make_embed(), view=Buttons(callbacker=pagecall), **kwargs)
+    message = await ctx.send(embed=pagecall.make_embed(), view=EmbedPageButtons(callbacker=pagecall), **kwargs)
     return message

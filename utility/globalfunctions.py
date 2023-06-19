@@ -24,33 +24,25 @@ def replace_working_directory(string):
     replaced_string=string
     for rawsite in site.getsitepackages():
         sites = os.path.dirname(rawsite)
-        # Use regex to replace all instances of the working directory in the string
         replaced_string = re.sub(re.escape(sites), 'site', string, flags=re.IGNORECASE)
-    # Use regex to replace all instances of the working directory in the string
+
     replaced_string = re.sub(re.escape(parent_dir), '..', replaced_string, flags=re.IGNORECASE)
 
     return escape_markdown(replaced_string)
 
 def filter_trace_stack(stack):
-    '''This function is for filtering call stacks'''
+    '''This function is for filtering call stacks so that ONLY the trace related to code files is shown'''
     cwd = os.getcwd()  # Replace backslashes for regex
-    print("Call stack:")
     newlines=[]
     
     parent_dir = os.path.dirname(cwd)
-    print(cwd)
-    print(parent_dir)
     for line in stack:
-        print(line)
-        #print(line.strip(),print(parent_dir))
         if parent_dir.upper() in line.upper().strip() and not '.venv' in line.strip():
-            newlines.append(line) 
-            print("AS",line.strip())
+            newlines.append(line)
     replaced_string="\n".join(newlines)
 
     return escape_markdown(replaced_string)
 
-'''Utility functions here to assist.'''
 '''Utility functions here to assist.'''
 
 def the_string_numerizer(num,thestring,comma=False, force=False, have_s=True):

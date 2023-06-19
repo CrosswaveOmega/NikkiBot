@@ -16,7 +16,8 @@ from utility import WebhookMessageWrapper as web, urltomessage, ConfirmView, RRu
 from bot import TCBot, TCGuildTask, Guild_Task_Functions, StatusEditMessage, TC_Cog_Mixin
 from random import randint
 from discord.ext import commands, tasks
-from dateutil.rrule import rrule,rrulestr, WEEKLY, SU, MINUTELY
+
+from dateutil.rrule import rrule,rrulestr, WEEKLY, SU, MINUTELY, HOURLY
 
 from discord import Webhook
 
@@ -50,7 +51,6 @@ class ToChoice(commands.Converter):
         else:
             return argument
 
-from dateutil.relativedelta import relativedelta, MO, TU, WE, TH, FR, SA, SU
 class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
     """This class is intended for Discord RP servers that use Tupperbox or another proxy application.."""
     def __init__(self, bot):
@@ -638,8 +638,8 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 myurl=message.jump_url
                 start_date = datetime(2023, 1, 1, 15, 0)
                 robj= rrule(
-                    freq=MINUTELY,
-                    interval=10,
+                    freq=HOURLY,
+                    interval=1,
                     dtstart=start_date
                 )
 
@@ -1052,7 +1052,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
         fullcount=ts
         profile.update(last_group_num=group_id)
-        remaining_time_float= fullcount* timebetweenmess
+        
         gui.gprint(lastgroup,group_id)
         if dynamicwait:
             remaining_time_float+=(totalcharlen*characterdelay)
@@ -1063,13 +1063,22 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         grouped=ChannelSep.get_unposted_separators(guildid)
         if needed:   
             grouped.insert(0,needed)
+        length=len(grouped)
         gui.gprint(grouped,needed)
-        
+        message_total,total_time_for_cluster=0,0.0
+        for sep in grouped: 
+            message_total+=sep.message_count
+        total_time_for_cluster=message_total*timebetweenmess
+        #time between each delay.
+        total_time_for_cluster+=(length*2)
+
+        remaining_time_float= fullcount* timebetweenmess
+
         await m.edit(content=f"It will take {seconds_to_time_string(int(remaining_time_float))} to post in the archive channel.")
         me=await ctx.channel.send(content=f"<a:LetWalk:1118184074239021209> This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
         mt=StatusEditMessage(me,ctx)
         gui.gprint(archive_channel.name)
-        length=len(grouped)
+
         for e,sep in enumerate(grouped):
             #Start posting
             gui.gprint(e,sep)

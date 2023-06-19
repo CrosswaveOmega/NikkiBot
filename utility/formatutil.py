@@ -10,8 +10,8 @@ def get_time_since_delta(delta: timedelta) -> str:
     return f"<t:{timestamp}:R>"
 
 def permission_print( permlist:List[str]):
+    '''print out missing permissions in a properly formatted sentence.'''
     missing = [perm.replace('_', ' ').replace('guild', 'server').title() for perm in permlist]
-
     if len(missing) > 2:
         fmt = '{}, and {}'.format(", ".join(missing[:-1]), missing[-1])
     else:
@@ -106,6 +106,7 @@ bar_emoji={'1e':'<a:emptyleft:1118209186917011566>'
 }
 
 def progress_bar(current, total, width=5):
+    '''print a progress bar.'''
     if current>total:
         current=total
     fraction = float(current / total)

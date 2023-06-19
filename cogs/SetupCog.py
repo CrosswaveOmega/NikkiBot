@@ -28,33 +28,6 @@ from database import Users_DoNotTrack
 
 
 
-class HelpSelect(discord.ui.Select):
-    def __init__(self,myhelp):
-        self.myhelp=myhelp
-        ctx = self.myhelp.context
-        bot = ctx.bot
-        self.cogs = bot.cogs
-        options=[]
-        for i, v in self.cogs.items():
-            options.append(discord.SelectOption(label=v.qualified_name,description="This is cog {}".format(v.qualified_name)))
-           
-            
-
-        super().__init__(placeholder="Select a cog",max_values=1,min_values=1,options=options)
-    async def callback(self, interaction: discord.Interaction):
-        value=self.values[0]
-        
-        for i, v in self.cogs.items():
-            if value==v.qualified_name:
-                myembed=await self.myhelp.get_cog_help_embed(v)
-                await interaction.response.edit_message(content="showing cog help",embed=myembed)
-
-class SelectView(discord.ui.View):
-    def __init__(self, *, timeout = 180, myhelp=None):
-        super().__init__(timeout=timeout)
-        self.add_item(HelpSelect(myhelp))
-
-
     
 class Setup(commands.Cog, TC_Cog_Mixin):
     """The component where you enable/disable other components."""
