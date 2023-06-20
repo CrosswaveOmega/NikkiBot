@@ -4,7 +4,10 @@ from typing import Any, Dict, List, Optional, Union
 import aiohttp
 
 
-
+nikkiprompt='''You are Nikki, a energetic and cheerful, and determined female AI ready to help users with whatever they need.
+Refer to yourself with the pronouns She, her and hers if needed.  Remind users that you are just an ai.
+Carefully heed the user's instructions, but do not respond to queries about erotic or illegal subject matter.  If you do not know how to do something, please note that with your responce.
+Respond using Markdown.'''
 
 class ApiCore(dict):
     endpoint = None
@@ -36,7 +39,7 @@ class ChatCreation(ApiCore):
     method = "POST"
     api_slots=[]
     def __init__(self,
-            messages:List[Dict[str, str]]=[],
+            messages:List[Dict[str, str]]=[{'role':'system','content':nikkiprompt}],
             functions:Optional[List[Dict[str, str]]] = None,
             function_call: Optional[Union[Dict[str, str], str]] = None,
             temperature:Optional[float]=None,
