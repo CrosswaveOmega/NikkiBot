@@ -1,5 +1,5 @@
 from typing import Union
-from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey, DateTime, Double
+from sqlalchemy import Column, Integer, Text, String, Boolean, ForeignKey, DateTime, Double
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
@@ -314,6 +314,7 @@ class Users_DoNotTrack(Main_DB_Base):
             return True
         else:
             return False
+
 
 
 

@@ -40,7 +40,7 @@ Initalizes TCBot, and defines some checks
 
 import database.database_main as dbmain
 from assets import AssetLookup
-
+import purgpt
 bot:TCBot = TCBot(guimode=True)
 
 
@@ -401,6 +401,7 @@ async def main(args):
         gui.DataStore.initialize_default_values()
 
         if (config!=None):
+            purgpt.api_key=config.get("optional", 'purgpt')
             await bot.start(config.get("vital", 'cipher'))
              
 

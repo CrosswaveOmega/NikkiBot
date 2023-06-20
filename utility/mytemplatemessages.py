@@ -6,11 +6,34 @@ from .globalfunctions import get_server_icon_color
 from .manual_load import load_manual
 from .views import ConfirmView
 from assets import AssetLookup
-
+from database.database_ai import ServerAIConfig
 embedicon=None
 
 class MessageTemplates:
     '''Class full of static methods that serve as templates for formatted embeds.'''
+    @staticmethod
+    def get_ai_config_embed(guild, description:str, color=0xffffff):
+        '''Create an embed based on a ServerAIConfig entry.'''
+        upper_channel_limit=25
+        profile=ServerAIConfig.get_or_new(guild.id)
+
+        aid,mentions="NOT SET","No added channels"
+        clist=profile.list_channels()
+        if clist: mentions=",".join( [f"<#{ment}>" for ment in clist[:upper_channel_limit]])
+        if len(clist) > upper_channel_limit: mentions += f' and {len(clist)-upper_channel_limit} more!'
+        embed = Embed(title="Server AI Config",description=mentions, color=Color(color))
+        embed.set_author(name=f"{AssetLookup.get_asset('name')}'s Server AI Profile",icon_url=AssetLookup.get_asset('embed_icon'))
+        embed.add_field(name="Result",value=description,inline=False)
+
+        embed.set_footer(text="AI Config Details")
+        
+        return embed
+    
+    @staticmethod
+    async def server_ai_message(ctx, description="",**kwargs):
+        embed = MessageTemplates.get_ai_config_embed(ctx.guild,description)
+        await ctx.send(embed=embed, **kwargs)
+
     @staticmethod
     def get_server_profile_embed(guild:Guild, description: str, extend_field_list=[],color=0xffffff):
         '''create a embed to display a simple overview on any server.'''

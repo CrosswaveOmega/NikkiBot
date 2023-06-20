@@ -598,7 +598,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         else: await MessageTemplatesMusic.music_msg(ctx, "Empty Playlist", "My playlist is already empty.")
 
 
-    @mp.command(name="playlistshuffle", description="Shuffle your playlist")
+    @mp.command(name="shuffle", description="Shuffle all songs in the queue.")
     async def playlistshuffle(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild:discord.Guild=interaction.guild

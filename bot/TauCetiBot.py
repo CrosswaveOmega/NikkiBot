@@ -12,7 +12,6 @@ import datetime
 import random
 import string
 from assets import AssetLookup
-from database import *
 from .Tasks.TCTasks import TCTaskManager
 from sqlalchemy.exc import IntegrityError
 import gui
@@ -23,6 +22,7 @@ from .TCAppCommandAutoSync import(
     build_and_format_app_commands, SpecialAppSync
     )
 from .TCMixins import CogFieldList, StatusTicker
+
 """ Primary Class
 
 This file is for an extended Bot Class for this Discord Bot.
@@ -35,11 +35,12 @@ intent.presences=True
 intent.message_content=True
 intent.guilds=True
 intent.members=True
-from database import DatabaseSingleton, Users_DoNotTrack
+from database import DatabaseSingleton, Users_DoNotTrack, ServerData
 from .StatusMessages import StatusMessageManager, StatusMessage, StatusMessageMixin
 from .PlaywrightAPI import PlaywrightMixin
 from discord import Interaction
 from discord.app_commands import CommandTree
+import purgpt
 import gui
 
 class TreeOverride(CommandTree):
@@ -73,7 +74,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         #The Database Singleton is initalized in here.
         self.database=None
 
-        
+        self.gptapi= None
         self.error_channel=None
 
         self.statmess:StatusMessageManager=StatusMessageManager(self)
@@ -111,6 +112,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         '''This function is called in on_ready, but only once.'''
         if not self.bot_ready:
             #if self.guimode:   self.gui.run(self.loop) #update_every_second()
+            self.gptapi= purgpt.PurGPTAPI(purgpt.api_key)
             if self.guimode:
                 self.gui.run(self.loop)
                 pass
@@ -134,6 +136,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
             self.bot_ready=True
             dbcheck=self.database.database_check()
             gui.gprint(dbcheck)
+
             await self.start_player()
             now = datetime.datetime.now()
             seconds_until_next_minute = (60 - now.second)%20

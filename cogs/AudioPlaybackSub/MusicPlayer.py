@@ -67,7 +67,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
     def __init__(self, bot,guild:discord.Guild=None):
         self.bot, self.guild = bot, guild
         self.songs, self.songhist,self.current= [], [],None
-        self.repeat,self.repeatone, self.shuffle=False, False,False
+        self.repeat,self.repeatone, self.autoshuffle=False, False,False
         self.player_condition="none"
         self.usersinvc=0
 
@@ -167,7 +167,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
     def reset(self):
         '''reset the player.'''
         self.songs, self.songhist,self.current= [], [],None
-        self.repeat,self.shuffle=False, False
+        self.repeat,self.autoshuffle=False, False
         self.lastm=None
     
     async def setvoiceandctx(self,interaction: discord.Interaction):
@@ -268,8 +268,11 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
         song.get_song()        
         if song.state=="Error":
             self.internal_message_log.append(f"I'm so sorry, {song.title} gave me a weird error: {str(song.error_value)}")
-        elif song.state=="Ok": 
-            self.songs.append(song)
+        elif song.state=="Ok":
+            if self.autoshuffle:
+                self.songs.insert(random.randint(0,len(self.songs)-1),song)
+            else:
+                self.songs.append(song)
 
     def get_music_embed(self, title: str, description: str)->discord.Embed:
         """Format a status embed and return"""
