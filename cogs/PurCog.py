@@ -140,7 +140,6 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             await MessageTemplates.server_ai_message(ctx,"?")
             return 
         self.bot.database.commit()
-        self.guild_db_cache[str(ctx.guild.id)]=profile
         await MessageTemplates.server_ai_message(ctx,"I will start listening there, ok?'")
 
         
@@ -188,7 +187,6 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             await MessageTemplates.server_ai_message(ctx,"?")
             return 
         self.bot.database.commit()
-        self.guild_db_cache[str(ctx.guild.id)]=profile
         await MessageTemplates.server_ai_message(ctx,"I will stop listening there, ok?  Pings will still work, though.")
     
     @commands.Cog.listener()
