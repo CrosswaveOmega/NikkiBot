@@ -94,7 +94,7 @@ async def message_check(bot:TCBot,message):
 
         emb.add_field(name="Server Data",value=f"{guild.name}, \nServer ID: {guild.id}",inline=False)
         emb.add_field(name="User Data",value=f"{user.name}, \n User ID: {user.id}",inline=False)
-        target=bot.get_channel(audit_channel)
+        target=bot.get_channel(int(audit_channel))
         await target.send(embed=emb)
     bot.database.commit()
 
