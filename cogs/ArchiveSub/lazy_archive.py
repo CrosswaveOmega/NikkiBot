@@ -125,14 +125,20 @@ async def lazy_archive(self, ctx):
                 lazycontext.message_count=ArchivedRPMessage.count_all(server_id=guildid)
                 lazycontext.next_state()
                 return True
-            still_collecting=await collect_server_history_lazy(
-                ctx,
-                update=True
-            )
-            if not still_collecting:
-                await ctx.send("Gather phase completed.")
-                
-                lazycontext.next_state()
+            while upper_time_limit()>0:
+                bot.add_act(str(guildid)+"lazyarch",f"Time={seconds_to_time_string(upper_time_limit())}")
+
+
+                still_collecting=await collect_server_history_lazy(
+                    ctx,
+                    update=True
+                )
+                if not still_collecting:
+                    await ctx.send("Gather phase completed.")
+                    lazycontext.next_state()
+                    break
+            bot.remove_act(str(guildid)+"lazyarch")
+            return True
         
         elif lazycontext.state=='grouping':
             if lazycontext.grouped:

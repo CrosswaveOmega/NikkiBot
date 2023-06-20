@@ -297,7 +297,7 @@ class PlaylistMixin:
             return removed_song
         return "ERR!&outofrange&ERR!"
 
-    async def playlist_action_shuffle(self)->str:
+    async def playlist_action_shuffle(self, param)->str:
         """
         Shuffle the songs in the playlist.
 
@@ -307,7 +307,7 @@ class PlaylistMixin:
         random.shuffle(self.songs)
         return "done"
 
-    async def playlist_action_clear(self)->str:
+    async def playlist_action_clear(self,param)->str:
         """
         Clear the playlist.
 

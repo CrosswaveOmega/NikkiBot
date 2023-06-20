@@ -41,7 +41,7 @@ Initalizes TCBot, and defines some checks
 import database.database_main as dbmain
 from assets import AssetLookup
 
-bot = TCBot(guimode=True)
+bot:TCBot = TCBot(guimode=True)
 
 
 taskflags=defaultdict(bool)
