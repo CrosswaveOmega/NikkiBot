@@ -9,7 +9,7 @@ import re
 #import datetime
 from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY, MO, TU, WE, TH, FR, SA, SU
 
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 import time
 from queue import Queue
 
@@ -47,6 +47,9 @@ async def message_check(bot:TCBot,message):
         await message.channel.send("This message is too big.")
         return
     serverrep,userrep=AuditProfile.get_or_new(guild,user)
+    serverrep.checktime()
+    userrep.checktime()
+
     ok, reason=serverrep.check_if_ok()
     if not ok:
         await message.channel.send(reasons["server"][reason])
@@ -142,12 +145,35 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         self.bot.database.commit()
         await MessageTemplates.server_ai_message(ctx,"I will start listening there, ok?'")
 
+    @commands.command()
+    @commands.is_owner()
+    async def increase_limit(self,ctx,type:Literal['server','user'],id:int,limit:int):
+        if type=='server':
+            profile=AuditProfile.get_server(id)
+            if profile:
+                profile.DailyLimit=limit
+                self.bot.database.commit()
+                await ctx.send("done")
+            else:
+                await ctx.send("server not found.")
+        elif type=='user':
+            profile=AuditProfile.get_user(id)
+            if profile:
+                profile.DailyLimit=limit
+                self.bot.database.commit()
+                await ctx.send("done")
+            else:
+                await ctx.send("user not found.")
+        
         
     @app_commands.command(name="ban_user", description="Ban a user from using my AI.", extras={"homeonly":True})
     @app_commands.describe(userid='user id')
     async def aiban(self, interaction: discord.Interaction, userid:int) -> None:
         """get bot info for this server"""
         ctx: commands.Context = await self.bot.get_context(interaction)
+        if interaction.user!=self.bot.application.owner:
+            await ctx.send("This command is owner only, buddy.")
+            return
         profile=AuditProfile.get_user(userid)
         if profile:
             profile.ban()
@@ -162,13 +188,16 @@ class AICog(commands.Cog, TC_Cog_Mixin):
     async def aibanserver(self, interaction: discord.Interaction, serverid:int) -> None:
         """get bot info for this server"""
         ctx: commands.Context = await self.bot.get_context(interaction)
+        if interaction.user!=self.bot.application.owner:
+            await ctx.send("This command is owner only, buddy.")
+            return
         profile=AuditProfile.get_server(serverid)
         if profile:
             profile.ban()
             await ctx.send(f"Good riddance!  The server with id {id} has been banned.")
         else:
             await ctx.send(f"I see no server by that name.")
-
+    
     @ai_setup.command(
         name="remove_ai_channel",
         brief="use to stop Nikki from talking in an added AI Channel."

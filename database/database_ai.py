@@ -13,6 +13,7 @@ from utility import filter_trace_stack
 import traceback
 from .database_main import AwareDateTime
 
+from datetime import datetime, time, timedelta
 AIBase = declarative_base(name="AI Feature Base")
 class AuditProfile(AIBase):
     '''To deal with bad actors.'''
@@ -27,7 +28,12 @@ class AuditProfile(AIBase):
     current = Column(Integer, default=0)
     last_call = Column(DateTime, nullable=True)
     started_dt = Column(DateTime, nullable=True)
-
+    def checktime(self):
+        if self.last_call!=None:
+            six_pm = time(hour=18)  # 6:00PM
+            today_at_six_pm = datetime.combine(datetime.today(), six_pm)
+            if self.last_call<today_at_six_pm:
+                self.current=0
     @staticmethod
     def get_or_new(server,user):
         sa= AuditProfile.get_server(server.id)
