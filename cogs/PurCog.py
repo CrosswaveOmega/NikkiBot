@@ -162,8 +162,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
     @commands.command(brief="Update user or server api limit [server,user],id,limit")
     @commands.is_owner()
     async def increase_limit(self,ctx,type:Literal['server','user'],id:int,limit:int):
-        '''Owner only: 
-        '''
+        '''"Update user or server api limit `[server,user],id,limit`"'''
         if type=='server':
             profile=AuditProfile.get_server(id)
             if profile:
