@@ -258,6 +258,13 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             try:
                 await message.channel.send(embed=emb)
             except Exception as e:
+                try:
+                    myperms= message.guild.system_channel.permissions_for(message.guild.me)
+                    if myperms.send_messages:
+                        await message.channel.send('I need to be able to send messages in a channel to use this feature.')
+                except e:
+                    pass
+                        
                 await self.bot.send_error(e,title=f"Could not send message",uselog=True)
         
 
