@@ -42,6 +42,11 @@ reasons={'server':{
 }
 } 
 async def message_check(bot:TCBot,message):
+    permissions = message.channel.permissions_for(message.channel.guild.me)
+    if permissions.send_messages:
+        pass
+    else:
+        raise Exception(f"{message.channel.name}:{message.channel.id} send message permission not enabled.")
 
     guild=message.guild
     user=message.author
@@ -241,6 +246,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         try:
             profile=ServerAIConfig.get_or_new(message.guild.id)
             if self.bot.user.mentioned_in(message):
+
                 await message_check(self.bot,message)
             else:
                 if profile.has_channel(message.channel.id):
