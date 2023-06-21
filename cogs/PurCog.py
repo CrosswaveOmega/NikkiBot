@@ -84,7 +84,7 @@ async def message_check(bot:TCBot,message):
     async with message.channel.typing():
         res=await bot.gptapi.callapi(chat)
     if res.get('err',False):
-        error=purgpt.error.PurGPTError(str(res))
+        error=purgpt.error.PurGPTError("Something went wrong.",json_body=res)
         raise error
     profile.add_message_to_chain(
         message.id,message.created_at,

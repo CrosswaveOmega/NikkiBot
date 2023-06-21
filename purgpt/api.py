@@ -58,7 +58,7 @@ class PurGPTAPI:
             except (aiohttp.ServerTimeoutError, asyncio.TimeoutError) as e:
                 raise error.Timeout("Request timed out") from e
             except aiohttp.ClientError as e:
-                raise error.APIConnectionError("Error communicating with PurGPT") from e
+                raise error.APIConnectionError("AIO client error:",e) from e
     async def callapi(self,obj:ApiCore):
         endpoint=obj.endpoint
         payload=obj.to_dict()

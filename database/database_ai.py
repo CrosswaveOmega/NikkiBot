@@ -25,7 +25,7 @@ class AuditProfile(AIBase):
     id = Column(String, primary_key=True)
     type = Column(String, primary_key=True)
     processing = Column(Boolean, default=False)
-    DailyLimit = Column(Integer, default=50)
+    DailyLimit = Column(Integer, default=20)
     banned = Column(Boolean, default=False)
     banned_since = Column(DateTime, nullable=True)
     ban_reason = Column(Text,default="")
@@ -79,6 +79,8 @@ class AuditProfile(AIBase):
         targetid,num=hash.hash_string(str(id),hashlen=16,hashset=hash.Hashsets.base64)
         session = DatabaseSingleton.get_session()
         entry = cls(id=targetid, type=type)
+        if type=='server':
+            entry.DailyLimit=50
         session.add(entry)
         session.commit()
         return entry
