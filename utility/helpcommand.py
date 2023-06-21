@@ -33,16 +33,28 @@ class HelpSelect(discord.ui.Select):
         super().__init__(placeholder="Select an option",max_values=1,min_values=1,options=options)
     async def callback(self, interaction: discord.Interaction):
         value=self.values[0]
+        for option in self.options:
+            option.default=False
+            if option.value==value:
+                option.default=True
         
         for i, v in self.cogs.items():
             if value==v.qualified_name:
                 myembed=await self.myhelp.get_cog_help_embed(v)
-                await interaction.response.edit_message(content="showing cog help",embed=myembed)
+                await interaction.response.edit_message(content="showing cog help",embed=myembed,view=self.view)
 
 class SelectView(discord.ui.View):
     def __init__(self, *, timeout = 180, myhelp=None):
         super().__init__(timeout=timeout)
-        self.add_item(HelpSelect(myhelp))
+        
+        cogchunk=discord.utils.as_chunks(myhelp.context.bot.cogs.values(),25)
+        for c in cogchunk:
+            options=[]
+            for v in c:
+                options.append(discord.SelectOption(label=v.qualified_name,description="This is cog {}".format(v.qualified_name)))
+            self.add_item(HelpSelect(myhelp))
+
+        
 
 
 class Chelp(HelpCommand):

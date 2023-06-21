@@ -884,6 +884,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         bot = ctx.bot
         auth = ctx.message.author
         channel = ctx.message.channel
+        
         guild:discord.Guild=channel.guild
         if guild==None:
             await ctx.send("This command will only work inside a guild.")
@@ -1072,7 +1073,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         #time between each delay.
         total_time_for_cluster+=(length*2)
 
-        remaining_time_float= fullcount* timebetweenmess
+        remaining_time_float= total_time_for_cluster
 
         await m.edit(content=f"It will take {seconds_to_time_string(int(remaining_time_float))} to post in the archive channel.")
         me=await ctx.channel.send(content=f"<a:LetWalk:1118184074239021209> This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
@@ -1089,7 +1090,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 sep.update(posted_url=chansep.jump_url)
                 await self.edit_embed_and_neighbors(sep)
                 self.bot.database.commit()
-            for amess in sep.get_messages():
+            messages=sep.get_messages()
+            messagelength=len(messages)
+            for index,amess in enumerate(messages):
                 c,au,av=amess.content,amess.author,amess.avatar
                 files=[]
                 for attach in amess.list_files():
@@ -1108,10 +1111,11 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 else:
                     await asyncio.sleep(timebetweenmess)
                     remaining_time_float=remaining_time_float-(timebetweenmess)
-                    await mt.editw(min_seconds=45,content=f"<a:LetWalk:1118184074239021209> Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
+                    await mt.editw(min_seconds=45,content=f"<a:LetWalk:1118184074239021209> Currently on {e+1}/{length}.\n index{index}/{messagelength} \n This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
             sep.update(all_ok=True)
             self.bot.database.commit()
             await asyncio.sleep(2)
+            remaining_time_float-=2
             await mt.editw(min_seconds=30,content=f"<a:LetWalk:1118184074239021209> Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
             #await edittime.invoke_if_time(content=f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
             bot.add_act(str(ctx.guild.id)+"arch",f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")

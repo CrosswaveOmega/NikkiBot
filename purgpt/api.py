@@ -5,16 +5,17 @@ import json
 import urllib
 import purgpt
 from purgpt.object import ApiCore,ChatCreation
+import purgpt.error as error
 BASE_URL='https://purgpt.xyz/v1'
+
+
+'''rate limit:
 
 {
 "messages":[{"role":"user", "content":"Hello world, how are you doing?"}],
 "key": "YOUR_API_KEY",
 "model":"ANY DESIRED MODEL"
 }
-'''rate limit:
-
-
 PurGPT Ratelimits
 
 - 10 Requests per 10 seconds
@@ -24,54 +25,40 @@ PurGPT Ratelimits
 Donators will have raised Limits
 
 '''
+TIMEOUT_SECS=30
 
-def serialize_non_null_values(messages: List[Dict[str, str]],
-                              functions: Optional[List[Dict[str, str]]] = None,
-                              function_call: Optional[Union[Dict[str, str], str]] = None,
-                              temperature: Optional[float] = None,
-                              top_p: Optional[float] = None,
-                              stream: bool = False,
-                              stop: Optional[Union[List[str], str]] = None,
-                              presence_penalty: Optional[float] = None,
-                              frequency_penalty: Optional[float] = None) -> Dict[str, any]:
-    
-    serialized_dict = {
-        'messages': messages,
-        'functions': functions,
-        'function_call': function_call,
-        'temperature': temperature,
-        'top_p': top_p,
-        'stream': stream,
-        'stop': stop,
-        'presence_penalty': presence_penalty,
-        'frequency_penalty': frequency_penalty
-    }
-    
-    return {k: v for k, v in serialized_dict.items() if v is not None}
 class PurGPTAPI:
-    def __init__(self,token:str):
+    def __init__(self,token:str=None):
         self.base_url = BASE_URL
         
         if not isinstance(token, str):
             raise TypeError(f'expected token to be a str, received {token.__class__.__name__} instead')
         token = token.strip()
-        self._key=token
+        self._key=purgpt.api_key
+        if token:
+            self._key=token
+        
     async def _make_call(self,endpoint:str,payload:Dict[str,Any]):
         headers = {
             "Content-Type": "application/json"
         }
         data = payload
-        data['key']= purgpt.api_key
+        if self._key==None: raise error.KeyException("API Key not set.")
+        data['key']= self._key
         data["model"]="gpt-3.5-turbo"
-        #purgpt.api_key
-        print(data)
-        print(data)
-        #data.update({'key',self._key})
+        timeout = aiohttp.ClientTimeout(
+                total=TIMEOUT_SECS
+            )
         async with aiohttp.ClientSession() as session:
             print(f"{self.base_url}/{endpoint}")
-            async with session.post(f"{self.base_url}/{endpoint}", headers=headers, json=data) as response:
-                result = await response.json()
-                return result
+            try:
+                async with session.post(f"{self.base_url}/{endpoint}", headers=headers, json=data, timeout=timeout) as response:
+                    result = await response.json()
+                    return result
+            except (aiohttp.ServerTimeoutError, asyncio.TimeoutError) as e:
+                raise error.Timeout("Request timed out") from e
+            except aiohttp.ClientError as e:
+                raise error.APIConnectionError("Error communicating with PurGPT") from e
     async def callapi(self,obj:ApiCore):
         endpoint=obj.endpoint
         payload=obj.to_dict()

@@ -39,6 +39,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         self.bot.add_act("listen"," webcore music.",discord.ActivityType.listening)
 
     nikkisetup = app_commands.Group(name="nikkisetup", description="Some general commands for helping with setting up your server.")
+    ticker = app_commands.Group(name="ticker", description="Commands for the ticker.", extras={"homeonly":True})
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         bot=self.bot
@@ -56,7 +57,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         pages=await MessageTemplates.get_manual_list(ctx,"nikki_setup_manual.json")
         await pages_of_embeds(ctx,pages,ephemeral=True)
 
-    @app_commands.command(name="add_ticker", description="Owner Only, add a command to the ticker.", extras={"homeonly":True})
+    @ticker.command(name="add", description="Owner Only, add a command to the ticker.", extras={"homeonly":True})
     @app_commands.describe(name='the name of the ticker entry')
     @app_commands.describe(text='the text of the ticker entry')
     #@app_commands.guilds(discord.Object(id=AssetLookup.get_asset('homeguild')))
@@ -67,6 +68,24 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         bot.add_act(name,text,discord.ActivityType.playing)
         await ctx.send("done",ephemeral=True)
 
+    @ticker.command(name="view", description="view all tickers", extras={"homeonly":True})
+    @app_commands.describe(name='the name of the ticker entry')
+    @app_commands.describe(text='the text of the ticker entry')
+    #@app_commands.guilds(discord.Object(id=AssetLookup.get_asset('homeguild')))
+    async def view_ticker(self, interaction: discord.Interaction, name:str, text:str) -> None:
+        """get bot info for this server"""
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        bot=ctx.bot
+        lines=[]
+
+        for i,v in bot.status_map.items():
+            st=f"{i}:{v.name}"
+            lines.append(st)
+        joined_list = []
+        for i in range(0, len(lines), 10):
+            joined_list.append("\n".join(lines[i:i+10]))
+        for l in joined_list:
+            await ctx.send(l)
 
     @nikkisetup.command(name="permissions", description="get links for re-authenticating my permissions")
     async def perms(self, interaction: discord.Interaction) -> None:

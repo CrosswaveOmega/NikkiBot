@@ -1,22 +1,25 @@
 from typing import Union
 from sqlalchemy import Column, Integer, Text, String, Boolean, ForeignKey, DateTime, Double
 from sqlalchemy.orm import relationship
-from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
 from .database_singleton import DatabaseSingleton
 from sqlalchemy import select, not_, func
-from datetime import datetime
+
 '''Tables related to the AI stuff.'''
 
-from sqlalchemy import types
-from utility import filter_trace_stack
-import traceback
+
 from .database_main import AwareDateTime
 
+from dateutil import rrule, tz
+
 from datetime import datetime, time, timedelta
+import utility.hash as hash
 AIBase = declarative_base(name="AI Feature Base")
+
 class AuditProfile(AIBase):
-    '''To deal with bad actors.'''
+    '''This table manages per server/user rate limits for the PurGPT api.  
+        It is not audited as to ebs
+    '''
     __tablename__ = 'audit_profile'
     
     id = Column(String, primary_key=True)
@@ -25,15 +28,26 @@ class AuditProfile(AIBase):
     DailyLimit = Column(Integer, default=50)
     banned = Column(Boolean, default=False)
     banned_since = Column(DateTime, nullable=True)
+    ban_reason = Column(Text,default="")
     current = Column(Integer, default=0)
     last_call = Column(DateTime, nullable=True)
     started_dt = Column(DateTime, nullable=True)
+
+    def set_rollover(self):
+        '''Change the internal rollover time.'''
+        rule = rrule.rrule(
+            rrule.DAILY,
+            dtstart=datetime.now().replace(hour=18, minute=0, second=0, microsecond=0),
+            byhour=18,  byminute=0,  bysecond=0,
+            )
+        self.started_dt = rule.after(datetime.now())
     def checktime(self):
+        if self.started_dt==None:
+            self.set_rollover()
         if self.last_call!=None:
-            six_pm = time(hour=18)  # 6:00PM
-            today_at_six_pm = datetime.combine(datetime.today(), six_pm)
-            if self.last_call<today_at_six_pm:
+            if self.last_call<self.started_dt:
                 self.current=0
+                self.set_rollover()
     @staticmethod
     def get_or_new(server,user):
         sa= AuditProfile.get_server(server.id)
@@ -44,22 +58,27 @@ class AuditProfile(AIBase):
     
     @classmethod
     def get_server(cls, server_id):
+        targetid,num=hash.hash_string(str(server_id),hashlen=16,hashset=hash.Hashsets.base64)
         session = DatabaseSingleton.get_session()
-        result= session.query(cls).filter(cls.type == 'server', cls.id == server_id).first()
+        result= session.query(cls).filter(cls.type == 'server', cls.id == targetid).first()
         if result:            return result
         else:            return None
     
     @classmethod
     def get_user(cls, user_id):
+        
+        targetid,num=hash.hash_string(str(user_id),hashlen=16,hashset=hash.Hashsets.base64)
         session = DatabaseSingleton.get_session()
-        result= session.query(cls).filter(cls.type == 'user', cls.id == user_id).first()
+        result= session.query(cls).filter(cls.type == 'user', cls.id == targetid).first()
         if result:            return result
         else:            return None
     
     @classmethod
     def add(cls, id, type):
+        
+        targetid,num=hash.hash_string(str(id),hashlen=16,hashset=hash.Hashsets.base64)
         session = DatabaseSingleton.get_session()
-        entry = cls(id=id, type=type)
+        entry = cls(id=targetid, type=type)
         session.add(entry)
         session.commit()
         return entry

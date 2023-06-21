@@ -2,16 +2,7 @@ import hashlib
 import discord
 from enum import Enum
 
-hashsets={
-    'alphanumeric':"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-    'alphanumeric_upper':'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-    'alphanumeric_lower':'abcdefghijklmnopqrstuvwxyz0123456789',
-    'numeric':'0123456789',
-    'hex':'0123456789abcdef',
-    'b64':"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/",
-    'b32':"0123456789bcdefghjklmnpqrstvwxyz",
-    'default':"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789%-"
-}
+
 class Hashsets(Enum):
     """
     Enumeration of character sets for generating hash values.
@@ -50,8 +41,8 @@ hashsets={
     'alphanumeric_lower':'abcdefghijklmnopqrstuvwxyz0123456789',
     'numeric':'0123456789',
     'hex':'0123456789abcdef',
-    'b64':"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/",
-    'b32':"0123456789bcdefghjklmnpqrstvwxyz",
+    'base64':"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/",
+    'base32':"0123456789bcdefghjklmnpqrstvwxyz",
     'default':"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789%-"
 }
 def hash_string(string_to_hash, hashlen=5, hashset:Hashsets=Hashsets.default):

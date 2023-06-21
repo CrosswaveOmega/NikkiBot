@@ -136,8 +136,6 @@ class General(commands.Cog, TC_Cog_Mixin):
             ]
             elist=await MessageTemplates.server_profile_embed_list(ctx,emoji_strings)
             await pages_of_embeds(ctx,elist,ephemeral=True)
-
-            
         else:
             await ctx.send("Guild not found.",ephemeral=True)
     @app_commands.command(name="progress_test", description="Test out the progress bar.")

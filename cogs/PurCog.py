@@ -24,9 +24,11 @@ from utility import MessageTemplates, RRuleView, formatutil
 from utility.embed_paginator import pages_of_embeds
 from bot import TCBot,TC_Cog_Mixin, super_context_menu
 import purgpt
+import purgpt.error
 from assets import AssetLookup
 from database.database_ai import AuditProfile, ServerAIConfig
 
+lock = asyncio.Lock()
 reasons={'server':{
     'messagelimit': "This server has reached the daily message limit, please try again tomorrow.",
     'ban': "This server is banned from using my AI due to violations.",
@@ -46,51 +48,63 @@ async def message_check(bot:TCBot,message):
     if len(message.clean_content)>2000:
         await message.channel.send("This message is too big.")
         return
-    serverrep,userrep=AuditProfile.get_or_new(guild,user)
-    serverrep.checktime()
-    userrep.checktime()
+    async with lock:
+        serverrep,userrep=AuditProfile.get_or_new(guild,user)
+        serverrep.checktime()
+        userrep.checktime()
 
-    ok, reason=serverrep.check_if_ok()
-    if not ok:
-        await message.channel.send(reasons["server"][reason])
-        return
-    ok, reason=userrep.check_if_ok()
-    if not ok:
-        await message.channel.send(reasons["user"][reason])
-        return
-    serverrep.modify_status()
-    userrep.modify_status()
+        ok, reason=serverrep.check_if_ok()
+        if not ok:
+            await message.channel.send(reasons["server"][reason])
+            return
+        ok, reason=userrep.check_if_ok()
+        if not ok:
+            await message.channel.send(reasons["user"][reason])
+            return
+        serverrep.modify_status()
+        userrep.modify_status()
     profile=ServerAIConfig.get_or_new(guild.id)
     audit_channel=AssetLookup.get_asset("monitor_channel")
-    print(audit_channel)
+
     if audit_channel:
         emb=discord.Embed(title="Audit",description=message.clean_content)
         emb.add_field(name="Server Data",value=f"{guild.name}, \nServer ID: {guild.id}",inline=False)
         emb.add_field(name="User Data",value=f"{user.name}, \n User ID: {user.id}",inline=False)
         target=bot.get_channel(int(audit_channel))
         await target.send(embed=emb)
-    profile.add_message_to_chain(message.id,message.created_at,role='user',name=re.sub(r'[^a-zA-Z0-9_]', '', user.name),content=message.clean_content)
-
+    
     profile.prune_message_chains()
     chain=profile.list_message_chains()
     mes=[c.to_dict() for c in chain]
     chat=purgpt.ChatCreation()
     for f in mes:
         chat.add_message(f['role'],f['content'])
-    res=await bot.gptapi.callapi(chat)
+    chat.add_message('user',message.clean_content)
+    #Call API
+    async with message.channel.typing():
+        res=await bot.gptapi.callapi(chat)
     if res.get('err',False):
-        bot.send_error_embed(str(res))
-        await message.channels.aend(str(res['err']))
-        return
-    print(res)
+        error=purgpt.error.PurGPTError(str(res))
+        raise error
+    profile.add_message_to_chain(
+        message.id,message.created_at,
+        role='user',
+        name=re.sub(r'[^a-zA-Z0-9_]', '', user.name),
+        content=message.clean_content)
+
     result=res['choices']
     bot.logs.info(str(res))
     for i in result:
         
         role=i['message']['role']
         content=i['message']['content']
-        content = content[:1980]
-        messageresp=await message.channel.send(content)
+        page=commands.Paginator(prefix='',suffix=None)
+        for p in content.split("\n"):
+            page.add_line(p)
+        messageresp=None
+        for pa in page.pages:
+            ms=await message.channel.send(pa)
+            if messageresp==None:messageresp=ms
         profile.add_message_to_chain(messageresp.id,messageresp.created_at,role=role,content=messageresp.clean_content)
         emb=discord.Embed(title="Audit",description=messageresp.clean_content)
         
@@ -223,12 +237,21 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         '''send a message'''
         if message.author.bot: return
         if not message.guild: return
-        profile=ServerAIConfig.get_or_new(message.guild.id)
-        if self.bot.user.mentioned_in(message):
-            await message_check(self.bot,message)
-        else:
-            if profile.has_channel(message.channel.id):
+        try:
+            profile=ServerAIConfig.get_or_new(message.guild.id)
+            if self.bot.user.mentioned_in(message):
                 await message_check(self.bot,message)
+            else:
+                if profile.has_channel(message.channel.id):
+                    await message_check(self.bot,message)
+        except Exception as error:
+            errormess=str(error)[:4000]
+            emb=MessageTemplates.get_error_embed(title=f"Error with your query!",description=f"{errormess}")
+            await self.bot.send_error(error,title=f"AI Responce error",uselog=True)
+            try:
+                await message.channel.send(embed=emb)
+            except Exception as e:
+                await self.bot.send_error(e,title=f"Could not send message",uselog=True)
         
 
     

@@ -372,16 +372,17 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
             chan=self.get_channel(self.error_channel)
             await chan.send(content=content,embed=emb)
         
-    async def send_error(self,error,title="ERROR"):
-        '''Add an error to the internal log and the log channel.'''
+    async def send_error(self,error,title="ERROR",uselog=False):
+        if uselog:
+            log=logging.getLogger('discord')
+            log.error('An error has been raised: %s', title, exc_info=error)
         stack=traceback.format_exception(None, error, error.__traceback__)
+        
         just_the_string=("".join([f"{replace_working_directory(s)}" for e, s in enumerate(stack)]))
         #just_the_string=''.join(stack)
         er=MessageTemplates.get_paged_error_embed(title=f"Error with {title}",description=f"{just_the_string},{str(error)}")
         er[-1].add_field(name="Details",value=f"{title},{error}")
         for e in er: await self.send_error_embed(e)
-
-
 
     @tasks.loop(seconds=10)
     async def status_ticker(self):
