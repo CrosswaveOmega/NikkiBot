@@ -159,9 +159,11 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         self.bot.database.commit()
         await MessageTemplates.server_ai_message(ctx,"I will start listening there, ok?'")
 
-    @commands.command()
+    @commands.command(brief="Update user or server api limit [server,user],id,limit")
     @commands.is_owner()
     async def increase_limit(self,ctx,type:Literal['server','user'],id:int,limit:int):
+        '''Owner only: 
+        '''
         if type=='server':
             profile=AuditProfile.get_server(id)
             if profile:
