@@ -45,7 +45,8 @@ class PurGPTAPI:
         data = payload
         if self._key==None: raise error.KeyException("API Key not set.")
         data['key']= self._key
-        data["model"]="gpt-3.5-turbo"
+        data["model"]="gpt-3.5-turbo-0613"
+        print(data)
         timeout = aiohttp.ClientTimeout(
                 total=TIMEOUT_SECS
             )
@@ -74,33 +75,7 @@ class PurGPTAPI:
             async with session.post(f"{self.base_url}/models", headers=headers, json=data) as response:
                 result = await response.json()
                 return result
-    async def create_completion(
-            self,
-            messages:List[Dict[str, str]]=[{"role":"user", "content":"Hello world, how are you doing?"}],
-            functions:Optional[List[Dict[str, str]]] = None,
-            function_call: Optional[Union[Dict[str, str], str]] = None,
-            temperature:Optional[float]=None,
-            top_p:Optional[float]=None,
-            stream=False,
-            stop:Optional[Union[List[str], str]]=None,
-            presence_penalty:Optional[float]=None,
-            frequency_penalty:Optional[float]=None):
-        '''begin formatting a new completion.'''
-        mydata={}
-        serialized_dict = {
-        'messages': messages,
-        'functions': functions,
-        'function_call': function_call,
-        'temperature': temperature,
-        'top_p': top_p,
-        'stream': stream,
-        'stop': stop,
-        'presence_penalty': presence_penalty,
-        'frequency_penalty': frequency_penalty
-        }
-        
-        mydata= {k: v for k, v in serialized_dict.items() if v is not None}
-        return await self._make_call('chat/completions',payload=mydata)
+
         
     async def get_data(self, path):
         async with aiohttp.ClientSession() as session:

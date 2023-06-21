@@ -254,10 +254,14 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         except Exception as error:
             errormess=str(error)[:4000]
             emb=MessageTemplates.get_error_embed(title=f"Error with your query!",description=f"{errormess}")
+            if isinstance(error,purgpt.error.PurGPTError):
+                if error.json_body!=None:
+                    error._message=json.dumps(e.json_body)
             await self.bot.send_error(error,title=f"AI Responce error",uselog=True)
             try:
                 await message.channel.send(embed=emb)
             except Exception as e:
+                
                 try:
                     myperms= message.guild.system_channel.permissions_for(message.guild.me)
                     if myperms.send_messages:

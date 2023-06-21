@@ -3,6 +3,7 @@ __pycache__/
 saveData/
 startup_tests/
 config.ini
+runner.py
 foofighter.db
 alembic
 alembic.ini
