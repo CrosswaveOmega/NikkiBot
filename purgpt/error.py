@@ -15,6 +15,8 @@ class PurGPTError(Exception):
         self._message = message
         self.json_body = json_body or {}
         self.request= request or {}
+        if 'key' in self.request:
+            self.request.pop('key')
         self.code = code
 
 
