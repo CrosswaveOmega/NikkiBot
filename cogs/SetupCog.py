@@ -69,10 +69,8 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         await ctx.send("done",ephemeral=True)
 
     @ticker.command(name="view", description="view all tickers", extras={"homeonly":True})
-    @app_commands.describe(name='the name of the ticker entry')
-    @app_commands.describe(text='the text of the ticker entry')
     #@app_commands.guilds(discord.Object(id=AssetLookup.get_asset('homeguild')))
-    async def view_ticker(self, interaction: discord.Interaction, name:str, text:str) -> None:
+    async def view_ticker(self, interaction: discord.Interaction) -> None:
         """get bot info for this server"""
         ctx: commands.Context = await self.bot.get_context(interaction)
         bot=ctx.bot
