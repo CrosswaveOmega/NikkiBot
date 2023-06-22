@@ -190,7 +190,7 @@ class ServerAIConfig(AIBase):
         message_chains = session.query(MessageChain).filter_by(server_id=self.server_id).order_by(MessageChain.created_at).all()
         return message_chains
 
-    def prune_message_chains(self, limit=30):
+    def prune_message_chains(self, limit=15):
         session = DatabaseSingleton.get_session()
         message_chains = session.query(MessageChain).filter_by(server_id=self.server_id).order_by(MessageChain.created_at.desc()).all()
         if len(message_chains) > limit:

@@ -266,11 +266,11 @@ class AICog(commands.Cog, TC_Cog_Mixin):
                     await message_check(self.bot,message)
         except Exception as error:
             errormess=str(error)[:4000]
-            emb=MessageTemplates.get_error_embed(title=f"Error with your query!",description=f"{errormess}")
+            emb=MessageTemplates.get_error_embed(title=f"Error with your query!",description=f"{error._message}")
             if isinstance(error,purgpt.error.PurGPTError):
                 if error.json_body!=None:
                     error._message='something just went wrong.'
-            await self.bot.send_error(error,title=f"AI Responce error",uselog=True)
+            
             try:
                 await message.channel.send(embed=emb)
             except Exception as e:
@@ -283,7 +283,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
                     pass
                         
                 await self.bot.send_error(e,title=f"Could not send message",uselog=True)
-        
+            await self.bot.send_error(error,title=f"AI Responce error",uselog=True)
 
     
 

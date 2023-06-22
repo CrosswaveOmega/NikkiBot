@@ -25,7 +25,7 @@ PurGPT Ratelimits
 Donators will have raised Limits
 
 '''
-TIMEOUT_SECS=30
+TIMEOUT_SECS=120
 
 class PurGPTAPI:
     def __init__(self,token:str=None):
