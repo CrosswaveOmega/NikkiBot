@@ -89,7 +89,8 @@ async def message_check(bot:TCBot,message):
     async with message.channel.typing():
         res=await bot.gptapi.callapi(chat)
     if res.get('err',False):
-        error=purgpt.error.PurGPTError("Something went wrong.",json_body=res)
+        err=res[err]
+        error=purgpt.error.PurGPTError(err,json_body=res)
         raise error
     profile.add_message_to_chain(
         message.id,message.created_at,
@@ -155,7 +156,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         profile=ServerAIConfig.get_or_new(guildid)
         
         await MessageTemplates.server_ai_message(ctx,"purging")
-        profile.clear_message_chains(0)
+        profile.clear_message_chains()
         await MessageTemplates.server_ai_message(ctx,"Data purged")
     @ai_setup.command(
         name="add_ai_channel",
