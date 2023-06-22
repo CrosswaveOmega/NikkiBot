@@ -7,6 +7,7 @@ from .manual_load import load_manual
 from .views import ConfirmView
 from assets import AssetLookup
 from database.database_ai import ServerAIConfig
+import re
 embedicon=None
 
 class MessageTemplates:
@@ -107,6 +108,8 @@ class MessageTemplates:
     @staticmethod
     def get_paged_error_embed(title: str, description: Union[str,List[str]]):
         pageme=commands.Paginator(prefix="",suffix="",max_size=4096)
+        
+        description=re.sub(r"\\+n", r"\n",description)
         for p in description.split('\n'):
             if len(p)>4096:
                 sub=MessageTemplates.split_lines(p,2000)
