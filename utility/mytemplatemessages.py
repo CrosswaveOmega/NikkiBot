@@ -97,12 +97,14 @@ class MessageTemplates:
         for word in words:
             if len(current_line + "," + word) <= max_size:
                 current_line += "," + word
+            
             else:
-                lines.append(current_line.strip())
+                
+                lines.append(current_line.strip()[:3000])
                 current_line = word
 
         if current_line:
-            lines.append(current_line.strip())
+            lines.append(current_line.strip()[:3000])
 
         return lines
     @staticmethod
