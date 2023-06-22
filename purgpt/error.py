@@ -23,12 +23,12 @@ class PurGPTError(Exception):
 
 
     def __str__(self):
-        return "%s(message=%r, request=%r, json=%r)" % (
+        return ("%s(message=%r, request=%r, json=%r)" % (
             self.__class__.__name__,
             self._message,
             self.request,
-            json.dumps(self.json_body if self.json_body!=None else {})[:1024]
-        )
+            self.json_body
+        ))[:1024]
 
 
     @property
@@ -40,7 +40,7 @@ class PurGPTError(Exception):
             self.__class__.__name__,
             self._message,
             self.request,
-            json.dumps(self.json_body if self.json_body!=None else {})
+            self.json_body
         )
 
 

@@ -153,7 +153,9 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         guild=channel.guild
         guildid=guild.id
         profile=ServerAIConfig.get_or_new(guildid)
-        profile.prune_message_chains(0)
+        
+        await MessageTemplates.server_ai_message(ctx,"purging")
+        profile.clear_message_chains(0)
         await MessageTemplates.server_ai_message(ctx,"Data purged")
     @ai_setup.command(
         name="add_ai_channel",

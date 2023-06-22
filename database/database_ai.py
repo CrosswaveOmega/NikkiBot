@@ -198,6 +198,14 @@ class ServerAIConfig(AIBase):
             for message_chain in message_chains_to_remove:
                 session.delete(message_chain)
             session.commit()
+    def clear_message_chains(self):
+        session = DatabaseSingleton.get_session()
+        message_chains = session.query(MessageChain).filter_by(server_id=self.server_id).order_by(MessageChain.created_at.desc()).all()
+
+        for message_chain in message_chains:
+            session.delete(message_chain)
+
+        session.commit()
 
 class EnabledChannel(AIBase):
     __tablename__ = 'EnabledChannel'
