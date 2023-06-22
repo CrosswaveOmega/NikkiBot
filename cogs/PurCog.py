@@ -110,7 +110,7 @@ async def message_check(bot:TCBot,message):
         for pa in page.pages:
             ms=await message.channel.send(pa)
             if messageresp==None:messageresp=ms
-        profile.add_message_to_chain(messageresp.id,messageresp.created_at,role=role,content=messageresp.clean_content)
+        profile.add_message_to_chain(messageresp.id,messageresp.created_at,role=role,content=content)
         emb=discord.Embed(title="Audit",description=messageresp.clean_content)
         
 
@@ -266,7 +266,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             emb=MessageTemplates.get_error_embed(title=f"Error with your query!",description=f"{errormess}")
             if isinstance(error,purgpt.error.PurGPTError):
                 if error.json_body!=None:
-                    error._message=json.dumps(error.json_body)
+                    error._message=re.sub(r"\\+\n", r"\n",json.dumps(error.json_body))
             await self.bot.send_error(error,title=f"AI Responce error",uselog=True)
             try:
                 await message.channel.send(embed=emb)
