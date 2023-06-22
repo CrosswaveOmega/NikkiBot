@@ -144,7 +144,17 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         profile=ServerAIConfig.get_or_new(guildid)
 
         await MessageTemplates.server_ai_message(ctx,"Here is your server's data.")
-    
+    @ai_setup.command(
+        name="clear_history",
+        brief="clear ai chat history."
+    )
+    async def chear_history(self, ctx):
+        channel = ctx.message.channel
+        guild=channel.guild
+        guildid=guild.id
+        profile=ServerAIConfig.get_or_new(guildid)
+        profile.prune_message_chains(0)
+        await MessageTemplates.server_ai_message(ctx,"Data purged")
     @ai_setup.command(
         name="add_ai_channel",
         brief="add a channel that Nikki can talk freely in."

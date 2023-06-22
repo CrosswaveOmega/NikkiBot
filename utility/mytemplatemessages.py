@@ -88,9 +88,32 @@ class MessageTemplates:
         return embed
     
     @staticmethod
+    def split_lines(text:str, max_size):
+        lines = []
+        words = text.split(',')
+        current_line = ""
+
+        for word in words:
+            if len(current_line + "," + word) <= max_size:
+                current_line += "," + word
+            else:
+                lines.append(current_line.strip())
+                current_line = word
+
+        if current_line:
+            lines.append(current_line.strip())
+
+        return lines
+    @staticmethod
     def get_paged_error_embed(title: str, description: Union[str,List[str]]):
         pageme=commands.Paginator(prefix="",suffix="",max_size=4096)
-        for p in description.split('\n'):pageme.add_line(p)
+        for p in description.split('\n'):
+            if len(p)>4096:
+                sub=MessageTemplates.split_lines(p,2000)
+                for pe in sub:
+                    pageme.add_line(pe)
+            else:
+                pageme.add_line(p)
         embeds=[]
         for page in pageme.pages:
             embed=MessageTemplates.get_error_embed(title,page)
