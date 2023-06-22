@@ -266,7 +266,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             emb=MessageTemplates.get_error_embed(title=f"Error with your query!",description=f"{errormess}")
             if isinstance(error,purgpt.error.PurGPTError):
                 if error.json_body!=None:
-                    error._message=json.dumps(error.json_body)
+                    error._message='something just went wrong.'
             await self.bot.send_error(error,title=f"AI Responce error",uselog=True)
             try:
                 await message.channel.send(embed=emb)

@@ -18,11 +18,17 @@ class PurGPTError(Exception):
         if 'key' in self.request:
             self.request.pop('key')
         self.code = code
+        if 'code' in json_body:
+            self.code=code
 
 
     def __str__(self):
-        msg = self._message or "<empty message>"
-        return msg
+        return "%s(message=%r, request=%r, json=%r)" % (
+            self.__class__.__name__,
+            self._message,
+            self.request,
+            json.dumps(self.json_body if self.json_body!=None else {})[:1024]
+        )
 
 
     @property
