@@ -18,7 +18,7 @@ class PurGPTError(Exception):
         if 'key' in self.request:
             self.request.pop('key')
         self.code = code
-        if 'code' in json_body:
+        if 'code' in self.json_body:
             self.code=code
 
 
