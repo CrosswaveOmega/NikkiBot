@@ -45,7 +45,10 @@ class PurGPTAPI:
         data = payload
         if self._key==None: raise error.KeyException("API Key not set.")
         data['key']= self._key
-        data["model"]="gpt-3.5-turbo-0613"
+        if 'functions' in data:
+            data["model"]="gpt-3.5-turbo-0613"
+        else:
+            data["model"]="gpt-3.5-turbo"
         print(data)
         timeout = aiohttp.ClientTimeout(
                 total=TIMEOUT_SECS
