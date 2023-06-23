@@ -16,39 +16,6 @@ from bot import TCBot, TCGuildTask, Guild_Task_Functions, StatusEditMessage, TC_
 import numpy as np
 
 
-def get_last_day_of_month(year, month):
-    next_month = datetime(year, month, 1,tzinfo=timezone.utc) + relativedelta(months=1)
-    last_day = next_month - relativedelta(days=1)
-    return last_day
-
-def get_month_and_year_from_string(date_string):
-    date = datetime.strptime(date_string, "%B %Y")
-    month = date.month
-    year = date.year
-    return month, year
-def get_last_day_of_string_date(date_string):
-    month, year = get_month_and_year_from_string(date_string)
-    last_day = get_last_day_of_month(year, month)
-    return last_day
-
-def is_user_nitro(user:discord.User):
-    c1=user.accent_color != None
-    c2=False
-    if user.avatar:
-        c2=user.avatar.is_animated()
-    c3=user.banner != None
-    gui.print(c1,c2,c3)
-    return c2 or c3
-
-
-def is_member_nitro(member:discord.Member):
-    c1=member.guild_avatar != None
-
-    c2=member.premium_since != None
-    c3=is_user_nitro(member)
-    gui.print(c1,c2,c3)
-    return c1 or c2 or c3
-
 
 def is_cyclic_i(dictionary, start_key):
     '''Determine if the passed in key will render a recursive reference somewhere.'''
@@ -136,8 +103,8 @@ async def dynamic_tag_get(dictionary,text, maxsize=2000):
 
 
 
-class Pomelo(commands.Cog):
-    """Pomelo!"""
+class Tags(commands.Cog):
+    """originally for pomelo."""
     def __init__(self, bot):
         self.helptext=""
         self.bot=bot
@@ -248,24 +215,6 @@ class Pomelo(commands.Cog):
                 f"You don't have permission to delete this tag.",
                 title="Tag delete error."
             )
-    async def userpass(self):
-        nitro_pom=self.db.get('nitropom')['text']
-        user_pom=self.db.get('userpom')['text']
-        nitro_deadline=get_last_day_of_string_date(nitro_pom)
-        user_deadline=get_last_day_of_string_date(user_pom)
-        havepom=upom=nipom=nopom=0
-        
-
-        for i, v in self.userdb.items():
-            if v['account_creation']<=user_deadline:
-                user=self.bot.get_user(v['user'])
-                try:
-                    output=f"{user.name}, you made your account before {user_pom}"
-                    await user.send(f"{output}, you can claim a pomelo username now!\n  You might need to restart the Desktop app though.")
-                    self.userdb.pop(i)
-                except Exception as e:
-                    gui.gprint(e)
-
 
     @tags.command(name='edit', description='edit a tag')
     @app_commands.describe(tagname='tagname to edit')
@@ -291,10 +240,7 @@ class Pomelo(commands.Cog):
                 tag['lastupdate']=discord.utils.utcnow()
                 self.db[tagname] = tag
                 self.db.commit()
-                await ctx.send(f"Tag '{tagname}' edited.")
-                if tagname=='userpom':
-                    await self.userpass()
-
+                await MessageTemplates.tag_message(ctx,f"Tag '{tagname}' edited.",tag=tag)
             else:
                 await MessageTemplates.tag_message(
                         ctx,
@@ -398,112 +344,7 @@ class Pomelo(commands.Cog):
             await MessageTemplates.tag_message(
                 ctx, f"Tag not found."
             )
-        
-    @app_commands.command(name='guild_pomelo',description="check pomelo status of entire guild.",extras={'global':True})
-    @app_commands.guild_only()
-    async def allpomelo(self,interaction:discord.Interaction):
-        ctx: commands.Context = await self.bot.get_context(interaction)
-
-        user=interaction.user
-        nitro_pom=self.db.get('nitropom')['text']
-        user_pom=self.db.get('userpom')['text']
-        nitro_deadline=get_last_day_of_string_date(nitro_pom)
-        user_deadline=get_last_day_of_string_date(user_pom)
-        output=await dynamic_tag_get(self.db,"[pomeloinfo]\n[pomwave]")
-
-            
-        havepom=upom=nipom=nopom=0
-        for user in ctx.guild.members:
-            if user.discriminator=="0":
-                havepom+=1
-            else:
-                if user.created_at<=user_deadline:
-                    upom+=1
-                if is_member_nitro(user):
-                    if user.created_at<=nitro_deadline:
-                        nipom+=1
-                nopom+=1
-        embed=discord.Embed(title=f"Server Pomelo Status", description='', color=discord.Color(0x00787f))
-        embed.add_field(name="Already have Pomelo",value=havepom)
-        embed.add_field(name="Could have pomelo",value=upom)
-        embed.add_field(name="Could have pomelo because Nitro",value=nipom)
-        embed.add_field(name="Can't get Pomelo Yet", value=nopom)
-        await ctx.send(output,embed=embed)
-        
-        
-        
-
-    @app_commands.command(name='username_pomelo',description="Check if you are eligable for the new discord username.",extras={'global':True})
-    @app_commands.guild_only()
-    async def amipomelo(self,interaction:discord.Interaction):
-        ctx: commands.Context = await self.bot.get_context(interaction)
-
-        user=interaction.user
-        nitro_pom=self.db.get('nitropom')['text']
-        user_pom=self.db.get('userpom')['text']
-        wave=self.db.get('pwave')['text']
-        note=self.db.get('pomeloinfo')['text']
-        nitro_deadline=get_last_day_of_string_date(nitro_pom)
-        user_deadline=get_last_day_of_string_date(user_pom)
-        await ctx.send(f"Using my sources, I'll check if you can claim a new username, or as it's called internally, a **Pomelo username**."+\
-                       "If your account was created after either of the dates below, you should be able to claim your username.\n"+\
-                       "If you don't get a notification though, either **close out and restart the desktop app**, or **refresh the web browser.**\n" +\
-                       "If it doesn't show up, however, please let me know via the `/nopomelo` command, because discord isn't being clear about it's rollout.\n"+\
-                       f"{note}"+\
-                       f"\n **Wave: {wave}**\n**Nitro users:**{nitro_pom}\n **Normal users:**{user_pom}")
-        if user.discriminator=="0":
-            await ctx.send("It looks like you claimed a pomelo already, nice work!")
-            return
-        if user.created_at<=user_deadline:
-            await ctx.send("You should be able to claim a pomelo username!")
-        elif is_member_nitro(ctx.author):
-            if user.created_at<=nitro_deadline:
-                await ctx.send("Despite having an account made after the nitro wave, the Nitro waves are bugged.  I don't know if you can get a Pomelo as of now.")
-            else:
-                await ctx.send("You can not claim a pomelo username yet, even though you are nitro.")
-        else:
-            await ctx.send("I don't think you can't claim a pomelo username yet.")
-     
-        
-    @app_commands.command(name='nopomelo',description="use this if I got it wrong and you can't pomelo yourself.",extras={'global':True})
-    @app_commands.guild_only()
-    async def nopomelo(self,interaction:discord.Interaction):
-        ctx: commands.Context = await self.bot.get_context(interaction)
-
-        user=interaction.user
-        nitro_pom=self.db.get('nitropom')['text']
-        user_pom=self.db.get('userpom')['text']
-        log=self.db.get('pomlog')['text']
-        channel=self.bot.get_channel(int(log))
-        nitro_deadline=get_last_day_of_string_date(nitro_pom)
-        user_deadline=get_last_day_of_string_date(user_pom)
-
-        user_check=user.created_at<=user_deadline
-        isnitro=is_member_nitro(ctx.author)
-        nitro_check=user.created_at<=nitro_deadline
-        
-        if user.discriminator==0:
-
-            
-            if not user_check:
-                await ctx.send("So you can pomelo despite having a newer account, thank you.")
-                await channel.send(f"Pomelo confirm: {user.created_at}, {nitro_pom}")
-                return
-            if isnitro and not nitro_check:
-                await ctx.send("Looks like the nitro worked too well.")
-                await channel.send(f"Nitro Pomelo confirm: {user.created_at}, {nitro_pom}")
-                return
-            await ctx.send("Hey, my prediction was right for you!")
-        else:
-            if isnitro and nitro_check:
-                await ctx.send("Yeah, I've seen reports that nitro users where unable to claim usernames, thanks for letting me know.")
-                await channel.send(f"Nitro Pomelo Has issue for user: {user.created_at}, {nitro_pom}")
-                return
-            if user_check:
-                await ctx.send("If you actually do have nitro, I'm sorry.  ")
-                await channel.send(f"Normal user cannot get pomelo: {user.created_at}, {nitro_pom}")
-                return
-            await ctx.send("It doesn't look like I was wrong though.")
+    
 
     @commands.command()
     async def tagcycletest(self,ctx):
@@ -542,5 +383,5 @@ class Pomelo(commands.Cog):
 
 
 async def setup(bot):
-    pc=Pomelo(bot)
+    pc=Tags(bot)
     await bot.add_cog(pc)

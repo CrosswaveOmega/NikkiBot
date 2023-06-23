@@ -23,9 +23,8 @@ from .Calculator import evaluate_expression, OutContainer, dprint, get_linenumbe
 
 
 class CalculatorCog(commands.Cog,TC_Cog_Mixin):
-    """A special set of commands used for calculating numbers with a special command."""
+    """A experimental calculator that parses string expressions."""
     def __init__(self, bot):
-        self.helptext="special set of commands used for calculating numbers and rolling dice."
         self.helptext="special set of commands used for calculating numbers and rolling dice."
         self.verb=2
         self.verbshow=False
@@ -35,9 +34,9 @@ class CalculatorCog(commands.Cog,TC_Cog_Mixin):
 
 
         
-    @commands.command(pass_context=True, aliases=['setverb'])
-    async def changeverb(self, ctx, newverb=0):
-        """Change the verbocity of the command."""
+    @commands.command(aliases=['setverb'])
+    async def changeverb(self, ctx, newverb:int=0):
+        """Change the verbocity of the command output"""
         bot=ctx.bot
         auth=ctx.message.author;
         channel=ctx.message.channel;
@@ -48,26 +47,26 @@ class CalculatorCog(commands.Cog,TC_Cog_Mixin):
 
         
     @commands.command(pass_context=True)
-    async def showverb(self, ctx, newverb=False):
-        """Change the verbocity of the command."""
+    async def showverb(self, ctx, newshowverb:bool=False):
+        """Configure if you want to view the verb integer each output line has."""
         bot=ctx.bot
         auth=ctx.message.author;
         channel=ctx.message.channel;
         
-        self.verbshow=newverb
-        await channel.send("set new verb {}".format(self.verbshow))
+        self.verbshow=newshowverb
+        await channel.send("set new show verb {}".format(self.verbshow))
     
 
         
     @commands.command(pass_context=True)
-    async def setddebug(self, ctx, newverb=False):
-        """Change the verbocity of the command."""
+    async def setddebug(self, ctx, debugmode:bool=False):
+        """Enable/disable debug mode"""
         bot=ctx.bot
         auth=ctx.message.author;
         channel=ctx.message.channel;
         
-        self.debugmode=newverb
-        await channel.send("set new verb {}".format(self.debugmode))
+        self.debugmode=debugmode
+        await channel.send("set new debug {}".format(self.debugmode))
 
     @commands.command(pass_context=True, aliases=['reseeddice'])
     async def reseed(self, ctx):
@@ -79,15 +78,14 @@ class CalculatorCog(commands.Cog,TC_Cog_Mixin):
         seed();
 
         await channel.send("reseeded RNG")
-    @commands.command(pass_context=True, aliases=['select'])
+    @commands.command(aliases=['select'])
     async def choose(self, ctx, *args):
         """
         syntax: choose [0] [1] ... [n]
-        Select from any of the args passed into this command.
+        Select one passed in argument.
         
         """
-        bot=ctx.bot
-        auth=ctx.message.author;
+
         channel=ctx.message.channel;
         
 
@@ -95,9 +93,9 @@ class CalculatorCog(commands.Cog,TC_Cog_Mixin):
             listValue=list(args)
             choice=random.choice(listValue)
             embe=discord.Embed(title="Selected Value", description="I choose {}.".format(choice))
-            await channel.send(embed=embe)
+            await ctx.send(embed=embe)
         else:
-            await channel.send("Not enough parameters")
+            await ctx.send("Not enough parameters")
     
 
     
@@ -177,7 +175,7 @@ example: (2d20reroll>10) will reroll any dice that has a value greater than 10.'
         emb.add_field(name="Common Operators",value=helpsC,inline=False)
         await interaction.response.send_message(embed=emb, ephemeral=True)
     
-    @commands.hybrid_command(name="roll", pass_context=True)
+    @commands.hybrid_command(name="roll")
     async def calculateroll(self, ctx: commands.Context, expression: str):
         """
         ex: /roll 2+1d20 A powerful command that does dice rolls and basic math.
@@ -190,7 +188,7 @@ example: (2d20reroll>10) will reroll any dice that has a value greater than 10.'
         await ctx.invoke(self.bot.get_command("calc"),expression)
 
 
-    @commands.hybrid_command(name="calc", pass_context=True, aliases=['rollAdvance', 'advanceRoll', 'calculate', 'eval', 'c'])
+    @commands.hybrid_command(name="calc", aliases=['rollAdvance', 'advanceRoll', 'calculate', 'eval', 'c'])
     async def calculate(self, ctx: commands.Context, expression: str):
         """
         A powerful command that does dice rolls and basic math.
@@ -220,9 +218,7 @@ example: (2d20reroll>10) will reroll any dice that has a value greater than 10.'
         for c in cho:
             if(len(string+"`"+c+"` \n")>=(4096-20)):
                 embedv=discord.Embed(title="Result of {}".format(out.formatStr(rollv)),description=string)
-                # embedv.set_author(name="Requested by "+auth.name) 
                 embedv.add_field(name="To be continued...")
-                #embedv.set_footer(text="Verbocity Level: {}".format(verb))
                 await ctx.send(embed=embedv)
                 string="`"+c+"` \n"
             elif(c!=""):
@@ -293,4 +289,15 @@ if __name__ == "__main__": #testing
 
             
 async def setup(bot):
+    print(__name__)
+    from .Calculator import setup
+    await bot.load_extension(setup.__module__)
     await bot.add_cog(CalculatorCog(bot))
+
+
+
+async def teardown(bot):
+    
+    from .Calculator import setup
+    await bot.unload_extension(setup.__module__)
+    await bot.remove_cog('CalculatorCog')

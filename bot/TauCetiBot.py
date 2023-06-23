@@ -148,7 +148,8 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
     async def close(self):
         print("Signing off.")
         # Close the SQLAlchemy engine
-        self.database.close_out()
+        
+        await self.database.close_out()
         # Logout the bot from Discord
         self.post_queue_message.cancel()
         self.delete_queue_message.cancel()

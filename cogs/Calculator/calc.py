@@ -156,8 +156,8 @@ def evaluate_expression(expr: str, *args, outputFunc):
 
     
 class OutContainer():
-    '''container for output function.'''
-    def __init__(self, verb=0,sayop=False,mode="short", showverb=False,debug=False):
+    '''container for output function, used for formatting results.'''
+    def __init__(self, verb:int=0,sayop:bool=False,mode:str="short", showverb:bool=False,debug:bool=False):
         self.out=""
         self.verb=verb
         self.showverb=showverb
@@ -188,8 +188,6 @@ class OutContainer():
                 stre+=str(x)
                 first=False
             stre=stre.replace("\u2212","-")
-         #   stre=stre.replace("*","∗")
-            stre=stre
             if verb>0:
                stre="> "+stre
             toput=stre

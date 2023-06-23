@@ -110,10 +110,10 @@ class General(commands.Cog, TC_Cog_Mixin):
         
         emb=await MessageTemplates.server_profile_message(ctx, description=desc,ephemeral=True )
 
-    @app_commands.command(name="emojis", description="Print out all emojis I have access to.")
+    @app_commands.command(name="emojis", description="Print out all emojis I have access to from this server.")
     @app_commands.guild_only()
     async def emojiinfo(self, interaction: discord.Interaction, scope:Literal['server', 'all']='all') -> None:
-        """get bot info for this server"""
+        '''print out a list of all emojis within the invoked server.'''
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild = ctx.guild
         member_count = guild.member_count
@@ -141,7 +141,7 @@ class General(commands.Cog, TC_Cog_Mixin):
     @app_commands.command(name="progress_test", description="Test out the progress bar.")
     @app_commands.guild_only()
     async def progresstest(self, interaction: discord.Interaction, total:int=10,width:int=5) -> None:
-        """get bot info for this server"""
+        """Just test out the progress bar"""
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild = ctx.guild
         member_count = guild.member_count
@@ -154,8 +154,6 @@ class General(commands.Cog, TC_Cog_Mixin):
                 pager.add_line(f"{percent}%:{bar}")
             for p in pager.pages:
                 await ctx.send(p)
-
-            
         else:
             await ctx.send("Guild not found.",ephemeral=True)
         

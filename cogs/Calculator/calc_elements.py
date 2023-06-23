@@ -52,7 +52,12 @@ def substitutions(strings):
     return strings
 
 class DataBit:
-    """Class that represents a single element in a expression."""
+    """Class that represents a single element in a expression, usually either a number,sequence, or operator.
+    Numbers are single numbers.
+    A Sequence is a list of numbers
+    Operators are used to determine what operations to use.
+    
+    """
     def __init__(self, typ=DatabitType.NUMBER, value=0, display=None, fromdie=False):
         if(typ==DatabitType.DETERMINE):
             if(value in operatorList):
@@ -453,7 +458,8 @@ class DataBit:
        # return str(self.value)
 
 def preprocess_string(strings):
-    
+    '''preform some pre-processing on the string, such as splitting up operators and ensuring that 
+    the negative symbol is used when needed.'''
     negative_sign_regex = re.compile(r'(?<!\d)-(?=\d)')
     strings = negative_sign_regex.sub('\u2212', strings)
     newString=substitutions(strings)
@@ -463,7 +469,7 @@ def preprocess_string(strings):
     
     operands=[]
     length=len(prenegative_operands)
-    dashes_to_add=""
+
     for i in range(0,length):
         thischar=prenegative_operands[i].strip()
         operands.append(thischar)

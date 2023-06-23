@@ -401,7 +401,6 @@ def sequence_sum(current_expression,spartA, spartB, outputFunc):
             outputFunc.outFunc(outputStr, verb=4,isop=True)
 
             if(current_expression[position+1].type==DatabitType.SEQUENCE):
-                #Old visulize code.
                 val=current_expression[position+1].value
                 newValue=0
                 pos=0

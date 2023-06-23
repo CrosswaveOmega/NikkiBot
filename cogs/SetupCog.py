@@ -30,39 +30,36 @@ from database import Users_DoNotTrack
 
     
 class Setup(commands.Cog, TC_Cog_Mixin):
-    """The component where you enable/disable other components."""
+    """This Cog is for bot help and configuration"""
     def __init__(self, bot):
         self.helptext="This section is for enabling and disabling specific bot features for your server."
         self.bot:TCBot=bot
         self.bot.add_act("WatchExample"," This space for rent.",discord.ActivityType.watching)
-        self.bot.add_act("WatchExample2"," My prefix is '>'.",discord.ActivityType.watching)
-        self.bot.add_act("listen"," webcore music.",discord.ActivityType.listening)
+        self.bot.add_act("WatchExample2","Prefix:'>'.",discord.ActivityType.watching)
 
     nikkisetup = app_commands.Group(name="nikkisetup", description="Some general commands for helping with setting up your server.")
     ticker = app_commands.Group(name="ticker", description="Commands for the ticker.", extras={"homeonly":True})
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         bot=self.bot
-
         await bot.tree.sync(guild=guild)
         if guild.system_channel!=None:
             await guild.system_channel.send("Hi, thanks for inviting me to your server!  I hope to be of use!\n"+ \
                 "Please understand that some of my features may require additional permissions.  \n"+
                 "I'll try to let you know which ones are needed and when.")
 
-    @nikkisetup.command(name="app_permmission_info", description="learn how to set up my app commands!")
+    @nikkisetup.command(name="app_permission_info", description="learn how to set up my app commands!")
     async def info(self, interaction: discord.Interaction) -> None:
-        """get bot info for this server"""
+        """Display a manual about changing the permission overrides for the bot's app commands."""
         ctx: commands.Context = await self.bot.get_context(interaction)
         pages=await MessageTemplates.get_manual_list(ctx,"nikki_setup_manual.json")
         await pages_of_embeds(ctx,pages,ephemeral=True)
 
-    @ticker.command(name="add", description="Owner Only, add a command to the ticker.", extras={"homeonly":True})
+    @ticker.command(name="add", description="Owner Only, add a string to the ticker.", extras={"homeonly":True})
     @app_commands.describe(name='the name of the ticker entry')
     @app_commands.describe(text='the text of the ticker entry')
-    #@app_commands.guilds(discord.Object(id=AssetLookup.get_asset('homeguild')))
     async def add_ticker(self, interaction: discord.Interaction, name:str, text:str) -> None:
-        """get bot info for this server"""
+        """add a new rotating status to Nikki's 'news ticker.'"""
         ctx: commands.Context = await self.bot.get_context(interaction)
         bot=ctx.bot
         bot.add_act(name,text,discord.ActivityType.playing)
@@ -71,7 +68,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
     @ticker.command(name="view", description="view all tickers", extras={"homeonly":True})
     #@app_commands.guilds(discord.Object(id=AssetLookup.get_asset('homeguild')))
     async def view_ticker(self, interaction: discord.Interaction) -> None:
-        """get bot info for this server"""
+        """Debug, display all rotating statuses on the news ticker."""
         ctx: commands.Context = await self.bot.get_context(interaction)
         bot=ctx.bot
         lines=[]
@@ -87,7 +84,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
 
     @nikkisetup.command(name="permissions", description="get links for re-authenticating my permissions")
     async def perms(self, interaction: discord.Interaction) -> None:
-        """get bot info for this server"""
+        """Return a manual that has a few oath2 links for server owners to quickly change Nikki's permissons with."""
         ctx: commands.Context = await self.bot.get_context(interaction)
         
         pages=await MessageTemplates.get_manual_list(ctx,"nikki_permissions_manual.json")
@@ -95,7 +92,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
     
     @nikkisetup.command(name="get_tree_json", description="return a JSON representation of my command tree for this server")
     async def mytree(self, interaction: discord.Interaction) -> None:
-        """get bot info for this server"""
+        """This is for debugging, it returns a json representation of a server's app command tree."""
         ctx: commands.Context = await self.bot.get_context(interaction)
         if not ctx.guild:
             await ctx.send("you can only use this in a guild.")
@@ -109,12 +106,14 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         await ctx.send(file=discord.File(file_object, filename="yourtree.json"))
 
 
-    @app_commands.command(name='usersettings_ignore_me',
-                           description="WORK IN PROGRESS: USE THIS COMMAND IF YOU WANT ME TO IGNORE YOU.",
-                           extras={"nocheck":True})
-    @app_commands.describe(condition="set this to on if you want me to listen to you, ignore if you want me to ignore you, .")
+    @app_commands.command(
+        name='usersettings_ignore_me',
+        description="WORK IN PROGRESS: USE THIS COMMAND IF YOU WANT ME TO IGNORE YOU.",
+        extras={"nocheck":True}
+        )
+    @app_commands.describe(condition="set this to on if you want me to listen to you, ignore if you want me to ignore you.")
     async def ignoreme(self, interaction: discord.Interaction, condition:Literal['on','off']='on') -> None:
-        """get bot info for this server"""
+        """Using this command makes it so the bot will never respond to a user for any reason, if they wish to be ignored."""
         ctx: commands.Context = await self.bot.get_context(interaction)
         user=interaction.user
         if condition=='on':
@@ -138,12 +137,15 @@ class Setup(commands.Cog, TC_Cog_Mixin):
     @commands.command()
     @commands.is_owner()
     async def syncall(self,ctx):
+        '''Sync the app commands.'''
         await ctx.send("Syncing...")
         await ctx.bot.all_guild_startup(True)
         await ctx.send("DONE.")
 
     @commands.hybrid_command(name='getapps',description="get all my app commands for this server, and check if you set any specific overrides.")
+    @commands.guild_only()
     async def get_apps(self,ctx):
+        '''List all App Commands synced in a server.'''
         if not ctx.guild:
             await ctx.send("This command is a guild only command.")
         my_tree:discord.app_commands.CommandTree=ctx.bot.tree

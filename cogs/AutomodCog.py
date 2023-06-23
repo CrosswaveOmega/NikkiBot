@@ -38,7 +38,7 @@ from discord import (
 )
         
 class AutomodCog(commands.Cog, TC_Cog_Mixin):
-    """Commands for some games.  Eventually."""
+    """This cog is a placeholder for future automod commands."""
     def __init__(self, bot):
         self.helptext=""
         self.bot=bot

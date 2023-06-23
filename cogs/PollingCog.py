@@ -180,6 +180,7 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
             return "Invalid poll id"
 
     async def poll_subscription(self):
+        '''update polls in all subscribed channels.'''
         try:
             polllist=PollChannelSubscribe.get_new_polls()
             gui.gprint(polllist)
@@ -228,12 +229,6 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
             gui.gprint(str(e))
         
     
-    @commands.command()
-    async def ping(self,ctx):
-        channel=ctx.channel
-        await ctx.send("OK.")
-        await channel.send("OK")
-    
     @app_commands.command(name="setup_poll_channel", description="admin only-Set a channel to post newly created polls in.")
     @app_commands.describe(autochannel= "The channel you want polls to be posted in.")
     async def pollchannelmake(self, interaction,autochannel:discord.TextChannel):
@@ -262,7 +257,7 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
     
     @app_commands.command(name="poll_channel_update", description="Force update for polling.")
     async def pollsub(self, interaction: discord.Interaction):
-        '''make a poll!'''
+        '''Force poll_subscription to run.'''
         ctx: commands.Context = await self.bot.get_context(interaction)
         await self.poll_subscription()
         await ctx.send("sub done.")
@@ -334,7 +329,7 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
         
     @commands.hybrid_command(name="persistent_view")
     async def constant_view(self, ctx):
-        '''test for poll system'''
+        '''This command returns a persistent view, as a test.'''
         await ctx.send("What's your favourite colour?", view=PersistentView())
 
     @app_commands.command(name="feedback")
@@ -344,4 +339,14 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
 
             
 async def setup(bot):
+    print(__name__)
+    from .Polling import setup
+    await bot.load_extension(setup.__module__)
     await bot.add_cog(PollingCog(bot))
+
+
+
+async def teardown(bot):
+    from .Polling import setup
+    await bot.unload_extension(setup.__module__)
+    await bot.remove_cog('PollingCog')

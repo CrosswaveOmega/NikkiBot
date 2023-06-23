@@ -22,6 +22,8 @@ from utility import seconds_to_time_string, seconds_to_time_stamp
 from .AudioPlaybackSub import *
 logger=logging.getLogger('discord')
 
+
+'''This is a music player that can play audio in voice chat'''
     
 class MusicCog(commands.Cog,TC_Cog_Mixin):
     def __init__(self, bot:TCBot) -> None:
@@ -681,4 +683,18 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         await MessageTemplatesMusic.music_msg(ctx, "Playlist", f"Loaded size {len(playlist)} playlist `{playlistname}` into processing queue.  Please wait.")'''
 
 async def setup(bot: commands.Bot) -> None:
+    await bot.add_cog()
+            
+async def setup(bot):
+    print(__name__)
+    from .AudioPlaybackSub import setup
+    await bot.load_extension(setup.__module__)
     await bot.add_cog(MusicCog(bot))
+
+
+
+async def teardown(bot):
+    
+    from .AudioPlaybackSub import setup
+    await bot.unload_extension(setup.__module__)
+    await bot.remove_cog('MusicCog')

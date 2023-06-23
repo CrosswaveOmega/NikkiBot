@@ -2,10 +2,14 @@ import gui
 from sqlalchemy import create_engine, text, MetaData, Table, inspect, Column
 from sqlalchemy.orm import sessionmaker, Session
 
+from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import registry
 
 import logging
 
+from sqlalchemy.ext.asyncio import create_async_engine
 '''
 The database engine is stored within a DatabaseSingleton, that ensures only one engine is connected to
 at any given time.  
@@ -16,6 +20,9 @@ It also can add new columns to the engine if they're missing,
 but that's the extent of database alterations.
 '''
 
+#TO DO LATER: ADD AN ASYNC SESSION MODE.
+
+
 def generate_column_definition(column, engine):
     column_name = column.name
     column_type = column.type.compile(engine.dialect)
@@ -24,8 +31,7 @@ def generate_column_definition(column, engine):
     if column_attributes:
         column_definition += " " + " ".join(column_attributes)
     return column_definition
-
-# Generate the ALTER TABLE statemen
+ENGINEPREFIX="sqlite:///"
 class DatabaseSingleton:
     """A singleton storage class that stores the database engine and connection objects."""
 
@@ -44,27 +50,41 @@ class DatabaseSingleton:
             self.bases=[]
             self.val = arg
             self.database_name=db_name
-            self.connected=False
+            self.connected,self.connected_a=False, False
             self.engine=None
+            self.aengine=None
             self.SessionLocal: sessionmaker = None
+            self.SessionAsyncLocal: async_sessionmaker = None
             self.session: Session = None
             
 
         def connect_to_engine(self):
             if not self.connected:
                 db_name=self.database_name
-                self.engine = create_engine(f'sqlite:///{db_name}', echo=False)
+                self.engine = create_engine(f'{ENGINEPREFIX}{db_name}', echo=False)
                 for base in self.bases:
                     base.metadata.create_all(self.engine)
                 self.connected=True
                 SessionLocal = sessionmaker(bind=self.engine, autocommit=False, autoflush=True)
-
+                
 
                 self.SessionLocal: sessionmaker = SessionLocal
                 self.session: Session = self.SessionLocal()
                 self.session.commit()
                 result=self.compare_db()
                 gui.gprint(result)
+
+        async def connect_to_engine_a(self):
+            '''async variant of connect_to_engine.'''
+            if not self.connected_a:
+                db_name=self.database_name
+                self.aengine= create_async_engine(f'{ENGINEPREFIX}{db_name}',echo=False)
+                self.SessionAsyncLocal=async_sessionmaker(bind=self.aengine, autocommit=False, autoflush=True)
+                for base in self.bases:
+                    async with self.aengine.begin() as conn:
+                        await conn.run_sync(base.metadata.create_all)
+                self.connected_a=True
+
 
         def load_in_base(self,Base):
             print("loading in: ",Base.__name__,Base)
@@ -146,18 +166,12 @@ class DatabaseSingleton:
                     result+=(f"Missing columns in remote '{table_name}': {', '.join(missing_columns_table1)}\n")
                     for miss in missing_columns_table1:
                         #Add missing columns to remote.
-                        #WARNING: UNSTABLE
+                        #This is primarly intended for SQLite3.
                         col:Column=table2.columns[miss]
                         alter_table_stmt = text(f"ALTER TABLE {table_name} ADD COLUMN {generate_column_definition(col,self.engine)};")
                         session.execute(alter_table_stmt)
                         session.commit()
             return result
-
-
-
-
-
-
 
         def execute_sql_string(self, string):
             with self.get_session() as session:
@@ -168,22 +182,32 @@ class DatabaseSingleton:
                 self.session.close()
             self.engine.dispose()
             self.connected=False
+        
+        async def close_async(self):
+            if self.connected_a:
+                await self.aengine.dispose()
+                self.connected_a=False
 
         def get_session(self) -> Session:
             if not self.session:
                 self.session = self.SessionLocal()
             return self.session
+        
+        async def get_async_session(self) -> AsyncSession:
+            await self.connect_to_engine_a()
+            return self.SessionAsyncLocal()
 
     _instance = None
 
     def __init__(self, arg, **kwargs):
         if not DatabaseSingleton._instance:
             print("Running singleton 2")
-            session = self.__DatabaseSingleton(arg, **kwargs)
-            DatabaseSingleton._instance = session
-        #If it's made, do nothing.
+            instance = self.__DatabaseSingleton(arg, **kwargs)
+            DatabaseSingleton._instance = instance
+        
     def database_check(self):
         return self._instance.compare_db()
+    
     def startup(self):
         self._instance.connect_to_engine()
 
@@ -213,11 +237,17 @@ class DatabaseSingleton:
             raise Exception("Singleton instance does not exist")
         DatabaseSingleton._instance.get_session().commit()
     
-    def close_out(self):
+    async def close_out(self):
         inst=self.get_instance()
         inst.close()
+        await inst.close_async()
 
     @staticmethod
     def get_session() -> Session:
         inst = DatabaseSingleton.get_instance()
         return inst.get_session()
+    
+    @staticmethod
+    async def get_async_session() -> AsyncSession:
+        inst = DatabaseSingleton.get_instance()
+        return await inst.get_async_session()

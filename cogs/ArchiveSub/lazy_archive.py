@@ -11,10 +11,16 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import desc, asc, and_
 
 '''
+RP archives is done within three phases: collecting, grouping, and then posting.
+The regular RP archive, designed to update a pre-existing RP archive, typically does these phases back to back.
+While this works for updating the archives, it does not work for creating whole new archives.
+Creating a whole new archive can take several weeks depending on the amount of valid archivable messages within a server.
 
-This script defines Tables that are used exclusively within the 
-context of the ServerRPArchive Cog and it's ArchiveSub subpackage.
-H
+As such, a 'lazy' variant of the RP archive system was designed.
+
+The lazy archive preforms each phase for about 15 minutes, then takes a pause.
+This reduces the  load on the server and system resources, and leaves the bot open for 
+preforming other tasks in the meantime.
 '''
 from assets import AssetLookup
 from utility import hash_string

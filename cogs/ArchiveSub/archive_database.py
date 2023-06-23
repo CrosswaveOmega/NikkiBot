@@ -114,7 +114,7 @@ class ChannelArchiveStatus(ArchiveBase):
         session.commit()
 
 class ChannelSep(ArchiveBase):
-    '''Table for the channel separator objects.'''
+    '''Table for the channel separator objects.  Channel separators are used to group archived messages.'''
     __tablename__ = 'ChannelSeps'
 
     channel_sep_id = Column(Integer,primary_key=True)
@@ -142,6 +142,8 @@ class ChannelSep(ArchiveBase):
         self.message_count=count
     @staticmethod
     def add_channel_sep_if_needed(message,chansepid):
+        '''if there's a new channel sep id, create a new channel sep.
+        otherwise, return the channel sep id passed in.'''
         session: Session = DatabaseSingleton.get_session()
         # Check if a ChannelSep with the same server_id and channel_sep_id already exists
         existing_channel_sep = session.query(ChannelSep).filter_by(
@@ -157,7 +159,7 @@ class ChannelSep(ArchiveBase):
 
     @staticmethod
     def derive_from_archived_rp_message(message):
-        # Create a new ChannelSep entry based on the ArchivedRPMessage
+        '''Create a new ChannelSep entry based on the passed in ArchivedRPMessage'''
         #session: Session = DatabaseSingleton.get_session()
         channel_sep = ChannelSep(
                 channel_sep_id=message.channel_sep_id,
@@ -208,9 +210,12 @@ class ChannelSep(ArchiveBase):
 
     @staticmethod
     def delete_channel_seps_by_server_id(server_id: int):
+        '''delete all channel seps that belong to the passed in server id'''
         session: Session = DatabaseSingleton.get_session()
         session.query(ChannelSep).filter(ChannelSep.server_id == server_id).delete()
         session.commit()
+
+
     @staticmethod
     def get_posted_but_incomplete(server_id: int):
         '''retrieve all ChannelSep objects that where posted, but not done retrieving messages.'''
@@ -221,9 +226,10 @@ class ChannelSep(ArchiveBase):
         )
         session = DatabaseSingleton.get_session()
         return session.query(ChannelSep).filter(filter).order_by(ChannelSep.channel_sep_id).first()
+    
     @staticmethod
     def get_unposted_separators(server_id: int,limit:int=None):
-        '''retrieve all ChannelSep objects that are not posted yet.'''
+        '''retrieve up to `limit` ChannelSep objects for the passed in serverid that are not posted yet.'''
         filter = and_(
             ChannelSep.posted_url == None,
             ChannelSep.server_id == server_id
@@ -235,6 +241,7 @@ class ChannelSep(ArchiveBase):
             return session.query(ChannelSep).filter(filter).order_by(ChannelSep.channel_sep_id).limit(limit).all()
     @staticmethod
     def get_all_separators(server_id: int):
+        '''get all separators from the passed in channel sep.'''
         filter =            ChannelSep.server_id == server_id
         session = DatabaseSingleton.get_session()
         return session.query(ChannelSep).filter(filter).order_by(ChannelSep.created_at).all()

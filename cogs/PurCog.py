@@ -139,8 +139,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
     @commands.has_permissions(manage_messages=True,manage_channels=True)
     async def ai_setup(self, ctx):
         """This family of commands is for setting up the ai in your server."""
-        channel = ctx.message.channel
-        guild=channel.guild
+        guild=ctx.guild
         guildid=guild.id
         profile=ServerAIConfig.get_or_new(guildid)
 
@@ -150,32 +149,14 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         brief="clear ai chat history."
     )
     async def chear_history(self, ctx):
-        channel = ctx.message.channel
-        guild=channel.guild
+        guild=ctx.guild
         guildid=guild.id
         profile=ServerAIConfig.get_or_new(guildid)
         
         await MessageTemplates.server_ai_message(ctx,"purging")
         profile.clear_message_chains()
         await MessageTemplates.server_ai_message(ctx,"Data purged")
-    @ai_setup.command(
-        name="add_ai_channel",
-        brief="add a channel that Nikki can talk freely in."
-    )
-    async def add_ai_channel(self, ctx, target_channel:discord.TextChannel):
-        channel = ctx.message.channel
-        guild=channel.guild
-        guildid=guild.id
-        profile=ServerAIConfig.get_or_new(guildid)
-        chanment=[target_channel]
-        if len(chanment)>=1:
-            for chan in chanment:
-                profile.add_channel(chan.id)
-        else:
-            await MessageTemplates.server_ai_message(ctx,"?")
-            return 
-        self.bot.database.commit()
-        await MessageTemplates.server_ai_message(ctx,"I will start listening there, ok?'")
+
 
     @commands.command(brief="Update user or server api limit [server,user],id,limit")
     @commands.is_owner()
@@ -202,7 +183,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
     @app_commands.command(name="ban_user", description="Ban a user from using my AI.", extras={"homeonly":True})
     @app_commands.describe(userid='user id')
     async def aiban(self, interaction: discord.Interaction, userid:int) -> None:
-        """get bot info for this server"""
+        """Ban a user from using the AI API."""
         ctx: commands.Context = await self.bot.get_context(interaction)
         if interaction.user!=self.bot.application.owner:
             await ctx.send("This command is owner only, buddy.")
@@ -217,9 +198,8 @@ class AICog(commands.Cog, TC_Cog_Mixin):
 
     @app_commands.command(name="ban_server", description="Ban a server from using my AI.", extras={"homeonly":True})
     @app_commands.describe(serverid='server id to ban.')
-    #@app_commands.guilds(discord.Object(id=AssetLookup.get_asset('homeguild')))
     async def aibanserver(self, interaction: discord.Interaction, serverid:int) -> None:
-        """get bot info for this server"""
+        """Ban a entire server user using the AI API."""
         ctx: commands.Context = await self.bot.get_context(interaction)
         if interaction.user!=self.bot.application.owner:
             await ctx.send("This command is owner only, buddy.")
@@ -230,15 +210,30 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(f"Good riddance!  The server with id {id} has been banned.")
         else:
             await ctx.send(f"I see no server by that name.")
-    
+    @ai_setup.command(
+        name="add_ai_channel",
+        brief="add a channel that Nikki can talk freely in."
+    )
+    async def add_ai_channel(self, ctx, target_channel:discord.TextChannel):
+        guild=ctx.guild
+        guildid=guild.id
+        profile=ServerAIConfig.get_or_new(guildid)
+        chanment=[target_channel]
+        if len(chanment)>=1:
+            for chan in chanment:
+                profile.add_channel(chan.id)
+        else:
+            await MessageTemplates.server_ai_message(ctx,"?")
+            return 
+        self.bot.database.commit()
+        await MessageTemplates.server_ai_message(ctx,f"Understood.  Whenever a message is sent in <#{target_channel.id}>, I'll respond to it.")
     @ai_setup.command(
         name="remove_ai_channel",
         brief="use to stop Nikki from talking in an added AI Channel."
     )
     async def remove_ai_channel(self, ctx, target_channel:discord.TextChannel):  
-
-        channel = ctx.message.channel
-        guild=channel.guild
+        '''remove a channel.'''
+        guild=ctx.guild
         guildid=guild.id
         profile=ServerAIConfig.get_or_new(guildid)
         chanment=[target_channel]
@@ -253,25 +248,20 @@ class AICog(commands.Cog, TC_Cog_Mixin):
     
     @commands.Cog.listener()
     async def on_message(self,message:discord.Message):
-        '''send a message'''
-        if message.author.bot: return
-        if not message.guild: return
+        '''Listener that will invoke the AI upon a message.'''
+        if message.author.bot: return #Don't respond to bot messages.
+        if not message.guild: return #Only work in guilds
+        
         try:
             profile=ServerAIConfig.get_or_new(message.guild.id)
             if self.bot.user.mentioned_in(message):
-
                 await message_check(self.bot,message)
             else:
                 if profile.has_channel(message.channel.id):
                     await message_check(self.bot,message)
-        except Exception as error:
-            errormess=str(error)[:4000]
-            emb=MessageTemplates.get_error_embed(title=f"Error with your query!",description=f"{error._message}")
-            if isinstance(error,purgpt.error.PurGPTError):
-                if error.json_body!=None:
-                    error._message='something just went wrong.'
-            
+        except Exception as error:           
             try:
+                emb=MessageTemplates.get_error_embed(title=f"Error with your query!",description=f"Something went wrong with the AI.")
                 await message.channel.send(embed=emb)
             except Exception as e:
                 

@@ -1,10 +1,6 @@
 import gui
 from typing import Literal
 import discord
-import operator
-import io
-import json
-import aiohttp
 import asyncio
 import csv
 #import datetime
@@ -19,27 +15,27 @@ from discord.ext import commands, tasks
 
 from dateutil.rrule import rrule,rrulestr, WEEKLY, SU, MINUTELY, HOURLY
 
-from discord import Webhook
-
-
-
 from discord import app_commands
 from discord.app_commands import Choice
 
 
 from database import ServerArchiveProfile
-from .ArchiveSub import do_group
+
 from .ArchiveSub import (
+do_group,
   collect_server_history,
   check_channel,
   ArchiveContext,
   collect_server_history_lazy,
   setup_lazy_grab,
   lazy_archive,
-  LazyContext
-
+  LazyContext,
+  ChannelSep,
+  ArchivedRPMessage,
+  MessageTemplates,
+  HistoryMakers, 
+  ChannelArchiveStatus
 ) 
-from .ArchiveSub import ChannelSep, ArchivedRPMessage, MessageTemplates, HistoryMakers, ChannelArchiveStatus
 from collections import defaultdict
 class ToChoice(commands.Converter):
     async def convert(self, ctx, argument):
@@ -610,12 +606,8 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 await ctx.send("I can't seem to access the history channel, it's gone!")
                 return False
             if profile.last_archive_time!=None:
-                await MessageTemplates.server_archive_message(ctx,"There's no reason for you to use lazy mode, this server is already archived.")
-                confirm=ConfirmView(user=ctx.author)
-                mes=await ctx.send("Continue anyways?",view=confirm)
-                await confirm.wait()
-                if not confirm.value:
-                    return False
+                await MessageTemplates.server_archive_message(ctx,"There's no reason for you to use lazy mode, this server already has an active archive.")
+                return False
             passok, statusmessage = check_channel(archive_channel)
 
             if not passok:
@@ -636,7 +628,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 task_name="LAZYARCHIVE"
                 message=await autochannel.send(f"**ATTEMPTING SET UP OF AUTO COMMAND {task_name}**")
                 myurl=message.jump_url
-                start_date = datetime(2023, 1, 1, 15, 0)
+                start_date = datetime(2023, 1, 1, 15, 30)
                 robj= rrule(
                     freq=HOURLY,
                     interval=1,
@@ -881,101 +873,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         brief="start archiving the server.  ",
         extras={"guildtask":['rp_history']})
     async def compileArchiveChannelLazy(self, ctx):
-        bot = ctx.bot
-        auth = ctx.message.author
-        channel = ctx.message.channel
-        
-        guild:discord.Guild=channel.guild
-        if guild==None:
-            await ctx.send("This command will only work inside a guild.")
-            return
-        guildid=guild.id
-
-        #options.
-        update=True
-        indexbot=True
-        user=False
-        scope='ws'
-        archive_from="server"
-
-        timebetweenmess=2.0
-        characterdelay=0.05
-
-
-        profile=ServerArchiveProfile.get_or_new(guildid)
-        
-        #for arg in args:
-            #if arg == 'full':   update=False
-            #if arg == 'update': update=True
-        if scope == 'ws':      indexbot,user=True,False
-        if scope == 'user':   indexbot,user=False, True
-        if scope == 'both':   indexbot,user=True,True
-        #await channel.send(profile.history_channel_id)
-        if profile.history_channel_id == 0:
-            await MessageTemplates.get_server_archive_embed(ctx,"Set a history channel first.")
-            return False
-        archive_channel=guild.get_channel(profile.history_channel_id)
-        if archive_channel==None:
-            await MessageTemplates.get_server_archive_embed(ctx,"I can't seem to access the history channel, it's gone!")
-            return False
-
-        #Make sure all permissions are there.
-        missing_permissions = []
-        passok, statusmessage = check_channel(archive_channel)
-
-        if not passok:
-            await MessageTemplates.server_archive_message(ctx,statusmessage)
-            return
-
-
-        m=await ctx.send("Initial check OK!")
-        dynamicwait=False
-        bot.add_act(str(ctx.guild.id),'archiving server...')
-        
-        await m.edit(content="Collecting server history...")
-
-        totalcharlen=0
-        new_last_time=0
-        if archive_from=="server":
-           messages, totalcharlen,new_last_time=await collect_server_history(ctx,update,indexbot,user)
-        
-
-        await  m.edit(content="Grouping into separators, this may take a while.")
-
-        lastgroup=profile.last_group_num
-        ts,group_id=await do_group(guildid,profile.last_group_num, ctx=ctx)
-        fullcount=ts
-        profile.update(last_group_num=group_id)
-        remaining_time_float= fullcount* timebetweenmess
-        gui.gprint(lastgroup,group_id)
-        if dynamicwait:
-            remaining_time_float+=(totalcharlen*characterdelay)
-
-        gui.gprint('next')
-        nogroup=ArchivedRPMessage.get_messages_without_group(guildid)
-        needed=ChannelSep.get_posted_but_incomplete(guildid)
-        grouped=ChannelSep.get_unposted_separators(guildid)
-        all=ChannelSep.get_all_separators(guildid)
-        unique_ids=ArchivedRPMessage.get_unique_chan_sep_ids(guildid)
-
-        if needed:   
-            grouped.insert(0,needed)
-        if nogroup==None:
-            nogroup=[]
-        if needed==None: needed=[]
-
-        
-        gui.gprint(grouped,needed)
-        await ctx.send(f'{len(nogroup)},  {len(needed)},{len(grouped)},{len(all)}, {len(unique_ids)}')
-        unposted=len(ArchivedRPMessage.get_archived_rp_messages_with_null_posted_url(guildid))
-        
-        for group in grouped:
-            group.channel_sep_id
-            messages_get=group.get_messages()
-            query2=ArchivedRPMessage.get_messages_in_group(guildid,group.channel_sep_id)
-            await ctx.send(f"{len(messages_get)},{len(query2)}")
-            unposted-=len(messages_get)
-        await ctx.send(f"Remaining:{unposted}")
+        await ctx.send(f"Coming soon.")
         
 
     @commands.hybrid_command(
@@ -1242,9 +1140,15 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
 
 async def setup(bot):
+    print(__name__)
+    from .ArchiveSub import setup
+    await bot.load_extension(setup.__module__)
     await bot.add_cog(ServerRPArchive(bot))
 
 
 
 async def teardown(bot):
+    
+    from .ArchiveSub import setup
+    await bot.unload_extension(setup.__module__)
     await bot.remove_cog('ServerRPArchive')
