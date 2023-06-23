@@ -164,61 +164,6 @@ class PlayerMixin:
                 await self.action_dict[action](ctx, editinter)
 
 
-class PlaylistMixin:
-    '''
-    A separate mixin class just for specifying playlist related actions.
-    '''
-    async def playlist_action_add(self, param):
-        song = param
-        self.songs.append(song)
-        if self.shuffle:
-            random.shuffle(self.songs)
-        return song
-
-    async def playlist_action_add_url(self, param):
-        url, author = param
-        song = AudioContainer(url, author.name)
-        song.get_song()
-
-        if song.state == "Error":
-            if self.channel is not None:
-                await self.send_message(self.channel, str(song.error_value), desc="Error...")
-            await self.bot.send_error(song.error_value, "Adding URL.")
-            return None
-
-        res = await self.playlist_action_add(song)
-        return res
-
-    async def playlist_action_removespot(self, param):
-        spot = param
-        if 0 <= spot < len(self.songs):
-            removed_song = self.songs.pop(spot)
-            return removed_song
-        return "ERR!&outofrange&ERR!"
-
-    async def playlist_action_jumpto(self, param):
-        spot = param
-        if 0 <= spot < len(self.songs):
-            removed_song = self.songs.pop(spot)
-            self.songs.insert(0, removed_song)
-            return removed_song
-        return "ERR!&outofrange&ERR!"
-
-    async def playlist_action_shuffle(self):
-        random.shuffle(self.songs)
-        return "done"
-
-    async def playlist_action_clear(self):
-        await self.player_actions("stop")
-        if self.songs:
-            self.songs, self.current = [], None
-            return 'done'
-        else:
-            return 'emptyalready'
-
-
-import random
-from typing import Callable
 
 class PlaylistMixin:
     '''
@@ -237,7 +182,7 @@ class PlaylistMixin:
         """
         song = param
         self.songs.append(song)
-        if self.shuffle:
+        if self.autoshuffle:
             random.shuffle(self.songs)
         return song
 
