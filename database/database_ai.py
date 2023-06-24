@@ -91,7 +91,7 @@ class AuditProfile(AIBase):
         if self.banned:
             return False, "ban"
         if self.last_call is not None:
-            if (datetime.now() - self.last_call).total_seconds() < 60:
+            if (datetime.now() - self.last_call).total_seconds() < 30:
                 return False, 'cooldown'
         return True, 'ok'
     

@@ -49,9 +49,10 @@ class MyLib(purgpt.functionlib.GPTFunctionLibrary):
         return str(current)
 
     @AILibFunction(name='google_search', description='Get a list of results from a google search query.')
+    @LibParam(comment='An interesting, amusing remark.')
     @LibParam(query='The query to search google with.')
     @LibParam(limit='Number of websites to include in search result.')
-    async def my_async_function(self,ctx:commands.Context,query:str,limit:int=5):
+    async def my_async_function(self,ctx:commands.Context,comment:str,query:str,limit:int=5):
         bot=ctx.bot
         if 'google' not in bot.keys or 'cse' not in bot.keys:
             return "insufficient keys!"
@@ -67,7 +68,7 @@ class MyLib(purgpt.functionlib.GPTFunctionLibrary):
             ).execute()
         results= query_results['items']
         allstr=""
-        emb=discord.Embed(title="Search results")
+        emb=discord.Embed(title="Search results", description=comment)
         for r in results:
             metatags=r['pagemap']['metatags'][0]
             desc=metatags.get('og:description',"NO DESCRIPTION")
@@ -79,7 +80,7 @@ class MyLib(purgpt.functionlib.GPTFunctionLibrary):
             )
         await ctx.send(embed=emb)
         current=discord.utils.utcnow()
-        return allstr
+        return comment+"\n"+allstr
 
 async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibrary=None):
     ctx=await bot.get_context(message)
