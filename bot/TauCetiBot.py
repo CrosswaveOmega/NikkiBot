@@ -73,7 +73,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         super().__init__(command_prefix=['tc>',">"], tree_cls=TreeOverride,help_command=Chelp(), intents=intent)
         #The Database Singleton is initalized in here.
         self.database=None
-
+        self.keys={}
         self.gptapi= None
         self.error_channel=None
 

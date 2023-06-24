@@ -34,7 +34,7 @@ from .TCAppCommandAutoSync import AppGuildTreeSync
 from .errorformat import client_error_message
 
 """
-Initalizes TCBot, and defines some checks
+Initalizes TCBot, defines some checks, and contains the main setup coroutine.
 
 """
 
@@ -300,6 +300,9 @@ class Main(commands.Cog):
             if val:
                 exepemb=discord.Embed(title=f"Error={i}", description=f"{ex}\n{val}")
                 await ctx.send(embed=exepemb)
+            if len(embed.fields)>20:
+                await ctx.send(embed=embed)
+                embed=discord.Embed(title="Loaded Extensions")
         await ctx.send(embed=embed)
     @commands.command()
     async def view_extend_status(self, ctx):
@@ -312,8 +315,9 @@ class Main(commands.Cog):
             embed.add_field(name=i,value=ex,inline=True)
             if val:
                 gui.gprint(f"{ex}\n{val}")
-                #exepemb=discord.Embed(title=f"Error={i}", description=f"{ex}\n{val}")
-                #await ctx.send(embed=exepemb)
+            if len(embed.fields)>20:
+                await ctx.send(embed=embed)
+                embed=discord.Embed(title="Loaded Extensions")
         await ctx.send(embed=embed)
     @commands.command()
     async def reload_extend(self, ctx, extname:str):
@@ -401,6 +405,10 @@ async def main(args):
         gui.DataStore.initialize_default_values()
 
         if (config!=None):
+            g=config.get("optional", 'google', fallback=None)
+            c=config.get("optional", 'cse_id',fallback=None)
+            bot.keys['google']=g
+            bot.keys['cse']=c
             purgpt.api_key=config.get("optional", 'purgpt')
             await bot.start(config.get("vital", 'cipher'))
              

@@ -3,7 +3,7 @@ from playwright.async_api import async_playwright
 import gui
 
 class PlaywrightMixin:
-    '''Mixin that provides rotating bot statuses.'''
+    '''This mixin is for initalizing a playwright context.'''
     playapi=None
     browser=None
     browser_on=False

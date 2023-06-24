@@ -27,7 +27,7 @@ import purgpt
 import purgpt.error
 from assets import AssetLookup
 from database.database_ai import AuditProfile, ServerAIConfig
-
+from googleapiclient.discovery import build   #Import the library
 lock = asyncio.Lock()
 reasons={'server':{
     'messagelimit': "This server has reached the daily message limit, please try again tomorrow.",
@@ -41,7 +41,45 @@ reasons={'server':{
     'cooldown': "There's a one minute delay between messages, slow down man!"
 }
 } 
-async def message_check(bot:TCBot,message):
+from purgpt.functionlib import *
+class MyLib(purgpt.functionlib.GPTFunctionLibrary):
+    @AILibFunction(name='get_time', description='Get the current time.')
+    async def my_function(self, ctx:commands.Context):
+        current=discord.utils.utcnow()
+        return str(current)
+
+    @AILibFunction(name='google_search', description='Get a list of results from a google search query.')
+    @LibParam(query='The query to search google with.')
+    @LibParam(limit='Number of websites to include in search result.')
+    async def my_async_function(self,ctx:commands.Context,query:str,limit:int=5):
+        bot=ctx.bot
+        if 'google' not in bot.keys or 'cse' not in bot.keys:
+            return "insufficient keys!"
+        query_service = build(
+        "customsearch", 
+        "v1", 
+        developerKey=bot.keys['google']
+        )  
+        query_results = query_service.cse().list(
+            q=query,    # Query
+            cx=bot.keys['cse'],  # CSE ID
+            num=limit   
+            ).execute()
+        results= query_results['items']
+        emb=discord.Embed(title="Search results")
+        for r in results:
+            emb.add_field(
+                name=r['title'][:255],
+                value=f"{r['link']}",
+                inline=False
+            )
+        await ctx.send(embed=emb)
+        current=discord.utils.utcnow()
+        return str(current)
+
+
+async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibrary=None):
+    ctx=await bot.get_context(message)
     permissions = message.channel.permissions_for(message.channel.guild.me)
     if permissions.send_messages:
         pass
@@ -85,6 +123,9 @@ async def message_check(bot:TCBot,message):
     for f in mes:
         chat.add_message(f['role'],f['content'])
     chat.add_message('user',message.clean_content)
+    if mylib!=None:
+        chat.functions=mylib.get_schema()
+        chat.function_call='auto'
     #Call API
     async with message.channel.typing():
         res=await bot.gptapi.callapi(chat)
@@ -104,6 +145,11 @@ async def message_check(bot:TCBot,message):
         
         role=i['message']['role']
         content=i['message']['content']
+        if i['finish_reason']=='function_call':
+            functiondict=i['message']['function_call']
+            output=await mylib.call_by_dict_ctx(ctx,functiondict)
+            resp=await output
+            content=output
         page=commands.Paginator(prefix='',suffix=None)
         for p in content.split("\n"):
             page.add_line(p)
@@ -131,6 +177,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         self.helptext=""
         self.bot=bot
         self.init_context_menus()
+        self.flib=MyLib()
 
     
     @commands.hybrid_group(fallback="view")
@@ -255,10 +302,10 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         try:
             profile=ServerAIConfig.get_or_new(message.guild.id)
             if self.bot.user.mentioned_in(message):
-                await message_check(self.bot,message)
+                await message_check(self.bot,message, mylib=self.flib)
             else:
                 if profile.has_channel(message.channel.id):
-                    await message_check(self.bot,message)
+                    await message_check(self.bot,message,mylib=self.flib)
         except Exception as error:           
             try:
                 emb=MessageTemplates.get_error_embed(title=f"Error with your query!",description=f"Something went wrong with the AI.")

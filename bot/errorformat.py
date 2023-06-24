@@ -1,6 +1,9 @@
 import discord
 from discord.ext import commands
 from utility import formatutil
+
+'''print out a new error message.'''
+
 def client_error_message(error_main, name='command'):
     error=error_main
     

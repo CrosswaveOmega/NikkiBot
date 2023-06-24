@@ -33,7 +33,7 @@ def speciallistsplitter(objects:List[Any], resetdata:Callable, splitcond:Callabl
 
 
 class AudioContainer():
-    """This class groups all featurs of playing audio into one neat package. """
+    """This class is for containing data related to playing audio."""
     def __init__(self, url,requested_by:str="Unknown"):
         info={}
 
