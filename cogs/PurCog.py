@@ -66,17 +66,20 @@ class MyLib(purgpt.functionlib.GPTFunctionLibrary):
             num=limit   
             ).execute()
         results= query_results['items']
+        allstr=""
         emb=discord.Embed(title="Search results")
         for r in results:
+            metatags=r['pagemap']['metatags'][0]
+            desc=metatags.get('og:description',"NO DESCRIPTION")
+            allstr+=r['link']+"\n"
             emb.add_field(
                 name=r['title'][:255],
-                value=f"{r['link']}",
+                value=f"{desc}\n{r['link']}",
                 inline=False
             )
         await ctx.send(embed=emb)
         current=discord.utils.utcnow()
-        return str(current)
-
+        return allstr
 
 async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibrary=None):
     ctx=await bot.get_context(message)
@@ -145,11 +148,13 @@ async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibra
         
         role=i['message']['role']
         content=i['message']['content']
+        function=None
         if i['finish_reason']=='function_call':
             functiondict=i['message']['function_call']
             output=await mylib.call_by_dict_ctx(ctx,functiondict)
             resp=await output
-            content=output
+            content=resp
+            function=str(i['message']['function_call'])
         page=commands.Paginator(prefix='',suffix=None)
         for p in content.split("\n"):
             page.add_line(p)
@@ -157,7 +162,10 @@ async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibra
         for pa in page.pages:
             ms=await message.channel.send(pa)
             if messageresp==None:messageresp=ms
+        if function:
+            profile.add_message_to_chain(messageresp.id,messageresp.created_at,role=role,content='', function=function)
         profile.add_message_to_chain(messageresp.id,messageresp.created_at,role=role,content=content)
+
         emb=discord.Embed(title="Audit",description=messageresp.clean_content)
         
 

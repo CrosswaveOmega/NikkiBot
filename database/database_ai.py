@@ -235,7 +235,7 @@ class MessageChain(AIBase):
             "role": self.role,
             "content": self.content,
             "name": self.name,
-            "function": self.function
+            "function_call": self.function
         }
 
 
