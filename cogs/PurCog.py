@@ -43,10 +43,7 @@ reasons={'server':{
 } 
 from purgpt.functionlib import *
 class MyLib(purgpt.functionlib.GPTFunctionLibrary):
-    @AILibFunction(name='get_time', description='Get the current time.')
-    async def my_function(self, ctx:commands.Context):
-        current=discord.utils.utcnow()
-        return str(current)
+    pass
 
 
 
@@ -156,7 +153,12 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         self.init_context_menus()
         self.flib=MyLib()
         self.walked=False
-
+    @AILibFunction(name='get_time',description='Get the current time and day in UTC.')
+    @commands.command(name='get_time',description='Get the current UTC Time',extras={})
+    async def get_time(self,ctx:commands.Context):
+        #This is an example of a decorated discord.py command.
+        bot=ctx.bot
+        await ctx.send(str(discord.utils.utcnow()))
     @AILibFunction(name='google_search',description='Get a list of results from a google search query.')
     @LibParam(comment='An interesting, amusing remark.',query='The query to search google with.',limit="Maximum number of results")
     @commands.command(name='google_search',description='Get a list of results from a google search query.',extras={})
