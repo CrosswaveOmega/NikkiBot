@@ -258,7 +258,10 @@ class Main(commands.Cog):
     async def task_remove(self, ctx):
         """debugging only."""
         return
-
+    @commands.command()
+    async def ping_tester(self, ctx:commands.Context,content:str='new'):
+        """debugging only."""
+        await ctx.send(content=content)
     @commands.command(hidden=True)
     async def purge_guild_data(self, ctx,guildid:int):
 

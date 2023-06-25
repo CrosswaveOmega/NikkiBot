@@ -28,6 +28,9 @@ Donators will have raised Limits
 TIMEOUT_SECS=120
 
 class PurGPTAPI:
+    '''
+    This bot utilizes the PurGPT api to connect to OpenAI.
+    '''
     def __init__(self,token:str=None):
         self.base_url = BASE_URL
         

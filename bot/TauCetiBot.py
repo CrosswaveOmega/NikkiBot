@@ -101,6 +101,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         self.database.startup()
 
 
+    
     def set_error_channel(self,newid):
         '''set the error channel id.'''
         if str(newid).isdigit():

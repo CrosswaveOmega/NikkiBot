@@ -31,7 +31,7 @@ from googleapiclient.discovery import build   #Import the library
 lock = asyncio.Lock()
 reasons={'server':{
     'messagelimit': "This server has reached the daily message limit, please try again tomorrow.",
-    'ban': "This server is banned from using my AI due to violations.",
+    'ban': "This server is banned from using my AI due to repeated violations.",
     'cooldown': "There's a one minute delay between messages."
 },
 'user':
@@ -48,39 +48,7 @@ class MyLib(purgpt.functionlib.GPTFunctionLibrary):
         current=discord.utils.utcnow()
         return str(current)
 
-    @AILibFunction(name='google_search', description='Get a list of results from a google search query.')
-    @LibParam(comment='An interesting, amusing remark.')
-    @LibParam(query='The query to search google with.')
-    @LibParam(limit='Number of websites to include in search result.')
-    async def my_async_function(self,ctx:commands.Context,comment:str,query:str,limit:int=5):
-        bot=ctx.bot
-        if 'google' not in bot.keys or 'cse' not in bot.keys:
-            return "insufficient keys!"
-        query_service = build(
-        "customsearch", 
-        "v1", 
-        developerKey=bot.keys['google']
-        )  
-        query_results = query_service.cse().list(
-            q=query,    # Query
-            cx=bot.keys['cse'],  # CSE ID
-            num=limit   
-            ).execute()
-        results= query_results['items']
-        allstr=""
-        emb=discord.Embed(title="Search results", description=comment)
-        for r in results:
-            metatags=r['pagemap']['metatags'][0]
-            desc=metatags.get('og:description',"NO DESCRIPTION")
-            allstr+=r['link']+"\n"
-            emb.add_field(
-                name=r['title'][:255],
-                value=f"{desc}\n{r['link']}",
-                inline=False
-            )
-        await ctx.send(embed=emb)
-        current=discord.utils.utcnow()
-        return comment+"\n"+allstr
+
 
 async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibrary=None):
     ctx=await bot.get_context(message)
@@ -153,7 +121,7 @@ async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibra
         if i['finish_reason']=='function_call':
             functiondict=i['message']['function_call']
             output=await mylib.call_by_dict_ctx(ctx,functiondict)
-            resp=await output
+            resp= output
             content=resp
             function=str(i['message']['function_call'])
         page=commands.Paginator(prefix='',suffix=None)
@@ -187,7 +155,76 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         self.bot=bot
         self.init_context_menus()
         self.flib=MyLib()
+        self.walked=False
 
+    @AILibFunction(name='google_search',description='Get a list of results from a google search query.')
+    @LibParam(comment='An interesting, amusing remark.',query='The query to search google with.',limit="Maximum number of results")
+    @commands.command(name='google_search',description='Get a list of results from a google search query.',extras={})
+    async def google_search(self,ctx:commands.Context,comment:str,query:str,limit:int=5):
+        #This is an example of a decorated discord.py command.
+        bot=ctx.bot
+        if 'google' not in bot.keys or 'cse' not in bot.keys:
+            return "insufficient keys!"
+        query_service = build(
+        "customsearch", 
+        "v1", 
+        developerKey=bot.keys['google']
+        )  
+        query_results = query_service.cse().list(
+            q=query,    # Query
+            cx=bot.keys['cse'],  # CSE ID
+            num=limit   
+            ).execute()
+        results= query_results['items']
+        allstr=""
+        emb=discord.Embed(title="Search results", description=comment)
+        for r in results:
+            metatags=r['pagemap']['metatags'][0]
+            desc=metatags.get('og:description',"NO DESCRIPTION")
+            allstr+=r['link']+"\n"
+            emb.add_field(
+                name=r['title'][:255],
+                value=f"{desc}\n{r['link']}",
+                inline=False
+            )
+        await ctx.send(embed=emb)
+        current=discord.utils.utcnow()
+        return comment+"\n"+allstr
+    
+    
+    @AILibFunction(name='google_search',description='Get a list of results from a google search query.')
+    @LibParam(comment='An interesting, amusing remark.',query='The query to search google with.',limit="Maximum number of results")
+    @commands.command(name='google_search',description='Get a list of results from a google search query.',extras={})
+    async def google_search(self,ctx:commands.Context,comment:str,query:str,limit:int=5):
+        #This is an example of a decorated discord.py command.
+        bot=ctx.bot
+        if 'google' not in bot.keys or 'cse' not in bot.keys:
+            return "insufficient keys!"
+        query_service = build(
+        "customsearch", 
+        "v1", 
+        developerKey=bot.keys['google']
+        )  
+        query_results = query_service.cse().list(
+            q=query,    # Query
+            cx=bot.keys['cse'],  # CSE ID
+            num=limit   
+            ).execute()
+        results= query_results['items']
+        allstr=""
+        emb=discord.Embed(title="Search results", description=comment)
+        for r in results:
+            metatags=r['pagemap']['metatags'][0]
+            desc=metatags.get('og:description',"NO DESCRIPTION")
+            allstr+=r['link']+"\n"
+            emb.add_field(
+                name=r['title'][:255],
+                value=f"{desc}\n{r['link']}",
+                inline=False
+            )
+        await ctx.send(embed=emb)
+        current=discord.utils.utcnow()
+        return comment+"\n"+allstr
     
     @commands.hybrid_group(fallback="view")
     @app_commands.default_permissions(manage_messages=True,manage_channels=True)
@@ -268,7 +305,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(f"I see no server by that name.")
     @ai_setup.command(
         name="add_ai_channel",
-        brief="add a channel that Nikki can talk freely in."
+        description="add a channel that Nikki will talk freely in."
     )
     async def add_ai_channel(self, ctx, target_channel:discord.TextChannel):
         guild=ctx.guild
@@ -285,7 +322,10 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         await MessageTemplates.server_ai_message(ctx,f"Understood.  Whenever a message is sent in <#{target_channel.id}>, I'll respond to it.")
     @ai_setup.command(
         name="remove_ai_channel",
-        brief="use to stop Nikki from talking in an added AI Channel."
+        description="use to stop Nikki from talking in an added AI Channel."
+    )
+    @app_commands.describe(
+        target_channel='channel to disable.'
     )
     async def remove_ai_channel(self, ctx, target_channel:discord.TextChannel):  
         '''remove a channel.'''
@@ -307,8 +347,11 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         '''Listener that will invoke the AI upon a message.'''
         if message.author.bot: return #Don't respond to bot messages.
         if not message.guild: return #Only work in guilds
-        
+        for p in self.bot.command_prefix:
+            if message.content.startswith(p): return 
         try:
+            if not self.walked:
+                self.flib.add_in_commands(self.bot)
             profile=ServerAIConfig.get_or_new(message.guild.id)
             if self.bot.user.mentioned_in(message):
                 await message_check(self.bot,message, mylib=self.flib)
