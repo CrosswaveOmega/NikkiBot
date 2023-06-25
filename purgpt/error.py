@@ -59,9 +59,4 @@ class Timeout(PurGPTError):
             )
 
 class APIConnectionError(PurGPTError):
-    def __init__(self, message):
-        
-        self._message = message or "CLIENT ERROR."
-        super(APIConnectionError, self).__init__(
-            self._message
-        )
+    pass
