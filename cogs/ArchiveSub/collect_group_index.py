@@ -13,7 +13,7 @@ server message.
 '''
 DEBUG_MODE=False
 
-async def iterate_backlog(backlog,group_id):
+async def iterate_backlog(backlog,group_id,count=0):
     tosend = []
     now=datetime.now()
     inital=backlog.qsize()
@@ -29,7 +29,7 @@ async def iterate_backlog(backlog,group_id):
             now=datetime.now()
         while backlog.empty()==False:
             if (datetime.now()-now).total_seconds()>1:
-                gui.gprint(F"Backlog Pass {group_id}: {archived} out of {inital} messages")
+                gui.gprint(F"Backlog Pass {group_id}: {archived} out of {inital} messages, with {count} remaining.")
                 await asyncio.sleep(0.1)
                 now=datetime.now()
             hm=backlog.get()
@@ -72,7 +72,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
     
     backlog=Queue()
     status_mess=None
-
+    bksize=0
     now=datetime.now()
     # iterate through the sorted message list
     for e,hm in enumerate(newlist):
@@ -127,7 +127,8 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
             if (group_id-old_group_id)>glimit:
                 #early termination, for lazygrab
                 DatabaseSingleton('voc').commit()
-                ts, group_id = await iterate_backlog(backlog, group_id)
+                bksize=0
+                ts, group_id = await iterate_backlog(backlog, group_id,length)
                 tosend += ts
                 print('done')
                 return tosend, group_id
@@ -143,12 +144,13 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
         # otherwise add message to backlog and add author to character set
         else:
             backlog.put(hm)
+            bksize+=1
             charsinbacklog.add(hm.author)
     #Commit to database.
     DatabaseSingleton('voc').commit()
     # add remaining backlog messages to tosend list
     
-    ts, group_id = await iterate_backlog(backlog, group_id)
+    ts, group_id = await iterate_backlog(backlog, group_id,length)
     #ChannelSep.derive_channel_seps_mass(server_id)
     tosend += ts
 
