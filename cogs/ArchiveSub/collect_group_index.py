@@ -13,7 +13,65 @@ server message.
 '''
 DEBUG_MODE=False
 
-async def iterate_backlog(backlog,group_id,count=0):
+async def iterate_backlog(backlog: Queue, group_id: int, count=0):
+    tosend = []
+    now = datetime.now()
+    initial = backlog.qsize()
+    archived = 0
+
+    buckets = {}  # Dictionary to hold buckets of messages
+    finished_buckets = []  # Dictionary to hold finished buckets
+
+    while not backlog.empty():
+        if DEBUG_MODE:
+            gui.gprint(f"Backlog Pass {group_id}:")
+        
+        if (datetime.now() - now).total_seconds() > 1:
+            gui.gprint(f"Backlog Pass {group_id}: {archived} out of {initial} messages, with {count} remaining.")
+            await asyncio.sleep(0.1)
+            now = datetime.now()
+
+        hm = backlog.get()
+        channelind = hm.get_chan_sep()
+
+        # Find the bucket for the current channel separator
+        bucket = buckets.get(channelind)
+
+        if bucket:
+            # Check if the author is in another bucket and move the messages accordingly
+            for key, value in buckets.items():
+                if key != channelind and hm.author in value['authors']:
+                    # Move the bucket to the 'finished' dictionary and create a new bucket
+                    group_id+=1
+                    gui.gprint(f"Backlog Pass {group_id}: {archived} out of {initial} messages, making a new bucket for {channelind} due to author backlog.")
+                    finished_buckets.append(value)
+                    bucket = {'messages': [], 'authors': set(), 'group_id': group_id}
+                    buckets[channelind] = bucket
+                    break
+
+        # If the bucket doesn't exist, create a new one
+        if not bucket:
+            group_id+=1
+            gui.gprint(f"Backlog Pass {group_id}: {archived} out of {initial} messages, making a new bucket for {channelind}")
+            bucket = {'messages': [], 'authors': set(), 'group_id': group_id}
+            buckets[channelind] = bucket
+
+        # Update the channel separator ID of the message
+        hm.update(channel_sep_id=buckets[channelind]['group_id'])
+        archived += 1
+        HistoryMakers.add_channel_sep_if_needed(hm, buckets[channelind]['group_id'])
+
+        # Add the message to the bucket
+        bucket['messages'].append(hm)
+        bucket['authors'].add(hm.author)
+
+    if DEBUG_MODE:
+        gui.gprint("Pass complete.")
+
+    DatabaseSingleton('voc').commit()
+    return tosend, group_id
+
+async def iterate_backlog_old(backlog:Queue,group_id:int,count=0):
     tosend = []
     now=datetime.now()
     inital=backlog.qsize()
@@ -51,8 +109,6 @@ async def iterate_backlog(backlog,group_id,count=0):
                 charsinotherbacklog.add(hm.author)
         if DEBUG_MODE: gui.gprint("Pass complete.")
         DatabaseSingleton('voc').commit()
-        
-
         backlog = new_backlog
     return tosend,group_id
 
@@ -110,7 +166,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
             
             DatabaseSingleton('voc').commit()
             
-            ts, group_id = await iterate_backlog(backlog, group_id)
+            ts, group_id = await iterate_backlog(backlog, group_id,length)
             await asyncio.sleep(0.1)
             tosend += ts
             # reset backlog and character set
