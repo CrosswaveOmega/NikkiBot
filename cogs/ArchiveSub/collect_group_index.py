@@ -16,6 +16,8 @@ DEBUG_MODE=False
 async def iterate_backlog(backlog,group_id):
     tosend = []
     now=datetime.now()
+    inital=backlog.qsize()
+    archived=0
     while backlog.empty()==False:
         if DEBUG_MODE: gui.gprint(F"Backlog Pass {group_id}:")
         new_backlog=Queue()
@@ -27,7 +29,7 @@ async def iterate_backlog(backlog,group_id):
             now=datetime.now()
         while backlog.empty()==False:
             if (datetime.now()-now).total_seconds()>1:
-                gui.gprint(F"Backlog Pass {group_id}:")
+                gui.gprint(F"Backlog Pass {group_id}: {archived} out of {inital} messages")
                 await asyncio.sleep(0.1)
                 now=datetime.now()
             hm=backlog.get()
@@ -42,6 +44,7 @@ async def iterate_backlog(backlog,group_id):
             if channelind == current_chana and running:
                 if DEBUG_MODE: gui.gprint('in',current_chana,hm.get_chan_sep(),group_id)
                 hm.update(channel_sep_id=group_id)
+                archived+=1
                 HistoryMakers.add_channel_sep_if_needed(hm,group_id)
             else:
                 new_backlog.put(hm)
