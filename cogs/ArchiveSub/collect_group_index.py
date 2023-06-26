@@ -123,7 +123,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
         # if current_chana is None, set it to the current channel
         if current_chana is None:
             current_chana = hm.get_chan_sep()
-            group_id+=1
+            
             if (group_id-old_group_id)>glimit:
                 #early termination, for lazygrab
                 DatabaseSingleton('voc').commit()
@@ -133,7 +133,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
                 print('done')
                 return tosend, group_id
             if DEBUG_MODE: gui.gprint('inb',current_chana,hm.get_chan_sep(),group_id)
-            
+            group_id+=1
         # add message to current group if it belongs to the current channel
         
         if chanin == current_chana:
