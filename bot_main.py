@@ -9,11 +9,13 @@ def recovery_mode(error):
    import os
    def setup():
       config = configparser.ConfigParser()
-      if not os.path.exists('config.ini'): return None
+      keys=configparser.ConfigParser()
+      if not os.path.exists('keys.ini') or not os.path.exists('config.ini'): return None, None
       else:
+         keys.read('keys.ini')
          config.read('config.ini')
-         return config
-   config=setup()
+         return keys, config
+   keys, config=setup()
    if config==None: 
       return
    import discord
@@ -28,7 +30,7 @@ def recovery_mode(error):
    config = configparser.ConfigParser()
    config.read('config.ini')
 
-   token = config.get("vital", 'cipher')
+   token = keys.get("vital", 'cipher')
    eid = config.get("optional", 'error_channel_id')
 
    recoverbot = commands.Bot(command_prefix='!', intents=intent)

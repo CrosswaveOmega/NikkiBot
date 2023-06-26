@@ -1,3 +1,4 @@
+import configparser
 from typing import Any, List
 import discord
 import traceback
@@ -43,6 +44,10 @@ from discord.app_commands import CommandTree
 import purgpt
 import gui
 
+class ConfigParserSub(configparser.ConfigParser):
+    def get(self, section, option, fallback=None,**kwargs):
+        return super().get( section, option,fallback=fallback,**kwargs)
+
 class TreeOverride(CommandTree):
     #I need to do this just to get a global check on app_commands...
     async def interaction_check(self, interaction: Interaction) -> bool:
@@ -76,6 +81,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         self.keys={}
         self.gptapi= None
         self.error_channel=None
+        self.config:configparser.ConfigParser = configparser.ConfigParser()
 
         self.statmess:StatusMessageManager=StatusMessageManager(self)
 

@@ -27,7 +27,7 @@ import gui
 
 from collections import defaultdict
 from dateutil.rrule import rrule,rrulestr, WEEKLY, SU
-from .TauCetiBot import TCBot
+from .TauCetiBot import TCBot, ConfigParserSub
 from .Tasks.TCTasks import TCTask, TCTaskManager
 from .TcGuildTaskDB import TCGuildTask
 from .TCAppCommandAutoSync import AppGuildTreeSync
@@ -172,7 +172,6 @@ async def on_ready():
     await bot.after_startup()
     gui.gprint("Setup done.")
 
-
 class Main(commands.Cog):
     """ debug class, only my owner can use these.
     """
@@ -209,7 +208,44 @@ class Main(commands.Cog):
         formatted_strings = [chunk for chunk in chunks]
         for i in formatted_strings:
             await ctx.send(i)
-            
+        
+    @commands.command()
+    async def config_view(self, ctx):
+        """view the config.ini file"""
+        #bot=ctx.bot
+        #guild=ctx.guild
+        print(bot.config.values())
+        for v in bot.config.values():
+            for k,s in v.items():
+                list.append(f"{v.name}, {k}, `{s}`")
+            print(list)
+        pages=commands.Paginator(prefix='',suffix='')
+        for l in list:
+            pages.add_line(l)
+        for p in pages.pages:
+            await ctx.send(p)
+
+    @commands.command()
+    async def config_set(self, ctx,section:str,option:str,value:str):
+        """set a value in the config.ini file"""
+        #bot=ctx.bot
+        #guild=ctx.guild
+        print(bot.config.values())
+        list=[]
+        for v in bot.config.values():
+            for k,s in v.items():
+                list.append(f"{v.name}, {k}, `{s}`")
+            print(list)
+        pages=commands.Paginator(prefix='',suffix='')
+        for l in list:
+            pages.add_line(l)
+        for p in pages.pages:
+            await ctx.send(p)
+        if not ctx.bot.config.has_section(section):
+            ctx.bot.config.add_section(section)
+
+        ctx.bot.config.set(section,option,value)
+        ctx.bot.config.write(open('config.ini', 'w'))
               
     @commands.command()
     async def assetlookuptest(self, ctx):
@@ -262,6 +298,8 @@ class Main(commands.Cog):
     async def ping_tester(self, ctx:commands.Context,content:str='new'):
         """debugging only."""
         await ctx.send(content=content)
+
+
     @commands.command(hidden=True)
     async def purge_guild_data(self, ctx,guildid:int):
 
@@ -347,9 +385,11 @@ class Main(commands.Cog):
 def setup(args):
     'get or create the config.ini file.'
     arglength=len(args)
-    config = configparser.ConfigParser()
-    if not os.path.exists('config.ini'):
-        gui.gprint("No config.ini file detected.")
+    keys=ConfigParserSub()
+    config = ConfigParserSub()
+    if not os.path.exists('config.ini') or not os.path.exists('keys.ini'):
+        if not os.path.exists('config.ini'): gui.gprint("No config.ini file detected.")
+        if not os.path.exists('keys.ini'): gui.gprint("No keys.ini file detected.")
         token,error_channel_id='',''
         if arglength >1: token=args[1]
         if arglength >2: error_channel_id=args[2]
@@ -360,10 +400,11 @@ def setup(args):
 
         gui.gprint("No config.ini file detected.")
 
-        config["vital"] = {'cipher': token}
+        keys["vital"] = {'cipher': token}
         config["optional"] = {'error_channel_id': error_channel_id}
         gui.gprint("MAKE SURE TO ADD YOUR ERROR CHANNEL ID!")
         config.write(open('config.ini', 'w'))
+        keys.write(open('keys.ini','w+'))
         try:
             gui.gprint("making savedata")
             Path("/saveData").mkdir(parents=True, exist_ok=True) #saveData
@@ -377,19 +418,31 @@ def setup(args):
         AssetLookup()
         gui.gprint("you can restart the bot now.")
 
-        return None
+        return None, None
 
     else:
         # Read File
+        keys.read('keys.ini')
         config.read('config.ini')
+        if config.get('vital','cipher',fallback=None)!=None:
+            gui.gprint("Bot token detected in config.ini!  Transferring to keys.ini")
+            for section in config.sections():
+                keys.add_section(section)
+                for option in config.options(section):
+                    if option!='error_channel_id':
+                        value = config.get(section, option)
+                        keys.set(section, option, value)
+                        config.remove_option(section, option)
+            config.write(open('config.ini', 'w+'))
+            keys.write(open('keys.ini','w+'))
         AssetLookup()
-        return config
+        return config, keys
 
 
 async def main(args):
     '''setup and start the bot.'''
-    config=setup(args)
-    if config==None: 
+    config, keys=setup(args)
+    if config==None or keys==None: 
         return
     async with bot:
 
@@ -402,18 +455,19 @@ async def main(args):
         outcome=bot.set_error_channel(config.get("optional", 'error_channel_id'))
         if not outcome:
             bot.error_channel=-726
+        bot.config=config
         await bot.add_cog(Main())
         bot.set_ext_directory('./cogs')
         gui.DataStore.initialize("./saveData/ds.sqlite")
         gui.DataStore.initialize_default_values()
 
         if (config!=None):
-            g=config.get("optional", 'google', fallback=None)
-            c=config.get("optional", 'cse_id',fallback=None)
+            g=keys.get("optional", 'google', fallback=None)
+            c=keys.get("optional", 'cse_id',fallback=None)
             bot.keys['google']=g
             bot.keys['cse']=c
-            purgpt.api_key=config.get("optional", 'purgpt')
-            await bot.start(config.get("vital", 'cipher'))
+            purgpt.api_key=keys.get("optional", 'purgpt')
+            await bot.start(keys.get("vital", 'cipher'))
              
 
 

@@ -104,8 +104,10 @@ async def lazy_archive(self, ctx):
         """
         MESSAGES_PER_POST_CALL=150
         CHANNEL_SEPS_PER_CLUSTER=5
-        MAX_TOTAL_SECONDS=15*60
-        
+        MAX_TOTAL_MINUTES=ctx.bot.config.get('archive','max_lazy_archive_minutes') or 15
+        MAX_TOTAL_SECONDS=max(MAX_TOTAL_MINUTES*60,60)
+
+
         #roughly five minutes worth of messages
         started_at=discord.utils.utcnow()
         def upper_time_limit(ext=0):
