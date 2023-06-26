@@ -388,23 +388,40 @@ def setup(args):
     keys=ConfigParserSub()
     config = ConfigParserSub()
     if not os.path.exists('config.ini') or not os.path.exists('keys.ini'):
-        if not os.path.exists('config.ini'): gui.gprint("No config.ini file detected.")
-        if not os.path.exists('keys.ini'): gui.gprint("No keys.ini file detected.")
-        token,error_channel_id='',''
-        if arglength >1: token=args[1]
-        if arglength >2: error_channel_id=args[2]
-        if not token:       
-            token = input("Please enter your bot token: ")
-        if not error_channel_id: 
-            error_channel_id = input("Please enter the ID of the channel to send error messages to, or 'NEWGUILD': ")
+        c1=c2=True
+        if not os.path.exists('config.ini'): 
+            gui.gprint("No config.ini file detected.")
+            c1=False
+        if not os.path.exists('keys.ini'): 
+            gui.gprint("No keys.ini file detected.")
+            c2=False
+        if c1 and not c2:
+            config.read('config.ini')
+            gui.gprint("config.ini found but no keys.ini")
+            for section in config.sections():
+                if section in ['vital','optional']:
+                    keys.add_section(section)
+                    for option in config.options(section):
+                        if option!='error_channel_id':
+                            value = config.get(section, option)
+                            keys.set(section, option, value)
+                            config.remove_option(section, option)
+            config.write(open('config.ini', 'w+'))
+            keys.write(open('keys.ini','w+'))
+        else:
+            token,error_channel_id='',''
+            if arglength >1: token=args[1]
+            if arglength >2: error_channel_id=args[2]
+            if not token:       
+                token = input("Please enter your bot token: ")
+            if not error_channel_id: 
+                error_channel_id = input("Please enter the ID of the channel to send error messages to, or 'NEWGUILD': ")
 
-        gui.gprint("No config.ini file detected.")
-
-        keys["vital"] = {'cipher': token}
-        config["optional"] = {'error_channel_id': error_channel_id}
-        gui.gprint("MAKE SURE TO ADD YOUR ERROR CHANNEL ID!")
-        config.write(open('config.ini', 'w'))
-        keys.write(open('keys.ini','w+'))
+            keys["vital"] = {'cipher': token}
+            config["optional"] = {'error_channel_id': error_channel_id}
+            gui.gprint("Writing config files")
+            config.write(open('config.ini', 'w'))
+            keys.write(open('keys.ini','w+'))
         try:
             gui.gprint("making savedata")
             Path("/saveData").mkdir(parents=True, exist_ok=True) #saveData
