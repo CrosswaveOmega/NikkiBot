@@ -215,12 +215,13 @@ class Main(commands.Cog):
         #bot=ctx.bot
         #guild=ctx.guild
         print(bot.config.values())
+        listv=[]
         for v in bot.config.values():
             for k,s in v.items():
-                list.append(f"{v.name}, {k}, `{s}`")
-            print(list)
+                listv.append(f"{v.name}, {k}, `{s}`")
+            print(listv)
         pages=commands.Paginator(prefix='',suffix='')
-        for l in list:
+        for l in listv:
             pages.add_line(l)
         for p in pages.pages:
             await ctx.send(p)
