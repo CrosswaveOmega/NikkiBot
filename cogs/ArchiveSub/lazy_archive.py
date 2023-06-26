@@ -105,7 +105,7 @@ async def lazy_archive(self, ctx):
         MESSAGES_PER_POST_CALL=150
         CHANNEL_SEPS_PER_CLUSTER=5
         MAX_TOTAL_MINUTES=ctx.bot.config.get('archive','max_lazy_archive_minutes')
-        if MAX_TOTAL_MINUTES!=None:
+        if MAX_TOTAL_MINUTES==None:
             MAX_TOTAL_MINUTES= '15'
         MAX_TOTAL_SECONDS=max(int(MAX_TOTAL_MINUTES)*60,60)
 
