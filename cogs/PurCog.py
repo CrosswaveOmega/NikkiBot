@@ -154,10 +154,12 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         self.flib=MyLib()
         self.walked=False
     @AILibFunction(name='get_time',description='Get the current time and day in UTC.')
+    @LibParam(comment='An interesting, amusing remark.')
     @commands.command(name='get_time',description='Get the current UTC Time',extras={})
-    async def get_time(self,ctx:commands.Context):
+    async def get_time(self,ctx:commands.Context,comment:str):
         #This is an example of a decorated discord.py command.
         bot=ctx.bot
+        await ctx.send(comment)
         await ctx.send(str(discord.utils.utcnow()))
     @AILibFunction(name='google_search',description='Get a list of results from a google search query.')
     @LibParam(comment='An interesting, amusing remark.',query='The query to search google with.',limit="Maximum number of results")
@@ -186,48 +188,14 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             allstr+=r['link']+"\n"
             emb.add_field(
                 name=r['title'][:255],
-                value=f"{desc}\n{r['link']}",
+                value=f"{r['link']}\n{desc}"[:1200],
                 inline=False
             )
         await ctx.send(embed=emb)
         current=discord.utils.utcnow()
         return comment+"\n"+allstr
     
-    
-    @AILibFunction(name='google_search',description='Get a list of results from a google search query.')
-    @LibParam(comment='An interesting, amusing remark.',query='The query to search google with.',limit="Maximum number of results")
-    @commands.command(name='google_search',description='Get a list of results from a google search query.',extras={})
-    async def google_search(self,ctx:commands.Context,comment:str,query:str,limit:int=5):
-        #This is an example of a decorated discord.py command.
-        bot=ctx.bot
-        if 'google' not in bot.keys or 'cse' not in bot.keys:
-            return "insufficient keys!"
-        query_service = build(
-        "customsearch", 
-        "v1", 
-        developerKey=bot.keys['google']
-        )  
-        query_results = query_service.cse().list(
-            q=query,    # Query
-            cx=bot.keys['cse'],  # CSE ID
-            num=limit   
-            ).execute()
-        results= query_results['items']
-        allstr=""
-        emb=discord.Embed(title="Search results", description=comment)
-        for r in results:
-            metatags=r['pagemap']['metatags'][0]
-            desc=metatags.get('og:description',"NO DESCRIPTION")
-            allstr+=r['link']+"\n"
-            emb.add_field(
-                name=r['title'][:255],
-                value=f"{desc}\n{r['link']}",
-                inline=False
-            )
-        await ctx.send(embed=emb)
-        current=discord.utils.utcnow()
-        return comment+"\n"+allstr
-    
+
     @commands.hybrid_group(fallback="view")
     @app_commands.default_permissions(manage_messages=True,manage_channels=True)
     @commands.guild_only()
