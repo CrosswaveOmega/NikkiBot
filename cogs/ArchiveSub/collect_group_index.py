@@ -43,6 +43,7 @@ async def iterate_backlog(backlog: Queue, group_id: int, count=0):
                 if key != channelind and hm.author in value['authors']:
                     # Move the bucket to the 'finished' dictionary and create a new bucket
                     group_id+=1
+                    value['authors'].remove(hm.author)
                     gui.gprint(f"Backlog Pass {group_id}: {archived} out of {initial} messages, making a new bucket for {channelind} due to author backlog.")
                     finished_buckets.append(value)
                     bucket = {'messages': [], 'authors': set(), 'group_id': group_id}
