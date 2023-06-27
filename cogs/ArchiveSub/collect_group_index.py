@@ -47,7 +47,7 @@ async def iterate_backlog(backlog: Queue, group_id: int, count=0):
                     gui.gprint(f"Backlog Pass {group_id}: {archived} out of {initial} messages, making a new bucket for {channelind} due to author backlog from {key}.")
                     finished_buckets.append(value)
                     finished_buckets.append(buckets[channelind])
-                    buckets[key]=None
+                    buckets.pop(key)
                     bucket = {'messages': [], 'authors': set(), 'group_id': group_id}
                     buckets[channelind] = bucket
                     break

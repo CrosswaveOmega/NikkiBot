@@ -697,7 +697,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
 
     @commands.command()
-    async def firstlasttimestamp(self, ctx, *args):
+    async def firstlasttimestamp(self, ctx):
         """Get the last timestamp of the most recently archived message.
         By default, it only indexes bot/webhook messages.
         """
@@ -706,20 +706,6 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         channel = ctx.message.channel
         guild=channel.guild
         guildid=guild.id
-
-
-        #options.
-        update=False
-        indexbot=True
-        user=False
-
-
-        for arg in args:
-            if arg == 'full':                update=False
-            if arg == 'update':                update=True
-            if arg== 'ws':                indexbot,user=True,False
-            if arg == 'user':                indexbot,user=False,True
-            if arg == 'both':                indexbot,user=True,True
 
 
         if not(serverOwner(ctx) or serverAdmin(ctx)):  #Permission Check.
