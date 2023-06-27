@@ -9,7 +9,6 @@ from sqlalchemy.orm import registry
 
 import logging
 
-from sqlalchemy.ext.asyncio import create_async_engine
 '''
 The database engine is stored within a DatabaseSingleton, that ensures only one engine is connected to
 at any given time.  
@@ -32,6 +31,7 @@ def generate_column_definition(column, engine):
         column_definition += " " + " ".join(column_attributes)
     return column_definition
 ENGINEPREFIX="sqlite:///"
+ASYNCENGINE='sqlite+aiosqlite:///'
 class DatabaseSingleton:
     """A singleton storage class that stores the database engine and connection objects."""
 
@@ -77,8 +77,9 @@ class DatabaseSingleton:
         async def connect_to_engine_a(self):
             '''async variant of connect_to_engine.'''
             if not self.connected_a:
+                gui.print("Connecting to ASYNCIO compatible engine variant.")
                 db_name=self.database_name
-                self.aengine= create_async_engine(f'{ENGINEPREFIX}{db_name}',echo=False)
+                self.aengine= create_async_engine(f'{ASYNCENGINE}{db_name}',echo=False)
                 self.SessionAsyncLocal=async_sessionmaker(bind=self.aengine, autocommit=False, autoflush=True)
                 for base in self.bases:
                     async with self.aengine.begin() as conn:
@@ -195,7 +196,8 @@ class DatabaseSingleton:
         
         async def get_async_session(self) -> AsyncSession:
             await self.connect_to_engine_a()
-            return self.SessionAsyncLocal()
+            mysession=self.SessionAsyncLocal()
+            return mysession
 
     _instance = None
 
@@ -250,4 +252,5 @@ class DatabaseSingleton:
     @staticmethod
     async def get_async_session() -> AsyncSession:
         inst = DatabaseSingleton.get_instance()
-        return await inst.get_async_session()
+        session=await inst.get_async_session()
+        return session

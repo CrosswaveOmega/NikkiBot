@@ -1,5 +1,6 @@
 import inspect
 import json
+import re
 from typing import Any, Coroutine, Dict, List, Union
 
 from enum import Enum, EnumMeta
@@ -112,6 +113,11 @@ class GPTFunctionLibrary:
         function_name = function_dict.get('name')
         function_args = function_dict.get('arguments', None)
         if isinstance(function_args,str):
+            #Making it so it won't break on poorly formatted function arguments.
+            function_args=function_args.replace("\\n",'\n')
+            pattern = r"(?<=:\s\")(.*?)(?=\"(?:,|\s*\}))"
+            #
+            function_args=re.sub(pattern, lambda m: m.group().replace('"', r'\"'), function_args)
             function_args=json.loads(function_args)
         print(function_name, function_args,len(function_args))
         method = self.FunctionDict.get(function_name)
@@ -119,6 +125,7 @@ class GPTFunctionLibrary:
             bot=ctx.bot
             command=bot.get_command(function_name)
             ctx.command=command
+            outcome="Done"
             if len(function_args)>0:
                 for i, v in command.clean_params.items():
                     if not i in function_args:
@@ -129,7 +136,9 @@ class GPTFunctionLibrary:
                 bot.dispatch('command', ctx)
                 try:
                     if await bot.can_run(ctx, call_once=True):
-                        await ctx.invoke(command,**function_args)
+                        outcome2=await ctx.invoke(command,**function_args)
+                        if outcome2!=None:
+                            outcome=outcome2
                     else:
                         raise commands.CheckFailure('The global check once functions failed.')
                 except Exception as exc:
@@ -139,7 +148,7 @@ class GPTFunctionLibrary:
             elif ctx.invoked_with:
                 exc =  commands.CommandNotFound(f'Command "{function_name}" is not found')
                 bot.dispatch('command_error', ctx, exc)
-            return "Done"
+            return outcome
             
         else:
 

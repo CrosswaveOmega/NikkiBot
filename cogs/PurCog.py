@@ -115,19 +115,29 @@ async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibra
         role=i['message']['role']
         content=i['message']['content']
         function=None
+        messageresp=None
         if i['finish_reason']=='function_call':
             functiondict=i['message']['function_call']
             output=await mylib.call_by_dict_ctx(ctx,functiondict)
+            
             resp= output
             content=resp
             function=str(i['message']['function_call'])
-        page=commands.Paginator(prefix='',suffix=None)
-        for p in content.split("\n"):
-            page.add_line(p)
-        messageresp=None
-        for pa in page.pages:
-            ms=await message.channel.send(pa)
-            if messageresp==None:messageresp=ms
+        if isinstance(content,str):
+            page=commands.Paginator(prefix='',suffix=None)
+            for p in content.split("\n"):
+                page.add_line(p)
+            messageresp=None
+            for pa in page.pages:
+                ms=await message.channel.send(pa)
+                if messageresp==None:messageresp=ms
+        elif isinstance(content,discord.Message):
+            messageresp=content
+            content=messageresp.content
+        else:
+            messageresp=await message.channel.send('No output from this command.')
+            content='No output from this command.'
+
         if function:
             profile.add_message_to_chain(messageresp.id,messageresp.created_at,role=role,content='', function=function)
         profile.add_message_to_chain(messageresp.id,messageresp.created_at,role=role,content=content)
@@ -160,7 +170,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         #This is an example of a decorated discord.py command.
         bot=ctx.bot
         await ctx.send(comment)
-        await ctx.send(str(discord.utils.utcnow()))
+        return await ctx.send(f"{comment}\n{str(discord.utils.utcnow())}")
     @AILibFunction(name='google_search',description='Get a list of results from a google search query.')
     @LibParam(comment='An interesting, amusing remark.',query='The query to search google with.',limit="Maximum number of results")
     @commands.command(name='google_search',description='Get a list of results from a google search query.',extras={})
@@ -191,9 +201,8 @@ class AICog(commands.Cog, TC_Cog_Mixin):
                 value=f"{r['link']}\n{desc}"[:1200],
                 inline=False
             )
-        await ctx.send(embed=emb)
-        current=discord.utils.utcnow()
-        return comment+"\n"+allstr
+        returnme=await ctx.send(content=comment,embed=emb)
+        return returnme
     
 
     @commands.hybrid_group(fallback="view")
