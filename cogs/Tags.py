@@ -121,36 +121,7 @@ class Tags(commands.Cog):
         
         self.db.close()
         self.userdb.close()
-    usernames = app_commands.Group(name="username_notify", description="Nikki will alert you when you can get a pomelo username.")
-    @usernames.command(name='subscribe', description='Nikki will alert you when you can get a pomelo username.')
-    async def usersub(self,interaction:discord.Interaction):
-        ctx: commands.Context = await self.bot.get_context(interaction)
-        userid=str(interaction.user.id)
 
-        tag={userid:{
-            'user':interaction.user.id,
-            'account_creation':interaction.user.created_at
-            }
-        }
-        self.userdb.update(tag)
-        self.userdb.commit()
-        try:
-            await interaction.user.send(f" Alright {interaction.user.name}, I'll notify you once your pomelo wave hits!")
-            await ctx.send("Dismiss me",ephemeral=True)
-        except Exception as e:
-            await ctx.send("I appreciate the enthusiasm, but I need permission to DM you.")
-    @usernames.command(name='unsubscribe', description='remove yourself')
-    async def userunsub(self, interaction: discord.Interaction):
-        ctx: commands.Context = await self.bot.get_context(interaction)
-        userid=interaction.user.id
-        tag = self.db.get(str(userid), False)
-        if tag:
-            tag=self.db.pop(str(userid))
-
-            self.db.commit()
-            await ctx.send("Ok, you're unsubscribed.")
-        else:
-            await ctx.send("You never used subscribe, though?")
     tags = app_commands.Group(name="tags", description="Tag commands")
     @tags.command(name='create', description='create a tag')
     @app_commands.describe(tagname='tagname to add')
