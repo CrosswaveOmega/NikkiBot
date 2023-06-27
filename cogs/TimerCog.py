@@ -101,7 +101,7 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
         now=datetime.now()
         target=now + timedelta(seconds=float(total_seconds))
         await ctx.send(comment)
-        await ctx.send(f"Timer {name} is set for {seconds_to_time_string(target)}")
+        await ctx.send(f"Timer {name} is set for <t:{target.timestamp()}:R")
         return 'ok'
 
 
