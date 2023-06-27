@@ -99,7 +99,7 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
         #This is an example of a decorated discord.py command.
         bot=ctx.bot
         now=datetime.now()
-        target=now + timedelta(seconds=total_seconds)
+        target=now + timedelta(seconds=float(total_seconds))
         await ctx.send(comment)
         await ctx.send(f"Timer {name} is set for {seconds_to_time_string(target)}")
         return 'ok'
