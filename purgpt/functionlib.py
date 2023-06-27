@@ -4,6 +4,7 @@ from typing import Any, Coroutine, Dict, List, Union
 
 from enum import Enum, EnumMeta
 import discord
+from discord.ext import commands, tasks
 from discord.ext.commands import Command, Context
 class GPTFunctionLibrary:
     """
@@ -130,13 +131,13 @@ class GPTFunctionLibrary:
                     if await bot.can_run(ctx, call_once=True):
                         await ctx.invoke(command,**function_args)
                     else:
-                        raise discord.ext.commands.CheckFailure('The global check once functions failed.')
-                except discord.ext.commands.CommandError as exc:
-                    await ctx.command.dispatch_error(ctx, exc)
+                        raise commands.CheckFailure('The global check once functions failed.')
+                except Exception as exc:
+                    bot.dispatch('command_error', ctx, exc)
                 else:
                     bot.dispatch('command_completion', ctx)
             elif ctx.invoked_with:
-                exc =  discord.ext.commands.CommandNotFound(f'Command "{function_name}" is not found')
+                exc =  commands.CommandNotFound(f'Command "{function_name}" is not found')
                 bot.dispatch('command_error', ctx, exc)
             return "Done"
             
