@@ -21,10 +21,10 @@ async def iterate_backlog(backlog: Queue, group_id: int, count=0):
 
     buckets = {}  # Dictionary to hold buckets of messages
     finished_buckets = []  # Dictionary to hold finished buckets
-    all_characters=set()
-    flags=set()
+
     chars={}
     while not backlog.empty():
+        time=datetime.now()
         if DEBUG_MODE:
             gui.gprint(f"Backlog Pass {group_id}:")
         
@@ -33,7 +33,7 @@ async def iterate_backlog(backlog: Queue, group_id: int, count=0):
             #await asyncio.sleep(0.02)
             now = datetime.now()
 
-        hm = backlog.get()
+        hm:ArchivedRPMessage = backlog.get()
         channelind = hm.get_chan_sep()
 
         # Find the bucket for the current channel separator
@@ -51,8 +51,11 @@ async def iterate_backlog(backlog: Queue, group_id: int, count=0):
                         #the current bucket.  Time to fix that.
                         finished_buckets.append(buckets[channelind])
                         group_id+=1
-                        bucket = {'messages': [], 'authors': set(), 'group_id': group_id}
+                        bucket = {'messages': 0, 'authors': 0, 'group_id': group_id}
                         buckets[channelind] = bucket
+                        
+                        hm.update(channel_sep_id=buckets[channelind]['group_id'])
+                        HistoryMakers.add_channel_sep_if_needed(hm, buckets[channelind]['group_id'])
                         gui.gprint(f"Backlog Pass {group_id}: {archived} out of {initial} messages, making a new bucket for {channelind}")
                     else:
                         gui.gprint(f"Backlog Pass {group_id}: Author is in older bucket, it's ok to overwrite.")
@@ -61,20 +64,24 @@ async def iterate_backlog(backlog: Queue, group_id: int, count=0):
         if not bucket:
             group_id+=1
             gui.gprint(f"Backlog Pass {group_id}: {archived} out of {initial} messages, making a new bucket for {channelind}")
-            bucket = {'messages': [], 'authors': set(), 'group_id': group_id}
+            bucket = {'messages': 0, 'authors': 0, 'group_id': group_id}
             buckets[channelind] = bucket
+            
+            hm.update(channel_sep_id=buckets[channelind]['group_id'])
+            HistoryMakers.add_channel_sep_if_needed(hm, buckets[channelind]['group_id'])
 
         # Update the channel separator ID of the message
         hm.update(channel_sep_id=buckets[channelind]['group_id'])
         archived += 1
-        HistoryMakers.add_channel_sep_if_needed(hm, buckets[channelind]['group_id'])
         chars[hm.author]={
              'ci':channelind,
              'gid':buckets[channelind]['group_id']
         }
         # Add the message to the bucket
-        bucket['messages'].append(hm)
-        bucket['authors'].add(hm.author)
+        bucket['messages']+=1
+        #bucket['authors'].add(hm.author)
+        res=time-datetime.now()
+        gui.gprint(res)
         await asyncio.sleep(float(0.01))
 
     if DEBUG_MODE:
