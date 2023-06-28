@@ -364,7 +364,19 @@ class SpecialAppSync:
                 add_command_to_tree(command, guild)
             for command in cog.walk_app_commands():
                 add_command_to_tree(command, guild)
+    async def sync_one_guild(self,guild,force=True):
+        try:
+            gui.gprint(guild)
 
+            entry=AppGuildTreeSync.get(server_id=guild.id)
+            if entry:
+                if entry.donotsync:
+                    return
+            await self.add_enabled_cogs_into_guild(guild,force=force)
+            await self.sync_commands_tree(guild, forced=force)
+        except Exception as e:
+            gui.gprint(e)
+            raise Exception()
     async def all_guild_startup(self, force=False,sync_only=False, no_sync=False):
         '''fetch all available guilds, and sync the command tree.'''
         try:

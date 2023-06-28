@@ -74,6 +74,7 @@ class General(commands.Cog, TC_Cog_Mixin):
         guild = ctx.guild
         member_count = guild.member_count
         channel_count = len(guild.channels)
+        cats=len([i for i in guild.channels if i.type==discord.ChannelType.category])
         blocked,can_see=0,0
         messagable, history_view=0,0
         c_mess,c_manage=0,0
@@ -104,7 +105,7 @@ class General(commands.Cog, TC_Cog_Mixin):
             else:
                 blocked+=1
 
-        view=f"Viewable:{can_see} channels.  \nArchivable: {history_view} channels."
+        view=f"Categories:{cats}\n Viewable:{can_see} channels.  \nArchivable: {history_view} channels."
         view2=f"Messagable: {messagable} channels.  \n Of which, {messagable-c_mess} channels have a restriction."
         desc=f"Members: {member_count}\n Channels: {channel_count}\n{view}\n{view2}"
         

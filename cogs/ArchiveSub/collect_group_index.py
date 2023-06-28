@@ -28,9 +28,9 @@ async def iterate_backlog(backlog: Queue, group_id: int, count=0):
         if DEBUG_MODE:
             gui.gprint(f"Backlog Pass {group_id}:")
         
-        if (datetime.now() - now).total_seconds() > 0.2:
+        if (datetime.now() - now).total_seconds() > 1:
             gui.gprint(f"Backlog Pass {group_id}: {archived} out of {initial} messages, with {count} remaining.")
-            await asyncio.sleep(0.02)
+            #await asyncio.sleep(0.02)
             now = datetime.now()
 
         hm = backlog.get()
@@ -75,6 +75,7 @@ async def iterate_backlog(backlog: Queue, group_id: int, count=0):
         # Add the message to the bucket
         bucket['messages'].append(hm)
         bucket['authors'].add(hm.author)
+        await asyncio.sleep(float(0.01))
 
     if DEBUG_MODE:
         gui.gprint("Pass complete.")

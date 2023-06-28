@@ -24,6 +24,7 @@ from utility.embed_paginator import pages_of_embeds
 from assets import AssetLookup
 from discord.app_commands import AppCommand
 from database import Users_DoNotTrack
+import gui
 ''''''
 
 
@@ -44,9 +45,20 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         bot=self.bot
         await bot.tree.sync(guild=guild)
         if guild.system_channel!=None:
-            await guild.system_channel.send("Hi, thanks for inviting me to your server!  I hope to be of use!\n"+ \
-                "Please understand that some of my features may require additional permissions.  \n"+
-                "I'll try to let you know which ones are needed and when.")
+            try:
+                await guild.system_channel.send("Hi, thanks for inviting me to your server!  I hope to be of use!\n"+ \
+                    "Please understand that some of my features may require additional permissions.  \n"+
+                    "I'll try to let you know which ones are needed and when.\n"+
+                    "Starting application command sync...")
+            except Exception as e:
+                gui.gprint(e)
+        await self.bot.sync_one_guild(guild=guild,force=True)
+        if guild.system_channel!=None:
+            try:
+                await guild.system_channel.send("Sync complete!")
+            except Exception as e:
+                gui.gprint(e)
+
 
     @nikkisetup.command(name="app_permission_info", description="learn how to set up my app commands!")
     async def info(self, interaction: discord.Interaction) -> None:
