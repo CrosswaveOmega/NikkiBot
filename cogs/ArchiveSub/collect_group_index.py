@@ -21,14 +21,16 @@ async def iterate_backlog(backlog: Queue, group_id: int, count=0):
 
     buckets = {}  # Dictionary to hold buckets of messages
     finished_buckets = []  # Dictionary to hold finished buckets
-
+    all_characters=set()
+    flags=set()
+    chars={}
     while not backlog.empty():
         if DEBUG_MODE:
             gui.gprint(f"Backlog Pass {group_id}:")
         
-        if (datetime.now() - now).total_seconds() > 1:
+        if (datetime.now() - now).total_seconds() > 0.2:
             gui.gprint(f"Backlog Pass {group_id}: {archived} out of {initial} messages, with {count} remaining.")
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.02)
             now = datetime.now()
 
         hm = backlog.get()
@@ -38,19 +40,22 @@ async def iterate_backlog(backlog: Queue, group_id: int, count=0):
         bucket = buckets.get(channelind)
 
         if bucket:
-            # Check if the author is in another bucket and move the messages accordingly
-            for key, value in buckets.items():
-                if key != channelind and hm.author in value['authors']:
-                    # Move the bucket to the 'finished' dictionary and create a new bucket
-                    group_id+=1
-                    value['authors'].remove(hm.author)
-                    gui.gprint(f"Backlog Pass {group_id}: {archived} out of {initial} messages, making a new bucket for {channelind} due to author backlog from {key}.")
-                    finished_buckets.append(value)
-                    finished_buckets.append(buckets[channelind])
-                    buckets.pop(key)
-                    bucket = {'messages': [], 'authors': set(), 'group_id': group_id}
-                    buckets[channelind] = bucket
-                    break
+            # Check if the author is in any bucket
+            if chars.get(hm.author,None):
+                #This author is in a bucket.  Make sure it's not this one.
+                if chars[hm.author]['ci']!=channelind:
+                    #It's not this bucket.  Check if this bucket is newer, if it isn't
+                    #Then time to split.
+                    if chars[hm.author]['gid']>bucket['group_id']:
+                        #The bucket the author is inside is NEWER than 
+                        #the current bucket.  Time to fix that.
+                        finished_buckets.append(buckets[channelind])
+                        group_id+=1
+                        bucket = {'messages': [], 'authors': set(), 'group_id': group_id}
+                        buckets[channelind] = bucket
+                        gui.gprint(f"Backlog Pass {group_id}: {archived} out of {initial} messages, making a new bucket for {channelind}")
+                    else:
+                        gui.gprint(f"Backlog Pass {group_id}: Author is in older bucket, it's ok to overwrite.")
 
         # If the bucket doesn't exist, create a new one
         if not bucket:
@@ -63,7 +68,10 @@ async def iterate_backlog(backlog: Queue, group_id: int, count=0):
         hm.update(channel_sep_id=buckets[channelind]['group_id'])
         archived += 1
         HistoryMakers.add_channel_sep_if_needed(hm, buckets[channelind]['group_id'])
-
+        chars[hm.author]={
+             'ci':channelind,
+             'gid':buckets[channelind]['group_id']
+        }
         # Add the message to the bucket
         bucket['messages'].append(hm)
         bucket['authors'].add(hm.author)
@@ -169,7 +177,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
             
             DatabaseSingleton('voc').commit()
             
-            ts, group_id = await iterate_backlog(backlog, group_id,length)
+            ts, group_id = await iterate_backlog(backlog, group_id,length-e)
             await asyncio.sleep(0.1)
             tosend += ts
             # reset backlog and character set

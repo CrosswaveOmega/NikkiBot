@@ -7,16 +7,22 @@ from enum import Enum, EnumMeta
 import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import Command, Context
+
 class GPTFunctionLibrary:
     """
-    A class representing a collection of functions with schema to be used with OpenAI's function calling.
+    A collection of methods to be used with OpenAI's chat completion endpoint.
+    When subclassed, decorated methods, called AILibFunctions, will be added to an internal FunctionDict.  
+    All methods will be converted to a function schema dictionary, which will be sent to OpenAI along with any user text.
+    OpenAI will then format paramaters and return them within a JSON object, which will be used to trigger the method
+    with call_by_dict or call_by_dict_ctx for discord.py Bot Commands.
+    It's possible to use both subclassed methods and discord.py bot commands, so long as either are decorated with the AILibFunction and LibParam decorators.
 
     Attributes:
-        FunctionDict (Dict[str, Callable]): A dictionary mapping function names to the corresponding methods.
+        FunctionDict ( Dict[str, Union[Command,callable]]): A dictionary mapping command and method names to the corresponding Command or methods
     """
     #To Do, make it possible to invoke prefix commands instead.
     CommandDict: Dict[str,Command]={}
-    FunctionDict: Dict[str, callable] = {}
+    FunctionDict: Dict[str, Union[Command,callable]] = {}
 
     def __new__(cls, *args: Any, **kwargs: Any) -> Any:
         """
@@ -39,9 +45,9 @@ class GPTFunctionLibrary:
             if hasattr(method, "function_schema"):
                 function_name = method.function_schema['name'] or method.__name__
                 self.FunctionDict[function_name] = method
-    def add_in_commands(self,bot) -> None:
+    def add_in_commands(self,bot:commands.Bot) -> None:
         """
-        Update the FunctionDict with discord commands.
+        Update the FunctionDict with decorated discord.py bot commands.
         """
         for command in bot.walk_commands():
             print(command.qualified_name)
@@ -51,20 +57,41 @@ class GPTFunctionLibrary:
                 self.FunctionDict[function_name] = command
     def get_schema(self) -> List[Dict[str, Any]]:
         """
-        Get the list of function schemas available in the class.
+        Get the list of function schema dictionaries representing callable methods, coroutines, or bot Commands available to the library.
 
         Returns:
-            A list of function schemas.
+            A list of function schema dictionaries from each decorated method or Command
         """
         functions_with_schema = []
         for name, method in self.FunctionDict.items():
+            schema=None
             if isinstance(method,Command):
-                functions_with_schema.append(method.extras['function_schema'])
+                schema=method.extras['function_schema']
             else:
                 if hasattr(method, "function_schema"):
-                    functions_with_schema.append(method.function_schema)
+                    schema=method.function_schema
+            if schema!=None:
+                if schema.get('parameters',None)!=None:
+                    functions_with_schema.append(schema)
         return functions_with_schema
-
+    def parse_name_args(self, function_dict):
+        print(function_dict)
+        function_name = function_dict.get('name')
+        function_args = function_dict.get('arguments', None)
+        if isinstance(function_args,str):
+            #Making it so it won't break on poorly formatted function arguments.
+            function_args=function_args.replace("\\n",'\n')
+            pattern = r"(?<=:\s\")(.*?)(?=\"(?:,|\s*\}))"
+            #In testing, I once had the API return a poorly escaped function_args attribute
+            #That could not be parsed by json.loads, so hence this regex.
+            function_args_str=re.sub(pattern, lambda m: m.group().replace('"', r'\"'), function_args)
+            try:
+                function_args=json.loads(function_args_str)
+            except json.JSONDecodeError as e:
+                #Something went wrong while parsing, return where.
+                output=f"JSONDecodeError: {e.msg} at line {e.lineno} column {e.colno}"
+                raise Exception(message=f"{output}\n{function_args_str}")
+        return function_name,function_args
     def call_by_dict(self, function_dict: Dict[str, Any]) -> Any:
         """
         Call a function based on the provided dictionary.
@@ -78,14 +105,13 @@ class GPTFunctionLibrary:
         Raises:
             AttributeError: If the function name is not found or not callable.
         """
-        print(function_dict)
-        function_name = function_dict.get('name')
-        function_args = function_dict.get('arguments', None)
-        if isinstance(function_args,str):
-            function_args=json.loads(function_args)
-        print(function_name, function_args,len(function_args))
+        try:
+            function_name,function_args=self.parse_name_args(function_dict)
+        except Exception as e:
+            result=str(e)
+            return result
         method = self.FunctionDict.get(function_name)
-        if callable(method):
+        if callable(method) and not isinstance(method,(Coroutine,Command)):
             if len(function_args)>0:
                 for i, v in function_args.items():
                     print("st",i,v)
@@ -104,21 +130,17 @@ class GPTFunctionLibrary:
             function_dict (Dict[str, Any]): The dictionary containing the function name and arguments.
 
         Returns:
-            The result of the function call.
+            The result of the function call, or Done if there is no returned value.
+            This is so something can be added to the bot's message_chain.
 
         Raises:
             AttributeError: If the function name is not found or not callable.
         """
-        print(function_dict)
-        function_name = function_dict.get('name')
-        function_args = function_dict.get('arguments', None)
-        if isinstance(function_args,str):
-            #Making it so it won't break on poorly formatted function arguments.
-            function_args=function_args.replace("\\n",'\n')
-            pattern = r"(?<=:\s\")(.*?)(?=\"(?:,|\s*\}))"
-            #
-            function_args=re.sub(pattern, lambda m: m.group().replace('"', r'\"'), function_args)
-            function_args=json.loads(function_args)
+        try:
+            function_name,function_args=self.parse_name_args(function_dict)
+        except Exception as e:
+            result=str(e)
+            return result
         print(function_name, function_args,len(function_args))
         method = self.FunctionDict.get(function_name)
         if isinstance(method,Command):
@@ -163,10 +185,10 @@ class GPTFunctionLibrary:
 
 def LibParam(**kwargs: Any) -> Any:
     """
-    Decorator to add parameter decorators to a function.
-
+    Decorator to add descriptions to any valid parameter inside a GPTFunctionLibary method or discord.py bot command.
+    AILibFunctions without this decorator will not be sent to the AI.
     Args:
-        **kwargs: The parameter decorators to be added.
+        **kwargs: function parameters, and the description to be applied.
 
     Returns:
         The decorated function.
@@ -194,29 +216,37 @@ substitutions={
     'Literal':'string'
 }
 
-def AILibFunction(name: str, description: str, force_words:List[str]=[]) -> Any:
+def AILibFunction(name: str, description: str, required:List[str]=[],force_words:List[str]=[]) -> Any:
     """
-    This decorator can be to add a function_schema element to a regular function, Coroutine, or a 
-    discord.py Command object.  In the case of the latter, the schema is added into the
-    Command.extras dictionary.
+    Flags a callable method, Coroutine, or discord.py Command, creating a 
+    function schema dictionary to be fed to OpenAI on invocation.
+    In the case of a bot Command, the schema is added into the Command.extras attribute.
+    Only Commands decorated with this can be called by the AI.
 
+    This should always be above the command decorator:
+    @AILibFunction(...)
+    @LibParam(...)
+    @commands.command(...,extras={})
     Args:
         name (str): The name of the function.
         description (str): The description of the function.
-
+        required:List[str]: list of parameters you want the AI to always use reguardless of if they have defaults.
     Returns:
         callable, Coroutine, or Command.
     """
     def decorator(func: Union[Command,callable,Coroutine]):
         if isinstance(func, Command):
+            #Added to the extras dictionary in the Command
             func.is_command=True
-            func.extras['function_schema'] = {
+            my_schema={}
+            my_schema= {
                 'name': func.qualified_name,
                 'description': description,
+                'parameters':None
             }
             if 'parameter_decorators' in func.extras:
                 paramdict=func.clean_params
-                func.extras['function_schema'].update(
+                my_schema.update(
                     { 'parameters': {
                     'type': 'object',
                     'properties': {},
@@ -238,9 +268,10 @@ def AILibFunction(name: str, description: str, force_words:List[str]=[]) -> Any:
                         #So that Enums can be made.
                         literal_values = param.annotation.__args__
                         param_info['enum'] = literal_values
-                    func.extras['function_schema']['parameters']['properties'][param_name] = param_info
-                    if param.default == inspect.Parameter.empty:
-                        func.extras['function_schema']['parameters']['required'].append(param_name)
+                    my_schema['parameters']['properties'][param_name] = param_info
+                    if param.default == inspect.Parameter.empty or param_name in required:
+                        my_schema['parameters']['required'].append(param_name)
+            func.extras['function_schema']=my_schema
             return func
         else:
 
@@ -249,6 +280,7 @@ def AILibFunction(name: str, description: str, force_words:List[str]=[]) -> Any:
             wrapper.function_schema = {
                 'name': name,
                 'description': description,
+                'parameters':None
             }
             wrapper.force_words=force_words
 

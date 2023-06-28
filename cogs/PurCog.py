@@ -171,10 +171,10 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         bot=ctx.bot
         await ctx.send(comment)
         return await ctx.send(f"{comment}\n{str(discord.utils.utcnow())}")
-    @AILibFunction(name='google_search',description='Get a list of results from a google search query.')
+    @AILibFunction(name='google_search',description='Get a list of results from a google search query.', required=['comment'])
     @LibParam(comment='An interesting, amusing remark.',query='The query to search google with.',limit="Maximum number of results")
     @commands.command(name='google_search',description='Get a list of results from a google search query.',extras={})
-    async def google_search(self,ctx:commands.Context,comment:str,query:str,limit:int=5):
+    async def google_search(self,ctx:commands.Context,query:str,comment:str='Search results:',limit:int=5):
         #This is an example of a decorated discord.py command.
         bot=ctx.bot
         if 'google' not in bot.keys or 'cse' not in bot.keys:
