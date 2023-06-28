@@ -21,7 +21,8 @@ async def iterate_backlog(backlog: Queue, group_id: int, count=0):
 
     buckets = {}  # Dictionary to hold buckets of messages
     finished_buckets = []  # Dictionary to hold finished buckets
-
+    optotal=0
+    opcount=0
     chars={}
     while not backlog.empty():
         time=datetime.now()
@@ -80,10 +81,10 @@ async def iterate_backlog(backlog: Queue, group_id: int, count=0):
         # Add the message to the bucket
         bucket['messages']+=1
         #bucket['authors'].add(hm.author)
-        res=time-datetime.now()
-        gui.gprint(res)
+        res=datetime.now()-time
+        optotal+=res.total_seconds()
         await asyncio.sleep(float(0.01))
-
+    gui.gprint(optotal/max(1,archived))
     if DEBUG_MODE:
         gui.gprint("Pass complete.")
 
