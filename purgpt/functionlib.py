@@ -88,10 +88,9 @@ class GPTFunctionLibrary:
             function_args_str=re.sub(pattern, lambda m: m.group().replace('"', r'\"'), function_args)
             print(function_args_str)
             try:
-                function_args=json.loads(function_args_str,strict=False)
+                function_args=json.loads(function_args_str)
             except json.JSONDecodeError as e:
                 #Something went wrong while parsing, return where.
-                
                 output=f"JSONDecodeError: {e.msg} at line {e.lineno} column {e.colno}: `{function_args_str[e.pos]}`"
                 raise json.JSONDecodeError(msg=f"{output}\n{function_args_str}", doc=function_args_str,pos=1)
         return function_name,function_args
