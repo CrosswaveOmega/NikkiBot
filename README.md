@@ -28,6 +28,8 @@ The tasks can be customized by adding coroutines to the Guild_Task_Functions cla
 
 9. **Natural Language Command Invocation:**  This bot is capable of invoking it's own Bot Commands through natural language, thanks to OpenAI Funciton calling and a special set of decorators.
 
+10. **Article Summarizaiton:** Summarize websites passed in, using a combination of mozilla/readability and the JSPyBridge library.
+
 10. **More features to come!**: The bot is constantly being updated and new features will be added as they become available.
 
 
@@ -40,6 +42,8 @@ Python 3.11 or higher!
 - sqlitedict
 - playwright
 - JSPyBridge
+
+please make sure to install the latest node.js runtime on your system to ensure that the Summarizer works.
 
 ## Technical Features
 -
