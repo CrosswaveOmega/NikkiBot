@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 import discord
 import operator
 import io
@@ -15,7 +15,7 @@ from queue import Queue
 
 from discord.ext import commands, tasks
 from discord.utils import find
-from discord import Webhook,ui
+from discord import EntityType, PrivacyLevel, Webhook,ui
 
 from discord import app_commands
 from discord.app_commands import Choice
@@ -203,7 +203,16 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             )
         returnme=await ctx.send(content=comment,embed=emb)
         return returnme
-    
+    @AILibFunction(name='code_gen',description="Output a block of formatted code in accordance with the user's instructions.", required=['comment'])
+    @LibParam(comment='An interesting, amusing remark.',code='Formatted computer code in any language to be given to the user.')
+    @commands.command(name='codeget',description='generate some code',extras={})
+    async def codegen(self,ctx:commands.Context,code:str,comment:str='Search results:'):
+        #This is an example of a decorated discord.py command.
+        bot=ctx.bot
+        emb=discord.Embed(title=comment, description=f"```py\n{code}\n```")
+        returnme=await ctx.send(content=comment+"{code:[1024]}",embed=emb)
+        return returnme
+
 
     @commands.hybrid_group(fallback="view")
     @app_commands.default_permissions(manage_messages=True,manage_channels=True)

@@ -173,7 +173,40 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
         else:
             return await ctx.send("You don't have any timers.")
         return 'ok'
+    @AILibFunction(
+        name='event_schedule',
+        description="Create a scheduled server event at a certain date,time, and with a name and description.",
+        required=['end_time','description']
+    )
+    @LibParam(name='The name of the event to schedule.',start_time='datetime to start event at, in UTC.',
+              end_time='datetime to end the event at, in UTC.',description='The description of what the event is.',
+              channelname='the name of the voice channel the event will occur within.  This is usually denoted as <#{integer}> in a user prompt.')
+    @commands.command(name='event_schedule',description='schedule an event.',extras={})
+    @commands.guild_only()
+    async def schedule_event(
+        self, ctx:commands.Context, name: str, start_time: datetime, channelname: str,end_time: datetime,
+        description: str = 'default description'):
 
+
+        channel:discord.VoiceChannel= discord.utils.get(ctx.guild.channels, name=channelname.replace("#",""))
+        print(channel)
+        if not ctx.author.guild_permissions.manage_events:
+            return await ctx.send('You do not have permission to create scheduled events.')
+        if not ctx.guild.me.guild_permissions.manage_events:
+            return await ctx.send("I do not have permission to create scheduled events.")
+        
+        image=await ctx.guild.icon.read()
+        # Create the scheduled event
+        event = await ctx.guild.create_scheduled_event(
+            name=name, start_time=start_time, 
+            channel=channel, 
+            end_time=end_time, description=description,
+            privacy_level=discord.PrivacyLevel.guild_only,
+            image=image
+        )
+
+        mes=await ctx.send(f'Scheduled event "{event.name}" created!')
+        return mes
 
 
     

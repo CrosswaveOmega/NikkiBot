@@ -5,6 +5,7 @@ from typing import Any, Coroutine, Dict, List, Union
 
 from enum import Enum, EnumMeta
 import discord
+from datetime import datetime
 from discord.ext import commands, tasks
 from discord.ext.commands import Command, Context
 
@@ -85,13 +86,34 @@ class GPTFunctionLibrary:
             #In testing, I once had the API return a poorly escaped function_args attribute
             #That could not be parsed by json.loads, so hence this regex.
             function_args_str=re.sub(pattern, lambda m: m.group().replace('"', r'\"'), function_args)
+            print(function_args_str)
             try:
-                function_args=json.loads(function_args_str)
+                function_args=json.loads(function_args_str,strict=False)
             except json.JSONDecodeError as e:
                 #Something went wrong while parsing, return where.
-                output=f"JSONDecodeError: {e.msg} at line {e.lineno} column {e.colno}"
-                raise Exception(message=f"{output}\n{function_args_str}")
+                
+                output=f"JSONDecodeError: {e.msg} at line {e.lineno} column {e.colno}: `{function_args_str[e.pos]}`"
+                raise json.JSONDecodeError(msg=f"{output}\n{function_args_str}", doc=function_args_str,pos=1)
         return function_name,function_args
+    def convert_args(self, function_name, function_args):
+        method=self.FunctionDict[function_name]
+        if isinstance(method,Command):
+            schema=method.extras['function_schema']
+            parameters=schema['parameters']
+            for i, v in parameters['properties'].items():
+                if i in function_args:
+                    form=v.get('format',None)
+                    if not form: continue
+                    if form=='date-time':
+                        datetime_format = "%Y-%m-%dT%H:%M:%S%z"
+
+                        converted_datetime = datetime.strptime(
+                            function_args[i], datetime_format
+                            )
+                        function_args[i]=converted_datetime
+        return function_args
+
+
     def call_by_dict(self, function_dict: Dict[str, Any]) -> Any:
         """
         Call a function based on the provided dictionary.
@@ -148,6 +170,7 @@ class GPTFunctionLibrary:
             command=bot.get_command(function_name)
             ctx.command=command
             outcome="Done"
+            self.convert_args(function_name,function_args)
             if len(function_args)>0:
                 for i, v in command.clean_params.items():
                     if not i in function_args:
@@ -213,6 +236,7 @@ substitutions={
     'int':'integer',
     'bool':'boolean',
     'float':'number',
+    'datetime':'string',
     'Literal':'string'
 }
 
@@ -264,6 +288,8 @@ def AILibFunction(name: str, description: str, required:List[str]=[],force_words
                         'type': typename,
                         'description': func.extras['parameter_decorators'].get(param_name, '')
                     }
+                    if oldtypename== 'datetime':
+                        param_info['format']='date-time'
                     if oldtypename == 'Literal':
                         #So that Enums can be made.
                         literal_values = param.annotation.__args__

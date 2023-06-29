@@ -41,17 +41,15 @@ class PurGPTAPI:
         if token:
             self._key=token
         
-    async def _make_call(self,endpoint:str,payload:Dict[str,Any]):
+    async def _make_call(self,endpoint:str,payload:Dict[str,Any])->Dict[str,Any]:
         headers = {
             "Content-Type": "application/json"
         }
         data = payload
+        print(data)
         if self._key==None: raise error.KeyException("API Key not set.")
         data['key']= self._key
-        if 'functions' in data:
-            data["model"]="gpt-3.5-turbo-0613"
-        else:
-            data["model"]="gpt-3.5-turbo"
+        
         timeout = aiohttp.ClientTimeout(
                 total=TIMEOUT_SECS
             )

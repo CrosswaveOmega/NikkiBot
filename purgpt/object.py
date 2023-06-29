@@ -35,7 +35,7 @@ class ApiCore(dict):
         return serialized_dict
 
 
-
+        
 class ChatCreation(ApiCore):
     endpoint = "chat/completions"
     method = "POST"
@@ -59,7 +59,13 @@ class ChatCreation(ApiCore):
         self.stop = stop
         self.presence_penalty = presence_penalty
         self.frequency_penalty = frequency_penalty
-
+    def to_dict(self):
+        data= super().to_dict()
+        if 'functions' in data:
+            data["model"]="gpt-3.5-turbo-0613"
+        else:
+            data["model"]="gpt-3.5-turbo"
+        return data
     def add_message(
         self,
         role: str,
@@ -81,4 +87,34 @@ class ChatCreation(ApiCore):
             message["name"] = name
 
         self.messages.append(message)
+    
+
+
+
+
+class Edit(ApiCore):
+    endpoint = "edits"
+    method = "POST"
+    api_slots=[]
+    def __init__(self,
+            model:str,
+            input:str,
+            instruction: str,
+            n:Optional[int]=None,
+            temperature:Optional[float]=None,
+            top_p:Optional[float]=None):
+        self.model:str = model,
+        self.input = input
+        self.instruction = instruction
+        self.n=n
+        self.temperature = temperature
+        self.top_p = top_p
+    def to_dict(self):
+        dictv={
+            'model':'text-davinci-edit-001',
+            'input':self.input,
+            'instruciton':self.instruction
+        }
+        return dictv
+
 

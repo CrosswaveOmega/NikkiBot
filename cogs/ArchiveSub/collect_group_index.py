@@ -14,6 +14,7 @@ server message.
 DEBUG_MODE=False
 
 async def iterate_backlog(backlog: Queue, group_id: int, count=0):
+    #Goes through queue once.
     tosend = []
     now = datetime.now()
     initial = backlog.qsize()

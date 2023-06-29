@@ -1,0 +1,11 @@
+
+var red = readability;
+var ji = jsdom;
+const response = await fetch(`https://github.com/extremeheat/JSPyBridge/blob/master/docs/python.md`);
+const html2 = await response.text();
+var doc = new jsdom.JSDOM(html2, {
+  url: "https://github.com/extremeheat/JSPyBridge/blob/master/docs/python.md"
+});
+let reader = new readability.Readability(doc.window.document);
+let article = reader.parse();
+return article.textContent
