@@ -108,6 +108,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         self.helptext=""
         self.bot=bot
         self.lock=asyncio.Lock()
+        self.prompt='''
+        Summarize general news articles, forum posts, and wiki pages that have been converted into Markdown. Condense the content into 2-4 medium-length paragraphs with 3-7 sentences per paragraph. Preserve key information and maintain a descriptive tone. The summary should be easily understood by a 10th grader. Exclude any concluding remarks from the summary.
+        '''
 
 
     @commands.command(name='summarize',description="make a summary of a url.",extras={})
@@ -132,7 +135,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             article, header=await read_article(url)
             
             chat=purgpt.ChatCreation(
-                messages=[{'role': "system", 'content': "You are to summarize the markdown formatted the user gives to you down to 2-5 paragraphs at least while preserving as much key information as possible while ensuring that the response is understandable by a 10th grader.  Your response should not repeat any information already stated within your response." }]
+                messages=[{'role': "system", 'content':  self.prompt }]
             )
             chat.add_message(role='user',content=article)
 
