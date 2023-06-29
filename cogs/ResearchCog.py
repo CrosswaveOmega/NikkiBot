@@ -108,9 +108,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         self.helptext=""
         self.bot=bot
         self.lock=asyncio.Lock()
-        readability= require('@mozilla/readability')
-        jsdom=require('jsdom')
-        TurndownService=require('turndown')
+
 
     @commands.command(name='summarize',description="make a summary of a url.",extras={})
     async def summarize(self,ctx:commands.Context,url:str):
