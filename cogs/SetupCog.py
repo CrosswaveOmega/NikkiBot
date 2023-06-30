@@ -35,7 +35,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
     def __init__(self, bot):
         self.helptext="This section is for enabling and disabling specific bot features for your server."
         self.bot:TCBot=bot
-        self.bot.add_act("WatchExample"," This space for rent.",discord.ActivityType.watching)
+        self.bot.add_act("WatchExample"," /nikkifeedback if you have a suggestion.",discord.ActivityType.watching)
         self.bot.add_act("WatchExample2","Prefix:'>'.",discord.ActivityType.watching)
 
     nikkisetup = app_commands.Group(name="nikkisetup", description="Some general commands for helping with setting up your server.")

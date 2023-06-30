@@ -348,7 +348,7 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
         '''This command returns a persistent view, as a test.'''
         await ctx.send("What's your favourite colour?", view=PersistentView())
 
-    @app_commands.command(name="feedback", description='Have a suggestion or complaint?  Use this and let me know!')
+    @app_commands.command(name="nikkifeedback", description='Have a suggestion or complaint?  Use this and let me know!')
     async def feedback_send(self, interaction: discord.Interaction):
         '''test for a feedback system'''
         await interaction.response.send_modal(Feedback())
