@@ -112,7 +112,20 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         Summarize general news articles, forum posts, and wiki pages that have been converted into Markdown. Condense the content into 2-4 medium-length paragraphs with 3-7 sentences per paragraph. Preserve key information and maintain a descriptive tone. The summary should be easily understood by a 10th grader. Exclude any concluding remarks from the summary.
         '''
 
-
+    @commands.command(name='reader',description="read a website in reader mode, converted to markdown",extras={})
+    async def webreader(self,ctx:commands.Context,url:str):
+        async with self.lock:
+            message=ctx.message
+            guild=message.guild
+            user=message.author
+            article, header=await read_article(url)
+            pages=commands.Paginator(prefix='',suffix='')
+            for l in article.split('\n'):
+                pages.add_line(l)
+            await ctx.send(f"# {header}")
+            for p in pages.pages:
+                await ctx.send(p)
+           
     @commands.command(name='summarize',description="make a summary of a url.",extras={})
     async def summarize(self,ctx:commands.Context,url:str):
         async with self.lock:
