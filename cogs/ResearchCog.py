@@ -85,6 +85,35 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         self.prompt='''
         Summarize general news articles, forum posts, and wiki pages that have been converted into Markdown. Condense the content into 2-4 medium-length paragraphs with 3-7 sentences per paragraph. Preserve key information and maintain a descriptive tone. The summary should be easily understood by a 10th grader. Exclude any concluding remarks from the summary.
         '''
+        self.translationprompt='''
+        Given text from a non-English language, provide an English translation along with contextual explanations for why and how the text's components conveys that meaning. Organize the explanations in a list format, with each word/phrase/component followed by its corresponding definition and explanation.  Note any double meanings within these explanations.
+        '''
+        self.init_context_menus()
+    @super_context_menu(name="Translate",description="Translate text into English.")
+    async def translate(self, interaction: discord.Interaction, message: discord.Message) -> None:
+        
+            chat=purgpt.ChatCreation(
+                messages=[{'role': "system", 'content':  self.translationprompt }]
+            )
+            chat.add_message(role='user',content=message.content)
+
+            #Call API
+            bot=self.bot
+
+
+            res=await bot.gptapi.callapi(chat)
+            #await ctx.send(res)
+            print(res)
+            result=res['choices'][0]['message']['content']
+            sources=[]
+
+            embed=discord.Embed(
+                title='translation.',
+                description=result[:4028]
+            )
+           
+            await interaction.response.send_message(content=f'{message.content}',embed=embed)
+
     @AILibFunction(name='google_search',description='Get a list of results from a google search query.', required=['comment'])
     @LibParam(comment='An interesting, amusing remark.',query='The query to search google with.',limit="Maximum number of results")
     @commands.command(name='google_search',description='Get a list of results from a google search query.',extras={})
