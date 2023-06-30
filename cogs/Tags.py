@@ -64,6 +64,9 @@ async def process_text(extracted_text,page):
     return result
 
 async def execute_javascript(tagtext, browser):
+    #I don't need to use the javascript library for this.
+    #Tag javascript runs with playwright instead as a security precaution.
+    
     result:str=tagtext
     
     page = await browser.new_page()

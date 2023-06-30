@@ -62,24 +62,40 @@ class PersistentView(discord.ui.View):
 
 
 class Feedback(discord.ui.Modal, title='Feedback'):
-
+    def __init__(self,bot, **kwargs):
+        super().__init__(**kwargs)
+        self.bot = bot
+        
     name = discord.ui.TextInput(
         label='title',
-        placeholder='give a title for your feature here!',
+        placeholder='Please title your suggestion.',
+        required=True,
+        max_length=256
     )
 
 
     feedback = discord.ui.TextInput(
-        label='Have a suggestion for a new feature?  Say it',
-        style=discord.TextStyle.long,
+        label='description',
+        style=discord.TextStyle.paragraph,
         placeholder='Type your feedback here...',
         required=True,
-        max_length=300,
+        max_length=1024,
     )
 
     async def on_submit(self, interaction: discord.Interaction):
         with open("feedback.txt", "a") as f:
             feedback_dict = {"name": self.name.value, "feedback": self.feedback.value}
+            interaction.user=None
+            embed=discord.Embed(
+                title=self.name.value,
+                description=self.feedback.value,
+                color=discord.Color.random()
+            )
+            embed.set_author(name=f"Sent by: {interaction.user.name}", icon_url=interaction.user.avatar.url)
+            mychannel =self.bot.config.get('optional','feedback_channel_id')
+            if mychannel:
+                chan=self.bot.get_channel(int(mychannel))
+                await chan.send(embed=embed)
             f.write(json.dumps(feedback_dict) + "\n")
         await interaction.response.send_message(f'Thanks for your feedback!  I will save it to my feedback file.', ephemeral=True)
 
@@ -332,7 +348,7 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
         '''This command returns a persistent view, as a test.'''
         await ctx.send("What's your favourite colour?", view=PersistentView())
 
-    @app_commands.command(name="feedback")
+    @app_commands.command(name="feedback", description='Have a suggestion or complaint?  Use this and let me know!')
     async def feedback_send(self, interaction: discord.Interaction):
         '''test for a feedback system'''
         await interaction.response.send_modal(Feedback())

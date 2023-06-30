@@ -782,8 +782,10 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             gui.gprint(f"New posted_url value for ChannelSep")
 
     #####################################FOR ACTIVE MODE##################################
+    #Disabled for now.
+    '''
     def guild_check(self,guildid):
-        '''Check if a guild is in the guild cache.'''
+        #Check if a guild is in the guild cache.
         if self.guild_cache[str(guildid)]==0:
             profile=ServerArchiveProfile.get(guildid)
             if not profile: 
@@ -798,7 +800,6 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         return self.guild_cache[str(guildid)]
     @commands.Cog.listener()
     async def on_message(self,message:discord.Message):
-        
         if not message.guild: return
         guildid=message.guild.id
 
@@ -835,7 +836,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 if m!=0:
                     e.update(content=message.clean_conent)
                     self.bot.database.commit()
-        pass
+        
     @commands.Cog.listener()
     async def on_message_delete(self,message):
         if not message.guild: return
@@ -852,7 +853,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                     session=self.bot.database.get_session()
                     session.delete(entry)
                     session.commit()
-        pass
+    '''
     
     @commands.command(
         name="archive_compile_lazy",

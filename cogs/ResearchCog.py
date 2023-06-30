@@ -30,57 +30,24 @@ import purgpt.error
 from database.database_ai import AuditProfile, ServerAIConfig
 #I need the readability npm package to work, so 
 from javascript import require, globalThis, eval_js
+import assets
 import gui
 
-async def read_article(url):
+def read_article_sync(url):
     readability= require('@mozilla/readability')
-    await asyncio.sleep(1)
     jsdom=require('jsdom')
-    await asyncio.sleep(1)
     TurndownService=require('turndown')
-    await asyncio.sleep(1)
     #Is there a better way to do this?
     print('attempting parse')
-    myjs='''
-    var red = readability;
-    var ji = jsdom;
-    
-    function isValidLink(url) {
-    // Regular expression pattern to validate URL format
-    const urlPattern = /^(ftp|http|https):\/\/[^ "]+$/;
-    
-    return urlPattern.test(url);
-    }
-    const targeturl=`URL`
-    const response = await fetch(targeturl);
-    const html2 = await response.text();
-    var doc = new jsdom.JSDOM(html2, {
-    url: targeturl
-    });
-    let reader = new readability.Readability(doc.window.document);
-    let article = reader.parse();
-    let articleHtml=article.content
-    const turndownService = new TurndownService();
-    turndownService.addRule('removeInvalidLinks', {
-        filter: 'a',
-        replacement: (content, node) => {
-            const href = node.getAttribute('href');
-            if (!href || !isValidLink(href)) {
-                return content;
-            }
-            return href ? `[${content}](${href})` : content;
-        }
-    });
-    const markdownContent = turndownService.turndown(articleHtml);
-
-    return [markdownContent,article.title];
-
+    out=f'''
+    let result=await read_webpage_plain(`{url}`,readability,jsdom);
+    return [result[0],result[1]];
     '''
-
-    myjs=myjs.replace("URL",url)
+    myjs=assets.JavascriptLookup.find_javascript_file('readwebpage.js',out)
+    #myjs=myjs.replace("URL",url)
     print(myjs)
     rsult= eval_js(myjs)
-    print(rsult)
+
     output,header=rsult[0],rsult[1]
     simplified_text = output.strip()
     simplified_text = re.sub(r'(\n){4,}', '\n\n\n', simplified_text)
@@ -88,7 +55,14 @@ async def read_article(url):
     simplified_text = re.sub(r' {3,}', '  ', simplified_text)
     simplified_text = simplified_text.replace('\t', '')
     simplified_text = re.sub(r'\n+(\s*\n)*', '\n', simplified_text)
-    return simplified_text, header
+    return [simplified_text, header]
+
+async def read_article(url):
+    getthread=asyncio.to_thread(read_article_sync, url)
+    result=await getthread
+    print(result)
+    text,header=result[0],result[1]
+    return text,header
 
 def extract_masked_links(markdown_text):
     '''just get all masked links.'''

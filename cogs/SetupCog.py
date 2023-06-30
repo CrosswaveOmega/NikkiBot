@@ -60,11 +60,17 @@ class Setup(commands.Cog, TC_Cog_Mixin):
                 gui.gprint(e)
 
 
-    @nikkisetup.command(name="app_permission_info", description="learn how to set up my app commands!")
+    @nikkisetup.command(name="app_permission_info", description="learn how to restrict access to my commands.")
     async def info(self, interaction: discord.Interaction) -> None:
         """Display a manual about changing the permission overrides for the bot's app commands."""
         ctx: commands.Context = await self.bot.get_context(interaction)
-        pages=await MessageTemplates.get_manual_list(ctx,"nikki_setup_manual.json")
+        pages=await MessageTemplates.get_manual_list(ctx,"nikki_ac_perm_overrides.json")
+        await pages_of_embeds(ctx,pages,ephemeral=True)
+    @nikkisetup.command(name="permissions", description="get links for re-authenticating my permissions")
+    async def perms(self, interaction: discord.Interaction) -> None:
+        """Return a manual that has a few oath2 links for server owners to quickly change Nikki's permissons with."""
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        pages=await MessageTemplates.get_manual_list(ctx,"nikki_permission_links.json")
         await pages_of_embeds(ctx,pages,ephemeral=True)
 
     @ticker.command(name="add", description="Owner Only, add a string to the ticker.", extras={"homeonly":True})
@@ -75,10 +81,9 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         bot=ctx.bot
         bot.add_act(name,text,discord.ActivityType.playing)
-        await ctx.send("done",ephemeral=True)
+        await ctx.send("Ticker added.",ephemeral=True)
 
     @ticker.command(name="view", description="view all tickers", extras={"homeonly":True})
-    #@app_commands.guilds(discord.Object(id=AssetLookup.get_asset('homeguild')))
     async def view_ticker(self, interaction: discord.Interaction) -> None:
         """Debug, display all rotating statuses on the news ticker."""
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -94,13 +99,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         for l in joined_list:
             await ctx.send(l)
 
-    @nikkisetup.command(name="permissions", description="get links for re-authenticating my permissions")
-    async def perms(self, interaction: discord.Interaction) -> None:
-        """Return a manual that has a few oath2 links for server owners to quickly change Nikki's permissons with."""
-        ctx: commands.Context = await self.bot.get_context(interaction)
-        
-        pages=await MessageTemplates.get_manual_list(ctx,"nikki_permissions_manual.json")
-        await pages_of_embeds(ctx,pages,ephemeral=True)
+
     
     @nikkisetup.command(name="get_tree_json", description="return a JSON representation of my command tree for this server")
     async def mytree(self, interaction: discord.Interaction) -> None:
@@ -267,11 +266,11 @@ class Setup(commands.Cog, TC_Cog_Mixin):
             stringval=stringval[:4020]+"...\n There are too many overwrites here for me to list!"
         return stringval
 
-    @commands.hybrid_command(name='permission_sleuth',description="Investigate permissions for user.")
+    @commands.hybrid_command(name='permission_sleuth',description="Investigate permission resolution for user.")
     @app_commands.describe(user="The user to evaluate permissions for.")
     async def permissionsleuth(self,ctx, user:discord.User):
         """Sometimes, people go overboard with discord permissions and turn their servers into something crazy.
-          This command figures out if they have.
+          This command figures out if there's a problem.
         Args:
             user (discord.User): user to investigate permissions for.
 
