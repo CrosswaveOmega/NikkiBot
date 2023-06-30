@@ -86,12 +86,23 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         Summarize general news articles, forum posts, and wiki pages that have been converted into Markdown. Condense the content into 2-4 medium-length paragraphs with 3-7 sentences per paragraph. Preserve key information and maintain a descriptive tone. The summary should be easily understood by a 10th grader. Exclude any concluding remarks from the summary.
         '''
         self.translationprompt='''
-        Given text from a non-English language, provide an English translation along with contextual explanations for why and how the text's components conveys that meaning. Organize the explanations in a list format, with each word/phrase/component followed by its corresponding definition and explanation.  Note any double meanings within these explanations.
+        Given text from a non-English language, provide an accurate English translation, followed by contextual explanations for why and how the text's components conveys that meaning. Organize the explanations in a list format, with each word/phrase/component followed by its corresponding definition and explanation.  Note any double meanings within these explanations.
         '''
         self.init_context_menus()
     @super_context_menu(name="Translate")
     async def translate(self, interaction: discord.Interaction, message: discord.Message) -> None:
-        
+            context=await self.bot.get_context(interaction)
+            guild=interaction.guild
+            user=interaction.user
+            
+            serverrep,userrep=AuditProfile.get_or_new(guild,user)
+            userrep.checktime()
+            ok, reason=userrep.check_if_ok()
+            if not ok:
+                if reason in ['messagelimit','ban']:
+                    await context.send("You have exceeded daily rate limit.")
+                    return
+            userrep.modify_status()
             chat=purgpt.ChatCreation(
                 messages=[{'role': "system", 'content':  self.translationprompt }]
             )
@@ -100,19 +111,27 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             #Call API
             bot=self.bot
 
+            targetmessage=await context.send(content=f'Translating...')
 
             res=await bot.gptapi.callapi(chat)
             #await ctx.send(res)
             print(res)
             result=res['choices'][0]['message']['content']
-            sources=[]
-
-            embed=discord.Embed(
-                title='translation.',
-                description=result[:4028]
-            )
+            embeds=[]
+            pages=commands.Paginator(prefix='',suffix='',max_size=4024)
+            for l in result.split('\n'):
+                pages.add_line(l)
+            for e, p in enumerate(pages.pages):
+                embed=discord.Embed(
+                    title=f'Translation' if e==0 else f'Translation {e+1}',
+                    description=p
+                )
+                embed.set_footer("If you're unsatisfied with the explanation, hit translate again.")
+                embeds.append(embed)
            
-            await interaction.response.send_message(content=f'{message.content}',embed=embed)
+            await targetmessage.edit(content=message.content,embed=embeds[0])
+            for e in embeds[1:]:
+                await context.send(embed=e)
 
     @AILibFunction(name='google_search',description='Get a list of results from a google search query.', required=['comment'])
     @LibParam(comment='An interesting, amusing remark.',query='The query to search google with.',limit="Maximum number of results")
@@ -204,9 +223,11 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             async with ctx.channel.typing():
                 try:
                     res=await bot.gptapi.callapi(chat)
+
                     #await ctx.send(res)
                     print(res)
                     result=res['choices'][0]['message']['content']
+
                     sources=[]
                     for link in mylinks:
                         link_text, url = link
