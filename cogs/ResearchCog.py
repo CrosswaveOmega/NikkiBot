@@ -89,7 +89,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         Given text from a non-English language, provide an English translation along with contextual explanations for why and how the text's components conveys that meaning. Organize the explanations in a list format, with each word/phrase/component followed by its corresponding definition and explanation.  Note any double meanings within these explanations.
         '''
         self.init_context_menus()
-    @super_context_menu(name="Translate",description="Translate text into English.")
+    @super_context_menu(name="Translate")
     async def translate(self, interaction: discord.Interaction, message: discord.Message) -> None:
         
             chat=purgpt.ChatCreation(
