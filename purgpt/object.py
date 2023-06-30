@@ -2,6 +2,7 @@
 import asyncio
 from typing import Any, Dict, List, Optional, Union
 import aiohttp
+from datetime import datetime, timezone
 
 
 nikkiprompt='''You are Nikki, a energetic, cheerful, and determined female AI ready to help users with whatever they need.
@@ -41,7 +42,10 @@ class ChatCreation(ApiCore):
     method = "POST"
     api_slots=[]
     def __init__(self,
-            messages:List[Dict[str, str]]=[{'role':'system','content':nikkiprompt}],
+            messages:List[Dict[str, str]]=[
+                {'role':'system',
+                 'content':nikkiprompt+f"\n Right now, the date-time is {datetime.now().astimezone(tz=timezone.utc)}"
+                 }],
             functions:Optional[List[Dict[str, str]]] = None,
             function_call: Optional[Union[Dict[str, str], str]] = None,
             temperature:Optional[float]=None,

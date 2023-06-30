@@ -32,7 +32,7 @@ from database.database_ai import AuditProfile, ServerAIConfig
 from javascript import require, globalThis, eval_js
 import assets
 import gui
-
+from googleapiclient.discovery import build   #Import the library
 def read_article_sync(url):
     readability= require('@mozilla/readability')
     jsdom=require('jsdom')
@@ -85,6 +85,47 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         self.prompt='''
         Summarize general news articles, forum posts, and wiki pages that have been converted into Markdown. Condense the content into 2-4 medium-length paragraphs with 3-7 sentences per paragraph. Preserve key information and maintain a descriptive tone. The summary should be easily understood by a 10th grader. Exclude any concluding remarks from the summary.
         '''
+    @AILibFunction(name='google_search',description='Get a list of results from a google search query.', required=['comment'])
+    @LibParam(comment='An interesting, amusing remark.',query='The query to search google with.',limit="Maximum number of results")
+    @commands.command(name='google_search',description='Get a list of results from a google search query.',extras={})
+    async def google_search(self,ctx:commands.Context,query:str,comment:str='Search results:',limit:int=5):
+        #This is an example of a decorated discord.py command.
+        bot=ctx.bot
+        if 'google' not in bot.keys or 'cse' not in bot.keys:
+            return "insufficient keys!"
+        query_service = build(
+        "customsearch", 
+        "v1", 
+        developerKey=bot.keys['google']
+        )  
+        query_results = query_service.cse().list(
+            q=query,    # Query
+            cx=bot.keys['cse'],  # CSE ID
+            num=limit   
+            ).execute()
+        results= query_results['items']
+        allstr=""
+        emb=discord.Embed(title="Search results", description=comment)
+        for r in results:
+            metatags=r['pagemap']['metatags'][0]
+            desc=metatags.get('og:description',"NO DESCRIPTION")
+            allstr+=r['link']+"\n"
+            emb.add_field(
+                name=r['title'][:255],
+                value=f"{r['link']}\n{desc}"[:1200],
+                inline=False
+            )
+        returnme=await ctx.send(content=comment,embed=emb)
+        return returnme
+    @AILibFunction(name='code_gen',description="Output a block of formatted code in accordance with the user's instructions.", required=['comment'])
+    @LibParam(comment='An interesting, amusing remark.',code='Formatted computer code in any language to be given to the user.')
+    @commands.command(name='codeget',description='generate some code',extras={})
+    async def codegen(self,ctx:commands.Context,code:str,comment:str='Search results:'):
+        #This is an example of a decorated discord.py command.
+        bot=ctx.bot
+        emb=discord.Embed(title=comment, description=f"```py\n{code}\n```")
+        returnme=await ctx.send(content=comment+"{code:[1024]}",embed=emb)
+        return returnme
 
     @commands.command(name='reader',description="read a website in reader mode, converted to markdown",extras={})
     async def webreader(self,ctx:commands.Context,url:str):
