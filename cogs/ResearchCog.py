@@ -126,7 +126,6 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     title=f'Translation' if e==0 else f'Translation {e+1}',
                     description=p
                 )
-                embed.set_footer("If you're unsatisfied with the explanation, hit translate again.")
                 embeds.append(embed)
            
             await targetmessage.edit(content=message.content,embed=embeds[0])
