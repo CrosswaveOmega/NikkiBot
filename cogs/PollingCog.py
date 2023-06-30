@@ -351,7 +351,7 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
     @app_commands.command(name="nikkifeedback", description='Have a suggestion or complaint?  Use this and let me know!')
     async def feedback_send(self, interaction: discord.Interaction):
         '''test for a feedback system'''
-        await interaction.response.send_modal(Feedback())
+        await interaction.response.send_modal(Feedback(self.bot))
 
             
 async def setup(bot):

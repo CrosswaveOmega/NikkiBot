@@ -27,7 +27,7 @@ import purgpt
 import purgpt.error
 from assets import AssetLookup
 from database.database_ai import AuditProfile, ServerAIConfig
-from googleapiclient.discovery import build   #Import the library
+
 lock = asyncio.Lock()
 reasons={'server':{
     'messagelimit': "This server has reached the daily message limit, please try again tomorrow.",
@@ -79,7 +79,7 @@ async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibra
     audit_channel=AssetLookup.get_asset("monitor_channel")
 
     if audit_channel:
-        emb=discord.Embed(title="Audit",description=message.clean_content)
+        emb=discord.Embed(title="Audit",description=f"```{message.content}```")
         emb.add_field(name="Server Data",value=f"{guild.name}, \nServer ID: {guild.id}",inline=False)
         emb.add_field(name="User Data",value=f"{user.name}, \n User ID: {user.id}",inline=False)
         target=bot.get_channel(int(audit_channel))
@@ -91,7 +91,7 @@ async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibra
     chat=purgpt.ChatCreation()
     for f in mes:
         chat.add_message(f['role'],f['content'])
-    chat.add_message('user',message.clean_content)
+    chat.add_message('user',message.content)
     if mylib!=None:
         chat.functions=mylib.get_schema()
         chat.function_call='auto'
@@ -171,48 +171,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         bot=ctx.bot
         await ctx.send(comment)
         return await ctx.send(f"{comment}\n{str(discord.utils.utcnow())}")
-    @AILibFunction(name='google_search',description='Get a list of results from a google search query.', required=['comment'])
-    @LibParam(comment='An interesting, amusing remark.',query='The query to search google with.',limit="Maximum number of results")
-    @commands.command(name='google_search',description='Get a list of results from a google search query.',extras={})
-    async def google_search(self,ctx:commands.Context,query:str,comment:str='Search results:',limit:int=5):
-        #This is an example of a decorated discord.py command.
-        bot=ctx.bot
-        if 'google' not in bot.keys or 'cse' not in bot.keys:
-            return "insufficient keys!"
-        query_service = build(
-        "customsearch", 
-        "v1", 
-        developerKey=bot.keys['google']
-        )  
-        query_results = query_service.cse().list(
-            q=query,    # Query
-            cx=bot.keys['cse'],  # CSE ID
-            num=limit   
-            ).execute()
-        results= query_results['items']
-        allstr=""
-        emb=discord.Embed(title="Search results", description=comment)
-        for r in results:
-            metatags=r['pagemap']['metatags'][0]
-            desc=metatags.get('og:description',"NO DESCRIPTION")
-            allstr+=r['link']+"\n"
-            emb.add_field(
-                name=r['title'][:255],
-                value=f"{r['link']}\n{desc}"[:1200],
-                inline=False
-            )
-        returnme=await ctx.send(content=comment,embed=emb)
-        return returnme
-    @AILibFunction(name='code_gen',description="Output a block of formatted code in accordance with the user's instructions.", required=['comment'])
-    @LibParam(comment='An interesting, amusing remark.',code='Formatted computer code in any language to be given to the user.')
-    @commands.command(name='codeget',description='generate some code',extras={})
-    async def codegen(self,ctx:commands.Context,code:str,comment:str='Search results:'):
-        #This is an example of a decorated discord.py command.
-        bot=ctx.bot
-        emb=discord.Embed(title=comment, description=f"```py\n{code}\n```")
-        returnme=await ctx.send(content=comment+"{code:[1024]}",embed=emb)
-        return returnme
-
+    
 
     @commands.hybrid_group(fallback="view")
     @app_commands.default_permissions(manage_messages=True,manage_channels=True)

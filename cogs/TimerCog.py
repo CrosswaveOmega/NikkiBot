@@ -172,24 +172,31 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
             return messageresp
         else:
             return await ctx.send("You don't have any timers.")
-        return 'ok'
+        
     @AILibFunction(
         name='event_schedule',
         description="Create a scheduled server event at a certain date,time, and with a name and description.",
         required=['end_time','description']
     )
-    @LibParam(name='The name of the event to schedule.',start_time='datetime to start event at, in UTC.',
-              end_time='datetime to end the event at, in UTC.',description='The description of what the event is.',
-              channelname='the name of the voice channel the event will occur within.  This is usually denoted as <#{integer}> in a user prompt.')
-    @commands.command(name='event_schedule',description='schedule an event.',extras={})
+    @LibParam(
+        name='The name of the event to schedule.',
+        start_time='datetime to start the event at, in UTC.',
+        end_time='datetime to end the event at, in UTC.',
+        channelname='the name of the voice channel the event will occur within.  This is usually denoted as <#{integer}> in a user prompt.',
+        description='The description of what the event is.'
+    )
+    @commands.command(name='event_schedule',description='schedule an event.',extras={}) #Command decorator.
     @commands.guild_only()
     async def schedule_event(
-        self, ctx:commands.Context, name: str, start_time: datetime, channelname: str,end_time: datetime,
-        description: str = 'default description'):
-
-
+            self, ctx:commands.Context, 
+            name: str, 
+            end_time: datetime,
+            start_time: datetime, 
+            channelname: str,
+            description: str = 'default description'
+        ):
         channel:discord.VoiceChannel= discord.utils.get(ctx.guild.channels, name=channelname.replace("#",""))
-        print(channel)
+        # Permission check
         if not ctx.author.guild_permissions.manage_events:
             return await ctx.send('You do not have permission to create scheduled events.')
         if not ctx.guild.me.guild_permissions.manage_events:
