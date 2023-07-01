@@ -20,7 +20,6 @@ from discord.app_commands import Choice
 
 
 from database import ServerArchiveProfile
-
 from .ArchiveSub import (
 do_group,
   collect_server_history,

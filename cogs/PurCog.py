@@ -42,6 +42,8 @@ reasons={'server':{
 }
 } 
 from purgpt.functionlib import *
+
+from .StepCalculator import evaluate_expression
 class MyLib(purgpt.functionlib.GPTFunctionLibrary):
     pass
 
@@ -162,6 +164,8 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         self.bot=bot
         self.init_context_menus()
         self.flib=MyLib()
+        self.flib.do_expression=True
+        self.flib.my_math_parser=evaluate_expression
         self.walked=False
     @AILibFunction(name='get_time',description='Get the current time and day in UTC.')
     @LibParam(comment='An interesting, amusing remark.')

@@ -24,7 +24,8 @@ class GPTFunctionLibrary:
     #To Do, make it possible to invoke prefix commands instead.
     CommandDict: Dict[str,Command]={}
     FunctionDict: Dict[str, Union[Command,callable]] = {}
-
+    do_expression: bool = False
+    my_math_parser:callable=None
     def __new__(cls, *args: Any, **kwargs: Any) -> Any:
         """
         Override the __new__ method to update the FunctionDict when instantiating or subclassing.
@@ -75,6 +76,14 @@ class GPTFunctionLibrary:
                 if schema.get('parameters',None)!=None:
                     functions_with_schema.append(schema)
         return functions_with_schema
+    def expression_match(self, function_args: str):
+        '''because sometimes, the API returns an expression and not a single integer.'''
+        if self.do_expression and self.my_math_parser!=None:
+            
+            expression_detect_pattern = r'(?<=:\s)([^"]*?[+\-*/][^"]*?)(?=(?:,|\s*\}))'
+            return re.sub(expression_detect_pattern, lambda m: self.my_math_parser(m.group()), function_args)
+        return function_args
+
     def parse_name_args(self, function_dict):
         print(function_dict)
         function_name = function_dict.get('name')
@@ -82,13 +91,15 @@ class GPTFunctionLibrary:
         if isinstance(function_args,str):
             #Making it so it won't break on poorly formatted function arguments.
             function_args=function_args.replace("\\n",'\n')
-            pattern = r"(?<=:\s\")(.*?)(?=\"(?:,|\s*\}))"
+            quoteescapefixpattern = r"(?<=:\s\")(.*?)(?=\"(?:,|\s*\}))"
             #In testing, I once had the API return a poorly escaped function_args attribute
             #That could not be parsed by json.loads, so hence this regex.
-            function_args_str=re.sub(pattern, lambda m: m.group().replace('"', r'\"'), function_args)
+            function_args_str=re.sub(quoteescapefixpattern, lambda m: m.group().replace('"', r'\"'), function_args)
+            
+            function_args_str=self.expression_match(function_args_str)
             print(function_args_str)
             try:
-                function_args=json.loads(function_args_str)
+                function_args=json.loads(function_args_str, strict=False)
             except json.JSONDecodeError as e:
                 #Something went wrong while parsing, return where.
                 output=f"JSONDecodeError: {e.msg} at line {e.lineno} column {e.colno}: `{function_args_str[e.pos]}`"

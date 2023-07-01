@@ -217,6 +217,7 @@ async def lazy_archive(self, ctx):
                     #Start posting
                     bot.add_act(str(guildid)+"lazyarch",f"groupid on {sep.channel_sep_id}/{allgroups}.\n  at least {seconds_to_time_string(upper_time_limit(total_time_for_cluster))} remaining.")
                     gui.gprint(e,sep)
+                    startedsep=datetime.now()
                     if not sep.posted_url:
                         currjob="rem: {}".format(seconds_to_time_string(int(remaining_time_float)))
                         emb,count=sep.create_embed()
@@ -224,7 +225,10 @@ async def lazy_archive(self, ctx):
                         sep.update(posted_url=chansep.jump_url)
                         await self.edit_embed_and_neighbors(sep)
                         self.bot.database.commit()
+                        duration=datetime.now()-startedsep
+                        gui.gprint(f"Gui print took at least {str(duration)}")
                     for amess in sep.get_messages():
+                        
                         c,au,av=amess.content,amess.author,amess.avatar
                         files=[]
                         for attach in amess.list_files():
@@ -240,11 +244,13 @@ async def lazy_archive(self, ctx):
                         remaining_time_float=remaining_time_float-(timebetweenmess)
                         lazycontext.increment_count()
                         archived_this_session+=1
+                        print(f"groupid: {sep.channel_sep_id}/{allgroups}.\n messages:{lazycontext.archived_so_far}/{lazycontext.message_count}\n  at least {seconds_to_time_string(upper_time_limit(total_time_for_cluster))} remaining.")
                         await mt.editw(min_seconds=45,content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count}, remaining session time is at least {seconds_to_time_string(upper_time_limit(total_time_for_cluster))}")
                         
                     sep.update(all_ok=True)
                     self.bot.database.commit()
                     await asyncio.sleep(2)
+                    print(f"groupid: {sep.channel_sep_id}/{allgroups}.\n messages:{lazycontext.archived_so_far}/{lazycontext.message_count}\n  at least {seconds_to_time_string(upper_time_limit(total_time_for_cluster))} remaining.")
                     await mt.editw(min_seconds=5,content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count},remaining session time is at least {seconds_to_time_string(upper_time_limit(total_time_for_cluster))}")
                 bot.remove_act(str(guildid)+"lazyarch")
             await me.delete()

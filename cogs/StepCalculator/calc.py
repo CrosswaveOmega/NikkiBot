@@ -108,52 +108,6 @@ def parse_expression(expression):
     if pcal_count>0:
         raise Exception(f"{pcal_count} Unmatched parenthesis.")
     return root
-
-def evaluate_expression(expr: str, *args, outputFunc):
-    """
-    Evaluate the given expression by parsing it and replacing variables with their corresponding values.
-
-    Parameters:
-    expr (str): A string representing the expression to be evaluated.
-    args: A tuple containing the values of variables used in the expression.
-    outputFunc: A function object that is used to output the evaluated result.
-
-    Returns:
-    str: A string representing the evaluated result.
-    """
-    # Replace expression strings with their corresponding values from the dictionary.
-    stri = expr
-    replaces = False
-    for i, v in expressDictionary.items():
-        if i in stri:
-            replaces = True
-        stri = stri.replace(i, v)
-
-    # Replace variable names with their corresponding values.
-    count = 1
-    numDictionary = {}
-    for i in args:
-        numDictionary[f"num{count}"] = str(i)
-        count += 1
-    for i, v in numDictionary.items():
-        if i in stri:
-            replaces = True
-        stri = stri.replace(i, v)
-
-    # Output the parsed expression if it has been modified.
-    if replaces:
-        outputFunc.outFunc(stri, verb=-1)
-    stri=f"({stri})"
-
-    # Check if all parenthesis expressions have matching pairs.
-    #boolA, boolB = check_parentheses(stri)
-    node=parse_expression(stri)
-    result=node.parse_children(node,outputFunc)
-    final_result = str(result)
-    outputFunc.outFunc(final_result, verb=0)
-
-    return final_result
-
     
 class OutContainer():
     '''container for output function, used for formatting results.'''
@@ -199,3 +153,49 @@ class OutContainer():
                 toput=(f"{toput}\t;\t{nesteddeb};")
                 #toput=toput+str(get_linenumber())+"\n"
             self.out+=toput+"\n"
+
+def evaluate_expression(expr: str, args=(''), outputFunc=OutContainer()):
+    """
+    Evaluate the given expression by parsing it and replacing variables with their corresponding values.
+
+    Parameters:
+    expr (str): A string representing the expression to be evaluated.
+    args: A tuple containing the values of variables used in the expression.
+    outputFunc: A function object that is used to output the evaluated result.
+
+    Returns:
+    str: A string representing the evaluated result.
+    """
+    # Replace expression strings with their corresponding values from the dictionary.
+    stri = expr
+    replaces = False
+    for i, v in expressDictionary.items():
+        if i in stri:
+            replaces = True
+        stri = stri.replace(i, v)
+
+    # Replace variable names with their corresponding values.
+    count = 1
+    numDictionary = {}
+    for i in args:
+        numDictionary[f"num{count}"] = str(i)
+        count += 1
+    for i, v in numDictionary.items():
+        if i in stri:
+            replaces = True
+        stri = stri.replace(i, v)
+
+    # Output the parsed expression if it has been modified.
+    if replaces:
+        outputFunc.outFunc(stri, verb=-1)
+    stri=f"({stri})"
+
+    # Check if all parenthesis expressions have matching pairs.
+    #boolA, boolB = check_parentheses(stri)
+    node=parse_expression(stri)
+    result=node.parse_children(node,outputFunc)
+    final_result = str(result)
+    outputFunc.outFunc(final_result, verb=0)
+
+    return final_result
+

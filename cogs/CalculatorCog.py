@@ -19,7 +19,7 @@ from bot import TC_Cog_Mixin
 from discord import app_commands
 from discord.app_commands import Choice
 
-from .Calculator import evaluate_expression, OutContainer, dprint, get_linenumber
+from .StepCalculator import evaluate_expression, OutContainer, dprint, get_linenumber
 
 
 class CalculatorCog(commands.Cog,TC_Cog_Mixin):
@@ -208,7 +208,7 @@ example: (2d20reroll>10) will reroll any dice that has a value greater than 10.'
         out=OutContainer(verb, sayop=True,showverb=self.verbshow,debug=self.debugmode)
         value=""
         try:
-            value=evaluate_expression(rollv, *tuple(newA), outputFunc=out)
+            value=evaluate_expression(rollv, tuple(newA), outputFunc=out)
         except Exception as ex:
             await self.bot.send_error(ex,'Calculation Error')
             value=(ex)
@@ -238,7 +238,7 @@ def operateTest(expr, verb=6):
     
     value=""
     try:
-        value=evaluate_expression(rollv, *tuple(newA), outputFunc=out)
+        value=evaluate_expression(rollv, tuple(newA), outputFunc=out)
     except Exception as ex:
         value=(ex)
         dprint(traceback.format_exc())
@@ -290,7 +290,7 @@ if __name__ == "__main__": #testing
             
 async def setup(bot):
     print(__name__)
-    from .Calculator import setup
+    from .StepCalculator import setup
     await bot.load_extension(setup.__module__)
     await bot.add_cog(CalculatorCog(bot))
 
@@ -298,6 +298,6 @@ async def setup(bot):
 
 async def teardown(bot):
     
-    from .Calculator import setup
+    from .StepCalculator import setup
     await bot.unload_extension(setup.__module__)
     await bot.remove_cog('CalculatorCog')

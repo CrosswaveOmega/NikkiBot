@@ -237,6 +237,7 @@ class Main(commands.Cog):
             for k,s in v.items():
                 list.append(f"{v.name}, {k}, `{s}`")
             print(list)
+
         pages=commands.Paginator(prefix='',suffix='')
         for l in list:
             pages.add_line(l)
