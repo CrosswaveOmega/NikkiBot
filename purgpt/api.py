@@ -57,6 +57,7 @@ class PurGPTAPI:
             print(f"{self.base_url}/{endpoint}")
             try:
                 async with session.post(f"{self.base_url}/{endpoint}", headers=headers, json=data, timeout=timeout) as response:
+                    print(response)
                     result = await response.json()
                     print(result)
                     return result
