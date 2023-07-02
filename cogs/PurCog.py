@@ -330,7 +330,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             if not self.walked:
                 self.flib.add_in_commands(self.bot)
             profile=ServerAIConfig.get_or_new(message.guild.id)
-            if self.bot.user.mentioned_in(message):
+            if self.bot.user.mentioned_in(message) and not message.mention_everyone:
                 await message_check(self.bot,message, mylib=self.flib)
             else:
                 if profile.has_channel(message.channel.id):
