@@ -79,7 +79,7 @@ class DatabaseSingleton:
             if not self.connected_a:
                 gui.print("Connecting to ASYNCIO compatible engine variant.")
                 db_name=self.database_name
-                self.aengine= create_async_engine(f'{ASYNCENGINE}a{db_name}',echo=False)
+                self.aengine= create_async_engine(f'{ASYNCENGINE}{db_name}',echo=False)
                 self.SessionAsyncLocal=async_sessionmaker(bind=self.aengine, autocommit=False, autoflush=True)
                 for base in self.bases:
                     async with self.aengine.begin() as conn:
