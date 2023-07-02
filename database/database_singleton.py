@@ -37,7 +37,7 @@ class DatabaseSingleton:
 
 
     class __DatabaseSingleton:
-        def __init__(self, arg, db_name='./saveData/mydatabase.db'):
+        def __init__(self, arg, db_name='./saveData/mydatabase.db',adbname='./saveData/asyncmydatabase.db'):
 
 
             file_handler = logging.FileHandler("./logs/sqlalchemy.log", encoding='utf-8')
@@ -50,6 +50,7 @@ class DatabaseSingleton:
             self.bases=[]
             self.val = arg
             self.database_name=db_name
+            self.adatabase_name=adbname
             self.connected,self.connected_a=False, False
             self.engine=None
             self.aengine=None
@@ -79,7 +80,7 @@ class DatabaseSingleton:
             if not self.connected_a:
                 gui.print("Connecting to ASYNCIO compatible engine variant.")
                 db_name=self.database_name
-                self.aengine= create_async_engine(f'{ASYNCENGINE}{db_name}',echo=False)
+                self.aengine= create_async_engine(f'{ASYNCENGINE}{self.adatabase_name}',echo=False)
                 self.SessionAsyncLocal=async_sessionmaker(bind=self.aengine, autocommit=False, autoflush=True)
                 for base in self.bases:
                     async with self.aengine.begin() as conn:
