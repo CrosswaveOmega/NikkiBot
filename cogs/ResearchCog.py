@@ -132,8 +132,13 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             for e in embeds[1:]:
                 await context.send(embed=e)
 
-    @AILibFunction(name='google_search',description='Get a list of results from a google search query.', required=['comment'])
-    @LibParam(comment='An interesting, amusing remark.',query='The query to search google with.',limit="Maximum number of results")
+    @AILibFunction(name='google_search',
+                   description='Get a list of results from a google search query.',
+                   enabled=False,
+                   force_words=['google','search'],
+                   required=['comment'])
+    @LibParam(comment='An interesting, amusing remark.',
+              query='The query to search google with.',limit="Maximum number of results")
     @commands.command(name='google_search',description='Get a list of results from a google search query.',extras={})
     async def google_search(self,ctx:commands.Context,query:str,comment:str='Search results:',limit:int=5):
         #This is an example of a decorated discord.py command.
@@ -164,14 +169,17 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             )
         returnme=await ctx.send(content=comment,embed=emb)
         return returnme
-    @AILibFunction(name='code_gen',description="Output a block of formatted code in accordance with the user's instructions.", required=['comment'])
+    @AILibFunction(name='code_gen',
+                   description="Output a block of formatted code in accordance with the user's instructions.",
+                   required=['comment'], enabled=False
+                   )
     @LibParam(comment='An interesting, amusing remark.',code='Formatted computer code in any language to be given to the user.')
     @commands.command(name='codeget',description='generate some code',extras={})
     async def codegen(self,ctx:commands.Context,code:str,comment:str='Search results:'):
         #This is an example of a decorated discord.py command.
         bot=ctx.bot
         emb=discord.Embed(title=comment, description=f"```py\n{code}\n```")
-        returnme=await ctx.send(content=comment+"{code:[1024]}",embed=emb)
+        returnme=await ctx.send(content=comment+"{code[:1024]}",embed=emb)
         return returnme
 
     @commands.command(name='reader',description="read a website in reader mode, converted to markdown",extras={})

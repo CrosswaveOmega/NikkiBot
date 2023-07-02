@@ -133,6 +133,13 @@ class ChannelSep(ArchiveBase):
     __table_args__ = (
         PrimaryKeyConstraint('channel_sep_id', 'server_id'),
     )
+    def get_message_count(self):
+        session:Session=DatabaseSingleton.get_session()
+        count= session.query(func.count(ArchivedRPMessage.message_id)).filter(
+            (ArchivedRPMessage.server_id == self.server_id) &
+            (ArchivedRPMessage.channel_sep_id == self.channel_sep_id)
+        ).scalar()
+        return count
     def update_message_count(self):
         session:Session=DatabaseSingleton.get_session()
         count= session.query(func.count(ArchivedRPMessage.message_id)).filter(
@@ -140,6 +147,7 @@ class ChannelSep(ArchiveBase):
             (ArchivedRPMessage.channel_sep_id == self.channel_sep_id)
         ).scalar()
         self.message_count=count
+
     @staticmethod
     def add_channel_sep_if_needed(message,chansepid):
         '''if there's a new channel sep id, create a new channel sep.

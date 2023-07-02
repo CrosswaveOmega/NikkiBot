@@ -18,7 +18,7 @@ AIBase = declarative_base(name="AI Feature Base")
 
 class AuditProfile(AIBase):
     '''This table manages per server/user rate limits for the PurGPT api.  
-        It is not audited as to ebs
+        It is not audited to preserve any needed bans.
     '''
     __tablename__ = 'audit_profile'
     
@@ -91,7 +91,7 @@ class AuditProfile(AIBase):
         if self.banned:
             return False, "ban"
         if self.last_call is not None:
-            if (datetime.now() - self.last_call).total_seconds() < 30:
+            if (datetime.now() - self.last_call).total_seconds() < 15:
                 return False, 'cooldown'
         return True, 'ok'
     
@@ -215,6 +215,7 @@ class EnabledChannel(AIBase):
     channel_id = Column(Integer)
     
     server_ai_config = relationship("ServerAIConfig", back_populates="enabled_channels")
+
 
 class MessageChain(AIBase):
     __tablename__ = "MessageChain"

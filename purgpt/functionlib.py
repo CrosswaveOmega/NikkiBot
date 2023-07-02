@@ -57,6 +57,29 @@ class GPTFunctionLibrary:
                 print(command.qualified_name, command.extras["function_schema"])
                 function_name = command.qualified_name
                 self.FunctionDict[function_name] = command
+    def force_word_check(self,query):
+        functions_with_schema = []
+        for name, method in self.FunctionDict.items():
+            schema=None
+            if isinstance(method,Command):
+                if method.extras['force_words']:
+                    pattern = r'\b(?:{})\b'.format('|'.join(map(re.escape,  method.extras['force_words'])))
+                    regex = re.compile(pattern, re.IGNORECASE)
+                    match = regex.search(query)
+
+                    if match:
+                        schema=method.extras['function_schema']
+                        return [schema]
+            else:
+                if hasattr(method, "function_schema"):
+                    if hasattr(method.force_words):
+                        pattern = r'\b(?:{})\b'.format('|'.join(map(re.escape,  method.extras['force_words'])))
+                        regex = re.compile(pattern, re.IGNORECASE)
+                        match = regex.search(query)
+                        if method.ai_on==False:
+                            continue
+                        return [method.function_schema]
+        return None
     def get_schema(self) -> List[Dict[str, Any]]:
         """
         Get the list of function schema dictionaries representing callable methods, coroutines, or bot Commands available to the library.
@@ -68,9 +91,13 @@ class GPTFunctionLibrary:
         for name, method in self.FunctionDict.items():
             schema=None
             if isinstance(method,Command):
-                schema=method.extras['function_schema']
+                if method.extras['ai_on']:
+                    schema=method.extras['function_schema']
             else:
                 if hasattr(method, "function_schema"):
+                    if hasattr(method.ai_on):
+                        if method.ai_on==False:
+                            continue
                     schema=method.function_schema
             if schema!=None:
                 if schema.get('parameters',None)!=None:
@@ -250,7 +277,7 @@ substitutions={
     'Literal':'string'
 }
 
-def AILibFunction(name: str, description: str, required:List[str]=[],force_words:List[str]=[]) -> Any:
+def AILibFunction(name: str, description: str, required:List[str]=[],force_words:List[str]=[], enabled=True) -> Any:
     """
     Flags a callable method, Coroutine, or discord.py Command, creating a 
     function schema dictionary to be fed to OpenAI on invocation.
@@ -265,6 +292,8 @@ def AILibFunction(name: str, description: str, required:List[str]=[],force_words
         name (str): The name of the function.
         description (str): The description of the function.
         required:List[str]: list of parameters you want the AI to always use reguardless of if they have defaults.
+        force_words:List[str]: list of words that will be used to force this command to be triggered.
+        enabled (bool): Whether or not this function is enabled by default.
     Returns:
         callable, Coroutine, or Command.
     """
@@ -308,11 +337,14 @@ def AILibFunction(name: str, description: str, required:List[str]=[],force_words
                     if param.default == inspect.Parameter.empty or param_name in required:
                         my_schema['parameters']['required'].append(param_name)
             func.extras['function_schema']=my_schema
+            func.extras['ai_on']=enabled
+            func.extras['force_words']=force_words
             return func
         else:
 
             wrapper=func
             wrapper.is_command=False
+            wrapper.ai_on=enabled
             wrapper.function_schema = {
                 'name': name,
                 'description': description,

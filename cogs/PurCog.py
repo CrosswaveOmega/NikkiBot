@@ -95,8 +95,13 @@ async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibra
         chat.add_message(f['role'],f['content'])
     chat.add_message('user',message.content)
     if mylib!=None:
-        chat.functions=mylib.get_schema()
-        chat.function_call='auto'
+        forcecheck=mylib.force_word_check(message.content)
+        if forcecheck:
+            chat.functions=forcecheck
+            chat.function_call={'name':forcecheck[0]['name']}
+        else:
+            chat.functions=mylib.get_schema()
+            chat.function_call='auto'
     #Call API
     async with message.channel.typing():
         res=await bot.gptapi.callapi(chat)
@@ -118,7 +123,7 @@ async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibra
         content=i['message']['content']
         function=None
         messageresp=None
-        if i['finish_reason']=='function_call':
+        if i['finish_reason']=='function_call' or 'function_call' in i['message']:
             functiondict=i['message']['function_call']
             output=await mylib.call_by_dict_ctx(ctx,functiondict)
             
@@ -192,6 +197,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         name="clear_history",
         brief="clear ai chat history."
     )
+
     async def chear_history(self, ctx):
         guild=ctx.guild
         guildid=guild.id
@@ -201,6 +207,26 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         profile.clear_message_chains()
         await MessageTemplates.server_ai_message(ctx,"Data purged")
 
+    @commands.hybrid_command(name="ai_functions",description="Get a list of ai functions.")
+    async def ai_functions(self,ctx):
+        schema=self.flib.get_schema()
+
+        def generate_embed(command_data):
+            name = command_data['name']
+            description = command_data['description']
+            parameters = command_data['parameters']['properties']
+
+            embed = discord.Embed(title=name, description=description)
+
+            for param_name, param_data in parameters.items():
+                param_fields = '\n'.join([f"{key}: {value}" for key, value in param_data.items()])
+                embed.add_field(name=param_name, value=param_fields[:1020], inline=False)
+            return embed
+        embeds = [generate_embed(command_data) for command_data in schema]
+        if ctx.interaction:
+            await pages_of_embeds(ctx, embeds,ephemeral=True)
+        else:
+            await pages_of_embeds(ctx, embeds)
 
     @commands.command(brief="Update user or server api limit [server,user],id,limit")
     @commands.is_owner()

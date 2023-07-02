@@ -207,7 +207,7 @@ async def lazy_archive(self, ctx):
                 message_total=0
                 gui.gprint(archive_channel.name)
                 length=len(grouped)
-                for sep in grouped: message_total+=sep.message_count
+                for sep in grouped: message_total+=sep.get_message_count()
                 #Time between each message
                 total_time_for_cluster=message_total*timebetweenmess
                 #time between each delay.
