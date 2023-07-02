@@ -97,13 +97,16 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
         self.helptext=""
         self.bot=bot
         bot.database.load_base(Base)
-
+        self.countdown=200
         self.timerloop.start()
 
     def cog_unload(self):
         self.timerloop.cancel()
     @tasks.loop(seconds=1)
     async def timerloop(self):
+        if self.countdown>0:
+            self.countdown-=1
+            return
         try:
             async with await DatabaseSingleton.get_async_session() as session:
                 expired=await TimerTable.get_expired_timers()
