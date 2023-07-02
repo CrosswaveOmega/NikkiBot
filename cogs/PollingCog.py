@@ -84,8 +84,10 @@ class Feedback(discord.ui.Modal, title='Feedback'):
 
     async def on_submit(self, interaction: discord.Interaction):
         with open("feedback.txt", "a") as f:
+            
             feedback_dict = {"name": self.name.value, "feedback": self.feedback.value}
-            interaction.user=None
+            
+            f.write(json.dumps(feedback_dict) + "\n")
             embed=discord.Embed(
                 title=self.name.value,
                 description=self.feedback.value,
@@ -93,10 +95,10 @@ class Feedback(discord.ui.Modal, title='Feedback'):
             )
             embed.set_author(name=f"Sent by: {interaction.user.name}", icon_url=interaction.user.avatar.url)
             mychannel =self.bot.config.get('optional','feedback_channel_id')
+            print('ok')
             if mychannel:
                 chan=self.bot.get_channel(int(mychannel))
                 await chan.send(embed=embed)
-            f.write(json.dumps(feedback_dict) + "\n")
         await interaction.response.send_message(f'Thanks for your feedback!  I will save it to my feedback file.', ephemeral=True)
 
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
