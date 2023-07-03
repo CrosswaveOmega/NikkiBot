@@ -18,8 +18,9 @@ class PurGPTError(Exception):
         if 'key' in self.request:
             self.request.pop('key')
         self.code = code
-        if 'code' in self.json_body:
-            self.code=code
+        if isinstance(self.json_body,dict):
+            if 'code' in self.json_body:
+                self.code=code
 
 
     def __str__(self):

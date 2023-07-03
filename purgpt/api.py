@@ -26,6 +26,7 @@ Donators will have raised Limits
 
 '''
 TIMEOUT_SECS=120
+MAX_LOAD_SIZE=20000
 
 class PurGPTAPI:
     '''
@@ -57,10 +58,17 @@ class PurGPTAPI:
             print(f"{self.base_url}/{endpoint}")
             try:
                 async with session.post(f"{self.base_url}/{endpoint}", headers=headers, json=data, timeout=timeout) as response:
-                    print(response)
-                    result = await response.json()
-                    print(result)
-                    return result
+                    if response.content_type== "application/json":
+                        print(response)
+                        result = await response.json()
+                        print(result)
+                        return result
+                    else:
+                        print(response.status,response.reason)
+                        result=await response.text()
+                        print(result)
+                        #if 'err:' in result:  raise error.PurGPTError(f"{response.status}: {response.reason}", code=response.status)
+                        raise error.PurGPTError(f"{response.status}: {response.reason}", code=response.status)
             except (aiohttp.ServerTimeoutError, asyncio.TimeoutError) as e:
                 raise error.Timeout("Request timed out") from e
             except aiohttp.ClientError as e:
@@ -68,6 +76,10 @@ class PurGPTAPI:
     async def callapi(self,obj:ApiCore):
         endpoint=obj.endpoint
         payload=obj.to_dict()
+        if len(json.dumps(payload))>MAX_LOAD_SIZE:
+            obj.slimdown(MAX_LOAD_SIZE)
+            payload=obj.to_dict()
+
         return await self._make_call(endpoint,payload)
     async def models(self):
         headers = {

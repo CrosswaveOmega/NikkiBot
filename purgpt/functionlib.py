@@ -50,6 +50,8 @@ class GPTFunctionLibrary:
     def add_in_commands(self,bot:commands.Bot) -> None:
         """
         Update the FunctionDict with decorated discord.py bot commands.
+        This has to be called somewhere before a call to the AI API if you 
+        want to use the commands.
         """
         for command in bot.walk_commands():
             print(command.qualified_name)
@@ -58,6 +60,11 @@ class GPTFunctionLibrary:
                 function_name = command.qualified_name
                 self.FunctionDict[function_name] = command
     def force_word_check(self,query):
+        '''
+        Check if the query contains the force words of any command.
+        force words will force OpenAI to invoke THAT particular command, as opposed to 
+        invoking a command automatically.
+        '''
         functions_with_schema = []
         for name, method in self.FunctionDict.items():
             schema=None
@@ -112,6 +119,7 @@ class GPTFunctionLibrary:
         return function_args
 
     def parse_name_args(self, function_dict):
+        '''parse the args within function_dict'''
         print(function_dict)
         function_name = function_dict.get('name')
         function_args = function_dict.get('arguments', None)
@@ -123,6 +131,8 @@ class GPTFunctionLibrary:
             #That could not be parsed by json.loads, so hence this regex.
             function_args_str=re.sub(quoteescapefixpattern, lambda m: m.group().replace('"', r'\"'), function_args)
             
+            #This regex is for detecting if there's an expression as a value and not a single integer.
+            #Which has happened before during testing.
             function_args_str=self.expression_match(function_args_str)
             print(function_args_str)
             try:
@@ -132,7 +142,9 @@ class GPTFunctionLibrary:
                 output=f"JSONDecodeError: {e.msg} at line {e.lineno} column {e.colno}: `{function_args_str[e.pos]}`"
                 raise json.JSONDecodeError(msg=f"{output}\n{function_args_str}", doc=function_args_str,pos=1)
         return function_name,function_args
+    
     def convert_args(self, function_name, function_args):
+        '''Preform any needed conversion of the function arguments.'''
         method=self.FunctionDict[function_name]
         if isinstance(method,Command):
             schema=method.extras['function_schema']

@@ -1,5 +1,6 @@
 
 import asyncio
+import json
 from typing import Any, Dict, List, Optional, Union
 import aiohttp
 from datetime import datetime, timezone
@@ -70,6 +71,30 @@ class ChatCreation(ApiCore):
         else:
             data["model"]="gpt-3.5-turbo"
         return data
+    
+    def total_payload_size(self):
+        dictv=self.to_dict()
+        return len(json.dumps(dictv))
+    
+    def slimdown(self, max_size: int):
+        '''to deal with an exceeded payload size'''
+        current_size = self.total_payload_size()
+        size_without_list=current_size-len(json.dumps(self.messages))
+        if current_size <= max_size:
+            return
+        new_messages=[self.messages[0],self.messages[-1]]
+        current_size=size_without_list+len(json.dumps(new_messages))
+        for i in range(len(self.messages) - 2, 0, -1):
+            if len(json.dumps(self.messages[i]))+current_size>max_size:
+                self.messages=new_messages
+                return
+            new_messages.insert(1,self.messages[i])
+            current_size=size_without_list+len(json.dumps(new_messages))
+
+        #ADD MESSAGES BEFORE END OF LIST UNTIL ADDING THE NEXT MESSAGE
+        #WOULD EXCEED THE PAYLOAD SIZE!
+
+
     def add_message(
         self,
         role: str,
