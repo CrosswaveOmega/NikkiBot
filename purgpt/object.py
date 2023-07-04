@@ -35,6 +35,10 @@ class ApiCore(dict):
                     print(key,value)
                     serialized_dict[key] = value
         return serialized_dict
+    
+    def slimdown(self, max_size: int):
+        '''to deal with an exceeded payload size'''
+        pass
 
 
         

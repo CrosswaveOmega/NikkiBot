@@ -43,18 +43,15 @@ class WebhookMessageWrapper:
     
     
     @staticmethod
-    async def postMessageAsWebhookWithURL(webhookurl, **kwargs)->discord.WebhookMessage:
+    async def postMessageAsWebhookWithURL(webhookurl,thread=None, **kwargs)->discord.WebhookMessage:
         """posts a message as a webhook
-        :param message_content: content of message
-        :param display_username: name to display of webhook
-        :param avatar_url: url to paste webhook as.
         """
         
         webhook=None
         async with aiohttp.ClientSession() as session:
             webhook = Webhook.from_url(webhookurl, session=session)
             
-            mess=await WebhookMessageWrapper.postMessageWithWebhook(webhook,**kwargs)
+            mess=await WebhookMessageWrapper.postMessageWithWebhook(webhook,thread,**kwargs)
             return mess
 
     @staticmethod

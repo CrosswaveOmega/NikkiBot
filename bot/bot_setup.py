@@ -155,6 +155,7 @@ async def on_connect():
 async def on_disconnect():
     gui.gprint(f"{datetime.datetime.now()}: Bot disconnected.")
 
+
 @bot.event
 async def on_ready():
 

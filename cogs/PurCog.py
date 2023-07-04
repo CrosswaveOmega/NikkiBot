@@ -45,7 +45,12 @@ from purgpt.functionlib import *
 
 from .StepCalculator import evaluate_expression
 class MyLib(purgpt.functionlib.GPTFunctionLibrary):
-    pass
+    @AILibFunction(name='get_time',description='Get the current time and day in UTC.')
+    @LibParam(comment='An interesting, amusing remark.')
+    async def get_time(self,comment:str):
+        #This is an example of a decorated coroutine command.
+        return f"{comment}\n{str(discord.utils.utcnow())}"
+    #pass
 
 
 
@@ -172,15 +177,6 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         self.flib.do_expression=True
         self.flib.my_math_parser=evaluate_expression
         self.walked=False
-    @AILibFunction(name='get_time',description='Get the current time and day in UTC.')
-    @LibParam(comment='An interesting, amusing remark.')
-    @commands.command(name='get_time',description='Get the current UTC Time',extras={})
-    async def get_time(self,ctx:commands.Context,comment:str):
-        #This is an example of a decorated discord.py command.
-        bot=ctx.bot
-        await ctx.send(comment)
-        return await ctx.send(f"{comment}\n{str(discord.utils.utcnow())}")
-    
 
     @commands.hybrid_group(fallback="view")
     @app_commands.default_permissions(manage_messages=True,manage_channels=True)

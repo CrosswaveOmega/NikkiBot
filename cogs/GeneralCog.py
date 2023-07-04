@@ -22,6 +22,7 @@ from discord.app_commands import Choice
 from pathlib import Path
 from utility import MessageTemplates, RRuleView, formatutil
 from utility.embed_paginator import pages_of_embeds
+from utility import WebhookMessageWrapper as web
 from bot import TC_Cog_Mixin, super_context_menu
 
 
