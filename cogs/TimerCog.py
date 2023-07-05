@@ -25,7 +25,7 @@ from utility.embed_paginator import pages_of_embeds
 from bot import TCBot,TC_Cog_Mixin, super_context_menu
 import purgpt
 from database import DatabaseSingleton
-from purgpt.functionlib import *
+from gptfunctionutil import *
 import purgpt.error
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base

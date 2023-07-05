@@ -40,11 +40,11 @@ reasons={'server':{
     'ban': "You are forbidden from using my AI due to conduct.",
     'cooldown': "There's a one minute delay between messages, slow down man!"
 }
-} 
-from purgpt.functionlib import *
+}
+from gptfunctionutil import *
 from .StepCalculator import evaluate_expression
 
-class MyLib(purgpt.functionlib.GPTFunctionLibrary):
+class MyLib(GPTFunctionLibrary):
     @AILibFunction(name='get_time',description='Get the current time and day in UTC.')
     @LibParam(comment='An interesting, amusing remark.')
     async def get_time(self,comment:str):

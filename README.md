@@ -26,7 +26,7 @@ The tasks can be customized by adding coroutines to the Guild_Task_Functions cla
 
 8. **PurGPT integration:** Can be integreated with the PurGPT API to access and utilize a number of AI Models, with a built in server/user limiting system to prevent api abuse.
 
-9. **Natural Language Command Invocation:**  This bot is capable of invoking it's own Bot Commands through natural language, thanks to OpenAI Function calling and a special set of decorators.
+9. **Natural Language Command Invocation:**  This bot is capable of invoking it's own Bot Commands through natural language, made easy with my GPT Function Calling Utility function.
 
 10. **Article Summarizaiton:** Summarize websites passed in, using a combination of mozilla/readability and the JSPyBridge library.
 
@@ -42,6 +42,7 @@ Python 3.11 or higher!
 - sqlitedict
 - playwright
 - JSPyBridge
+- gptfunctionutil 
 
 please make sure to install the latest node.js runtime on your system to ensure that the Summarizer works.
 
