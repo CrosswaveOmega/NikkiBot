@@ -196,12 +196,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         handler2.setFormatter(formatter2)
         discord.utils.setup_logging(level=logging.INFO,handler=handler2,root=False)
         #SQLALCHEMY LOGGER.
-        sqlalchemy_logger = logging.getLogger('sqlalchemy.engine')
-        sqlalchemy_logger.setLevel(logging.INFO)
-        file_handler = logging.FileHandler("./logs/sqlalchemy.log"
-            ,encoding='utf-8'
-        )
-        sqlalchemy_logger.addHandler(file_handler)
+
         #Sqlalchemylogger.
         
         self.logs=logging.getLogger("TCLogger")

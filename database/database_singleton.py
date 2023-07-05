@@ -42,11 +42,7 @@ class DatabaseSingleton:
 
             file_handler = logging.FileHandler("./logs/sqlalchemy.log", encoding='utf-8')
             # create a logger and set its level to INFO
-            self.logger = logging.getLogger("sqlalchemy.engine")
-            self.logger.setLevel(logging.INFO)
 
-            # add the file handler to the logger
-            self.logger.addHandler(file_handler)
             self.bases=[]
             self.val = arg
             self.database_name=db_name
