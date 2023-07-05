@@ -104,10 +104,12 @@ class AppGuildTreeSync(Guild_Sync_Base):
     lastsyncdata = Column(Text, nullable=True)
     lastsyncdate = Column(AwareDateTime, default=datetime.datetime.now())
     donotsync=Column(Boolean,default=False)
-    def __init__(self, server_id: int, command_tree: dict=None):
+    cog_disable = Column(Text, nullable=True)  # New column
+    def __init__(self, server_id: int, command_tree: dict=None,cog_disable_list:list=[]):
         self.server_id = server_id
         self.lastsyncdata = json.dumps(command_tree,default=str)
         self.lastsyncdate=datetime.datetime.now()
+        self.cog_disable = json.dumps(cog_disable_list, default=str)
 
     @classmethod
     def get(cls, server_id):
@@ -142,6 +144,28 @@ class AppGuildTreeSync(Guild_Sync_Base):
             return result
         else:            
             return None
+    @classmethod
+    def load_list(cls, server_id):
+        """
+        Loads and returns the list representation of the command tree for the specified server_id.
+        """
+        session: Session = DatabaseSingleton.get_session()
+        result = session.query(AppGuildTreeSync).filter_by(server_id=server_id).first()
+        if result:
+            if result.cog_disable==None:
+                return []
+            return json.loads(result.cog_disable)
+        else:
+            return []
+
+    def save_list(self, command_list: list):
+        """
+        Saves the list representation of the command tree for the current `AppGuildTreeSync` instance.
+        """
+        session: Session = DatabaseSingleton.get_session()
+        self.cog_disable = json.dumps(command_list, default=str)
+        print(self.cog_disable)
+        session.commit()
     def update(self, command_tree: dict):
         """
         Updates the `lastsyncdata` attribute of the current `AppGuildTreeSync` instance with a new serialized
@@ -321,12 +345,15 @@ class SpecialAppSync:
         '''With a passed in guild, sync all activated cogs for that guild.
         Works on a guild per guild basis in case I need to eventually provide
         code to sync different app commands between guilds.'''
+        ignorelist=AppGuildTreeSync.load_list(guild.id)
+        print(ignorelist)
         def syncprint(*lis):
             pass
             if False:  gui.gprint(f"Sync for {guild.name} (ID {guild.id})",*lis)
         def should_skip_cog(cogname: str) -> bool:
             """Determine whether a cog should be skipped during synchronization."""
             '''Not currently needed.'''
+            if cogname in ignorelist: return True
             return False
 
         def add_command_to_tree(command, guild):
@@ -380,6 +407,7 @@ class SpecialAppSync:
     async def all_guild_startup(self, force=False,sync_only=False, no_sync=False):
         '''fetch all available guilds, and sync the command tree.'''
         try:
+            
             gui.gprint(self.guilds)
             for guild in self.guilds:
                 entry=AppGuildTreeSync.get(server_id=guild.id)

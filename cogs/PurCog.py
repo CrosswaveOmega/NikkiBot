@@ -170,7 +170,7 @@ async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibra
 class AICog(commands.Cog, TC_Cog_Mixin):
     """General commands"""
     def __init__(self, bot):
-        self.helptext=""
+        self.helptext="This is Nikki's AI features"
         self.bot=bot
         self.init_context_menus()
         self.flib=MyLib()

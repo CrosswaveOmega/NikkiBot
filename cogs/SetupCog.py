@@ -14,7 +14,7 @@ from queue import Queue
 from discord.ext import commands, tasks
 from discord.utils import find
 from discord import Webhook,ui
-from bot import TC_Cog_Mixin, TCBot
+from bot import TC_Cog_Mixin, TCBot, AppGuildTreeSync
 from discord import app_commands
 from discord.app_commands import Choice
 from pathlib import Path
@@ -38,7 +38,8 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         self.bot.add_act("WatchExample"," /nikkifeedback if you have a suggestion.",discord.ActivityType.watching)
         self.bot.add_act("WatchExample2","Prefix:'>'.",discord.ActivityType.watching)
 
-    nikkisetup = app_commands.Group(name="nikkisetup", description="Some general commands for helping with setting up your server.")
+    nikkisetup = app_commands.Group(name="nikkisetup", description="Some general commands for helping with setting up your server.",default_permissions=discord.Permissions(manage_channels=True,manage_messages=True,manage_roles=True))
+    
     ticker = app_commands.Group(name="ticker", description="Commands for the ticker.", extras={"homeonly":True})
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
@@ -72,7 +73,30 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         pages=await MessageTemplates.get_manual_list(ctx,"nikki_permission_links.json")
         await pages_of_embeds(ctx,pages,ephemeral=True)
-
+        
+    @nikkisetup.command(name="toggle_cog", description="Enable/disable any of my features.")
+    @app_commands.describe(cogname ="the name of the cog to toggle on or off")
+    async def cogtoggle(self, interaction: discord.Interaction, cogname:str) -> None:
+        """Open a view where you can configure Nikki's features."""
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        profile=AppGuildTreeSync.get(server_id=ctx.guild.id)
+        list=AppGuildTreeSync.load_list(server_id=ctx.guild.id)
+        if cogname.lower() == 'setup':
+            await ctx.send("you can't disable setup, sorry",ephemeral=True)
+            return
+        if ctx.bot.get_cog(cogname) is not None:
+            if cogname in list:
+                list.remove(cogname)
+                await ctx.send(f"I will once again sync cog {cogname} here.",ephemeral=True)
+            else:
+                list.append(cogname)
+                await ctx.send(f"I will no longer sync cog {cogname} here.",ephemeral=True)
+            profile.save_list(list)
+            ctx.bot.tree.clear_commands(guild=ctx.guild)
+            await ctx.bot.all_guild_startup()
+        else:
+            await ctx.send('That cog does not exist!',ephemeral=True)
+            
     @ticker.command(name="add", description="Owner Only, add a string to the ticker.", extras={"homeonly":True})
     @app_commands.describe(name='the name of the ticker entry')
     @app_commands.describe(text='the text of the ticker entry')

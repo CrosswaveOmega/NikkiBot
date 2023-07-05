@@ -30,7 +30,7 @@ from bot import TC_Cog_Mixin, super_context_menu
 class General(commands.Cog, TC_Cog_Mixin):
     """General commands"""
     def __init__(self, bot):
-        self.helptext=""
+        self.helptext="Some assorted testing commands."
         self.bot=bot
         self.init_context_menus()
 
@@ -83,7 +83,6 @@ class General(commands.Cog, TC_Cog_Mixin):
         manageableperms=['manage_channels','manage_permissions']
         for channel in guild.text_channels:
             perms=channel.permissions_for(guild.me)
-            
             if perms.view_channel:
                 can_see+=1
                 messageable_check=[]
@@ -140,7 +139,7 @@ class General(commands.Cog, TC_Cog_Mixin):
             await pages_of_embeds(ctx,elist,ephemeral=True)
         else:
             await ctx.send("Guild not found.",ephemeral=True)
-    @app_commands.command(name="progress_test", description="Test out the progress bar.")
+    '''@app_commands.command(name="progress_test", description="Test out the progress bar.")
     @app_commands.guild_only()
     async def progresstest(self, interaction: discord.Interaction, total:int=10,width:int=5) -> None:
         """Just test out the progress bar"""
@@ -157,7 +156,7 @@ class General(commands.Cog, TC_Cog_Mixin):
             for p in pager.pages:
                 await ctx.send(p)
         else:
-            await ctx.send("Guild not found.",ephemeral=True)
+            await ctx.send("Guild not found.",ephemeral=True)'''
         
 
 

@@ -107,9 +107,8 @@ async def dynamic_tag_get(dictionary,text, maxsize=2000):
 
 
 class Tags(commands.Cog):
-    """originally for pomelo."""
     def __init__(self, bot):
-        self.helptext=""
+        self.helptext="This tag is for user tags.  Enter text, retrieve with a shortcut."
         self.bot=bot
         self.db = SqliteDict("./saveData/tags.sqlite")
         self.userdb = SqliteDict("./saveData/users.sqlite")

@@ -79,7 +79,7 @@ def extract_masked_links(markdown_text):
 class ResearchCog(commands.Cog, TC_Cog_Mixin):
     """For Timers."""
     def __init__(self, bot):
-        self.helptext=""
+        self.helptext="This cog is for AI powered websearch and summarization."
         self.bot=bot
         self.lock=asyncio.Lock()
         self.prompt='''
