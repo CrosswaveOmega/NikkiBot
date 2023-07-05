@@ -12,7 +12,7 @@ from discord.ext.commands import Command, Context
 class GPTFunctionLibrary:
     """
     A collection of methods to be used with OpenAI's chat completion endpoint.
-    When subclassed, decorated methods, called AILibFunctions, will be added to an internal FunctionDict along with 
+    When subclassed, decorated methods, called LibCommands, will be added to an internal FunctionDict along with 
     a special LibCommand object
     All methods will be converted to a function schema dictionary, which will be sent to OpenAI along with any user text.
     OpenAI will then format paramaters and return them within a JSON object, which will be used to trigger the method

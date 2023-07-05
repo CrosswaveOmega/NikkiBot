@@ -171,10 +171,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         return returnme
     @AILibFunction(name='code_gen',
                    description="Output a block of formatted code in accordance with the user's instructions.",
-                   required=['comment'], enabled=False
+                   required=['comment'], enabled=False, force_words=['generate code']
                    )
     @LibParam(comment='An interesting, amusing remark.',code='Formatted computer code in any language to be given to the user.')
-    @commands.command(name='codeget',description='generate some code',extras={})
+    @commands.command(name='codeget',description='generate some code')
     async def codegen(self,ctx:commands.Context,code:str,comment:str='Search results:'):
         #This is an example of a decorated discord.py command.
         bot=ctx.bot

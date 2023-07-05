@@ -22,12 +22,11 @@ PurGPT Ratelimits
 
 - 2000 Requests per Day
 
-Donators will have raised Limits
-
 '''
 TIMEOUT_SECS=120
+#Seconds until timeout.
 MAX_LOAD_SIZE=20000
-
+#Max payload size.
 class PurGPTAPI:
     '''
     This bot utilizes the PurGPT api to connect to OpenAI.

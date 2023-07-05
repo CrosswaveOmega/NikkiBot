@@ -42,8 +42,8 @@ reasons={'server':{
 }
 } 
 from purgpt.functionlib import *
-
 from .StepCalculator import evaluate_expression
+
 class MyLib(purgpt.functionlib.GPTFunctionLibrary):
     @AILibFunction(name='get_time',description='Get the current time and day in UTC.')
     @LibParam(comment='An interesting, amusing remark.')
