@@ -84,7 +84,7 @@ class ToonTownCog(commands.Cog, TC_Cog_Mixin):
             timestamp = datetime.fromtimestamp(data["last_update"])
             embed.timestamp = timestamp
 
-            embed.add_field(name="Invasion detect", value=data["population"])
+            embed.add_field(name="Invasion", value=data["invasion_online"])
             # Add fields based on condition
             
             embed.add_field(name="Cogs Attacking", value=data["cogs_attacking"])
