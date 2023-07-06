@@ -130,7 +130,26 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
         except Exception as e:
             await self.bot.send_error(e, f"Timerloop")
             gui.gprint(str(e))
-
+    @AILibFunction(name='alarm',description='Set a one time alarm for a future date and time.', required=['comment'])
+    @LibParam(comment='An interesting, amusing remark.',name='The name of the alarm to use',alarm_time='Datetime of the alarm to use in UTC.')
+    @commands.command(name='start_alarm',description='Set a one time alarm.',extras={})
+    async def start_alarm(self,ctx:commands.Context,name:str,alarm_time:datetime,comment:str="Alarm set."):
+        #This is an example of a decorated discord.py command.
+        bot=ctx.bot
+        now=datetime.now()
+        preexist=await TimerTable.get_timer(ctx.author.id,name)
+        if preexist:
+            await ctx.send("There already is a alarm by that name!")
+            return
+        message=ctx.message
+        print(message.jump_url)
+        target_message=await ctx.send(f"{comment}\nTimer {name} is set for <t:{int(alarm_time.timestamp())}:R>")
+        timer=await TimerTable.add_timer(ctx.author.id,name,alarm_time,message.jump_url)
+        
+        timer.message_url=target_message.jump_url
+        async with await DatabaseSingleton.get_async_session() as session:
+            await session.commit()
+        return target_message
     @AILibFunction(name='start_timer',description='Start a timer for a certain number of seconds.')
     @LibParam(comment='An interesting, amusing remark.',name='The name of the timer to use',total_seconds='the total amount of seconds the timer will run for.')
     @commands.command(name='start_timer',description='Get the current UTC Time',extras={})
