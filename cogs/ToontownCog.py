@@ -194,8 +194,11 @@ class ToonTownCog(commands.Cog, TC_Cog_Mixin):
             cheat_tattle=foetattle=''
             page=cogname.replace(" ","_")
             soup,desoup,attack_soup,cheat_soup=get_cog_soup(cogname)
+            addendum=""
+            for i,v in soup.items():
+                addendum+=f"{v[0]}: {v[1]}\n"
             tattle_text,header=await read_article(url=f'https://toontown-corporate-clash.fandom.com/wiki/{page}')
-            foe_tattle=await tattle(ctx.bot,tattle_text)
+            foe_tattle=await tattle(ctx.bot,addendum+tattle_text)
             if cheat_soup:
                 cheat_list=extract_cheat_soup(cheat_soup)
                 summe="\n".join([f"+ {c}" for c in cheat_list])
@@ -203,10 +206,10 @@ class ToonTownCog(commands.Cog, TC_Cog_Mixin):
             embed=await formatembed(f'https://toontown-corporate-clash.fandom.com/wiki/{page}',soup, desoup, attack_soup,cheat_soup, foe_tattle,cheat_tattle)
             self.db.update({search:embed.to_dict()})
             self.db.commit()
-        if webhook_url:
-            async with aiohttp.ClientSession() as session:
-                webhook = discord.Webhook.from_url(webhook_url, session=session)
-                await webhook.send(embed=embed)
+            if webhook_url and False:
+                async with aiohttp.ClientSession() as session:
+                    webhook = discord.Webhook.from_url(webhook_url, session=session)
+                    await webhook.send(embed=embed)
         await ctx.send(embed=embed)
     
 
