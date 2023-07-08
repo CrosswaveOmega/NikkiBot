@@ -73,7 +73,7 @@ class ChatCreation(ApiCore):
         if 'functions' in data:
             data["model"]="gpt-3.5-turbo-0613"
         else:
-            data["model"]="gpt-3.5-turbo"
+            data["model"]="gpt-3.5-turbo-16k"
         return data
     
     def total_payload_size(self):

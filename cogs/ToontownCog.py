@@ -31,17 +31,41 @@ from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.future import select
 import gui
-async def api_get(url):
+from .ToontownStuff import get_cog_soup,desouper, formatembed,extract_cheat_soup,read_article
+from assets import AssetLookup
+from sqlitedict import SqliteDict
+
+tattle_prompt='''You are tasked with generating new tattles for enemy characters in a video game called ToonTown Online. Each tattle should be written in the same style as the tattles from Paper Mario. Tattles provide amusing and informative descriptions of the enemy, their abilities, and any other noteworthy characteristics. When provided with information about a new enemy, generate a tattle based on the available information.
+
+Example:
+
+Enemy: Cog Boss - Flunky
+
+Tattle: "That's a Flunky, one of the entry-level Cogs. They're like the foot soldiers of the business world, but with less charm. I heard they work for the higher-ranked Cog Bosses, doing their bidding. Their attacks are as basic as they come, but they can still pack a punch if you're not careful. Keep an eye out for their sales pitch!"
+
+Remember, if you do not have enough information, feel free to provide a short amusing remark based on the information you do have.'''
+from purgpt import ChatCreation
+async def tattle(bot,tattlewith=""):
+    object=ChatCreation(    messages=[
+        {"role": "system", "content": tattle_prompt},
+        {"role": "user", "content": tattlewith}
+    ])
+    res=await bot.gptapi.callapi(object)
+    if res.get('err',False):
+        err=res[err]
+        error=purgpt.error.PurGPTError(err,json_body=res)
+        raise error
+    result=res['choices'][0]['message']['content']
+    return result
+
+async def api_get(url, params:dict={}):
     headers = {
         'user-agent': 'NikkiBot/1.0.0'
     }
-
-    
     timeout = aiohttp.ClientTimeout(total=120)
     async with aiohttp.ClientSession() as session:
-        print(f"https://corporateclash.net/api/v1/districts.js")
         try:
-            async with session.get(f"{url}", headers=headers, timeout=timeout) as response:
+            async with session.get(f"{url}", params=params, headers=headers, timeout=timeout) as response:
                 if response.content_type== "application/json":
                     print(response)
                     result = await response.json()
@@ -58,7 +82,55 @@ class ToonTownCog(commands.Cog, TC_Cog_Mixin):
     def __init__(self, bot):
         self.helptext="For Toontown Corporate Clash Api."
         self.bot=bot
+        self.db = SqliteDict("./saveData/toondata.sqlite")
+        taglist=[]
+        for i, v in self.db.items():
+            if i!='taglist':
+                taglist.append(i)
+        self.db.update({'taglist':taglist})
 
+
+    def cog_unload(self):
+        self.db.close()
+
+    async def dbsearch(self, query:str):
+        positions=['Operations Analyst','Employee','Field Specialist','Regional Manager','Manager','Contractor', 'Third Cousin Twice Removed','Boss']
+        dict=self.db.get('directory',None)
+        if not dict:
+            params={
+                'action':'query',
+                'generator':'categorymembers',
+                'gcmtitle':'Category:The_Cogs',
+                'prop':'categories',
+                'cllimit':'max',
+                'gcmlimit':'max',
+                'format':'json'
+            }
+            overdata=await api_get('https://toontown-corporate-clash.fandom.com/api.php',params)
+            pages=[]
+            for i, v in overdata['query']['pages'].items():
+                print(v.keys())
+                call=v['title'].replace(" ","_")
+                params = {
+                    "action": "parse", "page": call, "format": "json",'section': '0'
+                }
+                data=await api_get('https://toontown-corporate-clash.fandom.com/api.php',params)
+                try:
+                    soup,desoup=desouper(data['parse']['properties'][0]['*'])
+                    desoup['title']=soup['title1']
+                    
+                    desoup['urlname']=call
+                    if desoup['position'][1] in positions:
+                        pages.append(desoup)
+                except Exception as e:
+                    print(call,e)
+            self.db.update({'directory':pages})
+            self.db.commit()
+            dict=self.db['directory']
+        for dictionary in dict:
+            if query.lower() in dictionary['title'].lower():
+                return dictionary['urlname']
+        return None
 
     @AILibFunction(name='toontown_district',description='retrieve all connected toontown districts', required=['comment'])
     @LibParam(comment='An interesting, amusing remark.')
@@ -100,7 +172,43 @@ class ToonTownCog(commands.Cog, TC_Cog_Mixin):
                 embeds=[]
         if embeds:
             await ctx.send(embeds=embeds)
-            
+    
+    #@AILibFunction(name='cog_data',description='Retrieve data for a cog flunky.', required=['comment'])
+    #@LibParam(comment='An interesting, amusing remark.')
+    @commands.command(name='tattle',description='extract info for a cog.',extras={})
+    async def tattle(self,ctx:commands.Context,cogname:str, force:bool=False):
+        webhook_url=AssetLookup.get_asset('stathook')
+
+        bot=ctx.bot
+        now=datetime.now()
+        search=await self.dbsearch(cogname)
+        if search==None: 
+            return await ctx.send("invalid cog name.")
+            return
+        cogname=search
+        cache=self.db.get(search,None)
+        Embed=discord.Embed()
+        if cache and not force:
+            embed=discord.Embed.from_dict(cache)
+        else:
+            cheat_tattle=foetattle=''
+            page=cogname.replace(" ","_")
+            soup,desoup,attack_soup,cheat_soup=get_cog_soup(cogname)
+            tattle_text,header=await read_article(url=f'https://toontown-corporate-clash.fandom.com/wiki/{page}')
+            foe_tattle=await tattle(ctx.bot,tattle_text)
+            if cheat_soup:
+                cheat_list=extract_cheat_soup(cheat_soup)
+                summe="\n".join([f"+ {c}" for c in cheat_list])
+                cheat_tattle=await tattle(ctx.bot,tattlewith=summe)
+            embed=await formatembed(f'https://toontown-corporate-clash.fandom.com/wiki/{page}',soup, desoup, attack_soup,cheat_soup, foe_tattle,cheat_tattle)
+            self.db.update({search:embed.to_dict()})
+            self.db.commit()
+        if webhook_url:
+            async with aiohttp.ClientSession() as session:
+                webhook = discord.Webhook.from_url(webhook_url, session=session)
+                await webhook.send(embed=embed)
+        await ctx.send(embed=embed)
+    
 
 
     
@@ -110,4 +218,10 @@ class ToonTownCog(commands.Cog, TC_Cog_Mixin):
 
 
 async def setup(bot):
+    from .ToontownStuff import setup
+    await bot.load_extension(setup.__module__)
+    await bot.add_cog(ToonTownCog(bot))
+async def teardown(bot):
+    from .ToontownStuff import setup
+    await bot.unload_extension(setup.__module__)
     await bot.add_cog(ToonTownCog(bot))

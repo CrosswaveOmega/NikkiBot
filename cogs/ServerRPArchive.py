@@ -1127,14 +1127,13 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
 async def setup(bot):
     print(__name__)
-    from .ArchiveSub import setup
-    await bot.load_extension(setup.__module__)
+    #from .ArchiveSub import setup
+    #await bot.load_extension(setup.__module__)
     await bot.add_cog(ServerRPArchive(bot))
 
 
 
 async def teardown(bot):
-    
-    from .ArchiveSub import setup
-    await bot.unload_extension(setup.__module__)
+    #from .ArchiveSub import setup
+    #await bot.unload_extension(setup.__module__)
     await bot.remove_cog('ServerRPArchive')
