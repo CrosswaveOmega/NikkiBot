@@ -4,7 +4,7 @@ import aiohttp
 import json
 import urllib
 import purgpt
-from purgpt.object import ApiCore,ChatCreation
+from purgpt.object_core import ApiCore
 import purgpt.error as error
 BASE_URL='https://purgpt.xyz/v1'
 
@@ -72,6 +72,7 @@ class PurGPTAPI:
                 raise error.Timeout("Request timed out") from e
             except aiohttp.ClientError as e:
                 raise error.APIConnectionError("AIO client error:",e) from e
+            
     async def callapi(self,obj:ApiCore):
         endpoint=obj.endpoint
         payload=obj.to_dict()
@@ -100,16 +101,4 @@ class PurGPTAPI:
                 return data
 
 
-async def main():
-    wrapper = PurGPTAPI(purgpt.api_key)
-    mctx=ChatCreation(messages=[
-            {'role':'user','content':'Say hello world'}
-        ])
-    response = await wrapper.callapi(mctx)
-    print(response)
-    result=response['choices']
-    for i in result:
-        print(i)
-        print(i['message']['content'])
-    print(response)
 

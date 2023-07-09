@@ -203,6 +203,11 @@ async def lazy_archive(self, ctx):
                     await ctx.channel.send(f"group has changed: {lastgroup}->{group_id}")
                     grouped=ChannelSep.get_unposted_separators(guildid,limit=CHANNEL_SEPS_PER_CLUSTER)
                 bot.add_act(str(guildid)+"lazyarch",f"Time={seconds_to_time_string(upper_time_limit())}")
+                if needed:
+                    newgroup=[]
+                    newgroup.extend(needed)
+                    newgroup.extend(grouped)
+                    grouped=newgroup
                 allgroups=profile.last_group_num
                 message_total=0
                 gui.gprint(archive_channel.name)
@@ -227,6 +232,13 @@ async def lazy_archive(self, ctx):
                         self.bot.database.commit()
                         duration=datetime.now()-startedsep
                         gui.gprint(f"Gui print took at least {str(duration)}")
+                    elif sep.posted_url and not sep.all_ok:
+                        old_message=await urltomessage(sep.posted_url,bot)
+                        emb,count=sep.create_embed(cfrom=sep.posted_url)
+                        new_message=await archive_channel.send(embed=emb)
+                        jump_url=new_message.jump_url
+                        embedit,count=sep.create_embed(cto=jump_url)
+                        await old_message.edit(embed=embedit)
                     for amess in sep.get_messages():
                         
                         c,au,av=amess.content,amess.author,amess.avatar

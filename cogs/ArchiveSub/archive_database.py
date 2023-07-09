@@ -3,7 +3,7 @@ import json
 import discord
 import io
 
-from typing import List, Union
+from typing import List, Optional, Union
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Boolean, Text, distinct, or_, update, func
 from sqlalchemy import LargeBinary, ForeignKey,PrimaryKeyConstraint, insert, distinct
 from sqlalchemy.orm import relationship, column_property
@@ -233,7 +233,7 @@ class ChannelSep(ArchiveBase):
             ChannelSep.all_ok==False
         )
         session = DatabaseSingleton.get_session()
-        return session.query(ChannelSep).filter(filter).order_by(ChannelSep.channel_sep_id).first()
+        return session.query(ChannelSep).filter(filter).order_by(ChannelSep.channel_sep_id).all()
     
     @staticmethod
     def get_unposted_separators(server_id: int,limit:int=None):
@@ -324,11 +324,13 @@ class ChannelSep(ArchiveBase):
             if result:  return result
         return None
     
-    def create_embed(self):
+    def create_embed(self, cfrom:Optional[str]=None,cto:Optional[str]=None):
         defaultstr="EOL⏹️" #For the Index/Channel Index
         defaultcstr="EOCL⏹️" #For the Index/Channel Index
         defaultclstr="FIRST" #For the Index/Channel Index
         cembed=discord.Embed(colour=discord.Colour(0x7289da))
+        if cfrom:
+            cembed=discord.Embed(colour=discord.Colour(0xd1113a))
 
         cembed.add_field(name="Category", value=self.category, inline=True)
         if self.thread!=None:
@@ -359,6 +361,10 @@ class ChannelSep(ArchiveBase):
         if actorstr:
             if(len(actorstr)>1024): actorstr=actorstr[0:1023]
             cembed.add_field(name="Actors", value=actorstr, inline=False)
+        if cfrom:
+            cembed.add_field(name="Flashback to", value=f"{cfrom}", inline=False)
+        if cto:
+            cembed.add_field(name="Continued at", value=f"{cto}", inline=False)
         return cembed, count
     def __repr__(self):
         return f"{self.channel_sep_id}: [{self.get_chan_sep()}]"

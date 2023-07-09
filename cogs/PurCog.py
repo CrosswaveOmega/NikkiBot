@@ -109,7 +109,7 @@ async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibra
             chat.function_call='auto'
     #Call API
     async with message.channel.typing():
-        res=await bot.gptapi.callapi(chat)
+        res=await chat.call()
     if res.get('err',False):
         err=res[err]
         error=purgpt.error.PurGPTError(err,json_body=res)

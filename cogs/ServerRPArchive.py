@@ -946,8 +946,11 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
         needed=ChannelSep.get_posted_but_incomplete(guildid)
         grouped=ChannelSep.get_unposted_separators(guildid)
-        if needed:   
-            grouped.insert(0,needed)
+        if needed:
+            newgroup=[]
+            newgroup.extend(needed)
+            newgroup.extend(grouped)
+            grouped=newgroup
         length=len(grouped)
         gui.gprint(grouped,needed)
         message_total,total_time_for_cluster=0,0.0
@@ -974,6 +977,14 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 sep.update(posted_url=chansep.jump_url)
                 await self.edit_embed_and_neighbors(sep)
                 self.bot.database.commit()
+
+            elif sep.posted_url and not sep.all_ok:
+                        old_message=await urltomessage(sep.posted_url,bot)
+                        emb,count=sep.create_embed(cfrom=sep.posted_url)
+                        new_message=await archive_channel.send(embed=emb)
+                        jump_url=new_message.jump_url
+                        embedit,count=sep.create_embed(cto=jump_url)
+                        await old_message.edit(embed=embedit)
             messages=sep.get_messages()
             messagelength=len(messages)
             for index,amess in enumerate(messages):

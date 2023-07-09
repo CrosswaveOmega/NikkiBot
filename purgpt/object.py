@@ -4,45 +4,27 @@ import json
 from typing import Any, Dict, List, Optional, Union
 import aiohttp
 from datetime import datetime, timezone
-
+from purgpt.object_core import ApiCore
+from purgpt.api import PurGPTAPI
 
 nikkiprompt='''You are Nikki, a energetic, cheerful, and determined female AI ready to help users with whatever they need.
 All your responces must be in an energetic and cheerful manner, carrying a strong personal voice.
 Carefully heed the user's instructions.  If a query is inappropriate, respond with "I refuse to answer."
 If you do not know how to do something, please note that with your responce.  If a user is definitely wrong about something, explain how politely.
-Ensure that responces are brief, do not say more than is needed.
+Ensure that responces are brief, do not say more than is needed.  Never use emojis in your responses.
 Respond using Markdown.'''
 
-class ApiCore(dict):
-    endpoint = None
-    method = None
-
-    def __init__(self):
-        pass
-
-    @classmethod
-    def create(cls, **kwargs):
-        instance = cls()
-        for key, value in kwargs.items():
-            setattr(instance, key, value)
-        return instance
-
-    def to_dict(self):
-        serialized_dict = {}
-        for key, value in self.__dict__.items():
-            if key not in ["endpoint", "method"]:
-                if value is not None:
-                    print(key,value)
-                    serialized_dict[key] = value
-        return serialized_dict
-    
-    def slimdown(self, max_size: int):
-        '''to deal with an exceeded payload size'''
-        pass
-
+class ApiCoreMix(ApiCore):
+    '''extension that adds a call function.'''
+    async def call(self, api:Optional[PurGPTAPI]=None):
+        if api==None:
+            api=PurGPTAPI()
+        resp=await api.callapi(self)
+        return resp
 
         
-class ChatCreation(ApiCore):
+class ChatCreation(ApiCoreMix):
+    '''Base Class for the chat/completion endpoint.'''
     endpoint = "chat/completions"
     method = "POST"
     api_slots=[]
@@ -58,7 +40,8 @@ class ChatCreation(ApiCore):
             stream=False,
             stop:Optional[Union[List[str], str]]=None,
             presence_penalty:Optional[float]=None,
-            frequency_penalty:Optional[float]=None):
+            frequency_penalty:Optional[float]=None,
+            model:str="gpt-3.5-turbo-16k"):
         self.messages = messages
         self.functions = functions
         self.function_call = function_call
@@ -68,12 +51,14 @@ class ChatCreation(ApiCore):
         self.stop = stop
         self.presence_penalty = presence_penalty
         self.frequency_penalty = frequency_penalty
+        self.model="gpt-3.5-turbo-16k"
     def to_dict(self):
         data= super().to_dict()
         if 'functions' in data:
             data["model"]="gpt-3.5-turbo-0613"
         else:
-            data["model"]="gpt-3.5-turbo-16k"
+            pass
+            #data["model"]="gpt-3.5-turbo-16k"
         return data
     
     def total_payload_size(self):
