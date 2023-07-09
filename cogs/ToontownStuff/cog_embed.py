@@ -5,8 +5,6 @@ import requests
 import json
 from javascript import require, globalThis, eval_js
 import re
-from purgpt import ChatCreation
-
 
 def remove_link_node(data):
     value=data
@@ -176,7 +174,7 @@ def tform(data:tuple):
     '''Format a data tuple'''
     return f"{data[0]}: {data[1]}"
 
-async def formatembed(url,soup, desoup, attack_soup,cheat_soup, foetattle='', cheat_tattle=''):
+async def formatembed(url:str,soup:dict, desoup:dict, attack_soup:str,cheat_soup:str, foetattle:str='', cheat_tattle:str=''):
     mook_positions=['Operations Analyst','Employee','Field Specialist']
     miniboss_positions=['Regional Manager','Manager','Contractor', 'Third Cousin Twice Removed']
     boss_positions=['Boss']

@@ -92,6 +92,38 @@ class ToonTownCog(commands.Cog, TC_Cog_Mixin):
 
     def cog_unload(self):
         self.db.close()
+    async def dblocationsearch(self, query:str):
+        dict=self.db.get('atlas',None)
+        if not dict:
+            params={
+                'action':'query',
+                'generator':'categorymembers',
+                'gcmtitle':'Category:Locations',
+                'prop':'categories',
+                'cllimit':'max',
+                'gcmlimit':'max',
+                'format':'json'
+            }
+            overdata=await api_get('https://toontown-corporate-clash.fandom.com/api.php',params)
+            pages=[]
+            for i, v in overdata['query']['pages'].items():
+                print(v.keys())
+                call=v['title'].replace(" ","_")
+                params = {
+                    "action": "parse", "page": call, "format": "json",'section': '0'
+                }
+                data=await api_get('https://toontown-corporate-clash.fandom.com/api.php',params)
+                try:
+                    pass
+                except Exception as e:
+                    print(call,e)
+            self.db.update({'directory':pages})
+            self.db.commit()
+            dict=self.db['directory']
+        for dictionary in dict:
+            if query.lower() in dictionary['title'].lower():
+                return dictionary['urlname']
+        return None
 
     async def dbsearch(self, query:str):
         positions=['Operations Analyst','Employee','Field Specialist','Regional Manager','Manager','Contractor', 'Third Cousin Twice Removed','Boss']
