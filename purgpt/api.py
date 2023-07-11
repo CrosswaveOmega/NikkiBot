@@ -23,7 +23,7 @@ PurGPT Ratelimits
 - 2000 Requests per Day
 
 '''
-TIMEOUT_SECS=120
+TIMEOUT_SECS=60*5
 #Seconds until timeout.
 MAX_LOAD_SIZE=20000
 #Max payload size.
@@ -38,8 +38,9 @@ class PurGPTAPI:
             raise TypeError(f'expected token to be a str, received {token.__class__.__name__} instead')
         token = token.strip()
         self._key=purgpt.api_key
-        if token:
+        if token!=None:
             self._key=token
+        self.openaimode=False
         
     async def _make_call(self,endpoint:str,payload:Dict[str,Any])->Dict[str,Any]:
         headers = {
@@ -74,13 +75,16 @@ class PurGPTAPI:
                 raise error.APIConnectionError("AIO client error:",e) from e
             
     async def callapi(self,obj:ApiCore):
-        endpoint=obj.endpoint
-        payload=obj.to_dict()
-        if len(json.dumps(payload))>MAX_LOAD_SIZE:
-            obj.slimdown(MAX_LOAD_SIZE)
+        if self.openaimode:
+            return await obj.calloai()
+        else:
+            endpoint=obj.endpoint
             payload=obj.to_dict()
+            if len(json.dumps(payload))>MAX_LOAD_SIZE:
+                obj.slimdown(MAX_LOAD_SIZE)
+                payload=obj.to_dict()
 
-        return await self._make_call(endpoint,payload)
+            return await self._make_call(endpoint,payload)
     async def models(self):
         headers = {
             "Content-Type": "application/json"
@@ -93,6 +97,8 @@ class PurGPTAPI:
                 result = await response.json()
                 return result
 
+    def set_openai_mode(self,value:bool=False):
+        self.openaimode=value
         
     async def get_data(self, path):
         async with aiohttp.ClientSession() as session:

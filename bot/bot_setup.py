@@ -16,6 +16,8 @@ import sys, random
 
 from queue import Queue
 
+import openai
+
 from utility import serverOwner, serverAdmin,MessageTemplates,formatutil
 
 from discord.ext import commands, tasks
@@ -487,6 +489,7 @@ async def main(args):
             bot.keys['google']=g
             bot.keys['cse']=c
             purgpt.api_key=keys.get("optional", 'purgpt')
+            openai.api_key=keys.get("optional", 'openai')
             await bot.start(keys.get("vital", 'cipher'))
              
 

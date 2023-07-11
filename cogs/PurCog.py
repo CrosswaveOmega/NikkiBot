@@ -85,17 +85,11 @@ async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibra
     profile=ServerAIConfig.get_or_new(guild.id)
     audit_channel=AssetLookup.get_asset("monitor_channel")
 
-    if audit_channel:
-        emb=discord.Embed(title="Audit",description=f"```{message.content}```")
-        emb.add_field(name="Server Data",value=f"{guild.name}, \nServer ID: {guild.id}",inline=False)
-        emb.add_field(name="User Data",value=f"{user.name}, \n User ID: {user.id}",inline=False)
-        target=bot.get_channel(int(audit_channel))
-        await target.send(embed=emb)
-    
+
     profile.prune_message_chains()
     chain=profile.list_message_chains()
     mes=[c.to_dict() for c in chain]
-    chat=purgpt.ChatCreation()
+    chat=purgpt.ChatCreation(model="gpt-3.5-turbo-0613")
     for f in mes:
         chat.add_message(f['role'],f['content'])
     chat.add_message('user',message.content)
@@ -107,9 +101,28 @@ async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibra
         else:
             chat.functions=mylib.get_schema()
             chat.function_call='auto'
-    #Call API
+
+    if audit_channel:
+        emb=discord.Embed(title="Audit",description=f"```{message.content}```")
+        out,names=chat.summary()
+
+        emb.add_field(name="chat_summary",value=out[:1020],inline=False)
+        if names:
+            emb.add_field(name="Functions",value=names[:1020],inline=False)
+        emb.add_field(name="Server Data",value=f"{guild.name}, \nServer ID: {guild.id}",inline=False)
+        emb.add_field(name="User Data",value=f"{user.name}, \n User ID: {user.id}",inline=False)
+        target=bot.get_channel(int(audit_channel))
+        await target.send(embed=emb)
+    # completion = openai.ChatCompletion.create(
+    # model="gpt-3.5-turbo-0613",
+    # messages=chat.messages,
+    # functions=mylib.get_schema(),
+    # function_call="auto"
+    # )
+
     async with message.channel.typing():
         res=await bot.gptapi.callapi(chat)
+    #res=completion
     if res.get('err',False):
         err=res[err]
         error=purgpt.error.PurGPTError(err,json_body=res)
@@ -130,9 +143,19 @@ async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibra
         messageresp=None
         if i['finish_reason']=='function_call' or 'function_call' in i['message']:
             functiondict=i['message']['function_call']
-            output=await mylib.call_by_dict_ctx(ctx,functiondict)
-            
-            resp= output
+            name,args=mylib.parse_name_args(functiondict)
+            emb=discord.Embed(title="Audit_FuncionCall",description=str(functiondict))
+            emb.add_field(name="Server Data",value=f"{guild.name}, \nServer ID: {guild.id}",inline=False)
+            emb.add_field(name="User Data",value=f"{user.name}, \n User ID: {user.id}",inline=False)
+            emb.add_field(name="Function Call",value=f"{name}")
+            bg=0
+            for an,av in args.items():
+                emb.add_field(name=an,value=str(av),inline=True)
+                bg+=1
+                if bg>=20:  break
+            target=bot.get_channel(int(audit_channel))
+            await target.send(embed=emb)
+            resp= await mylib.call_by_dict_ctx(ctx,functiondict)
             content=resp
             function=str(i['message']['function_call'])
         if isinstance(content,str):
@@ -155,8 +178,6 @@ async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibra
         profile.add_message_to_chain(messageresp.id,messageresp.created_at,role=role,content=content)
 
         emb=discord.Embed(title="Audit",description=messageresp.clean_content)
-        
-
         emb.add_field(name="Server Data",value=f"{guild.name}, \nServer ID: {guild.id}",inline=False)
         emb.add_field(name="User Data",value=f"{user.name}, \n User ID: {user.id}",inline=False)
         target=bot.get_channel(int(audit_channel))
@@ -244,6 +265,16 @@ class AICog(commands.Cog, TC_Cog_Mixin):
                 await ctx.send("done")
             else:
                 await ctx.send("user not found.")
+       
+    @commands.command(brief="Turn on OpenAI mode")
+    @commands.is_owner()
+    async def openai(self,ctx,mode:bool=False):
+        '''"Update user or server api limit `[server,user],id,limit`"'''
+        self.bot.gptapi.set_openai_mode(mode)
+        if mode==True:
+            await ctx.send("OpenAI mode turned on.")
+        if mode==False:
+            await ctx.send("OpenAI mode turned off.")
         
         
     @app_commands.command(name="ban_user", description="Ban a user from using my AI.", extras={"homeonly":True})

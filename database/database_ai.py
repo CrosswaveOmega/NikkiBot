@@ -203,9 +203,10 @@ class ServerAIConfig(AIBase):
         message_chains = session.query(MessageChain).filter_by(server_id=self.server_id).order_by(MessageChain.created_at.desc()).all()
 
         for message_chain in message_chains:
+            print(message_chain)
             session.delete(message_chain)
-
         session.commit()
+        session.flush()
 
 class EnabledChannel(AIBase):
     __tablename__ = 'EnabledChannel'

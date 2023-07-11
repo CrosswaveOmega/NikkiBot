@@ -44,9 +44,19 @@ Enemy: Cog Boss - Flunky
 Tattle: "That's a Flunky, one of the entry-level Cogs. They're like the foot soldiers of the business world, but with less charm. I heard they work for the higher-ranked Cog Bosses, doing their bidding. Their attacks are as basic as they come, but they can still pack a punch if you're not careful. Keep an eye out for their sales pitch!"
 
 Remember, if you do not have enough information, feel free to provide a short amusing remark based on the information you do have.'''
+
+tattle_cheat_prompt='''You are tasked with generating a tattle for an enemy character's special abilities, called cheats, in a video game called ToonTown Online. You will be provided a bulleted list of a single enemy's abilities, and you are to summarize that list into a short, one paragraph 'tattle,'  that is no more than 1014 characters long.  Each tattle should be written in the same style as the tattles from Paper Mario. Tattles provide amusing and informative descriptions of the enemy's abilities, as well as a simple strategy to deal with that foe. When provided with information about a new enemy, generate a tattle based on the available information.
+
+Example:
+
+Enemy: Cog Regional Manager - Rainmaker
+
+Tattle: "Every two rounds, Rainmaker will change the weather to a different phase.  Oil rain will make all toons take 10 damage and heal all cogs for 50 HP. Fog will obscure all data on screen.  Heavy Rain will amplify everyone's damage by 20%.  Storm Cell will drop damaging lightning bolts on your toons.  Moonsoon will only be used when Raimnaker is below 880 HP, prevent you from using Toon Up and Sound Gags, significantly increase her defense, and summon buffed cogs to fight for her side!  When she's at 1 HP, she'll dispell the current weather and her flunkies.  You'll get a special cutscene if you go three turns without attacking her, meaning this is a boss you can spare if you're feeling merciful!"
+
+Remember, if you do not have enough information, feel free to provide a short amusing remark based on the information you do have.'''
 from purgpt import ChatCreation
 async def tattle(bot,tattlewith=""):
-    object=ChatCreation(    messages=[
+    object=ChatCreation( model='gpt-3.5-turbo-16k',   messages=[
         {"role": "system", "content": tattle_prompt},
         {"role": "user", "content": tattlewith}
     ])
@@ -92,38 +102,7 @@ class ToonTownCog(commands.Cog, TC_Cog_Mixin):
 
     def cog_unload(self):
         self.db.close()
-    async def dblocationsearch(self, query:str):
-        dict=self.db.get('atlas',None)
-        if not dict:
-            params={
-                'action':'query',
-                'generator':'categorymembers',
-                'gcmtitle':'Category:Locations',
-                'prop':'categories',
-                'cllimit':'max',
-                'gcmlimit':'max',
-                'format':'json'
-            }
-            overdata=await api_get('https://toontown-corporate-clash.fandom.com/api.php',params)
-            pages=[]
-            for i, v in overdata['query']['pages'].items():
-                print(v.keys())
-                call=v['title'].replace(" ","_")
-                params = {
-                    "action": "parse", "page": call, "format": "json",'section': '0'
-                }
-                data=await api_get('https://toontown-corporate-clash.fandom.com/api.php',params)
-                try:
-                    pass
-                except Exception as e:
-                    print(call,e)
-            self.db.update({'directory':pages})
-            self.db.commit()
-            dict=self.db['directory']
-        for dictionary in dict:
-            if query.lower() in dictionary['title'].lower():
-                return dictionary['urlname']
-        return None
+
 
     async def dbsearch(self, query:str):
         positions=['Operations Analyst','Employee','Field Specialist','Regional Manager','Manager','Contractor', 'Third Cousin Twice Removed','Boss']

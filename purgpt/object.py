@@ -6,7 +6,8 @@ import aiohttp
 from datetime import datetime, timezone
 from purgpt.object_core import ApiCore
 from purgpt.api import PurGPTAPI
-
+from purgpt.util import num_tokens_from_messages
+import openai
 nikkiprompt='''You are Nikki, a energetic, cheerful, and determined female AI ready to help users with whatever they need.
 All your responces must be in an energetic and cheerful manner, carrying a strong personal voice.
 Carefully heed the user's instructions.  If a query is inappropriate, respond with "I refuse to answer."
@@ -14,16 +15,8 @@ If you do not know how to do something, please note that with your responce.  If
 Ensure that responces are brief, do not say more than is needed.  Never use emojis in your responses.
 Respond using Markdown.'''
 
-class ApiCoreMix(ApiCore):
-    '''extension that adds a call function.'''
-    async def call(self, api:Optional[PurGPTAPI]=None):
-        if api==None:
-            api=PurGPTAPI()
-        resp=await api.callapi(self)
-        return resp
-
         
-class ChatCreation(ApiCoreMix):
+class ChatCreation(ApiCore):
     '''Base Class for the chat/completion endpoint.'''
     endpoint = "chat/completions"
     method = "POST"
@@ -41,7 +34,7 @@ class ChatCreation(ApiCoreMix):
             stop:Optional[Union[List[str], str]]=None,
             presence_penalty:Optional[float]=None,
             frequency_penalty:Optional[float]=None,
-            model:str="gpt-3.5-turbo-16k"):
+            model="gpt-3.5-turbo"):
         self.messages = messages
         self.functions = functions
         self.function_call = function_call
@@ -51,16 +44,32 @@ class ChatCreation(ApiCoreMix):
         self.stop = stop
         self.presence_penalty = presence_penalty
         self.frequency_penalty = frequency_penalty
-        self.model="gpt-3.5-turbo-16k"
+        self.use_model=model
+    async def calloai(self):
+        dictme=self.to_dict()
+        modelv=dictme['model']
+        if self.functions is not None:
+            dictme['messages']=[self.messages[0],self.messages[-1]]
+        result=await openai.ChatCompletion.acreate(
+            **dictme
+        )
+        return result
     def to_dict(self):
         data= super().to_dict()
-        if 'functions' in data:
-            data["model"]="gpt-3.5-turbo-0613"
+        if self.use_model!= "gpt-3.5-turbo":
+            data["model"]=self.use_model
         else:
-            pass
-            #data["model"]="gpt-3.5-turbo-16k"
+            if 'functions' in data:
+                data["model"]="gpt-3.5-turbo-0613"
+            else:
+                data["model"]="gpt-3.5-turbo"
         return data
-    
+    def summary(self):
+        messages=len(self.messages)
+        message_tokens=num_tokens_from_messages(self.messages)
+        functions=",".join([f"{f['name']}" for f in self.functions])
+        output=f"Messages: {messages}, tokens: {message_tokens}"
+        return output, functions
     def total_payload_size(self):
         dictv=self.to_dict()
         return len(json.dumps(dictv))

@@ -23,7 +23,7 @@ class ApiCore(dict):
     def to_dict(self):
         serialized_dict = {}
         for key, value in self.__dict__.items():
-            if key not in ["endpoint", "method"]:
+            if key not in ["endpoint", "method",'use_model']:
                 if value is not None:
                     print(key,value)
                     serialized_dict[key] = value

@@ -150,7 +150,7 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
         async with await DatabaseSingleton.get_async_session() as session:
             await session.commit()
         return target_message
-    @AILibFunction(name='start_timer',description='Start a timer for a certain number of seconds.')
+    @AILibFunction(name='start_timer',description='Start a timer for a certain number of seconds.', required=['set a timer','start a timer', 'timer for', 'start timer'])
     @LibParam(comment='An interesting, amusing remark.',name='The name of the timer to use',total_seconds='the total amount of seconds the timer will run for.')
     @commands.command(name='start_timer',description='Get the current UTC Time',extras={})
     async def start_timer(self,ctx:commands.Context,comment:str,name:str,total_seconds:int):
