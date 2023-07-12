@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 import discord
 import operator
 import io
@@ -43,6 +43,7 @@ reasons={'server':{
 }
 from gptfunctionutil import *
 from .StepCalculator import evaluate_expression
+from .AICalling import AIMessageTemplates
 
 class MyLib(GPTFunctionLibrary):
     @AILibFunction(name='get_time',description='Get the current time and day in UTC.')
@@ -52,21 +53,18 @@ class MyLib(GPTFunctionLibrary):
         return f"{comment}\n{str(discord.utils.utcnow())}"
     #pass
 
-
-
-async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibrary=None):
-    ctx=await bot.get_context(message)
+async def precheck_message(message:discord.Message)->bool:
+    '''Evaluate if a message should be processed.'''
     permissions = message.channel.permissions_for(message.channel.guild.me)
     if permissions.send_messages:
         pass
     else:
         raise Exception(f"{message.channel.name}:{message.channel.id} send message permission not enabled.")
 
-    guild=message.guild
-    user=message.author
+    guild,user=message.guild,message.author
     if len(message.clean_content)>2000:
         await message.channel.send("This message is too big.")
-        return
+        return False
     async with lock:
         serverrep,userrep=AuditProfile.get_or_new(guild,user)
         serverrep.checktime()
@@ -75,24 +73,77 @@ async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibra
         ok, reason=serverrep.check_if_ok()
         if not ok:
             await message.channel.send(reasons["server"][reason])
-            return
+            return False
         ok, reason=userrep.check_if_ok()
         if not ok:
             await message.channel.send(reasons["user"][reason])
-            return
+            return False
         serverrep.modify_status()
         userrep.modify_status()
+    return True
+
+async def process_result(ctx:commands.Context,result:Any,mylib:GPTFunctionLibrary):
+    '''
+    process the result.  Will either send a message, or invoke a function.  
+    
+    
+    When a function is invoked, the output of the function is added to the chain instead.
+    '''
+    i=result.choices[0]
+    role,content=i.message.role,i.message.content
+    messageresp=None
+    if i.finish_reason =='function_call' or 'function_call' in i['message']:
+        #Call the corresponding funciton, and set that to content.
+        functiondict=i.message.function_call 
+        name,args=mylib.parse_name_args(functiondict)
+        audit=await AIMessageTemplates.add_function_audit(
+            ctx,
+            functiondict,
+            name,
+            args
+        )
+        resp= await mylib.call_by_dict_ctx(ctx,functiondict)
+        content=resp
+    if isinstance(content,str):
+        #Split up content by line if it's too long.
+        page=commands.Paginator(prefix='',suffix=None)
+        for p in content.split("\n"):
+            page.add_line(p)
+        messageresp=None
+        for pa in page.pages:
+            ms=await ctx.channel.send(pa)
+            if messageresp==None:messageresp=ms
+    elif isinstance(content,discord.Message):
+        messageresp=content
+        content=messageresp.content
+    else:
+        messageresp=await ctx.channel.send('No output from this command.')
+        content='No output from this command.'
+    return role,content,messageresp
+
+
+async def ai_message_invoke(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibrary=None):
+    ctx=await bot.get_context(message)
+    botcheck=await precheck_message(message)
+    if not botcheck:
+        return
+    guild,user=message.guild,message.author
+    #Get the 'profile' of the active guild.
     profile=ServerAIConfig.get_or_new(guild.id)
-    audit_channel=AssetLookup.get_asset("monitor_channel")
-
-
+    #prune message chains with length greater than X
     profile.prune_message_chains()
+    #retrieve the saved messages
     chain=profile.list_message_chains()
+    #Convert into a list of messages
     mes=[c.to_dict() for c in chain]
+    #create new ChatCreation
     chat=purgpt.ChatCreation(model="gpt-3.5-turbo-0613")
-    for f in mes:
+    for f in mes: #Load old messags into ChatCreation
         chat.add_message(f['role'],f['content'])
+    #Load current message into chat creation.
     chat.add_message('user',message.content)
+
+    #Load in functions
     if mylib!=None:
         forcecheck=mylib.force_word_check(message.content)
         if forcecheck:
@@ -102,86 +153,42 @@ async def message_check(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibra
             chat.functions=mylib.get_schema()
             chat.function_call='auto'
 
-    if audit_channel:
-        emb=discord.Embed(title="Audit",description=f"```{message.content}```")
-        out,names=chat.summary()
+    audit=await AIMessageTemplates.add_user_audit(
+        ctx, chat
+    )
 
-        emb.add_field(name="chat_summary",value=out[:1020],inline=False)
-        if names:
-            emb.add_field(name="Functions",value=names[:1020],inline=False)
-        emb.add_field(name="Server Data",value=f"{guild.name}, \nServer ID: {guild.id}",inline=False)
-        emb.add_field(name="User Data",value=f"{user.name}, \n User ID: {user.id}",inline=False)
-        target=bot.get_channel(int(audit_channel))
-        await target.send(embed=emb)
-    # completion = openai.ChatCompletion.create(
-    # model="gpt-3.5-turbo-0613",
-    # messages=chat.messages,
-    # functions=mylib.get_schema(),
-    # function_call="auto"
-    # )
+
 
     async with message.channel.typing():
-        res=await bot.gptapi.callapi(chat)
-    #res=completion
-    if res.get('err',False):
-        err=res[err]
-        error=purgpt.error.PurGPTError(err,json_body=res)
+        #Call the API.
+        result=await bot.gptapi.callapi(chat)
+
+    if result.get('err',False):
+        err=result[err]
+        error=purgpt.error.PurGPTError(err,json_body=result)
         raise error
-    profile.add_message_to_chain(
+    #only add messages after they're finished processing.
+    
+    bot.logs.info(str(result))
+    #Process the result.
+    role, content, messageresp=await process_result(ctx,result,mylib)
+    profile.add_message_to_chain\
+    (
         message.id,message.created_at,
         role='user',
         name=re.sub(r'[^a-zA-Z0-9_]', '', user.name),
-        content=message.clean_content)
+        content=message.clean_content
+    )
+    if function:
+        profile.add_message_to_chain(messageresp.id,messageresp.created_at,role=role,content='', function=function)
+    profile.add_message_to_chain(messageresp.id,messageresp.created_at,role=role,content=content)
 
-    result=res['choices']
-    bot.logs.info(str(res))
-    for i in result:
-        
-        role=i['message']['role']
-        content=i['message']['content']
-        function=None
-        messageresp=None
-        if i['finish_reason']=='function_call' or 'function_call' in i['message']:
-            functiondict=i['message']['function_call']
-            name,args=mylib.parse_name_args(functiondict)
-            emb=discord.Embed(title="Audit_FuncionCall",description=str(functiondict))
-            emb.add_field(name="Server Data",value=f"{guild.name}, \nServer ID: {guild.id}",inline=False)
-            emb.add_field(name="User Data",value=f"{user.name}, \n User ID: {user.id}",inline=False)
-            emb.add_field(name="Function Call",value=f"{name}")
-            bg=0
-            for an,av in args.items():
-                emb.add_field(name=an,value=str(av),inline=True)
-                bg+=1
-                if bg>=20:  break
-            target=bot.get_channel(int(audit_channel))
-            await target.send(embed=emb)
-            resp= await mylib.call_by_dict_ctx(ctx,functiondict)
-            content=resp
-            function=str(i['message']['function_call'])
-        if isinstance(content,str):
-            page=commands.Paginator(prefix='',suffix=None)
-            for p in content.split("\n"):
-                page.add_line(p)
-            messageresp=None
-            for pa in page.pages:
-                ms=await message.channel.send(pa)
-                if messageresp==None:messageresp=ms
-        elif isinstance(content,discord.Message):
-            messageresp=content
-            content=messageresp.content
-        else:
-            messageresp=await message.channel.send('No output from this command.')
-            content='No output from this command.'
-
-        if function:
-            profile.add_message_to_chain(messageresp.id,messageresp.created_at,role=role,content='', function=function)
-        profile.add_message_to_chain(messageresp.id,messageresp.created_at,role=role,content=content)
-
-        emb=discord.Embed(title="Audit",description=messageresp.clean_content)
-        emb.add_field(name="Server Data",value=f"{guild.name}, \nServer ID: {guild.id}",inline=False)
-        emb.add_field(name="User Data",value=f"{user.name}, \n User ID: {user.id}",inline=False)
-        target=bot.get_channel(int(audit_channel))
-        await target.send(embed=emb)
+    audit=await AIMessageTemplates.add_resp_audit(
+        ctx,
+        messageresp,
+        result
+    )
+    
     bot.database.commit()
 
 
@@ -358,20 +365,20 @@ class AICog(commands.Cog, TC_Cog_Mixin):
                 self.flib.add_in_commands(self.bot)
             profile=ServerAIConfig.get_or_new(message.guild.id)
             if self.bot.user.mentioned_in(message) and not message.mention_everyone:
-                await message_check(self.bot,message, mylib=self.flib)
+                await ai_message_invoke(self.bot,message, mylib=self.flib)
             else:
                 if profile.has_channel(message.channel.id):
-                    await message_check(self.bot,message,mylib=self.flib)
+                    await ai_message_invoke(self.bot,message,mylib=self.flib)
         except Exception as error:           
             try:
-                emb=MessageTemplates.get_error_embed(title=f"Error with your query!",description=f"Something went wrong with the AI.")
+                emb=MessageTemplates.get_error_embed(title=f"Error with your query!",description=str(error))
                 await message.channel.send(embed=emb)
             except Exception as e:
                 
                 try:
                     myperms= message.guild.system_channel.permissions_for(message.guild.me)
                     if myperms.send_messages:
-                        await message.channel.send('I need to be able to send messages in a channel to use this feature.')
+                        await message.guild.system_channel.send('I need to be able to send messages in a channel to use this feature.')
                 except e:
                     pass
                         
@@ -385,6 +392,12 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         
 
 
-
 async def setup(bot):
+    from .AICalling import setup
+    await bot.load_extension(setup.__module__)
     await bot.add_cog(AICog(bot))
+async def teardown(bot):
+    from .AICalling import setup
+    await bot.unload_extension(setup.__module__)
+    await bot.remove_cog('AICog')
+

@@ -4,6 +4,8 @@ import aiohttp
 import json
 import urllib
 import purgpt
+import openai
+import openai.util as util
 from purgpt.object_core import ApiCore
 import purgpt.error as error
 BASE_URL='https://purgpt.xyz/v1'
@@ -34,12 +36,17 @@ class PurGPTAPI:
     def __init__(self,token:str=None):
         self.base_url = BASE_URL
         
-        if not isinstance(token, str):
-            raise TypeError(f'expected token to be a str, received {token.__class__.__name__} instead')
-        token = token.strip()
-        self._key=purgpt.api_key
+        
+        
         if token!=None:
+            if not isinstance(token, str):
+                raise TypeError(f'expected token to be a str, received {token.__class__.__name__} instead')
+            token = token.strip()
             self._key=token
+        else:
+            if purgpt.api_key==None:
+                raise TypeError(f'expected set token to be a string, recieved {token.__class__.__name__} instead')
+            self._key=purgpt.api_key
         self.openaimode=False
         
     async def _make_call(self,endpoint:str,payload:Dict[str,Any])->Dict[str,Any]:
@@ -84,7 +91,9 @@ class PurGPTAPI:
                 obj.slimdown(MAX_LOAD_SIZE)
                 payload=obj.to_dict()
 
-            return await self._make_call(endpoint,payload)
+            response_dict= await self._make_call(endpoint,payload)
+            openaiobject=util.convert_to_openai_object(response_dict)
+            return openaiobject
     async def models(self):
         headers = {
             "Content-Type": "application/json"

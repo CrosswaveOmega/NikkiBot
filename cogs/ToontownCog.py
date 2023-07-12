@@ -202,7 +202,11 @@ class ToonTownCog(commands.Cog, TC_Cog_Mixin):
         if cache and not force:
             embed=discord.Embed.from_dict(cache)
         else:
-            cheat_tattle=foetattle=''
+            if ctx.bot.gptapi.openaimode:
+                if ctx.bot.application.owner.id!=ctx.message.author.id:
+                    await ctx.send("Only my owner may use the AI while OpenAI mode is on.", ephemeral=True)
+                    return False
+            cheat_tattle=foe_tattle=''
             page=cogname.replace(" ","_")
             soup,desoup,attack_soup,cheat_soup=get_cog_soup(cogname)
             addendum=""
@@ -238,4 +242,4 @@ async def setup(bot):
 async def teardown(bot):
     from .ToontownStuff import setup
     await bot.unload_extension(setup.__module__)
-    await bot.add_cog(ToonTownCog(bot))
+    await bot.remove_cog('ToonTownCog')

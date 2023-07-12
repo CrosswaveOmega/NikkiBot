@@ -174,7 +174,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                    required=['comment'], enabled=False, force_words=['generate code']
                    )
     @LibParam(comment='An interesting, amusing remark.',code='Formatted computer code in any language to be given to the user.')
-    @commands.command(name='codeget',description='generate some code')
+    @commands.command(name='code_generate',description='generate some code')
     async def codegen(self,ctx:commands.Context,code:str,comment:str='Search results:'):
         #This is an example of a decorated discord.py command.
         bot=ctx.bot
@@ -202,7 +202,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             message=ctx.message
             guild=message.guild
             user=message.author
-            
+            if ctx.bot.gptapi.openaimode:
+                if ctx.bot.application.owner.id!=message.author.id:
+                    await ctx.send("Only my owner may use the AI while OpenAI mode is on.")
+                    return False
             serverrep,userrep=AuditProfile.get_or_new(guild,user)
             serverrep.checktime()
             userrep.checktime()

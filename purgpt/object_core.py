@@ -32,4 +32,3 @@ class ApiCore(dict):
     def slimdown(self, max_size: int):
         '''to deal with an exceeded payload size'''
         pass
-
