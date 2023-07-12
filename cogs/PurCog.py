@@ -92,6 +92,7 @@ async def process_result(ctx:commands.Context,result:Any,mylib:GPTFunctionLibrar
     i=result.choices[0]
     role,content=i.message.role,i.message.content
     messageresp=None
+    function=None
     if i.finish_reason =='function_call' or 'function_call' in i['message']:
         #Call the corresponding funciton, and set that to content.
         functiondict=i.message.function_call 
@@ -102,6 +103,7 @@ async def process_result(ctx:commands.Context,result:Any,mylib:GPTFunctionLibrar
             name,
             args
         )
+        function=str(i['message']['function_call'])
         resp= await mylib.call_by_dict_ctx(ctx,functiondict)
         content=resp
     if isinstance(content,str):
@@ -119,7 +121,7 @@ async def process_result(ctx:commands.Context,result:Any,mylib:GPTFunctionLibrar
     else:
         messageresp=await ctx.channel.send('No output from this command.')
         content='No output from this command.'
-    return role,content,messageresp
+    return role,content,messageresp, function
 
 
 async def ai_message_invoke(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibrary=None):
@@ -171,7 +173,7 @@ async def ai_message_invoke(bot:TCBot,message:discord.Message,mylib:GPTFunctionL
     
     bot.logs.info(str(result))
     #Process the result.
-    role, content, messageresp=await process_result(ctx,result,mylib)
+    role, content, messageresp,func=await process_result(ctx,result,mylib)
     profile.add_message_to_chain\
     (
         message.id,message.created_at,
@@ -179,8 +181,16 @@ async def ai_message_invoke(bot:TCBot,message:discord.Message,mylib:GPTFunctionL
         name=re.sub(r'[^a-zA-Z0-9_]', '', user.name),
         content=message.clean_content
     )
-    if function:
-        profile.add_message_to_chain(messageresp.id,messageresp.created_at,role=role,content='', function=function)
+    #Add 
+    if func:
+        profile.add_message_to_chain\
+        (
+            messageresp.id,
+            messageresp.created_at,
+            role=role,
+            content='', 
+            function=func
+        )
     profile.add_message_to_chain(messageresp.id,messageresp.created_at,role=role,content=content)
 
     audit=await AIMessageTemplates.add_resp_audit(
