@@ -2,6 +2,7 @@
 __pycache__/
 saveData/
 startup_tests/
+beta_cogs/
 config.ini
 keys.ini
 runner.py

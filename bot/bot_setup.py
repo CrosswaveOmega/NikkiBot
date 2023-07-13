@@ -16,7 +16,6 @@ import sys, random
 
 from queue import Queue
 
-import openai
 
 from utility import serverOwner, serverAdmin,MessageTemplates,formatutil
 
@@ -34,7 +33,7 @@ from .Tasks.TCTasks import TCTask, TCTaskManager
 from .TcGuildTaskDB import TCGuildTask
 from .TCAppCommandAutoSync import AppGuildTreeSync
 from .errorformat import client_error_message
-
+from .config_gen import setup, config_update
 """
 Initalizes TCBot, defines some checks, and contains the main setup coroutine.
 
@@ -42,8 +41,10 @@ Initalizes TCBot, defines some checks, and contains the main setup coroutine.
 
 import database.database_main as dbmain
 from assets import AssetLookup
-import purgpt
-bot:TCBot = TCBot(guimode=True)
+import purgpt, openai
+
+
+bot:TCBot = TCBot()
 
 
 taskflags=defaultdict(bool)
@@ -387,83 +388,11 @@ class Main(commands.Cog):
                 await ctx.send("...what?")
 
 
-def setup(args):
-    'get or create the config.ini file.'
-    arglength=len(args)
-    keys=ConfigParserSub()
-    config = ConfigParserSub()
-    if not os.path.exists('config.ini') or not os.path.exists('keys.ini'):
-        c1=c2=True
-        if not os.path.exists('config.ini'): 
-            gui.gprint("No config.ini file detected.")
-            c1=False
-        if not os.path.exists('keys.ini'): 
-            gui.gprint("No keys.ini file detected.")
-            c2=False
-        if c1 and not c2:
-            config.read('config.ini')
-            gui.gprint("config.ini found but no keys.ini")
-            for section in config.sections():
-                if section in ['vital','optional']:
-                    keys.add_section(section)
-                    for option in config.options(section):
-                        if option!='error_channel_id':
-                            value = config.get(section, option)
-                            keys.set(section, option, value)
-                            config.remove_option(section, option)
-            config.write(open('config.ini', 'w+'))
-            keys.write(open('keys.ini','w+'))
-        else:
-            token,error_channel_id='',''
-            if arglength >1: token=args[1]
-            if arglength >2: error_channel_id=args[2]
-            if not token:       
-                token = input("Please enter your bot token: ")
-            if not error_channel_id: 
-                error_channel_id = input("Please enter the ID of the channel to send error messages to, or 'NEWGUILD': ")
-
-            keys["vital"] = {'cipher': token}
-            config["optional"] = {'error_channel_id': error_channel_id}
-            gui.gprint("Writing config files")
-            config.write(open('config.ini', 'w'))
-            keys.write(open('keys.ini','w+'))
-        try:
-            gui.gprint("making savedata")
-            Path("/saveData").mkdir(parents=True, exist_ok=True) #saveData
-        except FileExistsError:
-            gui.gprint("saveData exists already.")
-        try:
-            gui.gprint("making logs")
-            Path("/logs").mkdir(parents=True, exist_ok=True) #logs
-        except FileExistsError:
-            gui.gprint("logs exists already.")
-        AssetLookup()
-        gui.gprint("you can restart the bot now.")
-
-        return None, None
-
-    else:
-        # Read File
-        keys.read('keys.ini')
-        config.read('config.ini')
-        if config.get('vital','cipher',fallback=None)!=None:
-            gui.gprint("Bot token detected in config.ini!  Transferring to keys.ini")
-            for section in config.sections():
-                keys.add_section(section)
-                for option in config.options(section):
-                    if option!='error_channel_id':
-                        value = config.get(section, option)
-                        keys.set(section, option, value)
-                        config.remove_option(section, option)
-            config.write(open('config.ini', 'w+'))
-            keys.write(open('keys.ini','w+'))
-        AssetLookup()
-        return config, keys
-
-
 async def main(args):
     '''setup and start the bot.'''
     config, keys=setup(args)
+    config_update(config)
+    AssetLookup()
     if config==None or keys==None: 
         return
     async with bot:

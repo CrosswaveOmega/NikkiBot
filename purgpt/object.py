@@ -1,13 +1,70 @@
 
 import asyncio
 import json
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 import aiohttp
 from datetime import datetime, timezone
 from purgpt.object_core import ApiCore
 from purgpt.api import PurGPTAPI
 from purgpt.util import num_tokens_from_messages
 import openai
+
+class Image(ApiCore):
+    endpoint = "images/generations"
+    method = "POST"
+    api_slots=[]
+    def __init__(self,
+            prompt:str,
+            n:int=1,
+            user:Optional[str]=None,
+            size:Literal['256x256','512x512','1024x1024']='256x256'):
+        self.prompt=prompt
+        self.n=n
+        self.size=size
+        self.user=user
+
+    async def calloai(self):
+        '''return a completion through openai instead.'''
+        dictme=self.to_dict()
+        result=await openai.Image.acreate(
+            **dictme
+        )
+        return result
+    def to_dict(self):
+        data= super().to_dict()
+        return data
+
+class ImageVariate(ApiCore):
+    endpoint = "images/variations"
+    method = "POST"
+    api_slots=[]
+    def __init__(self,
+            image:str,
+            n:int=1,
+            user:Optional[str]=None,
+            size:Literal['256x256','512x512','1024x1024']='256x256'):
+        self.image=image
+        self.n=n
+        self.size=size
+        self.user=user
+
+    async def calloai(self):
+        '''return a completion through openai instead.'''
+        dictme=self.to_dict()
+        result=await openai.Image.acreate_variation(
+            **dictme
+        )
+        return result
+    def to_dict(self):
+        data= super().to_dict()
+        return data
+
+
+
+
+
+
+
 
 
 class Edit(ApiCore):

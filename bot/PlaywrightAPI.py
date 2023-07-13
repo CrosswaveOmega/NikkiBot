@@ -8,6 +8,7 @@ class PlaywrightMixin:
     browser=None
     browser_on=False
     async def start_player(self):
+        '''Initalize an instance of Playwright'''
         gui.print("Playwright is initalizing...")
         self.playapi=await async_playwright().start()
         gui.print("Playwright initalized.")

@@ -1,3 +1,4 @@
+import base64
 from typing import Any, Literal, Optional
 import discord
 import operator
@@ -27,7 +28,7 @@ import purgpt
 import purgpt.error
 from assets import AssetLookup
 from database.database_ai import AuditProfile, ServerAIConfig
-
+import utility.hash as hash
 lock = asyncio.Lock()
 reasons={'server':{
     'messagelimit': "This server has reached the daily message limit, please try again tomorrow.",
@@ -53,18 +54,10 @@ class MyLib(GPTFunctionLibrary):
         return f"{comment}\n{str(discord.utils.utcnow())}"
     #pass
 
-async def precheck_message(message:discord.Message)->bool:
+async def precheck_context(ctx:commands.Context)->bool:
     '''Evaluate if a message should be processed.'''
-    permissions = message.channel.permissions_for(message.channel.guild.me)
-    if permissions.send_messages:
-        pass
-    else:
-        raise Exception(f"{message.channel.name}:{message.channel.id} send message permission not enabled.")
+    guild,user=ctx.guild,ctx.author
 
-    guild,user=message.guild,message.author
-    if len(message.clean_content)>2000:
-        await message.channel.send("This message is too big.")
-        return False
     async with lock:
         serverrep,userrep=AuditProfile.get_or_new(guild,user)
         serverrep.checktime()
@@ -72,11 +65,11 @@ async def precheck_message(message:discord.Message)->bool:
 
         ok, reason=serverrep.check_if_ok()
         if not ok:
-            await message.channel.send(reasons["server"][reason])
+            await ctx.channel.send(reasons["server"][reason])
             return False
         ok, reason=userrep.check_if_ok()
         if not ok:
-            await message.channel.send(reasons["user"][reason])
+            await ctx.channel.send(reasons["user"][reason])
             return False
         serverrep.modify_status()
         userrep.modify_status()
@@ -125,8 +118,17 @@ async def process_result(ctx:commands.Context,result:Any,mylib:GPTFunctionLibrar
 
 
 async def ai_message_invoke(bot:TCBot,message:discord.Message,mylib:GPTFunctionLibrary=None):
-    ctx=await bot.get_context(message)
-    botcheck=await precheck_message(message)
+    '''Evaluate if a message should be processed.'''
+    permissions = message.channel.permissions_for(message.channel.guild.me)
+    if permissions.send_messages:
+        pass
+    else:
+        raise Exception(f"{message.channel.name}:{message.channel.id} send message permission not enabled.")
+    if len(message.clean_content)>2000:
+        await message.channel.send("This message is too big.")
+        return False
+    ctx=await bot.get_context(ctx)
+    botcheck=await precheck_context(ctx)
     if not botcheck:
         return
     guild,user=message.guild,message.author
@@ -203,6 +205,12 @@ async def ai_message_invoke(bot:TCBot,message:discord.Message,mylib:GPTFunctionL
 
 
 
+async def download_image(url):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                data = await response.read()
+                return io.BytesIO(data)
 
     
 class AICog(commands.Cog, TC_Cog_Mixin):
@@ -240,6 +248,73 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         await MessageTemplates.server_ai_message(ctx,"purging")
         profile.clear_message_chains()
         await MessageTemplates.server_ai_message(ctx,"Data purged")
+    mc=app_commands.Group(name="image_ai",description='Generate images with DALL-E.')
+    @mc.command(name="generate_image",description="make a dalle image.")
+    async def make_image(self,inter:discord.Interaction,prompt:str,num:int=1,size:Literal['256x256','512x512','1024x1024']='256x256'):
+        ctx=await self.bot.get_context(inter)
+        if not ctx.guild: return
+        user_id=ctx.author.id
+        targetid,num2=hash.hash_string(str(user_id),hashlen=16,hashset=hash.Hashsets.base64)
+        if len(prompt)>=1000:
+            await ctx.send("Prompt too long.",ephemeral=True)
+            return
+        if not 0<num<=10:
+            await ctx.send("Invalid number of generations.",ephemeral=True)
+            return
+        precheck=precheck_context(ctx)
+        if not precheck:
+            await ctx.send("Precheck failed.",ephemeral=True)
+            return
+        img=purgpt.object.Image(
+            prompt=prompt,
+            n=num,
+            size=size
+        )
+        
+        message=await ctx.send(f"Generating image{'s' if num>1 else ''}...")
+        async with ctx.channel.typing():
+            #Call the API.
+            result=await ctx.bot.gptapi.callapi(img)
+        for data in result.data:
+            myimg=await download_image(data['url'])
+            # Create a discord.File object using the image_bytes
+            file = discord.File(fp=myimg, filename='image.png')
+            # Send the file with a message
+            await ctx.channel.send(file=file)
+    """
+    @mc.command(name="generate_image_variation",description="make variations of an image")
+    async def make_image_var(self,inter:discord.Interaction,image:discord.Attachment,num:int=1,size:Literal['256x256','512x512','1024x1024']='256x256'):
+        ctx=await self.bot.get_context(inter)
+        if not ctx.guild: return
+        user_id=ctx.author.id
+        targetid,num2=hash.hash_string(str(user_id),hashlen=16,hashset=hash.Hashsets.base64)
+        if not 0<num<=10:
+            await ctx.send("Invalid number of generations.",ephemeral=True)
+            return
+        precheck=await precheck_context(ctx)
+        if not precheck:
+            await ctx.send("Precheck failed.",ephemeral=True)
+            return
+        mybytes=await image.read()
+        byte_stream = io.BytesIO(mybytes)
+        img=purgpt.object.ImageVariate(
+            image= base64.b64encode(mybytes).decode('utf-8'),
+            n=num,
+            size=size
+        )
+        
+        message=await ctx.send(f"Generating image{'s' if num>1 else ''}...")
+        async with ctx.channel.typing():
+            #Call the API.
+            result=await ctx.bot.gptapi.callapi(img)
+        for data in result.data:
+            myimg=await download_image(data['url'])
+            # Create a discord.File object using the image_bytes
+            file = discord.File(fp=myimg, filename='image.png')
+            # Send the file with a message
+            await ctx.channel.send(file=file)
+            """
+
 
     @commands.hybrid_command(name="ai_functions",description="Get a list of ai functions.")
     async def ai_functions(self,ctx):

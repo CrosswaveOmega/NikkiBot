@@ -420,7 +420,8 @@ class SpecialAppSync:
                 if no_sync==False or sync_only:
                     await self.sync_commands_tree(guild, forced=force)
         except Exception as e:
-            gui.gprint(e)
+            res=str(traceback.format_exception(None, e, e.__traceback__))
+            gui.gprint("Exception in allgruild",e, res)
             raise Exception()
         
     async def get_tree_dict(self,guild):

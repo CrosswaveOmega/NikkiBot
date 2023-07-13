@@ -47,6 +47,8 @@ import gui
 class ConfigParserSub(configparser.ConfigParser):
     def get(self, section, option, fallback=None,**kwargs):
         return super().get( section, option,fallback=fallback,**kwargs)
+    def getbool(self,option,fallback=None,**kwargs):
+        return super().getboolean('feature',option,fallback=False,**kwargs)
 
 class TreeOverride(CommandTree):
     #I need to do this just to get a global check on app_commands...
@@ -81,7 +83,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         self.keys={}
         self.gptapi= None
         self.error_channel=None
-        self.config:configparser.ConfigParser = configparser.ConfigParser()
+        self.config:ConfigParserSub = ConfigParserSub()
 
         self.statmess:StatusMessageManager=StatusMessageManager(self)
 
@@ -90,10 +92,11 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
 
         self.extensiondir,self.extension_list="",[]
         self.plugindir,self.plugin_list="",[]
-        self.guimode=guimode
+        self.guimode=False
         self.gui=None
-        if guimode:
-            self.gui=gui.Gui()
+
+                
+
         self.loaded_extensions={}
         self.loaded_plugins={}
         self.default_error=self.on_command_error
@@ -118,12 +121,17 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
     async def after_startup(self):
         '''This function is called in on_ready, but only once.'''
         if not self.bot_ready:
-            #if self.guimode:   self.gui.run(self.loop) #update_every_second()
-            self.gptapi= purgpt.PurGPTAPI(purgpt.api_key)
+            #Start up the GuiPanel
+            guimode=self.config.getbool('gui')
+            if guimode:
+                self.guimode=True
+                self.gui=gui.Gui()
             if self.guimode:
                 self.gui.run(self.loop)
                 pass
                 #self.gthread=gui.Gui.run(self.gui)
+            self.gptapi= purgpt.PurGPTAPI(purgpt.api_key)
+
             self.database_on()
             self.update_ext_list()
             await self.reload_all()
@@ -131,6 +139,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
             #audit old guild data.
             await self.audit_guilds()
 
+            #Sync to all needed servers.
             await self.all_guild_startup()
             gui.gprint("BOT SYNCED!")
             self.delete_queue_message.start()
@@ -144,7 +153,11 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
             dbcheck=self.database.database_check()
             gui.gprint(dbcheck)
 
-            await self.start_player()
+            #start playwright
+            pmode=self.config.getboolean('feature','playwright')
+            print("playwrighter",pmode)
+            if pmode==True:
+                await self.start_player()
             now = datetime.datetime.now()
             seconds_until_next_minute = (60 - now.second)%20
             gui.gprint('sleeping for ',seconds_until_next_minute)

@@ -46,7 +46,7 @@ hashsets={
     'default':"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789%-"
 }
 def hash_string(string_to_hash, hashlen=5, hashset:Hashsets=Hashsets.default):
-    '''Given a string, generate a string representation of a hash.'''
+    '''Given a string, generate a string representation of a hash .'''
     # Convert the string to bytes
     encoded_string = string_to_hash.encode('utf-8')
     # Hash the bytes using SHA-256
