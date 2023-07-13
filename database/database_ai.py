@@ -187,7 +187,7 @@ class ServerAIConfig(AIBase):
 
     def list_message_chains(self):
         session = DatabaseSingleton.get_session()
-        message_chains = session.query(MessageChain).filter_by(server_id=self.server_id).order_by(MessageChain.created_at).all()
+        message_chains = session.query(MessageChain).filter_by(server_id=self.server_id).order_by(MessageChain.created_at).limit(10).all()
         return message_chains
 
     def prune_message_chains(self, limit=15):
@@ -203,12 +203,14 @@ class ServerAIConfig(AIBase):
     def clear_message_chains(self):
         session = DatabaseSingleton.get_session()
         message_chains = session.query(MessageChain).filter_by(server_id=self.server_id).order_by(MessageChain.created_at.desc()).all()
-
+        purged=0
         for message_chain in message_chains:
             print(message_chain)
+            purged+=1
             session.delete(message_chain)
         session.commit()
         session.flush()
+        return purged
 
 class EnabledChannel(AIBase):
     __tablename__ = 'EnabledChannel'

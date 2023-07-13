@@ -142,7 +142,7 @@ async def ai_message_invoke(bot:TCBot,message:discord.Message,mylib:GPTFunctionL
     mes=[c.to_dict() for c in chain]
     #create new ChatCreation
     chat=purgpt.ChatCreation(model="gpt-3.5-turbo-0613")
-    for f in mes: #Load old messags into ChatCreation
+    for f in mes[:10]: #Load old messags into ChatCreation
         chat.add_message(f['role'],f['content'])
     #Load current message into chat creation.
     chat.add_message('user',message.content)
