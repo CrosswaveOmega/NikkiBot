@@ -127,7 +127,7 @@ async def ai_message_invoke(bot:TCBot,message:discord.Message,mylib:GPTFunctionL
     if len(message.clean_content)>2000:
         await message.channel.send("This message is too big.")
         return False
-    ctx=await bot.get_context(ctx)
+    ctx=await bot.get_context(message)
     botcheck=await precheck_context(ctx)
     if not botcheck:
         return
@@ -246,8 +246,8 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         profile=ServerAIConfig.get_or_new(guildid)
         
         await MessageTemplates.server_ai_message(ctx,"purging")
-        profile.clear_message_chains()
-        await MessageTemplates.server_ai_message(ctx,"Data purged")
+        messages=profile.clear_message_chains()
+        await MessageTemplates.server_ai_message(ctx,f"{messages} purged")
     mc=app_commands.Group(name="image_ai",description='Generate images with DALL-E.')
     @mc.command(name="generate_image",description="make a dalle image.")
     async def make_image(self,inter:discord.Interaction,prompt:str,num:int=1,size:Literal['256x256','512x512','1024x1024']='256x256'):
