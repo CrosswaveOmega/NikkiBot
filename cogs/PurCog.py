@@ -242,12 +242,12 @@ class AICog(commands.Cog, TC_Cog_Mixin):
 
     async def chear_history(self, ctx):
         guild=ctx.guild
-        guildid=guild.id
-        profile=ServerAIConfig.get_or_new(guildid)
+        profile=ServerAIConfig.get_or_new(guild.id)
         
         await MessageTemplates.server_ai_message(ctx,"purging")
         messages=profile.clear_message_chains()
         await MessageTemplates.server_ai_message(ctx,f"{messages} purged")
+
     mc=app_commands.Group(name="image_ai",description='Generate images with DALL-E.')
     @mc.command(name="generate_image",description="make a dalle image.")
     async def make_image(self,inter:discord.Interaction,prompt:str,num:int=1,size:Literal['256x256','512x512','1024x1024']='256x256'):
@@ -281,10 +281,12 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             file = discord.File(fp=myimg, filename='image.png')
             # Send the file with a message
             await ctx.channel.send(file=file)
-    """
+
     @mc.command(name="generate_image_variation",description="make variations of an image")
     async def make_image_var(self,inter:discord.Interaction,image:discord.Attachment,num:int=1,size:Literal['256x256','512x512','1024x1024']='256x256'):
         ctx=await self.bot.get_context(inter)
+        await ctx.send("This command is disabled.")
+        return
         if not ctx.guild: return
         user_id=ctx.author.id
         targetid,num2=hash.hash_string(str(user_id),hashlen=16,hashset=hash.Hashsets.base64)
@@ -313,7 +315,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             file = discord.File(fp=myimg, filename='image.png')
             # Send the file with a message
             await ctx.channel.send(file=file)
-            """
+
 
 
     @commands.hybrid_command(name="ai_functions",description="Get a list of ai functions.")

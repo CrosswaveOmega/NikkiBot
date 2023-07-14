@@ -202,7 +202,7 @@ class ServerAIConfig(AIBase):
             
     def clear_message_chains(self):
         session = DatabaseSingleton.get_session()
-        message_chains = session.query(MessageChain).filter_by(server_id=self.server_id).order_by(MessageChain.created_at.desc()).all()
+        message_chains = session.query(MessageChain).filter_by(server_id=self.server_id).all()
         purged=0
         for message_chain in message_chains:
             print(message_chain)
