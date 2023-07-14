@@ -8,6 +8,7 @@ import openai
 import openai.util as util
 from purgpt.object_core import ApiCore
 import purgpt.error as error
+from assets import AssetLookup
 BASE_URL='https://purgpt.xyz/v1'
 
 
@@ -33,6 +34,7 @@ class PurGPTAPI:
     '''
     This bot utilizes the PurGPT api to connect to OpenAI.
     '''
+
     def __init__(self,token:str=None):
         self.base_url = BASE_URL
         
@@ -108,6 +110,16 @@ class PurGPTAPI:
 
     def set_openai_mode(self,value:bool=False):
         self.openaimode=value
+
+    async def check_oai(self,ctx):
+        if ctx.bot.gptapi.openaimode:
+            target_server=AssetLookup.get_asset('oai_server')
+            if not ctx.guild:
+                return True
+            if ctx.guild.id!=int(target_server):
+                await ctx.send("Only my owner may use the AI while OpenAI mode is on.", ephemeral=True)
+                return True
+            return False
         
     async def get_data(self, path):
         async with aiohttp.ClientSession() as session:

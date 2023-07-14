@@ -82,11 +82,19 @@ async def process_result(ctx:commands.Context,result:Any,mylib:GPTFunctionLibrar
     
     When a function is invoked, the output of the function is added to the chain instead.
     '''
+    if result.model=='you':
+        i=result.choices[0]
+        role,content=i.message.role,i.message.content
+        messageresp=await ctx.channel.send(content)
+
+        return role,content,messageresp,None
+
     i=result.choices[0]
     role,content=i.message.role,i.message.content
     messageresp=None
     function=None
-    if i.finish_reason =='function_call' or 'function_call' in i['message']:
+    finish_reason=i.get('finish_reason',None)
+    if finish_reason =='function_call' or 'function_call' in i['message']:
         #Call the corresponding funciton, and set that to content.
         functiondict=i.message.function_call 
         name,args=mylib.parse_name_args(functiondict)
@@ -112,6 +120,7 @@ async def process_result(ctx:commands.Context,result:Any,mylib:GPTFunctionLibrar
         messageresp=content
         content=messageresp.content
     else:
+        print(result,content)
         messageresp=await ctx.channel.send('No output from this command.')
         content='No output from this command.'
     return role,content,messageresp, function
@@ -128,6 +137,9 @@ async def ai_message_invoke(bot:TCBot,message:discord.Message,mylib:GPTFunctionL
         await message.channel.send("This message is too big.")
         return False
     ctx=await bot.get_context(message)
+    if await ctx.bot.gptapi.check_oai(ctx):
+        return
+
     botcheck=await precheck_context(ctx)
     if not botcheck:
         return

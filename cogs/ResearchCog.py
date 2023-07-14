@@ -94,7 +94,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             context=await self.bot.get_context(interaction)
             guild=interaction.guild
             user=interaction.user
-            
+            if await context.bot.gptapi.check_oai(context):
+                return
+
             serverrep,userrep=AuditProfile.get_or_new(guild,user)
             userrep.checktime()
             ok, reason=userrep.check_if_ok()
@@ -202,10 +204,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             message=ctx.message
             guild=message.guild
             user=message.author
-            if ctx.bot.gptapi.openaimode:
-                if ctx.bot.application.owner.id!=message.author.id:
-                    await ctx.send("Only my owner may use the AI while OpenAI mode is on.")
-                    return False
+            
+            if await ctx.bot.gptapi.check_oai(ctx):
+                return
             serverrep,userrep=AuditProfile.get_or_new(guild,user)
             serverrep.checktime()
             userrep.checktime()
