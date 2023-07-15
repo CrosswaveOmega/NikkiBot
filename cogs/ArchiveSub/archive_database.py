@@ -269,7 +269,11 @@ class ChannelSep(ArchiveBase):
         Returns the entire Channel_sep entry for the specified server_id and channel_sep_id, or None if it doesn't exist.
         """
         session:Session = DatabaseSingleton.get_session()
-        result = session.query(ChannelSep).filter(channel_sep_id=channel_sep_id,server_id=server_id).first()
+        filters = and_(
+            ChannelSep.channel_sep_id == channel_sep_id,
+            ChannelSep.server_id == server_id
+        )
+        result = session.query(ChannelSep).filter(filters).first()
         if result:            return result
         else:            return None
     def update(self, **kwargs):
