@@ -585,7 +585,8 @@ def create_history_pickle_dict(message, over=None):
     }
     if over:
         for i, v in over.items():
-            history_pickle_dict[i]=over[i]
+            if i !='m':
+                history_pickle_dict[i]=over[i]
     if not message.author.bot:
         hash, int=hash_string(message.author.name)
         name_list = AssetLookup.get_asset('blanknames')
