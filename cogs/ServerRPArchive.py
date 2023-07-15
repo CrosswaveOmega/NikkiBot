@@ -756,6 +756,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
     async def correct(self,ctx, guildid:int,channel:str):
         myseps=ChannelSep.get_channel_seps_by_channel(channel,guildid)
+        print(len(myseps))
         async def edit_if_needed(target):
             if isinstance(target,ChannelSep):
                 message=await urltomessage(target.posted_url,self.bot)

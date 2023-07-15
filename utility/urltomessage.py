@@ -56,7 +56,7 @@ async def urltomessage(link="", bot=None, partial=False)-> Optional[Union[discor
             else:
                 message = await channel.fetch_message(int(message_id))
         except discord.errors.NotFound:
-            raise BotError("Failed to get message {message_id}, it does not appear to exist.")
+            raise BotError(f"Failed to get message {message_id} from {link}, it does not appear to exist.")
     except Exception as e:
         gui.gprint(e)
         if bot:
