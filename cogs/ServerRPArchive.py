@@ -19,7 +19,7 @@ from discord import app_commands
 from discord.app_commands import Choice
 
 
-from database import ServerArchiveProfile
+from database import ServerArchiveProfile, DatabaseSingleton
 from .ArchiveSub import (
 do_group,
   collect_server_history,
@@ -754,8 +754,51 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         await ctx.send("timestamp:{}".format(profile.last_archive_time.timestamp()))
 
 
-
-        
+    async def correct(self,ctx, guildid:int,channel:str):
+        myseps=ChannelSep.get_channel_seps_by_channel(channel,guildid)
+        async def edit_if_needed(target):
+            if isinstance(target,ChannelSep):
+                message=await urltomessage(target.posted_url,self.bot)
+                
+                emb,lc=target.create_embed()
+                gui.gprint(lc)
+                target.update(neighbor_count=lc)
+                await message.edit(embeds=[emb])
+        session=DatabaseSingleton.get_session()
+        waittime=0
+        for sep in myseps:
+            iN,iL=sep.get_neighbor(False,True,False),sep.get_neighbor(False,False,False)
+            messages=sep.get_messages()
+            less=len(messages)
+            await ctx.channel.send(less)
+            for e,mess in enumerate(messages):
+                if mess.posted_url:
+                    partial=await urltomessage(mess.posted_url,ctx.bot)
+                    try:
+                        await partial.add_reaction('❌')
+                        ctx.bot.schedule_for_deletion(partial,waittime)
+                        waittime+=5
+                        #await partial.delete()
+                    except Exception as e:
+                        gui.gprint(str(e))
+                
+                
+                session.delete(mess)
+            if sep.posted_url:
+                message=await urltomessage(sep.posted_url,ctx.bot)
+                await message.delete()
+            session.delete(sep)
+            session.commit()
+            print(iN,iL)
+            await edit_if_needed(iN)
+            print(iL)
+            await edit_if_needed(iL)
+            #cN,cL=self.get_neighbor(True,True),self.get_neighbor(True,False)
+        await ctx.channel.send("All target messags deleted.")
+    @commands.command()
+    @commands.is_owner()
+    async def correctit(self,ctx,guildid:int,channel:str):
+        await self.correct(ctx,guildid,channel)
     async def edit_embed_and_neighbors(self, target:ChannelSep):
         '''
         This code checks if the target ChannelSep object has a 

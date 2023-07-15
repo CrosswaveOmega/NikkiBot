@@ -223,6 +223,17 @@ class ChannelSep(ArchiveBase):
         session.query(ChannelSep).filter(ChannelSep.server_id == server_id).delete()
         session.commit()
 
+    @staticmethod
+    def get_channel_seps_by_channel(channel:str,server_id: int):
+        '''delete all channel seps that belong to the passed in server id'''
+        session: Session = DatabaseSingleton.get_session()
+        
+        results=session.query(ChannelSep).filter(
+            (ChannelSep.channel == channel)&
+            (ChannelSep.server_id == server_id)
+            ).all()
+        return results
+        session.commit()
 
     @staticmethod
     def get_posted_but_incomplete(server_id: int):
