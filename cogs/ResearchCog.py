@@ -88,6 +88,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         self.translationprompt='''
         Given text from a non-English language, provide an accurate English translation, followed by contextual explanations for why and how the text's components conveys that meaning. Organize the explanations in a list format, with each word/phrase/component followed by its corresponding definition and explanation.  Note any double meanings within these explanations.
         '''
+        self.simpletranslationprompt='''
+        Given text from a non-English language, provide an accurate English translation.  If any part of the non-English text can be translated in more than one possible way, provide all possible translations for that part in parenthesis.
+        '''
         self.init_context_menus()
     @super_context_menu(name="Translate")
     async def translate(self, interaction: discord.Interaction, message: discord.Message) -> None:
@@ -171,6 +174,50 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             )
         returnme=await ctx.send(content=comment,embed=emb)
         return returnme
+    @commands.hybrid_command(name='translate_simple',description='Translate a block of text.')
+    async def translatesimple(self,context,text:str):
+            if not context.guild:
+                return
+            if await context.bot.gptapi.check_oai(context):
+                return
+            guild,user=context.guild,context.author
+            serverrep,userrep=AuditProfile.get_or_new(guild,user)
+            userrep.checktime()
+            ok, reason=userrep.check_if_ok()
+            if not ok:
+                if reason in ['messagelimit','ban']:
+                    await context.send("You have exceeded daily rate limit.")
+                    return
+            userrep.modify_status()
+            chat=purgpt.ChatCreation(
+                messages=[{'role': "system", 'content':  self.simpletranslationprompt }]
+            )
+            chat.add_message(role='user',content=text)
+
+            #Call API
+            bot=self.bot
+
+            targetmessage=await context.send(content=f'Translating...')
+
+            res=await bot.gptapi.callapi(chat)
+            #await ctx.send(res)
+            print(res)
+            result=res['choices'][0]['message']['content']
+            embeds=[]
+            pages=commands.Paginator(prefix='',suffix='',max_size=2000)
+            for l in result.split('\n'):
+                pages.add_line(l)
+            for e, p in enumerate(pages.pages):
+                embed=discord.Embed(
+                    title=f'Translation' if e==0 else f'Translation {e+1}',
+                    description=p
+                )
+                embeds.append(embed)
+           
+            await targetmessage.edit(content=text,embed=embeds[0])
+            for e in embeds[1:]:
+                await context.send(embed=e)
+    
     @AILibFunction(name='code_gen',
                    description="Output a block of formatted code in accordance with the user's instructions.",
                    required=['comment'], enabled=False, force_words=['generate code']
