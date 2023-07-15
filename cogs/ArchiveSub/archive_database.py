@@ -584,7 +584,8 @@ def create_history_pickle_dict(message, over=None):
         'server_id': message.channel.guild.id
     }
     if over:
-        history_pickle_dict['created_at']=over['created_at']
+        for i, v in over.items():
+            history_pickle_dict[i]=over[i]
     if not message.author.bot:
         hash, int=hash_string(message.author.name)
         name_list = AssetLookup.get_asset('blanknames')

@@ -90,6 +90,7 @@ class AudioContainer():
         dump=json.dumps(self.json_dict, indent=3, sort_keys=True)
         logs.info(dump)
         self.title, self.duration,self.url= info["title"], info["duration"], info["webpage_url"]
+
         self.source=info["url"]
         self.state="Ok"
 
@@ -223,7 +224,7 @@ def url_basename(url):
     return path.strip('/').split('/')[-1]
 
 async def special_playlist_download(bot, ctx, ie_result):
-    ##This was included because downloading from the playlist blocked.
+    ##This was included because downloading from a playlist blocked the loop.
     result_type = ie_result.get('_type', 'video')
     if result_type in ('playlist', 'multi_video'):
         # We process each entry in the playlist

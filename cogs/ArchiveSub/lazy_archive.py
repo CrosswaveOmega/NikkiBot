@@ -240,18 +240,14 @@ async def lazy_archive(self, ctx):
                         embedit,count=sep.create_embed(cto=jump_url)
                         await old_message.edit(embed=embedit)
                     for amess in sep.get_messages():
-                        
                         c,au,av=amess.content,amess.author,amess.avatar
                         files=[]
                         for attach in amess.list_files():
                             this_file=attach.to_file()
                             files.append(this_file)
-
                         webhookmessagesent=await web.postWebhookMessageProxy(archive_channel, message_content=c, display_username=au, avatar_url=av, embed=amess.get_embed(), file=files)
                         if webhookmessagesent:
                             amess.update(posted_url=webhookmessagesent.jump_url)
-                            
-
                         await asyncio.sleep(timebetweenmess)
                         remaining_time_float=remaining_time_float-(timebetweenmess)
                         lazycontext.increment_count()

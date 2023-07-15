@@ -27,9 +27,18 @@ from bot import TCBot,TC_Cog_Mixin, super_context_menu
 import purgpt
 import purgpt.error
 from assets import AssetLookup
+from datetime import datetime, timezone
 from database.database_ai import AuditProfile, ServerAIConfig
 import utility.hash as hash
 lock = asyncio.Lock()
+
+nikkiprompt='''You are Nikki, a energetic, cheerful, and determined female AI ready to help users with whatever they need.
+All your responces must be in an energetic and cheerful manner, carrying a strong personal voice.
+Carefully heed the user's instructions.  If a query is inappropriate, respond with "I refuse to answer."
+If you do not know how to do something, please note that with your responce.  If a user is definitely wrong about something, explain how politely.
+Ensure that responces are brief, do not say more than is needed.  Never use emojis in your responses.
+Respond using Markdown.'''
+
 reasons={'server':{
     'messagelimit': "This server has reached the daily message limit, please try again tomorrow.",
     'ban': "This server is banned from using my AI due to repeated violations.",
@@ -153,12 +162,16 @@ async def ai_message_invoke(bot:TCBot,message:discord.Message,mylib:GPTFunctionL
     #Convert into a list of messages
     mes=[c.to_dict() for c in chain]
     #create new ChatCreation
-    chat=purgpt.ChatCreation(model="gpt-3.5-turbo-0613")
+    chat=purgpt.ChatCreation(
+        messages=[],
+        model="gpt-3.5-turbo-0613")
+
+    chat.add_message('system',nikkiprompt+f"\n Right now, the date-time is {datetime.now().astimezone(tz=timezone.utc)}")
     for f in mes[:10]: #Load old messags into ChatCreation
         chat.add_message(f['role'],f['content'])
     #Load current message into chat creation.
     chat.add_message('user',message.content)
-
+    print(len(chat.messages))
     #Load in functions
     if mylib!=None:
         forcecheck=mylib.force_word_check(message.content)

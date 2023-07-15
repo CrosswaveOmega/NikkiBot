@@ -21,10 +21,7 @@ class ChatCreation(ApiCore):
     method = "POST"
     api_slots=[]
     def __init__(self,
-            messages:List[Dict[str, str]]=[
-                {'role':'system',
-                 'content':nikkiprompt+f"\n Right now, the date-time is {datetime.now().astimezone(tz=timezone.utc)}"
-                 }],
+            messages:Optional[List[Dict[str, str]]]=None,
             functions:Optional[List[Dict[str, str]]] = None,
             function_call: Optional[Union[Dict[str, str], str]] = None,
             temperature:Optional[float]=None,
@@ -34,7 +31,8 @@ class ChatCreation(ApiCore):
             presence_penalty:Optional[float]=None,
             frequency_penalty:Optional[float]=None,
             model="gpt-3.5-turbo"):
-        self.messages = messages
+        self.messages=[]
+        if messages is not None: self.messages = messages
         self.functions = functions
         self.function_call = function_call
         self.temperature = temperature

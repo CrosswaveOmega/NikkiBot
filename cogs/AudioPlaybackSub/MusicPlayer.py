@@ -295,10 +295,13 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
         if self.current!=None:
             song=self.current
             title,url,duration=song.title,song.url,seconds_to_time_stamp(song.duration)
+
             timeat=seconds_to_time_stamp(song.gettime())
             fieldval=f"{title}\n {url} \n{timeat}/{duration}\nRequested by: {song.requested_by}"
             inline=True
             if len(title)>=32: inline=False
+            if song.thumbnail is not None:
+                embed.set_thumbnail(song.thumbnail)
             embed.add_field(name="Now Playing",value=fieldval, inline=inline)
         if self.songs:
             duration=0.0
