@@ -993,11 +993,19 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 for attach in amess.list_files():
                     this_file=attach.to_file()
                     files.append(this_file)
-
-                webhookmessagesent=await web.postWebhookMessageProxy(archive_channel, message_content=c, display_username=au, avatar_url=av, embed=amess.get_embed(), file=files)
-                if webhookmessagesent:
-                    amess.update(posted_url=webhookmessagesent.jump_url)
-                    
+                pager=commands.Paginator(prefix='',suffix='')
+                if len(c)>2000:
+                    for l in c.split('\n'):
+                        pager.add_line(l)
+                    for page in pager.pages:
+                        webhookmessagesent=await web.postWebhookMessageProxy(archive_channel, message_content=page, display_username=au, avatar_url=av, embed=amess.get_embed(), file=files)
+                    if webhookmessagesent:
+                        amess.update(posted_url=webhookmessagesent.jump_url)
+                else:
+                    webhookmessagesent=await web.postWebhookMessageProxy(archive_channel, message_content=c, display_username=au, avatar_url=av, embed=amess.get_embed(), file=files)
+                    if webhookmessagesent:
+                        amess.update(posted_url=webhookmessagesent.jump_url)
+                        
                 if dynamicwait:
                     chars=len(c)
                     await asyncio.sleep(characterdelay*chars)
