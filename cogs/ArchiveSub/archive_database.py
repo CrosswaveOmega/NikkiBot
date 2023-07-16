@@ -696,8 +696,9 @@ class HistoryMakers():
                 #Only want
                 embed=thisMessage.embeds[0]
                 embedv=create_archived_rp_embed(ms,embed)
-                archived_rp_embeds.append(embedv)
-                hasembed=True
+                if embedv is not None:
+                    archived_rp_embeds.append(embedv)
+                    hasembed=True
 
             filecount, fsize = 0,0
             for attach in thisMessage.attachments:
