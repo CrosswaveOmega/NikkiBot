@@ -627,10 +627,17 @@ def create_history_pickle_dict(message, over=None):
 
 class HistoryMakers():
     @staticmethod
-    async def get_history_message(thisMessage,active=False):
+    async def get_history_message(thisMessagev,active=False):
         fsize=0
         session = DatabaseSingleton.get_session()
-        hmes=create_history_pickle_dict(thisMessage)
+        thisMessage=thisMessagev
+        over=None
+        if isinstance(thisMessagev,dict):
+            thisMessage=thisMessagev['m']
+            over=thisMessagev
+        mes=discord.Message
+        hmes = create_history_pickle_dict(thisMessage,over)
+        #hmes=create_history_pickle_dict(thisMessage)
         id=hmes['server_id']
         if active: hmes['is_active']=True
         filecount,fchecksize=0,0
