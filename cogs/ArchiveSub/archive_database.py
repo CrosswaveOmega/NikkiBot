@@ -673,7 +673,7 @@ class HistoryMakers():
                     session.add(file)
                     fsize+=attach.size
         session.commit()
-        return hmes
+        return ms
     @staticmethod
     async def get_history_message_list(messages):
         '''add list of history messages to result.'''
