@@ -33,6 +33,22 @@ from javascript import require, globalThis, eval_js
 import assets
 import gui
 from googleapiclient.discovery import build   #Import the library
+def is_readable(url):
+    readability= require('@mozilla/readability')
+    jsdom=require('jsdom')
+    TurndownService=require('turndown')
+    #Is there a better way to do this?
+    print('attempting parse')
+    out=f'''
+    let result=await check_read(`{url}`,readability,jsdom);
+    return result
+    '''
+    myjs=assets.JavascriptLookup.find_javascript_file('readwebpage.js',out)
+    #myjs=myjs.replace("URL",url)
+    print(myjs)
+    rsult= eval_js(myjs)
+    return rsult
+
 def read_article_sync(url):
     readability= require('@mozilla/readability')
     jsdom=require('jsdom')
@@ -64,6 +80,15 @@ async def read_article(url):
     text,header=result[0],result[1]
     return text,header
 
+async def read_many_articles(urls):
+    outputted=[]
+    for url in urls:
+        getthread=asyncio.to_thread(read_article_sync, url)
+        result=await getthread
+        print(result)
+        text,header=result[0],result[1]
+        outputted.append((url,text,header))
+    return outputted
 def extract_masked_links(markdown_text):
     '''just get all masked links.'''
     pattern = r'\[([^\]]+)\]\(([^\)]+)\)'
@@ -146,7 +171,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
               query='The query to search google with.',limit="Maximum number of results")
     @commands.command(name='google_search',description='Get a list of results from a google search query.',extras={})
     async def google_search(self,ctx:commands.Context,query:str,comment:str='Search results:',limit:int=5):
-        #This is an example of a decorated discord.py command.
+        'Search google for a query.'
         bot=ctx.bot
         if 'google' not in bot.keys or 'cse' not in bot.keys:
             return "insufficient keys!"
@@ -163,17 +188,106 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         results= query_results['items']
         allstr=""
         emb=discord.Embed(title="Search results", description=comment)
+        readable_links=[]
+        messages=ctx.send("Search completed, indexing.")
         for r in results:
             metatags=r['pagemap']['metatags'][0]
             desc=metatags.get('og:description',"NO DESCRIPTION")
             allstr+=r['link']+"\n"
+            readable=is_readable(r['link'])
+            if readable:
+                readable_links.append(r['link'])
+                lines="\n".join(readable_links)
+                messages.edit(f"{lines}")
             emb.add_field(
-                name=r['title'][:255],
+                name=f"{r['title'][:200]}{'_read' if readable else ''}",
                 value=f"{r['link']}\n{desc}"[:1200],
                 inline=False
             )
         returnme=await ctx.send(content=comment,embed=emb)
         return returnme
+    @AILibFunction(name='google_detective',
+                   description='Solve a question using a google search.  Form the query based on the question, and then use the page text from the search results to create an answer..',
+                   enabled=False,
+                   force_words=['research'],
+                   required=['comment'])
+    @LibParam(comment='An interesting, amusing remark.',
+              query='The query to search google with.  Must be related to the question.',
+              question='the question that is to be solved with this search',
+              limit="Number of search results.  Maximum of 10.")
+    @commands.command(name='google_detective',description='Get a list of results from a google search query.',extras={})
+    async def google_detective(self,ctx:commands.Context,question:str,query:str,comment:str='Search results:',limit:int=5):
+        'Search google for a query.'
+        bot=ctx.bot
+        if 'google' not in bot.keys or 'cse' not in bot.keys:
+            return "insufficient keys!"
+        query_service = build(
+        "customsearch", 
+        "v1", 
+        developerKey=bot.keys['google']
+        )  
+        query_results = query_service.cse().list(
+            q=query,    # Query
+            cx=bot.keys['cse'],  # CSE ID
+            num=limit   
+            ).execute()
+        results= query_results['items']
+        allstr=""
+        emb=discord.Embed(title="Search results", description=comment)
+        all_links=[]
+        readable_links=[]
+        messages=await ctx.send("Search completed, indexing.")
+        lines=''
+        for r in results:
+            all_links.append(r['link'])
+            readable=asyncio.to_thread(is_readable,r['link'])
+            if (await readable):
+                readable_links.append(r['link'])
+                lines="\n".join(readable_links)
+                await messages.edit(content=f"{lines}")
+        await ctx.send(
+            content='drawing conclusion...',
+            embed=discord.Embed(\
+            title=f'readable links {len(readable_links)}/{len(all_links)}',
+            description=f"out=\n{lines}")
+            )
+        if len(readable_links)>0:
+            #Can't use embeddings, so unfortunately I can't use Langchain.
+            prompt=f'''
+Use the markdown content retrieved from {len(readable_links)} different web pages to answer the question provided to you by the user.  Each of your source web pages will be in their own system messags, and are in the following template:
+BEGIN
+**Name:** [Name Here]
+**Link:** [Link Here]
+**Content:** [Content Here]
+END
+ The websites may contradict each other, prioritize information from encyclopedia pages and wikis.  Valid news sources follow.  Annotate your answer with footnotes indicating where you got each piece of information from, and then list those footnote sources at the end of your answer.
+ Your answer must be 3-7 medium-length paragraphs with 5-10 sentences per paragraph. Preserve key information from the sources and maintain a descriptive tone. Your goal is not to summarize, your goal is to answer the user's question based on the provided sources.  If there is no information related to the user's question, simply state that you could not find an answer and leave it at that. Exclude any concluding remarks from the answer.
+ '''
+            
+            myout=await read_many_articles(readable_links)
+            chat=purgpt.ChatCreation(
+                messages=[{'role': "system", 'content': prompt}],
+                model='gpt-3.5-turbo-16k'
+            )
+            for line in myout:
+                url,text,header=line
+                myline=f"BEGIN\n**Name:** {header}\n**Link:** {url}\n**Content:** {text}"
+                chat.add_message('system',myline)
+            chat.add_message('user',question)
+            async with ctx.channel.typing():
+                #Call the API.
+                result=await ctx.bot.gptapi.callapi(chat)
+            page=commands.Paginator(prefix='',suffix=None)
+            i=result.choices[0]
+            role,content=i.message.role,i.message.content
+            for p in content.split("\n"):
+                page.add_line(p)
+            messageresp=None
+            for pa in page.pages:
+                ms=await ctx.channel.send(pa)
+            return content
+        return "No data"
+        
     @commands.hybrid_command(name='translate_simple',description='Translate a block of text.')
     async def translatesimple(self,context,text:str):
             if not context.guild:
@@ -233,6 +347,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
     @commands.command(name='reader',description="read a website in reader mode, converted to markdown",extras={})
     async def webreader(self,ctx:commands.Context,url:str):
+        '''Download the text from a website, and read it'''
         async with self.lock:
             message=ctx.message
             guild=message.guild
@@ -244,9 +359,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(f"# {header}")
             for p in pages.pages:
                 await ctx.send(p)
-           
+    
     @commands.command(name='summarize',description="make a summary of a url.",extras={})
     async def summarize(self,ctx:commands.Context,url:str):
+        '''Download the reader mode view of a passed in URL, and summarize it.'''
         async with self.lock:
             message=ctx.message
             guild=message.guild
@@ -269,9 +385,16 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             article, header=await read_article(url)
             
             chat=purgpt.ChatCreation(
-                messages=[{'role': "system", 'content':  self.prompt }]
+                messages=[{'role': "system", 'content':  self.prompt }],
+                model='gpt-3.5-turbo-16k'
             )
             chat.add_message(role='user',content=article)
+            sources=[]
+            for link in mylinks:
+                link_text, url = link
+                link_text=link_text.replace("_","")
+                print(link_text,url)
+                sources.append(f"[{link_text}]({url})")
 
             #Call API
             bot=ctx.bot
@@ -291,12 +414,11 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                         link_text, url = link
                         link_text=link_text.replace("_","")
                         print(link_text,url)
-
                         if link_text in result:
                             print(link_text,url)
-                            sources.append(f"[{link_text}]({url})")
+                            #sources.append(f"[{link_text}]({url})")
                             result=result.replace(link_text,f'*{link_text}*')
-
+                    
                     embed=discord.Embed(
                         title=header,
                         description=result[:4028]

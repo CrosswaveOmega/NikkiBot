@@ -654,8 +654,9 @@ class HistoryMakers():
             #Only one embed.
             embed=thisMessage.embeds[0]
             embedv=create_archived_rp_embed(ms,embed)
-            session.add(embedv)
-            hasembed=True
+            if embedv is not None:
+                session.add(embedv)
+                hasembed=True
 
         for attach in thisMessage.attachments:
             if 'image' in attach.content_type:
