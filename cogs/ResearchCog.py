@@ -210,14 +210,15 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                    description='Solve a question using a google search.  Form the query based on the question, and then use the page text from the search results to create an answer..',
                    enabled=False,
                    force_words=['research'],
-                   required=['comment'])
+                   required=['comment','limit'])
     @LibParam(comment='An interesting, amusing remark.',
               query='The query to search google with.  Must be related to the question.',
               question='the question that is to be solved with this search',
-              limit="Number of search results.  Maximum of 10.")
+              limit="Number of search results to retrieve.  Minimum of 7,  Maximum of 16.")
     @commands.command(name='google_detective',description='Get a list of results from a google search query.',extras={})
-    async def google_detective(self,ctx:commands.Context,question:str,query:str,comment:str='Search results:',limit:int=5):
+    async def google_detective(self,ctx:commands.Context,question:str,query:str,comment:str='Search results:',limit:int=7):
         'Search google for a query.'
+        
         bot=ctx.bot
         if 'google' not in bot.keys or 'cse' not in bot.keys:
             return "insufficient keys!"
