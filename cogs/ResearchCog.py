@@ -390,6 +390,8 @@ END
             )
             chat.add_message(role='user',content=article)
             sources=[]
+            
+            mylinks = extract_masked_links(article)
             for link in mylinks:
                 link_text, url = link
                 link_text=link_text.replace("_","")
@@ -399,7 +401,6 @@ END
             #Call API
             bot=ctx.bot
             messageresp=None
-            mylinks = extract_masked_links(article)
 
             async with ctx.channel.typing():
                 try:
@@ -409,7 +410,6 @@ END
                     print(res)
                     result=res['choices'][0]['message']['content']
 
-                    sources=[]
                     for link in mylinks:
                         link_text, url = link
                         link_text=link_text.replace("_","")
