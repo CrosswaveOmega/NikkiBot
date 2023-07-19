@@ -419,6 +419,7 @@ async def main(args):
             bot.keys['cse']=c
             purgpt.api_key=keys.get("optional", 'purgpt')
             openai.api_key=keys.get("optional", 'openai')
+            
             await bot.start(keys.get("vital", 'cipher'))
              
 

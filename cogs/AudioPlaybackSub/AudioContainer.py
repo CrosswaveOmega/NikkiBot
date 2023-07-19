@@ -72,6 +72,7 @@ class AudioContainer():
         self.json_dict=info
         self.title, self.duration,self.url= info["title"], info["duration"], info["webpage_url"]
         self.thumbnail=info['thumbnail']
+        print(self.thumbnail)
         self.source=info["url"]
         gui.gprint(self.source)
         self.state="Ok"

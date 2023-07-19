@@ -194,13 +194,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             metatags=r['pagemap']['metatags'][0]
             desc=metatags.get('og:description',"NO DESCRIPTION")
             allstr+=r['link']+"\n"
-            readable=is_readable(r['link'])
-            if readable:
-                readable_links.append(r['link'])
-                lines="\n".join(readable_links)
-                messages.edit(f"{lines}")
             emb.add_field(
-                name=f"{r['title'][:200]}{'_read' if readable else ''}",
+                name=f"{r['title'][:200]}",
                 value=f"{r['link']}\n{desc}"[:1200],
                 inline=False
             )
@@ -210,13 +205,13 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                    description='Solve a question using a google search.  Form the query based on the question, and then use the page text from the search results to create an answer..',
                    enabled=False,
                    force_words=['research'],
-                   required=['comment','limit'])
+                   required=['comment','result_limit'])
     @LibParam(comment='An interesting, amusing remark.',
               query='The query to search google with.  Must be related to the question.',
-              question='the question that is to be solved with this search',
-              limit="Number of search results to retrieve.  Minimum of 7,  Maximum of 16.")
+              question='the question that is to be solved with this search.  Must be a complete sentence.',
+              result_limit="Number of search results to retrieve.  Minimum of 3,  Maximum of 16.")
     @commands.command(name='google_detective',description='Get a list of results from a google search query.',extras={})
-    async def google_detective(self,ctx:commands.Context,question:str,query:str,comment:str='Search results:',limit:int=7):
+    async def google_detective(self,ctx:commands.Context,question:str,query:str,comment:str='Search results:',result_limit:int=4):
         'Search google for a query.'
         
         bot=ctx.bot
@@ -226,11 +221,12 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         "customsearch", 
         "v1", 
         developerKey=bot.keys['google']
-        )  
+        ) 
+        print(query,question, result_limit)
         query_results = query_service.cse().list(
             q=query,    # Query
             cx=bot.keys['cse'],  # CSE ID
-            num=limit   
+            num=result_limit
             ).execute()
         results= query_results['items']
         allstr=""
@@ -254,39 +250,45 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             )
         if len(readable_links)>0:
             #Can't use embeddings, so unfortunately I can't use Langchain.
-            prompt=f'''
-Use the markdown content retrieved from {len(readable_links)} different web pages to answer the question provided to you by the user.  Each of your source web pages will be in their own system messags, and are in the following template:
-BEGIN
-**Name:** [Name Here]
-**Link:** [Link Here]
-**Content:** [Content Here]
-END
- The websites may contradict each other, prioritize information from encyclopedia pages and wikis.  Valid news sources follow.  Annotate your answer with footnotes indicating where you got each piece of information from, and then list those footnote sources at the end of your answer.
- Your answer must be 3-7 medium-length paragraphs with 5-10 sentences per paragraph. Preserve key information from the sources and maintain a descriptive tone. Your goal is not to summarize, your goal is to answer the user's question based on the provided sources.  If there is no information related to the user's question, simply state that you could not find an answer and leave it at that. Exclude any concluding remarks from the answer.
- '''
-            
-            myout=await read_many_articles(readable_links)
-            chat=purgpt.ChatCreation(
-                messages=[{'role': "system", 'content': prompt}],
-                model='gpt-3.5-turbo-16k'
-            )
-            for line in myout:
-                url,text,header=line
-                myline=f"BEGIN\n**Name:** {header}\n**Link:** {url}\n**Content:** {text}"
-                chat.add_message('system',myline)
-            chat.add_message('user',question)
-            async with ctx.channel.typing():
-                #Call the API.
-                result=await ctx.bot.gptapi.callapi(chat)
-            page=commands.Paginator(prefix='',suffix=None)
-            i=result.choices[0]
-            role,content=i.message.role,i.message.content
-            for p in content.split("\n"):
-                page.add_line(p)
-            messageresp=None
-            for pa in page.pages:
-                ms=await ctx.channel.send(pa)
-            return content
+            if ctx.bot.gptapi.openaimode:
+                if await ctx.bot.gptapi.check_oai(ctx):
+                    return
+                
+
+            if True:
+                prompt=f'''
+    Use the markdown content retrieved from {len(readable_links)} different web pages to answer the question provided to you by the user.  Each of your source web pages will be in their own system messags, and are in the following template:
+    BEGIN
+    **Name:** [Name Here]
+    **Link:** [Link Here]
+    **Content:** [Content Here]
+    END
+    The websites may contradict each other, prioritize information from encyclopedia pages and wikis.  Valid news sources follow.  Annotate your answer with footnotes indicating where you got each piece of information from, and then list those footnote sources at the end of your answer.
+    Your answer must be 3-7 medium-length paragraphs with 5-10 sentences per paragraph. Preserve key information from the sources and maintain a descriptive tone. Your goal is not to summarize, your goal is to answer the user's question based on the provided sources.  If there is no information related to the user's question, simply state that you could not find an answer and leave it at that. Exclude any concluding remarks from the answer.
+    '''
+                
+                myout=await read_many_articles(readable_links)
+                chat=purgpt.ChatCreation(
+                    messages=[{'role': "system", 'content': prompt}],
+                    model='gpt-3.5-turbo-16k'
+                )
+                for line in myout:
+                    url,text,header=line
+                    myline=f"BEGIN\n**Name:** {header}\n**Link:** {url}\n**Content:** {text}"
+                    chat.add_message('system',myline)
+                chat.add_message('user',question)
+                async with ctx.channel.typing():
+                    #Call the API.
+                    result=await ctx.bot.gptapi.callapi(chat)
+                page=commands.Paginator(prefix='',suffix=None)
+                i=result.choices[0]
+                role,content=i.message.role,i.message.content
+                for p in content.split("\n"):
+                    page.add_line(p)
+                messageresp=None
+                for pa in page.pages:
+                    ms=await ctx.channel.send(pa)
+                return content
         return "No data"
         
     @commands.hybrid_command(name='translate_simple',description='Translate a block of text.')

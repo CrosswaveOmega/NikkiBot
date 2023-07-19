@@ -301,7 +301,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
             inline=True
             if len(title)>=32: inline=False
             if song.thumbnail is not None:
-                embed.set_thumbnail(song.thumbnail)
+                embed.set_thumbnail(url=song.thumbnail)
             embed.add_field(name="Now Playing",value=fieldval, inline=inline)
         if self.songs:
             duration=0.0
