@@ -56,11 +56,13 @@ class PlayerMixin:
         """
         if self.current is not None:
             self.current.stop()
-            self.player_condition = "stop"
-            self.voice.stop()
+
             if self.repeat:
                 self.songs.append(self.current)
+            self.player_condition = "stop"
+            
             self.current = None
+            self.voice.stop()
             await self.send_message(ctx, "Stop", "The player has been stopped.", editinter)
 
     async def pause(self, ctx: commands.Context, editinter: discord.Integration = None):
@@ -97,6 +99,11 @@ class PlayerMixin:
         Returns:
             None
         """
+        if self.player_condition=='stop':
+            await self.send_message(ctx, "Stopped", "Stopped.",
+                                    editinter)
+            self.bot.remove_act("MusicPlay")
+            self.player_condition = "none"
         if self.repeatone and case == "auto":
             if self.current is not None:
                 self.songs.insert(0, self.current)
