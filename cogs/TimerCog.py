@@ -130,8 +130,12 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
         except Exception as e:
             await self.bot.send_error(e, f"Timerloop")
             gui.gprint(str(e))
-    @AILibFunction(name='alarm',description='Set a one time alarm for a future date and time.', required=['comment'])
-    @LibParam(comment='An interesting, amusing remark.',name='The name of the alarm to use',alarm_time='Datetime of the alarm to use.  The alarm is triggered on a specific date and time.')
+    @AILibFunction(name='alarm'
+                   ,description='Set a one time alarm for a future date and time.',
+                     required=['comment'])
+    @LibParam(comment='An interesting, amusing remark.',
+              name='The name of the alarm to use',
+              alarm_time='Datetime of the alarm to use.  The alarm is triggered on a specific date and time.')
     @commands.command(name='start_alarm',description='Set a one time alarm.',extras={})
     async def start_alarm(self,ctx:commands.Context,name:str,alarm_time:datetime,comment:str="Alarm set."):
         #This is an example of a decorated discord.py command.
@@ -143,6 +147,7 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
             return
         message=ctx.message
         print(message.jump_url)
+        print(alarm_time)
         target_message=await ctx.send(f"{comment}\nTimer {name} is set for <t:{int(alarm_time.timestamp())}:R>")
         timer=await TimerTable.add_timer(ctx.author.id,name,alarm_time,message.jump_url)
         
