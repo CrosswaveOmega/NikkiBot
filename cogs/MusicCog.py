@@ -59,7 +59,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
             " • **/mp playlistremove** `index` - remove song from Playlist\n"
             " • **/mp playlistjump** `index` - jump to song at index within Playlist\n"
             " • **/mp playlistclear** - Clear all songs from Playlist\n"
-            " • **/mp playlistshuffle** - shuffle the playlist once shuffling"
+            " • **/mp shuffle** - shuffle the playlist once shuffling"
         """
         self.song_add_processer.start()
 
@@ -122,7 +122,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
             " • **/mp playlistremove** `index` - remove song from Playlist\n"
             " • **/mp playlistjump** `index` - jump to song at index within Playlist\n"
             " • **/mp playlistclear** - Clear all songs from Playlist\n"
-            " • **/mp playlistshuffle** - shuffle the playlist once shuffling"))
+            " • **/mp shuffle** - shuffle the playlist once shuffling"))
 
     @mp.command(name="connect", description="Nikki connects to Voice Channel")
     async def connect(self, interaction: discord.Interaction):
