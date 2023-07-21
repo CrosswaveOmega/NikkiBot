@@ -104,6 +104,7 @@ class PlayerMixin:
                                     editinter)
             self.bot.remove_act("MusicPlay")
             self.player_condition = "none"
+            return
         if self.repeatone and case == "auto":
             if self.current is not None:
                 self.songs.insert(0, self.current)
