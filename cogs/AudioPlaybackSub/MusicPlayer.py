@@ -17,23 +17,77 @@ from typing import  Union
 from assets import AssetLookup
 from utility import  seconds_to_time_string, seconds_to_time_stamp, urltomessage
 from utility import PageClassContainer
-from .AudioContainer import AudioContainer
+from .AudioContainer import AudioContainer, speciallistsplitter
 from .MusicUtils import connection_check
-from .MusicViews import PlayerButtons
+from .MusicViews import PlayerButtons, PlaylistButtons
 from .MusicPlayer_Mixins import PlaylistMixin, PlayerMixin
 '''this code is for the music player, and it's interactions.'''
-
+    
+def make_playlist_embeds(player, interaction):
+    """MAKE EMBED LIST BASED ON ALL SONGS IN QUEUE"""
+    guild:discord.Guild=interaction.guild
+    if player.songs:
+        duration=0.0
+        processing=player.processsize #Check size of songs still getting the data from.
+        pstr=""
+        if processing>0:
+            pstr=f"{processing}"
+        for song in player.songs:  duration+=song.duration
+        embeds=[]
+        def resetdata(current=None):
+            if current==None: return (0,[])
+            off, titles=current
+            return (off, [])
+        def splitcond(current, preobj):
+            off, titles=current
+            if len(titles)>=10: return True
+            return False
+        def transform(current):
+            off, titles=current
+            playlist = ''.join(f'**{idv}:** [{song.title}]({song.url})-{song.duration}\n' for idv, song in titles)
+            emb=player.get_music_embed("pl",f"**Playlist**\n{playlist}")
+            if pstr: emb.add_field(name="Still Processing",value=f"I'm still processing {pstr} songs!")
+            emb.set_footer(text=f"{seconds_to_time_string(duration)}")
+            return playlist
+        def addtransform(current,preobj):
+            off, titles=current
+            app=(off,preobj)
+            titles.append(app)
+            off=off+1
+            return (off,titles)
+        
+        embeds=speciallistsplitter(player.songs,resetdata,splitcond,transform,addtransform)
+        return embeds
+    
 class PlaylistPageContainer(PageClassContainer):
     #Class to extend.
-    def __init__(self,inter,musiccomm, player):
+    def __init__(self,inter, player):
         self.this_interaction=inter
         self.guild=inter.guild
-        self.musiccom=musiccomm
         self.last_inter=None
         self.player=player
-        display=self.musiccom.make_playlist_embeds(inter)
+        display=make_playlist_embeds(player,inter)
 
         super(PlaylistPageContainer,self).__init__(display)
+    def make_embed(self) -> Embed:
+        """
+        Create an Embed object with the current page's content.
+
+        Returns:
+        - An Embed object
+        """
+        self.page = (self.spot // self.perpage) + 1
+        key = ""
+        gui.gprint(len(self.display),self.page)
+        playpage="None"
+        name=" Page {}/{}\n".format(self.page, self.maxpages, self.length)
+        emb=Embed(title="No Pages")
+        if len(self.display)>0:
+            playpage = self.display[self.page - 1]
+        if self.length<=1:
+            name=""
+        emb=self.player.get_music_embed("pl",f"{name}**Playlist**\n{playpage}")
+        return emb
     async def playlistcallback(self, interaction, view, result):
         c = 0
         if interaction!=None:
@@ -45,7 +99,7 @@ class PlaylistPageContainer(PageClassContainer):
         else:
             if result =="shuffle":
                 await self.player.playlist_actions("shuffle")
-                self.display=self.musiccom.make_playlist_embeds(self.this_interaction)
+                self.display=make_playlist_embeds(self.player,self.this_interaction)
             if result == "next":
                 self.spot = self.spot + self.perpage
                 if (self.spot) >= self.length:
@@ -90,6 +144,11 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
              {"options": "-vn -loglevel 0"}
 
 
+    async def playlist_view(self, ctx,interaction:discord.Interaction):
+        ctx: commands.Context = await self.bot.get_context(interaction.message)
+        pagecall=PlaylistPageContainer(interaction, self) #Page container for playlist
+        buttons=PlaylistButtons(callback=pagecall) #buttons for playlist
+        last_set=await ctx.send(embed=pagecall.make_embed(),view=buttons)
     async def player_button_call(self, interaction:discord.Interaction, action:str):
         '''Callback for player buttons.'''
         ctx: commands.Context = await self.bot.get_context(interaction.message)
@@ -234,7 +293,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
             song = self.current
             if voice.is_playing():
                 voice.pause()
-            
+            song.get_source()
             aud=discord.FFmpegPCMAudio(song.source, **self.FFMPEG_OPTIONS)
             if song.type=='file':
                 aud=discord.FFmpegPCMAudio(song.source, **self.FFMPEG_FILEOPTIONS)
@@ -302,7 +361,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
             if len(title)>=32: inline=False
             if song.thumbnail is not None:
                 embed.set_thumbnail(url=song.thumbnail)
-            embed.add_field(name="Now Playing",value=fieldval, inline=inline)
+            embed.add_field(name="Now Playing",value=fieldval, inline=False)
         if self.songs:
             duration=0.0
             for i in self.songs:

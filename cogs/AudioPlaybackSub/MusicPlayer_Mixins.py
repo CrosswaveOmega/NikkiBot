@@ -23,7 +23,8 @@ class PlayerMixin:
             "next": self.next,
             "back": self.back,
             "auto_next": self.next_auto,
-            "auto_over": self.next_auto
+            "auto_over": self.next_auto,
+            "playlistview":self.playlist_view
         }
     async def play(self, ctx: commands.Context, editinter: discord.Interaction = None):
         """Start playing or resume playing the AudioContainer at self.current.
@@ -33,6 +34,8 @@ class PlayerMixin:
             editinter (discord.Interaction, optional): The interaction object for editing the response message. Defaults to None.
         """
         voice = self.voice
+        if self.voice==None:
+            await self.send_message(ctx, "voice was never set!", editinter)
         if self.current is None:
             self.player_condition = "play"
             await self.play_song(ctx)

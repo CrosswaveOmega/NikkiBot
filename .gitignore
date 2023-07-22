@@ -167,3 +167,5 @@ config2.ini
 channel_related_permission_list.txt
 file.json
 requirements.txt
+*.1
+track.txt

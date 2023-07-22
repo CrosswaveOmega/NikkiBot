@@ -26,6 +26,10 @@ class PlayerButtons(discord.ui.View):
     async def next_button(self,interaction:discord.Interaction,button:discord.ui.Button):
         await interaction.response.defer()#(content="Next pressed",view=self)
         await self.callbacker.player_button_call(interaction,"next")
+    @discord.ui.button(emoji='⏭️',label="PlaylistOpen",style=discord.ButtonStyle.blurple) # or .primary
+    async def open_playlist(self,interaction:discord.Interaction,button:discord.ui.Button):
+        await interaction.response.defer()#(content="Next pressed",view=self)
+        await self.callbacker.player_button_call(interaction,"playlistview")
         
 
 

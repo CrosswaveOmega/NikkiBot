@@ -380,9 +380,8 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
             return
 
         if MusicManager.get(guild).songs:
-            pagecall=PlaylistPageContainer(interaction, self, MusicManager.get(guild)) #Page container for playlist
-            buttons=PlaylistButtons(callback=pagecall) #buttons for playlist
-            last_set=await ctx.send(embed=pagecall.make_embed(),view=buttons)
+            await MusicManager.get(guild).playlist_view(interaction)
+            
 
         else: await MessageTemplatesMusic.music_msg(ctx, "Empty Playlist", 
         f"My **playlist** is currently empty, and I'm processing {MusicManager.get(guild).processsize} songs.")
@@ -405,7 +404,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
                     return
             except yt_dlp.DownloadError as e:
                 gui.gprint(e)
-            opres=await MusicManager.get(guild).player_actions("add_url",(url,ctx.author))
+            opres=await MusicManager.get(guild).playlist_actions("add_url",(url,ctx.author))
             if opres==None:
                 await MessageTemplatesMusic.music_msg(ctx, "something went wrong...", f"I couldn't find the **{url}** video... are you sure it's a valid url?")
                 return

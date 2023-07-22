@@ -43,6 +43,7 @@ class AudioContainer():
         self.playing=False
         self.query=url
         self.url="N/A"
+        self.webpageurl=None
         self.requested_by=requested_by
         self.title="TITLE UNRETRIEVED"
         self.duration, self.timeat=0,0
@@ -52,12 +53,28 @@ class AudioContainer():
         self.started_at:datetime.datetime=discord.utils.utcnow()
         self.seekerspot=0.0
         self.source=None
+        self.extract_options={}
     
+    def get_source(self):
+        dlp=self.extract_options.get('nodlp',True)
+        if dlp:
+            with yt_dlp.YoutubeDL(self.extract_options) as ydl:
+                res = ydl.extract_info(f"{self.url}", download=False)
+                if 'entries' in res:          # a playlist or a list of videos
+                    info = res['entries'][0]
+                else:                         # Just a video
+                    info = res
+            self.source=info["url"]
+        else:
+            self.source=self.url
+        
 
     def get_song_youtube(self,search=False):
         '''Get a song from a youtube url.'''
         info={}
-        options={"format": "bestaudio", "noplaylist": "True", 'youtube_include_dash_manifest': False, 'format_sort':["hasaud"]}
+        #args= {'youtube': {'player_skip': ['configs','js'],'player_client':('web_embedded')}}
+        options={'simulate':True, 'skip_download': True,
+                 "format": "worstaudio","noplaylist": True,'format_sort':["hasaud"],'youtube_include_dash_manifest': False  }
         with yt_dlp.YoutubeDL(options) as ydl:
             res=None
             if search:  res = ydl.extract_info(f"ytsearch:{self.query}", download=False)
@@ -73,14 +90,16 @@ class AudioContainer():
         self.title, self.duration,self.url= info["title"], info["duration"], info["webpage_url"]
         self.thumbnail=info['thumbnail']
         print(self.thumbnail)
-        self.source=info["url"]
-        gui.gprint(self.source)
+        
+        self.extract_options={"format": "bestaudio","noplaylist": True,'format_sort':["hasaud"],'youtube_include_dash_manifest': False }
+        #self.source=info["url"]
+        gui.gprint('source',self.source)
         self.state="Ok"
 
     def get_song_soundcloud(self):
         '''Get a song from a soundcloud url.'''
         info={}
-        options={"format": "bestaudio","noplaylist": "True",'format_sort':["hasaud"]}
+        options={"simulate":True, 'skip_download': True}
         with yt_dlp.YoutubeDL(options) as ydl:
             res = ydl.extract_info(f"{self.url}", download=False)
             if 'entries' in res:          # a playlist or a list of videos
@@ -92,13 +111,14 @@ class AudioContainer():
         logs.info(dump)
         self.title, self.duration,self.url= info["title"], info["duration"], info["webpage_url"]
 
-        self.source=info["url"]
+        self.extract_options={"format": "bestaudio","noplaylist": True,'format_sort':["hasaud"]}
+        #self.source=info["url"]
         self.state="Ok"
 
     def get_song_remote_file(self):
         '''Get a song from a file url.'''
         info={}
-        options={"format": "bestaudio","noplaylist": "True",'format_sort':["hasaud"]}
+        options={'nodlp':True}
         
         duration_cmd = "ffprobe -i "+self.query+" -show_format -v quiet"
         output = subprocess.check_output(duration_cmd, shell=True, stderr=subprocess.STDOUT).decode("utf-8")
@@ -111,12 +131,13 @@ class AudioContainer():
         mdata=mutagen.File(self.query)
         if mdata:
             self.title=mdata.get('title')
-        self.source=self.query
+        self.extract_options=options
+        #self.source=self.query
         self.state="Ok"
     def get_song_local_file(self):
         '''Get a song from a file url.'''
         info={}
-        options={"format": "bestaudio","noplaylist": "True",'format_sort':["hasaud"]}
+        options={'nodlp':True}
         
 
         directory_name = "saveData/music"
@@ -145,7 +166,8 @@ class AudioContainer():
         gui.gprint("Total Length: "+str(total_length) +" seconds")
         mdata=mutagen.File(file_path)
         self.title, self.duration,self.url= "Your Song", total_length, "./"+file_path
-        self.source="./"+file_path
+        self.extract_options=options
+        #self.source="./"+file_path
         if mdata:
             self.title=mdata.get('title')
         self.type='file'
@@ -162,18 +184,24 @@ class AudioContainer():
     def get_song(self):
         '''Attempt to retrieve a song '''
         try:
-            if "youtu" in self.query: #It's a youtube link 
+            if "youtu" in self.query: #It's a youtube link
+                gui.gprint("Youtube")
                 self.get_song_youtube()
             elif "soundcloud" in self.query: #It's a soundcloud Link
+                gui.gprint("Soundcloud video")
                 self.get_song_soundcloud()
             elif 'discordapp' in self.query:
+                gui.print("Youtube video")
                 self.get_song_remote_file()
             elif 'local:' in self.query:
+                gui.print('local')
                 self.get_song_local_file()
             elif self.is_audio_link(self.query):
+                gui.print('link')
                 self.get_song_remote_file()
 
             else: #No idea what it is, do a search.
+                gui.print('search')
                 self.get_song_youtube(search=True)
 
         except Exception as e:
