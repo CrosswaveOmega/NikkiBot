@@ -1,5 +1,6 @@
 import asyncio
 import sys
+import os
 
 recoverme=False
 def recovery_mode(error):
@@ -86,7 +87,8 @@ if __name__ == "__main__":
       continueme=False
       try:
          from pathlib import Path
-         Path("/logs").mkdir(parents=True, exist_ok=True) #logs
+         if not os.path.exists('/logs'):
+            Path("/logs").mkdir(parents=True, exist_ok=True) #logs
          from bot import main
          asyncio.run(main(sys.argv))
       except Exception as e:
