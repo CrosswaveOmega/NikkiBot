@@ -86,9 +86,6 @@ if __name__ == "__main__":
    while continueme:
       continueme=False
       try:
-         from pathlib import Path
-         if not os.path.exists('/logs'):
-            Path("/logs").mkdir(parents=True, exist_ok=True) #logs
          from bot import main
          asyncio.run(main(sys.argv))
       except Exception as e:
