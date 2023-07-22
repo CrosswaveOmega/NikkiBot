@@ -397,16 +397,19 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
             return
         ydlops={"extract_flat":"in_playlist","skip_download":True,"forcejson":True}
         with yt_dlp.YoutubeDL(ydlops) as ydl:
-            ie = ydl.extract_info(f"{url}", download=False, process=False)
-            result_type = ie.get('_type', 'video')
-            if result_type in ('playlist', 'multi_video'):
-                await self.playlistcopy(ctx,url,ie)
-            else:
-                opres=await MusicManager.get(guild).player_actions("add_url",(url,ctx.author))
-                if opres==None:
-                    await MessageTemplatesMusic.music_msg(ctx, "something went wrong...", f"I couldn't find the **{url}** video... are you sure it's a valid url?")
+            try:
+                ie = ydl.extract_info(f"{url}", download=False, process=False)
+                result_type = ie.get('_type', 'video')
+                if result_type in ('playlist', 'multi_video'):
+                    await self.playlistcopy(ctx,url,ie)
                     return
-                await MessageTemplatesMusic.music_msg(ctx, "Playlist", f"**I added {opres.title}** to my playlist.")
+            except yt_dlp.DownloadError as e:
+                gui.gprint(e)
+            opres=await MusicManager.get(guild).player_actions("add_url",(url,ctx.author))
+            if opres==None:
+                await MessageTemplatesMusic.music_msg(ctx, "something went wrong...", f"I couldn't find the **{url}** video... are you sure it's a valid url?")
+                return
+            await MessageTemplatesMusic.music_msg(ctx, "Playlist", f"**I added {opres.title}** to my playlist.")
 
     @mp.command(name="add_server_playlist", description="get all music tracks saved inside one channel.")
     @app_commands.describe(channel="The Discord channel in this server the videos are in.")
