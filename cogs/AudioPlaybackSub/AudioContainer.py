@@ -31,12 +31,23 @@ def speciallistsplitter(objects:List[Any], resetdata:Callable, splitcond:Callabl
     currlist.append(trans)
     return currlist
 
+def sanatize_info(v):
+    '''Just clean out '''
+    to_pop=[
+        'thumbnails','ext','chapters','fragments','formats''subtitles',
+        'automatic_captions','_format_sort_fields',
+        'acodec','vcodec','video_ext','audio_ext','url','requested_subtitles','http_headers']
+    for popme in to_pop:
+        if popme in v:
+            v.pop(popme)
+    return v
 
 class AudioContainer():
     """This class is for containing data related to playing audio."""
     def __init__(self, url,requested_by:str="Unknown"):
         info={}
-
+        self.title="TITLE UNRETRIEVED"
+        self.duration, self.timeat=0,0
         self.state="uninit"
         self.error_value=None
         
@@ -45,8 +56,8 @@ class AudioContainer():
         self.url="N/A"
         self.webpageurl=None
         self.requested_by=requested_by
-        self.title="TITLE UNRETRIEVED"
-        self.duration, self.timeat=0,0
+        
+        
         self.type="stream"
         self.json_dict={}
         self.thumbnail=None
@@ -74,7 +85,7 @@ class AudioContainer():
         info={}
         #args= {'youtube': {'player_skip': ['configs','js'],'player_client':('web_embedded')}}
         options={'simulate':True, 'skip_download': True,
-                 "format": "worstaudio","noplaylist": True,'format_sort':["hasaud"],'youtube_include_dash_manifest': False  }
+                 "format": "sb0","noplaylist": True,'format_sort':{ "acodec": "none",'vcodec':"none"},'youtube_include_dash_manifest': False  }
         with yt_dlp.YoutubeDL(options) as ydl:
             res=None
             if search:  res = ydl.extract_info(f"ytsearch:{self.query}", download=False)
@@ -83,7 +94,7 @@ class AudioContainer():
                 info = res['entries'][0]
             else:                         # Just a video
                 info = res
-        
+        info=sanatize_info(info)
         dump=json.dumps(info, indent=3, sort_keys=True)
         logs.info(dump)
         self.json_dict=info
@@ -106,6 +117,7 @@ class AudioContainer():
                 info = res['entries'][0]
             else:                         # Just a video
                 info = res
+        info=sanatize_info(info)
         self.json_dict=info
         dump=json.dumps(self.json_dict, indent=3, sort_keys=True)
         logs.info(dump)
