@@ -130,25 +130,25 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
         except Exception as e:
             await self.bot.send_error(e, f"Timerloop")
             gui.gprint(str(e))
-    @AILibFunction(name='alarm'
-                   ,description='Set a one time alarm for a future date and time.',
+    @AILibFunction(name='reminder'
+                   ,description='Set a one time reminder for a future date and time.',
                      required=['comment'])
     @LibParam(comment='An interesting, amusing remark.',
-              name='The name of the alarm to use',
-              alarm_time='Datetime of the alarm to use.  The alarm is triggered on a specific date and time.')
+              name='The name of the reminder to create.',
+              alarm_time='Datetime the reminder will trigger at.  The reminder will be triggered on this specific date and time.')
     @commands.command(name='start_alarm',description='Set a one time alarm.',extras={})
-    async def start_alarm(self,ctx:commands.Context,name:str,alarm_time:datetime,comment:str="Alarm set."):
+    async def set_reminder(self,ctx:commands.Context,name:str,alarm_time:datetime,comment:str="Alarm set."):
         #This is an example of a decorated discord.py command.
         bot=ctx.bot
         now=datetime.now()
         preexist=await TimerTable.get_timer(ctx.author.id,name)
         if preexist:
-            await ctx.send("There already is a alarm by that name!")
+            await ctx.send("There already is a reminder by that name!")
             return
         message=ctx.message
         print(message.jump_url)
         print(alarm_time)
-        target_message=await ctx.send(f"{comment}\nTimer {name} is set for <t:{int(alarm_time.timestamp())}:R>")
+        target_message=await ctx.send(f"{comment}\n Reminder {name} is set for <t:{int(alarm_time.timestamp())}:R>")
         timer=await TimerTable.add_timer(ctx.author.id,name,alarm_time,message.jump_url)
         
         timer.message_url=target_message.jump_url

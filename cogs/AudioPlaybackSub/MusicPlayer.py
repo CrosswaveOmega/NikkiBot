@@ -12,7 +12,7 @@ from discord.ext import commands, tasks
 import re
 from functools import partial
 from queue import Queue
-from typing import  Union
+from typing import  Any, List, Optional, Union
 
 from assets import AssetLookup
 from utility import  seconds_to_time_string, seconds_to_time_stamp, urltomessage
@@ -33,7 +33,7 @@ def make_playlist_embeds(player, interaction):
         if processing>0:
             pstr=f"{processing}"
         for song in player.songs:  duration+=song.duration
-        embeds=[]
+        plist=[]
         def resetdata(current=None):
             if current==None: return (0,[])
             off, titles=current
@@ -56,8 +56,8 @@ def make_playlist_embeds(player, interaction):
             off=off+1
             return (off,titles)
         
-        embeds=speciallistsplitter(player.songs,resetdata,splitcond,transform,addtransform)
-        return embeds
+        plist=speciallistsplitter(player.songs,resetdata,splitcond,transform,addtransform)
+        return plist
     
 class PlaylistPageContainer(PageClassContainer):
     #Class to extend.
@@ -88,6 +88,16 @@ class PlaylistPageContainer(PageClassContainer):
             name=""
         emb=self.player.get_music_embed("pl",f"{name}**Playlist**\n{playpage}")
         return emb
+    def set_display(self, display: List[str] = ...):
+        self.display = display
+        self.length = len(self.display)
+        self.largest_spot = ((self.length - 1) // self.perpage) * self.perpage
+        self.maxpages = ((self.length - 1) // self.perpage) + 1
+        self.custom_callbacks = {}
+        self.page = (self.spot // self.perpage) + 1
+    def update_display(self):
+        self.display=make_playlist_embeds(self.player,self.this_interaction)
+        self.set_display(self.display)
     async def playlistcallback(self, interaction, view, result):
         c = 0
         if interaction!=None:
@@ -100,6 +110,7 @@ class PlaylistPageContainer(PageClassContainer):
             if result =="shuffle":
                 await self.player.playlist_actions("shuffle")
                 self.display=make_playlist_embeds(self.player,self.this_interaction)
+                self.set_display(self.display)
             if result == "next":
                 self.spot = self.spot + self.perpage
                 if (self.spot) >= self.length:
@@ -115,6 +126,7 @@ class PlaylistPageContainer(PageClassContainer):
                 
             emb=self.make_embed()
             await self.last_inter.response.edit_message(embed=emb,view=view)
+    
 
 class MusicPlayer(PlaylistMixin, PlayerMixin):
     """The class which plays songs."""
@@ -124,6 +136,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
         self.repeat,self.repeatone, self.autoshuffle=False, False,False
         self.player_condition="none"
         self.usersinvc=0
+        self.viewplaylistmode=False
 
 
         self.timeidle=0
@@ -144,11 +157,19 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
              {"options": "-vn -loglevel 0"}
 
 
-    async def playlist_view(self, ctx,interaction:discord.Interaction):
-        ctx: commands.Context = await self.bot.get_context(interaction.message)
+    async def playlist_view(self, interaction:discord.Interaction):
+        #ctx: commands.Context = await self.bot.get_context(interaction.message)
         pagecall=PlaylistPageContainer(interaction, self) #Page container for playlist
-        buttons=PlaylistButtons(callback=pagecall) #buttons for playlist
-        last_set=await ctx.send(embed=pagecall.make_embed(),view=buttons)
+        return pagecall
+        #buttons=PlaylistButtons(callback=pagecall) #buttons for playlist
+        #last_set=await ctx.send(embed=pagecall.make_embed(),view=buttons)
+    async def playlistcallback(self, interaction:discord.Interaction, action:str,param:Optional[Any]=None):
+        '''Callback for player buttons.'''
+        ctx: commands.Context = await self.bot.get_context(interaction.message)
+        guild:discord.Guild=interaction.guild
+        if await connection_check(interaction,ctx): #if it's true, then it shouldn't run.
+            return
+        await self.playlist_actions(action,param)
     async def player_button_call(self, interaction:discord.Interaction, action:str):
         '''Callback for player buttons.'''
         ctx: commands.Context = await self.bot.get_context(interaction.message)
@@ -192,7 +213,10 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
                 self.songcanadd=True
         if self.internal_message_log:
             front=self.internal_message_log.pop()
-            embed=self.get_music_embed('wham',front)
+            myname=AssetLookup.get_asset("name")
+            myicon=AssetLookup.get_asset("embed_icon")
+            embed=discord.Embed(description=front,color=discord.Color.brand_red)
+            embed.set_author(name=f"{myname}'s music player.",icon_url=myicon)
             if self.channel:
                 mess=await self.channel.send(embed=embed)
             
@@ -291,8 +315,9 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
                     asyncio.run_coroutine_threadsafe(self.player_actions("auto_next"), self.bot.loop)
                     return
             song = self.current
-            if voice.is_playing():
-                voice.pause()
+            if voice is not None:
+                if voice.is_playing():
+                    voice.pause()
             song.get_source()
             aud=discord.FFmpegPCMAudio(song.source, **self.FFMPEG_OPTIONS)
             if song.type=='file':
@@ -350,6 +375,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
         elif self.repeatone:plistc=" Repeat One is On."
         if self.processsize>0: processing=f" Processing { self.processsize} songs."
         embed.set_footer(text=f"{con}{plistc}{processing}")
+        
 
         if self.current!=None:
             song=self.current
@@ -362,6 +388,8 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
             if song.thumbnail is not None:
                 embed.set_thumbnail(url=song.thumbnail)
             embed.add_field(name="Now Playing",value=fieldval, inline=False)
+        if self.viewplaylistmode:
+            pass
         if self.songs:
             duration=0.0
             for i in self.songs:

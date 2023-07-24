@@ -169,3 +169,7 @@ file.json
 requirements.txt
 *.1
 track.txt
+logs/tauceti__log.log.2
+logs/tauceti__log.log.3
+logs/tauceti__log.log.4
+logs/tauceti__log.log.5

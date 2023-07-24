@@ -35,7 +35,7 @@ import gui
 from googleapiclient.discovery import build   #Import the library
 def is_readable(url):
     readability= require('@mozilla/readability')
-    jsdom=require('jsdom')
+    jsdom=require('jsdom', timeout=10000)
     TurndownService=require('turndown')
     #Is there a better way to do this?
     print('attempting parse')
@@ -385,7 +385,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     return
             serverrep.modify_status()
             userrep.modify_status()
-            article, header=await read_article(url)
+            article, header=read_article_sync(url)
             
             chat=purgpt.ChatCreation(
                 messages=[{'role': "system", 'content':  self.prompt }],

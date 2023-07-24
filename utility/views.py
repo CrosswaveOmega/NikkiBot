@@ -188,6 +188,7 @@ class RRuleView(discord.ui.View):
     ])
     async def frequency_select(self, interaction: discord.Interaction,select: discord.ui.Select):
         value=select.values[0]
+        #Set default.
         for f in select.options:
             if f.value==value:   f.default=True
             else:   f.default=False

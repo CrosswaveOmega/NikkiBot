@@ -216,7 +216,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         if MusicManager.get(guild).voice==None or MusicManager.get(guild).channel==None:
             await MusicManager.get(guild).setvoiceandctx(interaction)
         if url:
-            attempt=await ctx.send("attempting to add")
+            attempt=await ctx.send("<a:trianglepointer:1132773635195686924> attempting to add")
             song:AudioContainer=await MusicManager.get(guild).playlist_actions("add_url",(url,ctx.author))
             await attempt.delete()
             if song==None:
@@ -231,8 +231,10 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
                 await MusicManager.get(guild).send_message(ctx, "Play", f"There's already something playing, \
                     so I'll just add {song.link_markdown()} to my playlist at spot{length}.")
         else:
+            attempt=await ctx.send("<a:trianglepointer:1132773635195686924> starting player.")
             if len(MusicManager.get(guild).songs)>0:
                 await MusicManager.get(guild).player_actions("play",ctx)
+                await attempt.delete()
                 #await ctx.send("processed", ephemeral=True)
             else:
                 await ctx.send("There is nothing available I can play.", ephemeral=True)
@@ -380,7 +382,12 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
             return
 
         if MusicManager.get(guild).songs:
-            await MusicManager.get(guild).playlist_view(interaction)
+            
+            pagecall=await MusicManager.get(guild).playlist_view(interaction)
+            #ctx: commands.Context = await self.bot.get_context(interaction.message)
+            #pagecall=PlaylistPageContainer(interaction, self) #Page container for playlist
+            buttons=PlaylistButtons(callback=pagecall) #buttons for playlist
+            last_set=await ctx.send(embed=pagecall.make_embed(),view=buttons)
             
 
         else: await MessageTemplatesMusic.music_msg(ctx, "Empty Playlist", 
@@ -519,7 +526,12 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
 
 
     async def playlistcopy(self, ctx, url: str, initial=None):
-        await MessageTemplatesMusic.music_msg(ctx, "Playlist", f"I'm downloading the urls from the provided [playlist]({url})... this may take a while.")
+        await MessageTemplatesMusic.music_msg(
+            ctx, 
+            "Playlist",
+             f"reading the urls from [playlist]({url})",
+             delete_after=False,use_author=False
+             )
 
         total=0
         ydlops={"extract_flat":"in_playlist","skip_download":True,"forcejson":True}
