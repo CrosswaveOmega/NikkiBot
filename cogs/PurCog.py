@@ -91,6 +91,7 @@ async def process_result(ctx:commands.Context,result:Any,mylib:GPTFunctionLibrar
     
     When a function is invoked, the output of the function is added to the chain instead.
     '''
+    print()
     if result.model=='you':
         i=result.choices[0]
         role,content=i.message.role,i.message.content
@@ -163,9 +164,8 @@ async def ai_message_invoke(bot:TCBot,message:discord.Message,mylib:GPTFunctionL
     mes=[c.to_dict() for c in chain]
     #create new ChatCreation
     chat=purgpt.ChatCreation(
-        messages=[],
-        model="gpt-3.5-turbo-0613")
-
+        messages=[])
+#,model="gpt-3.5-turbo-0613"
     chat.add_message('system',nikkiprompt+f"\n Right now, the date-time is {datetime.now().astimezone(tz=timezone.utc)}")
     for f in mes[:10]: #Load old messags into ChatCreation
         chat.add_message(f['role'],f['content'])
@@ -191,7 +191,10 @@ async def ai_message_invoke(bot:TCBot,message:discord.Message,mylib:GPTFunctionL
     async with message.channel.typing():
         #Call the API.
         result=await bot.gptapi.callapi(chat)
-
+    if result.get('error',False):
+        err=result['error']
+        error=purgpt.error.PurGPTError(err,json_body=result)
+        raise error
     if result.get('err',False):
         err=result[err]
         error=purgpt.error.PurGPTError(err,json_body=result)

@@ -34,11 +34,13 @@ def speciallistsplitter(objects:List[Any], resetdata:Callable, splitcond:Callabl
 def sanatize_info(v):
     '''Just clean out '''
     to_pop=[
-        'thumbnails','ext','chapters','fragments','formats''subtitles',
-        'automatic_captions','_format_sort_fields',
+        'aspect_ratio','thumbnails','ext','chapters','fragments','formats','subtitles',
+        'automatic_captions','_format_sort_fields','format','format_id','format_note'
         'acodec','vcodec','video_ext','audio_ext','url','requested_subtitles','http_headers']
     for popme in to_pop:
+        print(popme)
         if popme in v:
+            print(v[popme])
             v.pop(popme)
     return v
 
@@ -110,19 +112,21 @@ class AudioContainer():
     def get_song_soundcloud(self):
         '''Get a song from a soundcloud url.'''
         info={}
+        print("loading")
         options={"simulate":True, 'skip_download': True}
         with yt_dlp.YoutubeDL(options) as ydl:
-            res = ydl.extract_info(f"{self.url}", download=False)
+            res = ydl.extract_info(f"{self.query}", download=False)
             if 'entries' in res:          # a playlist or a list of videos
                 info = res['entries'][0]
             else:                         # Just a video
                 info = res
+        print('extracted')
         info=sanatize_info(info)
         self.json_dict=info
         dump=json.dumps(self.json_dict, indent=3, sort_keys=True)
         logs.info(dump)
         self.title, self.duration,self.url= info["title"], info["duration"], info["webpage_url"]
-
+        self.thumbnail=info['thumbnail']
         self.extract_options={"format": "bestaudio","noplaylist": True,'format_sort':["hasaud"]}
         #self.source=info["url"]
         self.state="Ok"
@@ -194,7 +198,7 @@ class AudioContainer():
 
 
     def get_song(self):
-        '''Attempt to retrieve a song '''
+        '''Attempt to retrieve a song's metadata.'''
         try:
             if "youtu" in self.query: #It's a youtube link
                 gui.gprint("Youtube")

@@ -9,8 +9,9 @@ import openai.util as util
 from purgpt.object_core import ApiCore
 import purgpt.error as error
 from assets import AssetLookup
-BASE_URL='https://purgpt.xyz/v1'
+BASE_URL='https://beta.purgpt.xyz/'
 
+#
 
 '''rate limit:
 
@@ -26,7 +27,7 @@ PurGPT Ratelimits
 - 2000 Requests per Day
 
 '''
-TIMEOUT_SECS=60*5
+TIMEOUT_SECS=60*10
 #Seconds until timeout.
 MAX_LOAD_SIZE=20000
 #Max payload size.
@@ -53,10 +54,12 @@ class PurGPTAPI:
         
     async def _make_call(self,endpoint:str,payload:Dict[str,Any])->Dict[str,Any]:
         headers = {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self._key}"
         }
         data = payload
         print(data)
+
         if self._key==None: raise error.KeyException("API Key not set.")
         data['key']= self._key
         
@@ -64,9 +67,9 @@ class PurGPTAPI:
                 total=TIMEOUT_SECS
             )
         async with aiohttp.ClientSession() as session:
-            print(f"{self.base_url}/{endpoint}")
+            print(f"{self.base_url}{endpoint}")
             try:
-                async with session.post(f"{self.base_url}/{endpoint}", headers=headers, json=data, timeout=timeout) as response:
+                async with session.post(f"{self.base_url}{endpoint}", headers=headers, json=data, timeout=timeout) as response:
                     if response.content_type== "application/json":
                         print(response)
                         result = await response.json()

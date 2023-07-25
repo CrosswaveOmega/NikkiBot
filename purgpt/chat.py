@@ -17,7 +17,7 @@ Respond using Markdown.'''
         
 class ChatCreation(ApiCore):
     '''Base Class for the chat/completion endpoint.'''
-    endpoint = "chat/completions"
+    endpoint = "openai/chat/completions"
     method = "POST"
     api_slots=[]
     def __init__(self,
@@ -45,7 +45,7 @@ class ChatCreation(ApiCore):
 
     async def calloai(self):
         '''return a completion through openai instead.'''
-        dictme=self.to_dict()
+        dictme=self.to_dict(pur=False)
         modelv=dictme['model']
         if self.functions is not None:
             dictme['messages']=[self.messages[0],self.messages[-1]]
@@ -53,15 +53,18 @@ class ChatCreation(ApiCore):
             **dictme
         )
         return result
-    def to_dict(self):
+    def to_dict(self,pur=True):
         data= super().to_dict()
-        if self.use_model!= "gpt-3.5-turbo":
-            data["model"]=self.use_model
+        if pur:
+            data['model']="gpt-3.5-turbo"
         else:
-            if 'functions' in data:
-                data["model"]="gpt-3.5-turbo-0613"
+            if self.use_model!= "gpt-3.5-turbo":
+                data["model"]=self.use_model
             else:
-                data["model"]="gpt-3.5-turbo"
+                if 'functions' in data:
+                    data["model"]="gpt-3.5-turbo-0613"
+                else:
+                    data["model"]="gpt-3.5-turbo"
         return data
     def summary(self):
         messages=len(self.messages)

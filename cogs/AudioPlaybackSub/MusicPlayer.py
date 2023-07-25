@@ -138,7 +138,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
         self.usersinvc=0
         self.viewplaylistmode=False
 
-
+        self.lastedit=discord.utils.utcnow()
         self.timeidle=0
         self.override=False
         self.channel,self.voice=None,None
@@ -146,6 +146,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
         self.lastm:discord.Message=None
         self.messages=[]
         self.internal_message_log=[]
+        self.old_desc=''
         self.setup_actions()
         self.setup_playlist_actions()
         
@@ -155,6 +156,17 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
              "options": "-vn -bufsize 5M -nostats -loglevel 0"}
         self.FFMPEG_FILEOPTIONS =\
              {"options": "-vn -loglevel 0"}
+
+    async def edit_current_player(self):
+        
+        if self.lastm is not None:
+            duration=discord.utils.utcnow()-self.lastedit
+            print(duration.total_seconds())
+            if duration.total_seconds()>20:
+                oldembed=self.get_music_embed('','')
+
+                await self.lastm.edit(embed=oldembed)
+                self.lastedit=discord.utils.utcnow()
 
 
     async def playlist_view(self, interaction:discord.Interaction):
@@ -232,7 +244,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
                 if len(voice.channel.members)<=1:
                     self.timeidle+=1
                     gui.gprint(self.timeidle)
-                    if self.timeidle>=120:
+                    if self.timeidle>=20:
                         if self.channel!=None:
                             await self.send_message_internal(self.channel,"disconnected",
                             f"I'm leaving {voice.channel.name} now because I'm the only one in it.")
@@ -263,7 +275,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
         except:
             self.channel,self.voice=None,None
 
-    async def send_message_internal(self, ctx, title, desc,  editinter: discord.Interaction=None):
+    async def send_message_internal(self, ctx:commands.Context, title:str, desc:str,  editinter: discord.Interaction=None, addbuttons:bool=True):
         """Send or edit a player message."""
         embed=self.get_music_embed(title,desc)
         if editinter==None:
@@ -280,19 +292,24 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
                         gui.gprint(ep)
             #mymess=self.messages.copy()
             #for i in mymess:   await i.delete()
-            m=await ctx.send(embed=embed, view=PlayerButtons(
-                callback=self
-            ))
+            view=None
+            if addbuttons:
+                view=PlayerButtons(callback=self)
+            tchannel=ctx
+            if isinstance(tchannel,commands.Context):
+                tchannel=ctx.channel
+            m=await tchannel.send(embed=embed, view=view)
+            self.lastedit=discord.utils.utcnow()
             self.lastm=m
             #self.messages=[]
             #self.messages.append(m)
         else:
             await editinter.edit_original_response(embed=embed)
 
-    async def send_message(self, ctx_to_try:commands.Context, title:str, desc:str,  editinter: discord.Interaction=None):
+    async def send_message(self, ctx_to_try:commands.Context, title:str, desc:str,  editinter: discord.Interaction=None,addbuttons:bool=True):
         """Send a message through the ctx_to_try"""
         try:
-            await self.send_message_internal(ctx_to_try,title,desc,editinter)
+            await self.send_message_internal(ctx_to_try,title,desc,editinter,addbuttons=addbuttons)
         except:
             if self.channel!=None:
                 await self.send_message_internal(self.channel,title,desc,None)
@@ -360,7 +377,9 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
 
     def get_music_embed(self, title: str, description: str)->discord.Embed:
         """Format a status embed and return"""
-        embed=discord.Embed(title="", description=description,color=Colour(0x68ff72))
+        if description:
+            self.old_desc=description
+        embed=discord.Embed(title="", description=self.old_desc,color=Colour(0x68ff72))
         myname=AssetLookup.get_asset("name")
         myicon=AssetLookup.get_asset("embed_icon")
         embed.set_author(name=f"{myname}'s music player.",\

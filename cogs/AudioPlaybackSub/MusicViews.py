@@ -58,10 +58,11 @@ class PlayerButtons(discord.ui.View):
             self.nextpage_button.emoji=None
             self.backpage_button.label='_ _'
             self.nextpage_button.label='_ _'
+    
     async def updateview(self,inter:discord.Interaction):
         self.setplaypause()
         self.changenextlast()
-        await inter.edit_original_response(view=self)
+        if inter: await inter.edit_original_response(content='',view=self)
     @discord.ui.button(emoji='⬅️',label="",style=discord.ButtonStyle.blurple) # or .primary
     async def backpage_button(self,interaction:discord.Interaction,button:discord.ui.Button):
         if self.pview:
@@ -77,8 +78,10 @@ class PlayerButtons(discord.ui.View):
     @discord.ui.button(emoji='⏯',label="",style=discord.ButtonStyle.blurple) # or .primary
     async def playpause_button(self,interaction:discord.Interaction,button:discord.ui.Button):
         #await interaction.response.defer()#(content="Next pressed",view=self)
-        await interaction.response.send_message(f'{self.playpausemode}, give it a second.',ephemeral=True)
+        orig=interaction.message
+        await interaction.response.edit_message(content=f'{self.playpausemode} was recieved, give it a second.')
         await self.callbacker.player_button_call( interaction,self.playpausemode)
+
         await self.updateview(interaction)
     '''@discord.ui.button(emoji='▶️',label="play",style=discord.ButtonStyle.blurple) # or .primary
     async def play_button(self,interaction:discord.Interaction,button:discord.ui.Button):

@@ -67,7 +67,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         self.song_add_processer.cancel()
 
 
-    @tasks.loop(seconds=0.05)
+    @tasks.loop(seconds=0.5)
     async def song_add_processer(self):
         '''Fire every 1/20th of a second, download the data for a song in the queue,
          and add to the playlist.  Also check if it's time to disconnect and remove a musicplayer.'''
@@ -75,6 +75,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         for i in MusicManager.all_players():
             await i.countusers()
             await i.songadd()
+            await i.edit_current_player()
             removeif=await i.autodisconnect()
             if removeif:
                 toremove.append(i.guild)
