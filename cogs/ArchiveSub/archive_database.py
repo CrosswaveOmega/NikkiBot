@@ -265,6 +265,15 @@ class ChannelSep(ArchiveBase):
         session = DatabaseSingleton.get_session()
         return session.query(ChannelSep).filter(filter).order_by(ChannelSep.created_at).all()
     @staticmethod
+    def count_separators(server_id: int):
+        '''get all separators from the passed in channel sep.'''
+        filter =  ChannelSep.server_id == server_id
+        session = DatabaseSingleton.get_session()
+        count= session.query(func.count(ChannelSep.channel_sep_id)).filter(
+                (ChannelSep.server_id == server_id) 
+        ).scalar()
+        return count
+    @staticmethod
     def get_all_update_count(server_id: int):
         filter = ChannelSep.server_id == server_id
         session = DatabaseSingleton.get_session()
@@ -488,7 +497,6 @@ class ArchivedRPMessage(ArchiveBase):
         ).order_by(ArchivedRPMessage.created_at).all()
     @staticmethod
     def count_all(server_id: int):
-        session = DatabaseSingleton.get_session()
         session:Session=DatabaseSingleton.get_session()
         count= session.query(func.count(ArchivedRPMessage.message_id)).filter(
                 (ArchivedRPMessage.server_id == server_id) 

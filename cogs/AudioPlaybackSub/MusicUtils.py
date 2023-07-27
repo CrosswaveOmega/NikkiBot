@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands, tasks
 from .MessageTemplates_EXT import MessageTemplatesMusic
 import os
+import re
 async def connection_check(interaction: discord.Interaction,ctx:commands.Context, mode:int=3)->bool:
     '''Check if the calling user is connected to a voice channel, 
         and check if the bot is not currently connected to their same voice channel.
@@ -35,3 +36,10 @@ def get_directory_size():
             total_size += os.path.getsize(filepath)
 
     return total_size
+
+def is_url(text:str):
+    reg=r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+    if(re.match(reg,text)):
+        return True
+    else:
+        return False

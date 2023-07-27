@@ -1,25 +1,30 @@
 import discord
 from discord import PartialEmoji
-class WeekdayButton(discord.ui.Button):
-    def __init__(self, myvalue=False,**kwargs):
-        self.value = myvalue
-        super().__init__(**kwargs)
-        
-        if self.value:
-            self.style = discord.ButtonStyle.green
-        else:
-            self.style = discord.ButtonStyle.grey
+from .AudioContainer import AudioContainer
+class AddSong(discord.ui.Modal, title='Enter your songs here.'):
+    '''this modal is for making the Poll name and Description.'''
 
-    async def callback(self, interaction: discord.Interaction):
-        self.value = not self.value
-        if self.value:
-            self.style = discord.ButtonStyle.green
-            
-            self.view.dtvals['days'].append(self.custom_id)
-        else:
-            self.style = discord.ButtonStyle.grey
-            self.view.dtvals['days'].remove(self.custom_id)
-        await interaction.response.edit_message(view=self.view, embed=self.view.emb())
+
+    SongList = discord.ui.TextInput(
+        label='Paste the song urls below.',
+        style=discord.TextStyle.paragraph,
+        placeholder="Enter the urls of every song you want to add to the queue here.  Each url must be on it's own line.",
+        required=True,
+        max_length=512,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.done=None
+
+
+    async def on_submit(self, interaction):
+        songtext = self.SongList.value
+        self.done={}
+        self.done['songs']=songtext
+        await interaction.response.defer()
+        self.stop()
+
 
 class PlayerButtons(discord.ui.View):
     '''buttons for the audio player.'''
@@ -127,9 +132,38 @@ class PlayerButtons(discord.ui.View):
             button.label='view'
             button.emoji=PartialEmoji.from_str("playlist2:1133094676019294268")
             await interaction.response.edit_message(embed=self.callbacker.get_music_embed('Hidden','Playlist disabled.'),view=self)
-    
-        
-        #await self.callbacker.player_button_call(interaction,"playlistview")
+    @discord.ui.button(emoji='➕',label="",style=discord.ButtonStyle.blurple) # or .primary
+    async def addsong(self,interaction:discord.Interaction,button:discord.ui.Button,row=1):
+        name_modal=AddSong()
+        await interaction.response.send_modal(name_modal)
+        await name_modal.wait()
+        if name_modal.done!=None:
+            songs=name_modal.done['songs']
+            slist=songs.split('\n')
+            add=err=0
+            errs=[]
+            for s in slist:
+                try:
+                    result=await self.callbacker.playlist_actions(
+                        'add_url',
+                        param=(s,interaction.user),
+                        do_search=False,
+                        ignore_error=True
+                    )
+                    if not isinstance(result,AudioContainer):
+                        errs.append(f"`{s}`: {result}")
+                    else:
+                        add+=1
+                except Exception as e:
+                    print(e)
+                    err+=1
+            if not errs:
+                await interaction.edit_original_response( content=f"Added all {add} Songs")
+            else:
+                output="\n".join(errs)
+                await interaction.edit_original_response( content=f"Added {add} Songs, except for...\n{output}")
+        else:
+            await interaction.edit_original_response(content='cancelled')
         
 
 

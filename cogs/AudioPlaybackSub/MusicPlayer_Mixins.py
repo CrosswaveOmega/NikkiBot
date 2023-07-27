@@ -1,6 +1,7 @@
 import asyncio
 from typing import(
     Literal,
+    Tuple,
     Union,
     
     )
@@ -197,7 +198,7 @@ class PlaylistMixin:
             random.shuffle(self.songs)
         return song
 
-    async def playlist_action_add_url(self, param:str)->AudioContainer:
+    async def playlist_action_add_url(self, param:Tuple[str,str], do_search:bool=True, ignore_error:bool=False)->AudioContainer:
         """
         Create an AudioContainer from a URL and add it to the playlist
 
@@ -209,16 +210,18 @@ class PlaylistMixin:
         """
         url, author = param
         song = AudioContainer(url, author.name)
-        song.get_song()
+        song.get_song(do_search)
 
-        if song.state == "Error":
+        if song.state == "Error" and not ignore_error:
             if self.channel is not None:
                 await self.send_message(self.channel, str(song.error_value), desc="Error...")
             await self.bot.send_error(song.error_value, "Adding URL.")
             return None
-
-        res = await self.playlist_action_add(song)
-        return res
+        elif song.state == "Error" and ignore_error:
+            return song.error_value
+        else:
+           res = await self.playlist_action_add(song)
+           return res
     
     async def playlist_action_removespot(self, param:int)->Union[AudioContainer, str]:
         """
@@ -290,7 +293,7 @@ class PlaylistMixin:
             "clear": self.playlist_action_clear
         }
 
-    async def playlist_actions(self, action: Literal['add','add_url','removespot','jumpto','shuffle','clear'], param=None):
+    async def playlist_actions(self, action: Literal['add','add_url','removespot','jumpto','shuffle','clear'], param=None, **kwargs):
         """
         Dispatch a playlist action based on the passed in string action.
         'add'       : Add a AudioContainer to the playlist
@@ -311,6 +314,6 @@ class PlaylistMixin:
             Any: The result of the action performed.
         """
         if action in self.playlist_action_dict:
-            return await self.playlist_action_dict[action](param)
+            return await self.playlist_action_dict[action](param, **kwargs)
 
         return "Playlist Command Error"

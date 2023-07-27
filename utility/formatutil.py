@@ -94,7 +94,8 @@ def explain_rrule(rrule_obj:rrule):
     return description, sentence
 
 
-bar_emoji={'1e':'<a:emptyleft:1118209186917011566>'
+bar_emoji={
+'1e':'<a:emptyleft:1118209186917011566>'
 ,'1h':'<a:halfleft:1118209195683094639>'
 ,'1f':'<a:fullleft:1118209191845318806>'
 ,'e':'<a:emptymiddle:1118209505973522584>'

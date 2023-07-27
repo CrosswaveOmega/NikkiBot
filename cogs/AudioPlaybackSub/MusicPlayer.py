@@ -161,8 +161,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
         
         if self.lastm is not None:
             duration=discord.utils.utcnow()-self.lastedit
-            print(duration.total_seconds())
-            if duration.total_seconds()>20:
+            if duration.total_seconds()>30:
                 oldembed=self.get_music_embed('','')
 
                 await self.lastm.edit(embed=oldembed)

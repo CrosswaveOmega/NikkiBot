@@ -4,6 +4,10 @@ from sqlalchemy.orm import relationship, Session
 from database import DatabaseSingleton
 MusicBase = declarative_base(name="Music System Base")
 
+#class MusicMemoryDB(MusicBase):
+#    __tablename__ = 'music_memory_db'
+
+
 
 class UserMusicProfile(MusicBase):
     __tablename__ = 'user_music_profiles'

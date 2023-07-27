@@ -13,6 +13,7 @@ import logging
 import yt_dlp # type: ignore
 import itertools
 import json
+from .MusicUtils import is_url
 from utility import MessageTemplates, seconds_to_time_string, seconds_to_time_stamp
 import mutagen
 logs=logging.getLogger("TCLogger")
@@ -108,7 +109,6 @@ class AudioContainer():
         #self.source=info["url"]
         gui.gprint('source',self.source)
         self.state="Ok"
-
     def get_song_soundcloud(self):
         '''Get a song from a soundcloud url.'''
         info={}
@@ -197,7 +197,7 @@ class AudioContainer():
             return False
 
 
-    def get_song(self):
+    def get_song(self,do_search=True):
         '''Attempt to retrieve a song's metadata.'''
         try:
             if "youtu" in self.query: #It's a youtube link
@@ -218,7 +218,12 @@ class AudioContainer():
 
             else: #No idea what it is, do a search.
                 gui.print('search')
-                self.get_song_youtube(search=True)
+                if do_search:
+                    self.get_song_youtube(search=True)
+                else:
+                    if is_url(self.query):
+                        raise Exception("Can't extract this link.")
+                    raise Exception("This is not a link.")
 
         except Exception as e:
             self.state="Error"
@@ -259,6 +264,26 @@ class AudioContainer():
         return toreturn
     def link_markdown(self):
         return f"[{self.title}]({self.url})"
+    def save_to_file(self):
+        dictionary=self.json_dict
+        if 'title' in dictionary:
+            filename = dictionary['title'] + '.json'
+        elif 'id' in dictionary:
+            filename = str(dictionary['id']) + '.json'
+        else:
+            # Handle the case when 'title' or 'id' field is missing
+            print("Could not find 'title' or 'id' field in the dictionary.")
+            return
+        
+        directory = 'saveData'
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+            
+        filepath = os.path.join(directory, filename)
+        
+        with open(filepath, 'w') as file:
+            json.dump(dictionary, file, indent=3,sort_keys=True)
+        print("Dictionary saved to", filepath)
     def to_display_dict(self):
         v={"title":f"[{self.title}]({self.url})","duration":seconds_to_time_string(self.duration), \
         "remaining":seconds_to_time_string(self.duration-self.seekerspot),"requested_by":self.requested_by}
