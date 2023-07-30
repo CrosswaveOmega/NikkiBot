@@ -214,6 +214,7 @@ class PlaylistMixin:
 
         if song.state == "Error" and not ignore_error:
             if self.channel is not None:
+                self.internal_message_log.append(f"I could not add {song.title} : `{str(song.error_value)}`")
                 await self.send_message(self.channel, str(song.error_value), desc="Error...")
             await self.bot.send_error(song.error_value, "Adding URL.")
             return None

@@ -215,18 +215,23 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
                     self.processsize-=1
                     if self.song_add_queue.empty():
                         gui.gprint("COMPLETED.")
-                        if self.get_ctx!=None:
-                            mess=await self.get_ctx.send("All songs have been processed.")
+                        if self.channel:
+                            embed=discord.Embed(description="All songs have been processed.",color=discord.Color.green())
+                            mess=await self.channel.send(embed=embed)
+                            #mess=await self.channel.send(embed=embed)
                             self.bot.schedule_for_deletion(mess,20)
                 except:
-                    if got: self.processsize-=1
+                    if not got: self.processsize-=1
+                    
                     gui.gprint("PROCESSING ERROR")
+                    if self.song_add_queue.empty():
+                        self.processsize=0
                 self.songcanadd=True
         if self.internal_message_log:
             front=self.internal_message_log.pop()
             myname=AssetLookup.get_asset("name")
             myicon=AssetLookup.get_asset("embed_icon")
-            embed=discord.Embed(description=front,color=discord.Color.brand_red)
+            embed=discord.Embed(description=front,color=discord.Color.brand_red())
             embed.set_author(name=f"{myname}'s music player.",icon_url=myicon)
             if self.channel:
                 mess=await self.channel.send(embed=embed)
@@ -325,8 +330,10 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
                 self.current.get_song()
                 if self.current.state=="Error":
                     gui.gprint("error")
+                    #if song.state=="Error":
+                    self.internal_message_log.append(f"I could not play {self.current.title} : `{str(self.current.error_value)}`")
                     await self.send_message(ctx,str(self.current.error_value))
-                    await self.bot.send_error(self.error_value,"Adding URL.")
+                    await self.bot.send_error(self.current.error_value,"Adding URL.")
                     self.current=None
                     asyncio.run_coroutine_threadsafe(self.player_actions("auto_next"), self.bot.loop)
                     return
@@ -335,6 +342,14 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
                 if voice.is_playing():
                     voice.pause()
             song.get_source()
+            if song.state=="Error":
+                gui.gprint("error")
+                await self.send_message(ctx,str(song.error_value),desc='err')
+                await self.bot.send_error(song.error_value,"Adding URL.")
+                
+                self.internal_message_log.append(f"I could not play {song.title} : `{str(song.error_value)}`")
+                asyncio.run_coroutine_threadsafe(self.player_actions("auto_next"), self.bot.loop)
+                return
             aud=discord.FFmpegPCMAudio(song.source, **self.FFMPEG_OPTIONS)
             if song.type=='file':
                 aud=discord.FFmpegPCMAudio(song.source, **self.FFMPEG_FILEOPTIONS)
@@ -365,9 +380,9 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
 
     def musicplayeradd(self,song:AudioContainer):
         '''Get song, and add to queue.  BLOCKING OPERATION.'''
-        song.get_song()        
+        song.get_song(do_search=False,db_search=True)        
         if song.state=="Error":
-            self.internal_message_log.append(f"I'm so sorry, {song.title} gave me a weird error: {str(song.error_value)}")
+            self.internal_message_log.append(f"I could not add {song.title} : `{str(song.error_value)}`")
         elif song.state=="Ok":
             if self.autoshuffle:
                 self.songs.insert(random.randint(0,len(self.songs)-1),song)

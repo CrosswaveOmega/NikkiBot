@@ -3,7 +3,7 @@ import asyncio
 import datetime
 import os
 import random
-from typing import Any, Callable, List
+from typing import Any, Callable, Dict, List
 import urllib 
 import discord
 import subprocess
@@ -14,10 +14,11 @@ import yt_dlp # type: ignore
 import itertools
 import json
 from .MusicUtils import is_url
+from .MusicDatabase import MusicJSONMemoryDB
 from utility import MessageTemplates, seconds_to_time_string, seconds_to_time_stamp
 import mutagen
 logs=logging.getLogger("TCLogger")
-
+FILE_DEBUG=False
 def speciallistsplitter(objects:List[Any], resetdata:Callable, splitcond:Callable,transformation:Callable, addtransformation:Callable):
     '''Used in MusicCog.  '''
     currlist=[]
@@ -32,16 +33,11 @@ def speciallistsplitter(objects:List[Any], resetdata:Callable, splitcond:Callabl
     currlist.append(trans)
     return currlist
 
-def sanatize_info(v):
-    '''Just clean out '''
-    to_pop=[
-        'aspect_ratio','thumbnails','ext','chapters','fragments','formats','subtitles',
-        'automatic_captions','_format_sort_fields','format','format_id','format_note'
-        'acodec','vcodec','video_ext','audio_ext','url','requested_subtitles','http_headers']
+def sanatize_info(v:Dict):
+    '''Just clean out the info dict.'''
+    to_pop=['_format_sort_fields', 'abr', 'acodec', 'aspect_ratio', 'asr', 'audio_ext', 'automatic_captions', 'chapters', 'concurrent_view_count', 'container', 'dynamic_range', 'ext', 'filesize_approx', 'format', 'format_id', 'format_note', 'formats', 'fps', 'fragment_base_url', 'fragments', 'height', 'http_headers', 'language', 'language_preference', 'player_url', 'playlist', 'playlist_autonumber', 'playlist_count', 'playlist_id', 'playlist_index', 'playlist_title', 'playlist_uploader', 'playlist_uploader_id', 'protocol', 'requested_subtitles', 'resolution', 'rows', 'source_preference', 'subtitles', 'subtitles', 'tbr', 'thumbnails', 'url', 'vbr', 'vcodec', 'video_ext', 'width','columns','rows']
     for popme in to_pop:
-        print(popme)
         if popme in v:
-            print(v[popme])
             v.pop(popme)
     return v
 
@@ -70,25 +66,55 @@ class AudioContainer():
         self.extract_options={}
     
     def get_source(self):
-        dlp=self.extract_options.get('nodlp',True)
-        if dlp:
-            with yt_dlp.YoutubeDL(self.extract_options) as ydl:
-                res = ydl.extract_info(f"{self.url}", download=False)
+        try:
+            dlp=self.extract_options.get('nodlp',True)
+            if dlp:
+                with yt_dlp.YoutubeDL(self.extract_options) as ydl:
+                    res = ydl.extract_info(f"{self.url}", download=False)
+                    if 'entries' in res:          # a playlist or a list of videos
+                        info = res['entries'][0]
+                    else:                         # Just a video
+                        info = res
+                self.source=info["url"]
+            else:
+                self.source=self.url
+        except Exception as e:
+            self.state="Error"
+            self.error_value=e
+        
+    def get_song_from_entry(self,entry):
+        '''Get a song from a db entry.'''
+        info={}
+        if not entry.infojson:
+            options={'simulate':True, 'skip_download': True,
+                 'format':'worstaudio',
+                 "noplaylist": True,'format_sort':{ "acodec": "none",'vcodec':"none"}}
+            with yt_dlp.YoutubeDL(options) as ydl:
+                res=None
+                res = ydl.extract_info(f"{self.query}", download=False)
                 if 'entries' in res:          # a playlist or a list of videos
                     info = res['entries'][0]
                 else:                         # Just a video
                     info = res
-            self.source=info["url"]
-        else:
-            self.source=self.url
+        else: info=entry.infojson
+        info=sanatize_info(info)
         
+        self.json_dict=info
+        self.title, self.duration,self.url= info["title"], info["duration"], info["webpage_url"]
+        self.thumbnail=info['thumbnail']
+        
+        self.extract_options={"format": "bestaudio","noplaylist": True,'format_sort':["hasaud"]}
+
+        self.state="Ok"
+        self.save_to_file()
 
     def get_song_youtube(self,search=False):
         '''Get a song from a youtube url.'''
         info={}
         #args= {'youtube': {'player_skip': ['configs','js'],'player_client':('web_embedded')}}
         options={'simulate':True, 'skip_download': True,
-                 "format": "sb0","noplaylist": True,'format_sort':{ "acodec": "none",'vcodec':"none"},'youtube_include_dash_manifest': False  }
+                 'format':'worstaudio',
+                 "noplaylist": True,'format_sort':{ "acodec": "none",'vcodec':"none"},'youtube_include_dash_manifest': False  }
         with yt_dlp.YoutubeDL(options) as ydl:
             res=None
             if search:  res = ydl.extract_info(f"ytsearch:{self.query}", download=False)
@@ -98,21 +124,20 @@ class AudioContainer():
             else:                         # Just a video
                 info = res
         info=sanatize_info(info)
-        dump=json.dumps(info, indent=3, sort_keys=True)
-        logs.info(dump)
+
         self.json_dict=info
         self.title, self.duration,self.url= info["title"], info["duration"], info["webpage_url"]
         self.thumbnail=info['thumbnail']
-        print(self.thumbnail)
+
         
         self.extract_options={"format": "bestaudio","noplaylist": True,'format_sort':["hasaud"],'youtube_include_dash_manifest': False }
-        #self.source=info["url"]
-        gui.gprint('source',self.source)
+
         self.state="Ok"
+        self.save_to_file()
     def get_song_soundcloud(self):
         '''Get a song from a soundcloud url.'''
         info={}
-        print("loading")
+
         options={"simulate":True, 'skip_download': True}
         with yt_dlp.YoutubeDL(options) as ydl:
             res = ydl.extract_info(f"{self.query}", download=False)
@@ -120,16 +145,16 @@ class AudioContainer():
                 info = res['entries'][0]
             else:                         # Just a video
                 info = res
-        print('extracted')
+
         info=sanatize_info(info)
         self.json_dict=info
-        dump=json.dumps(self.json_dict, indent=3, sort_keys=True)
-        logs.info(dump)
+
         self.title, self.duration,self.url= info["title"], info["duration"], info["webpage_url"]
         self.thumbnail=info['thumbnail']
         self.extract_options={"format": "bestaudio","noplaylist": True,'format_sort':["hasaud"]}
         #self.source=info["url"]
         self.state="Ok"
+        self.save_to_file()
 
     def get_song_remote_file(self):
         '''Get a song from a file url.'''
@@ -197,9 +222,19 @@ class AudioContainer():
             return False
 
 
-    def get_song(self,do_search=True):
+    def get_song(self,do_search=True,db_search=False,substrings=False):
         '''Attempt to retrieve a song's metadata.'''
         try:
+            if is_url(self.query) and db_search:
+                res=MusicJSONMemoryDB.search(self.query,do_sub=True)
+                if res:
+                    self.get_song_from_entry(res[0])
+                    return
+            elif db_search and do_search:
+                res=MusicJSONMemoryDB.search(self.query,do_sub=substrings)
+                if res:
+                    self.get_song_from_entry(res[0])
+                    return
             if "youtu" in self.query: #It's a youtube link
                 gui.gprint("Youtube")
                 self.get_song_youtube()
@@ -227,6 +262,7 @@ class AudioContainer():
 
         except Exception as e:
             self.state="Error"
+            logs.error('Error %s',e,exc_info=True)
             self.error_value=e
 
     def start(self):
@@ -265,25 +301,27 @@ class AudioContainer():
     def link_markdown(self):
         return f"[{self.title}]({self.url})"
     def save_to_file(self):
-        dictionary=self.json_dict
-        if 'title' in dictionary:
-            filename = dictionary['title'] + '.json'
-        elif 'id' in dictionary:
-            filename = str(dictionary['id']) + '.json'
-        else:
-            # Handle the case when 'title' or 'id' field is missing
-            print("Could not find 'title' or 'id' field in the dictionary.")
-            return
-        
-        directory = 'saveData'
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+        MusicJSONMemoryDB.from_dict(self.json_dict)
+        if FILE_DEBUG==True:
+            dictionary=self.json_dict
+            if 'title' in dictionary:
+                filename = dictionary['title'] + '.json'
+            elif 'id' in dictionary:
+                filename = str(dictionary['id']) + '.json'
+            else:
+                # Handle the case when 'title' or 'id' field is missing
+                print("Could not find 'title' or 'id' field in the dictionary.")
+                return
+            filename=filename.replace('/', '').replace('\\', '')
+            directory = 'saveData'
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+                
+            filepath = os.path.join(directory, filename)
             
-        filepath = os.path.join(directory, filename)
-        
-        with open(filepath, 'w') as file:
-            json.dump(dictionary, file, indent=3,sort_keys=True)
-        print("Dictionary saved to", filepath)
+            with open(filepath, 'w') as file:
+                json.dump(dictionary, file, indent=3,sort_keys=True)
+            print("Dictionary saved to", filepath)
     def to_display_dict(self):
         v={"title":f"[{self.title}]({self.url})","duration":seconds_to_time_string(self.duration), \
         "remaining":seconds_to_time_string(self.duration-self.seekerspot),"requested_by":self.requested_by}

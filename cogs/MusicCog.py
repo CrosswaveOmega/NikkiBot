@@ -626,7 +626,18 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         if res=="done":
             await MessageTemplatesMusic.music_msg(ctx, "Shuffle", "I've shuffled my playlist!")
         else: await MessageTemplatesMusic.music_msg(ctx, "?",f"{res}")
-            
+    @mp.command(name="search", description="search cache")
+    async def search(self, interaction: discord.Interaction,search:str):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        guild:discord.Guild=interaction.guild
+        me=await ctx.send('searching... <a:trianglepointer:1132773635195686924>')
+        results=MusicJSONMemoryDB.search(search, do_maxsearch=True)
+        text="\n".join(f"{e}:{s}" for e, s in enumerate(results))
+        if text:
+            await me.edit(content=text)
+
+        else:
+            await ctx.send("no results.")
     @mp.command(name="myplaylists", description="View a list of your playlists.")
     async def myplaylists(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
