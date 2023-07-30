@@ -191,6 +191,10 @@ class DatabaseSingleton:
             if not self.session:
                 self.session = self.SessionLocal()
             return self.session
+    
+        def get_sub_session(self) -> Session:
+            return self.SessionLocal()
+
         
         async def get_async_session(self) -> AsyncSession:
             await self.connect_to_engine_a()
@@ -247,6 +251,10 @@ class DatabaseSingleton:
         inst = DatabaseSingleton.get_instance()
         return inst.get_session()
     
+    @staticmethod
+    def get_new_session() -> Session:
+        inst = DatabaseSingleton.get_instance()
+        return inst.get_sub_session()
     @staticmethod
     async def get_async_session() -> AsyncSession:
         inst = DatabaseSingleton.get_instance()

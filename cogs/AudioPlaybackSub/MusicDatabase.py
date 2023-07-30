@@ -30,6 +30,7 @@ class MusicJSONMemoryDB(MusicBase):
         title=infojson['title']
         source=infojson.get('extractor','???')
         MusicJSONMemoryDB.add_or_update(url,title,id,source,infojson)
+        
 
     @staticmethod
     def add_or_update(url,title,id,source,infojson):
@@ -61,7 +62,7 @@ class MusicJSONMemoryDB(MusicBase):
         ]
         return part_conditions
     @classmethod 
-    def count_total_substring_matches(cls,parts:List[str]) -> List[Tuple[str, int]]:
+    def count_total_substring_matches(cls,parts:List[str],session=None) -> List[Tuple[str, int]]:
         """
         Count the total number of distinct substring matches in the database table for a given list of substrings.
 
@@ -81,7 +82,8 @@ class MusicJSONMemoryDB(MusicBase):
         - The count includes all matches where the given part is found within any of the three columns.
 
         """
-        session: Session = DatabaseSingleton.get_session()
+        if not session:
+            session: Session = DatabaseSingleton.get_session()
 
         # List of conditions for each part
         part_conditions = [
@@ -105,7 +107,7 @@ class MusicJSONMemoryDB(MusicBase):
 
         return part_matches
     @classmethod 
-    def max_search(cls, sub_count:List[Tuple[str,int]])->List:
+    def max_search(cls, sub_count:List[Tuple[str,int]],session=None)->List:
         """
         Search for and sort entries by the number of substrings in parts that they contain.
 
@@ -116,7 +118,8 @@ class MusicJSONMemoryDB(MusicBase):
         - List[Tuple[MusicJSONMemoryDB, int]]: A list of tuples containing the matching entries 
             and their respective total count of substring matches.
         """        
-        session: Session = DatabaseSingleton.get_session()
+        if not session:
+            session: Session = DatabaseSingleton.get_session()
 
         # List of conditions for each part
         part_conditions = cls.get_part_conditionals(sub_count)
@@ -177,7 +180,7 @@ class MusicJSONMemoryDB(MusicBase):
         return maxdistinct_matches
 
     @classmethod
-    def and_search(cls,parts:List[str],sub_count:List[Tuple[str,int]])->List:
+    def and_search(cls,parts:List[str],sub_count:List[Tuple[str,int]],session=None)->List:
         """
         Search for entries that contain all substrings somewhere in its fields.
 
@@ -203,8 +206,8 @@ class MusicJSONMemoryDB(MusicBase):
 
 
         """
-
-        session: Session = DatabaseSingleton.get_session()
+        if not session:
+            session: Session = DatabaseSingleton.get_session()
         conditions = and_(*[
             cls.id.ilike(f"%{part}%") | cls.title.ilike(f"%{part}%") | cls.url.ilike(f"%{part}%")
             for part,count in sub_count if count>0
@@ -219,7 +222,7 @@ class MusicJSONMemoryDB(MusicBase):
         # Find the count of matches for each result element.
 
     @classmethod
-    def substring_search(cls, parts: List[str],do_maxsearch:bool=False) -> List:
+    def substring_search(cls, parts: List[str],do_maxsearch:bool=False, session=None) -> List:
         """
         Search the database for entries that can contain all or most of the substrings in `parts`.
         Will utilize an "And" search a
@@ -251,17 +254,17 @@ class MusicJSONMemoryDB(MusicBase):
             return []
         #Count how many times each substring was found in any entry 
         #in this table.
-        subcount=cls.count_total_substring_matches(parts)
+        subcount=cls.count_total_substring_matches(parts,session=session)
         #And Search checks for entries that contain all of the substrings in parts.
         #If there are none, move on to max_search. 
-        andsearch=cls.and_search(parts,subcount)
+        andsearch=cls.and_search(parts,subcount,session=session)
         if andsearch: 
             print('found result with and search.')
             return andsearch
         if do_maxsearch:
             #Max Search searches for all entries that contain at least one substring,
             #Ordering by the total number of matched substrings.
-            p3=cls.max_search(subcount)
+            p3=cls.max_search(subcount,session=session)
             print('found resutl with max search')
             return [i for i, s in p3 if s>0]
         return []
@@ -278,13 +281,14 @@ class MusicJSONMemoryDB(MusicBase):
         Returns:
         - List[MusicJSONMemoryDB]: A list of MusicJSONMemoryDB objects that match the search query.
         """
-        session: Session = DatabaseSingleton.get_session()
+        session: Session = DatabaseSingleton.get_new_session()
         results = session.query(cls).filter(
             (cls.id.ilike(f"%{query}%")) |
             (cls.title.ilike(f"%{query}%")) |
             (cls.url.ilike(f"%{query}%"))
         ).limit(10).all()
         if results:
+            session.close()
             return results
         if do_sub:
             parts=[]
@@ -308,9 +312,11 @@ class MusicJSONMemoryDB(MusicBase):
                             parts.append(param_value)
             else:
                 parts = query.split()
-            res=MusicJSONMemoryDB.substring_search(parts,do_maxsearch=do_maxsearch)
+            res=MusicJSONMemoryDB.substring_search(parts,do_maxsearch=do_maxsearch,session=session)
+            session.close()
             return res
         else:
+            session.close()
             return []
 
 
