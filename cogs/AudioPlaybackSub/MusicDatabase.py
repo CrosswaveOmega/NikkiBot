@@ -34,7 +34,7 @@ class MusicJSONMemoryDB(MusicBase):
 
     @staticmethod
     def add_or_update(url,title,id,source,infojson):
-        session:Session=DatabaseSingleton.get_session()
+        session:Session=DatabaseSingleton.get_new_session()
         profile = session.query(MusicJSONMemoryDB).filter_by(url=url).first()
         if not profile:
             profile = MusicJSONMemoryDB(url=url,title=title,id=id,source=source,infojson=infojson)
@@ -43,6 +43,7 @@ class MusicJSONMemoryDB(MusicBase):
         else:
             profile.update(url=url,title=title,id=id,infojson=infojson)
         session.commit()
+        session.close()
 
     def update(self, **kwargs):
         for key, value in kwargs.items():
