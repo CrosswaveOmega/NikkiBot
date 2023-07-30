@@ -226,7 +226,7 @@ class AudioContainer():
         '''Attempt to retrieve a song's metadata.'''
         try:
             if is_url(self.query) and db_search:
-                res=MusicJSONMemoryDB.search(self.query,do_sub=True)
+                res=MusicJSONMemoryDB.search(self.query,do_sub=substrings)
                 if res:
                     self.get_song_from_entry(res[0])
                     return

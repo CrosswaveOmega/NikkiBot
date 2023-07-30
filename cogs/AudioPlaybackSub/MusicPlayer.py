@@ -380,7 +380,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
 
     def musicplayeradd(self,song:AudioContainer):
         '''Get song, and add to queue.  BLOCKING OPERATION.'''
-        song.get_song(do_search=False,db_search=True)        
+        song.get_song(do_search=False,db_search=True, substrings=False)        
         if song.state=="Error":
             self.internal_message_log.append(f"I could not add {song.title} : `{str(song.error_value)}`")
         elif song.state=="Ok":
