@@ -1,3 +1,4 @@
+import sqlalchemy
 import gui
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy import PrimaryKeyConstraint
@@ -188,15 +189,21 @@ class TCGuildTask(Guild_Task_Base):
         else:
             raise Exception(f"No TCGuildTask entry found for server_id={server_id} and task_name={task_name}")
 
-    async def guild_task(self, bot):
+    async def guild_task(self, bot,server_id,task_name):
         '''This function is passed into TCTask as the wrapped function.  '''
         try:
+            print(server_id,task_name)
             channel=bot.get_channel(self.target_channel_id)
             source_message=await channel.send(f"Auto Guild Task {self.task_name} launching.")
             await Guild_Task_Functions.execute_task_function(
                 self.task_name, source_message=source_message)
         except Exception as e:
-            await bot.send_error(e,"AUTO COMMAND ERROR.")
+            if isinstance(e, sqlalchemy.orm.exc.DetachedInstanceError): 
+                print("DetachedInstanceError occurred.")
+                TCGuildTask.remove_guild_task(server_id,task_name)
+            else:
+                await bot.send_error(e,"AUTO COMMAND ERROR.")
+                print("Another error occurred.")
         await asyncio.sleep(2)
         gui.gprint(f"{self.name} Task done at", datetime.now(),"excution ok.")
         if self.remove_after:
@@ -209,7 +216,7 @@ class TCGuildTask(Guild_Task_Base):
         gui.gprint("adding task for ",str(self))
         if not TCTaskManager.does_task_exist(self.name):
             tc=TCTask(name=self.name, time_interval=rd, next_run=self.next_run,parent_db=TCGuildTask)
-            tc.assign_wrapper(lambda: self.guild_task(bot))
+            tc.assign_wrapper(lambda: self.guild_task(bot,self.server_id,self.task_name))
         else:
             raise Exception("Task is already in the manager.")
 

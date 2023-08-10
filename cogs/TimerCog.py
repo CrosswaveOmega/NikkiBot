@@ -96,7 +96,7 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
     def __init__(self, bot):
         self.helptext=""
         self.bot=bot
-        bot.database.load_base(Base)
+        bot.database.load_base_to(Base, 'async')
         self.countdown=200
         self.timerloop.start()
 

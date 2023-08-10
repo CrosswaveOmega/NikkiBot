@@ -1,9 +1,9 @@
 import base64
 from typing import Any, Literal, Optional
 import discord
-import operator
+
 import io
-import json
+
 import aiohttp
 import asyncio
 import re

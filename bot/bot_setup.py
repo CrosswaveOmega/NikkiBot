@@ -339,7 +339,7 @@ class Main(commands.Cog):
         """debugging only."""
         bot=ctx.bot
         bot.update_ext_list()
-        await bot.reload_all()
+        await bot.reload_all(True)
         embed=discord.Embed(title="Reloaded Loaded Extensions")
         for i, v in bot.loaded_extensions.items():
             ex,val=v

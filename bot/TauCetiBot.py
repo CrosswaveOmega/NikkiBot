@@ -149,6 +149,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
                 mytasks=TCGuildTask.get_tasks_by_server_id(g.id)
                 for t in mytasks:
                     t.to_task(self)
+            
             self.bot_ready=True
             dbcheck=self.database.database_check()
             gui.gprint(dbcheck)
@@ -161,8 +162,10 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
             now = datetime.datetime.now()
             seconds_until_next_minute = (60 - now.second)%20
             gui.gprint('sleeping for ',seconds_until_next_minute)
+            
             await asyncio.sleep(seconds_until_next_minute)
             self.check_tc_tasks.start()
+            
             # Start the coroutine
 
     async def close(self):

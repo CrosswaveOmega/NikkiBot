@@ -115,13 +115,13 @@ class PlayerButtons(discord.ui.View):
     async def exit_button(self,interaction:discord.Interaction,button:discord.ui.Button):
         await interaction.response.defer()#(content="back pressed",view=self)
         await self.callbacker.player_button_call( interaction,"stop")
-    @discord.ui.button(emoji=PartialEmoji.from_str("playlist2:1133094676019294268"),label="view",style=discord.ButtonStyle.blurple) # or .primary
+    @discord.ui.button(emoji=PartialEmoji.from_str("playlist2:1133094676019294268"),label="",style=discord.ButtonStyle.blurple) # or .primary
     async def open_playlist(self,interaction:discord.Interaction,button:discord.ui.Button,row=1):
         if self.playlistviewmode==False:
             self.pview=await self.callbacker.playlist_view(interaction)
             self.playlistviewmode=True
-            button.label='hide'
-            button.emoji=PartialEmoji.from_str("playlist2:1133094676019294268")
+            #button.label='hide'
+            button.emoji=PartialEmoji.from_str("playlistclose:1135616781063565343")
             self.changenextlast()
             await interaction.response.edit_message(embed=self.pview.make_embed(),view=self)
         else:
@@ -129,10 +129,11 @@ class PlayerButtons(discord.ui.View):
             #await self.callbacker.player_button_call(interaction,"playlistview")
             self.playlistviewmode=False
             self.changenextlast()
-            button.label='view'
-            button.emoji=PartialEmoji.from_str("playlist2:1133094676019294268")
+            #button.label='view'
+            button.emoji=PartialEmoji.from_str("playlistopen:1135616782254743663")
             await interaction.response.edit_message(embed=self.callbacker.get_music_embed('Hidden','Playlist disabled.'),view=self)
-    @discord.ui.button(emoji='➕',label="",style=discord.ButtonStyle.blurple) # or .primary
+    #
+    @discord.ui.button(emoji=PartialEmoji.from_str("noteadd:1135620202856464545"),label="",style=discord.ButtonStyle.blurple) # or .primary
     async def addsong(self,interaction:discord.Interaction,button:discord.ui.Button,row=1):
         name_modal=AddSong()
         await interaction.response.send_modal(name_modal)

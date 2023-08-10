@@ -117,6 +117,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         
 
     async def gtask_compile(self, source_message=None):
+ 
         if not source_message: return None
         context=await self.bot.get_context(source_message)
         await context.channel.send("Greetings from GTASK.")

@@ -23,7 +23,7 @@ from pathlib import Path
 from utility import MessageTemplates, RRuleView, formatutil
 from utility.embed_paginator import pages_of_embeds
 from utility import WebhookMessageWrapper as web
-from bot import TC_Cog_Mixin, super_context_menu
+from bot import TC_Cog_Mixin, super_context_menu, TCGuildTask, TCTaskManager
 
 
 
@@ -40,6 +40,7 @@ class General(commands.Cog, TC_Cog_Mixin):
         for i in hlist:
             has,hint=hash.hash_string(string_to_hash=string,hashlen=length, hashset=i)
             await ctx.send(f"{has}\n{hint}")
+
 
     @commands.command()
     async def create_rruleview(self, ctx):

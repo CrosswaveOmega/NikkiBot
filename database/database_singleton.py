@@ -32,6 +32,63 @@ def generate_column_definition(column, engine):
     return column_definition
 ENGINEPREFIX="sqlite:///"
 ASYNCENGINE='sqlite+aiosqlite:///'
+class EngineContainer:
+    def __init__(self,db_name):
+        self.database_name=db_name
+        self.connected=False
+        self.engine=None
+        self.bases=[]
+        self.SessionLocal: sessionmaker = None
+        self.session=None
+        self.SessionAsyncLocal: async_sessionmaker = None
+    def connect_to_engine(self):
+        if not self.connected:
+            db_name=self.database_name
+            self.engine = create_engine(f'{ENGINEPREFIX}{db_name}', echo=False)
+            for base in self.bases:
+                base.metadata.create_all(self.engine)
+            self.connected=True
+            SessionLocal = sessionmaker(bind=self.engine, autocommit=False, autoflush=True)
+            
+
+            self.SessionLocal: sessionmaker = SessionLocal
+            self.session: Session = self.SessionLocal()
+            self.session.commit()
+            result=self.compare_db()
+            gui.gprint(result)
+    async def connect_to_engine_a(self):
+        '''async variant of connect_to_engine.'''
+        if not self.connected_a:
+            gui.print("Connecting to ASYNCIO compatible engine variant.")
+            db_name=self.database_name
+            self.aengine= create_async_engine(f'{ASYNCENGINE}{db_name}',echo=False)
+            self.SessionAsyncLocal=async_sessionmaker(bind=self.aengine, autocommit=False, autoflush=True)
+            for base in self.bases:
+                async with self.aengine.begin() as conn:
+                    await conn.run_sync(base.metadata.create_all)
+            self.connected_a=True
+
+    def load_in_base(self,Base):
+        print("loading in: ",Base.__name__,Base)
+        if not Base in self.bases: self.bases.append(Base)
+        if self.connected:
+            Base.metadata.create_all(self.engine)
+            self.session: Session = self.SessionLocal()
+            self.session.commit()
+
+
+    def close(self):
+        if self.session is not None:
+            self.session.close()
+        self.engine.dispose()
+        self.connected=False
+
+    def get_session(self) -> Session:
+        if not self.session:
+            self.session = self.SessionLocal()
+        return self.session
+
+
 class DatabaseSingleton:
     """A singleton storage class that stores the database engine and connection objects."""
 
@@ -44,6 +101,7 @@ class DatabaseSingleton:
             # create a logger and set its level to INFO
 
             self.bases=[]
+            self.engines={}
             self.val = arg
             self.database_name=db_name
             self.adatabase_name=adbname
@@ -53,8 +111,13 @@ class DatabaseSingleton:
             self.SessionLocal: sessionmaker = None
             self.SessionAsyncLocal: async_sessionmaker = None
             self.session: Session = None
+            self.add_engine('main',db_name)
+            self.add_engine('async',adbname)
             
-
+        def add_engine(self,ename,db_name):
+            if not ename in self.engines:
+                engine=EngineContainer(db_name)
+                self.engines[ename]=engine
         def connect_to_engine(self):
             if not self.connected:
                 db_name=self.database_name
@@ -84,9 +147,12 @@ class DatabaseSingleton:
                 self.connected_a=True
 
 
-        def load_in_base(self,Base):
+        def load_in_base(self,Base, ename='main'):
             print("loading in: ",Base.__name__,Base)
-            if not Base in self.bases: self.bases.append(Base)
+            if ename in self.engines:
+                self.engines[ename].load_in_base(Base)
+            if not Base in self.bases: 
+                self.bases.append(Base)
             print('done')
             if self.connected:
                 Base.metadata.create_all(self.engine)
@@ -226,6 +292,9 @@ class DatabaseSingleton:
 
     def load_base(self, Base):
         self._instance.load_in_base(Base)
+
+    def load_base_to(self, Base,ename:str):
+        self._instance.load_in_base(Base,ename)
     # Use a static method to get the singleton instance.
 
     @staticmethod

@@ -634,12 +634,15 @@ def create_history_pickle_dict(message, over=None):
     return history_pickle_dict
 
 class HistoryMakers():
+    
     @staticmethod
     async def get_history_message(thisMessagev,active=False):
         fsize=0
         session = DatabaseSingleton.get_session()
         thisMessage=thisMessagev
         over=None
+        archived_rp_embeds=[]
+        archived_rp_files=[]
         if isinstance(thisMessagev,dict):
             thisMessage=thisMessagev['m']
             over=thisMessagev
@@ -661,9 +664,9 @@ class HistoryMakers():
         if thisMessage.embeds:
             #Only one embed.
             embed=thisMessage.embeds[0]
-            embedv=create_archived_rp_embed(ms,embed)
+            embedv=None #create_archived_rp_embed(ms,embed)
             if embedv is not None:
-                session.add(embedv)
+                archived_rp_embeds.append(embedv)
                 hasembed=True
 
         for attach in thisMessage.attachments:
@@ -678,9 +681,16 @@ class HistoryMakers():
                         "description": fd.description,
                         "spoiler": fd.spoiler
                     }
-                    file=create_archived_rp_file(ms,count,dummy_file=fdv)
-                    session.add(file)
+                    print(ms,fdv)
+                    file=create_archived_rp_file(ms,count,vekwargs=fdv)
+                    if file!=None: 
+                        archived_rp_files.append(file)
+                        #session.add(file)
                     fsize+=attach.size
+        add_or_update_all(session,ArchivedRPMessage,[ms])
+        add_or_update_all(session,ArchivedRPEmbed,archived_rp_embeds)
+        add_or_update_all(session,ArchivedRPFile,archived_rp_files)
+
         session.commit()
         return ms
     @staticmethod

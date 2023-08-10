@@ -301,7 +301,7 @@ class AudioContainer():
     def link_markdown(self):
         return f"[{self.title}]({self.url})"
     def save_to_file(self):
-        MusicJSONMemoryDB.from_dict(self.json_dict)
+        #MusicJSONMemoryDB.from_dict(self.json_dict)
         if FILE_DEBUG==True:
             dictionary=self.json_dict
             if 'title' in dictionary:
