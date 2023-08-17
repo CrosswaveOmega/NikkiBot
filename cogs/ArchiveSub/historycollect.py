@@ -206,8 +206,11 @@ async def setup_lazy_grab(ctx, **kwargs):
         current_channel_count,total_channels=0,0
         current_channel_every=max(chanlen//50,1)
 
+        chantups=[]
+        chantups.extend(('forum',chan) for chan in guild.forums)
         
-        for chan in guild.text_channels:
+        chantups.extend(('textchan',chan) for chan in guild.text_channels)
+        for tup,chan in guild.text_channels:
             total_channels+=1
             if profile.has_channel(chan.id)==False and chan.permissions_for(guild.me).view_channel==True and chan.permissions_for(guild.me).read_message_history==True:
                 threads=chan.threads
@@ -218,8 +221,9 @@ async def setup_lazy_grab(ctx, **kwargs):
                 for thread in threads:
                     tarch=ChannelArchiveStatus.get_by_tc(thread)
                     await tarch.get_first_and_last(thread,force=True)
-                carch=ChannelArchiveStatus.get_by_tc(chan)
-                await carch.get_first_and_last(chan,force=True)
+                if tup=='textchan':
+                    carch=ChannelArchiveStatus.get_by_tc(chan)
+                    await carch.get_first_and_last(chan,force=True)
                 bar=futil.progress_bar(
                     total_channels,
                     chanlen,
