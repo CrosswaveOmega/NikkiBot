@@ -37,6 +37,16 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         self.bot:TCBot=bot
         self.bot.add_act("WatchExample"," /nikkifeedback if you have a suggestion.",discord.ActivityType.watching)
         self.bot.add_act("WatchExample2","Prefix:'>'.",discord.ActivityType.watching)
+    
+    def server_profile_field_ext(self,guild:discord.Guild):
+        features=guild.features
+        if features:
+            value=""
+            for f in features:
+                value+=(f"- {f}\n")
+            field={"name":"Feature Map",'value':value,'inline':False}
+            return field
+        return None
 
     nikkisetup = app_commands.Group(name="nikkisetup", description="Some general commands for helping with setting up your server.",default_permissions=discord.Permissions(manage_channels=True,manage_messages=True,manage_roles=True))
     

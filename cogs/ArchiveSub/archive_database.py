@@ -125,6 +125,7 @@ class ChannelSep(ArchiveBase):
 
     all_ok=Column(Boolean, default=False)
     neighbor_count=Column(Integer, default=0)
+    is_forum=Column(Boolean, default=False)
 
     created_at = Column(AwareDateTime)
     posted_url = Column(String, nullable=True, default=None)
@@ -175,7 +176,8 @@ class ChannelSep(ArchiveBase):
                 channel=message.channel,
                 category=message.category,
                 thread=message.thread,
-                created_at=message.created_at
+                created_at=message.created_at,
+                is_forum=message.forum
             )
         return channel_sep
 
@@ -349,6 +351,7 @@ class ChannelSep(ArchiveBase):
         return None
     
     def create_embed(self, cfrom:Optional[str]=None,cto:Optional[str]=None):
+        '''create a display embed representing this channel separator'''
         defaultstr="EOL⏹️" #For the Index/Channel Index
         defaultcstr="EOCL⏹️" #For the Index/Channel Index
         defaultclstr="FIRST" #For the Index/Channel Index
@@ -358,7 +361,9 @@ class ChannelSep(ArchiveBase):
 
         cembed.add_field(name="Category", value=self.category, inline=True)
         if self.thread!=None:
-            cembed.add_field(name="ParentChannel", value=self.channel, inline=True)
+            field_name="ParentChannel"
+            if self.is_forum: field_name="Forum"
+            cembed.add_field(name=field_name, value=self.channel, inline=True)
             cembed.add_field(name="Thread", value=self.thread, inline=True)
             #categorytext+= "\n**Channel**"+current_channel.Parent.name
         else:
@@ -409,6 +414,7 @@ class ArchivedRPMessage(ArchiveBase):
     channel_sep_id = Column(Integer,ForeignKey('ChannelSeps.channel_sep_id'), nullable=True)
     server_id = Column(Integer)
     is_active = Column(Boolean, default=False)
+    forum=Column(Boolean,default=False)
     #channel_sep = relationship('ChannelSeps', back_populates='messages')
     files = relationship('ArchivedRPFile', backref='archived_rp_message')
     embed = relationship('ArchivedRPEmbed', backref='archived_rp_message_set')
@@ -590,9 +596,10 @@ def create_archived_rp_embed(arpm, embed):
 
 
 def create_history_pickle_dict(message, over=None):
-    #This code once saved Discord messages into a serialized object, which is why 
-    #It's called history_pickle_dict
-
+    '''
+    This code once saved Discord messages into a serialized object, which is why 
+    It's called history_pickle_dict
+    '''
     history_pickle_dict = {
         'message_id': message.id,
         'author': message.author.name,
@@ -604,7 +611,8 @@ def create_history_pickle_dict(message, over=None):
         'thread': None,
         'channel_sep_id': None,
         'posted_url': None,
-        'server_id': message.channel.guild.id
+        'server_id': message.channel.guild.id,
+        'forum':False
     }
     if over:
         for i, v in over.items():
@@ -627,6 +635,8 @@ def create_history_pickle_dict(message, over=None):
     if channel.type == discord.ChannelType.public_thread:
         history_pickle_dict['thread'] = channel.name
         history_pickle_dict['channel'] = channel.parent.name
+        if channel.parent.type==discord.ChannelType.forum:
+            history_pickle_dict['forum']=True
 
     if channel.category != None:
         history_pickle_dict['category'] = channel.category.name

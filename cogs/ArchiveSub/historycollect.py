@@ -275,7 +275,11 @@ async def collect_server_history(ctx, **kwargs):
         current_channel_count=0
         current_channel_every=max(chanlen//50,1)
         totalcharlen=0
-        for chan in guild.forums:
+        chantups=[]
+        chantups.extend(('forum',chan) for chan in guild.forums)
+        
+        chantups.extend(('textchan',chan) for chan in guild.text_channels)
+        '''for chan in guild.forums:
             arch_ctx.channel_spot+=1
             if profile.has_channel(chan.id)==False and chan.permissions_for(guild.me).view_channel==True and chan.permissions_for(guild.me).read_message_history==True:
                 threads=chan.threads
@@ -291,8 +295,8 @@ async def collect_server_history(ctx, **kwargs):
                 await arch_ctx.edit_mess(f"",chan.name)
                 if current_channel_count >current_channel_every:
                     await asyncio.sleep(1)
-                    current_channel_count=0
-        for chan in guild.text_channels:
+                    current_channel_count=0'''
+        for tup, chan in chantups:
             arch_ctx.channel_spot+=1
             if profile.has_channel(chan.id)==False and chan.permissions_for(guild.me).view_channel==True and chan.permissions_for(guild.me).read_message_history==True:
                 threads=chan.threads
@@ -302,23 +306,20 @@ async def collect_server_history(ctx, **kwargs):
                 threads=threads+archived
                 for thread in threads:
                     mess=await iter_hist_messages(thread, arch_ctx)
-                    #arch_ctx.alter_latest_time(new_last_time,newtime)
                     messages=messages+mess
                     current_channel_count+=1
 
-                            
-                chanmess=await iter_hist_messages(chan, arch_ctx)
-                #new_last_time=max(new_last_time,newtime)
-                #ignored+=ign
-                #totalcharlen+=charlen
-                messages=messages+chanmess
-                current_channel_count+=1
+                if tup=='textchan':
+                    chanmess=await iter_hist_messages(chan, arch_ctx)
+                    #new_last_time=max(new_last_time,newtime)
+                    #ignored+=ign
+                    #totalcharlen+=charlen
+                    messages=messages+chanmess
+                    current_channel_count+=1
                 
                 await arch_ctx.edit_mess(f"",chan.name)
                 if current_channel_count >current_channel_every:
                     await asyncio.sleep(1)
-                    
-                    #await edittime.invoke_if_time()
                     current_channel_count=0
 
         if statusMessToEdit!=None: 
