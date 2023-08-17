@@ -329,7 +329,10 @@ class ChannelSep(ArchiveBase):
         session = DatabaseSingleton.get_session()
         filters = [ChannelSep.server_id == self.server_id]
         order = desc(ChannelSep.channel_sep_id)
-        if use_channel:filters.append(ChannelSep.channel == self.channel)
+        if use_channel:
+            filters.append(ChannelSep.channel == self.channel)
+            filters.append(ChannelSep.thread == self.thread)
+            
         if next:
             filters.append(and_(ChannelSep.channel_sep_id > self.channel_sep_id))
             order = asc(ChannelSep.channel_sep_id)
