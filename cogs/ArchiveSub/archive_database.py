@@ -261,7 +261,7 @@ class ChannelSep(ArchiveBase):
     @staticmethod
     def get_all_separators(server_id: int):
         '''get all separators from the passed in channel sep.'''
-        filter =            ChannelSep.server_id == server_id
+        filter = ChannelSep.server_id == server_id
         session = DatabaseSingleton.get_session()
         return session.query(ChannelSep).filter(filter).order_by(ChannelSep.created_at).all()
     @staticmethod

@@ -164,6 +164,7 @@ async def ai_message_invoke(bot:TCBot,message:discord.Message,mylib:GPTFunctionL
     mes=[c.to_dict() for c in chain]
     #create new ChatCreation
     chat=purgpt.ChatCreation(
+        presence_penalty=0.3,
         messages=[])
 #,model="gpt-3.5-turbo-0613"
     chat.add_message('system',nikkiprompt+f"\n Right now, the date-time is {datetime.now().astimezone(tz=timezone.utc)}")

@@ -275,7 +275,23 @@ async def collect_server_history(ctx, **kwargs):
         current_channel_count=0
         current_channel_every=max(chanlen//50,1)
         totalcharlen=0
-        
+        for chan in guild.forums:
+            arch_ctx.channel_spot+=1
+            if profile.has_channel(chan.id)==False and chan.permissions_for(guild.me).view_channel==True and chan.permissions_for(guild.me).read_message_history==True:
+                threads=chan.threads
+                archived=[]
+                async for thread in chan.archived_threads():
+                    archived.append(thread)
+                threads=threads+archived
+                for thread in threads:
+                    mess=await iter_hist_messages(thread, arch_ctx)
+                    messages=messages+mess
+                    current_channel_count+=1
+                
+                await arch_ctx.edit_mess(f"",chan.name)
+                if current_channel_count >current_channel_every:
+                    await asyncio.sleep(1)
+                    current_channel_count=0
         for chan in guild.text_channels:
             arch_ctx.channel_spot+=1
             if profile.has_channel(chan.id)==False and chan.permissions_for(guild.me).view_channel==True and chan.permissions_for(guild.me).read_message_history==True:
