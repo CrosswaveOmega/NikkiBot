@@ -1096,7 +1096,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         channel = ctx.message.channel
         guild=channel.guild
         guildid=guild.id
-
+        print('calendar maek')
         profile=ServerArchiveProfile.get_or_new(guildid)
         
 
@@ -1115,15 +1115,18 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await thread.delete()
         new_thread=await archive_channel.create_thread(name="Message Calendar", auto_archive_duration=10080, type=discord.ChannelType.public_thread )
 
-
+        print('ok')
         async def calendarMake(guildid, lastday=None, this_dates=["█","█","█","█","█","█","█"], current_calendar_embed_object=None, weeknumber=0):
             this_dates=["█","█","█","█","█","█","█"]
             au=ctx.bot.user.avatar.url
-            def get_seps_between_dates(s,e):
+            print('starting up')
+            def get_seps_between_dates(start,end):
                 '''this generator returns lists of all separators that are on the specified dates.'''
-                cd = s
-                while cd <= e:   
+                cd = start
+                print('starting')
+                while cd <= end:   
                     dc=0
+                    print(cd)
                     se=ChannelSep.get_all_separators_on_date(guildid,cd)
                     if se:
                         for tm in se:dc+=tm.message_count
@@ -1131,7 +1134,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                     cd += timedelta(days=1)
 
             async def post(cceo): 
-                await web.postWebhookMessageProxy(new_thread, message_content="_ _", display_username="dm", avatar_url=au, embed=[cceo])
+                await web.postWebhookMessageProxy(new_thread, message_content="", display_username="Archive Calendar", avatar_url=au, embed=[cceo])
 
             def same_week(d1, d2):
                 return d1.isocalendar()[1] == d2.isocalendar()[1] and d1.year == d2.year
@@ -1151,7 +1154,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             start,end=ChannelSep.get_first_and_last_dates(guildid)
             start=start.replace(hour=0,minute=0,second=0,microsecond=0)
             end=end.replace(hour=0,minute=0,second=0,microsecond=0)+timedelta(days=1)
-            
+            print(';ok')
             for day in get_seps_between_dates(start,end):
                 date,url,mc=day["date"],day["url"],day["mc"]
                 if current_calendar_embed_object==None: 
