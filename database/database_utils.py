@@ -27,3 +27,12 @@ def merge_metadata(*original_metadata) -> MetaData:
             table.to_metadata(merged)
     
     return merged
+
+async def get_entries_in_batches(session,model_class,filter_condition, batch_size):
+    query = session.query(model_class).filter(filter_condition)
+    offset = 0
+    entries_batch = query.offset(offset).limit(batch_size).all()
+    while entries_batch:
+        yield entries_batch
+        offset += batch_size
+        entries_batch = query.offset(offset).limit(batch_size).all()

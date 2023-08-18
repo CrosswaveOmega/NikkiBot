@@ -1,4 +1,4 @@
-from datetime import timezone, datetime
+from datetime import timedelta, timezone, datetime
 import json
 import discord
 import io
@@ -260,10 +260,20 @@ class ChannelSep(ArchiveBase):
             return session.query(ChannelSep).filter(filter).order_by(ChannelSep.channel_sep_id).all()
         else:
             return session.query(ChannelSep).filter(filter).order_by(ChannelSep.channel_sep_id).limit(limit).all()
+        
     @staticmethod
     def get_all_separators(server_id: int):
         '''get all separators from the passed in channel sep.'''
         filter = ChannelSep.server_id == server_id
+        session = DatabaseSingleton.get_session()
+        return session.query(ChannelSep).filter(filter).order_by(ChannelSep.created_at).all()
+    
+    @staticmethod
+    def get_all_separators_on_date(server_id: int, target_date:datetime):
+        '''get all separators from the passed in channel sep.'''
+        filter = and_(ChannelSep.server_id == server_id,
+                      ChannelSep.created_at >= target_date,
+                     ChannelSep.created_at < target_date + timedelta(days=1))
         session = DatabaseSingleton.get_session()
         return session.query(ChannelSep).filter(filter).order_by(ChannelSep.created_at).all()
     @staticmethod
@@ -284,7 +294,13 @@ class ChannelSep(ArchiveBase):
                 csep.update_message_count()
         session.commit()
         return 
-    
+    # Query to get the ChannelSeps with the first and last created_at values
+    @staticmethod
+    def get_first_and_last_dates(server_id: int):
+        session = DatabaseSingleton.get_session()
+        first_date = session.query(func.min(ChannelSep.created_at)).filter(ChannelSep.server_id == server_id).scalar()
+        last_date = session.query(func.max(ChannelSep.created_at)).filter(ChannelSep.server_id == server_id).scalar()
+        return first_date,last_date
     @classmethod
     def get(cls, channel_sep_id, server_id):
         """

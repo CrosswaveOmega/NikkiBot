@@ -1115,76 +1115,58 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await thread.delete()
         new_thread=await archive_channel.create_thread(name="Message Calendar", auto_archive_duration=10080, type=discord.ChannelType.public_thread )
 
-        #archive_channel=guild.get_channel(profile.history_channel_id)
 
-        async def calendarMake(separator_messages, lastday=None, this_dates=["█","█","█","█","█","█","█"], current_calendar_embed_object=None, weeknumber=0):
-            ##This code is old.
-            daystarts=[]
-            day_count=0
-            separator_count=0
+        async def calendarMake(guildid, lastday=None, this_dates=["█","█","█","█","█","█","█"], current_calendar_embed_object=None, weeknumber=0):
+            this_dates=["█","█","█","█","█","█","█"]
+            au=ctx.bot.user.avatar.url
+            def get_seps_between_dates(s,e):
+                '''this generator returns lists of all separators that are on the specified dates.'''
+                cd = s
+                while cd <= e:   
+                    dc=0
+                    se=ChannelSep.get_all_separators_on_date(guildid,cd)
+                    if se:
+                        for tm in se:dc+=tm.message_count
+                        yield {"date":cd.date(),"url":se[0].posted_url,"mc":dc,"sc":len(se)}
+                    cd += timedelta(days=1)
 
-            lastmessage=None
-            lastdate=None
+            async def post(cceo): 
+                await web.postWebhookMessageProxy(new_thread, message_content="_ _", display_username="dm", avatar_url=au, embed=[cceo])
 
-            for num, spot in enumerate(separator_messages, start=0):
-                thisMessage=spot
-                curr_count=len(thisMessage.get_messages())
-
-                thisembed,c=thisMessage.create_embed()
-                newdate=thisembed.timestamp
-
-                if lastdate==None:
-                    lastdate=newdate.date()
-                elif (newdate.date()-lastdate).days>0:
-                    daystarts.append({"date":lastdate, "url":lastmessage.posted_url, "mcount":day_count, "sepcount":separator_count})
-                    lastdate=newdate.date()
-                    day_count=0
-                    separator_count=0
-                gui.gprint((lastdate-newdate.date()).days)
-                lastmessage=thisMessage
-                day_count=day_count+curr_count
-                separator_count=separator_count+1
-
-            daystarts.append({"date":lastdate, "url":lastmessage.posted_url, "mcount":day_count, "sepcount":separator_count})
-            ########################################## MAKING THE CALENDAR ############################3
-
-            def same_week(currdat, last):
-                '''returns true if a dateString in %Y%m%d format is part of the current week'''
-                d1 = currdat
-                d2 = last
-                return d1.isocalendar()[1] == d2.isocalendar()[1] \
-                          and d1.year == d2.year
-            def same_month(currdat, last):
-                '''returns true if a dateString in %Y%m%d format is part of the current week'''
-                d1 = currdat
-                d2 = last
+            def same_week(d1, d2):
+                return d1.isocalendar()[1] == d2.isocalendar()[1] and d1.year == d2.year
+            def same_month(d1, d2): 
                 return (d1.month== d2.month and d1.year == d2.year)
-
-            gui.gprint("Current Calendar Embed")
-
-            for day in daystarts:
-                date,url,mcount=day["date"],day["url"],day["mcount"]
-                sepcount=day["sepcount"]
-                if current_calendar_embed_object==None:
-                    current_calendar_embed_object=discord.Embed(title=date.strftime("%B %Y"), colour=discord.Colour(randint(0,0xffffff)))
-                if lastday != None:
-                    if not same_week(lastday, date):
-                        current_calendar_embed_object.add_field(name="Week {}".format(weeknumber), value="\n".join(this_dates), inline=True)
-                        this_dates=["█","█","█","█","█","█","█"]
-                        weeknumber=weeknumber+1
-                    if not same_month(lastday, date):
-                        await web.postWebhookMessageProxy(new_thread, message_content="_ _", display_username="DateMaster", avatar_url=bot.user.avatar.url, embed=[current_calendar_embed_object])
-                        current_calendar_embed_object=discord.Embed(title=date.strftime("%B %Y"), colour=discord.Colour(randint(0,0xffffff)))
-                        weeknumber=0
-                else:
-                    current_calendar_embed_object=discord.Embed(title=date.strftime("%B %Y"), colour=discord.Colour(randint(0,0xffffff)))
+            
+            async def lti(cceo,wn,this_dates,lastday,date):
+                if not same_week(lastday, date):
+                    cceo.add_field(name=f"Week {wn}", value="\n".join(this_dates), inline=True)
+                    this_dates, wn= ["█","█","█","█","█","█","█"], wn+1
+                if not same_month(lastday, date):
+                    cceo.add_field(name=f"Week {wn}", value="\n".join(this_dates), inline=True)
+                    this_dates, wn= ["█","█","█","█","█","█","█"],0
+                    await post(cceo)
+                    cceo,wn=discord.Embed(title=date.strftime("%B %Y")),0
+                return wn,cceo,this_dates
+            start,end=ChannelSep.get_first_and_last_dates(guildid)
+            start=start.replace(hour=0,minute=0,second=0,microsecond=0)
+            end=end.replace(hour=0,minute=0,second=0,microsecond=0)+timedelta(days=1)
+            
+            for day in get_seps_between_dates(start,end):
+                date,url,mc=day["date"],day["url"],day["mc"]
+                if current_calendar_embed_object==None: 
+                    current_calendar_embed_object=discord.Embed(title=date.strftime("%B %Y"))
+                if lastday!=None:
+                    weeknumber,current_calendar_embed_object,this_dates=await lti(current_calendar_embed_object,weeknumber,this_dates,lastday,date)
+                else: 
+                    current_calendar_embed_object=discord.Embed(title=date.strftime("%B %Y"))
                 strday=date.strftime("%m-%d-%Y")
-                this_dates[date.weekday()]="[{}]({})-{}".format(strday, url, mcount)
+                this_dates[date.weekday()]="[{}]({})-{}".format(strday, url, mc)
                 lastday=date
             current_calendar_embed_object.add_field(name="Week {}".format(weeknumber), value="\n".join(this_dates), inline=True)
-            await web.postWebhookMessageProxy(new_thread, message_content="_ _", display_username="DateMaster", avatar_url=bot.user.avatar.url, embed=[current_calendar_embed_object])
+            await post(current_calendar_embed_object)
 
-        await calendarMake(ChannelSep.get_all_separators(guildid))
+        await calendarMake(guildid)
         
 
 

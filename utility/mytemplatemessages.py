@@ -44,6 +44,7 @@ class MessageTemplates:
             embed.add_field(**i)
         embed.set_thumbnail(url=guild.icon)
         embed.set_author(name=f"{AssetLookup.get_asset('name')}'s Server Profile",icon_url=AssetLookup.get_asset('embed_icon'))
+
         embed.set_footer(text=f"Server ID: {guild.id}")
         return embed
     @staticmethod
