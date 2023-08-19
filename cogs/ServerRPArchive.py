@@ -1104,6 +1104,8 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             if reason in ['messagelimit','ban']:
                 await ctx.send("I can not process your request.")
                 return
+        serverrep.modify_status()
+        userrep.modify_status()
         profile=ServerArchiveProfile.get_or_new(guildid)
         
 
