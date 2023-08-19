@@ -1089,13 +1089,12 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         
         
     @commands.command( extras={"guildtask":['rp_history']})
-    async def summarize_day(self, ctx, daystr:str, endstr:str=None, guildid:int=None):
+    async def summarize_day(self, ctx, daystr:str, endstr:str=None):
         """Create a calendar of all archived messages with dates in this channel."""
         bot = ctx.bot
         channel = ctx.message.channel
         guild=channel.guild
-        if guildid==None:
-            guildid=guild.id
+        guildid=guild.id
         
         serverrep,userrep=AuditProfile.get_or_new(guild,ctx.author)
         userrep.checktime()
