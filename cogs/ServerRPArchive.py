@@ -1170,6 +1170,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 tokens=purgpt.util.num_tokens_from_messages([prompt,script],'gpt-3.5-turbo-16k')
                 await mt.editw(min_seconds=45,content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount}.  Tokensize is {tokens}")
                 location=format_location_name(sep)
+                if tokens> 16384:
+                    await ctx.send("I'm sorry, but there's too much content on this day for me to summarize.")
+                    return
                 script+="\n"+location+'\n'
                 await asyncio.sleep(0.1)
                 for m in sep.get_messages():
@@ -1179,6 +1182,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                         await asyncio.sleep(1.0)
                         tokens=purgpt.util.num_tokens_from_messages([prompt,script],'gpt-3.5-turbo-16k')
                         await mt.editw(min_seconds=45,content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount}.  Tokensize is {tokens}")
+                        if tokens> 16384:
+                            await ctx.send("I'm sorry, but there's too much content on this day for me to summarize.")
+                            return
                         count=0
                     embed=m.get_embed()
                     if m.content:
