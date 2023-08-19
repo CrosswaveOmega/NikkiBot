@@ -1160,7 +1160,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 cd += timedelta(days=1)
 
         script=''''''
-        count=0
+        count=ecount=mcount=0
         ecount=0
         await ctx.send('Starting gather.')
 
@@ -1170,22 +1170,25 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 tokens=purgpt.util.num_tokens_from_messages([
                     {'role':'system','content':prompt},{
                         'role':'user','content':script}],'gpt-3.5-turbo-16k')
-                await mt.editw(min_seconds=15,content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount}.  Tokensize is {tokens}")
+                await mt.editw(min_seconds=15,content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount},message {mcount}.  Tokensize is {tokens}")
                 location=format_location_name(sep)
                 if tokens> 16384:
                     await ctx.send("I'm sorry, but there's too much content on this day for me to summarize.")
                     return
                 script+="\n"+location+'\n'
-                await asyncio.sleep(0.1)
-                for m in sep.get_messages():
+                await asyncio.sleep(0.2)
+                messages=sep.get_messages()
+                await asyncio.sleep(0.5)
+                for m in messages:
                     count+=1
-                    if count>50:
+                    mcount+=1
+                    if count>25:
                         #To avoid blocking the asyncio loop.
-                        await asyncio.sleep(2.0)
+                        await asyncio.sleep(1.0)
                         tokens=purgpt.util.num_tokens_from_messages([
                         {'role':'system','content':prompt},{
                             'role':'user','content':script}],'gpt-3.5-turbo-16k')
-                        await mt.editw(min_seconds=15,content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount}.  Tokensize is {tokens}")
+                        await mt.editw(min_seconds=15,content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount},message {mcount}.  Tokensize is {tokens}")
                         if tokens> 16384:
                             await ctx.send("I'm sorry, but there's too much content on this day for me to summarize.")
                             return
