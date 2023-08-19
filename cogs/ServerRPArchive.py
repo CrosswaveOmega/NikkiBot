@@ -1167,7 +1167,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         for se in get_seps_between_dates(datetime_object,datetime_object_end):
             for sep in se:
                 ecount+=1
-                tokens=purgpt.util.num_tokens_from_messages([prompt,script],'gpt-3.5-turbo-16k')
+                tokens=purgpt.util.num_tokens_from_messages([
+                    {'role':'system','content':prompt},{
+                        'role':'user','content':script}],'gpt-3.5-turbo-16k')
                 await mt.editw(min_seconds=45,content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount}.  Tokensize is {tokens}")
                 location=format_location_name(sep)
                 if tokens> 16384:
@@ -1180,7 +1182,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                     if count>50:
                         #To avoid blocking the asyncio loop.
                         await asyncio.sleep(1.0)
-                        tokens=purgpt.util.num_tokens_from_messages([prompt,script],'gpt-3.5-turbo-16k')
+                        tokens=purgpt.util.num_tokens_from_messages([
+                        {'role':'system','content':prompt},{
+                            'role':'user','content':script}],'gpt-3.5-turbo-16k')
                         await mt.editw(min_seconds=45,content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount}.  Tokensize is {tokens}")
                         if tokens> 16384:
                             await ctx.send("I'm sorry, but there's too much content on this day for me to summarize.")
