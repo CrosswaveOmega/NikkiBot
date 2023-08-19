@@ -1170,7 +1170,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 tokens=purgpt.util.num_tokens_from_messages([
                     {'role':'system','content':prompt},{
                         'role':'user','content':script}],'gpt-3.5-turbo-16k')
-                await mt.editw(min_seconds=45,content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount}.  Tokensize is {tokens}")
+                await mt.editw(min_seconds=15,content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount}.  Tokensize is {tokens}")
                 location=format_location_name(sep)
                 if tokens> 16384:
                     await ctx.send("I'm sorry, but there's too much content on this day for me to summarize.")
@@ -1181,11 +1181,11 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                     count+=1
                     if count>50:
                         #To avoid blocking the asyncio loop.
-                        await asyncio.sleep(1.0)
+                        await asyncio.sleep(2.0)
                         tokens=purgpt.util.num_tokens_from_messages([
                         {'role':'system','content':prompt},{
                             'role':'user','content':script}],'gpt-3.5-turbo-16k')
-                        await mt.editw(min_seconds=45,content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount}.  Tokensize is {tokens}")
+                        await mt.editw(min_seconds=15,content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount}.  Tokensize is {tokens}")
                         if tokens> 16384:
                             await ctx.send("I'm sorry, but there's too much content on this day for me to summarize.")
                             return
