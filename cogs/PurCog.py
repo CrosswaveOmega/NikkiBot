@@ -402,9 +402,10 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         
     @app_commands.command(name="ban_user", description="Ban a user from using my AI.", extras={"homeonly":True})
     @app_commands.describe(userid='user id')
-    async def aiban(self, interaction: discord.Interaction, userid:int) -> None:
+    async def aiban(self, interaction: discord.Interaction, userid:str) -> None:
         """Ban a user from using the AI API."""
         ctx: commands.Context = await self.bot.get_context(interaction)
+        userid=int(userid)
         if interaction.user!=self.bot.application.owner:
             await ctx.send("This command is owner only, buddy.")
             return
@@ -418,9 +419,10 @@ class AICog(commands.Cog, TC_Cog_Mixin):
 
     @app_commands.command(name="ban_server", description="Ban a server from using my AI.", extras={"homeonly":True})
     @app_commands.describe(serverid='server id to ban.')
-    async def aibanserver(self, interaction: discord.Interaction, serverid:int) -> None:
+    async def aibanserver(self, interaction: discord.Interaction, serverid:str) -> None:
         """Ban a entire server user using the AI API."""
         ctx: commands.Context = await self.bot.get_context(interaction)
+        userid=int(userid)
         if interaction.user!=self.bot.application.owner:
             await ctx.send("This command is owner only, buddy.")
             return

@@ -1089,7 +1089,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         
         
     @commands.command( extras={"guildtask":['rp_history']})
-    async def summarize_day(self, ctx, daystr:str, guildid=None):
+    async def summarize_day(self, ctx, daystr:str, endstr:str=None, guildid:int=None):
         """Create a calendar of all archived messages with dates in this channel."""
         bot = ctx.bot
         channel = ctx.message.channel
@@ -1102,7 +1102,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         ok, reason=userrep.check_if_ok()
         if not ok:
             if reason in ['messagelimit','ban']:
-                await ctx.send("You have exceeded daily rate limit.")
+                await ctx.send("I can not process your request.")
                 return
         profile=ServerArchiveProfile.get_or_new(guildid)
         
@@ -1132,21 +1132,33 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
    
 
         datetime_object = datetime.strptime(f"{daystr} 00:00:00 +0000",'%Y-%m-%d %H:%M:%S %z')
-        
+        datetime_object_end=datetime_object
+        if endstr:
+            datetime_object_end = datetime.strptime(f"{endstr} 00:00:00 +0000",'%Y-%m-%d %H:%M:%S %z')
         se=ChannelSep.get_all_separators_on_date(guildid,datetime_object)
         prompt='''
         You are to summarize a series of chat logs sent across a period of time.
         The log consists of conversations between participants in a role-playing game (RP) set in a fictional world.  
-        The log is broken up into segments that indicate the general location the provided events occured within, of format:
+        The log is broken up into segments that start with a message indicating where the conversation took place in, of format:
         'Location: [location name], [location category].  [Optional Sub location].'
         Each message is of format:
-        '[character name]: [Character action.]'
-        You must provide a summary of the RP log, highlighting the key events, character interactions, and plot developments that occoured across that time period.
-        Your summary should provide an overview of the story, major conflicts, and notable character arcs.  Exclude any concluding remarks from the summary.
-        
+        '[character name]: [ContentHere]'
+        The Summary's length must reflect the length of the chat log.  A minimum of 2 paragraphs with 5-10 sentences each is required.
         '''
+        def get_seps_between_dates(start,end):
+            '''this generator returns lists of all separators that are on the specified dates.'''
+            cd = start
+            print('starting')
+            while cd <= end:   
+                dc=0
+                print(cd)
+                se=ChannelSep.get_all_separators_on_date(guildid,cd)
+                if se:
+                    yield se
+                cd += timedelta(days=1)
+
         script=''''''
-        if se:
+        for se in get_seps_between_dates(datetime_object,datetime_object_end):
             for sep in se:
                 location=format_location_name(sep)
                 script+="\n"+location+'\n'
@@ -1155,6 +1167,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                     if m.content:
                         script=f"{script}\n {m.author}: {m.content}"
                     elif embed:
+                        embed=embed[0]
                         if embed.type=='rich':
                             embedscript=f"{embed.title}: {embed.description}"
                             script=f"{script}\n {m.author}: {embedscript}"
@@ -1162,8 +1175,14 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 messages=[{'role': "system", 'content':  prompt }],
                 model='gpt-3.5-turbo-16k'
             )
-        chat.add_message(role='user',content=script)
+        gui.gprint(script)
 
+        chat.add_message(role='user',content=script)
+        tokens=purgpt.util.num_tokens_from_messages(chat.messages,'gpt-3.5-turbo-16k')
+        await ctx.send(tokens)
+        if tokens> 16384:
+            await ctx.send("I'm sorry, but there's too much content on this day for me to summarize.")
+            return
         #Call API
         bot=ctx.bot
         messageresp=None
@@ -1192,7 +1211,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                     title='summary',
                     description=pa[:4028]
                 )
-                ms=await ctx.channel.send(embed=pa)
+                ms=await ctx.channel.send(embed=embed)
                 
                 if messageresp==None:messageresp=ms
     
