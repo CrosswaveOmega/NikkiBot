@@ -1131,7 +1131,8 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 output=f"{output}  {thread}"
             return output
    
-
+        me=await ctx.channel.send(content=f"<a:LetWalk:1118184074239021209> Retrieving archived messages...")
+        mt=StatusEditMessage(me,ctx)
         datetime_object = datetime.strptime(f"{daystr} 00:00:00 +0000",'%Y-%m-%d %H:%M:%S %z')
         datetime_object_end=datetime_object
         if endstr:
@@ -1159,11 +1160,26 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 cd += timedelta(days=1)
 
         script=''''''
+        count=0
+        ecount=0
+        await ctx.send('Starting gather.')
+
         for se in get_seps_between_dates(datetime_object,datetime_object_end):
             for sep in se:
+                ecount+=1
+                tokens=purgpt.util.num_tokens_from_messages([prompt,script],'gpt-3.5-turbo-16k')
+                await mt.editw(min_seconds=45,content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount}.  Tokensize is {tokens}")
                 location=format_location_name(sep)
                 script+="\n"+location+'\n'
+                await asyncio.sleep(0.1)
                 for m in sep.get_messages():
+                    count+=1
+                    if count>50:
+                        #To avoid blocking the asyncio loop.
+                        await asyncio.sleep(1.0)
+                        tokens=purgpt.util.num_tokens_from_messages([prompt,script],'gpt-3.5-turbo-16k')
+                        await mt.editw(min_seconds=45,content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount}.  Tokensize is {tokens}")
+                        count=0
                     embed=m.get_embed()
                     if m.content:
                         script=f"{script}\n {m.author}: {m.content}"
