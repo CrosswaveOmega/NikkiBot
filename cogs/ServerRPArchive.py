@@ -18,7 +18,7 @@ from dateutil.rrule import rrule,rrulestr, WEEKLY, SU, MINUTELY, HOURLY
 from discord import app_commands
 from discord.app_commands import Choice
 
-
+from database.database_ai import AuditProfile, ServerAIConfig
 from database import ServerArchiveProfile, DatabaseSingleton
 from .ArchiveSub import (
 do_group,
@@ -36,6 +36,7 @@ do_group,
   ChannelArchiveStatus
 ) 
 from collections import defaultdict
+import purgpt
 class ToChoice(commands.Converter):
     async def convert(self, ctx, argument):
         if not ctx.interaction:
@@ -1087,7 +1088,116 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         #await m.delete()
         
         
+    @commands.command( extras={"guildtask":['rp_history']})
+    async def summarize_day(self, ctx, daystr:str, guildid=None):
+        """Create a calendar of all archived messages with dates in this channel."""
+        bot = ctx.bot
+        channel = ctx.message.channel
+        guild=channel.guild
+        if guildid==None:
+            guildid=guild.id
+        
+        serverrep,userrep=AuditProfile.get_or_new(guild,ctx.author)
+        userrep.checktime()
+        ok, reason=userrep.check_if_ok()
+        if not ok:
+            if reason in ['messagelimit','ban']:
+                await ctx.send("You have exceeded daily rate limit.")
+                return
+        profile=ServerArchiveProfile.get_or_new(guildid)
+        
 
+        if profile.history_channel_id == 0:
+            await MessageTemplates.get_server_archive_embed(ctx,"Set a history channel first.")
+            return False
+        if channel.id==profile.history_channel_id:
+            return False
+        archive_channel=guild.get_channel(profile.history_channel_id)
+        if archive_channel==None:
+            await MessageTemplates.get_server_archive_embed(ctx,"I can't seem to access the history channel, it's gone!")
+            return False
+        def format_location_name(csep):
+            # Replace dashes with spaces
+            channel_name=csep.channel
+            category=csep.category
+            thread=csep.thread
+            formatted_name = channel_name.replace('-', ' ')
+
+            # Capitalize the first letter
+            formatted_name = formatted_name.capitalize()
+            output=f"Location: {formatted_name}, {category}."
+            if thread!=None:
+                output=f"{output}  {thread}"
+            return output
+   
+
+        datetime_object = datetime.strptime(f"{daystr} 00:00:00 +0000",'%Y-%m-%d %H:%M:%S %z')
+        
+        se=ChannelSep.get_all_separators_on_date(guildid,datetime_object)
+        prompt='''
+        You are to summarize a series of chat logs sent across a period of time.
+        The log consists of conversations between participants in a role-playing game (RP) set in a fictional world.  
+        The log is broken up into segments that indicate the general location the provided events occured within, of format:
+        'Location: [location name], [location category].  [Optional Sub location].'
+        Each message is of format:
+        '[character name]: [Character action.]'
+        You must provide a summary of the RP log, highlighting the key events, character interactions, and plot developments that occoured across that time period.
+        Your summary should provide an overview of the story, major conflicts, and notable character arcs.  Exclude any concluding remarks from the summary.
+        
+        '''
+        script=''''''
+        if se:
+            for sep in se:
+                location=format_location_name(sep)
+                script+="\n"+location+'\n'
+                for m in sep.get_messages():
+                    embed=m.get_embed()
+                    if m.content:
+                        script=f"{script}\n {m.author}: {m.content}"
+                    elif embed:
+                        if embed.type=='rich':
+                            embedscript=f"{embed.title}: {embed.description}"
+                            script=f"{script}\n {m.author}: {embedscript}"
+        chat=purgpt.ChatCreation(
+                messages=[{'role': "system", 'content':  prompt }],
+                model='gpt-3.5-turbo-16k'
+            )
+        chat.add_message(role='user',content=script)
+
+        #Call API
+        bot=ctx.bot
+        messageresp=None
+
+        async with ctx.channel.typing():
+
+            res=await bot.gptapi.callapi(chat)
+
+            #await ctx.send(res)
+            print(res)
+            if res.get('error',False):
+                err=res['error']
+                error=purgpt.error.PurGPTError(err,json_body=res)
+                raise error
+            if res.get('err',False):
+                err=res[err]
+                error=purgpt.error.PurGPTError(err,json_body=res)
+                raise error
+            result=res['choices'][0]['message']['content']
+            page=commands.Paginator(prefix='',suffix=None,max_size=4000)
+            for p in result.split("\n"):
+                page.add_line(p)
+            messageresp=None
+            for pa in page.pages:
+                embed=discord.Embed(
+                    title='summary',
+                    description=pa[:4028]
+                )
+                ms=await ctx.channel.send(embed=pa)
+                
+                if messageresp==None:messageresp=ms
+    
+        
+        
 
     @commands.command( extras={"guildtask":['rp_history']})
     async def makeCalendar(self, ctx):
