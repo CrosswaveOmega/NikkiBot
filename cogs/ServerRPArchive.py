@@ -1164,7 +1164,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         ecount=0
         await ctx.send('Starting gather.')
 
-        for sep in ChannelSep.get_all_separators_on_dates(datetime_object,datetime_object_end):
+        for sep in ChannelSep.get_all_separators_on_dates(guildid, datetime_object,datetime_object_end):
             ecount+=1
             tokens=purgpt.util.num_tokens_from_messages([
                 {'role':'system','content':prompt},{
@@ -1181,9 +1181,10 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             for m in messages:
                 count+=1
                 mcount+=1
-                if count>25:
+                await asyncio.sleep(0.1)
+                if count>5:
                     #To avoid blocking the asyncio loop.
-                    await asyncio.sleep(1.0)
+                    
                     tokens=purgpt.util.num_tokens_from_messages([
                     {'role':'system','content':prompt},{
                         'role':'user','content':script}],'gpt-3.5-turbo-16k')
