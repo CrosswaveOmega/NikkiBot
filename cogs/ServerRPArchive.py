@@ -1164,43 +1164,42 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         ecount=0
         await ctx.send('Starting gather.')
 
-        for se in get_seps_between_dates(datetime_object,datetime_object_end):
-            for sep in se:
-                ecount+=1
-                tokens=purgpt.util.num_tokens_from_messages([
+        for sep in ChannelSep.get_all_separators_on_dates(datetime_object,datetime_object_end):
+            ecount+=1
+            tokens=purgpt.util.num_tokens_from_messages([
+                {'role':'system','content':prompt},{
+                    'role':'user','content':script}],'gpt-3.5-turbo-16k')
+            await mt.editw(min_seconds=15,content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount} ({sep.message_count}),message {mcount}.  Tokensize is {tokens}")
+            location=format_location_name(sep)
+            if tokens> 16384:
+                await ctx.send("I'm sorry, but there's too much content on this day for me to summarize.")
+                return
+            script+="\n"+location+'\n'
+            await asyncio.sleep(0.2)
+            messages=sep.get_messages()
+            await asyncio.sleep(0.5)
+            for m in messages:
+                count+=1
+                mcount+=1
+                if count>25:
+                    #To avoid blocking the asyncio loop.
+                    await asyncio.sleep(1.0)
+                    tokens=purgpt.util.num_tokens_from_messages([
                     {'role':'system','content':prompt},{
                         'role':'user','content':script}],'gpt-3.5-turbo-16k')
-                await mt.editw(min_seconds=15,content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount},message {mcount}.  Tokensize is {tokens}")
-                location=format_location_name(sep)
-                if tokens> 16384:
-                    await ctx.send("I'm sorry, but there's too much content on this day for me to summarize.")
-                    return
-                script+="\n"+location+'\n'
-                await asyncio.sleep(0.2)
-                messages=sep.get_messages()
-                await asyncio.sleep(0.5)
-                for m in messages:
-                    count+=1
-                    mcount+=1
-                    if count>25:
-                        #To avoid blocking the asyncio loop.
-                        await asyncio.sleep(1.0)
-                        tokens=purgpt.util.num_tokens_from_messages([
-                        {'role':'system','content':prompt},{
-                            'role':'user','content':script}],'gpt-3.5-turbo-16k')
-                        await mt.editw(min_seconds=15,content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount},message {mcount}.  Tokensize is {tokens}")
-                        if tokens> 16384:
-                            await ctx.send("I'm sorry, but there's too much content on this day for me to summarize.")
-                            return
-                        count=0
-                    embed=m.get_embed()
-                    if m.content:
-                        script=f"{script}\n {m.author}: {m.content}"
-                    elif embed:
-                        embed=embed[0]
-                        if embed.type=='rich':
-                            embedscript=f"{embed.title}: {embed.description}"
-                            script=f"{script}\n {m.author}: {embedscript}"
+                    await mt.editw(min_seconds=15,content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount},message {mcount}.  Tokensize is {tokens}")
+                    if tokens> 16384:
+                        await ctx.send("I'm sorry, but there's too much content on this day for me to summarize.")
+                        return
+                    count=0
+                embed=m.get_embed()
+                if m.content:
+                    script=f"{script}\n {m.author}: {m.content}"
+                elif embed:
+                    embed=embed[0]
+                    if embed.type=='rich':
+                        embedscript=f"{embed.title}: {embed.description}"
+                        script=f"{script}\n {m.author}: {embedscript}"
         chat=purgpt.ChatCreation(
                 messages=[{'role': "system", 'content':  prompt }],
                 model='gpt-3.5-turbo-16k'

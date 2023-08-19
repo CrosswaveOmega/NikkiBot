@@ -277,6 +277,14 @@ class ChannelSep(ArchiveBase):
         session = DatabaseSingleton.get_session()
         return session.query(ChannelSep).filter(filter).order_by(ChannelSep.created_at).all()
     @staticmethod
+    def get_all_separators_on_dates(server_id: int, target_date:datetime,end_date:datetime):
+        '''get all separators from the passed in channel sep.'''
+        filter = and_(ChannelSep.server_id == server_id,
+                      ChannelSep.created_at >= target_date,
+                     ChannelSep.created_at < end_date + timedelta(days=1))
+        session = DatabaseSingleton.get_session()
+        return session.query(ChannelSep).filter(filter).order_by(ChannelSep.created_at).all()
+    @staticmethod
     def count_separators(server_id: int):
         '''get all separators from the passed in channel sep.'''
         filter =  ChannelSep.server_id == server_id
