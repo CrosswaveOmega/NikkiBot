@@ -36,7 +36,7 @@ do_group,
   ChannelArchiveStatus
 ) 
 from collections import defaultdict
-import purgpt
+
 class ToChoice(commands.Converter):
     async def convert(self, ctx, argument):
         if not ctx.interaction:
@@ -631,8 +631,8 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 myurl=message.jump_url
                 start_date = datetime(2023, 1, 1, 15, 30)
                 robj= rrule(
-                    freq=HOURLY,
-                    interval=1,
+                    freq=MINUTELY,
+                    interval=15,
                     dtstart=start_date
                 )
 
@@ -684,7 +684,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                     profile.update(history_channel_id=cloned.id)
                     await archive_channel.delete()
                 await mes.delete()
-
+                profile.last_archive_time=None
                 self.bot.database.commit()
                 mess2=ArchivedRPMessage.get_archived_rp_messages_with_null_posted_url(ctx.guild.id)
                 mess=ArchivedRPMessage.get_archived_rp_messages_without_null_posted_url(ctx.guild.id)
@@ -963,6 +963,12 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
         m2=await ctx.send("archiving...")
         m=await ctx.channel.send("Initial check OK!")
+        if profile.last_archive_time==None:
+            if ctx.author.id==ctx.bot.user.id:
+                await ctx.send("This is my first time archiving this server!")
+            else:
+                await ctx.send("## Hold up!  This is my first time archiving this server!\n"+
+                               "I highly recommend using a lazy archive depending on the number of messages in this server!")
         dynamicwait=False
         bot.add_act(str(ctx.guild.id)+"arch",'archiving server...')
         await m.edit(content="Collecting server history...")

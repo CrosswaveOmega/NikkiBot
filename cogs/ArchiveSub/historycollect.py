@@ -107,10 +107,11 @@ async def lazy_grab(cobj:discord.TextChannel, actx:ArchiveContext):
     
     messages=[]
     mlen=0
-    
+    haveany=False
     carch=ChannelArchiveStatus.get_by_tc(cobj)
     async for thisMessage in cobj.history(limit=LAZYGRAB_LIMIT,oldest_first=True,after=carch.latest_archive_time):
-        #if(thisMessage.created_at<=actx.last_stored_time and actx.update): break 
+        #if(thisMessage.created_at<=actx.last_stored_time and actx.update): break
+        haveany=True
         add_check=actx.evaluate_add(thisMessage)
 
         if add_check:
@@ -138,7 +139,7 @@ async def lazy_grab(cobj:discord.TextChannel, actx:ArchiveContext):
         gui.gprint('now:',actx.total_archived)
         messages=[]
 
-    return messages
+    return messages, haveany
 async def collect_server_history_lazy(ctx, **kwargs):
         #Get at most LAZYGRAB_LIMIT messages from all channels in guild
         bot=ctx.bot
@@ -176,9 +177,9 @@ async def collect_server_history_lazy(ctx, **kwargs):
             channel=guild.get_channel_or_thread(c.channel_id)
             if channel:
                 gui.gprint("Channel",channel)
-                await lazy_grab(channel,arch_ctx)
+                mes,have=await lazy_grab(channel,arch_ctx)
                 await statmess.editw(min_seconds=10,content=f"{ChannelArchiveStatus.get_total_unarchived_time(guildid)}")
-                grabstat=True
+                grabstat=grabstat or have
         await statmess.editw(min_seconds=0,content=f"{ChannelArchiveStatus.get_total_unarchived_time(guildid)}")
         #await statmess.delete()
         return grabstat
@@ -210,7 +211,7 @@ async def setup_lazy_grab(ctx, **kwargs):
         chantups.extend(('forum',chan) for chan in guild.forums)
         
         chantups.extend(('textchan',chan) for chan in guild.text_channels)
-        for tup,chan in guild.text_channels:
+        for tup,chan in chantups:
             total_channels+=1
             if profile.has_channel(chan.id)==False and chan.permissions_for(guild.me).view_channel==True and chan.permissions_for(guild.me).read_message_history==True:
                 threads=chan.threads

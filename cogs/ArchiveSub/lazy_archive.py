@@ -168,6 +168,7 @@ async def lazy_archive(self, ctx):
             fullcount=lazycontext.message_count-lazycontext.archived_so_far
             remaining_time_float= fullcount* timebetweenmess
             archived_this_session=0
+            
             me=await ctx.channel.send(content=f"<a:LetWalk:1118184074239021209> currently on {lazycontext.archived_so_far}/{lazycontext.message_count}, will take {seconds_to_time_string(upper_time_limit())} this session.")
             mt=StatusEditMessage(me,ctx)
             #archived_this_session<=MESSAGES_PER_POST_CALL
@@ -182,17 +183,24 @@ async def lazy_archive(self, ctx):
                     query = session.query(func.date(ArchivedRPMessage.created_at), func.count()).\
                     filter((ArchivedRPMessage.server_id == guildid)&(ArchivedRPMessage.channel_sep_id == None)).\
                     group_by(func.date(ArchivedRPMessage.created_at))
-                    message_counts = query.first()
-                    
+                    message_counts = query.limit(40).all()
+                    await ctx.send(str(message_counts))
                     gui.gprint(message_counts)
                     if message_counts==None:
                         await ctx.send(f"All {fullcount} messages posted. ")
                         lazycontext.next_state()
                         return True
                     thelim=0
-                    day, count = message_counts
-                    gui.gprint(f"Day: {day} Count: {count}")
-                    if count>0:  thelim=count
+                    await ctx.send(message_counts)
+                    for mc in message_counts:
+                        day, count = mc
+                        gui.gprint(f"{day}, {count}")
+                        if count>0:  
+                            thelim+=count
+                    if thelim<=0:
+                        await ctx.send("Limit is 0?")
+                        return
+
                     if thelim<=0:
                         await ctx.send(f"All {fullcount} messages posted. ")
                         lazycontext.next_state()
@@ -201,6 +209,7 @@ async def lazy_archive(self, ctx):
                     ts,group_id=await do_group(guildid,profile.last_group_num, ctx=ctx,upperlim=thelim)
                     profile.update(last_group_num=group_id)
                     await ctx.channel.send(f"group has changed: {lastgroup}->{group_id}")
+                    ChannelSep.get_all_update_count(guildid,200)
                     grouped=ChannelSep.get_unposted_separators(guildid,limit=CHANNEL_SEPS_PER_CLUSTER)
                 bot.add_act(str(guildid)+"lazyarch",f"Time={seconds_to_time_string(upper_time_limit())}")
                 if needed:

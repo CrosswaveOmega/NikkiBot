@@ -141,6 +141,35 @@ class ChannelSep(ArchiveBase):
             (ArchivedRPMessage.channel_sep_id == self.channel_sep_id)
         ).scalar()
         return count
+    @staticmethod
+    def get_all_update_count(server_id: int,limit:int=100):
+        session = DatabaseSingleton.get_session()
+        query = (
+                    session.query(ChannelSep)
+                    .filter(and_(
+                      or_(
+                        ChannelSep.message_count == 0,
+                        ChannelSep.message_count == None
+                        ),
+                      ChannelSep.server_id == server_id))
+                    .order_by(ChannelSep.created_at)
+                ).with_entities(ChannelSep, func.count(ArchivedRPMessage.message_id))
+
+        results = query.join(
+            ArchivedRPMessage, 
+            and_(ChannelSep.channel_sep_id == ArchivedRPMessage.channel_sep_id,
+                 ChannelSep.server_id==ArchivedRPMessage.server_id)
+            ).group_by(ChannelSep.channel_sep_id).limit(limit).all()
+        mps=[]
+        for channel_sep_id, message_count in results:
+            if message_count<=0: 
+                mps.append(channel_sep_id)
+            else:
+                channel_sep_id.message_count=int(message_count)
+        session.commit()
+        if results: return results[-1],results[-1][0].message_count, len(mps)
+            #session.query(ChannelSep).filter_by(channel_sep_id=channel_sep_id).update({"message_count": message_count})
+            #updated_channel_seps.append(channel_sep_id)
     def update_message_count(self):
         session:Session=DatabaseSingleton.get_session()
         count= session.query(func.count(ArchivedRPMessage.message_id)).filter(
@@ -293,15 +322,7 @@ class ChannelSep(ArchiveBase):
                 (ChannelSep.server_id == server_id) 
         ).scalar()
         return count
-    @staticmethod
-    def get_all_update_count(server_id: int):
-        filter = ChannelSep.server_id == server_id
-        session = DatabaseSingleton.get_session()
-        for csep in session.query(ChannelSep).filter(filter).order_by(ChannelSep.created_at).all():
-            if csep.message_count==None:
-                csep.update_message_count()
-        session.commit()
-        return 
+
     # Query to get the ChannelSeps with the first and last created_at values
     @staticmethod
     def get_first_and_last_dates(server_id: int):
