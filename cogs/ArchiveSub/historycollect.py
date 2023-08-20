@@ -180,9 +180,9 @@ async def collect_server_history_lazy(ctx, **kwargs):
                 gui.gprint("Channel",channel)
                 mes,have, count=await lazy_grab(channel,arch_ctx)
                 print(count)
-                await statmess.editw(min_seconds=10,content=f"channels:{len(channels)},{count},{ChannelArchiveStatus.get_total_unarchived_time(guildid)}")
+                await statmess.editw(min_seconds=0,content=f"channels:{len(channels)},{count},{ChannelArchiveStatus.get_total_unarchived_time(guildid)}")
                 grabstat=grabstat or have
-        #await statmess.editw(min_seconds=30,content=f"channels:{len(channels),{ChannelArchiveStatus.get_total_unarchived_time(guildid)}")
+        await statmess.editw(min_seconds=0,content=f"channels:{len(channels)},{ChannelArchiveStatus.get_total_unarchived_time(guildid)}")
         #await statmess.delete()
         return grabstat
             
