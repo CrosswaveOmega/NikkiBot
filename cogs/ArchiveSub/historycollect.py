@@ -109,6 +109,7 @@ async def lazy_grab(cobj:discord.TextChannel, actx:ArchiveContext):
     mlen=0
     haveany, count=False,0
     carch=ChannelArchiveStatus.get_by_tc(cobj)
+    print(carch.latest_archive_time)
     async for thisMessage in cobj.history(limit=LAZYGRAB_LIMIT,oldest_first=True,after=carch.latest_archive_time):
         #if(thisMessage.created_at<=actx.last_stored_time and actx.update): break
         haveany=True
@@ -183,6 +184,7 @@ async def collect_server_history_lazy(ctx, **kwargs):
                 await statmess.editw(min_seconds=0,content=f"channels:{len(channels)},{count},{ChannelArchiveStatus.get_total_unarchived_time(guildid)}")
                 grabstat=grabstat or have
         await statmess.editw(min_seconds=0,content=f"channels:{len(channels)},{ChannelArchiveStatus.get_total_unarchived_time(guildid)}")
+        await bot.database.commit()
         #await statmess.delete()
         return grabstat
             
