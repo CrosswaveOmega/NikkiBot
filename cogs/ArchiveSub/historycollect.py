@@ -14,7 +14,7 @@ Collects all messages in non-blacklisted channels, and adds them to the database
 
 '''
 BATCH_SIZE=10
-LAZYGRAB_LIMIT=1000
+LAZYGRAB_LIMIT=5000
 class ArchiveContext:
     def __init__(self, bot, status_mess=None, last_stored_time=None, update=False, 
                  profile=None, total_archived=0,channel_count=0, channel_spot=0, character_len=0, latest_time=None,
@@ -107,13 +107,13 @@ async def lazy_grab(cobj:discord.TextChannel, actx:ArchiveContext):
     
     messages=[]
     mlen=0
-    haveany=False
+    haveany, count=False,0
     carch=ChannelArchiveStatus.get_by_tc(cobj)
     async for thisMessage in cobj.history(limit=LAZYGRAB_LIMIT,oldest_first=True,after=carch.latest_archive_time):
         #if(thisMessage.created_at<=actx.last_stored_time and actx.update): break
         haveany=True
         add_check=actx.evaluate_add(thisMessage)
-
+        count=count+1
         if add_check:
             thisMessage.content=thisMessage.clean_content
             actx.alter_latest_time(thisMessage.created_at.timestamp())
@@ -139,7 +139,7 @@ async def lazy_grab(cobj:discord.TextChannel, actx:ArchiveContext):
         gui.gprint('now:',actx.total_archived)
         messages=[]
 
-    return messages, haveany
+    return messages, haveany, count
 async def collect_server_history_lazy(ctx, **kwargs):
         #Get at most LAZYGRAB_LIMIT messages from all channels in guild
         bot=ctx.bot
@@ -172,15 +172,17 @@ async def collect_server_history_lazy(ctx, **kwargs):
             channel_count=chanlen,**kwargs)
         channels=ChannelArchiveStatus.get_all(guildid,outdated=True)
         grabstat=False
+        gui.gprint(len(channels))
         for c in channels:
             gui.print(c)
             channel=guild.get_channel_or_thread(c.channel_id)
             if channel:
                 gui.gprint("Channel",channel)
-                mes,have=await lazy_grab(channel,arch_ctx)
-                await statmess.editw(min_seconds=10,content=f"{ChannelArchiveStatus.get_total_unarchived_time(guildid)}")
+                mes,have, count=await lazy_grab(channel,arch_ctx)
+                print(count)
+                await statmess.editw(min_seconds=10,content=f"channels:{len(channels)},{count},{ChannelArchiveStatus.get_total_unarchived_time(guildid)}")
                 grabstat=grabstat or have
-        await statmess.editw(min_seconds=0,content=f"{ChannelArchiveStatus.get_total_unarchived_time(guildid)}")
+        #await statmess.editw(min_seconds=30,content=f"channels:{len(channels),{ChannelArchiveStatus.get_total_unarchived_time(guildid)}")
         #await statmess.delete()
         return grabstat
             
