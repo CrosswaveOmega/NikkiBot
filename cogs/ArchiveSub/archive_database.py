@@ -99,7 +99,7 @@ class ChannelArchiveStatus(ArchiveBase):
         
     def increment(self,date):
         self.stored += 1
-        #print(self.last_message_time.tzinfo,date.tzinfo)
+        print('inc',date,self.latest_archive_time,self.last_message_time.tzinfo,date.tzinfo)
         if self.last_message_time<=date:
             self.last_message_time=date
         
