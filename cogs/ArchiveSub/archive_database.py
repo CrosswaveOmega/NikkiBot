@@ -102,8 +102,9 @@ class ChannelArchiveStatus(ArchiveBase):
         print('inc',date,self.latest_archive_time,self.last_message_time.tzinfo,date.tzinfo)
         if self.last_message_time<=date:
             self.last_message_time=date
-        
-        self.latest_archive_time = date
+        if self.latest_archive_time<=date:
+            # self.last_message_time=date
+            self.latest_archive_time = date
     def mod_active(self,incr):
         self.active_count+=incr
     def __str__(self):
