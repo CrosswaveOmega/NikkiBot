@@ -122,7 +122,7 @@ async def lazy_archive(self, ctx):
         channel = ctx.message.channel
         guild:discord.Guild=channel.guild
         guildid=guild.id
-
+        
         lazycontext=LazyContext.get(guildid)
         if not lazycontext:    return False
         if lazycontext.active_id:   guildid=int(lazycontext.active_id)
@@ -135,12 +135,14 @@ async def lazy_archive(self, ctx):
                 lazycontext.message_count=ArchivedRPMessage.count_all(server_id=guildid)
                 lazycontext.next_state()
                 return True
+            statusMessToEdit=await channel.send(f"Commencing Lazy Archive Run")
+            statmess=StatusEditMessage(statusMessToEdit,ctx)
             while upper_time_limit()>0:
                 bot.add_act(str(guildid)+"lazyarch",f"Time={seconds_to_time_string(upper_time_limit())}")
 
-
-                still_collecting=await collect_server_history_lazy(
-                    ctx,
+                st==None
+                still_collecting,st=await collect_server_history_lazy(
+                    ctx,statmess,
                     update=True
                 )
                 if not still_collecting:
@@ -148,6 +150,7 @@ async def lazy_archive(self, ctx):
                     lazycontext.next_state()
                     break
             bot.remove_act(str(guildid)+"lazyarch")
+            await statmess.delete()
             return True
         
         elif lazycontext.state=='grouping':

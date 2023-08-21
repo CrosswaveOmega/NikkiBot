@@ -54,7 +54,7 @@ class ArchiveContext:
         self.latest_time=max(new,self.latest_time)
     async def edit_mess(self,pre='',cname=""):
         place=f"{self.total_archived} messages collected in total.\n",
-        text=f"{place}On channel {self.channel_spot}/{self.channel_count},\n {cname},\n Please wait. <a:Loading:812758595867377686>"
+        text=f"{place}On channel {self.channel_spot}/{self.channel_count},\n {cname},\n Please wait. <a:SquareLoading:1143238358303264798>"
         await self.status_mess.editw(min_seconds=15,content=text)
 
 
@@ -96,8 +96,8 @@ async def iter_hist_messages(cobj:discord.TextChannel, actx:ArchiveContext):
         if(mlen%200 == 0 and mlen>0):
             await asyncio.sleep(1)
             await actx.edit_mess(cobj.name)
-            #await edittime.invoke_if_time(content=f"{mlen} messages so far in this channel, this may take a moment.   \n On channel {chancount}/{chanlen},\n {cobj.name},\n gathered <a:Loading:812758595867377686>.  This will take a while...")
-            #await statusMess.updatew(f"{mlen} messages so far in this channel, this may take a moment.   \n On channel {chancount}/{chanlen},\n {cobj.name},\n gathered <a:Loading:812758595867377686>.  This will take a while...")
+            #await edittime.invoke_if_time(content=f"{mlen} messages so far in this channel, this may take a moment.   \n On channel {chancount}/{chanlen},\n {cobj.name},\n gathered <a:SquareLoading:1143238358303264798>.  This will take a while...")
+            #await statusMess.updatew(f"{mlen} messages so far in this channel, this may take a moment.   \n On channel {chancount}/{chanlen},\n {cobj.name},\n gathered <a:SquareLoading:1143238358303264798>.  This will take a while...")
     if messages:
         hmes=await HistoryMakers.get_history_message_list(messages)
         messages=[]
@@ -112,10 +112,11 @@ async def lazy_grab(cobj:discord.TextChannel, actx:ArchiveContext):
     print(carch.latest_archive_time)
     async for thisMessage in cobj.history(limit=LAZYGRAB_LIMIT,oldest_first=True,after=carch.latest_archive_time):
         #if(thisMessage.created_at<=actx.last_stored_time and actx.update): break
-        haveany=True
+        
         add_check=actx.evaluate_add(thisMessage)
         count=count+1
         if add_check:
+            haveany=True
             thisMessage.content=thisMessage.clean_content
             actx.alter_latest_time(thisMessage.created_at.timestamp())
             actx.character_len+=len(thisMessage.content)
@@ -141,7 +142,7 @@ async def lazy_grab(cobj:discord.TextChannel, actx:ArchiveContext):
         messages=[]
 
     return messages, haveany, count
-async def collect_server_history_lazy(ctx, **kwargs):
+async def collect_server_history_lazy(ctx, statmess=None, **kwargs):
         #Get at most LAZYGRAB_LIMIT messages from all channels in guild
         bot=ctx.bot
         channel = ctx.message.channel
@@ -150,9 +151,10 @@ async def collect_server_history_lazy(ctx, **kwargs):
         profile=ServerArchiveProfile.get_or_new(guildid)
 
         messages=[]
-        statusMessToEdit=await channel.send("I'm getting everything in the given RP channels, this may take a moment!")
+        if statmess==None:
+            statusMessToEdit=await channel.send("I'm getting everything in the given RP channels, this may take a moment!")
 
-        statmess=StatusEditMessage(statusMessToEdit,ctx)
+            statmess=StatusEditMessage(statusMessToEdit,ctx)
         time=profile.last_archive_time
         print(time)
         #await channel.send("Starting at time:{}".format(time.strftime("%B %d, %Y %I:%M:%S %p")))
@@ -184,9 +186,9 @@ async def collect_server_history_lazy(ctx, **kwargs):
                 await statmess.editw(min_seconds=0,content=f"channels:{len(channels)},{count},{ChannelArchiveStatus.get_total_unarchived_time(guildid)}")
                 grabstat=grabstat or have
         await statmess.editw(min_seconds=0,content=f"channels:{len(channels)},{ChannelArchiveStatus.get_total_unarchived_time(guildid)}")
-        await bot.database.commit()
+        bot.database.commit()
         #await statmess.delete()
-        return grabstat
+        return grabstat, statmess
             
 
 async def setup_lazy_grab(ctx, **kwargs):

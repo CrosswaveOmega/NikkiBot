@@ -36,7 +36,7 @@ from googleapiclient.discovery import build   #Import the library
 
 def is_readable(url):
     readability= require('@mozilla/readability')
-    jsdom=require('jsdom', timeout=10000)
+    jsdom=require('jsdom')
     TurndownService=require('turndown')
     #Is there a better way to do this?
     print('attempting parse')

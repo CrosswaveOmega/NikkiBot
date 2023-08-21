@@ -35,6 +35,9 @@ class ChannelArchiveStatus(ArchiveBase):
     first_message_time=Column(AwareDateTime(timezone=True),nullable=True)
     last_message_time=Column(AwareDateTime(timezone=True),nullable=True)
     latest_archive_time=Column(AwareDateTime(timezone=True),nullable=True)
+    first_message_id=Column(Integer,nullable=True)
+    last_message_id=Column(Integer,nullable=True)
+    latest_archive_id=Column(Integer,nullable=True)
     @staticmethod
     def get_by_tc(channel):
         server_id=channel.guild.id
@@ -84,12 +87,14 @@ class ChannelArchiveStatus(ArchiveBase):
             async for thisMessage in channel.history(oldest_first=True, limit=1):
                 print(thisMessage.created_at,thisMessage.created_at.tzinfo)
                 self.first_message_time=thisMessage.created_at
+                self.first_message_id=thisMessage.id
                 #self.latest_archive_time=thisMessage.created_at
                 
         if self.last_message_time==None or force:
             async for thisMessage in channel.history(oldest_first=False, limit=1):
                 print(thisMessage.created_at,thisMessage.created_at.tzinfo)
                 self.last_message_time=thisMessage.created_at
+                self.last_message_id=thisMessage.id
     def get_time_between(self):
         if self.latest_archive_time==None:
             if self.first_message_time==None:
@@ -102,9 +107,7 @@ class ChannelArchiveStatus(ArchiveBase):
         print('inc',date,self.latest_archive_time,self.last_message_time.tzinfo,date.tzinfo)
         if self.last_message_time<=date:
             self.last_message_time=date
-        if self.latest_archive_time<=date:
-            # self.last_message_time=date
-            self.latest_archive_time = date
+        self.latest_archive_time = date
     def mod_active(self,incr):
         self.active_count+=incr
     def __str__(self):

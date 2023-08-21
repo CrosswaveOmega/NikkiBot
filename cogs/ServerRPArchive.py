@@ -632,7 +632,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 start_date = datetime(2023, 1, 1, 15, 30)
                 robj= rrule(
                     freq=MINUTELY,
-                    interval=15,
+                    interval=10,
                     dtstart=start_date
                 )
 
@@ -696,6 +696,63 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         else:
             await ctx.send("guild only.")
 
+    @commands.guild_only()
+    @commands.has_guild_permissions(administrator=True)
+    @commands.command(name="delete_archive", description="ADMIN ONLY: WILL DELETE ALL ARCHIVE DATA.")
+    async def delete_archive(self, ctx):  
+        if ctx.guild:
+            
+            profile=ServerArchiveProfile.get_or_new(ctx.guild.id)
+            if profile.history_channel_id == 0:
+                await MessageTemplates.get_server_archive_embed(ctx,"Set a history channel first.")
+                return False
+            if not(serverOwner(ctx) or serverAdmin(ctx)):
+                await MessageTemplates.server_archive_message(ctx,"You do not have permission to use this command.")
+                return False
+            confirm=ConfirmView(user=ctx.author)
+            steps=['# Warning! \n  THIS WILL COMPLETELY ERASE ALL DATA ARCHIVED FROM THIS SERVER!'+\
+                   "\nAre you sure about this?",
+                    f"# This cannont be undone! \n "+\
+                    f"Are you sure you want to delete this server's data?",
+                    f"I need one final confirmation before I change the setting.  \n You are sure you want to delete this server's data?"
+            ]
+            for r in steps:
+                confirm=ConfirmView(user=ctx.author)
+                mes=await ctx.send(r,view=confirm)
+                await confirm.wait()
+                if not confirm.value:
+                    await MessageTemplates.server_archive_message(ctx,f"Very well, scope changed aborted.", ephemeral=True)
+                    return
+            
+            await confirm.wait()
+            if confirm.value:
+                await mes.delete()
+                ChannelSep.delete_channel_seps_by_server_id(ctx.guild.id)
+                session=DatabaseSingleton.get_session()
+                session.query(ArchivedRPMessage).filter_by(server_id=ctx.guild.id).delete()
+                session.commit()
+                
+                profile.update(last_group_num=0)
+                confirm2=ConfirmView(user=ctx.author)
+                mes=await ctx.send("I can delete the current history channel if you want to start fresh, is that ok?",view=confirm2)
+                await confirm2.wait()
+                if confirm2.value:
+                    archive_channel=ctx.guild.get_channel(profile.history_channel_id)
+                    cloned=await archive_channel.clone()
+                    profile.update(history_channel_id=cloned.id)
+                    await archive_channel.delete()
+                await mes.delete()
+                profile.last_archive_time=None
+                self.bot.database.commit()
+                mess2=ArchivedRPMessage.get_archived_rp_messages_with_null_posted_url(ctx.guild.id)
+                mess=ArchivedRPMessage.get_archived_rp_messages_without_null_posted_url(ctx.guild.id)
+                await MessageTemplates.server_archive_message(ctx,
+                    f"I've reset the grouping data for this server.  When you run another compile_archive, **everything in the archive_channel will be reposted.**")
+                
+            else:
+                await mes.delete()
+        else:
+            await ctx.send("guild only.")
 
     @commands.command()
     async def firstlasttimestamp(self, ctx):
@@ -1039,6 +1096,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                         await old_message.edit(embed=embedit)
             messages=sep.get_messages()
             messagelength=len(messages)
+            
             for index,amess in enumerate(messages):
                 c,au,av=amess.content,amess.author,amess.avatar
                 files=[]
