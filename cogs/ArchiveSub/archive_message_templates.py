@@ -26,8 +26,8 @@ class ArchiveMessageTemplate(MessageTemplates):
         if hist_channel: aid=f"<#{hist_channel}>"
         clist=profile.list_channels()
         if clist:
-            mentionlist= [f"<#{ment}>" for ment in clist if guild.get_channel(ment).type!=ChannelType.category]
-            catlist=[f"<#{ment}>" for ment in clist if guild.get_channel(ment).type==ChannelType.category]
+            mentionlist= [f"<#{ment}>" for ment in clist if guild.get_channel(ment)!=None and guild.get_channel(ment).type!=ChannelType.category]
+            catlist=[f"<#{ment}>" for ment in clist if guild.get_channel(ment)!=None and guild.get_channel(ment).type==ChannelType.category]
             mentions=",".join(mentionlist[:upper_ignore_limit])
             cattext=",".join(catlist[:upper_cat_limit])
         if len(mentionlist) > upper_ignore_limit: mentions += f' and {len(mentionlist)-upper_ignore_limit} more!'
