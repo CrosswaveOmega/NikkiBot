@@ -587,7 +587,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         thismessage=ctx.message
         auth = ctx.message.author
 
-        guild=channel.guild
+        guild=ctx.guild
         guildid=guild.id
 
         if not(serverOwner(ctx) or serverAdmin(ctx)):
