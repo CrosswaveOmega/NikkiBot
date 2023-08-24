@@ -603,7 +603,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         
         self.guild_db_cache[str(ctx.guild.id)]=profile
         self.bot.database.commit()
-        await MessageTemplates.server_archive_message(ctx,f"Removed {len(channel)} deleted channels from my ignore list.")
+        await MessageTemplates.server_archive_message(ctx,f"Removed {len(removed)} deleted channels from my ignore list.")
     
     @archive_setup.command(name="set_scope", description="Configure the archive scope, the bot will archive messages only if the authors are in this scope.")
     @app_commands.choices(
