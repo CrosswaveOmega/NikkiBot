@@ -33,8 +33,8 @@ class ArchiveMessageTemplate(MessageTemplates):
         if len(mentionlist) > upper_ignore_limit: mentions += f' and {len(mentionlist)-upper_ignore_limit} more!'
         if len(catlist) > upper_cat_limit: cattext += f' and {len(catlist)-upper_ignore_limit} more!'
         #Ignored channels go into mentions becuase there will be *alot* of them.
-        ments=f"Ignoring {len(mentionlist)} Channels:{mentions}\n"
-        cats=f"Ignoring {len(catlist)} Categories:{cattext}\n"
+        ments=f"Ignoring {len(mentionlist)} Channels:{mentions}\n"[:3000]
+        cats=f"Ignoring {len(catlist)} Categories:{cattext}\n"[:1000]
         if len(catlist)<=0:cats=''
         if len(mentionlist)<=0:ments='No ignored channels.'
         embed=Embed(title=guild.name, description=f'{ments}{cats}', color=Color(color))
