@@ -596,7 +596,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         profile=ServerArchiveProfile.get_or_new(guildid)
         channels=profile.list_channels()
         removed=[]
-        for channel in profile.channels():
+        for channel in channels():
             if guild.get_channel(channel)==None:
                 profile.remove_channel(channel)
                 removed.append(channel)
