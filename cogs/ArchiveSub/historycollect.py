@@ -309,7 +309,11 @@ async def collect_server_history(ctx, **kwargs):
                     current_channel_count=0'''
         for tup, chan in chantups:
             arch_ctx.channel_spot+=1
+
             if profile.has_channel(chan.id)==False and chan.permissions_for(guild.me).view_channel==True and chan.permissions_for(guild.me).read_message_history==True:
+                if chan.category:
+                    if profile.has_channel(chan.category.id)==True: 
+                        continue
                 threads=chan.threads
                 archived=[]
                 async for thread in chan.archived_threads():

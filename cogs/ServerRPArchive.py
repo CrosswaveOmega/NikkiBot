@@ -461,7 +461,74 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         self.guild_db_cache[str(ctx.guild.id)]=profile
         await MessageTemplates.server_archive_message(ctx,"Added channels to my ignore list.  Any messages in these channels will be ignored while archiving.")
 
+    
+    @archive_setup.command(
+        name="add_ignore_category",
+        brief="add a category to this server's ignore list."
+    )
+    @app_commands.describe(
+            cat="Name of category to ignore.")
+    async def add_ignore_category(self, ctx, cat:discord.CategoryChannel):  # Add ignore.
+        '''
+        Add mentioned categories to this server's ignore list. Ignored channels will not be archived.
+        '''
+        bot = ctx.bot
+        thismessage=ctx.message
+        auth = ctx.message.author
+        channel = ctx.message.channel
+       
+
+        guild=channel.guild
+        guildid=guild.id
+        #await ctx.send(f"{cat.id},{cat.name},{len(cat.channels)}")
+        if not(serverOwner(ctx) or serverAdmin(ctx)):
+            await MessageTemplates.server_archive_message(ctx,"You do not have permission to use this command.")
+            return False
+        profile=ServerArchiveProfile.get_or_new(guildid)
+        if profile.has_channel(cat.id):
+            await MessageTemplates.server_archive_message(ctx,f"You are already ignoring category `{cat.name}`.")
+            return
+        profile.add_channel(cat.id)
+
+        self.bot.database.commit()
+        self.guild_db_cache[str(ctx.guild.id)]=profile
+        await MessageTemplates.server_archive_message(ctx,f"Added category `{cat.name}` to my ignore list.  All messages in it's {len(cat.channels)} channels will be ignored while archiving.")
+
         
+    
+    @archive_setup.command(
+        name="remove_ignore_category",
+        brief="remove a category from this server's ignore list."
+    )
+    @app_commands.describe(
+            cat="Name of category to stop ignoring.")
+    async def remove_ignore_category(self, ctx, cat:discord.CategoryChannel):  # Add ignore.
+        '''
+        Remove mentioned categories from this server's ignore list. 
+        '''
+        bot = ctx.bot
+        thismessage=ctx.message
+        auth = ctx.message.author
+        channel = ctx.message.channel
+       
+
+        guild=channel.guild
+        guildid=guild.id
+        #await ctx.send(f"{cat.id},{cat.name},{len(cat.channels)}")
+        if not(serverOwner(ctx) or serverAdmin(ctx)):
+            await MessageTemplates.server_archive_message(ctx,"You do not have permission to use this command.")
+            return False
+        profile=ServerArchiveProfile.get_or_new(guildid)
+        if profile.has_channel(cat.id):
+            profile.remove_channel(cat.id)
+
+            self.bot.database.commit()
+            self.guild_db_cache[str(ctx.guild.id)]=profile
+            await MessageTemplates.server_archive_message(ctx,f"Removed category `{cat.name}` from my ignore list.  All messages in it's {len(cat.channels)} channels will no longer be ignored while archiving.")
+            return
+        
+        await MessageTemplates.server_archive_message(ctx,f"I'm not ignoring category `{cat.name}`.")
+
 
 
     @archive_setup.command(
@@ -506,6 +573,37 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         self.bot.database.commit()
         await MessageTemplates.server_archive_message(ctx,"Removed channels from my ignore list.  Any messages in these channels will no longer be ignored while archiving.")
     
+    
+    @archive_setup.command(
+        
+        name="remove_deleted_channels",
+        brief="removes channels from this server's ignore list that have been deleted."
+    )
+    async def remove_deleted_channels(self, ctx):  
+        '''
+        Removes channels from this server's ignore list. These channels will be archived.
+        '''
+        bot = ctx.bot
+        thismessage=ctx.message
+        auth = ctx.message.author
+
+        guild=channel.guild
+        guildid=guild.id
+
+        if not(serverOwner(ctx) or serverAdmin(ctx)):
+            await MessageTemplates.server_archive_message(ctx,"You do not have permission to use this command.")
+            return False
+        profile=ServerArchiveProfile.get_or_new(guildid)
+        channels=profile.list_channels()
+        removed=[]
+        for channel in profile.channels():
+            if guild.get_channel(channel)==None:
+                profile.remove_channel(channel)
+                removed.append(channel)
+        
+        self.guild_db_cache[str(ctx.guild.id)]=profile
+        self.bot.database.commit()
+        await MessageTemplates.server_archive_message(ctx,f"Removed {len(channel)} deleted channels from my ignore list.")
     
     @archive_setup.command(name="set_scope", description="Configure the archive scope, the bot will archive messages only if the authors are in this scope.")
     @app_commands.choices(

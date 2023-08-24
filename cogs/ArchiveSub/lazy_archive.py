@@ -200,9 +200,6 @@ async def lazy_archive(self, ctx):
                         gui.gprint(f"{day}, {count}")
                         if count>0:  
                             thelim+=count
-                    if thelim<=0:
-                        await ctx.send("Limit is 0?")
-                        return
 
                     if thelim<=0:
                         await ctx.send(f"All {fullcount} messages posted. ")

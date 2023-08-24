@@ -1,11 +1,12 @@
 
-from discord import Embed, Color, Guild
+from discord import Embed, Color, Guild, ChannelType
 from discord.ext import commands
 
 from utility import MessageTemplates, get_server_icon_color
 from bot import TCGuildTask
 from assets import AssetLookup
 upper_ignore_limit=50
+upper_cat_limit=10
 from database import ServerArchiveProfile
 '''
 This template will only ever be used inside ArchiveSub
@@ -15,7 +16,8 @@ class ArchiveMessageTemplate(MessageTemplates):
     def get_server_archive_embed(guild:Guild, description: str, color:int=0xffffff):
         '''Create an embed that sums up the server archive information for this server.'''
         profile=ServerArchiveProfile.get_or_new(guild.id)
-        aid,mentions="NOT SET","No ignored channels"
+        mentionlist,catlist=[],[]
+        aid,mentions,cattext="NOT SET","No ignored channels",''
         hist_channel=profile.history_channel_id
         last_date="Never compiled"
         if profile.last_archive_time:
@@ -23,10 +25,19 @@ class ArchiveMessageTemplate(MessageTemplates):
             last_date=f"<t:{int(timestamped)}:f>"
         if hist_channel: aid=f"<#{hist_channel}>"
         clist=profile.list_channels()
-        if clist: mentions=",".join( [f"<#{ment}>" for ment in clist[:upper_ignore_limit]])
-        if len(clist) > upper_ignore_limit: mentions += f' and {len(clist)-upper_ignore_limit} more!'
+        if clist:
+            mentionlist= [f"<#{ment}>" for ment in clist if guild.get_channel(ment).type!=ChannelType.category]
+            catlist=[f"<#{ment}>" for ment in clist if guild.get_channel(ment).type==ChannelType.category]
+            mentions=",".join(mentionlist[:upper_ignore_limit])
+            cattext=",".join(catlist[:upper_cat_limit])
+        if len(mentionlist) > upper_ignore_limit: mentions += f' and {len(mentionlist)-upper_ignore_limit} more!'
+        if len(catlist) > upper_cat_limit: cattext += f' and {len(catlist)-upper_ignore_limit} more!'
         #Ignored channels go into mentions becuase there will be *alot* of them.
-        embed=Embed(title=guild.name, description=f'ignored channels:{mentions}', color=Color(color))
+        ments=f"Ignoring {len(mentionlist)} Channels:{mentions}\n"
+        cats=f"Ignoring {len(catlist)} Categories:{cattext}\n"
+        if len(catlist)<=0:cats=''
+        if len(mentionlist)<=0:ments='No ignored channels.'
+        embed=Embed(title=guild.name, description=f'{ments}{cats}', color=Color(color))
         embed.add_field(name="Archive Channel",value=aid)
         embed.add_field(name="Last Archive Date",
                         value=last_date)
