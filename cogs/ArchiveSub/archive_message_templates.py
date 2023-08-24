@@ -25,9 +25,12 @@ class ArchiveMessageTemplate(MessageTemplates):
             last_date=f"<t:{int(timestamped)}:f>"
         if hist_channel: aid=f"<#{hist_channel}>"
         clist=profile.list_channels()
+        rc=0
         if clist:
-            mentionlist= [f"<#{ment}>" for ment in clist if guild.get_channel(ment)!=None and guild.get_channel(ment).type!=ChannelType.category]
-            catlist=[f"<#{ment}>" for ment in clist if guild.get_channel(ment)!=None and guild.get_channel(ment).type==ChannelType.category]
+            filtered=[guild.get_channel(ment) for ment in clist if guild.get_channel(ment)!=None]
+            rc=len([guild.get_channel(ment) for ment in clist if guild.get_channel(ment)==None])
+            mentionlist= [f"<#{ment.id}>" for ment in filtered if ment.type!=ChannelType.category]
+            catlist=[f"<#{ment.id}>" for ment in filtered if ment.type==ChannelType.category]
             mentions=",".join(mentionlist[:upper_ignore_limit])
             cattext=",".join(catlist[:upper_cat_limit])
         if len(mentionlist) > upper_ignore_limit: mentions += f' and {len(mentionlist)-upper_ignore_limit} more!'
@@ -37,7 +40,9 @@ class ArchiveMessageTemplate(MessageTemplates):
         cats=f"Ignoring {len(catlist)} Categories:{cattext}\n"[:1000]
         if len(catlist)<=0:cats=''
         if len(mentionlist)<=0:ments='No ignored channels.'
-        embed=Embed(title=guild.name, description=f'{ments}{cats}', color=Color(color))
+        removeif=f""
+        if rc>0:removeif=f"# {rc} CHANNEL/CATEGORIES IN IGNORE LIST WHERE DELETED.\n"
+        embed=Embed(title=guild.name, description=f'{removeif}{ments}{cats}', color=Color(color))
         embed.add_field(name="Archive Channel",value=aid)
         embed.add_field(name="Last Archive Date",
                         value=last_date)
