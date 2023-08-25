@@ -289,7 +289,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 messageresp=None
                 for pa in page.pages:
                     ms=await ctx.channel.send(pa)
-                return content
+                    if messageresp==None: messageresp=ms
+                return ms
         return "No data"
         
     @commands.hybrid_command(name='translate_simple',description='Translate a block of text.')

@@ -59,10 +59,10 @@ class PurGPTAPI:
         }
         data = payload
         print(data)
-
+    
         if self._key==None: raise error.KeyException("API Key not set.")
         data['key']= self._key
-        
+        print()
         timeout = aiohttp.ClientTimeout(
                 total=TIMEOUT_SECS
             )
@@ -91,10 +91,10 @@ class PurGPTAPI:
             return await obj.calloai()
         else:
             endpoint=obj.endpoint
-            payload=obj.to_dict()
+            payload=obj.to_dict(pur=True)
             if len(json.dumps(payload))>MAX_LOAD_SIZE:
                 obj.slimdown(MAX_LOAD_SIZE)
-                payload=obj.to_dict()
+                payload=obj.to_dict(pur=True)
 
             response_dict= await self._make_call(endpoint,payload)
             openaiobject=util.convert_to_openai_object(response_dict)

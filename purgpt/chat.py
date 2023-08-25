@@ -56,15 +56,15 @@ class ChatCreation(ApiCore):
     def to_dict(self,pur=True):
         data= super().to_dict()
         if pur:
-            data['model']="gpt-3.5-turbo"
+            data['forceModel']=True
+        if self.use_model!= "gpt-3.5-turbo":
+            data["model"]=self.use_model
+            
         else:
-            if self.use_model!= "gpt-3.5-turbo":
-                data["model"]=self.use_model
+            if 'functions' in data:
+                data["model"]="gpt-3.5-turbo-0613"
             else:
-                if 'functions' in data:
-                    data["model"]="gpt-3.5-turbo-0613"
-                else:
-                    data["model"]="gpt-3.5-turbo"
+                data["model"]="gpt-3.5-turbo"
         return data
     def summary(self):
         messages=len(self.messages)
