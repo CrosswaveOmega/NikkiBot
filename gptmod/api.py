@@ -3,54 +3,46 @@ from typing import Any, Dict, List, Optional, Union
 import aiohttp
 import json
 import urllib
-import purgpt
+import gptmod
 import openai
 import openai.util as util
-from purgpt.object_core import ApiCore
-import purgpt.error as error
+from gptmod.object_core import ApiCore
+import gptmod.error as error
 from assets import AssetLookup
-BASE_URL='https://beta.purgpt.xyz/'
 
-#
 
-'''rate limit:
-
-{
-"messages":[{"role":"user", "content":"Hello world, how are you doing?"}],
-"key": "YOUR_API_KEY",
-"model":"ANY DESIRED MODEL"
-}
-PurGPT Ratelimits
-
-- 10 Requests per 10 seconds
-
-- 2000 Requests per Day
-
-'''
 TIMEOUT_SECS=60*10
 #Seconds until timeout.
-MAX_LOAD_SIZE=20000
+MAX_LOAD_SIZE=40000
 #Max payload size.
-class PurGPTAPI:
+class GptmodAPI:
     '''
-    This bot utilizes the PurGPT api to connect to OpenAI.
+    Simple GPT wrapper just in case.
     '''
 
     def __init__(self,token:str=None):
-        self.base_url = BASE_URL
+        self.base_url = gptmod.base_url
         
         
         
         if token!=None:
             if not isinstance(token, str):
-                raise TypeError(f'expected token to be a str, received {token.__class__.__name__} instead')
-            token = token.strip()
-            self._key=token
+                self._key='None'
+                self.openaimode=True
+                #raise TypeError(f'expected token to be a str, received {token.__class__.__name__} instead')
+            else:
+                token = token.strip()
+                self._key=token
+                self.openaimode=False
         else:
-            if purgpt.api_key==None:
-                raise TypeError(f'expected set token to be a string, recieved {token.__class__.__name__} instead')
-            self._key=purgpt.api_key
-        self.openaimode=False
+            if gptmod.api_key==None:
+                self._key='None'
+                self.openaimode=True
+                #raise TypeError(f'expected set token to be a string, recieved {token.__class__.__name__} instead')
+            else:
+
+                self._key=gptmod.api_key
+                self.openaimode=False
         
     async def _make_call(self,endpoint:str,payload:Dict[str,Any])->Dict[str,Any]:
         headers = {
@@ -58,11 +50,11 @@ class PurGPTAPI:
             "Authorization": f"Bearer {self._key}"
         }
         data = payload
-        print(data)
+        #print(data)
     
         if self._key==None: raise error.KeyException("API Key not set.")
-        data['key']= self._key
-        print()
+        #data['key']= self._key
+        #print()
         timeout = aiohttp.ClientTimeout(
                 total=TIMEOUT_SECS
             )
@@ -79,8 +71,8 @@ class PurGPTAPI:
                         print(response.status,response.reason)
                         result=await response.text()
                         print(result)
-                        #if 'err:' in result:  raise error.PurGPTError(f"{response.status}: {response.reason}", code=response.status)
-                        raise error.PurGPTError(f"{response.status}: {response.reason}", code=response.status)
+                        #if 'err:' in result:  raise error.GptmodError(f"{response.status}: {response.reason}", code=response.status)
+                        raise error.GptmodError(f"{response.status}: {response.reason}", code=response.status)
             except (aiohttp.ServerTimeoutError, asyncio.TimeoutError) as e:
                 raise error.Timeout("Request timed out") from e
             except aiohttp.ClientError as e:
@@ -90,11 +82,13 @@ class PurGPTAPI:
         if self.openaimode:
             return await obj.calloai()
         else:
+            if not self.base_url:
+                raise error.GptmodError("There is no set base url.")
             endpoint=obj.endpoint
-            payload=obj.to_dict(pur=True)
+            payload=obj.to_dict(pro=True)
             if len(json.dumps(payload))>MAX_LOAD_SIZE:
                 obj.slimdown(MAX_LOAD_SIZE)
-                payload=obj.to_dict(pur=True)
+                payload=obj.to_dict(pro=True)
 
             response_dict= await self._make_call(endpoint,payload)
             openaiobject=util.convert_to_openai_object(response_dict)
@@ -120,7 +114,7 @@ class PurGPTAPI:
             if not ctx.guild:
                 return True
             if ctx.guild.id!=int(target_server):
-                await ctx.send("Only my owner may use the AI while OpenAI mode is on.", ephemeral=True)
+                await ctx.send("OpenAI mode may only be used in my server", ephemeral=True)
                 return True
             return False
         

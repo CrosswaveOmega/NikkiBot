@@ -41,7 +41,7 @@ Initalizes TCBot, defines some checks, and contains the main setup coroutine.
 
 import database.database_main as dbmain
 from assets import AssetLookup
-import purgpt, openai
+import openai
 
 
 bot:TCBot = TCBot()
@@ -417,7 +417,6 @@ async def main(args):
             c=keys.get("optional", 'cse_id',fallback=None)
             bot.keys['google']=g
             bot.keys['cse']=c
-            purgpt.api_key=keys.get("optional", 'purgpt')
             openai.api_key=keys.get("optional", 'openai')
             
             await bot.start(keys.get("vital", 'cipher'))

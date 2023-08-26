@@ -41,7 +41,7 @@ from .StatusMessages import StatusMessageManager, StatusMessage, StatusMessageMi
 from .PlaywrightAPI import PlaywrightMixin
 from discord import Interaction
 from discord.app_commands import CommandTree
-import purgpt
+import gptmod
 import gui
 
 class ConfigParserSub(configparser.ConfigParser):
@@ -130,7 +130,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
                 self.gui.run(self.loop)
                 pass
                 #self.gthread=gui.Gui.run(self.gui)
-            self.gptapi= purgpt.PurGPTAPI(purgpt.api_key)
+            self.gptapi= gptmod.GptmodAPI()
 
             self.database_on()
             self.update_ext_list()

@@ -4,13 +4,13 @@ import json
 from typing import Any, Dict, List, Literal, Optional, Union
 import aiohttp
 from datetime import datetime, timezone
-from purgpt.object_core import ApiCore
-from purgpt.api import PurGPTAPI
-from purgpt.util import num_tokens_from_messages
+from gptmod.object_core import ApiCore
+from gptmod.api import GptmodAPI
+from gptmod.util import num_tokens_from_messages
 import openai
 
 class Image(ApiCore):
-    endpoint = "images/generations"
+    endpoint = "v1/images/generations"
     method = "POST"
     api_slots=[]
     def __init__(self,

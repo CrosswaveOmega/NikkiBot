@@ -36,7 +36,7 @@ do_group,
   ChannelArchiveStatus
 ) 
 from collections import defaultdict
-import purgpt
+import gptmod
 class ToChoice(commands.Converter):
     async def convert(self, ctx, argument):
         if not ctx.interaction:
@@ -67,7 +67,9 @@ class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
         channel = ctx.message.channel
         guild=channel.guild
         guildid=guild.id
-        
+        if await ctx.bot.gptapi.check_oai(ctx):
+            return
+
         serverrep,userrep=AuditProfile.get_or_new(guild,ctx.author)
         userrep.checktime()
         ok, reason=userrep.check_if_ok()
@@ -138,7 +140,7 @@ class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
 
         for sep in ChannelSep.get_all_separators_on_dates(guildid, datetime_object,datetime_object_end):
             ecount+=1
-            tokens=purgpt.util.num_tokens_from_messages([
+            tokens=gptmod.util.num_tokens_from_messages([
                 {'role':'system','content':prompt},{
                     'role':'user','content':script}],'gpt-3.5-turbo-16k')
             await mt.editw(min_seconds=15,content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount} ({sep.message_count}),message {mcount}.  Tokensize is {tokens}")
@@ -157,7 +159,7 @@ class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
                 if count>5:
                     #To avoid blocking the asyncio loop.
                     
-                    tokens=purgpt.util.num_tokens_from_messages([
+                    tokens=gptmod.util.num_tokens_from_messages([
                     {'role':'system','content':prompt},{
                         'role':'user','content':script}],'gpt-3.5-turbo-16k')
                     await mt.editw(min_seconds=15,content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount},message {mcount}.  Tokensize is {tokens}")
@@ -173,14 +175,14 @@ class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
                     if embed.type=='rich':
                         embedscript=f"{embed.title}: {embed.description}"
                         script=f"{script}\n {m.author}: {embedscript}"
-        chat=purgpt.ChatCreation(
+        chat=gptmod.ChatCreation(
                 messages=[{'role': "system", 'content':  prompt }],
                 model='gpt-3.5-turbo-16k'
             )
         gui.gprint(script)
 
         chat.add_message(role='user',content=script)
-        tokens=purgpt.util.num_tokens_from_messages(chat.messages,'gpt-3.5-turbo-16k')
+        tokens=gptmod.util.num_tokens_from_messages(chat.messages,'gpt-3.5-turbo-16k')
         await ctx.send(tokens)
         if tokens> 16384:
             await ctx.send("I'm sorry, but there's too much content on this day for me to summarize.")
@@ -197,11 +199,11 @@ class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
             print(res)
             if res.get('error',False):
                 err=res['error']
-                error=purgpt.error.PurGPTError(err,json_body=res)
+                error=gptmod.error.GptmodError(err,json_body=res)
                 raise error
             if res.get('err',False):
                 err=res[err]
-                error=purgpt.error.PurGPTError(err,json_body=res)
+                error=gptmod.error.GptmodError(err,json_body=res)
                 raise error
             result=res['choices'][0]['message']['content']
             page=commands.Paginator(prefix='',suffix=None,max_size=4000)

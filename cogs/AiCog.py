@@ -24,8 +24,8 @@ from pathlib import Path
 from utility import MessageTemplates, RRuleView, formatutil
 from utility.embed_paginator import pages_of_embeds
 from bot import TCBot,TC_Cog_Mixin, super_context_menu
-import purgpt
-import purgpt.error
+import gptmod
+import gptmod.error
 from assets import AssetLookup
 from datetime import datetime, timezone
 from database.database_ai import AuditProfile, ServerAIConfig
@@ -33,7 +33,7 @@ import utility.hash as hash
 lock = asyncio.Lock()
 
 nikkiprompt='''You are Nikki, a energetic, cheerful, and determined female AI ready to help users with whatever they need.
-All your responces must be in an energetic and cheerful manner, carrying a strong personal voice.
+All your responces must convey a strong personal voice.  Show, don't tell.
 Carefully heed the user's instructions.  If a query is inappropriate, respond with "I refuse to answer."
 If you do not know how to do something, please note that with your responce.  If a user is definitely wrong about something, explain how politely.
 Ensure that responces are brief, do not say more than is needed.  Never use emojis in your responses.
@@ -163,7 +163,7 @@ async def ai_message_invoke(bot:TCBot,message:discord.Message,mylib:GPTFunctionL
     #Convert into a list of messages
     mes=[c.to_dict() for c in chain]
     #create new ChatCreation
-    chat=purgpt.ChatCreation(
+    chat=gptmod.ChatCreation(
         presence_penalty=0.3,
         messages=[])
 #,model="gpt-3.5-turbo-0613"
@@ -194,11 +194,11 @@ async def ai_message_invoke(bot:TCBot,message:discord.Message,mylib:GPTFunctionL
         result=await bot.gptapi.callapi(chat)
     if result.get('error',False):
         err=result['error']
-        error=purgpt.error.PurGPTError(err,json_body=result)
+        error=gptmod.error.GptmodError(err,json_body=result)
         raise error
     if result.get('err',False):
         err=result[err]
-        error=purgpt.error.PurGPTError(err,json_body=result)
+        error=gptmod.error.GptmodError(err,json_body=result)
         raise error
     #only add messages after they're finished processing.
     
@@ -277,74 +277,6 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         messages=profile.clear_message_chains()
         await MessageTemplates.server_ai_message(ctx,f"{messages} purged")
 
-    mc=app_commands.Group(name="image_ai",description='Generate images with DALL-E.')
-    @mc.command(name="generate_image",description="make a dalle image.")
-    async def make_image(self,inter:discord.Interaction,prompt:str,num:int=1,size:Literal['256x256','512x512','1024x1024']='256x256'):
-        ctx=await self.bot.get_context(inter)
-        if not ctx.guild: return
-        user_id=ctx.author.id
-        targetid,num2=hash.hash_string(str(user_id),hashlen=16,hashset=hash.Hashsets.base64)
-        if len(prompt)>=1000:
-            await ctx.send("Prompt too long.",ephemeral=True)
-            return
-        if not 0<num<=10:
-            await ctx.send("Invalid number of generations.",ephemeral=True)
-            return
-        precheck=precheck_context(ctx)
-        if not precheck:
-            await ctx.send("Precheck failed.",ephemeral=True)
-            return
-        img=purgpt.object.Image(
-            prompt=prompt,
-            n=num,
-            size=size
-        )
-        
-        message=await ctx.send(f"Generating image{'s' if num>1 else ''}...")
-        async with ctx.channel.typing():
-            #Call the API.
-            result=await ctx.bot.gptapi.callapi(img)
-        for data in result.data:
-            myimg=await download_image(data['url'])
-            # Create a discord.File object using the image_bytes
-            file = discord.File(fp=myimg, filename='image.png')
-            # Send the file with a message
-            await ctx.channel.send(file=file)
-
-    @mc.command(name="generate_image_variation",description="make variations of an image")
-    async def make_image_var(self,inter:discord.Interaction,image:discord.Attachment,num:int=1,size:Literal['256x256','512x512','1024x1024']='256x256'):
-        ctx=await self.bot.get_context(inter)
-        await ctx.send("This command is disabled.")
-        return
-        if not ctx.guild: return
-        user_id=ctx.author.id
-        targetid,num2=hash.hash_string(str(user_id),hashlen=16,hashset=hash.Hashsets.base64)
-        if not 0<num<=10:
-            await ctx.send("Invalid number of generations.",ephemeral=True)
-            return
-        precheck=await precheck_context(ctx)
-        if not precheck:
-            await ctx.send("Precheck failed.",ephemeral=True)
-            return
-        mybytes=await image.read()
-        byte_stream = io.BytesIO(mybytes)
-        img=purgpt.object.ImageVariate(
-            image= base64.b64encode(mybytes).decode('utf-8'),
-            n=num,
-            size=size
-        )
-        
-        message=await ctx.send(f"Generating image{'s' if num>1 else ''}...")
-        async with ctx.channel.typing():
-            #Call the API.
-            result=await ctx.bot.gptapi.callapi(img)
-        for data in result.data:
-            myimg=await download_image(data['url'])
-            # Create a discord.File object using the image_bytes
-            file = discord.File(fp=myimg, filename='image.png')
-            # Send the file with a message
-            await ctx.channel.send(file=file)
-
 
 
     @commands.hybrid_command(name="ai_functions",description="Get a list of ai functions.")
@@ -392,7 +324,6 @@ class AICog(commands.Cog, TC_Cog_Mixin):
     @commands.command(brief="Turn on OpenAI mode")
     @commands.is_owner()
     async def openai(self,ctx,mode:bool=False):
-        '''"Update user or server api limit `[server,user],id,limit`"'''
         self.bot.gptapi.set_openai_mode(mode)
         if mode==True:
             await ctx.send("OpenAI mode turned on.")

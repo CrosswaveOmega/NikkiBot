@@ -23,10 +23,10 @@ from pathlib import Path
 from utility import MessageTemplates, RRuleView, formatutil, seconds_to_time_string, urltomessage
 from utility.embed_paginator import pages_of_embeds
 from bot import TCBot,TC_Cog_Mixin, super_context_menu
-import purgpt
+import gptmod
 from database import DatabaseSingleton
 from gptfunctionutil import *
-import purgpt.error
+import gptmod.error
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.future import select
@@ -54,7 +54,7 @@ Enemy: Cog Regional Manager - Rainmaker
 Tattle: "Every two rounds, Rainmaker will change the weather to a different phase.  Oil rain will make all toons take 10 damage and heal all cogs for 50 HP. Fog will obscure all data on screen.  Heavy Rain will amplify everyone's damage by 20%.  Storm Cell will drop damaging lightning bolts on your toons.  Moonsoon will only be used when Raimnaker is below 880 HP, prevent you from using Toon Up and Sound Gags, significantly increase her defense, and summon buffed cogs to fight for her side!  When she's at 1 HP, she'll dispell the current weather and her flunkies.  You'll get a special cutscene if you go three turns without attacking her, meaning this is a boss you can spare if you're feeling merciful!"
 
 Remember, if you do not have enough information, feel free to provide a short amusing remark based on the information you do have.'''
-from purgpt import ChatCreation
+from gptmod import ChatCreation
 async def tattle(bot,tattlewith=""):
     object=ChatCreation( model='gpt-3.5-turbo-16k',   messages=[
         {"role": "system", "content": tattle_prompt},
@@ -63,7 +63,7 @@ async def tattle(bot,tattlewith=""):
     res=await bot.gptapi.callapi(object)
     if res.get('err',False):
         err=res[err]
-        error=purgpt.error.PurGPTError(err,json_body=res)
+        error=gptmod.error.GptmodError(err,json_body=res)
         raise error
     result=res['choices'][0]['message']['content']
     return result

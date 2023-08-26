@@ -3,9 +3,9 @@ import json
 from typing import Any, Dict, List, Optional, Union
 import aiohttp
 from datetime import datetime, timezone
-from purgpt.object_core import ApiCore
-from purgpt.api import PurGPTAPI
-from purgpt.util import num_tokens_from_messages
+from gptmod.object_core import ApiCore
+from gptmod.api import GptmodAPI
+from gptmod.util import num_tokens_from_messages
 import openai
 nikkiprompt='''You are Nikki, a energetic, cheerful, and determined female AI ready to help users with whatever they need.
 All your responces must convey a strong personal voice.  Show, don't tell.
@@ -17,7 +17,7 @@ Respond using Markdown.'''
         
 class ChatCreation(ApiCore):
     '''Base Class for the chat/completion endpoint.'''
-    endpoint = "openai/chat/completions"
+    endpoint = "v1/chat/completions"
     method = "POST"
     api_slots=[]
     def __init__(self,
@@ -45,7 +45,7 @@ class ChatCreation(ApiCore):
 
     async def calloai(self):
         '''return a completion through openai instead.'''
-        dictme=self.to_dict(pur=False)
+        dictme=self.to_dict(pro=False)
         modelv=dictme['model']
         if self.functions is not None:
             dictme['messages']=[self.messages[0],self.messages[-1]]
@@ -53,9 +53,9 @@ class ChatCreation(ApiCore):
             **dictme
         )
         return result
-    def to_dict(self,pur=True):
+    def to_dict(self,pro=True):
         data= super().to_dict()
-        if pur:
+        if pro:
             data['forceModel']=True
         if self.use_model!= "gpt-3.5-turbo":
             data["model"]=self.use_model

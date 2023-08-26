@@ -23,10 +23,10 @@ from pathlib import Path
 from utility import MessageTemplates, RRuleView, formatutil, seconds_to_time_string, urltomessage
 from utility.embed_paginator import pages_of_embeds
 from bot import TCBot,TC_Cog_Mixin, super_context_menu
-import purgpt
+import gptmod
 from database import DatabaseSingleton
 from gptfunctionutil import *
-import purgpt.error
+import gptmod.error
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.future import select

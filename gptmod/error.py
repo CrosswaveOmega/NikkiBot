@@ -1,7 +1,7 @@
 import json
 
 '''Partially derived from OpenAI's python library errors.'''
-class PurGPTError(Exception):
+class GptmodError(Exception):
     
     def __init__(
         self,
@@ -10,7 +10,7 @@ class PurGPTError(Exception):
         request=None,
         code=None,
     ):
-        super(PurGPTError, self).__init__(message)
+        super(GptmodError, self).__init__(message)
 
         self._message = message
         self.json_body = json_body or {}
@@ -45,19 +45,19 @@ class PurGPTError(Exception):
         )
 
 
-class KeyException(PurGPTError):
+class KeyException(GptmodError):
     def __init__(self, message):
         self._message = message or "API KEY HAS NOT BEEN SET!"
         super(KeyException,self).__init__(
             self._message
             )
 
-class Timeout(PurGPTError):
+class Timeout(GptmodError):
     def __init__(self, message):
         self._message = message or "REQUEST TIMED OUT!"
         super(Timeout,self).__init__(
             self._message
             )
 
-class APIConnectionError(PurGPTError):
+class APIConnectionError(GptmodError):
     pass

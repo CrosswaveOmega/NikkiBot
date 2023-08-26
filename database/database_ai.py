@@ -17,7 +17,7 @@ import utility.hash as hash
 AIBase = declarative_base(name="AI Feature Base")
 
 class AuditProfile(AIBase):
-    '''This table manages per server/user rate limits for the PurGPT api.  
+    '''This table manages per server/user rate limits for any gpt API.  
         It is not audited to preserve any needed bans.
     '''
     __tablename__ = 'audit_profile'
