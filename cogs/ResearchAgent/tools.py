@@ -32,7 +32,9 @@ def google_search(bot,query:str,result_limit:int):
     return results
 def read_and_split_link(url:str,chunk_size:int=1024,chunk_overlap:int=1)->List[Document]:
     # Document loader
-    loader = webload(url)
+    loader = webload(url,header_template={
+      'User-Agent': 'Mozilla/5.0 (X11,Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'
+      })
     # Index that wraps above steps
     data=loader.load()
     print('ok')
