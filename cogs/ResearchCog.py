@@ -448,11 +448,17 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                             print(link_text,url)
                             #sources.append(f"[{link_text}]({url})")
                             result=result.replace(link_text,f'*{link_text}*')
-                    
-                    embed=discord.Embed(
-                        title=header,
-                        description=result[:4028]
-                    )
+                    page=commands.Paginator(prefix='',suffix=None,max_size=4000)
+            
+                    for p in result.split('\n'):
+                        page.add_line(p)
+                    for p in page:
+                        embed=discord.Embed(
+                            title=header,
+                            description=p
+                        )
+                        await ctx.send(content=header,embed=embed)
+                    embed=discord.Embed()
                     name,res='',''
                     for i in sources:
                         if len(res+i)>1020:
