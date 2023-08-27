@@ -423,7 +423,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 if reason in ['messagelimit','ban']:
                     await ctx.channel.send("You have exceeded daily rate limit.")
                     return
-            await ctx.channel.send(f"<a:SquareLoading:1143238358303264798> Searching google for {query} ...")
+            mes=await ctx.channel.send(f"<a:SquareLoading:1143238358303264798> Reading Article")
             serverrep.modify_status()
             userrep.modify_status()
             article, header=await read_article(url)
@@ -445,7 +445,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             #Call API
             bot=ctx.bot
             messageresp=None
-
+            await mes.delete()
             async with ctx.channel.typing():
                 try:
                     res=await bot.gptapi.callapi(chat)
