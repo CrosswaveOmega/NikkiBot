@@ -452,7 +452,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             
                     for p in result.split('\n'):
                         page.add_line(p)
-                    for p in page:
+                    for p in page.pages:
                         embed=discord.Embed(
                             title=header,
                             description=p
