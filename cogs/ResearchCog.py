@@ -36,6 +36,7 @@ from .ResearchAgent import *
 from googleapiclient.discovery import build   #Import the library
 
 def is_readable(url):
+    timeout=30
     readability= require('@mozilla/readability')
     jsdom=require('jsdom')
     TurndownService=require('turndown')
@@ -52,6 +53,7 @@ def is_readable(url):
     return rsult
 
 def read_article_sync(url):
+    timeout=30
     readability= require('@mozilla/readability')
     jsdom=require('jsdom')
     TurndownService=require('turndown')
@@ -64,6 +66,7 @@ def read_article_sync(url):
     myjs=assets.JavascriptLookup.find_javascript_file('readwebpage.js',out)
     #myjs=myjs.replace("URL",url)
     print(myjs)
+    
     rsult= eval_js(myjs)
 
     output,header=rsult[0],rsult[1]
@@ -76,18 +79,23 @@ def read_article_sync(url):
     return [simplified_text, header]
 
 async def read_article(url):
+    now=discord.utils.utcnow()
     getthread=asyncio.to_thread(read_article_sync, url)
     result=await getthread
     print(result)
+    gui.gprint('elapsed', discord.utils.utcnow()-now)
     text,header=result[0],result[1]
     return text,header
 
 async def read_many_articles(urls):
     outputted=[]
     for url in urls:
+        now=discord.utils.utcnow()
         getthread=asyncio.to_thread(read_article_sync, url)
         result=await getthread
         print(result)
+        
+        gui.gprint('elapsed', discord.utils.utcnow()-now)
         text,header=result[0],result[1]
         outputted.append((url,text,header))
     return outputted
@@ -211,9 +219,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @LibParam(comment='An interesting, amusing remark.',
               query='The query to search google with.  Must be related to the question.',
               question='the question that is to be solved with this search.  Must be a complete sentence.',
+              site_title_restriction='Optional restrictions for sources.  Only sources with this substring in the title will be considered when writing the answer.  Include only if user explicitly asks.',
               result_limit="Number of search results to retrieve.  Minimum of 3,  Maximum of 16.")
     @commands.command(name='google_detective',description='Get a list of results from a google search query.',extras={})
-    async def google_detective(self,ctx:commands.Context,question:str,query:str,comment:str='Search results:',result_limit:int=4):
+    async def google_detective(self,ctx:commands.Context,question:str,query:str,comment:str='Search results:',site_title_restriction:str='None',result_limit:int=4):
         'Search google for a query.'
         
         bot=ctx.bot
@@ -223,37 +232,75 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         if 'google' not in bot.keys or 'cse' not in bot.keys:
             await ctx.send("google search keys not set up.")
             return "insufficient keys!"
-        target_message=await ctx.channel.send("Searching...")
+        chromac=ChromaTools.get_chroma_client()
+
+        target_message=await ctx.channel.send(f"<a:SquareLoading:1143238358303264798> Searching google for {query} ...")
         
         statmess=StatusEditMessage(target_message,ctx)
         async with ctx.channel.typing():
             results=google_search(ctx.bot,query,result_limit)
+            
             all_links=[]
             hascount=0
             length=len(results)
             lines="\n".join([f"- {r['link']}" for r in results])
+            
+            embed=discord.Embed(title=f"query: {query}",description=f"out=\n{lines}")
+                
+            await statmess.editw(min_seconds=0,content=f'<a:LetWalkR:1118191001731874856> Search complete: reading {0}/{length}. {hascount}/{len(all_links)}',embed=embed)
             for e,r in enumerate(results):
                 all_links.append(r['link'])
-                if has_url(r['link']): 
-                    hascount+=1
                 embed=discord.Embed(description=f"out=\n{lines}")
-                
+                has,getres=has_url(r['link'],client=chromac)
+                if has:
+                    await ctx.send(f"[Link {e}]({r['link']}) has {len(getres['documents'])} cached documents.",suppress_embeds=True)
+                    ver=zip(getres['documents'],getres['metadatas'])
+                    for d,e in ver:
+                        if e['source']!=r['link']:
+                            await ctx.send(f"docmismatch MISMATCH")
+                    hascount+=1
+                else:
+                    splits=read_and_split_link(r['link'])
+                    dbadd=True
+                    for split in splits:
+                        gui.gprint(split.page_content)
+                        for i,m in split.metadata.items():
+                            gui.gprint(i,m)
+                            if m==None:
+                                await ctx.send(f"split metadata {i} is none!")
+                                dbadd=False
+                    if dbadd:
+                        await ctx.send(f"[Link {e}]({r['link']}) has {len(splits)} splits.",suppress_embeds=True)
+                        store_splits(splits, client=chromac)
                 await statmess.editw(min_seconds=15,content=f'reading {e}/{length}. {hascount}/{len(all_links)}',embed=embed)
-                splits=read_and_split_link(r['link'])
-                store_splits(splits)
 
 
         lines="\n".join(all_links)
+        embed=discord.Embed(\
+        title=f'Search Query: {query} ',
+        description=f"{hascount}/{len(all_links)}\nout=\n{lines}")
+        embed.add_field(name='Question',value=question,inline=False)
+        if site_title_restriction!='None':
+            embed.add_field(name='restrict',value=site_title_restriction,inline=False)
+        embed.set_footer(text=comment)
         await statmess.editw(
         min_seconds=0,
-        content='drawing conclusion...',
-        embed=discord.Embed(\
-        title=f'cached links {hascount}/{len(all_links)}',
-        description=f"out=\n{lines}")
+        content='querying db...',
+        embed=embed
         )
         async with ctx.channel.typing():
-            data=await search_sim(question)
-            answer=await format_answer(question,data)
+            data=await search_sim(question,client=chromac, titleres=site_title_restriction)
+            len(data)
+            if len(data)<=0:
+                return 'NO RELEVANT DATA.'
+            docs2 = sorted(data, key=lambda x: x[1],reverse=True)
+            embed.add_field(name='Cache_Query',value=f'About {len(docs2)} entries where found.  Max score is {docs2[0][1]}')
+            #docs2 = sorted(data, key=lambda x: x[1],reverse=True)
+            await statmess.editw(
+            min_seconds=0,
+            content='drawing conclusion...',
+            embed=embed)
+            answer=await format_answer(question,docs2)
             page=commands.Paginator(prefix='',suffix=None)
             
             for p in answer.split('\n'):
@@ -263,6 +310,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 ms=await ctx.channel.send(pa)
                 if messageresp==None: messageresp=ms
             return messageresp
+
 
 
         
@@ -362,7 +410,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     return
             serverrep.modify_status()
             userrep.modify_status()
-            article, header=read_article_sync(url)
+            article, header=await read_article(url)
             
             chat=gptmod.ChatCreation(
                 messages=[{'role': "system", 'content':  self.prompt }],
