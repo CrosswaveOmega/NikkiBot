@@ -267,8 +267,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                         for i,m in split.metadata.items():
                             gui.gprint(i,m)
                             if m==None:
-                                await ctx.send(f"split metadata {i} is none!")
-                                dbadd=False
+                                split.metadata[i]='N/A'
+                            else:
+                                dbadd=True
+                                #await ctx.send(f"split metadata {i} is none!")
                     if dbadd:
                         await ctx.send(f"[Link {e}]({r['link']}) has {len(splits)} splits.",suppress_embeds=True)
                         store_splits(splits, client=chromac)
