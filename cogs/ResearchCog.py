@@ -226,12 +226,25 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         'Search google for a query.'
         
         bot=ctx.bot
+        if not ctx.guild:
+            await ctx.send('needs to be guild')
+            return
         if await ctx.bot.gptapi.check_oai(ctx):
             await ctx.send("I'm sorry, but the research system is unavailable in this server.")
             return 'INVALID CONTEXT'
         if 'google' not in bot.keys or 'cse' not in bot.keys:
             await ctx.send("google search keys not set up.")
             return "insufficient keys!"
+        serverrep,userrep=AuditProfile.get_or_new(ctx.guild,ctx.author)
+        serverrep.checktime()
+        userrep.checktime()
+
+
+        ok, reason=userrep.check_if_ok()
+        if not ok:
+            if reason in ['messagelimit','ban']:
+                await ctx.channel.send("You have exceeded daily rate limit.")
+                return
         chromac=ChromaTools.get_chroma_client()
 
         target_message=await ctx.channel.send(f"<a:SquareLoading:1143238358303264798> Searching google for {query} ...")
@@ -410,6 +423,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 if reason in ['messagelimit','ban']:
                     await ctx.channel.send("You have exceeded daily rate limit.")
                     return
+            await ctx.channel.send(f"<a:SquareLoading:1143238358303264798> Searching google for {query} ...")
             serverrep.modify_status()
             userrep.modify_status()
             article, header=await read_article(url)
