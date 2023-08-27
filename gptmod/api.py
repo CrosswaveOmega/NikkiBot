@@ -114,7 +114,7 @@ class GptmodAPI:
             if not ctx.guild:
                 return True
             if ctx.guild.id!=int(target_server):
-                await ctx.send("OpenAI mode may only be used in my server", ephemeral=True)
+                await ctx.send("OpenAI mode may only be used in my private testing server.", ephemeral=True)
                 return True
             return False
         
