@@ -223,20 +223,29 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         if 'google' not in bot.keys or 'cse' not in bot.keys:
             await ctx.send("google search keys not set up.")
             return "insufficient keys!"
+        target_message=await ctx.channel.send("Searching...")
+        
+        statmess=StatusEditMessage(target_message,ctx)
         async with ctx.channel.typing():
             results=google_search(ctx.bot,query,result_limit)
             all_links=[]
             hascount=0
-            for r in results:
+            length=len(results)
+            lines="\n".join([f"- {r['link']}" for r in results])
+            for e,r in enumerate(results):
                 all_links.append(r['link'])
                 if has_url(r['link']): 
                     hascount+=1
+                embed=discord.Embed(description=f"out=\n{lines}")
+                
+                await statmess.editw(min_seconds=15,content=f'reading {e}/{length}. {hascount}/{len(all_links)}',embed=embed)
                 splits=read_and_split_link(r['link'])
                 store_splits(splits)
 
 
         lines="\n".join(all_links)
-        await ctx.send(
+        await statmess.editw(
+        min_seconds=0,
         content='drawing conclusion...',
         embed=discord.Embed(\
         title=f'cached links {hascount}/{len(all_links)}',
