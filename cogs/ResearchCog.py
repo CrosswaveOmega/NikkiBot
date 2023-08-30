@@ -328,6 +328,15 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await ctx.channel.send('complete',view=viewme)
             return messageresp
 
+    @commands.command(name='loadurl',description='loadurl test.',extras={})
+    async def loader_test(self,ctx:commands.Context,link:str):
+        
+        
+        splits=await read_and_split_link(link)
+        for e,s in splits:
+            await ctx.send(f"[Link {e}]({link}) has {len(s)} splits.",suppress_embeds=True)
+
+
     @commands.command(name='get_source',description='get sources.',extras={})
     async def source_get(self,ctx:commands.Context,question:str):
         
