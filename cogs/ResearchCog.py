@@ -333,7 +333,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         
         
         splits=await read_and_split_link(link)
-        for e,s in splits:
+        for e,s in enumerate(splits):
             await ctx.send(f"[Link {e}]({link}) has {len(s)} splits.",suppress_embeds=True)
 
 
