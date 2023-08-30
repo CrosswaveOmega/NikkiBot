@@ -16,7 +16,7 @@ from langchain.indexes import VectorstoreIndexCreator
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
-from ReadabilityLoader import ReadableLoader
+from .ReadabilityLoader import ReadableLoader
 import gptmod
 def google_search(bot,query:str,result_limit:int):
     query_service = build(
