@@ -47,8 +47,9 @@ def read_article_direct(html,url):
     jsdom=require('jsdom')
     TurndownService=require('turndown')
     print('attempting parse')
+    html2=html.replace("`",'\`')
     out=f'''
-    let result=await read_webpage_html_direct(`{html}`,`{url}`,readability,jsdom);
+    let result=await read_webpage_html_direct(`{html2}`,`{url}`,readability,jsdom);
     return [result[0],result[1]];
     '''
     myjs=assets.JavascriptLookup.find_javascript_file('readwebpage.js',out)

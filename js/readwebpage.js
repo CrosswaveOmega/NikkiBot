@@ -109,7 +109,7 @@ async function read_webpage_plain(targeturl, readability, jsdom) {
     let reader = new readability.Readability(doc.window.document);
     let article = reader.parse();
     let articleHtml = article.content;
-  
+    //The heading style recognized by discord apps.
     const turndownService = new TurndownService({ headingStyle: 'atx' });
     turndownService.addRule('removeInvalidLinks', {
       filter: 'a',
