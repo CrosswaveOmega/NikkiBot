@@ -25,7 +25,7 @@ class Followup(discord.ui.View):
             **Link:** {meta['source']}
             **Text:** {content}'''
             embed.add_field(name=f's: score:{score}',
-                            value=output,
+                            value=output[:1024],
                             inline=False)
         await interaction.response.edit_message(embed=embed)
         #await self.callbacker.playlistcallback(interaction,self,"back")

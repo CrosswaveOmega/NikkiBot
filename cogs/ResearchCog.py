@@ -345,7 +345,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             output=f'''**Name:** {meta['title'][:100]}
             **Link:** {meta['source']}
             **Text:** {content}'''
-            await ctx.send(output)
+            await ctx.send(output,suppress_embeds=True)
             embed.add_field(name=f's: score:{score}',
                             value=output[:1024],
                             inline=False)
