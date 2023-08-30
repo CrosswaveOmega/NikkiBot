@@ -50,7 +50,7 @@ async def read_and_split_link(url:str,chunk_size:int=1024,chunk_overlap:int=1)->
         simplified_text = re.sub(r'\n+(\s*\n)*', '\n', simplified_text)
         d.page_content=simplified_text
         newdata.append(d)
-    text_splitter=RecursiveCharacterTextSplitter(chunk_size=chunk_size,chunk_overlap=chunk_overlap)
+    text_splitter=MarkdownTextSplitter(chunk_size=chunk_size,chunk_overlap=chunk_overlap)
     all_splits=text_splitter.split_documents(newdata)
     return all_splits
 
