@@ -1,6 +1,6 @@
 import discord
 from discord import PartialEmoji
-
+import gui
 
 class Followup(discord.ui.View):
     '''buttons for the audio player.'''
@@ -8,6 +8,9 @@ class Followup(discord.ui.View):
         super().__init__(timeout=timeout)
         self.my_sources=page_content
         
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        gui.gprint(str(error))
+        await interaction.response.send_message(f'Oops! Something went wrong: {str(error)}.', ephemeral=True)
 
     @discord.ui.button(emoji='⬅️',label="view sources",style=discord.ButtonStyle.blurple) # or .primary
     async def showsauce(self,interaction:discord.Interaction,button:discord.ui.Button):
@@ -16,7 +19,7 @@ class Followup(discord.ui.View):
             #print(doc)
             meta=doc.metadata#'metadata',{'title':'UNKNOWN','source':'unknown'})
             content=doc.page_content #('page_content','Data l
-            output=f'''**Name:** {meta['title']}
+            output=f'''**Name:** {meta['title'][:100]}
             **Link:** {meta['source']}
             **Text:** {content}'''
             embed.add_field(name=f's: score:{score}',
