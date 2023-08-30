@@ -329,13 +329,13 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             return messageresp
 
     @commands.command(name='get_source',description='get sources.',extras={})
-    async def source_get(self,ctx:commands.Context,question:str,query:str,comment:str='Search results:',site_title_restriction:str='None',result_limit:int=4):
+    async def source_get(self,ctx:commands.Context,question:str):
         
         chromac=ChromaTools.get_chroma_client()
-        data=await search_sim(question,client=chromac, titleres=site_title_restriction)
+        data=await search_sim(question,client=chromac, titleres='None')
         len(data)
         if len(data)<=0:
-            return 'NO RELEVANT DATA.'
+            await ctx.send('NO RELEVANT DATA.')
         docs2 = sorted(data, key=lambda x: x[1],reverse=False)
         
         viewme=Followup(bot=self.bot,page_content=docs2)
