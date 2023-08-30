@@ -345,8 +345,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             output=f'''**Name:** {meta['title'][:100]}
             **Link:** {meta['source']}
             **Text:** {content}'''
+            await ctx.send(output)
             embed.add_field(name=f's: score:{score}',
-                            value=output,
+                            value=output[:1024],
                             inline=False)
         await ctx.send(embed=embed)
         viewme=Followup(bot=self.bot,page_content=docs2)
