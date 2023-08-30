@@ -25,7 +25,7 @@ async function check_read(targeturl, readability, jsdom) {
   var ji = jsdom;
 
   function isValidLink(url) {
-    // Regular expression pattern to validate URL format 
+    // Regular expression pattern to validate URL format
     const urlPattern = /^(ftp|http|https):\/\/[^ "]+$/;
 
     return urlPattern.test(url);
