@@ -99,6 +99,7 @@ class ReadableLoader(dl.WebBaseLoader):
                 text,header=await read_article_aw(result,url)
                 final_results.append((text,souped))
             except Exception as e:
+                raise e
                 text = souped.get_text(**self.bs_get_text_kwargs)
                 final_results.append((text,souped))
         return final_results
