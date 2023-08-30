@@ -109,7 +109,13 @@ class ReadableLoader(dl.WebBaseLoader):
                 self._check_parser(parser)
             souped=(BeautifulSoup(result, parser))
             try:
-                text,header=await read_article_aw(result,url)
+                scripts = souped.find_all('script')
+
+                for script in scripts:
+                    script.extract()
+
+                clean_html = str(souped)
+                text,header=await read_article_aw(clean_html,url)
                 final_results.append((remove_links(text),souped))
             except Exception as e:
                 raise e
