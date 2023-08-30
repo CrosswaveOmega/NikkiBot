@@ -103,8 +103,7 @@ def remove_url(url,collection='web_collection',client:chromadb.API=None)->bool:
             collectionvar = client.get_collection(collection)
             sres=collectionvar.peek()
             res=collectionvar.delete(
-                where={"source": url},
-                include=['documents','metadatas']
+                where={"source": url}
             )
             
             return True
@@ -113,16 +112,7 @@ def remove_url(url,collection='web_collection',client:chromadb.API=None)->bool:
             raise e
             return False
     else:
-
-        vs=Chroma(persist_directory=persist,embedding_function=OpenAIEmbeddings(),collection_name=collection,client=client)
-        try:
-            res=vs._collection_.get(where={'source':url})
-            print(res)
-            if res: return True
-            else: return False
-        except Exception as e:
-            print(e)
-            return False
+        return False
 async def search_sim(question:str,collection='web_collection',client=None, titleres="None")-> List[Tuple[Document, float]]:
     persist='saveData'
     vs=Chroma(client=client,persist_directory=persist,embedding_function=OpenAIEmbeddings(),collection_name=collection)
