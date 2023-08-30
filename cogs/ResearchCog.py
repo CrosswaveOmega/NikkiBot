@@ -336,9 +336,11 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         for i in splits[0:3]:
             await ctx.send(f"```{str(i.page_content)}```"[:1980],suppress_embeds=True)
     @commands.is_owner()
-    @commands.command(name='loadurlover',description='loadurl test.',extras={})
+    @commands.command(name='loadurlover',description='replace a url in documents.',extras={})
     async def loavover(self,ctx:commands.Context,link:str):
         bot=ctx.bot
+        query='No query needed'
+        comment='Override'
         if not ctx.guild:
             await ctx.send('needs to be guild')
             return
