@@ -337,7 +337,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(f"```{str(i.page_content)}```"[:1980],suppress_embeds=True)
     @commands.is_owner()
     @commands.command(name='loadurlover',description='replace a url in documents.',extras={})
-    async def loavover(self,ctx:commands.Context,link:str):
+    async def loadover(self,ctx:commands.Context,link:str):
         bot=ctx.bot
         query='No query needed'
         comment='Override'
@@ -398,7 +398,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     await ctx.send(f"[Link {e}]({r['link']}) has {len(splits)} splits.",suppress_embeds=True)
                     store_splits(splits, client=chromac)
                 await statmess.editw(min_seconds=15,content=f'reading {e}/{length}. {hascount}/{len(all_links)}',embed=embed)
-
+            await statmess.editw(min_seconds=0,content=f'Overwrite ok.',embed=embed)
+            
 
 
 
@@ -418,14 +419,14 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             content=doc.page_content #('page_content','Data l
             output=f'''**Name:** {meta['title'][:100]}
             **Link:** {meta['source']}
-            **Text:** {content}'''
+            **Text:** {content[:256]}...'''
             await ctx.send(output,suppress_embeds=True)
             embed.add_field(name=f's: score:{score}',
                             value=output[:1024],
                             inline=False)
         await ctx.send(embed=embed)
         viewme=Followup(bot=self.bot,page_content=docs2)
-        await ctx.channel.send(f'{len(data)} sauces',view=viewme)
+        await ctx.channel.send(f'{len(data)} sources found',view=viewme)
 
 
         

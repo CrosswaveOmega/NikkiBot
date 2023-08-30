@@ -143,7 +143,7 @@ async def search_sim(question:str,collection='web_collection',client=None, title
     persist='saveData'
     vs=Chroma(client=client,persist_directory=persist,embedding_function=OpenAIEmbeddings(),collection_name=collection)
     if titleres=='None':
-        docs = await vs.asimilarity_search_with_relevance_scores(question)
+        docs = await vs.asimilarity_search_with_relevance_scores(question,k=7)
 
         return docs
     else:
