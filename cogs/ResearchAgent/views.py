@@ -16,8 +16,6 @@ class Followup(discord.ui.View):
 
     @discord.ui.button(emoji='⬅️',label="view sources",style=discord.ButtonStyle.blurple) # or .primary
     async def showsauce(self,interaction:discord.Interaction,button:discord.ui.Button):
-        context =await self.bot.get_context(interaction)
-        await context.send('ok')
         embed=discord.Embed(title='sauces')
         for doc,score in self.my_sources[:10]:
             #print(doc)
@@ -26,9 +24,8 @@ class Followup(discord.ui.View):
             output=f'''**Name:** {meta['title'][:100]}
             **Link:** {meta['source']}
             **Text:** {content}'''
-            await context.send(output)
             embed.add_field(name=f's: score:{score}',
                             value=output,
                             inline=False)
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.edit_message(embed=embed)
         #await self.callbacker.playlistcallback(interaction,self,"back")
