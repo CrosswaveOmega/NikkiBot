@@ -13,11 +13,35 @@ import openai
 from langchain.docstore.document import Document
 webload= docload.WebBaseLoader
 from langchain.indexes import VectorstoreIndexCreator
-from langchain.text_splitter import MarkdownTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 from .ReadabilityLoader import ReadableLoader
 import gptmod
+
+tosplitby=[
+
+    # First, try to split along Markdown headings (starting with level 2)
+    "\n#{1,6} ",
+    # Note the alternative syntax for headings (below) is not handled here
+    # Heading level 2
+    # ---------------
+    # End of code block
+    "```\n",
+    # Horizontal lines
+    "\n\\*\\*\\*+\n",
+    "\n---+\n",
+    "\n___+\n",
+    " #{1,6} ",
+    # Note that this splitter doesn't handle horizontal lines defined
+    # by *three or more* of ***, ---, or ___, but this is not handled
+    "\n\n",
+    "\n",
+    " ",
+    "",
+            
+]
+
 def google_search(bot,query:str,result_limit:int):
     query_service = build(
         "customsearch", 
@@ -31,6 +55,7 @@ def google_search(bot,query:str,result_limit:int):
         ).execute()
     results= query_results['items']
     return results
+
 async def read_and_split_link(url:str,chunk_size:int=1800,chunk_overlap:int=0)->List[Document]:
     # Document loader
     loader = ReadableLoader(url,header_template={
@@ -50,7 +75,7 @@ async def read_and_split_link(url:str,chunk_size:int=1800,chunk_overlap:int=0)->
         simplified_text = re.sub(r'\n+(\s*\n)*', '\n', simplified_text)
         d.page_content=simplified_text
         newdata.append(d)
-    text_splitter=MarkdownTextSplitter(chunk_size=chunk_size,chunk_overlap=chunk_overlap)
+    text_splitter=RecursiveCharacterTextSplitter(separators=tosplitby,chunk_size=chunk_size,chunk_overlap=chunk_overlap)
     all_splits=text_splitter.split_documents(newdata)
     return all_splits
 
@@ -65,6 +90,7 @@ def store_splits(splits, collection='web_collection',client=None):
     else:
         vectorstore=Chroma.from_documents(documents=splits,embedding=OpenAIEmbeddings(),ids=ids,collection_name=collection,client=client,persist_directory=persist)
         #vectorstore.persist()
+
 def has_url(url,collection='web_collection',client:chromadb.API=None)->bool:
     persist='saveData'
     if client!=None:
