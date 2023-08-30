@@ -13,7 +13,7 @@ import openai
 from langchain.docstore.document import Document
 webload= docload.WebBaseLoader
 from langchain.indexes import VectorstoreIndexCreator
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.text_splitter import MarkdownTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 from .ReadabilityLoader import ReadableLoader

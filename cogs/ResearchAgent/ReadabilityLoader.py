@@ -29,19 +29,30 @@ def is_readable(url):
     rsult= eval_js(myjs)
     return rsult
 
+
+    
+def remove_links(markdown_text):
+    # Regular expression pattern to match masked links
+    #pattern = r'\[([^\]]+)\]\(([^\)]+)\)'
+    pattern = r'\[([^\]]+)\]\([^)]+\)'
+    
+    # Replace the masked links with their text content
+    no_links_string = re.sub(pattern, r'\1', markdown_text)
+    
+    return no_links_string
+
 def read_article_direct(html,url):
     timeout=30
     readability= require('@mozilla/readability')
     jsdom=require('jsdom')
     TurndownService=require('turndown')
-    #Is there a better way to do this?
     print('attempting parse')
     out=f'''
     let result=await read_webpage_html_direct(`{html}`,`{url}`,readability,jsdom);
     return [result[0],result[1]];
     '''
     myjs=assets.JavascriptLookup.find_javascript_file('readwebpage.js',out)
-    #myjs=myjs.replace("URL",url)
+
     print(myjs)
     
     rsult= eval_js(myjs)
