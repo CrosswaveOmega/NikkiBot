@@ -62,7 +62,7 @@ def read_article_direct(html,url):
     output,header=rsult[0],rsult[1]
     simplified_text = output.strip()
     simplified_text = re.sub(r'(\n){4,}', '\n\n\n', simplified_text)
-    simplified_text = re.sub(r'\n\n', ' ', simplified_text)
+    simplified_text = re.sub(r'\n\n', '\n', simplified_text)
     simplified_text = re.sub(r' {3,}', '  ', simplified_text)
     simplified_text = simplified_text.replace('\t', '')
     simplified_text = re.sub(r'\n+(\s*\n)*', '\n', simplified_text)
