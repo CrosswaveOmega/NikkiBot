@@ -274,7 +274,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                             await ctx.send(f"docmismatch MISMATCH")
                     hascount+=1
                 else:
-                    splits=read_and_split_link(r['link'])
+                    splits=await read_and_split_link(r['link'])
                     dbadd=True
                     for split in splits:
                         gui.gprint(split.page_content)
