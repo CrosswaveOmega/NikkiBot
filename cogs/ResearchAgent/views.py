@@ -11,7 +11,8 @@ class Followup(discord.ui.View):
         
     async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
         gui.gprint(str(error))
-        await interaction.response.send_message(f'Oops! Something went wrong: {str(error)}.', ephemeral=True)
+        await self.bot.send_error(error,'followuperror')
+        #await interaction.response.send_message(f'Oops! Something went wrong: {str(error)}.', ephemeral=True)
 
     @discord.ui.button(emoji='⬅️',label="view sources",style=discord.ButtonStyle.blurple) # or .primary
     async def showsauce(self,interaction:discord.Interaction,button:discord.ui.Button):
