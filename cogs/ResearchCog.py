@@ -334,7 +334,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         
         splits=await read_and_split_link(link)
         await ctx.send(f"[Link ]({link}) has {len(splits)} splits.",suppress_embeds=True)
-        for i in splits[3:]:
+        for i in splits[:3]:
             await ctx.send(str(i)[:1980])
 
 
