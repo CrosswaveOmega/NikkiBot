@@ -108,7 +108,7 @@ class ReadableLoader(dl.WebBaseLoader):
             souped=(BeautifulSoup(result, parser))
             try:
                 text,header=await read_article_aw(result,url)
-                final_results.append((text,souped))
+                final_results.append((remove_links(text),souped))
             except Exception as e:
                 raise e
                 text = souped.get_text(**self.bs_get_text_kwargs)
