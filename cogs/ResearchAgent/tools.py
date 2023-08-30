@@ -31,7 +31,7 @@ def google_search(bot,query:str,result_limit:int):
         ).execute()
     results= query_results['items']
     return results
-async def read_and_split_link(url:str,chunk_size:int=1524,chunk_overlap:int=1)->List[Document]:
+async def read_and_split_link(url:str,chunk_size:int=1800,chunk_overlap:int=0)->List[Document]:
     # Document loader
     loader = ReadableLoader(url,header_template={
       'User-Agent': 'Mozilla/5.0 (X11,Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'
@@ -80,6 +80,34 @@ def has_url(url,collection='web_collection',client:chromadb.API=None)->bool:
                 print('hasres',res)
                 return True, res
             return False,None
+        except ValueError as e:
+            print(e)
+            raise e
+            return False
+    else:
+
+        vs=Chroma(persist_directory=persist,embedding_function=OpenAIEmbeddings(),collection_name=collection,client=client)
+        try:
+            res=vs._collection_.get(where={'source':url})
+            print(res)
+            if res: return True
+            else: return False
+        except Exception as e:
+            print(e)
+            return False
+        
+def remove_url(url,collection='web_collection',client:chromadb.API=None)->bool:
+    persist='saveData'
+    if client!=None:
+        try:
+            collectionvar = client.get_collection(collection)
+            sres=collectionvar.peek()
+            res=collectionvar.delete(
+                where={"source": url},
+                include=['documents','metadatas']
+            )
+            
+            return True
         except ValueError as e:
             print(e)
             raise e

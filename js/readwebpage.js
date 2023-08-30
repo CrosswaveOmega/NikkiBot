@@ -110,7 +110,7 @@ async function read_webpage_plain(targeturl, readability, jsdom) {
     let article = reader.parse();
     let articleHtml = article.content;
   
-    const turndownService = new TurndownService();
+    const turndownService = new TurndownService({ headingStyle: 'atx' });
     turndownService.addRule('removeInvalidLinks', {
       filter: 'a',
       replacement: (content, node) => {

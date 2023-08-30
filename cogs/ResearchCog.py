@@ -330,13 +330,74 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
     @commands.command(name='loadurl',description='loadurl test.',extras={})
     async def loader_test(self,ctx:commands.Context,link:str):
-        
-        
         async with ctx.channel.typing():
             splits=await read_and_split_link(link)
         await ctx.send(f"[Link ]({link}) has {len(splits)} splits.",suppress_embeds=True)
-        for i in splits[:3]:
+        for i in splits[0:3]:
             await ctx.send(f"```{str(i.page_content)}```"[:1980],suppress_embeds=True)
+    @commands.is_owner()
+    @commands.command(name='loadurlover',description='loadurl test.',extras={})
+    async def loavover(self,ctx:commands.Context,link:str):
+        bot=ctx.bot
+        if not ctx.guild:
+            await ctx.send('needs to be guild')
+            return
+        if await ctx.bot.gptapi.check_oai(ctx):
+            await ctx.send("I'm sorry, but the research system is unavailable in this server.")
+            return 'INVALID CONTEXT'
+        if 'google' not in bot.keys or 'cse' not in bot.keys:
+            await ctx.send("google search keys not set up.")
+            return "insufficient keys!"
+        serverrep,userrep=AuditProfile.get_or_new(ctx.guild,ctx.author)
+        serverrep.checktime()
+        userrep.checktime()
+
+
+        ok, reason=userrep.check_if_ok()
+        if not ok:
+            if reason in ['messagelimit','ban']:
+                await ctx.channel.send("You have exceeded daily rate limit.")
+                return
+        chromac=ChromaTools.get_chroma_client()
+
+        target_message=await ctx.channel.send(f"<a:SquareLoading:1143238358303264798> Searching google for {query} ...")
+        
+        statmess=StatusEditMessage(target_message,ctx)
+        async with ctx.channel.typing():
+            results=[{'link':link}]
+            
+            all_links=[]
+            hascount=0
+            length=len(results)
+            lines="\n".join([f"- {r['link']}" for r in results])
+            
+            embed=discord.Embed(title=f"query: none.",description=f"out=\n{lines}")
+                
+            await statmess.editw(min_seconds=0,content=f'<a:LetWalkR:1118191001731874856> Search complete: reading {0}/{length}. {hascount}/{len(all_links)}',embed=embed)
+            for e,r in enumerate(results):
+                all_links.append(r['link'])
+                embed=discord.Embed(description=f"out=\n{lines}")
+                has,getres=has_url(r['link'],client=chromac)
+                if has:
+                    await ctx.send('removing present entries for new data...')
+                    remove_url(r['link'],client=chromac)
+                splits=await read_and_split_link(r['link'])
+                dbadd=True
+                for split in splits:
+                    gui.gprint(split.page_content)
+                    for i,m in split.metadata.items():
+                        gui.gprint(i,m)
+                        if m==None:
+                            split.metadata[i]='N/A'
+                        else:
+                            dbadd=True
+                            #await ctx.send(f"split metadata {i} is none!")
+                if dbadd:
+                    await ctx.send(f"[Link {e}]({r['link']}) has {len(splits)} splits.",suppress_embeds=True)
+                    store_splits(splits, client=chromac)
+                await statmess.editw(min_seconds=15,content=f'reading {e}/{length}. {hascount}/{len(all_links)}',embed=embed)
+
+
 
 
     @commands.command(name='get_source',description='get sources.',extras={})
