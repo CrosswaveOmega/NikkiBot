@@ -337,7 +337,18 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         if len(data)<=0:
             await ctx.send('NO RELEVANT DATA.')
         docs2 = sorted(data, key=lambda x: x[1],reverse=False)
-        
+        embed=discord.Embed(title='sauces')
+        for doc,score in docs2[:10]:
+            #print(doc)
+            meta=doc.metadata#'metadata',{'title':'UNKNOWN','source':'unknown'})
+            content=doc.page_content #('page_content','Data l
+            output=f'''**Name:** {meta['title'][:100]}
+            **Link:** {meta['source']}
+            **Text:** {content}'''
+            embed.add_field(name=f's: score:{score}',
+                            value=output,
+                            inline=False)
+        await ctx.send(embed=embed)
         viewme=Followup(bot=self.bot,page_content=docs2)
         await ctx.channel.send(f'{len(data)} sauces',view=viewme)
 
