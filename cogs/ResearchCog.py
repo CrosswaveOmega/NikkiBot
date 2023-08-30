@@ -318,7 +318,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             embed=embed)
             answer=await format_answer(question,docs2)
             page=commands.Paginator(prefix='',suffix=None)
-            viewme=Followup(page_content=docs2)
+            viewme=Followup(bot=self.bot,page_content=docs2)
             for p in answer.split('\n'):
                 page.add_line(p)
             messageresp=None
