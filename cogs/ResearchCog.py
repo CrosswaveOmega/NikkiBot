@@ -216,6 +216,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                    enabled=False,
                    force_words=['research'],
                    required=['comment','result_limit'])
+    
     @LibParam(comment='An interesting, amusing remark.',
               query='The query to search google with.  Must be related to the question.',
               question='the question that is to be solved with this search.  Must be a complete sentence.',
@@ -308,7 +309,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             len(data)
             if len(data)<=0:
                 return 'NO RELEVANT DATA.'
-            docs2 = sorted(data, key=lambda x: x[1],reverse=True)
+            docs2 = sorted(data, key=lambda x: x[1],reverse=False)
             embed.add_field(name='Cache_Query',value=f'About {len(docs2)} entries where found.  Max score is {docs2[0][1]}')
             #docs2 = sorted(data, key=lambda x: x[1],reverse=True)
             await statmess.editw(
@@ -317,13 +318,14 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             embed=embed)
             answer=await format_answer(question,docs2)
             page=commands.Paginator(prefix='',suffix=None)
-            
+            viewme=Followup(page_content=docs2)
             for p in answer.split('\n'):
                 page.add_line(p)
             messageresp=None
             for pa in page.pages:
                 ms=await ctx.channel.send(pa)
                 if messageresp==None: messageresp=ms
+            await ctx.channel.send('complete',view=viewme)
             return messageresp
 
 

@@ -1,6 +1,7 @@
 
 from .tools import *
 from .chromatools import ChromaTools
+from .views import *
 async def setup(bot):
     import gui
     gui.print(f"loading in child module {__name__}")
