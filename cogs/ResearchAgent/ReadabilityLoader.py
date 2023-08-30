@@ -57,7 +57,7 @@ def read_article_direct(html,url):
 
 async def read_article_aw(html,url):
     now=discord.utils.utcnow()
-    getthread=asyncio.to_thread(read_article_direct, url)
+    getthread=asyncio.to_thread(read_article_direct, html, url)
     result=await getthread
     print(result)
     text,header=result[0],result[1]
