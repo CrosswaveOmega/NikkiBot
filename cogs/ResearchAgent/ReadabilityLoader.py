@@ -11,6 +11,7 @@ import requests
 import assets
 from javascript import require, globalThis, eval_js
 
+'''This is a special loader that makes use of Mozilla's readability module. '''
 
 def is_readable(url):
     timeout=30
@@ -47,7 +48,7 @@ def read_article_direct(html,url):
     jsdom=require('jsdom')
     TurndownService=require('turndown')
     print('attempting parse')
-    html2=html.replace("`",'\`')
+    html2=html.replace("`",'\"')
     out=f'''
     let result=await read_webpage_html_direct(`{html2}`,`{url}`,readability,jsdom);
     return [result[0],result[1]];
