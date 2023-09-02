@@ -22,7 +22,10 @@ from .MusicUtils import connection_check
 from .MusicViews import PlayerButtons, PlaylistButtons
 from .MusicPlayer_Mixins import PlaylistMixin, PlayerMixin
 '''this code is for the music player, and it's interactions.'''
-    
+
+EDIT_INTERVAL=45
+
+
 def make_playlist_embeds(player, interaction):
     """MAKE EMBED LIST BASED ON ALL SONGS IN QUEUE"""
     guild:discord.Guild=interaction.guild
@@ -161,7 +164,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
         
         if self.lastm is not None:
             duration=discord.utils.utcnow()-self.lastedit
-            if duration.total_seconds()>30:
+            if duration.total_seconds()>EDIT_INTERVAL:
                 oldembed=self.get_music_embed('','')
 
                 await self.lastm.edit(embed=oldembed)
@@ -332,7 +335,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
                     gui.gprint("error")
                     #if song.state=="Error":
                     self.internal_message_log.append(f"I could not play {self.current.title} : `{str(self.current.error_value)}`")
-                    await self.send_message(ctx,str(self.current.error_value))
+                    await self.send_message(ctx,str(self.current.error_value),'none')
                     await self.bot.send_error(self.current.error_value,"Adding URL.")
                     self.current=None
                     asyncio.run_coroutine_threadsafe(self.player_actions("auto_next"), self.bot.loop)
@@ -341,8 +344,9 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
             if voice is not None:
                 if voice.is_playing():
                     voice.pause()
-            song.get_source()
+            song.get_source() #Get youtube streaming link
             if song.state=="Error":
+                #Something went wrong don't play it
                 gui.gprint("error")
                 await self.send_message(ctx,str(song.error_value),desc='err')
                 await self.bot.send_error(song.error_value,"Adding URL.")
@@ -351,13 +355,22 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
                 asyncio.run_coroutine_threadsafe(self.player_actions("auto_next"), self.bot.loop)
                 return
             aud=discord.FFmpegPCMAudio(song.source, **self.FFMPEG_OPTIONS)
-            if song.type=='file':
+            if song.type=='file': 
+                #FFMPEG has different rules for files.
                 aud=discord.FFmpegPCMAudio(song.source, **self.FFMPEG_FILEOPTIONS)
-            await asyncio.sleep(0.25)
+            await asyncio.sleep(0.1)
             song.start()
-            voice.play(aud,
-                       after=lambda e: self.bot.schedule_for_post(ctx.channel, "Error in playback: "+str(e)) if e else  asyncio.run_coroutine_threadsafe(self.player_actions("auto_next"), 
-                        self.bot.loop))
+            voice.play\
+                (aud,
+                after=lambda e: self.bot.schedule_for_post(
+                    ctx.channel, 
+                    "Error in playback: "+str(e))\
+                        if e else  \
+                        asyncio.run_coroutine_threadsafe(
+                            self.player_actions("auto_next"),
+                            self.bot.loop
+                        )
+                )
             voice.is_playing()
             self.bot.add_act("MusicPlay",f"{song.title}",discord.ActivityType.listening)
             await self.send_message(ctx,"play",f"**{song.title}** is now playing.  " )
@@ -380,7 +393,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
 
     def musicplayeradd(self,song:AudioContainer):
         '''Get song, and add to queue.  BLOCKING OPERATION.'''
-        song.get_song(do_search=False,db_search=True, substrings=False)        
+        song.get_song(do_search=True,db_search=False, substrings=False)        
         if song.state=="Error":
             self.internal_message_log.append(f"I could not add {song.title} : `{str(song.error_value)}`")
         elif song.state=="Ok":

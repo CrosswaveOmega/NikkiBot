@@ -503,7 +503,6 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             for p in pages.pages:
                 await ctx.send(p)
 
-    
     @commands.command(name='summarize',description="make a summary of a url.",extras={})
     async def summarize(self,ctx:commands.Context,url:str):
         '''Download the reader mode view of a passed in URL, and summarize it.'''
