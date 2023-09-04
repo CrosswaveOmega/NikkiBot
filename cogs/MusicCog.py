@@ -626,6 +626,7 @@ class MusicCog(commands.Cog,TC_Cog_Mixin):
         if res=="done":
             await MessageTemplatesMusic.music_msg(ctx, "Shuffle", "I've shuffled my playlist!")
         else: await MessageTemplatesMusic.music_msg(ctx, "?",f"{res}")
+        
     @mp.command(name="search", description="search cache")
     async def search(self, interaction: discord.Interaction,search:str):
         ctx: commands.Context = await self.bot.get_context(interaction)

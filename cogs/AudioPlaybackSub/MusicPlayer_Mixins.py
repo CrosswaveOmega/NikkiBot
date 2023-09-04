@@ -25,6 +25,7 @@ class PlayerMixin:
             "back": self.back,
             "auto_next": self.next_auto,
             "auto_over": self.next_auto,
+            "repeat":self.repeat_toggle,
             "playlistview":self.playlist_view
         }
     async def play(self, ctx: commands.Context, editinter: discord.Interaction = None):
@@ -69,7 +70,7 @@ class PlayerMixin:
             self.voice.stop()
             await self.send_message(ctx, "Stop", "The player has been stopped.", editinter)
 
-    async def pause(self, ctx: commands.Context, editinter: discord.Integration = None):
+    async def pause(self, ctx: commands.Context, editinter: discord.Interaction = None):
         """Pause the currently playing song.
 
         Args:
@@ -89,10 +90,10 @@ class PlayerMixin:
         else:
             await self.send_message(ctx, "Not playing", "There isn't a song playing right now.", editinter)
 
-    async def next_auto(self,ctx:commands.Context, editinter: discord.Integration = None):
+    async def next_auto(self,ctx:commands.Context, editinter: discord.Interaction = None):
         await self.next(ctx,editinter,case='auto')
 
-    async def next(self, ctx: commands.Context, editinter: discord.Integration = None, case="notauto"):
+    async def next(self, ctx: commands.Context, editinter: discord.Interaction = None, case="notauto"):
         """Play the next song in the playlist.
 
         Args:
@@ -133,7 +134,7 @@ class PlayerMixin:
             self.bot.remove_act("MusicPlay")
             self.player_condition = "none"
 
-    async def back(self, ctx: commands.Context, editinter: discord.Integration = None):
+    async def back(self, ctx: commands.Context, editinter: discord.Interaction = None):
         """Go back to the previous song in the playlist.
 
         Args:
@@ -157,6 +158,17 @@ class PlayerMixin:
         else:
             await self.send_message(ctx, "Empty Playlist", "There's nothing to go back to!", editinter)
             self.player_condition = "none"
+
+    async def repeat_toggle(self, ctx: commands.Context, editinter: discord.Interaction = None):
+        if self.repeat==False:
+            self.repeat=True
+            self.repeatone=False
+            await self.send_message(ctx, "repeat", f"Repeat enabled.", editinter)
+        elif self.repeat==True:
+            self.repeat=False
+            self.repeatone=False
+            await self.send_message(ctx, "repeat", f"Repeat disabled.", editinter)
+
 
     async def player_actions(self, action: Literal['','play','stop','pause','next','back','auto_next','auto_over']="", ctxmode: commands.Context = None, editinter: discord.Interaction = None):
         """Dispatch a player action based on the passed in string action.

@@ -322,6 +322,12 @@ class AudioContainer():
             with open(filepath, 'w') as file:
                 json.dump(dictionary, file, indent=3,sort_keys=True)
             print("Dictionary saved to", filepath)
+    def remember_song(self):
+        '''Store song in database.'''
+        san=sanatize_info(self.json_dict)
+        MusicJSONMemoryDB.from_dict(san)
+        
+    
     def to_display_dict(self):
         v={"title":f"[{self.title}]({self.url})","duration":seconds_to_time_string(self.duration), \
         "remaining":seconds_to_time_string(self.duration-self.seekerspot),"requested_by":self.requested_by}

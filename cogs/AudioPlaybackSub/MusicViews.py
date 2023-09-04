@@ -37,6 +37,12 @@ class PlayerButtons(discord.ui.View):
         self.playpausemode=''
         self.setplaypause()
         self.changenextlast()
+        self.repeat_toggle()
+    def repeat_toggle(self):
+        if self.callbacker.repeat==True:
+            self.repeat_button.style=discord.ButtonStyle.gray
+        else:
+            self.repeat_button.style=discord.ButtonStyle.blurple
 
     def setplaypause(self):
         
@@ -67,7 +73,9 @@ class PlayerButtons(discord.ui.View):
     async def updateview(self,inter:discord.Interaction):
         self.setplaypause()
         self.changenextlast()
+        self.repeat_toggle()
         if inter: await inter.edit_original_response(content='',view=self)
+        
     @discord.ui.button(emoji='⬅️',label="",style=discord.ButtonStyle.blurple) # or .primary
     async def backpage_button(self,interaction:discord.Interaction,button:discord.ui.Button):
         if self.pview:
@@ -106,11 +114,19 @@ class PlayerButtons(discord.ui.View):
 
     @discord.ui.button(emoji='🔀',label="",style=discord.ButtonStyle.blurple,row=1) # or .primary
     async def shuffle_button(self,interaction:discord.Interaction,button:discord.ui.Button):
+        '''Shuffle all songs in the queue.'''
         await self.callbacker.playlistcallback(interaction,"shuffle")
         if self.playlistviewmode:
             await interaction.response.edit_message(embed=self.pview.make_embed(),view=self)
         else:
             await interaction.response.edit_message(embed=self.callbacker.get_music_embed('Shuffle','Playlist shuffled.'),view=self)
+
+    @discord.ui.button(emoji='🔁',label="",style=discord.ButtonStyle.grey,row=1) # or .primary
+    async def repeat_button(self,interaction:discord.Interaction,button:discord.ui.Button):
+        await  self.callbacker.player_button_call(interaction,"repeat")
+        
+        await self.updateview(interaction)
+
     @discord.ui.button(emoji='⏹️', label="",style=discord.ButtonStyle.red, row=3) # or .primary
     async def exit_button(self,interaction:discord.Interaction,button:discord.ui.Button):
         await interaction.response.defer()#(content="back pressed",view=self)
