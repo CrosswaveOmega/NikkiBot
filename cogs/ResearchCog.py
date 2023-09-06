@@ -408,7 +408,51 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await statmess.editw(min_seconds=0,content=f'Overwrite ok.',embed=embed)
             
 
-
+    @commands.is_owner()
+    @commands.command(name='research',description='get sources.',extras={})
+    async def research(self,ctx:commands.Context,question:str,k:int=5,site_title_restriction:str="None"):
+        '''
+        question:str-Question you want to ask
+        site_title_restriction-Restrict to all with this in the title. 
+        '''
+        
+        chromac=ChromaTools.get_chroma_client()
+        res=await ctx.send('ok')
+        statmess=StatusEditMessage(res,ctx)
+        embed=discord.Embed(\
+        title=f'Search Query: {question} ',
+        description=f"ok")
+        embed.add_field(name='Question',value=question,inline=False)
+        if site_title_restriction!='None':
+            embed.add_field(name='restrict',value=site_title_restriction,inline=False)
+        await statmess.editw(
+        min_seconds=0,
+        content='querying db...',
+        embed=embed
+        )
+        async with ctx.channel.typing():
+            data=await search_sim(question,client=chromac, titleres=site_title_restriction,k=k)
+            len(data)
+            if len(data)<=0:
+                return 'NO RELEVANT DATA.'
+            docs2 = sorted(data, key=lambda x: x[1],reverse=False)
+            embed.add_field(name='Cache_Query',value=f'About {len(docs2)} entries where found.  Max score is {docs2[0][1]}')
+            #docs2 = sorted(data, key=lambda x: x[1],reverse=True)
+            await statmess.editw(
+            min_seconds=0,
+            content='drawing conclusion...',
+            embed=embed)
+            answer=await format_answer(question,docs2)
+            page=commands.Paginator(prefix='',suffix=None)
+            viewme=Followup(bot=self.bot,page_content=docs2)
+            for p in answer.split('\n'):
+                page.add_line(p)
+            messageresp=None
+            for pa in page.pages:
+                ms=await ctx.channel.send(pa)
+                if messageresp==None: messageresp=ms
+            await ctx.channel.send('complete',view=viewme)
+            
 
     @commands.command(name='get_source',description='get sources.',extras={})
     async def source_get(self,ctx:commands.Context,question:str):

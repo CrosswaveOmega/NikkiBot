@@ -139,7 +139,7 @@ def remove_url(url,collection='web_collection',client:chromadb.API=None)->bool:
             return False
     else:
         return False
-async def search_sim(question:str,collection='web_collection',client=None, titleres="None")-> List[Tuple[Document, float]]:
+async def search_sim(question:str,collection='web_collection',client=None, titleres="None",k=7)-> List[Tuple[Document, float]]:
     persist='saveData'
     vs=Chroma(client=client,persist_directory=persist,embedding_function=OpenAIEmbeddings(),collection_name=collection)
     if titleres=='None':
@@ -148,7 +148,8 @@ async def search_sim(question:str,collection='web_collection',client=None, title
         return docs
     else:
         docs = await vs.asimilarity_search_with_relevance_scores(
-            question, 
+            question,
+            k=k,
             where={  "$contains":{'title':titleres}}
         )
         return docs
