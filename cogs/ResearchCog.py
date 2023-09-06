@@ -288,9 +288,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                         if dbadd:
                             await ctx.send(f"[Link {e}]({r['link']}) has {len(splits)} splits.",suppress_embeds=True)
                             store_splits(splits, client=chromac)
-                    except Exception as e:
-                        await ctx.send(str(e))
-                        await bot.send_error(e)
+                    except Exception as err:
+                        await ctx.send(str(err))
+                        await bot.send_error(err)
                 await statmess.editw(min_seconds=15,content=f'reading {e}/{length}. {hascount}/{len(all_links)}',embed=embed)
 
 
