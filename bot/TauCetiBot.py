@@ -400,7 +400,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         just_the_string=("".join([f"{replace_working_directory(s)}" for e, s in enumerate(stack)]))
         #just_the_string=''.join(stack)
         er=MessageTemplates.get_paged_error_embed(title=f"Error with {title}",description=f"{just_the_string},{str(error)}")
-        er[-1].add_field(name="Details",value=f"{title},{error}")
+        er[-1].add_field(name="Details",value=f"{title},{error}"[:1020])
         for e in er: await self.send_error_embed(e)
 
     @tasks.loop(seconds=10)
