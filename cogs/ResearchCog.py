@@ -274,20 +274,23 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                             await ctx.send(f"docmismatch MISMATCH")
                     hascount+=1
                 else:
-                    splits=await read_and_split_link(r['link'])
-                    dbadd=True
-                    for split in splits:
-                        gui.gprint(split.page_content)
-                        for i,m in split.metadata.items():
-                            gui.gprint(i,m)
-                            if m==None:
-                                split.metadata[i]='N/A'
-                            else:
-                                dbadd=True
-                                #await ctx.send(f"split metadata {i} is none!")
-                    if dbadd:
-                        await ctx.send(f"[Link {e}]({r['link']}) has {len(splits)} splits.",suppress_embeds=True)
-                        store_splits(splits, client=chromac)
+                    try:
+                        splits=await read_and_split_link(r['link'])
+                        dbadd=True
+                        for split in splits:
+                            gui.gprint(split.page_content)
+                            for i,m in split.metadata.items():
+                                gui.gprint(i,m)
+                                if m==None:
+                                    split.metadata[i]='N/A'
+                                else:
+                                    dbadd=True
+                        if dbadd:
+                            await ctx.send(f"[Link {e}]({r['link']}) has {len(splits)} splits.",suppress_embeds=True)
+                            store_splits(splits, client=chromac)
+                    except Exception as e:
+                        await ctx.send(str(e))
+                        await bot.send_error(e)
                 await statmess.editw(min_seconds=15,content=f'reading {e}/{length}. {hascount}/{len(all_links)}',embed=embed)
 
 
@@ -335,9 +338,13 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         await ctx.send(f"[Link ]({link}) has {len(splits)} splits.",suppress_embeds=True)
         for i in splits[0:3]:
             await ctx.send(f"```{str(i.page_content)}```"[:1980],suppress_embeds=True)
+
     @commands.is_owner()
     @commands.command(name='loadurlover',description='replace a url in documents.',extras={})
     async def loadover(self,ctx:commands.Context,link:str):
+        ''''replace a url in documents.
+        link:str
+        '''
         bot=ctx.bot
         query='No query needed'
         comment='Override'
