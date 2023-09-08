@@ -294,13 +294,14 @@ class PlaylistMixin:
         else:
             return 'emptyalready'
 
-    async def playlist_repeat(self):
+    async def playlist_repeat(self,param):
         if self.repeat==False:
             self.repeat=True
             self.repeatone=False
         elif self.repeat==True:
             self.repeat=False
             self.repeatone=False
+        return 'done'
     def setup_playlist_actions(self):
         """
         Set up the dictionary for playlist actions.
