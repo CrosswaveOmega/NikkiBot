@@ -68,7 +68,7 @@ async def read_article_direct(html,url):
     print('attempting parse')
     html2=html.replace("`",'')
     out=f'''
-    let result=await read_webpage_html_direct(`{html2}`,`{url}`,readability,jsdom);
+    let result=await read_webpage_html_direct(html2,`{url}`,readability,jsdom);
     return [result[0],result[1]];
     '''
     myjs=assets.JavascriptLookup.find_javascript_file('readwebpage.js',out)
