@@ -123,9 +123,11 @@ class PlayerButtons(discord.ui.View):
 
     @discord.ui.button(emoji='🔁',label="",style=discord.ButtonStyle.grey,row=1) # or .primary
     async def repeat_button(self,interaction:discord.Interaction,button:discord.ui.Button):
-        await  self.callbacker.player_button_call(interaction,"repeat")
+        await  self.callbacker.playlistcallback(interaction,"repeat")
         
         await self.updateview(interaction)
+        await interaction.response.edit_message(embed=self.callbacker.get_music_embed('Shuffle','repeat toggled'),view=self)
+
 
     @discord.ui.button(emoji='⏹️', label="",style=discord.ButtonStyle.red, row=3) # or .primary
     async def exit_button(self,interaction:discord.Interaction,button:discord.ui.Button):

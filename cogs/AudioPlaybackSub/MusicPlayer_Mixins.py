@@ -28,6 +28,16 @@ class PlayerMixin:
             "repeat":self.repeat_toggle,
             "playlistview":self.playlist_view
         }
+    async def repeat_toggle(self,ctx: commands.Context, editinter: discord.Interaction = None):
+        '''switch repeats to on or off.'''
+        if self.repeat==False:
+            self.repeat=True
+            self.repeatone=False
+            await self.send_message(ctx, "repeat", f"Repeat enabled.", editinter)
+        elif self.repeat==True:
+            self.repeat=False
+            self.repeatone=False
+            await self.send_message(ctx, "repeat", f"Repeat disabled.", editinter)
     async def play(self, ctx: commands.Context, editinter: discord.Interaction = None):
         """Start playing or resume playing the AudioContainer at self.current.
 
@@ -159,15 +169,6 @@ class PlayerMixin:
             await self.send_message(ctx, "Empty Playlist", "There's nothing to go back to!", editinter)
             self.player_condition = "none"
 
-    async def repeat_toggle(self, ctx: commands.Context, editinter: discord.Interaction = None):
-        if self.repeat==False:
-            self.repeat=True
-            self.repeatone=False
-            await self.send_message(ctx, "repeat", f"Repeat enabled.", editinter)
-        elif self.repeat==True:
-            self.repeat=False
-            self.repeatone=False
-            await self.send_message(ctx, "repeat", f"Repeat disabled.", editinter)
 
 
     async def player_actions(self, action: Literal['','play','stop','pause','next','back','auto_next','auto_over']="", ctxmode: commands.Context = None, editinter: discord.Interaction = None):
@@ -293,6 +294,13 @@ class PlaylistMixin:
         else:
             return 'emptyalready'
 
+    async def playlist_repeat(self):
+        if self.repeat==False:
+            self.repeat=True
+            self.repeatone=False
+        elif self.repeat==True:
+            self.repeat=False
+            self.repeatone=False
     def setup_playlist_actions(self):
         """
         Set up the dictionary for playlist actions.
@@ -303,7 +311,8 @@ class PlaylistMixin:
             "removespot": self.playlist_action_removespot,
             "jumpto": self.playlist_action_jumpto,
             "shuffle": self.playlist_action_shuffle,
-            "clear": self.playlist_action_clear
+            "clear": self.playlist_action_clear,
+            'repeat': self.playlist_repeat
         }
 
     async def playlist_actions(self, action: Literal['add','add_url','removespot','jumpto','shuffle','clear'], param=None, **kwargs):

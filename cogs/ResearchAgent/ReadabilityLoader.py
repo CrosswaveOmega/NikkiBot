@@ -4,7 +4,7 @@ import logging
 import re
 import warnings
 from typing import Any, Dict, Iterator, List, Optional, Union
-
+import inspect
 import aiohttp
 import discord
 import requests
@@ -13,6 +13,23 @@ from javascript import require, globalThis, eval_js
 
 '''This is a special loader that makes use of Mozilla's readability module. '''
 
+async def eval_js_a(js,  timeout=10):
+    '''a variant of eval_js that can be used asyncronously.'''
+    from javascript import config
+    frame = inspect.currentframe()
+    rv = None
+    try:
+        local_vars = {}
+        locals=frame.f_back.f_locals
+        
+        for local in frame.f_back.f_locals:
+            #print('localv',local,frame.f_back.f_locals[local])
+            if not local.startswith("__"):
+                local_vars[local] = frame.f_back.f_locals[local]
+        rv = await asyncio.to_thread(config.global_jsi.evaluateWithContext,js, local_vars, timeout=timeout,forceRefs=True)
+    finally:
+        del frame
+    return rv
 def is_readable(url):
     timeout=30
     readability= require('@mozilla/readability')
@@ -42,10 +59,11 @@ def remove_links(markdown_text):
     
     return no_links_string
 
-def read_article_direct(html,url):
+async def read_article_direct(html,url):
     timeout=30
-    readability= require('@mozilla/readability')
-    jsdom=require('jsdom')
+    readability= await asyncio.to_thread(require,'@mozilla/readability')
+    print('readability',readability)
+    jsdom=await asyncio.to_thread(require,'jsdom')
     TurndownService=require('turndown')
     print('attempting parse')
     html2=html.replace("`",'')
@@ -55,9 +73,9 @@ def read_article_direct(html,url):
     '''
     myjs=assets.JavascriptLookup.find_javascript_file('readwebpage.js',out)
 
-    print(myjs)
+    #print(myjs)
     
-    rsult= eval_js(myjs)
+    rsult= await eval_js_a(myjs)
 
     output,header=rsult[0],rsult[1]
     simplified_text = output.strip()
@@ -70,8 +88,8 @@ def read_article_direct(html,url):
 
 async def read_article_aw(html,url):
     now=discord.utils.utcnow()
-    getthread=asyncio.to_thread(read_article_direct, html, url)
-    result=await getthread
+    getthread=await read_article_direct( html, url)
+    result= getthread
     print(result)
     text,header=result[0],result[1]
     return text,header
