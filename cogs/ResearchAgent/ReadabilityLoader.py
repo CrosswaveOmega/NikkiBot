@@ -66,7 +66,7 @@ async def read_article_direct(html,url):
     jsdom=await asyncio.to_thread(require,'jsdom')
     TurndownService=require('turndown')
     print('attempting parse')
-    html2=html.replace("`",'')
+    html2=str(html.replace("`",''))
     out=f'''
     let result=await read_webpage_html_direct(html2,`{url}`,readability,jsdom);
     return [result[0],result[1]];
