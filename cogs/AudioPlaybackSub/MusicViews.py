@@ -70,7 +70,7 @@ class PlayerButtons(discord.ui.View):
             self.backpage_button.label='_ _'
             self.nextpage_button.label='_ _'
     
-    async def updateview(self,inter:discord.Interaction):
+    async def updateview(self,inter:discord.Interaction=None):
         self.setplaypause()
         self.changenextlast()
         self.repeat_toggle()
@@ -125,7 +125,7 @@ class PlayerButtons(discord.ui.View):
     async def repeat_button(self,interaction:discord.Interaction,button:discord.ui.Button):
         await  self.callbacker.playlistcallback(interaction,"repeat")
         
-        await self.updateview(interaction)
+        await self.updateview()
         await interaction.response.edit_message(embed=self.callbacker.get_music_embed('Shuffle','repeat toggled'),view=self)
 
 
