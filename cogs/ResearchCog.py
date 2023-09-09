@@ -340,14 +340,14 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(f"```{str(i.page_content)}```"[:1980],suppress_embeds=True)
 
     @commands.is_owner()
-    @commands.command(name='loadurlover',description='replace a url in documents.',extras={})
+    @commands.hybrid_command(name='loadurlover',description='replace or load a url into my document_store documents.',extras={})
+    @app_commands.checks.is_owner()
+    @app_commands.describe(link='URL to add to my database.')
     async def loadover(self,ctx:commands.Context,link:str):
         ''''replace a url in documents.
         link:str
         '''
         bot=ctx.bot
-        query='No query needed'
-        comment='Override'
         if not ctx.guild:
             await ctx.send('needs to be guild')
             return
@@ -369,7 +369,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 return
         chromac=ChromaTools.get_chroma_client()
 
-        target_message=await ctx.channel.send(f"<a:SquareLoading:1143238358303264798> Searching google for {query} ...")
+        target_message=await ctx.channel.send(f"<a:SquareLoading:1143238358303264798> Retrieving {link} ...")
         
         statmess=StatusEditMessage(target_message,ctx)
         async with ctx.channel.typing():
