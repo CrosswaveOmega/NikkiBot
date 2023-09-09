@@ -62,9 +62,9 @@ def remove_links(markdown_text):
 
 async def read_article_direct(html,url):
     timeout=30
-    readability= await asyncio.to_thread(require,'@mozilla/readability')
+    readability= require('@mozilla/readability')
     print('readability',readability)
-    jsdom=await asyncio.to_thread(require,'jsdom')
+    jsdom=require('jsdom')
     TurndownService=require('turndown')
     print('attempting parse')
     
