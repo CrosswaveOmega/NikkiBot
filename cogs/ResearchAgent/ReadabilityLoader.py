@@ -80,7 +80,7 @@ async def read_article_direct(html,url):
 
     #print(myjs)
     
-    rsult= await eval_js_a(myjs)
+    rsult= await eval_js_a(myjs,timeout=25)
 
     output,header=rsult[0],rsult[1]
     simplified_text = output.strip()
