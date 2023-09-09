@@ -3,7 +3,7 @@ import asyncio
 from typing import List, Tuple
 import chromadb
 from googleapiclient.discovery import build   #Import the library
-from javascriptasync import require, globalThis, eval_js
+from javascriptasync import require,  eval_js
 import assets
 import re
 import langchain

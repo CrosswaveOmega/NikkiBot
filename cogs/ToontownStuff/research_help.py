@@ -1,5 +1,5 @@
 import asyncio
-from javascript import require, globalThis, eval_js
+from javascriptasync import require, eval_js
 import assets
 import re
 

@@ -9,27 +9,10 @@ import aiohttp
 import discord
 import requests
 import assets
-from javascriptasync import require, globalThis, eval_js
+from javascriptasync import require, eval_js, eval_js_a
 
 '''This is a special loader that makes use of Mozilla's readability module. '''
 
-async def eval_js_a(js,  timeout=10):
-    '''a variant of eval_js that can be used asyncronously.'''
-    from javascript import config
-    frame = inspect.currentframe()
-    rv = None
-    try:
-        local_vars = {}
-        locals=frame.f_back.f_locals
-        
-        for local in frame.f_back.f_locals:
-            #print('localv',local,frame.f_back.f_locals[local])
-            if not local.startswith("__"):
-                local_vars[local] = frame.f_back.f_locals[local]
-        rv = await asyncio.to_thread(config.global_jsi.evaluateWithContext,js, local_vars, timeout=timeout,forceRefs=True)
-    finally:
-        del frame
-    return rv
 
 def is_readable(url):
     timeout=30
