@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 import discord
 import requests
 import json
-from javascript import require, globalThis, eval_js
 import re
 
 def remove_link_node(data):

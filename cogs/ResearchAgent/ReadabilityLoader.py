@@ -9,7 +9,7 @@ import aiohttp
 import discord
 import requests
 import assets
-from javascript import require, globalThis, eval_js
+from javascriptasync import require, globalThis, eval_js
 
 '''This is a special loader that makes use of Mozilla's readability module. '''
 

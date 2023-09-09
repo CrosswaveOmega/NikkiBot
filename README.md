@@ -41,7 +41,7 @@ Python 3.11 or higher!
 - yt_dlp
 - sqlitedict
 - playwright
-- JSPyBridge
+- ~~JSPyBridge~~ [JSPyBridge_Async](https://github.com/CrosswaveOmega/JSPyBridge_Async)
 - gptfunctionutil
 - openai
 

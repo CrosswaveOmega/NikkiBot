@@ -29,7 +29,7 @@ from gptfunctionutil import *
 import gptmod.error
 from database.database_ai import AuditProfile,ServerAIConfig
 #I need the readability npm package to work, so 
-from javascript import require, globalThis, eval_js
+from javascriptasync import require, globalThis, eval_js
 import assets
 import gui
 from .ResearchAgent import *

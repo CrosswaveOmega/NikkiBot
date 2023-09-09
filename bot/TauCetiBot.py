@@ -23,7 +23,7 @@ from .TCAppCommandAutoSync import(
     build_and_format_app_commands, SpecialAppSync
     )
 from .TCMixins import CogFieldList, StatusTicker
-
+from javascriptasync import init
 """ Primary Class
 
 This file is for an extended Bot Class for this Discord Bot.
@@ -122,6 +122,7 @@ class TCBot(commands.Bot, CogFieldList,StatusTicker,StatusMessageMixin, SpecialA
         '''This function is called in on_ready, but only once.'''
         if not self.bot_ready:
             #Start up the GuiPanel
+            init()
             guimode=self.config.getbool('gui')
             if guimode:
                 self.guimode=True
