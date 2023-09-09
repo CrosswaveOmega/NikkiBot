@@ -341,7 +341,6 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
     @commands.is_owner()
     @commands.hybrid_command(name='loadurlover',description='replace or load a url into my document_store documents.',extras={})
-    @app_commands.checks.is_owner()
     @app_commands.describe(link='URL to add to my database.')
     async def loadover(self,ctx:commands.Context,link:str):
         ''''replace a url in documents.
