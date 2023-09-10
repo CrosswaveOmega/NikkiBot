@@ -218,7 +218,6 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                    enabled=False,
                    force_words=['research'],
                    required=['comment','result_limit'])
-    
     @LibParam(comment='An interesting, amusing remark.',
               query='The query to search google with.  Must be related to the question.',
               question='the question that is to be solved with this search.  Must be a complete sentence.',
