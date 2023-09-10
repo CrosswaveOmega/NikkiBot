@@ -1,6 +1,7 @@
 import discord
 from discord import PartialEmoji
 import gui
+from utility import pages_of_embeds_2
 
 class Followup(discord.ui.View):
     '''buttons for the audio player.'''
@@ -17,15 +18,27 @@ class Followup(discord.ui.View):
     @discord.ui.button(emoji='⬅️',label="view sources",style=discord.ButtonStyle.blurple) # or .primary
     async def showsauce(self,interaction:discord.Interaction,button:discord.ui.Button):
         embed=discord.Embed(title='sauces')
+        field_count = 0
+        embeds=[]
         for doc,score in self.my_sources[:10]:
-            #print(doc)
-            meta=doc.metadata#'metadata',{'title':'UNKNOWN','source':'unknown'})
-            content=doc.page_content #('page_content','Data l
+            if field_count == 3:
+                # Send the embed here or add it to a list of embeds
+                # Reset the field count and create a new embed
+                field_count = 0
+                embeds.append(embed)
+                embed=discord.Embed(title='sauces')
+
+            meta=doc.metadata
+            content=doc.page_content
             output=f'''**Name:** {meta['title'][:100]}
             **Link:** {meta['source']}
             **Text:** {content}'''
             embed.add_field(name=f's: score:{score}',
-                            value=output[:1024],
+                            value=output[:1020],
                             inline=False)
-        await interaction.response.edit_message(embed=embed)
+            field_count += 1
+        embeds.append(embed)
+        PCC,buttons=pages_of_embeds_2('ANY',embeds)
+        
+        await interaction.response.send_message(embed=PCC.make_embed(), view=buttons)
         #await self.callbacker.playlistcallback(interaction,self,"back")

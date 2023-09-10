@@ -5,6 +5,7 @@ import io
 import json
 import aiohttp
 import asyncio
+from assets import AssetLookup
 import re
 #import datetime
 from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY, MO, TU, WE, TH, FR, SA, SU
@@ -86,7 +87,6 @@ async def read_article(url):
     gui.gprint('elapsed', discord.utils.utcnow()-now)
     text,header=result[0],result[1]
     return text,header
-
 async def read_many_articles(urls):
     outputted=[]
     for url in urls:
@@ -110,7 +110,9 @@ def extract_masked_links(markdown_text):
     
     return masked_links
     
-    
+
+
+target_server=AssetLookup.get_asset('oai_server')
 class ResearchCog(commands.Cog, TC_Cog_Mixin):
     """For Timers."""
     def __init__(self, bot):
@@ -408,13 +410,34 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             
 
     @commands.is_owner()
-    @commands.command(name='research',description='get sources.',extras={})
+    @commands.hybrid_command(name='research with cached',description='Research a restriction',extras={})
+    @app_commands.guilds(int(target_server))
+    @app_commands.describe(question='question to be asked.')
+    @app_commands.describe(k='min number of sources to grab.')
+    @app_commands.describe(site_title_restriction='Restrain query to websites with this in the title.')
     async def research(self,ctx:commands.Context,question:str,k:int=5,site_title_restriction:str="None"):
         '''
         question:str-Question you want to ask
         site_title_restriction-Restrict to all with this in the title. 
         '''
-        
+        bot=ctx.bot
+        if not ctx.guild:
+            await ctx.send('needs to be guild')
+            return
+        if await ctx.bot.gptapi.check_oai(ctx):
+            await ctx.send("I'm sorry, but the research system is unavailable in this server.")
+            return 'INVALID CONTEXT'
+
+        serverrep,userrep=AuditProfile.get_or_new(ctx.guild,ctx.author)
+        serverrep.checktime()
+        userrep.checktime()
+
+
+        ok, reason=userrep.check_if_ok()
+        if not ok:
+            if reason in ['messagelimit','ban']:
+                await ctx.channel.send("You have exceeded daily rate limit.")
+                return
         chromac=ChromaTools.get_chroma_client()
         res=await ctx.send('ok')
         statmess=StatusEditMessage(res,ctx)
