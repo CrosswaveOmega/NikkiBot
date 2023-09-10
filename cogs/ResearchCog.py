@@ -410,7 +410,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             
 
     @commands.is_owner()
-    @commands.hybrid_command(name='research with cached',description='Research a restriction',extras={})
+    @commands.hybrid_command(name='researchcached',description='Research a topic.',extras={})
     @app_commands.guilds(int(target_server))
     @app_commands.describe(question='question to be asked.')
     @app_commands.describe(k='min number of sources to grab.')
