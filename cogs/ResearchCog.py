@@ -369,7 +369,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 return
         chromac=ChromaTools.get_chroma_client()
 
-        target_message=await ctx.channel.send(f"<a:SquareLoading:1143238358303264798> Retrieving {link} ...")
+        target_message=await ctx.send(f"<a:SquareLoading:1143238358303264798> Retrieving {link} ...")
         
         statmess=StatusEditMessage(target_message,ctx)
         async with ctx.channel.typing():
@@ -380,9 +380,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             length=len(results)
             lines="\n".join([f"- {r['link']}" for r in results])
             
-            embed=discord.Embed(title=f"query: none.",description=f"out=\n{lines}")
+            embed=discord.Embed(title=f"query: {link}.",description=f"out=\n{lines}")
                 
-            await statmess.editw(min_seconds=0,content=f'<a:LetWalkR:1118191001731874856> Search complete: reading {0}/{length}. {hascount}/{len(all_links)}',embed=embed)
+            await statmess.editw(min_seconds=0,content=f'<a:SquareLoading:1143238358303264798> Retrieving {link} ...',embed=embed)
             for e,r in enumerate(results):
                 all_links.append(r['link'])
                 embed=discord.Embed(description=f"out=\n{lines}")
@@ -404,7 +404,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 if dbadd:
                     await ctx.send(f"[Link {e}]({r['link']}) has {len(splits)} splits.",suppress_embeds=True)
                     store_splits(splits, client=chromac)
-                await statmess.editw(min_seconds=15,content=f'reading {e}/{length}. {hascount}/{len(all_links)}',embed=embed)
+                #await statmess.editw(min_seconds=15,content=f'reading {e}/{length}. {hascount}/{len(all_links)}',embed=embed)
             await statmess.editw(min_seconds=0,content=f'Overwrite ok.',embed=embed)
             
 
