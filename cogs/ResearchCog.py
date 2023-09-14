@@ -30,7 +30,7 @@ from gptfunctionutil import *
 import gptmod.error
 from database.database_ai import AuditProfile,ServerAIConfig
 #I need the readability npm package to work, so 
-from javascriptasync import require, eval_js
+from javascriptasync import require, eval_js, require_a, eval_js_a
 import assets
 import gui
 from .ResearchAgent import *
@@ -78,10 +78,36 @@ def read_article_sync(url):
     simplified_text = simplified_text.replace('\t', '')
     simplified_text = re.sub(r'\n+(\s*\n)*', '\n', simplified_text)
     return [simplified_text, header]
+async def read_article_async(url):
+
+    readability= await require_a('@mozilla/readability')
+    jsdom=await require_a('jsdom')
+    TurndownService=await require_a('turndown')
+    pythonObject = {"var": url}
+    out='''
+    let urla=await pythonObject.var
+    
+    const turndownService = new TurndownService({ headingStyle: 'atx' });
+    let result=await read_webpage_plain(urla,readability,jsdom,turndownService);
+    return [result[0],result[1]];
+    '''   
+
+    myjs=assets.JavascriptLookup.find_javascript_file('readwebpage.js',out)
+    rsult= await eval_js_a(myjs,timeout=30)
+
+    output,header=rsult[0],rsult[1]
+    simplified_text = output.strip()
+    simplified_text = re.sub(r'(\n){4,}', '\n\n\n', simplified_text)
+    simplified_text = re.sub(r'\n\n', ' ', simplified_text)
+    simplified_text = re.sub(r' {3,}', '  ', simplified_text)
+    simplified_text = simplified_text.replace('\t', '')
+    simplified_text = re.sub(r'\n+(\s*\n)*', '\n', simplified_text)
+    print(simplified_text)
+    return [simplified_text, header]
 
 async def read_article(url):
     now=discord.utils.utcnow()
-    getthread=asyncio.to_thread(read_article_sync, url)
+    getthread=await read_article_async(url)
     result=await getthread
     print(result)
     gui.gprint('elapsed', discord.utils.utcnow()-now)

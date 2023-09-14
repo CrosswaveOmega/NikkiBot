@@ -11,7 +11,6 @@ This script is intended to be used in conjunction with the JSPyBridge.
 
 INTENDED TO BE EXECUTED THROUGH JSPyBridge!
 */
-
 async function check_read(targeturl, readability, jsdom) {
   if (typeof readability === 'undefined') {
     readability = require('@mozilla/readability');
@@ -39,7 +38,7 @@ async function check_read(targeturl, readability, jsdom) {
   return readability.isProbablyReaderable(doc.window.document)
 }
 
-async function read_webpage_plain(targeturl, readability, jsdom) {
+async function read_webpage_plain(targeturl, readability, jsdom, turndownService) {
     if (typeof readability === 'undefined') {
       readability = require('@mozilla/readability');
     }
@@ -67,7 +66,6 @@ async function read_webpage_plain(targeturl, readability, jsdom) {
     let article = reader.parse();
     let articleHtml = article.content;
   
-    const turndownService = new TurndownService();
     turndownService.addRule('removeInvalidLinks', {
       filter: 'a',
       replacement: (content, node) => {
@@ -83,7 +81,7 @@ async function read_webpage_plain(targeturl, readability, jsdom) {
     return [markdownContent, article.title];
   }
 
-  async function read_webpage_html_direct(htmldoc,targeturl, readability, jsdom) {
+  async function read_webpage_html_direct(htmldoc,targeturl, readability, jsdom,turndownService) {
     if (typeof readability === 'undefined') {
       readability = require('@mozilla/readability');
     }
@@ -110,7 +108,6 @@ async function read_webpage_plain(targeturl, readability, jsdom) {
     let article = reader.parse();
     let articleHtml = article.content;
     //The heading style recognized by discord apps.
-    const turndownService = new TurndownService({ headingStyle: 'atx' });
     turndownService.addRule('removeInvalidLinks', {
       filter: 'a',
       replacement: (content, node) => {
@@ -124,4 +121,5 @@ async function read_webpage_plain(targeturl, readability, jsdom) {
   
     const markdownContent = turndownService.turndown(articleHtml);
     return [markdownContent, article.title];
-  }
+}
+

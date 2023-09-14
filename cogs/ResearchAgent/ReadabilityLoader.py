@@ -53,10 +53,12 @@ async def read_article_direct(html,url):
     
     htmls:str=str(html)
     
-    pythonObject = {"var": htmls}
-    out=f'''
+    pythonObject = {"var": htmls, "url":url}
+    out='''
     let html2=await pythonObject.var
-    let result=await read_webpage_html_direct(html2,`{url}`,readability,jsdom);
+    let url=await pythonObject.url
+    const turndownService = new TurndownService({ headingStyle: 'atx' });
+    let result=await read_webpage_html_direct(html2,url,readability,jsdom, turndownService);
     return [result[0],result[1]];
     '''
     myjs=assets.JavascriptLookup.find_javascript_file('readwebpage.js',out)
