@@ -107,8 +107,7 @@ async def read_article_async(url):
 
 async def read_article(url):
     now=discord.utils.utcnow()
-    getthread=await read_article_async(url)
-    result=await getthread
+    result=await read_article_async(url)
     print(result)
     gui.gprint('elapsed', discord.utils.utcnow()-now)
     text,header=result[0],result[1]
