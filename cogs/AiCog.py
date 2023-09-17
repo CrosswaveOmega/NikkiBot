@@ -333,6 +333,23 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             await ctx.send("OpenAI mode turned off.")
         
         
+    @app_commands.command(name="ai_use", description="Check your current AI use.")
+    @app_commands.describe(userid='user id')
+    async def usage(self, interaction: discord.Interaction, userid:str) -> None:
+        """Ban a user from using the AI API."""
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        guild,user=ctx.guild,ctx.author
+
+        async with lock:
+            serverrep,userrep=AuditProfile.get_or_new(guild,user)
+            serverrep.checktime()
+            userrep.checktime()
+               
+            await ctx.channel.send(f"SERVER: <t:{int(serverrep.last_call.timestamp())}:F>, RESET ONL <t:{int(serverrep.started_dt.timestamp())}:F>, {serverrep.current}, {serverrep.DailyLimit}")
+            await ctx.channel.send(f"USER: <t:{int(userrep.last_call.timestamp())}:F>, RESET ON<t:{int(userrep.started_dt.timestamp())}:F>, {userrep.current}, {userrep.DailyLimit}")
+
+        return True
+        
     @app_commands.command(name="ban_user", description="Ban a user from using my AI.", extras={"homeonly":True})
     @app_commands.describe(userid='user id')
     async def aiban(self, interaction: discord.Interaction, userid:str) -> None:
