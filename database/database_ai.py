@@ -45,7 +45,7 @@ class AuditProfile(AIBase):
         if self.started_dt==None:
             self.set_rollover()
         if self.last_call!=None:
-            if self.last_call<self.started_dt:
+            if self.last_call>self.started_dt:
                 self.current=0
                 self.set_rollover()
     @staticmethod
