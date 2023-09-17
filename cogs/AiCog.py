@@ -74,6 +74,7 @@ async def precheck_context(ctx:commands.Context)->bool:
 
         ok, reason=serverrep.check_if_ok()
         if not ok:
+            await ctx.channel.send(serverrep.current, serverrep.DailyLimit)
             await ctx.channel.send(reasons["server"][reason])
             return False
         ok, reason=userrep.check_if_ok()
