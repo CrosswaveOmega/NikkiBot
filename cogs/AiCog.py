@@ -159,7 +159,7 @@ async def ai_message_invoke(bot:TCBot,message:discord.Message,mylib:GPTFunctionL
     #Get the 'profile' of the active guild.
     profile=ServerAIConfig.get_or_new(guild.id)
     #prune message chains with length greater than X
-    profile.prune_message_chains()
+    profile.prune_message_chains(limit=5)
     #retrieve the saved messages
     chain=profile.list_message_chains()
     #Convert into a list of messages
@@ -170,7 +170,7 @@ async def ai_message_invoke(bot:TCBot,message:discord.Message,mylib:GPTFunctionL
         messages=[])
 #,model="gpt-3.5-turbo-0613"
     chat.add_message('system',nikkiprompt+f"\n Right now, the date-time is {datetime.now().astimezone(tz=timezone.utc)}")
-    for f in mes[:10]: #Load old messags into ChatCreation
+    for f in mes[:5]: #Load old messags into ChatCreation
         chat.add_message(f['role'],f['content'])
     #Load current message into chat creation.
     chat.add_message('user',message.content)
@@ -334,8 +334,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         
         
     @app_commands.command(name="ai_use", description="Check your current AI use.")
-    @app_commands.describe(userid='user id')
-    async def usage(self, interaction: discord.Interaction, userid:str) -> None:
+    async def usage(self, interaction: discord.Interaction) -> None:
         """Ban a user from using the AI API."""
         ctx: commands.Context = await self.bot.get_context(interaction)
         guild,user=ctx.guild,ctx.author
@@ -345,8 +344,8 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             serverrep.checktime()
             userrep.checktime()
                
-            await ctx.channel.send(f"SERVER: <t:{int(serverrep.last_call.timestamp())}:F>, RESET ONL <t:{int(serverrep.started_dt.timestamp())}:F>, {serverrep.current}, {serverrep.DailyLimit}")
-            await ctx.channel.send(f"USER: <t:{int(userrep.last_call.timestamp())}:F>, RESET ON<t:{int(userrep.started_dt.timestamp())}:F>, {userrep.current}, {userrep.DailyLimit}")
+            await ctx.send(f"SERVER: <t:{int(serverrep.last_call.timestamp())}:F>, RESET ONL <t:{int(serverrep.started_dt.timestamp())}:F>, {serverrep.current}, {serverrep.DailyLimit}")
+            await ctx.send(f"USER: <t:{int(userrep.last_call.timestamp())}:F>, RESET ON<t:{int(userrep.started_dt.timestamp())}:F>, {userrep.current}, {userrep.DailyLimit}")
 
         return True
         

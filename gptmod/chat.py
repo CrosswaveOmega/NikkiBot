@@ -47,8 +47,7 @@ class ChatCreation(ApiCore):
         '''return a completion through openai instead.'''
         dictme=self.to_dict(pro=False)
         modelv=dictme['model']
-        if self.functions is not None:
-            dictme['messages']=[self.messages[0],self.messages[-1]]
+        #if self.functions is not None:  dictme['messages']=[self.messages[0],self.messages[-1]]
         result=await openai.ChatCompletion.acreate(
             **dictme
         )
