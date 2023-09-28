@@ -517,7 +517,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             output=f'''**Name:** {meta['title'][:100]}
             **Link:** {meta['source']}
             **Text:** {content[:256]}...'''
-            await ctx.send(output,suppress_embeds=True)
+            #await ctx.send(output,suppress_embeds=True)
             embed.add_field(name=f's: score:{score}',
                             value=output[:1024],
                             inline=False)
@@ -543,7 +543,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                             inline=False)
             field_count += 1
         embeds.append(embed)
-        PCC,buttons=pages_of_embeds_2('ANY',embeds)
+        PCC,buttons=await pages_of_embeds_2('ANY',embeds)
         
         await ctx.channel.send(embed=PCC.make_embed(), view=buttons)
         #viewme=Followup(bot=self.bot,page_content=docs2)

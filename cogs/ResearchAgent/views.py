@@ -38,7 +38,7 @@ class Followup(discord.ui.View):
                             inline=False)
             field_count += 1
         embeds.append(embed)
-        PCC,buttons=pages_of_embeds_2('ANY',embeds)
+        PCC,buttons=await pages_of_embeds_2('ANY',embeds)
         
         await interaction.response.send_message(embed=PCC.make_embed(), view=buttons)
         #await self.callbacker.playlistcallback(interaction,self,"back")
