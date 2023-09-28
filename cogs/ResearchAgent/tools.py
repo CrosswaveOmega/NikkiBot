@@ -150,7 +150,7 @@ async def search_sim(question:str,collection='web_collection',client=None, title
         docs = await vs.asimilarity_search_with_relevance_scores(
             question,
             k=k,
-            filter={'where':{"$contains":{'title':titleres}}}
+            filter={"$contains":{'title':titleres}}
         )
         return docs
 
