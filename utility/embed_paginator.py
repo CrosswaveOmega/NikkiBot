@@ -199,7 +199,7 @@ async def pages_of_embeds_2(ctx: commands.Context, display: List[discord.Embed])
     """
     pagecall = PageClassContainer(display)
 
-    buttons = EmbedPageButtons(callback=pagecall)
+    buttons = EmbedPageButtons(callbacker=pagecall)
     return pagecall, buttons
 
 
