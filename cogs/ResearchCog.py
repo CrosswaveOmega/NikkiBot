@@ -522,8 +522,32 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                             value=output[:1024],
                             inline=False)
         await ctx.send(embed=embed)
-        viewme=Followup(bot=self.bot,page_content=docs2)
-        await ctx.channel.send(f'{len(data)} sources found',view=viewme)
+        embed=discord.Embed(title='sauces')
+        field_count = 0
+        embeds=[]
+        for doc,score in docs2[:10]:
+            if field_count == 3:
+                # Send the embed here or add it to a list of embeds
+                # Reset the field count and create a new embed
+                field_count = 0
+                embeds.append(embed)
+                embed=discord.Embed(title='sauces')
+
+            meta=doc.metadata
+            content=doc.page_content
+            output=f'''**Name:** {meta['title'][:100]}
+            **Link:** {meta['source']}
+            **Text:** {content}'''
+            embed.add_field(name=f's: score:{score}',
+                            value=output[:1020],
+                            inline=False)
+            field_count += 1
+        embeds.append(embed)
+        PCC,buttons=pages_of_embeds_2('ANY',embeds)
+        
+        await ctx.channel.send(embed=PCC.make_embed(), view=buttons)
+        #viewme=Followup(bot=self.bot,page_content=docs2)
+        #await ctx.channel.send(f'{len(data)} sources found',view=viewme)
 
 
         
