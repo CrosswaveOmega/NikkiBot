@@ -478,6 +478,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         )
         async with ctx.channel.typing():
             data=await search_sim(question,client=chromac, titleres=site_title_restriction,k=k)
+            print(data)
             len(data)
             if len(data)<=0:
                 return 'NO RELEVANT DATA.'
@@ -499,7 +500,63 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 if messageresp==None: messageresp=ms
             await ctx.channel.send('complete',view=viewme)
             
+    @commands.command(name='titecheck')
+    async def get_matching_titles(self, ctx,titleres):
+        if not ctx.guild:
+            await ctx.send('needs to be guild')
+            return
+        if await ctx.bot.gptapi.check_oai(ctx):
+            await ctx.send("I'm sorry, but the research system is unavailable in this server.")
+            return 'INVALID CONTEXT'
 
+        serverrep,userrep=AuditProfile.get_or_new(ctx.guild,ctx.author)
+        serverrep.checktime()
+        userrep.checktime()
+
+        question="unimportant"
+        site_title_restriction=titleres
+        ok, reason=userrep.check_if_ok()
+        if not ok:
+            if reason in ['messagelimit','ban']:
+                await ctx.channel.send("You have exceeded daily rate limit.")
+                return
+        chromac=ChromaTools.get_chroma_client()
+        res=await ctx.send('ok')
+        statmess=StatusEditMessage(res,ctx)
+        embed=discord.Embed(\
+        title=f'Search Query: {question} ',
+        description=f"ok")
+        embed.add_field(name='Question',value=question,inline=False)
+        if site_title_restriction!='None':
+            embed.add_field(name='restrict',value=site_title_restriction,inline=False)
+        await statmess.editw(
+        min_seconds=0,
+        content='querying db...',
+        embed=embed
+        )
+        async with ctx.channel.typing():
+            data=await debug_get(question,client=chromac, titleres=site_title_restriction)
+            len(data)
+            if len(data)<=0:
+                return 'NO RELEVANT DATA.'
+            docs2 = sorted(data, key=lambda x: x[1],reverse=False)
+            embed.add_field(name='Cache_Query',value=f'About {len(docs2)} entries where found.  Max score is {docs2[0][1]}')
+            #docs2 = sorted(data, key=lambda x: x[1],reverse=True)
+            await statmess.editw(
+            min_seconds=0,
+            content='drawing conclusion...',
+            embed=embed)
+            answer="NO ANSWER"
+            page=commands.Paginator(prefix='',suffix=None)
+            viewme=Followup(bot=self.bot,page_content=docs2)
+            for p in answer.split('\n'):
+                page.add_line(p)
+            messageresp=None
+            for pa in page.pages:
+                ms=await ctx.channel.send(pa)
+                if messageresp==None: messageresp=ms
+            await ctx.channel.send('complete',view=viewme)
+        
     @commands.command(name='get_source',description='get sources.',extras={})
     async def source_get(self,ctx:commands.Context,question:str):
         

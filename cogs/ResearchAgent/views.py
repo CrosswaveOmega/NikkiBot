@@ -10,7 +10,7 @@ class Followup(discord.ui.View):
         self.my_sources=page_content
         self.bot=bot
         
-    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+    async def on_error(self, interaction: discord.Interaction, error: Exception, item) -> None:
         gui.gprint(str(error))
         await self.bot.send_error(error,'followuperror')
         #await interaction.response.send_message(f'Oops! Something went wrong: {str(error)}.', ephemeral=True)

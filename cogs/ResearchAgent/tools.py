@@ -147,13 +147,40 @@ async def search_sim(question:str,collection='web_collection',client=None, title
 
         return docs
     else:
+        print('here')
+        
+        collectionvar = client.get_collection(collection)
+        res=collectionvar.get(
+                where={'title':{"$contains":titleres}},
+                include=['metadatas']
+            )
+        print(res)
+        for f in res['metadatas']:
+            print(f['title'])
+        print("NEXT")
         docs = await vs.asimilarity_search_with_relevance_scores(
             question,
             k=k,
-            filter={"$contains":{'title':titleres}}
+            filter={'title':{{"$like":f"%{titleres}%"}} #{'':titleres}}
         )
         return docs
+async def debug_get(question:str,collection='web_collection',client=None, titleres="None",k=7)-> List[Tuple[Document, float]]:
+    persist='saveData'
+    vs=Chroma(client=client,persist_directory=persist,embedding_function=OpenAIEmbeddings(),collection_name=collection)
+    if titleres=='None':
+        return "NONE"
+        docs = await vs.asimilarity_search_with_relevance_scores(question,k=7)
 
+        return docs
+    else:
+        print('here')
+        
+        collectionvar = client.get_collection(collection)
+        res=collectionvar.get(
+                where={'title':{"$like":f"%{titleres}%"}},
+                include=['metadatas']
+            )
+        return res
 async def format_answer(question:str, docs:List[Tuple[Document, float]])->str:
     prompt='''
     Use the provided sources to answer question provided to you by the user.  Each of your source web pages will be in their own system messags, slimmed down to a series of relevant snippits,
