@@ -161,7 +161,7 @@ async def search_sim(question:str,collection='web_collection',client=None, title
         docs = await vs.asimilarity_search_with_relevance_scores(
             question,
             k=k,
-            filter={'title':{{"$like":f"%{titleres}%"}} #{'':titleres}}
+            filter={'title':{"$like":f"%{titleres}%"}} #{'':titleres}}
         )
         return docs
 async def debug_get(question:str,collection='web_collection',client=None, titleres="None",k=7)-> List[Tuple[Document, float]]:
