@@ -149,15 +149,6 @@ async def search_sim(question:str,collection='web_collection',client=None, title
     else:
         print('here')
         
-        collectionvar = client.get_collection(collection)
-        res=collectionvar.get(
-                where={'title':{"$contains":titleres}},
-                include=['metadatas']
-            )
-        print(res)
-        for f in res['metadatas']:
-            print(f['title'])
-        print("NEXT")
         docs = await vs.asimilarity_search_with_relevance_scores(
             question,
             k=k,
