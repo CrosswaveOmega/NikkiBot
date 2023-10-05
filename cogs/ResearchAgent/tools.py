@@ -79,9 +79,30 @@ async def read_and_split_link(url:str,chunk_size:int=1800,chunk_overlap:int=0)->
     all_splits=text_splitter.split_documents(newdata)
     return all_splits
 
+async def add_summary(url:str, desc:str, collection='web_collection',client=None):
+    loader = ReadableLoader(url,header_template={
+        'User-Agent': 'Mozilla/5.0 (X11,Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'})
+    # Index that wraps above steps
+    persist='saveData'
+    newdata=[]
+    data=await loader.aload()
+    for d in data:
+        d.page_content=desc
+        d.metadata['issum']='sum'
+        newdata.append(d)
+    ids = [f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,doc.metadata['source']))}],sid:[{e}]" for e, doc in enumerate(newdata)]
+    if client==None:
+        vectorstore=Chroma.from_documents(documents=newdata,embedding=OpenAIEmbeddings(),ids=ids,collection_name=collection,persist_directory=persist)
+        vectorstore.persist()
+    else:
+        vectorstore=Chroma.from_documents(documents=newdata,embedding=OpenAIEmbeddings(),ids=ids,collection_name=collection,client=client,persist_directory=persist)
+        #vectorstore.persist()
+
+
+    
 def store_splits(splits, collection='web_collection',client=None):
     persist='saveData'
-    ids = [f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,doc.metadata['source']))}],sid:[{e}]" for e, doc in enumerate(splits)]
+    ids = [f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,doc.metadata['source']))}],sid:[{e+1}]" for e, doc in enumerate(splits)]
     print(splits)
     print(ids)
     if client==None:

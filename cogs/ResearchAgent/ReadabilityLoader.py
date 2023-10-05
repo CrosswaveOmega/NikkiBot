@@ -173,6 +173,7 @@ class ReadableLoader(dl.WebBaseLoader):
             text,soup = results[i]
             
             metadata = _build_metadata(soup, self.web_paths[i])
+            metadata['sum']='source'
             docs.append(Document(page_content=text, metadata=metadata))
 
         return docs
