@@ -748,7 +748,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 await ctx.send(p)
 
     @commands.command(name='summarize',description="make a summary of a url.",extras={})
-    async def summarize(self,ctx:commands.Context,url:str, over:bool=False):
+    async def summarize(self,ctx:commands.Context,url:str, over:bool=False, stopat:str=None):
         '''Download the reader mode view of a passed in URL, and summarize it.'''
         async with self.lock:
             message=ctx.message
@@ -771,7 +771,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             serverrep.modify_status()
             userrep.modify_status()
             article, header=await read_article(url)
-            
+            if stopat!=None:
+                article=article.split(stopat)[0]
             chat=gptmod.ChatCreation(
                 messages=[{'role': "system", 'content':  self.prompt }],
                 model='gpt-3.5-turbo-16k'
