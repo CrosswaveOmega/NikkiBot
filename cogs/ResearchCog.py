@@ -781,10 +781,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             
             mylinks = extract_masked_links(article)
             for link in mylinks:
-                link_text, url = link
+                link_text, url4 = link
                 link_text=link_text.replace("_","")
-                print(link_text,url)
-                sources.append(f"[{link_text}]({url})")
+                print(link_text,url4)
+                sources.append(f"[{link_text}]({url4})")
 
             #Call API
             bot=ctx.bot
@@ -818,22 +818,23 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                         await ctx.send(content=header,embed=embed)
                     embed=discord.Embed()
                     name,res='',''
-                    for i in sources:
-                        if len(res+i)>1020:
-                            embed.add_field(
-                                name='Sources Located',
-                                value=res, inline=False
-                            )
-                            res=''
-                            await ctx.send(content=header,embed=embed)
-                            embed=discord.Embed()
-                        res+=f"{i}\n"
-                    embed.add_field(
-                        name='Sources Located',
-                        value=res, inline=False
-                    )
-                    
-                    await ctx.send(content=header,embed=embed)
+                    if len(sources)<20:
+                        for i in sources:
+                            if len(res+i)>1020:
+                                embed.add_field(
+                                    name='Sources Located',
+                                    value=res, inline=False
+                                )
+                                res=''
+                                await ctx.send(content=header,embed=embed)
+                                embed=discord.Embed()
+                            res+=f"{i}\n"
+                        embed.add_field(
+                            name='Sources Located',
+                            value=res, inline=False
+                        )
+                        
+                        await ctx.send(content=header,embed=embed)
                     if over:
                         target_message=await ctx.send(f"<a:SquareLoading:1143238358303264798> Saving {url} summary...")
                         chromac=ChromaTools.get_chroma_client()
