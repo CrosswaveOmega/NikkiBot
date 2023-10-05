@@ -88,7 +88,7 @@ async def add_summary(url:str, desc:str, collection='web_collection',client=None
     data=await loader.aload()
     for d in data:
         d.page_content=desc
-        d.metadata['issum']='sum'
+        d.metadata['sum']='sum'
         newdata.append(d)
     ids = [f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,doc.metadata['source']))}],sid:[{e}]" for e, doc in enumerate(newdata)]
     if client==None:
