@@ -184,7 +184,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             #Call API
             bot=self.bot
 
-            targetmessage=await context.send(content=f'Translating... ```{totranslate[:1800]}```')
+            targetmessage=await context.send(content=f' <a:SquareLoading:1143238358303264798> Translating... ```{totranslate[:1800]}```')
 
 
             
