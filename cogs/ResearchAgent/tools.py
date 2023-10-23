@@ -243,3 +243,23 @@ async def format_answer(question:str, docs:List[Tuple[Document, float]])->str:
         messages=messages
     )
     return completion.choices[0]['message']['content']
+
+
+
+def extract_embed_text(embed):
+    bullet_list = []
+    
+    # Extract title, description, and fields from the Embed
+    if embed.title:
+        bullet_list.append(f"{embed.title}")
+    
+    if embed.description:
+        bullet_list.append(f"{embed.description}")
+    
+    for field in embed.fields:
+        bullet_list.append(f"**{field.name}**: {field.value}")
+
+    # Join the extracted text with bullet points
+    bullet_string = "\n".join([f"• {line}" for line in bullet_list])
+    
+    return bullet_string

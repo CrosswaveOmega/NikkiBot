@@ -173,13 +173,21 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             chat=gptmod.ChatCreation(
                 messages=[{'role': "system", 'content':  self.translationprompt }]
             )
-            chat.add_message(role='user',content=message.content)
+
+            totranslate=message.content
+            if message.embeds:
+                for m in message.embeds:
+                    result=extract_embed_text(m)
+                    totranslate+=f"\n {result}"
+            chat.add_message(role='user',content=totranslate)
 
             #Call API
             bot=self.bot
 
-            targetmessage=await context.send(content=f'Translating...')
+            targetmessage=await context.send(content=f'Translating... ```{totranslate[:1800]}```')
 
+
+            
             res=await bot.gptapi.callapi(chat)
             #await ctx.send(res)
             print(res)
