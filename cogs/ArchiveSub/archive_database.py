@@ -138,6 +138,7 @@ class ChannelSep(ArchiveBase):
     __table_args__ = (
         PrimaryKeyConstraint('channel_sep_id', 'server_id'),
     )
+    
     def get_message_count(self):
         session:Session=DatabaseSingleton.get_session()
         count= session.query(func.count(ArchivedRPMessage.message_id)).filter(
@@ -145,6 +146,7 @@ class ChannelSep(ArchiveBase):
             (ArchivedRPMessage.channel_sep_id == self.channel_sep_id)
         ).scalar()
         return count
+    
     @staticmethod
     def get_all_update_count(server_id: int,limit:int=100):
         session = DatabaseSingleton.get_session()
@@ -171,9 +173,11 @@ class ChannelSep(ArchiveBase):
             else:
                 channel_sep_id.message_count=int(message_count)
         session.commit()
-        if results: return results[-1],results[-1][0].message_count, len(mps)
+        if results: 
+            return results[-1],results[-1][0].message_count, len(mps)
             #session.query(ChannelSep).filter_by(channel_sep_id=channel_sep_id).update({"message_count": message_count})
             #updated_channel_seps.append(channel_sep_id)
+
     def update_message_count(self):
         session:Session=DatabaseSingleton.get_session()
         count= session.query(func.count(ArchivedRPMessage.message_id)).filter(
@@ -260,16 +264,15 @@ class ChannelSep(ArchiveBase):
 
     @staticmethod
     def get_channel_seps_by_channel(channel:str,server_id: int):
-        '''delete all channel seps that belong to the passed in server id'''
+        '''Query all channel seps that belong to the passed in channel and server id'''
         session: Session = DatabaseSingleton.get_session()
-        
+
         results=session.query(ChannelSep).filter(
             (ChannelSep.channel == channel)&
             (ChannelSep.server_id == server_id)
             ).all()
         return results
-        session.commit()
-
+    
     @staticmethod
     def get_posted_but_incomplete(server_id: int):
         '''retrieve all ChannelSep objects that where posted, but not done retrieving messages.'''
@@ -309,6 +312,7 @@ class ChannelSep(ArchiveBase):
                      ChannelSep.created_at < target_date + timedelta(days=1))
         session = DatabaseSingleton.get_session()
         return session.query(ChannelSep).filter(filter).order_by(ChannelSep.created_at).all()
+    
     @staticmethod
     def get_all_separators_on_dates(server_id: int, target_date:datetime,end_date:datetime):
         '''get all separators from the passed in channel sep.'''
@@ -317,6 +321,7 @@ class ChannelSep(ArchiveBase):
                      ChannelSep.created_at < end_date + timedelta(days=1))
         session = DatabaseSingleton.get_session()
         return session.query(ChannelSep).filter(filter).order_by(ChannelSep.created_at).all()
+    
     @staticmethod
     def count_separators(server_id: int):
         '''get all separators from the passed in channel sep.'''
@@ -334,6 +339,7 @@ class ChannelSep(ArchiveBase):
         first_date = session.query(func.min(ChannelSep.created_at)).filter(ChannelSep.server_id == server_id).scalar()
         last_date = session.query(func.max(ChannelSep.created_at)).filter(ChannelSep.server_id == server_id).scalar()
         return first_date,last_date
+    
     @classmethod
     def get(cls, channel_sep_id, server_id):
         """
@@ -345,14 +351,17 @@ class ChannelSep(ArchiveBase):
             ChannelSep.server_id == server_id
         )
         result = session.query(ChannelSep).filter(filters).first()
-        if result:            return result
-        else:            return None
+        if result:
+            return result
+        else:
+            return None
+        
     def update(self, **kwargs):
         session = DatabaseSingleton.get_session()
         for key, value in kwargs.items():
             setattr(self, key, value)
-        #session.add(self)
         session.commit()
+
     def get_messages(self):
         session = DatabaseSingleton.get_session()
         return session.query(ArchivedRPMessage).filter(
@@ -513,10 +522,19 @@ class ArchivedRPMessage(ArchiveBase):
     def update(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
-
     @staticmethod
     def get(server_id: int,message_id:int):
-        '''get result from database.'''
+        '''Get result from database.
+
+        Args:
+            server_id (int): The ID of the server.
+            message_id (int): The ID of the message.
+
+        Returns:
+            tuple: A tuple containing 2 elements. The first element is an integer representing the status
+                   of the query (2 if the result is active, 1 if the result is inactive,
+                   and 0 if the result does not exist). The second element is the result object itself.
+        '''
         session = DatabaseSingleton.get_session()
         result= session.query(ArchivedRPMessage).filter(
             (ArchivedRPMessage.server_id == server_id) &
@@ -546,6 +564,13 @@ class ArchivedRPMessage(ArchiveBase):
         query = session.query(distinct(ArchivedRPMessage.channel_sep_id)).filter_by(server_id=server_id).all()
         chan_sep_ids = [result[0] for result in query]
         return chan_sep_ids
+    @staticmethod
+    def get_archived_messages_by_channel(server_id: int, channel: str):
+        session = DatabaseSingleton.get_session()
+        return session.query(ArchivedRPMessage).filter(
+            (ArchivedRPMessage.server_id == server_id) &
+            (ArchivedRPMessage.channel == channel)
+        ).order_by(ArchivedRPMessage.created_at).all()
     @staticmethod
     def get_messages_in_group(server_id: int,channel_sep_id:int):
         session = DatabaseSingleton.get_session()
@@ -585,12 +610,39 @@ class ArchivedRPMessage(ArchiveBase):
         session = DatabaseSingleton.get_session()
         files = session.query(ArchivedRPFile).filter_by(message_id=self.message_id).all()
         return [file for file in files]
+    
     def get_embed(self):
         session = DatabaseSingleton.get_session()
         embed_attr = session.query(ArchivedRPEmbed).filter_by(message_id=self.message_id).first()
         embeds=[]
         if embed_attr: embeds=[embed_attr.to_embed()]
         return embeds
+    @staticmethod
+    def search_messages(server_id: int, substring: str, **kwargs) -> List['ArchivedRPMessage']:
+        """
+        Search messages in the database.
+
+        This method searches for messages in the database that contains the given substring.
+        Optionally, it also allows for searching by other attributes of the 'ArchivedRPMessage' class.
+
+        Args:
+            server_id (int): Identifier for the server where the message was sent.
+            substring (str): Substring to be searched in content of the messages.
+            **kwargs: Arbitrary keyword arguments for additional search criteria.
+
+        Returns:
+            List['ArchivedRPMessage']: List of messages containing the substring in the specified server.
+
+        """
+        session: Session = DatabaseSingleton.get_session()
+        query = session.query(ArchivedRPMessage).join(ArchivedRPEmbed, isouter=True).filter(
+            (ArchivedRPMessage.server_id == server_id) &
+            (or_(func.lower(ArchivedRPMessage.content).contains(func.lower(substring)), func.lower(ArchivedRPEmbed.embed_json).contains(func.lower(substring))))
+        )
+        for key, value in kwargs.items():
+            query = query.filter(getattr(ArchivedRPMessage, key) == value)
+        return query.all()
+    
     def __repr__(self):
         return f"{self.author}: {self.content} [{self.created_at}] ([{self.get_chan_sep()}]: [{self.channel_sep_id}])"
 

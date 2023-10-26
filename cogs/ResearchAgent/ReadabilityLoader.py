@@ -99,34 +99,61 @@ def _build_metadata(soup: Any, url: str) -> dict:
 
 from langchain.docstore.document import Document
 import langchain.document_loaders as dl
+from langchain.document_loaders import PDFMinerPDFasHTMLLoader
+
 class ReadableLoader(dl.WebBaseLoader):
     async def scrape_all(self, urls: List[str], parser: Union[str, None] = None) -> List[Any]:
         """Fetch all urls, then return soups for all results."""
         from bs4 import BeautifulSoup
 
-        results = await self.fetch_all(urls)
+        pdf_urls = []
+        regular_urls = []
+
+        for url in urls:
+            if url.endswith(".pdf"):
+                pdf_urls.append(url)
+            else:
+                regular_urls.append(url)
+
+        results = await self.fetch_all(regular_urls)
+        for pdfurl in pdf_urls:
+            loader = PDFMinerPDFasHTMLLoader(pdfurl)
+            data = loader.load()[0]
+            results.append(data)
+            regular_urls.append(pdfurl)
+
         final_results = []
+
         for i, result in enumerate(results):
-            url = urls[i]
-            
+            url = regular_urls[i]
+
             if parser is None:
                 if url.endswith(".xml"):
                     parser = "xml"
                 else:
                     parser = self.default_parser
-                self._check_parser(parser)
-            souped=(BeautifulSoup(result, parser))
-            try:
 
+                self._check_parser(parser)
+
+            # If the URL is one of the PDF URLs, we load the PDF content
+            # using PDFMinerPDFasHTMLLoader
+            if url in pdf_urls:
+                
+                souped = BeautifulSoup(data.page_content,'html.parser')
+            else:
+                
+                souped=(BeautifulSoup(result, parser))
+
+            try:
                 clean_html = re.sub(r'<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>', '', result)
                 text,header=await read_article_aw(clean_html,url)
                 final_results.append((remove_links(text),souped))
+
             except Exception as e:
-                raise e
                 text = souped.get_text(**self.bs_get_text_kwargs)
                 final_results.append((text,souped))
-        return final_results
 
+        return final_results
     def _scrape(self, url: str, parser: Union[str, None] = None) -> Any:
         from bs4 import BeautifulSoup
 
