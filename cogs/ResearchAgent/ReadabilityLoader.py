@@ -139,7 +139,7 @@ class ReadableLoader(dl.WebBaseLoader):
             # using PDFMinerPDFasHTMLLoader
             if url in pdf_urls:
                 
-                souped = BeautifulSoup(data.page_content,'html.parser')
+                souped = BeautifulSoup(result.page_content,'html.parser')
             else:
                 
                 souped=(BeautifulSoup(result, parser))
