@@ -1267,7 +1267,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await ctx.send("This command will only work inside a guild.")
             return
         guildid = guild.id
-
+        channelid= channelid
         # options.
         update = True
         indexbot = True
@@ -1453,9 +1453,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         game = discord.Game("{}".format("clear"))
         await bot.change_presence(activity=game)
 
-        bot.remove_act(str(ctx.guild.id) + "arch")
-        channel = ctx.channel
-        latest = ArchivedRPMessage.get_latest_archived_rp_message(ctx.guild.id)
+        bot.remove_act(str(guildid) + "arch")
+        channel = await bot.fetch_channel(channelid)
+        latest = ArchivedRPMessage.get_latest_archived_rp_message(guildid)
         gui.gprint(
             discord.utils.utcnow(),
             latest.created_at,
