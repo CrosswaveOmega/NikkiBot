@@ -1140,7 +1140,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         await  m.edit(content="Grouping into separators, this may take a while.")
 
         lastgroup=profile.last_group_num
-        ts,group_id=await do_group(guildid,profile.last_group_num, ctx=ctx)
+        ts,group_id=await do_group(guildid, profile.last_group_num, ctx=ctx)
 
         fullcount=ts
         profile.update(last_group_num=group_id)

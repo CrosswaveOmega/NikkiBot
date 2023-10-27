@@ -553,46 +553,127 @@ class ArchivedRPMessage(ArchiveBase):
         return query
     @staticmethod
     def get_messages_without_group(server_id: int, upperlim=None):
+        """
+        Function to get messages without a group from the database.
+
+        Args:
+            server_id (int): The ID of the server.
+            upperlim ([int, None], optional): The upper limit for the number of messages to get. Defaults to None.
+
+        Returns:
+            Returns a list of messages without a group.
+        """
         session = DatabaseSingleton.get_session()
         return session.query(ArchivedRPMessage).filter(
             (ArchivedRPMessage.server_id == server_id) &
             ((ArchivedRPMessage.channel_sep_id == None))
         ).order_by(ArchivedRPMessage.created_at).limit(upperlim).all()
+
+    @staticmethod
+    def count_messages_without_group(server_id:int):
+        """
+        Function to count messages without a group in the database.
+
+        Args:
+            server_id (int): The ID of the server.
+
+        Returns:
+            The number of messages without a group.
+        """
+        session = DatabaseSingleton.get_session()
+        return session.query(func.count(ArchivedRPMessage.message_id)).filter(
+            (ArchivedRPMessage.server_id == server_id) &
+            (ArchivedRPMessage.channel_sep_id == None)
+        ).scalar()
+
     @staticmethod
     def get_unique_chan_sep_ids(server_id: int):
+        """
+        Function to get unique channel separation IDs from the database.
+
+        Args:
+            server_id (int): The ID of the server.
+
+        Returns:
+            A list of unique channel separation IDs.
+        """
         session: Session = DatabaseSingleton.get_session()
         query = session.query(distinct(ArchivedRPMessage.channel_sep_id)).filter_by(server_id=server_id).all()
         chan_sep_ids = [result[0] for result in query]
         return chan_sep_ids
+
     @staticmethod
     def get_archived_messages_by_channel(server_id: int, channel: str):
+        """
+        Function to get archived messages by channel from the database.
+
+        Args:
+            server_id (int): The ID of the server.
+            channel (str): The channel to filter messages by.
+
+        Returns:
+            A list of archived messages by channel.
+        """
         session = DatabaseSingleton.get_session()
         return session.query(ArchivedRPMessage).filter(
             (ArchivedRPMessage.server_id == server_id) &
             (ArchivedRPMessage.channel == channel)
         ).order_by(ArchivedRPMessage.created_at).all()
+
     @staticmethod
     def get_messages_in_group(server_id: int,channel_sep_id:int):
+        """
+        Function to get messages in a group from the database.
+
+        Args:
+            server_id (int): The ID of the server.
+            channel_sep_id (int): The channel separation ID of the group to get messages from.
+
+        Returns:
+            A list of messages in the group.
+        """
         session = DatabaseSingleton.get_session()
         return session.query(ArchivedRPMessage).filter(
             (ArchivedRPMessage.server_id == server_id) &
             ((ArchivedRPMessage.channel_sep_id == channel_sep_id))
         ).order_by(ArchivedRPMessage.created_at).all()
+
     @staticmethod
     def count_all(server_id: int):
+        """
+        Function to count all messages in the database.
+
+        Args:
+            server_id (int): The ID of the server.
+
+        Returns:
+            The total number of messages.
+        """
         session:Session=DatabaseSingleton.get_session()
         count= session.query(func.count(ArchivedRPMessage.message_id)).filter(
-                (ArchivedRPMessage.server_id == server_id) 
+                (ArchivedRPMessage.server_id == server_id)
         ).scalar()
         return count
+
     @staticmethod
     def count_all_without_group(server_id: int):
+        """
+        Function to count all messages without a group in the database.
+
+        Args:
+            server_id (int): The ID of the server.
+
+        Returns:
+            The total number of messages without a group.
+        """
         session = DatabaseSingleton.get_session()
         session:Session=DatabaseSingleton.get_session()
         count= session.query(func.count(ArchivedRPMessage.message_id)).filter(
-                (ArchivedRPMessage.server_id == server_id) & (ArchivedRPMessage.channel_sep_id == None)
+                (ArchivedRPMessage.server_id == server_id) &
+                (ArchivedRPMessage.channel_sep_id == None)
         ).scalar()
         return count
+    
     def add_file(self, archived_rp_file):
         session = DatabaseSingleton.get_session()
         session.add(archived_rp_file)

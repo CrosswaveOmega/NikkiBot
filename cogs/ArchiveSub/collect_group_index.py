@@ -136,10 +136,15 @@ async def iterate_backlog_old(backlog:Queue,group_id:int,count=0):
 async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, maximumwithother=200,ctx=None,glimit=999999999,upperlim=None):
     # sort message list by created_at attribute
     gui.gprint("Starting run.")
+    count=ArchivedRPMessage().count_messages_without_group(server_id)
+    
+    statusMessToEdit=await ctx.channel.send(f"Grouping: total of {count} messages.  Stand by.")
     newlist =ArchivedRPMessage().get_messages_without_group(server_id,upperlim=upperlim)
     #await asyncio.gather(
     #                    asyncio.to_thread(ArchivedRPMessage().get_messages_without_group,server_id)
     #                )
+
+    #statmess=StatusEditMessage(statusMessToEdit,ctx)
     length=len(newlist)
     old_group_id=group_id
     # initialize variables
@@ -172,6 +177,7 @@ async def do_group(server_id, group_id=0, forceinterval=240, withbacklog=240, ma
         
         # check if a new group should be started
         split=False
+
         if cc_count > maximumwithother and current_chana != chanin:
             split = True
         elif hm.author in charsinbacklog and chanin == current_chana:
