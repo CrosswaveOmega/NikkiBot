@@ -114,7 +114,7 @@ class ReadableLoader(dl.WebBaseLoader):
         regular_urls = []
 
         for url in urls:
-            if url.endswith(".pdf"):
+            if url.endswith(".pdf") or ".pdf?" in url:
                 pdf_urls.append(url)
             else:
                 regular_urls.append(url)
