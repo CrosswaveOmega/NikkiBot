@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime, timedelta
 
+
 class TimeDelimitedCoroutine:
     """
     A class that invokes a coroutine if a minimum time has elapsed since the last invocation.

@@ -1,48 +1,47 @@
-
 import subprocess
 import asyncio
 from queue import Queue
+
+
 class DataStore:
     db = None
-    init=None
-    lock=None
-    cqueue=None
+    init = None
+    lock = None
+    cqueue = None
+
     @staticmethod
     def initialize(database=None):
-       DataStore.db={}
-       DataStore.lock=asyncio.Lock()
-       DataStore.cqueue=Queue()
-        
+        DataStore.db = {}
+        DataStore.lock = asyncio.Lock()
+        DataStore.cqueue = Queue()
 
     @staticmethod
     def initialize_default_values():
         default_values = {
-            'latency': 0.04,
-            'con': True,
-            'queuenext':"s",
-            'tasknum': 0,
-            'schedule': [],
-            'commands': "invoked commands will go here later."
+            "latency": 0.04,
+            "con": True,
+            "queuenext": "s",
+            "tasknum": 0,
+            "schedule": [],
+            "commands": "invoked commands will go here later.",
         }
         for k, v in default_values.items():
-            DataStore.add_value(k,v)
-        #DataStore.db.update(default_values)
+            DataStore.add_value(k, v)
+        # DataStore.db.update(default_values)
 
-        
     @staticmethod
     def add_value(key, value):
-        old=None
+        old = None
         if key in DataStore.db:
-            old=DataStore.db[key]
-        
-        DataStore.db[key] = value
-        if old!=value:
-            DataStore.cqueue.put_nowait((key,value))
+            old = DataStore.db[key]
 
+        DataStore.db[key] = value
+        if old != value:
+            DataStore.cqueue.put_nowait((key, value))
 
     @staticmethod
     def set(key, value):
-        DataStore.add_value(key,value)
+        DataStore.add_value(key, value)
 
     @staticmethod
     def remove_value(key):
@@ -51,4 +50,4 @@ class DataStore:
 
     @staticmethod
     def closeout():
-        DataStore.db['con']=False
+        DataStore.db["con"] = False

@@ -11,78 +11,79 @@ import requests
 import assets
 from javascriptasync import require, eval_js, eval_js_a
 
-'''This is a special loader that makes use of Mozilla's readability module. '''
+"""This is a special loader that makes use of Mozilla's readability module. """
 
 
 def is_readable(url):
-    timeout=30
-    readability= require('@mozilla/readability')
-    jsdom=require('jsdom')
-    TurndownService=require('turndown')
-    #Is there a better way to do this?
-    print('attempting parse')
-    out=f'''
+    timeout = 30
+    readability = require("@mozilla/readability")
+    jsdom = require("jsdom")
+    TurndownService = require("turndown")
+    # Is there a better way to do this?
+    print("attempting parse")
+    out = f"""
     let result=await check_read(`{url}`,readability,jsdom);
     return result
-    '''
-    myjs=assets.JavascriptLookup.find_javascript_file('readwebpage.js',out)
-    #myjs=myjs.replace("URL",url)
+    """
+    myjs = assets.JavascriptLookup.find_javascript_file("readwebpage.js", out)
+    # myjs=myjs.replace("URL",url)
     print(myjs)
-    rsult= eval_js(myjs)
+    rsult = eval_js(myjs)
     return rsult
 
 
-    
 def remove_links(markdown_text):
     # Regular expression pattern to match masked links
-    #pattern = r'\[([^\]]+)\]\(([^\)]+)\)'
-    pattern = r'\[([^\]]+)\]\([^)]+\)'
-    
+    # pattern = r'\[([^\]]+)\]\(([^\)]+)\)'
+    pattern = r"\[([^\]]+)\]\([^)]+\)"
+
     # Replace the masked links with their text content
-    no_links_string = re.sub(pattern, r'\1', markdown_text)
-    
+    no_links_string = re.sub(pattern, r"\1", markdown_text)
+
     return no_links_string
 
-async def read_article_direct(html,url):
-    timeout=30
-    readability= require('@mozilla/readability')
-    print('readability',readability)
-    jsdom=require('jsdom')
-    TurndownService=require('turndown')
-    print('attempting parse')
-    
-    htmls:str=str(html)
-    
-    pythonObject = {"var": htmls, "url":url}
-    out='''
+
+async def read_article_direct(html, url):
+    timeout = 30
+    readability = require("@mozilla/readability")
+    print("readability", readability)
+    jsdom = require("jsdom")
+    TurndownService = require("turndown")
+    print("attempting parse")
+
+    htmls: str = str(html)
+
+    pythonObject = {"var": htmls, "url": url}
+    out = """
     let html2=await pythonObject.var
     let urlV=await pythonObject.url
     const turndownService = new TurndownService({ headingStyle: 'atx' });
     let result=await read_webpage_html_direct(html2,urlV,readability,jsdom, turndownService);
     return [result[0],result[1]];
-    '''
-    myjs=assets.JavascriptLookup.find_javascript_file('readwebpage.js',out)
+    """
+    myjs = assets.JavascriptLookup.find_javascript_file("readwebpage.js", out)
 
-    #print(myjs)
-    
-    rsult= await eval_js_a(myjs,timeout=25)
+    # print(myjs)
 
-    output,header=rsult[0],rsult[1]
+    rsult = await eval_js_a(myjs, timeout=25)
+
+    output, header = rsult[0], rsult[1]
     simplified_text = output.strip()
-    simplified_text = re.sub(r'(\n){4,}', '\n\n\n', simplified_text)
-    simplified_text = re.sub(r'\n\n', '\n', simplified_text)
-    simplified_text = re.sub(r' {3,}', '  ', simplified_text)
-    simplified_text = simplified_text.replace('\t', '')
-    simplified_text = re.sub(r'\n+(\s*\n)*', '\n', simplified_text)
+    simplified_text = re.sub(r"(\n){4,}", "\n\n\n", simplified_text)
+    simplified_text = re.sub(r"\n\n", "\n", simplified_text)
+    simplified_text = re.sub(r" {3,}", "  ", simplified_text)
+    simplified_text = simplified_text.replace("\t", "")
+    simplified_text = re.sub(r"\n+(\s*\n)*", "\n", simplified_text)
     return [simplified_text, header]
 
-async def read_article_aw(html,url):
-    now=discord.utils.utcnow()
-    getthread=await read_article_direct( html, url)
-    result= getthread
+
+async def read_article_aw(html, url):
+    now = discord.utils.utcnow()
+    getthread = await read_article_direct(html, url)
+    result = getthread
     print(result)
-    text,header=result[0],result[1]
-    return text,header
+    text, header = result[0], result[1]
+    return text, header
 
 
 def _build_metadata(soup: Any, url: str) -> dict:
@@ -101,8 +102,11 @@ from langchain.docstore.document import Document
 import langchain.document_loaders as dl
 from langchain.document_loaders import PDFMinerPDFasHTMLLoader
 
+
 class ReadableLoader(dl.WebBaseLoader):
-    async def scrape_all(self, urls: List[str], parser: Union[str, None] = None) -> List[Any]:
+    async def scrape_all(
+        self, urls: List[str], parser: Union[str, None] = None
+    ) -> List[Any]:
         """Fetch all urls, then return soups for all results."""
         from bs4 import BeautifulSoup
 
@@ -138,22 +142,23 @@ class ReadableLoader(dl.WebBaseLoader):
             # If the URL is one of the PDF URLs, we load the PDF content
             # using PDFMinerPDFasHTMLLoader
             if url in pdf_urls:
-                
-                souped = BeautifulSoup(result.page_content,'html.parser')
+                souped = BeautifulSoup(result.page_content, "html.parser")
             else:
-                
-                souped=(BeautifulSoup(result, parser))
+                souped = BeautifulSoup(result, parser)
 
             try:
-                clean_html = re.sub(r'<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>', '', result)
-                text,header=await read_article_aw(clean_html,url)
-                final_results.append((remove_links(text),souped))
+                clean_html = re.sub(
+                    r"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>", "", result
+                )
+                text, header = await read_article_aw(clean_html, url)
+                final_results.append((remove_links(text), souped))
 
             except Exception as e:
                 text = souped.get_text(**self.bs_get_text_kwargs)
-                final_results.append((text,souped))
+                final_results.append((text, souped))
 
         return final_results
+
     def _scrape(self, url: str, parser: Union[str, None] = None) -> Any:
         from bs4 import BeautifulSoup
 
@@ -197,10 +202,10 @@ class ReadableLoader(dl.WebBaseLoader):
         results = await self.scrape_all(self.web_paths)
         docs = []
         for i in range(len(results)):
-            text,soup = results[i]
-            
+            text, soup = results[i]
+
             metadata = _build_metadata(soup, self.web_paths[i])
-            metadata['sum']='source'
+            metadata["sum"] = "source"
             docs.append(Document(page_content=text, metadata=metadata))
 
         return docs

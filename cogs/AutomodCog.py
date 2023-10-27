@@ -7,7 +7,8 @@ import json
 import aiohttp
 import asyncio
 import csv
-#import datetime
+
+# import datetime
 from datetime import datetime, timedelta
 
 from queue import Queue
@@ -15,7 +16,7 @@ from queue import Queue
 from discord.ext import commands, tasks
 from discord.interactions import Interaction
 from discord.utils import find
-from discord import Webhook,ui
+from discord import Webhook, ui
 
 from discord import app_commands
 from discord.app_commands import Choice
@@ -33,43 +34,54 @@ from discord import (
     AutoModTrigger,
     AutoModRuleTriggerType,
     AutoModRuleAction,
-    AutoModPresets
-
+    AutoModPresets,
 )
-        
+
+
 class AutomodCog(commands.Cog, TC_Cog_Mixin):
     """This cog is a placeholder for future automod commands."""
+
     def __init__(self, bot):
-        self.helptext=""
-        self.bot=bot
+        self.helptext = ""
+        self.bot = bot
+
     @commands.Cog.listener()
-    async def on_automod_rule_create(self,rule:AutoModRule):
+    async def on_automod_rule_create(self, rule: AutoModRule):
         gui.print(rule)
         pass
+
     @commands.Cog.listener()
-    async def on_automod_rule_update(self,rule:AutoModRule):
+    async def on_automod_rule_update(self, rule: AutoModRule):
         gui.print(rule)
         pass
+
     @commands.Cog.listener()
-    async def on_automod_rule_delete(self,rule:AutoModRule):
+    async def on_automod_rule_delete(self, rule: AutoModRule):
         gui.print(rule)
         pass
+
     @commands.Cog.listener()
-    async def on_automod_action(self,execution:AutoModAction):
+    async def on_automod_action(self, execution: AutoModAction):
         gui.print(execution)
         pass
-        
 
-    @app_commands.command(name="automodadd", description="this command adds in an automod rule that prevents invites.")
-    @app_commands.describe(modchannel='The moderation channel to be notified of this rule in.')
+    @app_commands.command(
+        name="automodadd",
+        description="this command adds in an automod rule that prevents invites.",
+    )
+    @app_commands.describe(
+        modchannel="The moderation channel to be notified of this rule in."
+    )
     @app_commands.checks.bot_has_permissions(manage_guild=True)
     @app_commands.default_permissions(manage_guild=True)
-    async def automod(self, interaction: discord.Interaction,modchannel:discord.TextChannel) -> None:
-        ''''''
+    async def automod(
+        self, interaction: discord.Interaction, modchannel: discord.TextChannel
+    ) -> None:
+        """"""
         ctx: commands.Context = await self.bot.get_context(interaction)
-        guild=ctx.guild
-        rulename='No invite posting'
-        '''
+        guild = ctx.guild
+        rulename = "No invite posting"
+        """
         valid automod trigger types
         keyword: The rule will trigger when a keyword is mentioned.
 
@@ -80,47 +92,39 @@ class AutomodCog(commands.Cog, TC_Cog_Mixin):
         keyword_preset: The rule will trigger when something triggers based on the set keyword preset types.
 
         mention_spam: The rule will trigger when combined number of role and user mentions is greater than the set limit.
-        '''
-        amtrigger:AutoModTrigger= AutoModTrigger(
+        """
+        amtrigger: AutoModTrigger = AutoModTrigger(
             type=AutoModRuleTriggerType.keyword,
-            regex_patterns=\
-                [
-                '(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?'
-                ],
-            keyword_filter=['invite']
+            regex_patterns=[
+                "(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?"
+            ],
+            keyword_filter=["invite"],
         )
-        actiona=AutoModRuleAction(
+        actiona = AutoModRuleAction(
             custom_message="Invite links are against the rules here!"
         )
-        actionb=AutoModRuleAction(
-            channel_id=modchannel.id
-        )
-        actionc=AutoModRuleAction(
-            duration=timedelta(hours=3)
-        )
-        #creating an automod rule
+        actionb = AutoModRuleAction(channel_id=modchannel.id)
+        actionc = AutoModRuleAction(duration=timedelta(hours=3))
+        # creating an automod rule
         await guild.create_automod_rule(
-            #The name of the automodrule
+            # The name of the automodrule
             name=rulename,
-            #the event type, although the only type right now is
-            #on message send.
+            # the event type, although the only type right now is
+            # on message send.
             event_type=discord.AutoModRuleEventType.message_send,
-            #The trigger for the automod rule.  see above for an example.
+            # The trigger for the automod rule.  see above for an example.
             trigger=amtrigger,
-            #A list of actions to take
-            actions=[actiona,actionb],
+            # A list of actions to take
+            actions=[actiona, actionb],
             enabled=True,
-            #What channels should be exempt from the automod rule?
+            # What channels should be exempt from the automod rule?
             exempt_channels=[modchannel],
-            #What roles are exempt from the automod rule?
+            # What roles are exempt from the automod rule?
             exempt_roles=[],
-            #add a reason for the audit logs
-            reason="To experiment with the automod."
-             )
+            # add a reason for the audit logs
+            reason="To experiment with the automod.",
+        )
         await ctx.send(f"Automod rule {rulename} created.")
-    
-
-
 
 
 async def setup(bot):

@@ -1,6 +1,6 @@
 from .BotEntry import DataStore
 from .GuiSide import (
-    Gui, 
+    Gui,
     gprint,
     gprint as print,
 )

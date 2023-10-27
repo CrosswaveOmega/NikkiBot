@@ -2,12 +2,14 @@ import os
 import json
 
 from discord.ext import commands, tasks
-directory="./manual"
 
-def load_json_with_substitutions(directory:str, filename:str, substitutions:dict):
+directory = "./manual"
+
+
+def load_json_with_substitutions(directory: str, filename: str, substitutions: dict):
     """
-    Load a JSON file from the given directory, apply any substitutuions to the 
-    JSON string contained within the substitutions dictionary, and load in a 
+    Load a JSON file from the given directory, apply any substitutuions to the
+    JSON string contained within the substitutions dictionary, and load in a
     dictionary from the result.
 
     Args:
@@ -21,7 +23,7 @@ def load_json_with_substitutions(directory:str, filename:str, substitutions:dict
     file_path = os.path.join(directory, filename)
 
     # Read the JSON file as a string
-    with open(file_path, 'r', encoding='utf-8') as file:
+    with open(file_path, "r", encoding="utf-8") as file:
         json_string = file.read()
 
     # Perform substitutions
@@ -35,9 +37,8 @@ def load_json_with_substitutions(directory:str, filename:str, substitutions:dict
     return json_data
 
 
-
-def load_manual(file:str,ctx:commands.Context):
-    bot:commands.Bot=ctx.bot
-    subs={"$BOTID$":str(bot.user.id), "$APPNAME$":str(bot.application.name)}
-    jsondata=load_json_with_substitutions("./manual",file,subs)
+def load_manual(file: str, ctx: commands.Context):
+    bot: commands.Bot = ctx.bot
+    subs = {"$BOTID$": str(bot.user.id), "$APPNAME$": str(bot.application.name)}
+    jsondata = load_json_with_substitutions("./manual", file, subs)
     return jsondata

@@ -1,22 +1,23 @@
 import asyncio
-from typing import(
+from typing import (
     Literal,
     Tuple,
     Union,
-    
-    )
+)
 from .AudioContainer import AudioContainer
 import random
 import discord
 
 from discord.ext import commands, tasks
 
-'''
+"""
 I'm putting the playback/playlist management functions in these two mixins because MusicPlayer was getting crowded.
-'''
+"""
+
+
 class PlayerMixin:
     def setup_actions(self):
-        '''Mapping of the mixin's functions to a dictionary.'''
+        """Mapping of the mixin's functions to a dictionary."""
         self.action_dict = {
             "play": self.play,
             "stop": self.stop,
@@ -25,19 +26,23 @@ class PlayerMixin:
             "back": self.back,
             "auto_next": self.next_auto,
             "auto_over": self.next_auto,
-            "repeat":self.repeat_toggle,
-            "playlistview":self.playlist_view
+            "repeat": self.repeat_toggle,
+            "playlistview": self.playlist_view,
         }
-    async def repeat_toggle(self,ctx: commands.Context, editinter: discord.Interaction = None):
-        '''switch repeats to on or off.'''
-        if self.repeat==False:
-            self.repeat=True
-            self.repeatone=False
+
+    async def repeat_toggle(
+        self, ctx: commands.Context, editinter: discord.Interaction = None
+    ):
+        """switch repeats to on or off."""
+        if self.repeat == False:
+            self.repeat = True
+            self.repeatone = False
             await self.send_message(ctx, "repeat", f"Repeat enabled.", editinter)
-        elif self.repeat==True:
-            self.repeat=False
-            self.repeatone=False
+        elif self.repeat == True:
+            self.repeat = False
+            self.repeatone = False
             await self.send_message(ctx, "repeat", f"Repeat disabled.", editinter)
+
     async def play(self, ctx: commands.Context, editinter: discord.Interaction = None):
         """Start playing or resume playing the AudioContainer at self.current.
 
@@ -46,7 +51,7 @@ class PlayerMixin:
             editinter (discord.Interaction, optional): The interaction object for editing the response message. Defaults to None.
         """
         voice = self.voice
-        if self.voice==None:
+        if self.voice == None:
             await self.send_message(ctx, "voice was never set!", editinter)
         if self.current is None:
             self.player_condition = "play"
@@ -57,10 +62,14 @@ class PlayerMixin:
                 self.current.resume()
                 voice.resume()
                 data = self.current
-                await self.send_message(ctx, "Resume", f"{data.title} is resuming!", editinter)
+                await self.send_message(
+                    ctx, "Resume", f"{data.title} is resuming!", editinter
+                )
             else:
                 data = self.current
-                await self.send_message(ctx, "Resume", f"{data.title} is already playing!", editinter)
+                await self.send_message(
+                    ctx, "Resume", f"{data.title} is already playing!", editinter
+                )
 
     async def stop(self, ctx, editinter: discord.Interaction = None):
         """Stop the currently playing song and reset the player state.
@@ -75,10 +84,12 @@ class PlayerMixin:
             if self.repeat:
                 self.songs.append(self.current)
             self.player_condition = "stop"
-            
+
             self.current = None
             self.voice.stop()
-            await self.send_message(ctx, "Stop", "The player has been stopped.", editinter)
+            await self.send_message(
+                ctx, "Stop", "The player has been stopped.", editinter
+            )
 
     async def pause(self, ctx: commands.Context, editinter: discord.Interaction = None):
         """Pause the currently playing song.
@@ -94,16 +105,32 @@ class PlayerMixin:
                     if self.current:
                         self.current.pause()
                     self.player_condition = "pause"
-                    await self.send_message(ctx, "Pause", f"I have paused {self.current.title}!", editinter)
+                    await self.send_message(
+                        ctx, "Pause", f"I have paused {self.current.title}!", editinter
+                    )
             else:
-                await self.send_message(ctx, "Not playing", "There isn't a song playing right now.", editinter)
+                await self.send_message(
+                    ctx,
+                    "Not playing",
+                    "There isn't a song playing right now.",
+                    editinter,
+                )
         else:
-            await self.send_message(ctx, "Not playing", "There isn't a song playing right now.", editinter)
+            await self.send_message(
+                ctx, "Not playing", "There isn't a song playing right now.", editinter
+            )
 
-    async def next_auto(self,ctx:commands.Context, editinter: discord.Interaction = None):
-        await self.next(ctx,editinter,case='auto')
+    async def next_auto(
+        self, ctx: commands.Context, editinter: discord.Interaction = None
+    ):
+        await self.next(ctx, editinter, case="auto")
 
-    async def next(self, ctx: commands.Context, editinter: discord.Interaction = None, case="notauto"):
+    async def next(
+        self,
+        ctx: commands.Context,
+        editinter: discord.Interaction = None,
+        case="notauto",
+    ):
         """Play the next song in the playlist.
 
         Args:
@@ -114,9 +141,8 @@ class PlayerMixin:
         Returns:
             None
         """
-        if self.player_condition=='stop':
-            await self.send_message(ctx, "Stopped", "Stopped.",
-                                    editinter)
+        if self.player_condition == "stop":
+            await self.send_message(ctx, "Stopped", "Stopped.", editinter)
             self.bot.remove_act("MusicPlay")
             self.player_condition = "none"
             return
@@ -139,8 +165,12 @@ class PlayerMixin:
             if self.current is not None:
                 self.current.stop()
                 self.current = None
-            await self.send_message(ctx, "Empty Playlist", "My playlist is expended, so I can't go to a new song.",
-                                    editinter)
+            await self.send_message(
+                ctx,
+                "Empty Playlist",
+                "My playlist is expended, so I can't go to a new song.",
+                editinter,
+            )
             self.bot.remove_act("MusicPlay")
             self.player_condition = "none"
 
@@ -166,12 +196,19 @@ class PlayerMixin:
         if self.songs:
             await self.play_song(ctx)
         else:
-            await self.send_message(ctx, "Empty Playlist", "There's nothing to go back to!", editinter)
+            await self.send_message(
+                ctx, "Empty Playlist", "There's nothing to go back to!", editinter
+            )
             self.player_condition = "none"
 
-
-
-    async def player_actions(self, action: Literal['','play','stop','pause','next','back','auto_next','auto_over']="", ctxmode: commands.Context = None, editinter: discord.Interaction = None):
+    async def player_actions(
+        self,
+        action: Literal[
+            "", "play", "stop", "pause", "next", "back", "auto_next", "auto_over"
+        ] = "",
+        ctxmode: commands.Context = None,
+        editinter: discord.Interaction = None,
+    ):
         """Dispatch a player action based on the passed in string action.
         'play' : play or resume the current song.
         'stop' : stop the current song and reset the player
@@ -189,13 +226,12 @@ class PlayerMixin:
                 await self.action_dict[action](ctx, editinter)
 
 
-
 class PlaylistMixin:
-    '''
+    """
     A separate mixin class just for specifying playlist related actions.
-    '''
+    """
 
-    async def playlist_action_add(self, param:AudioContainer)->AudioContainer:
+    async def playlist_action_add(self, param: AudioContainer) -> AudioContainer:
         """
         Add an AudioContainer to the playlist.
 
@@ -211,7 +247,9 @@ class PlaylistMixin:
             random.shuffle(self.songs)
         return song
 
-    async def playlist_action_add_url(self, param:Tuple[str,str], do_search:bool=True, ignore_error:bool=False)->AudioContainer:
+    async def playlist_action_add_url(
+        self, param: Tuple[str, str], do_search: bool = True, ignore_error: bool = False
+    ) -> AudioContainer:
         """
         Create an AudioContainer from a URL and add it to the playlist
 
@@ -227,17 +265,23 @@ class PlaylistMixin:
 
         if song.state == "Error" and not ignore_error:
             if self.channel is not None:
-                self.internal_message_log.append(f"I could not add {song.title} : `{str(song.error_value)}`")
-                await self.send_message(self.channel, str(song.error_value), desc="Error...")
+                self.internal_message_log.append(
+                    f"I could not add {song.title} : `{str(song.error_value)}`"
+                )
+                await self.send_message(
+                    self.channel, str(song.error_value), desc="Error..."
+                )
             await self.bot.send_error(song.error_value, "Adding URL.")
             return None
         elif song.state == "Error" and ignore_error:
             return song.error_value
         else:
-           res = await self.playlist_action_add(song)
-           return res
-    
-    async def playlist_action_removespot(self, param:int)->Union[AudioContainer, str]:
+            res = await self.playlist_action_add(song)
+            return res
+
+    async def playlist_action_removespot(
+        self, param: int
+    ) -> Union[AudioContainer, str]:
         """
         Remove a song from the playlist at a specific spot.
 
@@ -253,7 +297,7 @@ class PlaylistMixin:
             return removed_song
         return "ERR!&outofrange&ERR!"
 
-    async def playlist_action_jumpto(self, param:int)->Union[AudioContainer, str]:
+    async def playlist_action_jumpto(self, param: int) -> Union[AudioContainer, str]:
         """
         Move a song to the beginning of the playlist at a specific spot.
 
@@ -270,7 +314,7 @@ class PlaylistMixin:
             return removed_song
         return "ERR!&outofrange&ERR!"
 
-    async def playlist_action_shuffle(self, param)->str:
+    async def playlist_action_shuffle(self, param) -> str:
         """
         Shuffle the songs in the playlist.
 
@@ -280,7 +324,7 @@ class PlaylistMixin:
         random.shuffle(self.songs)
         return "done"
 
-    async def playlist_action_clear(self,param)->str:
+    async def playlist_action_clear(self, param) -> str:
         """
         Clear the playlist.
 
@@ -290,18 +334,19 @@ class PlaylistMixin:
         await self.player_actions("stop")
         if self.songs:
             self.songs, self.current = [], None
-            return 'done'
+            return "done"
         else:
-            return 'emptyalready'
+            return "emptyalready"
 
-    async def playlist_repeat(self,param):
-        if self.repeat==False:
-            self.repeat=True
-            self.repeatone=False
-        elif self.repeat==True:
-            self.repeat=False
-            self.repeatone=False
-        return 'done'
+    async def playlist_repeat(self, param):
+        if self.repeat == False:
+            self.repeat = True
+            self.repeatone = False
+        elif self.repeat == True:
+            self.repeat = False
+            self.repeatone = False
+        return "done"
+
     def setup_playlist_actions(self):
         """
         Set up the dictionary for playlist actions.
@@ -313,15 +358,20 @@ class PlaylistMixin:
             "jumpto": self.playlist_action_jumpto,
             "shuffle": self.playlist_action_shuffle,
             "clear": self.playlist_action_clear,
-            'repeat': self.playlist_repeat
+            "repeat": self.playlist_repeat,
         }
 
-    async def playlist_actions(self, action: Literal['add','add_url','removespot','jumpto','shuffle','clear'], param=None, **kwargs):
+    async def playlist_actions(
+        self,
+        action: Literal["add", "add_url", "removespot", "jumpto", "shuffle", "clear"],
+        param=None,
+        **kwargs,
+    ):
         """
         Dispatch a playlist action based on the passed in string action.
         'add'       : Add a AudioContainer to the playlist
         'add_url'   : Create an AudioContainer from a passed in url
-        'removespot': Remove 
+        'removespot': Remove
         'jumpto'    : Play the next song
         'shuffle'   : play the previous song
         'clear':    : called whenever the current song is done playing.
