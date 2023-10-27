@@ -287,7 +287,7 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
         # print(doc)
         meta = doc.metadata  #'metadata',{'title':'UNKNOWN','source':'unknown'})
         content = doc.page_content  # ('page_content','Data lost!')
-        output = f"""**Name:** {meta['title']}
+        output = f"""**Name:** {meta['title'] if meta['title'] else "NOTITLE!"}
         **Link:** {meta['source']}
         **Text:** {content}"""
         formatted_docs.append(output)
