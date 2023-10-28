@@ -1267,7 +1267,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await ctx.send("This command will only work inside a guild.")
             return
         guildid = guild.id
-        channelid= channelid
+        channelid= channel.id
         # options.
         update = True
         indexbot = True
