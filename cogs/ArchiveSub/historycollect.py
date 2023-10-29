@@ -409,7 +409,7 @@ async def collect_server_history(ctx, **kwargs):
     )
 
     current_channel_count = 0
-    current_channel_every = max(chanlen // 50, 1)
+    current_channel_every = 50
     totalcharlen = 0
     
     """for chan in guild.forums:
