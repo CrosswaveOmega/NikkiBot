@@ -9,6 +9,6 @@ class ChromaTools:
     """Class full of static methods for simple Chroma DB ops."""
 
     @staticmethod
-    def get_chroma_client() -> chromadb.API:
+    def get_chroma_client() -> chromadb.ClientAPI:
         client = chromadb.PersistentClient(path="saveData")
         return client

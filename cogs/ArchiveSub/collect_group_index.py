@@ -179,8 +179,8 @@ async def do_group_old(
 
     count = ArchivedRPMessage().count_messages_without_group(server_id)
     new_list, new_count = [], 0
-    stopcount=0
-    countlim=2**64
+    stopcount = 0
+    countlim = 2**64
     status_mess = (
         StatusEditMessage(
             await ctx.channel.send(
@@ -202,8 +202,8 @@ async def do_group_old(
         )
         new_list.extend(get_msg_result[0])
         new_count = get_msg_result[1]
-        stopcount+=1
-        if stopcount>countlim:
+        stopcount += 1
+        if stopcount > countlim:
             raise RecursionError("something has gone horribly wrong.")
         gui.gprint(f"Now at: {new_count}/{count}.")
         await asyncio.sleep(0.1)
@@ -335,8 +335,8 @@ async def do_group(
     )
     length, old_group_id = count, group_id
     to_send, current_chana, backlog, chars_in_backlog = [], None, Queue(), set()
-    stopcount=0
-    countlim=2**64
+    stopcount = 0
+    countlim = 2**64
     while new_count < count:
         DatabaseSingleton("voc").commit()
         get_msg_result = ArchivedRPMessage().get_messages_without_group(server_id, 1)
@@ -348,8 +348,8 @@ async def do_group(
         last = thesemessages[-1]
         toprint = f"Now at: {new_count}/{count}. [{first.simplerep()}]-{thiscount}-[{last.simplerep()}]"
         print(toprint)
-        stopcount+=1
-        if stopcount>countlim:
+        stopcount += 1
+        if stopcount > countlim:
             raise RecursionError("something has gone horribly wrong.")
         if status_mess:
             await status_mess.editw(

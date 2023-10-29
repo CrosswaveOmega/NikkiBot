@@ -83,7 +83,7 @@ async def read_and_split_link(
     return all_splits
 
 
-async def add_summary(url: str, desc: str, collection="web_collection", client=None):
+async def add_summary(url: str, desc: str, collection="web_collection", client:chromadb.ClientAPI=None):
     loader = ReadableLoader(
         url,
         header_template={
@@ -123,7 +123,7 @@ async def add_summary(url: str, desc: str, collection="web_collection", client=N
         # vectorstore.persist()
 
 
-def store_splits(splits, collection="web_collection", client=None):
+def store_splits(splits, collection="web_collection", client:chromadb.ClientAPI=None):
     persist = "saveData"
     ids = [
         f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,doc.metadata['source']))}],sid:[{e+1}]"
@@ -152,7 +152,7 @@ def store_splits(splits, collection="web_collection", client=None):
         # vectorstore.persist()
 
 
-def has_url(url, collection="web_collection", client: chromadb.API = None) -> bool:
+def has_url(url, collection="web_collection", client:chromadb.ClientAPI=None) -> bool:
     persist = "saveData"
     if client != None:
         try:
@@ -189,7 +189,7 @@ def has_url(url, collection="web_collection", client: chromadb.API = None) -> bo
             return False
 
 
-def remove_url(url, collection="web_collection", client: chromadb.API = None) -> bool:
+def remove_url(url, collection="web_collection", client:chromadb.ClientAPI = None) -> bool:
     persist = "saveData"
     if client != None:
         try:
@@ -207,7 +207,7 @@ def remove_url(url, collection="web_collection", client: chromadb.API = None) ->
 
 
 async def search_sim(
-    question: str, collection="web_collection", client=None, titleres="None", k=7
+    question: str, collection="web_collection", client:chromadb.ClientAPI=None, titleres="None", k=7
 ) -> List[Tuple[Document, float]]:
     persist = "saveData"
     vs = Chroma(
@@ -232,7 +232,7 @@ async def search_sim(
 
 
 async def debug_get(
-    question: str, collection="web_collection", client=None, titleres="None", k=7
+    question: str, collection="web_collection", client:chromadb.ClientAPI=None, titleres="None", k=7
 ) -> List[Tuple[Document, float]]:
     persist = "saveData"
     vs = Chroma(
@@ -287,9 +287,9 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
         # print(doc)
         meta = doc.metadata  #'metadata',{'title':'UNKNOWN','source':'unknown'})
         content = doc.page_content  # ('page_content','Data lost!')
-        tile="NOTITLE"
-        if 'title' in meta:
-            tile=meta['title']
+        tile = "NOTITLE"
+        if "title" in meta:
+            tile = meta["title"]
         output = f"""**Name:** {tile}
         **Link:** {meta['source']}
         **Text:** {content}"""

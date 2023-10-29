@@ -1267,7 +1267,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await ctx.send("This command will only work inside a guild.")
             return
         guildid = guild.id
-        channelid= channel.id
+        channelid = channel.id
         # options.
         update = True
         indexbot = True
@@ -1361,7 +1361,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         )
         mt = StatusEditMessage(me, ctx)
         gui.gprint(archive_channel.name)
-        messagearchived=0
+        messagearchived = 0
         for e, sep in enumerate(grouped):
             # Start posting
             gui.gprint(e, sep)
@@ -1385,11 +1385,10 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 await old_message.edit(embed=embedit)
             messages = sep.get_messages()
             messagelength = len(messages)
-            
 
             for index, amess in enumerate(messages):
                 c, au, av = amess.content, amess.author, amess.avatar
-                messagearchived+=1
+                messagearchived += 1
                 files = []
                 for attach in amess.list_files():
                     this_file = attach.to_file()
@@ -1441,7 +1440,8 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             remaining_time_float -= 2
             await mt.editw(
                 min_seconds=30,
-                content=f"<a:LetWalk:1118184074239021209> Currently on group {e+1}/{length}.\n {0}% \n Currently archived {messagearchived} messages out of {message_total}\n This is going to take another...{seconds_to_time_string(int(remaining_time_float))}",            )
+                content=f"<a:LetWalk:1118184074239021209> Currently on group {e+1}/{length}.\n {0}% \n Currently archived {messagearchived} messages out of {message_total}\n This is going to take another...{seconds_to_time_string(int(remaining_time_float))}",
+            )
             # await edittime.invoke_if_time(content=f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
             bot.add_act(
                 str(ctx.guild.id) + "arch",
