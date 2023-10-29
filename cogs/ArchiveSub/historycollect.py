@@ -145,8 +145,14 @@ async def iter_hist_messages(cobj: discord.TextChannel, actx: ArchiveContext):
     messages = []
     mlen = 0
     carch = ChannelArchiveStatus.get_by_tc(cobj)
-    await carch.get_first_and_last(cobj)
+    
     timev = actx.last_stored_time
+    if lasttime and timev:
+        if lasttime<timev:
+            gui.gprint(f"probably don't need to archive {cobj.name}")
+            return []
+
+    await carch.get_first_and_last(cobj)
     if carch.first_message_time != None:
         # print(carch.first_message_time.replace(tzinfo=timezone.utc))
         # print(carch.first_message_time,carch.first_message_time.tzinfo,actx.last_stored_time,actx.last_stored_time.tzinfo)
@@ -162,10 +168,8 @@ async def iter_hist_messages(cobj: discord.TextChannel, actx: ArchiveContext):
                lasttime, " ",
                timev)
     reallasttime=None
-    if lasttime and timev:
-        if lasttime<timev:
-            gui.gprint(f"probably don't need to archive {cobj.name}")
-            return [];
+
+            # return [];
     async for thisMessage in cobj.history(after=timev, oldest_first=True):
         # if(thisMessage.created_at<=actx.last_stored_time and actx.update): break
         add_check = actx.evaluate_add(thisMessage)
@@ -380,18 +384,14 @@ async def collect_server_history(ctx, **kwargs):
     time = profile.last_archive_time
     print(time)
     if time:
-        await channel.send(
-            "Starting at time:{}".format(time.strftime("%B %d, %Y %I:%M:%S %p"))
-        )
+        #await channel.send(            "Starting at time:{}".format(time.strftime("%B %d, %Y %I:%M:%S %p"))        )
         time = time.timestamp()
-    if time == None:
+    if time is None:
         time = 1431518400
     last_time = datetime.fromtimestamp(time, timezone.utc)
     new_last_time = last_time.timestamp()
 
-    await channel.send(
-        "Starting at time:{}".format(last_time.strftime("%B %d, %Y %I:%M:%S %p"))
-    )
+    #await channel.send(        "Starting at time:{}".format(last_time.strftime("%B %d, %Y %I:%M:%S %p"))    )
     chantups = []
     chantups.extend(("forum", chan) for chan in guild.forums)
 
