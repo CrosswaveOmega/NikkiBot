@@ -25,7 +25,7 @@ from .TCAppCommandAutoSync import (
     SpecialAppSync,
 )
 from .TCMixins import CogFieldList, StatusTicker
-from javascriptasync import init_js
+from javascriptasync import init_js, kill_js
 
 """ Primary Class
 
@@ -194,7 +194,7 @@ class TCBot(
         self.delete_queue_message.cancel()
         self.check_tc_tasks.cancel()
         self.status_ticker.cancel()
-
+        kill_js()
         if self.gui:
             await self.gui.kill()
         if self.playapi:
