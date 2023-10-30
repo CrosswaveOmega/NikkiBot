@@ -118,9 +118,11 @@ class GptmodAPI:
     async def check_oai(self, ctx):
         if ctx.bot.gptapi.openaimode:
             target_server = AssetLookup.get_asset("oai_server")
+            targetserverlist=json.loads(target_server)
+            print(targetserverlist, type(targetserverlist))
             if not ctx.guild:
                 return True
-            if ctx.guild.id != int(target_server):
+            if ctx.guild.id not in (targetserverlist):
                 await ctx.send(
                     "OpenAI mode may only be used in my private testing server.",
                     ephemeral=True,
