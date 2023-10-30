@@ -204,7 +204,7 @@ class TCBot(
                 except Exception as ex:
                     print("rt", ex)
                 print("done closing.")
-                self.playapi.stop()
+                await self.playapi.stop()
                 print()
             except Exception as e:
                 # l=logging.getLogger("TCLogger")
