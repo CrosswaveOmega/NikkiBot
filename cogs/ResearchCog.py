@@ -606,7 +606,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @commands.hybrid_command(
         name="researchcached", description="Research a topic.", extras={}
     )
-    @app_commands.guilds(int(target_server[0]))
+    @app_commands.guilds(int(target_server[1]))
     @app_commands.describe(question="question to be asked.")
     @app_commands.describe(k="min number of sources to grab.")
     @app_commands.describe(
