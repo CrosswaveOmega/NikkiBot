@@ -145,7 +145,7 @@ async def iter_hist_messages(cobj: discord.TextChannel, actx: ArchiveContext):
     messages = []
     mlen = 0
     carch = ChannelArchiveStatus.get_by_tc(cobj)
-    
+    lasttime=None if cobj.last_message_id is None else discord.utils.snowflake_time(cobj.last_message_id)
     timev = actx.last_stored_time
     if lasttime and timev:
         if lasttime<timev:
@@ -163,7 +163,7 @@ async def iter_hist_messages(cobj: discord.TextChannel, actx: ArchiveContext):
         timev = None
     # if carch.latest_archive==None:timev=None
     lastmess=cobj.last_message_id
-    lasttime=None if cobj.last_message_id is None else discord.utils.snowflake_time(cobj.last_message_id)
+
     gui.gprint(cobj.name, " ", lastmess, " ",
                lasttime, " ",
                timev)
