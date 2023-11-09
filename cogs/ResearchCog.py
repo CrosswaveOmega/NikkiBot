@@ -1,44 +1,22 @@
-from typing import Literal
 import discord
-import operator
-import io
-import json
-import aiohttp
 import asyncio
 from assets import AssetLookup
 import re
 
 # import datetime
-from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY, MO, TU, WE, TH, FR, SA, SU
 
-from datetime import datetime, time, timedelta
-import time
-from queue import Queue
 
-from discord.ext import commands, tasks
-from discord.utils import find
-from discord import Webhook, ui
+from discord.ext import commands
 
 from discord import app_commands
-from discord.app_commands import Choice
-from pathlib import Path
-from utility import (
-    MessageTemplates,
-    RRuleView,
-    formatutil,
-    seconds_to_time_string,
-    urltomessage,
-)
-from utility.embed_paginator import pages_of_embeds
-from bot import TCBot, TC_Cog_Mixin, StatusEditMessage, super_context_menu
+from bot import TC_Cog_Mixin, StatusEditMessage, super_context_menu
 import gptmod
-from database import DatabaseSingleton, ServerArchiveProfile
 from gptfunctionutil import *
 import gptmod.error
-from database.database_ai import AuditProfile, ServerAIConfig
+from database.database_ai import AuditProfile
 
 # I need the readability npm package to work, so
-from javascriptasync import require, eval_js, require_a, eval_js_a
+from javascriptasync import require, eval_js
 import assets
 import gui
 from .ResearchAgent import *
@@ -67,7 +45,6 @@ def is_readable(url):
 
 async def read_article_async(url):
     myfile=await assets.JavascriptLookup.get_full_pathas('readwebpage.js')
-    
 
     rsult = await myfile.read_webpage_plain(url)
     #print(rsult)
@@ -903,8 +880,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     for p in result.split("\n"):
                         page.add_line(p)
                     for p in page.pages:
-                        embed = discord.Embed(title=header, description=p)
-                        await ctx.send(content=header, embed=embed)
+                        embed = discord.Embed(title=header.get('title', "notitle"), description=p)
+                        await ctx.send(content=header.get('title', "notitle"), embed=embed)
                     embed = discord.Embed()
                     name, res = "", ""
                     if len(sources) < 20:
