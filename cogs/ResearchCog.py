@@ -881,7 +881,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                         page.add_line(p)
                     for p in page.pages:
                         embed = discord.Embed(title=header.get('title', "notitle"), description=p)
-                        await ctx.send(content=header.get('title', "notitle"), embed=embed)
+                        await ctx.send(content=header.get('title', "notitle")[:200], embed=embed)
                     embed = discord.Embed()
                     name, res = "", ""
                     if len(sources) < 20:
