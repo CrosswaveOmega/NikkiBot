@@ -1,7 +1,7 @@
 /*
-dependencies: 
+dependencies:
 @mozilla/readability
-jsdom
+core.jsdom.jsdom
 
 This script is for taking in a single url, reading the html from that site,
 and then running that html through the Readability package to get readable content
@@ -11,115 +11,110 @@ This script is intended to be used in conjunction with the JSPyBridge.
 
 INTENDED TO BE EXECUTED THROUGH JSPyBridge!
 */
-async function check_read(targeturl, readability, jsdom) {
-  if (typeof readability === 'undefined') {
-    readability = require('@mozilla/readability');
+const Readability=require('@mozilla/readability')
+const {Window}=require('happy-dom')
+const TurndownService=require('turndown')
+var turndownService=new TurndownService({ 'headingStyle': 'atx' });
+turndownService.addRule('removeInvalidLinks', {
+  filter: 'a',
+  replacement: (content, node) => {
+    const href = node.getAttribute('href');
+    if (!href || !isValidLink(href)) {
+      return content;
+    }
+    return href ? `[${content}](${href})` : content;
   }
+});
 
-  if (typeof jsdom === 'undefined') {
-    jsdom = require('jsdom');
-  }
+var core={};
+function isValidLink(url) {
+  // Regular expression pattern to validate URL format
+  const urlPattern = /^(ftp|http|https):\/\/[^ "]+$/;
 
-  var red = readability;
-  var ji = jsdom;
+  return urlPattern.test(url);
+}
 
-  function isValidLink(url) {
-    // Regular expression pattern to validate URL format
-    const urlPattern = /^(ftp|http|https):\/\/[^ "]+$/;
+async function setup(mod1, mod2, mod3){
+  
 
-    return urlPattern.test(url);
-  }
+  core.ts=new TurndownService({ 'headingStyle': 'atx' });    
+  core.ts.addRule('removeInvalidLinks', {
+      filter: 'a',
+      replacement: (content, node) => {
+        const href = node.getAttribute('href');
+        if (!href || !isValidLink(href)) {
+          return content;
+        }
+        return href ? `[${content}](${href})` : content;
+      }
+    });
+}
+
+async function check_read(targeturl) {
+
+
+
+
+
 
   const response = await fetch(targeturl);
   const html2 = await response.text();
-  var doc = new jsdom.JSDOM(html2, {
+  var doc = new JSDOM.JSDOM(html2, {
     url: targeturl
   });
-  return readability.isProbablyReaderable(doc.window.document)
+  return Readability.isProbablyReaderable(doc.window.document)
 }
 
-async function read_webpage_plain(targeturl, readability, jsdom, turndownService) {
-    if (typeof readability === 'undefined') {
-      readability = require('@mozilla/readability');
-    }
-  
-    if (typeof jsdom === 'undefined') {
-      jsdom = require('jsdom');
-    }
-  
-    var red = readability;
-    var ji = jsdom;
-  
+async function read_webpage_plain(targeturl) {
+
     function isValidLink(url) {
       // Regular expression pattern to validate URL format
       const urlPattern = /^(ftp|http|https):\/\/[^ "]+$/;
-  
+
       return urlPattern.test(url);
     }
-  
+
     const response = await fetch(targeturl);
     const html2 = await response.text();
-    var doc = new jsdom.JSDOM(html2, {
-      url: targeturl
-    });
-    let reader = new readability.Readability(doc.window.document);
+    const window = new Window();
+
+    var document=window.document;
+    document.write(html2);
+
+    
+    let reader = new Readability.Readability(window.document);
     let article = reader.parse();
     let articleHtml = article.content;
-  
-    turndownService.addRule('removeInvalidLinks', {
-      filter: 'a',
-      replacement: (content, node) => {
-        const href = node.getAttribute('href');
-        if (!href || !isValidLink(href)) {
-          return content;
-        }
-        return href ? `[${content}](${href})` : content;
-      }
-    });
-  
+    window.happyDOM.cancelAsync()
+    
+
     const markdownContent = turndownService.turndown(articleHtml);
-    return [markdownContent, article.title];
+    return {'mark':markdownContent, 'orig':article};
   }
 
-  async function read_webpage_html_direct(htmldoc,targeturl, readability, jsdom,turndownService) {
-    if (typeof readability === 'undefined') {
-      readability = require('@mozilla/readability');
-    }
-  
-    if (typeof jsdom === 'undefined') {
-      jsdom = require('jsdom');
-    }
-  
-    var red = readability;
-    var ji = jsdom;
-  
+ async function read_webpage_html_direct(htmldoc,targeturl) {
+
+
     function isValidLink(url) {
       // Regular expression pattern to validate URL format
       const urlPattern = /^(ftp|http|https):\/\/[^ "]+$/;
-  
+
       return urlPattern.test(url);
     }
-    
+
     const html2 = htmldoc
-    var doc = new jsdom.JSDOM(html2, {
-      url: targeturl
-    });
-    let reader = new readability.Readability(doc.window.document);
+    const window = new Window();
+
+    var document=window.document;
+    document.write(html2);
+
+    let reader = new Readability.Readability(window.document);
     let article = reader.parse();
     let articleHtml = article.content;
     //The heading style recognized by discord apps.
-    turndownService.addRule('removeInvalidLinks', {
-      filter: 'a',
-      replacement: (content, node) => {
-        const href = node.getAttribute('href');
-        if (!href || !isValidLink(href)) {
-          return content;
-        }
-        return href ? `[${content}](${href})` : content;
-      }
-    });
-  
+    window.happyDOM.cancelAsync()
+    window.cl
     const markdownContent = turndownService.turndown(articleHtml);
-    return [markdownContent, article.title];
+    return  {'mark':markdownContent, 'orig':article};
 }
-
+module.exports={setup, check_read,read_webpage_plain,read_webpage_html_direct}

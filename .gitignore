@@ -14,6 +14,37 @@ feedback.txt
 *.py[cod]
 *$py.class
 
+# Dependency directories
+node_modules/
+
+# Build directory
+dist/
+build/
+
+# Logs
+logs
+*.log
+
+# Environment variables
+.env
+
+# IDE/editor files
+.vscode/
+.idea/
+*.sublime-workspace
+*.swp
+
+# Other generated files
+package-lock.json
+yarn.lock
+
+# Testing files
+coverage/
+
+# Miscellaneous
+.DS_Store
+Thumbs.db
+
 # C extensions
 *.so
 
@@ -173,3 +204,4 @@ logs/tauceti__log.log.2
 logs/tauceti__log.log.3
 logs/tauceti__log.log.4
 logs/tauceti__log.log.5
+package.json

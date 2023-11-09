@@ -1,7 +1,7 @@
 import os
 import configparser
 import json
-import gui
+
 from typing import Optional
 
 
@@ -24,3 +24,12 @@ class JavascriptLookup:
             return script
         else:
             return None
+
+    @staticmethod
+    async def get_full_pathas(filename: str):
+        
+        from javascriptasync import require_a
+        js_folder = "../js/"+filename
+        myfile=await require_a(js_folder,amode=True)
+        return myfile
+    

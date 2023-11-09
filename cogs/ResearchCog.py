@@ -63,50 +63,18 @@ def is_readable(url):
     return rsult
 
 
-def read_article_sync(url):
-    timeout = 30
-    readability = require("@mozilla/readability")
-    jsdom = require("jsdom")
-    TurndownService = require("turndown")
-    # Is there a better way to do this?
-    print("attempting parse")
-    out = f"""
-    let result=await read_webpage_plain(`{url}`,readability,jsdom);
-    return [result[0],result[1]];
-    """
-    myjs = assets.JavascriptLookup.find_javascript_file("readwebpage.js", out)
-    # myjs=myjs.replace("URL",url)
-    print(myjs)
-
-    rsult = eval_js(myjs)
-
-    output, header = rsult[0], rsult[1]
-    simplified_text = output.strip()
-    simplified_text = re.sub(r"(\n){4,}", "\n\n\n", simplified_text)
-    simplified_text = re.sub(r"\n\n", " ", simplified_text)
-    simplified_text = re.sub(r" {3,}", "  ", simplified_text)
-    simplified_text = simplified_text.replace("\t", "")
-    simplified_text = re.sub(r"\n+(\s*\n)*", "\n", simplified_text)
-    return [simplified_text, header]
 
 
 async def read_article_async(url):
-    readability = await require_a("@mozilla/readability")
-    jsdom = await require_a("jsdom")
-    TurndownService = await require_a("turndown")
-    pythonObject = {"var": url}
-    out = """
-    let urla=await pythonObject.var
+    myfile=await assets.JavascriptLookup.get_full_pathas('readwebpage.js')
     
-    const turndownService = new TurndownService({ headingStyle: 'atx' });
-    let result=await read_webpage_plain(urla,readability,jsdom,turndownService);
-    return [result[0],result[1]];
-    """
 
-    myjs = assets.JavascriptLookup.find_javascript_file("readwebpage.js", out)
-    rsult = await eval_js_a(myjs, timeout=30)
-
-    output, header = rsult[0], rsult[1]
+    rsult = await myfile.read_webpage_plain(url)
+    #print(rsult)
+    output= await rsult.get_a('mark')
+    header=await rsult.get_a('orig')
+    serial=await header.get_dict_a()
+    #print(serial)
     simplified_text = output.strip()
     simplified_text = re.sub(r"(\n){4,}", "\n\n\n", simplified_text)
     simplified_text = re.sub(r"\n\n", " ", simplified_text)
@@ -114,8 +82,7 @@ async def read_article_async(url):
     simplified_text = simplified_text.replace("\t", "")
     simplified_text = re.sub(r"\n+(\s*\n)*", "\n", simplified_text)
     print(simplified_text)
-    return [simplified_text, header]
-
+    return simplified_text, serial
 
 async def read_article(url):
     now = discord.utils.utcnow()

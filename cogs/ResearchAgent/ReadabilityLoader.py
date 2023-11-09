@@ -44,12 +44,8 @@ def remove_links(markdown_text):
 
 
 async def read_article_direct(html, url):
+    myfile = await assets.JavascriptLookup.get_full_pathas("readwebpage.js")
     timeout = 30
-    readability = require("@mozilla/readability")
-    print("readability", readability)
-    jsdom = require("jsdom")
-    TurndownService = require("turndown")
-    print("attempting parse")
 
     htmls: str = str(html)
 
@@ -61,20 +57,19 @@ async def read_article_direct(html, url):
     let result=await read_webpage_html_direct(html2,urlV,readability,jsdom, turndownService);
     return [result[0],result[1]];
     """
-    myjs = assets.JavascriptLookup.find_javascript_file("readwebpage.js", out)
 
-    # print(myjs)
+    rsult = await myfile.read_webpage_html_direct(htmls, url)
+    output = await rsult.get_a("mark")
+    header = await rsult.get_a("orig")
+    serial = await header.get_dict_a()
 
-    rsult = await eval_js_a(myjs, timeout=25)
-
-    output, header = rsult[0], rsult[1]
     simplified_text = output.strip()
     simplified_text = re.sub(r"(\n){4,}", "\n\n\n", simplified_text)
     simplified_text = re.sub(r"\n\n", "\n", simplified_text)
     simplified_text = re.sub(r" {3,}", "  ", simplified_text)
     simplified_text = simplified_text.replace("\t", "")
     simplified_text = re.sub(r"\n+(\s*\n)*", "\n", simplified_text)
-    return [simplified_text, header]
+    return [simplified_text, serial]
 
 
 async def read_article_aw(html, url):
@@ -151,11 +146,11 @@ class ReadableLoader(dl.WebBaseLoader):
                     r"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>", "", result
                 )
                 text, header = await read_article_aw(clean_html, url)
-                final_results.append((remove_links(text), souped))
+                final_results.append((remove_links(text), souped, header))
 
             except Exception as e:
                 text = souped.get_text(**self.bs_get_text_kwargs)
-                final_results.append((text, souped))
+                final_results.append((text, souped, None))
 
         return final_results
 
@@ -201,10 +196,19 @@ class ReadableLoader(dl.WebBaseLoader):
 
         results = await self.scrape_all(self.web_paths)
         docs = []
-        for i in range(len(results)):
-            text, soup = results[i]
+        for i,res in enumerate(results):
+            text, soup, header = results[i]
 
             metadata = _build_metadata(soup, self.web_paths[i])
+            if not "title" in metadata:
+                metadata["title"] = "LoadedPDF"
+            if header is not None:
+                print(header["byline"])
+                if "byline" in header:
+                    metadata["authors"] = header["byline"]
+                metadata["website"] = header.get("siteName", "siteunknown")
+                metadata["title"] = header.get("title")
+
             metadata["sum"] = "source"
             docs.append(Document(page_content=text, metadata=metadata))
 
