@@ -45,8 +45,8 @@ def is_readable(url):
 
 async def read_article_async(url):
     myfile=await assets.JavascriptLookup.get_full_pathas('readwebpage.js')
-
-    rsult = await myfile.read_webpage_plain(url)
+    print(url)
+    rsult = await myfile.read_webpage_plain(url, timeout=45)
     #print(rsult)
     output= await rsult.get_a('mark')
     header=await rsult.get_a('orig')
@@ -68,20 +68,6 @@ async def read_article(url):
     gui.gprint("elapsed", discord.utils.utcnow() - now)
     text, header = result[0], result[1]
     return text, header
-
-
-async def read_many_articles(urls):
-    outputted = []
-    for url in urls:
-        now = discord.utils.utcnow()
-        getthread = asyncio.to_thread(read_article_sync, url)
-        result = await getthread
-        print(result)
-
-        gui.gprint("elapsed", discord.utils.utcnow() - now)
-        text, header = result[0], result[1]
-        outputted.append((url, text, header))
-    return outputted
 
 
 def extract_masked_links(markdown_text):
@@ -300,10 +286,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 embed = discord.Embed(description=f"out=\n{lines}")
                 has, getres = has_url(r["link"], client=chromac)
                 if has:
-                    await ctx.send(
-                        f"[Link {e}]({r['link']}) has {len(getres['documents'])} cached documents.",
+                    '''await ctx.send(
+                        f"[Link {e}]({r['link']}) has{len(getres['documents'])} cached documents.",
                         suppress_embeds=True,
-                    )
+                    )'''
                     ver = zip(getres["documents"], getres["metadatas"])
                     for d, e in ver:
                         if e["source"] != r["link"]:
@@ -322,10 +308,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                                 else:
                                     dbadd = True
                         if dbadd:
-                            await ctx.send(
+                            '''await ctx.send(
                                 f"[Link {e}]({r['link']}) has {len(splits)} splits.",
                                 suppress_embeds=True,
-                            )
+                            )'''
                             store_splits(splits, client=chromac)
                     except Exception as err:
                         await ctx.send(str(err))

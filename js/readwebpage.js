@@ -25,7 +25,24 @@ turndownService.addRule('removeInvalidLinks', {
     return href ? `[${content}](${href})` : content;
   }
 });
-
+settings={
+  disableJavaScriptEvaluation: true,
+			disableJavaScriptFileLoading: true,
+			disableCSSFileLoading: true,
+			disableIframePageLoading: true,
+			disableComputedStyleRendering: true,
+			disableErrorCapturing: false,
+			enableFileSystemHttpRequests: false,
+			navigator: {
+				userAgent: `Mozilla/5.0 (X11; ${
+					process.platform.charAt(0).toUpperCase() + process.platform.slice(1) + ' ' + process.arch
+				}) AppleWebKit/537.36 (KHTML, like Gecko) HappyDOM/${5}`
+			},
+			device: {
+				prefersColorScheme: 'light',
+				mediaType: 'screen'
+			}
+}
 var core={};
 function isValidLink(url) {
   // Regular expression pattern to validate URL format
@@ -73,14 +90,19 @@ async function read_webpage_plain(targeturl) {
 
       return urlPattern.test(url);
     }
-
+    console.log("clear A")
     const response = await fetch(targeturl);
     const html2 = await response.text();
-    const window = new Window();
-
-    var document=window.document;
-    document.write(html2);
-
+    const window = new Window({
+      innerWidth: 1024,
+      innerHeight: 768,
+      url: 'http://localhost:8080',
+      settings:settings
+    });
+    console.log("clear b")
+    window.document.write(html2)
+    console.log(html2)
+    console.log('clear c')
     
     let reader = new Readability.Readability(window.document);
     let article = reader.parse();
@@ -103,11 +125,16 @@ async function read_webpage_plain(targeturl) {
     }
 
     const html2 = htmldoc
-    const window = new Window();
+    const window = new Window({
+      innerWidth: 1024,
+      innerHeight: 768,
+      url: 'http://localhost:8080',
+      settings:settings
+    });
 
-    var document=window.document;
-    document.write(html2);
-
+    window.document.write(html2)
+    console.log(html2)
+    console.log('clear c')
     let reader = new Readability.Readability(window.document);
     let article = reader.parse();
     let articleHtml = article.content;

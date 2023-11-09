@@ -58,7 +58,7 @@ async def read_article_direct(html, url):
     return [result[0],result[1]];
     """
 
-    rsult = await myfile.read_webpage_html_direct(htmls, url)
+    rsult = await myfile.read_webpage_html_direct(htmls, url,timeout=45)
     output = await rsult.get_a("mark")
     header = await rsult.get_a("orig")
     serial = await header.get_dict_a()
