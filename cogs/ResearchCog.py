@@ -896,7 +896,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                             res += f"{i}\n"
                         embed.add_field(name="Sources Located", value=res, inline=False)
 
-                        await ctx.send(content=header, embed=embed)
+                        await ctx.send(content=header.get('title',"???"), embed=embed)
                     if over:
                         target_message = await ctx.send(
                             f"<a:SquareLoading:1143238358303264798> Saving {url} summary..."
