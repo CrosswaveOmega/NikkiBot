@@ -213,7 +213,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         description="Solve a question using a google search.  Form the query based on the question, and then use the page text from the search results to create an answer..",
         enabled=False,
         force_words=["research"],
-        required=["comment", "result_limit"],
+        required=["comment"],
     )
     @LibParam(
         comment="An interesting, amusing remark.",
