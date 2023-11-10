@@ -195,7 +195,7 @@ class Chelp(HelpCommand):
                         help_val = comm.help + "\n"
                         for ccomm in comm.walk_commands():
                             help_val += f"**{ccomm.full_parent_name} {ccomm.name}** : {ccomm.brief}\n"
-                    embed.add_field(name=name_val, value=help_val, inline=False)
+                    embed.add_field(name=name_val, value=help_val[:1024], inline=False)
                     commandSTR = commandSTR + " `{}`:{}".format(comm.name, comm.help)
         return embed
 

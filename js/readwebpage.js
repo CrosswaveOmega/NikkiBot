@@ -1,15 +1,16 @@
 /*
 dependencies:
 @mozilla/readability
-core.jsdom.jsdom
+happy-dom
+turndown
 
 This script is for taking in a single url, reading the html from that site,
 and then running that html through the Readability package to get readable content
 from that site.
 
-This script is intended to be used in conjunction with the JSPyBridge.
+This script is intended to be used in conjunction with JsPyBridgeAsync.
 
-INTENDED TO BE EXECUTED THROUGH JSPyBridge!
+INTENDED TO BE EXECUTED THROUGH JsPyBridgeAsync!
 */
 const Readability=require('@mozilla/readability')
 const {Window}=require('happy-dom')
@@ -73,13 +74,22 @@ async function check_read(targeturl) {
 
 
 
-
   const response = await fetch(targeturl);
   const html2 = await response.text();
-  var doc = new JSDOM.JSDOM(html2, {
-    url: targeturl
+  const window = new Window({
+    innerWidth: 1024,
+    innerHeight: 768,
+    url: 'http://localhost:8080',
+    settings:settings
   });
-  return Readability.isProbablyReaderable(doc.window.document)
+  console.log("clear b")
+  window.document.write(html2)
+  console.log(html2)
+  console.log('clear c')
+  
+  var outcome= Readability.isProbablyReaderable(window.document)
+  window.happyDOM.cancelAsync()
+  return outcome
 }
 
 async function read_webpage_plain(targeturl) {
@@ -140,7 +150,6 @@ async function read_webpage_plain(targeturl) {
     let articleHtml = article.content;
     //The heading style recognized by discord apps.
     window.happyDOM.cancelAsync()
-    window.cl
     const markdownContent = turndownService.turndown(articleHtml);
     return  {'mark':markdownContent, 'orig':article};
 }

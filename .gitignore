@@ -17,6 +17,7 @@ feedback.txt
 # Dependency directories
 node_modules/
 
+
 # Build directory
 dist/
 build/
@@ -35,6 +36,7 @@ logs
 *.swp
 
 # Other generated files
+package.json
 package-lock.json
 yarn.lock
 
@@ -204,4 +206,3 @@ logs/tauceti__log.log.2
 logs/tauceti__log.log.3
 logs/tauceti__log.log.4
 logs/tauceti__log.log.5
-package.json

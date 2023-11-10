@@ -234,7 +234,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         query: str,
         comment: str = "Search results:",
         site_title_restriction: str = "None",
-        result_limit: int = 4,
+        result_limit: int = 7,
     ):
         "Search google for a query."
 
@@ -266,6 +266,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         )
 
         statmess = StatusEditMessage(target_message, ctx)
+        current=""
         async with ctx.channel.typing():
             results = google_search(ctx.bot, query, result_limit)
 
@@ -286,10 +287,12 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 embed = discord.Embed(description=f"out=\n{lines}")
                 has, getres = has_url(r["link"], client=chromac)
                 if has:
-                    '''await ctx.send(
-                        f"[Link {e}]({r['link']}) has{len(getres['documents'])} cached documents.",
-                        suppress_embeds=True,
-                    )'''
+                    current+=f"[Link {e}]({r['link']}) has{len(getres['documents'])} cached documents.\n"
+                    await statmess.editw(
+                        min_seconds=5,
+                        content=f"<a:LetWalkR:1118191001731874856> {current}",
+                        embed=embed,
+                    )
                     ver = zip(getres["documents"], getres["metadatas"])
                     for d, e in ver:
                         if e["source"] != r["link"]:
@@ -308,19 +311,22 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                                 else:
                                     dbadd = True
                         if dbadd:
-                            '''await ctx.send(
-                                f"[Link {e}]({r['link']}) has {len(splits)} splits.",
-                                suppress_embeds=True,
-                            )'''
+                            current+=f"[Link {e}]({r['link']}) has {len(splits)} splits.\n"
+                            await statmess.editw(
+                                min_seconds=5,
+                                content=f"<a:LetWalkR:1118191001731874856> {current}",
+                                embed=embed,
+                            )
                             store_splits(splits, client=chromac)
                     except Exception as err:
-                        await ctx.send(str(err))
-                        await bot.send_error(err)
-                await statmess.editw(
-                    min_seconds=15,
-                    content=f"reading {e}/{length}. {hascount}/{len(all_links)}",
-                    embed=embed,
-                )
+                       current+=f"{str(err)}"
+                       await statmess.editw(
+                            min_seconds=5,
+                            content=f"<a:LetWalkR:1118191001731874856> {current}",
+                            embed=embed,
+                        )
+                       await bot.send_error(err)
+
 
         lines = "\n".join(all_links)
         embed = discord.Embed(
