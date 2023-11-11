@@ -99,7 +99,7 @@ class GptmodAPI:
                 payload = obj.to_dict(pro=True)
 
             response_dict = await self._make_call(endpoint, payload)
-            openaiobject = util.convert_to_openai_object(response_dict)
+            openaiobject = response_dict#util.convert_to_openai_object(response_dict)
             return openaiobject
 
     async def models(self):
