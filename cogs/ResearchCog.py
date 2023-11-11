@@ -856,9 +856,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     res = await bot.gptapi.callapi(chat)
 
                     # await ctx.send(res)
-                    print(res)
+                    print('clear',res)
                     result = res["choices"][0]["message"]["content"]
-
+                    print(result)
                     for link in mylinks:
                         link_text, url2 = link
                         link_text = link_text.replace("_", "")
