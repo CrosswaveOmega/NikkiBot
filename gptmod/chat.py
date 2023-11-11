@@ -36,6 +36,7 @@ class ChatCreation(ApiCore):
         frequency_penalty: Optional[float] = None,
         model="gpt-3.5-turbo",
     ):
+        
         self.messages = []
         if messages is not None:
             self.messages = messages
@@ -49,12 +50,12 @@ class ChatCreation(ApiCore):
         self.frequency_penalty = frequency_penalty
         self.use_model = model
 
-    async def calloai(self):
+    async def calloai(self,client):
         """return a completion through openai instead."""
         dictme = self.to_dict(pro=False)
         modelv = dictme["model"]
         # if self.functions is not None:  dictme['messages']=[self.messages[0],self.messages[-1]]
-        result = await openai.ChatCompletion.acreate(**dictme)
+        result = await client.chat.completions.create(**dictme)
         return result
 
     def to_dict(self, pro=True):
@@ -66,7 +67,7 @@ class ChatCreation(ApiCore):
 
         else:
             if "functions" in data:
-                data["model"] = "gpt-3.5-turbo-0613"
+                data["model"] = "gpt-3.5-turbo-1106"
             else:
                 data["model"] = "gpt-3.5-turbo"
         return data

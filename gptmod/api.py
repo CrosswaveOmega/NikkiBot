@@ -5,7 +5,7 @@ import json
 import urllib
 import gptmod
 import openai
-import openai.util as util
+
 from gptmod.object_core import ApiCore
 import gptmod.error as error
 from assets import AssetLookup
@@ -24,7 +24,7 @@ class GptmodAPI:
 
     def __init__(self, token: str = None):
         self.base_url = gptmod.base_url
-
+        self.client=openai.AsyncOpenAI()
         if token != None:
             if not isinstance(token, str):
                 self._key = "None"
@@ -88,7 +88,7 @@ class GptmodAPI:
 
     async def callapi(self, obj: ApiCore):
         if self.openaimode:
-            return await obj.calloai()
+            return await obj.calloai( self.client)
         else:
             if not self.base_url:
                 raise error.GptmodError("There is no set base url.")
@@ -99,7 +99,7 @@ class GptmodAPI:
                 payload = obj.to_dict(pro=True)
 
             response_dict = await self._make_call(endpoint, payload)
-            openaiobject = util.convert_to_openai_object(response_dict)
+            openaiobject = response_dict#util.convert_to_openai_object(response_dict)
             return openaiobject
 
     async def models(self):

@@ -84,7 +84,7 @@ async function check_read(targeturl) {
   });
   console.log("clear b")
   window.document.write(html2)
-  console.log(html2)
+
   console.log('clear c')
   
   var outcome= Readability.isProbablyReaderable(window.document)
@@ -111,14 +111,14 @@ async function read_webpage_plain(targeturl) {
     });
     console.log("clear b")
     window.document.write(html2)
-    console.log(html2)
+
     console.log('clear c')
     
     let reader = new Readability.Readability(window.document);
     let article = reader.parse();
     let articleHtml = article.content;
     window.happyDOM.cancelAsync()
-    
+    console.log('parsing complete.')
 
     const markdownContent = turndownService.turndown(articleHtml);
     return {'mark':markdownContent, 'orig':article};
@@ -143,7 +143,6 @@ async function read_webpage_plain(targeturl) {
     });
 
     window.document.write(html2)
-    console.log(html2)
     console.log('clear c')
     let reader = new Readability.Readability(window.document);
     let article = reader.parse();

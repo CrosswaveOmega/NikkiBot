@@ -196,7 +196,7 @@ class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
                     {"role": "system", "content": prompt},
                     {"role": "user", "content": script},
                 ],
-                "gpt-3.5-turbo-16k",
+                "gpt-3.5-turbo-1106",
             )
             await mt.editw(
                 min_seconds=15,
@@ -224,7 +224,7 @@ class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
                             {"role": "system", "content": prompt},
                             {"role": "user", "content": script},
                         ],
-                        "gpt-3.5-turbo-16k",
+                        "gpt-3.5-turbo-1106",
                     )
                     await mt.editw(
                         min_seconds=15,
@@ -245,13 +245,13 @@ class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
                         embedscript = f"{embed.title}: {embed.description}"
                         script = f"{script}\n {m.author}: {embedscript}"
         chat = gptmod.ChatCreation(
-            messages=[{"role": "system", "content": prompt}], model="gpt-3.5-turbo-16k"
+            messages=[{"role": "system", "content": prompt}], model="gpt-3.5-turbo-1106"
         )
         gui.gprint(script)
 
         chat.add_message(role="user", content=script)
         tokens = gptmod.util.num_tokens_from_messages(
-            chat.messages, "gpt-3.5-turbo-16k"
+            chat.messages, "gpt-3.5-turbo-1106"
         )
         await ctx.send(tokens)
         if tokens > 16384:
