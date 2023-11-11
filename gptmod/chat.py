@@ -55,7 +55,7 @@ class ChatCreation(ApiCore):
         dictme = self.to_dict(pro=False)
         modelv = dictme["model"]
         # if self.functions is not None:  dictme['messages']=[self.messages[0],self.messages[-1]]
-        result = await client.chat.completion.create(**dictme)
+        result = await client.chat.completions.create(**dictme)
         return result
 
     def to_dict(self, pro=True):
