@@ -5,7 +5,7 @@ import json
 import urllib
 import gptmod
 import openai
-import openai.util as util
+
 from gptmod.object_core import ApiCore
 import gptmod.error as error
 from assets import AssetLookup
