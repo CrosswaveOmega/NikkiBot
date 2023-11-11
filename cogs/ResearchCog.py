@@ -857,7 +857,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
                     # await ctx.send(res)
                     print('clear',res)
-                    choice=res.C
+                    
                     result = res.choices[0].message.content
                     print(result)
                     for link in mylinks:
