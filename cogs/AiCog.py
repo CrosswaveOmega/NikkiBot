@@ -196,8 +196,9 @@ async def ai_message_invoke(
             chat.tools = forcecheck
             chat.tool_choice = forcecheck[0]
         else:
-            chat.tools = mylib.get_tool_schema()
-            chat.tool_choice = "auto"
+            pass
+            #chat.tools = mylib.get_tool_schema()
+            #chat.tool_choice = "auto"
 
     audit = await AIMessageTemplates.add_user_audit(ctx, chat)
 
