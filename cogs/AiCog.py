@@ -181,7 +181,7 @@ async def ai_message_invoke(
     chat.add_message(
         "system",
         nikkiprompt
-        + f"\n Right now, the date-time is {datetime.now().astimezone(tz=timezone.utc)}",
+        
     )
     for f in mes[:5]:  # Load old messags into ChatCreation
         chat.add_message(f["role"], f["content"])
