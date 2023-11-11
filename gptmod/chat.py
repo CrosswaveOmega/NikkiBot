@@ -65,7 +65,8 @@ class ChatCreation(ApiCore):
     def summary(self):
         messages = len(self.messages)
         message_tokens = num_tokens_from_messages(self.messages)
-        functions = ",".join([f"{str(f['function']['name'])}" for f in self.tools])
+        if self.tools:
+            functions = ",".join([f"{str(f['function']['name'])}" for f in self.tools])
         output = f"Messages: {messages}, tokens: {message_tokens}"
         return output, functions
 
