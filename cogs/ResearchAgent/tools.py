@@ -309,9 +309,9 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
     messages.append({"role": "user", "content": question})
     client=openai.AsyncOpenAI()
     completion = await client.chat.completions.create(
-        model="gpt-3.5-turbo-1106-0613", messages=messages
+        model="gpt-3.5-turbo-1106", messages=messages
     )
-    return completion.choices[0]["message"]["content"]
+    return completion.choices[0].message.content
 
 
 def extract_embed_text(embed):

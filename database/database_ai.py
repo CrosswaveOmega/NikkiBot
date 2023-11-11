@@ -1,3 +1,4 @@
+import json
 from typing import Union
 from sqlalchemy import (
     Column,
@@ -229,7 +230,7 @@ class ServerAIConfig(AIBase):
             role=role,
             content=content,
             name=name,
-            function=function,
+            function=json.dumps(function),
         )
         session.add(message_chain)
         session.commit()
@@ -315,7 +316,7 @@ class MessageChain(AIBase):
             "role": self.role,
             "content": self.content,
             "name": self.name,
-            "function_call": self.function,
+            "tool_calls": json.loads(self.function) if self.function is not None else None,
         }
 
 

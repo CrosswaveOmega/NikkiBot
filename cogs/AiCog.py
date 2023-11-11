@@ -109,20 +109,22 @@ async def process_result(ctx: commands.Context, result: Any, mylib: GPTFunctionL
         return role, content, messageresp, None
 
     i = result.choices[0]
+    print(i)
     role, content = i.message.role, i.message.content
     messageresp = None
     function = None
     finish_reason = i.finish_reason
-    if finish_reason == "function_call":
+
+    if finish_reason == "tool_calls" or i.message.tool_calls:
         # Call the corresponding funciton, and set that to content.
-        functiondict = i.message.function_call
-        name, args = mylib.parse_name_args(functiondict)
-        audit = await AIMessageTemplates.add_function_audit(
-            ctx, functiondict, name, args
-        )
-        function = str(i.message.function_call)
-        resp = await mylib.call_by_dict_ctx(ctx, functiondict)
-        content = resp
+        function=str(i.message.tool_calls)
+        for tool_call in i.message.tool_calls:
+            audit = await AIMessageTemplates.add_function_audit(
+                ctx, tool_call, tool_call.function.name, json.loads(tool_call.function.arguments)
+            )
+            outcome=await mylib.call_by_tool_ctx(ctx,tool_call)
+            content=outcome['content']
+        #content = resp
     if isinstance(content, str):
         # Split up content by line if it's too long.
         page = commands.Paginator(prefix="", suffix=None)
@@ -190,11 +192,11 @@ async def ai_message_invoke(
     if mylib != None:
         forcecheck = mylib.force_word_check(message.content)
         if forcecheck:
-            chat.functions = forcecheck
-            chat.function_call = {"name": forcecheck[0]["name"]}
+            chat.tools = forcecheck
+            chat.tool_choice = forcecheck[0]
         else:
-            chat.functions = mylib.get_schema()
-            chat.function_call = "auto"
+            chat.tools = mylib.get_tool_schema()
+            chat.tool_choice = "auto"
 
     audit = await AIMessageTemplates.add_user_audit(ctx, chat)
 
@@ -206,7 +208,7 @@ async def ai_message_invoke(
 
     bot.logs.info(str(result))
     # Process the result.
-    role, content, messageresp, func = await process_result(ctx, result, mylib)
+    role, content, messageresp, tools = await process_result(ctx, result, mylib)
     profile.add_message_to_chain(
         message.id,
         message.created_at,
@@ -215,9 +217,9 @@ async def ai_message_invoke(
         content=message.clean_content,
     )
     # Add
-    if func:
+    if tools:
         profile.add_message_to_chain(
-            messageresp.id, messageresp.created_at, role=role, content="", function=func
+            messageresp.id, messageresp.created_at, role=role, content="", function=tools
         )
     profile.add_message_to_chain(
         messageresp.id, messageresp.created_at, role=role, content=content

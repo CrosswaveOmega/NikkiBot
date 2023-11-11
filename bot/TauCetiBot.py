@@ -25,7 +25,7 @@ from .TCAppCommandAutoSync import (
     SpecialAppSync,
 )
 from .TCMixins import CogFieldList, StatusTicker
-from javascriptasync import init_js, kill_js
+from javascriptasync import init_js_a, kill_js
 
 """ Primary Class
 
@@ -137,7 +137,7 @@ class TCBot(
         """This function is called in on_ready, but only once."""
         if not self.bot_ready:
             # Start up the GuiPanel
-            init_js()
+            await init_js_a()
             guimode = self.config.getbool("gui")
             if guimode:
                 self.guimode = True

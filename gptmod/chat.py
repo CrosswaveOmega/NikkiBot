@@ -34,14 +34,18 @@ class ChatCreation(ApiCore):
         stop: Optional[Union[List[str], str]] = None,
         presence_penalty: Optional[float] = None,
         frequency_penalty: Optional[float] = None,
+        tools:Optional[List[Dict[str, str]]] = None,
+        tool_choice:Optional[Union[Dict[str, str], str]] = None,
         model="gpt-3.5-turbo",
     ):
         
         self.messages = []
         if messages is not None:
             self.messages = messages
-        self.functions = functions
-        self.function_call = function_call
+        #self.functions = functions
+        #self.function_call = function_call
+        self.tools=tools
+        self.tool_choice=tool_choice
         self.temperature = temperature
         self.top_p = top_p
         self.stream = stream
@@ -60,22 +64,13 @@ class ChatCreation(ApiCore):
 
     def to_dict(self, pro=True):
         data = super().to_dict()
-        if pro:
-            data["forceModel"] = True
-        if self.use_model != "gpt-3.5-turbo":
-            data["model"] = self.use_model
-
-        else:
-            if "functions" in data:
-                data["model"] = "gpt-3.5-turbo-1106"
-            else:
-                data["model"] = "gpt-3.5-turbo"
+        data["model"] = "gpt-3.5-turbo-1106"
         return data
 
     def summary(self):
         messages = len(self.messages)
         message_tokens = num_tokens_from_messages(self.messages)
-        functions = ",".join([f"{f['name']}" for f in self.functions])
+        functions = ",".join([f"{str(f['function']['name'])}" for f in self.tools])
         output = f"Messages: {messages}, tokens: {message_tokens}"
         return output, functions
 
@@ -106,13 +101,13 @@ class ChatCreation(ApiCore):
         role: str,
         content: Optional[str] = None,
         name: Optional[str] = None,
-        function_call: Optional[Dict[str, str]] = None,
+        tool_calls: Optional[Dict[str, str]] = None,
     ):
         message = {"role": role}
-        if function_call is not None:
-            message["function_call"] = function_call
-        if role == "assistant" and function_call is not None:
-            message["function_call"] = function_call
+        if tool_calls is not None:
+            message["tool_calls"] = tool_calls
+        if role == "assistant" and tool_calls is not None:
+            message["tool_calls"] = tool_calls
         else:
             if content is None:
                 raise ValueError(
