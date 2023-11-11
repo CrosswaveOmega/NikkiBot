@@ -112,15 +112,15 @@ async def process_result(ctx: commands.Context, result: Any, mylib: GPTFunctionL
     role, content = i.message.role, i.message.content
     messageresp = None
     function = None
-    finish_reason = i.get("finish_reason", None)
-    if finish_reason == "function_call" or "function_call" in i["message"]:
+    finish_reason = i.finish_reason
+    if finish_reason == "function_call":
         # Call the corresponding funciton, and set that to content.
         functiondict = i.message.function_call
         name, args = mylib.parse_name_args(functiondict)
         audit = await AIMessageTemplates.add_function_audit(
             ctx, functiondict, name, args
         )
-        function = str(i["message"]["function_call"])
+        function = str(i.message.function_call)
         resp = await mylib.call_by_dict_ctx(ctx, functiondict)
         content = resp
     if isinstance(content, str):
@@ -175,7 +175,7 @@ async def ai_message_invoke(
     mes = [c.to_dict() for c in chain]
     # create new ChatCreation
     chat = gptmod.ChatCreation(presence_penalty=0.3, messages=[])
-    # ,model="gpt-3.5-turbo-0613"
+    # ,model="gpt-3.5-turbo-1106"
     chat.add_message(
         "system",
         nikkiprompt

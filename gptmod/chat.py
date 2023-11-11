@@ -67,7 +67,7 @@ class ChatCreation(ApiCore):
 
         else:
             if "functions" in data:
-                data["model"] = "gpt-3.5-turbo-0613"
+                data["model"] = "gpt-3.5-turbo-1106"
             else:
                 data["model"] = "gpt-3.5-turbo"
         return data

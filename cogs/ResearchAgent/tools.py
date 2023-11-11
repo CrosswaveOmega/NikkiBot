@@ -281,7 +281,7 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
     # print(docs2)
     total_tokens = gptmod.util.num_tokens_from_messages(
         [{"role": "system", "content": prompt}, {"role": "user", "content": question}],
-        "gpt-3.5-turbo-16k",
+        "gpt-3.5-turbo-1106",
     )
     for doc, score in docs:
         # print(doc)
@@ -296,7 +296,7 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
         formatted_docs.append(output)
         # print(output)
         tokens = gptmod.util.num_tokens_from_messages(
-            [{"role": "system", "content": output}], "gpt-3.5-turbo-16k"
+            [{"role": "system", "content": output}], "gpt-3.5-turbo-1106"
         )
 
         if total_tokens + tokens >= 14000:
@@ -309,7 +309,7 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
     messages.append({"role": "user", "content": question})
     client=openai.AsyncOpenAI()
     completion = await client.chat.completions.create(
-        model="gpt-3.5-turbo-16k-0613", messages=messages
+        model="gpt-3.5-turbo-1106-0613", messages=messages
     )
     return completion.choices[0]["message"]["content"]
 

@@ -142,9 +142,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         res = await bot.gptapi.callapi(chat)
         # await ctx.send(res)
         print(res)
-        result = res["choices"][0]["message"]["content"]
+        result = res.choices[0].message.content
         embeds = []
-        pages = commands.Paginator(prefix="", suffix="", max_size=4024)
+        pages = commands.Paginator(prefix="", suffix="", max_size=3890)
         for l in result.split("\n"):
             pages.add_line(l)
         for e, p in enumerate(pages.pages):
@@ -835,7 +835,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 article = article.split(stopat)[0]
             chat = gptmod.ChatCreation(
                 messages=[{"role": "system", "content": self.prompt}],
-                model="gpt-3.5-turbo-16k",
+                model="gpt-3.5-turbo-1106",
             )
             chat.add_message(role="user", content=article)
             sources = []
