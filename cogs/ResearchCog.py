@@ -884,7 +884,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                                     name="Sources Located", value=res, inline=False
                                 )
                                 res = ""
-                                await ctx.send(content=header, embed=embed)
+                                await ctx.send(content=header.get('title', "notitle"), embed=embed)
                                 embed = discord.Embed()
                             res += f"{i}\n"
                         embed.add_field(name="Sources Located", value=res, inline=False)
