@@ -24,6 +24,7 @@ class AIMessageTemplates(MessageTemplates):
         emb.add_field(name="chat_summary", value=out[:1020], inline=False)
         if names:
             emb.add_field(name="Functions", value=names[:1020], inline=False)
+        emb.add_field(name="chat_summary", value=f"choose: {str(chat.tool_choice)}")
         emb.add_field(
             name="Server Data",
             value=f"{guild.name}, \nServer ID: {guild.id}",

@@ -189,6 +189,7 @@ async def ai_message_invoke(
     chat.add_message("user", message.content)
     print(len(chat.messages))
     # Load in functions
+    forcecheck=None
     if mylib != None:
         forcecheck = mylib.force_word_check(message.content)
         if forcecheck:
