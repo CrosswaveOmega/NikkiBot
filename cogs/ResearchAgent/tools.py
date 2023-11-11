@@ -307,7 +307,8 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
         if total_tokens >= 12000:
             break
     messages.append({"role": "user", "content": question})
-    completion = await openai.ChatCompletion.acreate(
+    client=openai.AsyncOpenAI()
+    completion = await client.chat.completions.create(
         model="gpt-3.5-turbo-16k-0613", messages=messages
     )
     return completion.choices[0]["message"]["content"]

@@ -24,7 +24,7 @@ class GptmodAPI:
 
     def __init__(self, token: str = None):
         self.base_url = gptmod.base_url
-
+        self.client=openai.AsyncOpenAI()
         if token != None:
             if not isinstance(token, str):
                 self._key = "None"
@@ -88,7 +88,7 @@ class GptmodAPI:
 
     async def callapi(self, obj: ApiCore):
         if self.openaimode:
-            return await obj.calloai()
+            return await obj.calloai( self.client)
         else:
             if not self.base_url:
                 raise error.GptmodError("There is no set base url.")
