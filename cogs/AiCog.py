@@ -201,14 +201,7 @@ async def ai_message_invoke(
     async with message.channel.typing():
         # Call the API.
         result = await bot.gptapi.callapi(chat)
-    if result.get("error", False):
-        err = result["error"]
-        error = gptmod.error.GptmodError(err, json_body=result)
-        raise error
-    if result.get("err", False):
-        err = result[err]
-        error = gptmod.error.GptmodError(err, json_body=result)
-        raise error
+    
     # only add messages after they're finished processing.
 
     bot.logs.info(str(result))
