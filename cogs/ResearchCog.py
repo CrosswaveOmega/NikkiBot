@@ -795,7 +795,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             guild = message.guild
             user = message.author
             article, header = await read_article(url)
-            pages = commands.Paginator(prefix="", suffix="",4000)
+            pages = commands.Paginator(prefix="", suffix="",max_size=4000)
             for l in article.split("\n"):
                 pages.add_line(l)
             await ctx.send(f"# {header.get('title', "notitle")}")
