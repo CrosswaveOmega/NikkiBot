@@ -43,7 +43,7 @@ def is_readable(url):
 
 
 
-async def read_article_async(url):
+async def read_article_async(url, clearout=True):
     myfile=await assets.JavascriptLookup.get_full_pathas('readwebpage.js')
     print(url)
     rsult = await myfile.read_webpage_plain(url, timeout=45)
@@ -53,11 +53,12 @@ async def read_article_async(url):
     serial=await header.get_dict_a()
     #print(serial)
     simplified_text = output.strip()
-    simplified_text = re.sub(r"(\n){4,}", "\n\n\n", simplified_text)
-    simplified_text = re.sub(r"\n\n", " ", simplified_text)
-    simplified_text = re.sub(r" {3,}", "  ", simplified_text)
-    simplified_text = simplified_text.replace("\t", "")
-    simplified_text = re.sub(r"\n+(\s*\n)*", "\n", simplified_text)
+    if clearout:
+        simplified_text = re.sub(r"(\n){4,}", "\n\n\n", simplified_text)
+        simplified_text = re.sub(r"\n\n", " ", simplified_text)
+        simplified_text = re.sub(r" {3,}", "  ", simplified_text)
+        simplified_text = simplified_text.replace("\t", "")
+        simplified_text = re.sub(r"\n+(\s*\n)*", "\n", simplified_text)
     print(simplified_text)
     return simplified_text, serial
 
@@ -794,7 +795,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             message = ctx.message
             guild = message.guild
             user = message.author
-            article, header = await read_article(url)
+            article, header = await read_article_async(url,False)
             pages = commands.Paginator(prefix="", suffix="",max_size=4000)
             for l in article.split("\n"):
                 pages.add_line(l)
