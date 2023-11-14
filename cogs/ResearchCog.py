@@ -798,7 +798,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             pages = commands.Paginator(prefix="", suffix="",max_size=4000)
             for l in article.split("\n"):
                 pages.add_line(l)
-            await ctx.send(f"# {header.get('title', "notitle")}")
+            mytitle=header.get('title', "notitle")
+            await ctx.send(f"# {mytitle}")
             for p in pages.pages:
                 await ctx.send(p)
 
