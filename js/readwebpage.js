@@ -79,7 +79,7 @@ async function check_read(targeturl) {
   const window = new Window({
     innerWidth: 1024,
     innerHeight: 768,
-    url: 'http://localhost:8080',
+    url: targeturl,
     settings:settings
   });
   console.log("clear b")
@@ -106,7 +106,7 @@ async function read_webpage_plain(targeturl) {
     const window = new Window({
       innerWidth: 1024,
       innerHeight: 768,
-      url: 'http://localhost:8080',
+      url: targeturl,
       settings:settings
     });
     console.log("clear b")
@@ -138,7 +138,7 @@ async function read_webpage_plain(targeturl) {
     const window = new Window({
       innerWidth: 1024,
       innerHeight: 768,
-      url: 'http://localhost:8080',
+      url: targeturl,
       settings:settings
     });
 
