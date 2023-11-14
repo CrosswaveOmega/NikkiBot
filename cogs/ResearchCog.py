@@ -53,7 +53,7 @@ async def read_article_async(url, clearout=True):
     serial=await header.get_dict_a()
     #print(serial)
     simplified_text = output.strip()
-    simplifed_text = re.sub(r"\* (\s){2,}"," ", simplified_text)
+    simplifed_text = re.sub(r"\*(\s){1,}","\* ", simplified_text)
     if clearout:
         simplified_text = re.sub(r"(\n){4,}", "\n\n\n", simplified_text)
         simplified_text = re.sub(r"\n\n", "\n", simplified_text)
