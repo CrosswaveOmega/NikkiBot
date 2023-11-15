@@ -45,10 +45,9 @@ class PersonalServerConfigs(commands.Cog):
             new={
                 "private_channels":{}
             }
-            self.db['guild_config'].setdefault(gid,
-                                            {"name":ctx.guild.name, "private_channels":{} })
+            self.db.setdefault(gid,{"name":ctx.guild.name, "private_channels":{} })
             self.db.commit()
-            await ctx.send(str(self.db['guild_config'].get(gid,'none')))
+            await ctx.send(str(self.db.get(gid,'none')))
             self.db.commit()
             await ctx.send("Special config set up.")
 
