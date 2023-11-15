@@ -45,7 +45,9 @@ class PersonalServerConfigs(commands.Cog):
             new={
                 "private_channels":{}
             }
-            self.db['guild_config'].update({gid:new})
+            self.db['guild_config'][gid]={
+                "private_channels":{}
+            }
             await ctx.send(str(self.db['guild_config']))
             self.db.commit()
             await ctx.send("Special config set up.")
@@ -56,7 +58,7 @@ class PersonalServerConfigs(commands.Cog):
     @commands.guild_only()
     async def create_private_channel(self, ctx):
         gid=f"g{ctx.guild.id}"
-        if self.db.get('guild_config').get(gid)==None:
+        if self.db['guild_config'].get(gid,None)==None:
             await ctx.send('no config detected...')
             return
         uid=f"u{ctx.author.id}"
