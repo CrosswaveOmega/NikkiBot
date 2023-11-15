@@ -46,7 +46,7 @@ class PersonalServerConfigs(commands.Cog):
             new={
                 "private_channels":{}
             }
-            self.db.get('guild_config').update(gid,new)
+            self.db.get('guild_config').update({gid:new})
             self.db.commit()
             await ctx.send("Special config set up,")
 
@@ -71,7 +71,7 @@ class PersonalServerConfigs(commands.Cog):
             }
             new_channel = await ctx.guild.create_text_channel(f"{ctx.author.name}s-channel", overwrites=overwrites)
             await ctx.send(f"Private channel created: {new_channel.mention}")
-            self.db.get('guild_config').get(gid)['private_channels'].update(uid,new_channel.id)
+            self.db.get('guild_config').get(gid)['private_channels'].update({uid:new_channel.id})
 
             
 
