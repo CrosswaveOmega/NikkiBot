@@ -35,7 +35,6 @@ class PersonalServerConfigs(commands.Cog):
 
     def cog_unload(self):
         self.db.close()
-        self.userdb.close()
 
     @commands.command()
     @commands.is_owner()
@@ -47,6 +46,7 @@ class PersonalServerConfigs(commands.Cog):
                 "private_channels":{}
             }
             self.db['guild_config'].update({gid:new})
+            await ctx.send(str(self.db['guild_config']))
             self.db.commit()
             await ctx.send("Special config set up.")
 
