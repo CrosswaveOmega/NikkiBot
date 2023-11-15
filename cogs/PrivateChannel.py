@@ -30,7 +30,7 @@ class PersonalServerConfigs(commands.Cog):
         )
         self.bot = bot
         self.db = SqliteDict("./saveData/privateserverconfig.sqlite")
-        self.db.setdefault('guild_config',{})
+        
         
 
     def cog_unload(self):
@@ -48,7 +48,11 @@ class PersonalServerConfigs(commands.Cog):
             self.db['guild_config'][gid]={
                 "private_channels":{}
             }
-            await ctx.send(str(self.db['guild_config']))
+            self.db['guild_config'].update({gid:{
+                "private_channels":{}
+            })
+            self.db.commit()
+            await ctx.send(str(self.db['guild_config'][gid]))
             self.db.commit()
             await ctx.send("Special config set up.")
 
