@@ -41,7 +41,7 @@ class PersonalServerConfigs(commands.Cog):
     @commands.guild_only()
     async def enable_personal_config(self, ctx):
         gid=f"g{ctx.guild.id}"
-        if self.db.get(gid)==None:
+        if self.db['guild_config'].get(gid,None)==None:
             new={
                 "private_channels":{}
             }
@@ -50,7 +50,7 @@ class PersonalServerConfigs(commands.Cog):
             }
             self.db['guild_config'].update({gid:{
                 "private_channels":{}
-            })
+            }})
             self.db.commit()
             await ctx.send(str(self.db['guild_config'][gid]))
             self.db.commit()
