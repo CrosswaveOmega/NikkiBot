@@ -46,9 +46,9 @@ class PersonalServerConfigs(commands.Cog):
             new={
                 "private_channels":{}
             }
-            self.db.get('guild_config').update({gid:new})
+            self.db['guild_config'].update({gid:new})
             self.db.commit()
-            await ctx.send("Special config set up,")
+            await ctx.send("Special config set up.")
 
 
 
