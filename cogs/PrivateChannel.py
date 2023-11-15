@@ -46,7 +46,7 @@ class PersonalServerConfigs(commands.Cog):
                 "private_channels":{}
             }
             self.db['guild_config'].update(
-                {gid:{"name":ctx.guild.name, "private_channels":{} })
+                {gid:{"name":ctx.guild.name, "private_channels":{} }})
             self.db.commit()
             await ctx.send(str(self.db['guild_config'][gid]))
             self.db.commit()
