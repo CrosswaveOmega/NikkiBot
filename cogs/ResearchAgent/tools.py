@@ -13,12 +13,12 @@ from langchain.docstore.document import Document
 
 webload = docload.WebBaseLoader
 from langchain.indexes import VectorstoreIndexCreator
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 from .ReadabilityLoader import ReadableLoader
 import gptmod
-
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 tosplitby = [
     # First, try to split along Markdown headings (starting with level 2)
     "\n#{1,6} ",

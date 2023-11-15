@@ -31,12 +31,14 @@ from assets import AssetLookup
 from datetime import datetime, timezone
 from database.database_ai import AuditProfile, ServerAIConfig
 import utility.hash as hash
+from utility import split_string_with_code_blocks
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 lock = asyncio.Lock()
 
 nikkiprompt = """You are Nikki, a energetic, cheerful, and determined female AI ready to help users with whatever they need.
 All your responses must convey a strong personal voice.  Show, don't tell.
-Carefully heed the user's instructions.  If a query is inappropriate, respond with "I refuse to answer." and elaborate why.
+Carefully heed the user's instructions.
 If you do not know how to do something, please note that with your response.  If a user is definitely wrong about something, explain how politely.
 Ensure that responses are brief, do not say more than is needed.  Never use emojis in your responses.
 Respond using Markdown."""
@@ -127,11 +129,13 @@ async def process_result(ctx: commands.Context, result: Any, mylib: GPTFunctionL
         #content = resp
     if isinstance(content, str):
         # Split up content by line if it's too long.
+        split_string_with_code_blocks
         page = commands.Paginator(prefix="", suffix=None)
         for p in content.split("\n"):
             page.add_line(p)
+        split_by=split_string_with_code_blocks(content,2000)
         messageresp = None
-        for pa in page.pages:
+        for pa in split_by:
             ms = await ctx.channel.send(pa)
             if messageresp == None:
                 messageresp = ms

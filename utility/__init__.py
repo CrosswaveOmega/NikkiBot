@@ -10,6 +10,7 @@ from .globalfunctions import (
     get_server_icon_color,
     replace_working_directory,
     filter_trace_stack,
+    split_string_with_code_blocks
 )
 
 from .mytemplatemessages import MessageTemplates

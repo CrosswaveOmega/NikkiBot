@@ -14,6 +14,49 @@ import site
 import gui
 from discord.utils import escape_markdown
 
+def split_string_with_code_blocks(input_str, max_length,oncode=False):
+    tosplitby = [
+    # First, try to split along Markdown headings (starting with level 2)
+    "\n#{1,6} ",
+    # Note the alternative syntax for headings (below) is not handled here
+    # Heading level 2
+    # ---------------
+    
+    # Horizontal lines
+    "\n\\*\\*\\*+\n",
+    "\n---+\n",
+    "\n___+\n",
+    " #{1,6} ",
+    # Note that this splitter doesn't handle horizontal lines defined
+    # by *three or more* of ***, ---, or ___, but this is not handled
+    "\n\n",
+    "\n",
+    " ",
+    "",
+    ]
+    if len(input_str) <= max_length:
+        return [input_str]
+
+    # Prioritize code block delimiters
+    code_block_delimiters = ["```"]
+    for code_block_delimiter in code_block_delimiters:
+        if code_block_delimiter in input_str:
+            parts = input_str.split(code_block_delimiter, 1)
+            if len(parts) == 2 and parts[0] and parts[1]:
+                # Recursively split the second part and concatenate the results
+                if oncode==False:                    
+                    return [parts[0]] + split_string_with_code_blocks(code_block_delimiter+parts[1], max_length,oncode=not oncode)
+                return [parts[0]+code_block_delimiter] + split_string_with_code_blocks(parts[1], max_length,oncode=not oncode)
+
+    # If no code block delimiter is found, use the regular delimiters
+    for separator in tosplitby:
+        parts = input_str.split(separator, 1)
+        if len(parts) == 2 and parts[0] and parts[1]:
+            return [parts[0]] + split_string_with_code_blocks(parts[1], max_length,oncode=oncode)
+
+    # If no suitable separator is found, split at the max length
+    return [input_str[:max_length]] + split_string_with_code_blocks(input_str[max_length:], max_length,oncode=oncode)
+
 
 def replace_working_directory(string):
     """This function is for replacing the current working directory with a shorthand"""
