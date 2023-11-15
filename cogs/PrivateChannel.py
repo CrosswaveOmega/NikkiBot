@@ -56,7 +56,8 @@ class PersonalServerConfigs(commands.Cog):
     @commands.guild_only()
     async def create_private_channel(self, ctx):
         gid=f"g{ctx.guild.id}"
-        if self.db.get(gid)==None:
+        if self.db.get('guild_config').get(gid)==None:
+            await ctx.send('no config detected...')
             return
         uid=f"u{ctx.author.id}"
         existing_channel = self.db.get('guild_config').get(gid)['private_channels'].get(uid,None)
