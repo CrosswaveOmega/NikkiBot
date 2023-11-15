@@ -30,7 +30,7 @@ class PersonalServerConfigs(commands.Cog):
         )
         self.bot = bot
         self.db = SqliteDict("./saveData/privateserverconfig.sqlite")
-        self.db.setdefault('guild_config',None)
+        self.db.setdefault('guild_config',{})
         
 
     def cog_unload(self):
@@ -46,7 +46,8 @@ class PersonalServerConfigs(commands.Cog):
             new={
                 "private_channels":{}
             }
-            self.db.set(gid,new)
+            self.db['guild_config'][gid]=new
+            self.db.commit()
             await ctx.send("Special config set up,")
 
 
@@ -58,7 +59,7 @@ class PersonalServerConfigs(commands.Cog):
         if self.db.get(gid)==None:
             return
         uid=f"u{ctx.author.id}"
-        existing_channel = self.db.get(gid)['private_channels'].get(uid,None)
+        existing_channel = self.db.get('guild_config').get(gid)['private_channels'].get(uid,None)
         
         if existing_channel:
             await ctx.send(f"You already have a private channel: {existing_channel.mention}")
@@ -70,6 +71,7 @@ class PersonalServerConfigs(commands.Cog):
             new_channel = await ctx.guild.create_text_channel(f"{ctx.author.name}s-channel", overwrites=overwrites)
             await ctx.send(f"Private channel created: {new_channel.mention}")
             self.db.get(gid)['private_channels'].set(uid,new_channel.id)
+
             
 
 
