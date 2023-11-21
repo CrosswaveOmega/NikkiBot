@@ -899,7 +899,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                             f"<a:SquareLoading:1143238358303264798> Saving {url} summary..."
                         )
                         chromac = ChromaTools.get_chroma_client()
-                        await add_summary(url, result, client=chromac)
+                        await add_summary(url, result, header, client=chromac)
                         await target_message.edit(content="SUMMARY SAVED!")
                 except Exception as e:
                     return await ctx.send(e)
