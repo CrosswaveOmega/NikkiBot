@@ -83,7 +83,7 @@ async def read_and_split_link(
     return all_splits
 
 
-async def add_summary(url: str, desc: str, collection="web_collection", client:chromadb.ClientAPI=None):
+async def add_summary(url: str, desc: str, header, collection="web_collection", client:chromadb.ClientAPI=None):
     loader = ReadableLoader(
         url,
         header_template={
@@ -93,11 +93,20 @@ async def add_summary(url: str, desc: str, collection="web_collection", client:c
     # Index that wraps above steps
     persist = "saveData"
     newdata = []
-    data = await loader.aload()
-    for d in data:
-        d.page_content = desc
-        d.metadata["sum"] = "sum"
-        newdata.append(d)
+    #data = await loader.aload()
+    metadata={}
+    if header is not None:
+        print(header["byline"])
+        if "byline" in header:
+            metadata["authors"] = header["byline"]
+        metadata["website"] = header.get("siteName", "siteunknown")
+        metadata["title"] = header.get("title","TitleError")
+        metadata["source"]=url
+        metadata["description"]=header.get("excerpt")
+        metadata["language"]=header.get("lang","en")
+        metadata["sum"]="sum"
+    docs=Document(page_content=desc, metadata=metadata)
+    newdata=[docs]
     ids = [
         f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,doc.metadata['source']))}],sid:[{e}]"
         for e, doc in enumerate(newdata)
