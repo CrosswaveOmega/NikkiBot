@@ -102,7 +102,7 @@ async def add_summary(url: str, desc: str, header, collection="web_collection", 
         metadata["website"] = header.get("siteName", "siteunknown")
         metadata["title"] = header.get("title","TitleError")
         metadata["source"]=url
-        metadata["description"]=header.get("excerpt")
+        metadata["description"]=header.get("excerpt", 'NA')
         metadata["language"]=header.get("lang","en")
         metadata["sum"]="sum"
     docs=Document(page_content=desc, metadata=metadata)
