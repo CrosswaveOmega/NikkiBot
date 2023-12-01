@@ -42,7 +42,7 @@ class MessageTemplates:
     @staticmethod
     async def server_ai_message(ctx, description="", **kwargs):
         embed = MessageTemplates.get_ai_config_embed(ctx.guild, description)
-        await ctx.send(embed=embed, **kwargs)
+        return await ctx.send(embed=embed, **kwargs)
 
     @staticmethod
     def get_server_profile_embed(

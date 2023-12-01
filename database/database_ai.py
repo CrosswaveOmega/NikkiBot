@@ -220,12 +220,13 @@ class ServerAIConfig(AIBase):
         return count
 
     def add_message_to_chain(
-        self, message_id, created_at, role=None, content=None, name=None, function=None
+        self, message_id, created_at, thread_id=None,role=None, content=None, name=None, function=None
     ):
         session = DatabaseSingleton.get_session()
         message_chain = MessageChain(
             server_id=self.server_id,
             message_id=message_id,
+            thread_id=thread_id,
             created_at=created_at,
             role=role,
             content=content,
@@ -246,8 +247,18 @@ class ServerAIConfig(AIBase):
             session.delete(message_chain)
             session.commit()
 
-    def list_message_chains(self):
+    def list_message_chains(self, thread_id=None):
         session = DatabaseSingleton.get_session()
+        if thread_id:
+
+            message_chains = (
+                session.query(MessageChain)
+                .filter_by(server_id=self.server_id,thread_id=thread_id)
+                .order_by(MessageChain.created_at)
+                .limit(10)
+                .all()
+            )
+            return message_chains
         message_chains = (
             session.query(MessageChain)
             .filter_by(server_id=self.server_id)
@@ -257,11 +268,11 @@ class ServerAIConfig(AIBase):
         )
         return message_chains
 
-    def prune_message_chains(self, limit=15):
+    def prune_message_chains(self, limit=15,thread_id=None):
         session = DatabaseSingleton.get_session()
         message_chains = (
             session.query(MessageChain)
-            .filter_by(server_id=self.server_id)
+            .filter_by(server_id=self.server_id, thread_id=thread_id)
             .order_by(MessageChain.created_at.desc())
             .all()
         )
@@ -272,10 +283,10 @@ class ServerAIConfig(AIBase):
             session.commit()
             session.flush()
 
-    def clear_message_chains(self):
+    def clear_message_chains(self, thread_id=None):
         session = DatabaseSingleton.get_session()
         message_chains = (
-            session.query(MessageChain).filter_by(server_id=self.server_id).all()
+            session.query(MessageChain).filter_by(server_id=self.server_id,thread_id=thread_id).all()
         )
         purged = 0
         for message_chain in message_chains:
@@ -302,6 +313,7 @@ class MessageChain(AIBase):
 
     id = Column(Integer, primary_key=True)
     server_id = Column(Integer, ForeignKey("ServerAIConfig.server_id"))
+    thread_id = Column(Integer, default=None)
     message_id = Column(Integer)
     created_at = Column(AwareDateTime)
     role = Column(String)
