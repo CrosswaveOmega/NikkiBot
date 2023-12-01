@@ -408,7 +408,8 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         name="add_ai_channel",
         description="add a channel that Nikki will talk freely in.",
     )
-    async def add_ai_channel(self, ctx, target_channel: discord.TextChannel):
+    async def add_ai_channel(self, ctx, target_channel: Union[discord.TextChannel,discord.ForumChannel]):
+        "Add a channel that nikki can talk freely in"
         guild = ctx.guild
         guildid = guild.id
         profile = ServerAIConfig.get_or_new(guildid)
@@ -430,7 +431,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         description="use to stop Nikki from talking in an added AI Channel.",
     )
     @app_commands.describe(target_channel="channel to disable.")
-    async def remove_ai_channel(self, ctx, target_channel: discord.TextChannel):
+    async def remove_ai_channel(self, ctx, target_channel:  Union[discord.TextChannel,discord.ForumChannel]):
         """remove a channel."""
         guild = ctx.guild
         guildid = guild.id
