@@ -26,7 +26,7 @@ from .TCAppCommandAutoSync import (
 )
 from .TCMixins import CogFieldList, StatusTicker
 from javascriptasync import init_js_a, kill_js
-
+from javascriptasync.logging import setup_logging,get_filehandler
 """ Primary Class
 
 This file is for an extended Bot Class for this Discord Bot.
@@ -138,6 +138,7 @@ class TCBot(
         if not self.bot_ready:
             # Start up the GuiPanel
             await init_js_a()
+            setup_logging(logging.INFO,handler=get_filehandler(log_level=logging.INFO))
             guimode = self.config.getbool("gui")
             if guimode:
                 self.guimode = True

@@ -363,11 +363,16 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             for p in answer.split("\n"):
                 page.add_line(p)
             messageresp = None
-            for pa in page.pages:
-                ms = await ctx.channel.send(pa)
-                if messageresp == None:
+            pages=[p for p in page.pages]
+            pl=len(pages)
+            for e,pa in enumerate(pages):
+                if e==pl-1:
+                    ms = await ctx.channel.send(pa,view=viewme)
+                else:
+                    ms = await ctx.channel.send(pa)
+                if messageresp is None:
                     messageresp = ms
-            await ctx.channel.send("complete", view=viewme)
+            #await ctx.channel.send("complete", view=viewme)
             return messageresp
 
     @commands.command(name="loadurl", description="loadurl test.", extras={})

@@ -4,6 +4,7 @@ import json
 
 from typing import Optional
 
+from javascriptasync import require_a, require
 
 class JavascriptLookup:
     @staticmethod
@@ -27,9 +28,10 @@ class JavascriptLookup:
 
     @staticmethod
     async def get_full_pathas(filename: str):
-        
-        from javascriptasync import require_a
+        #test=require("@mozilla/readability")
+        print('ok')
         js_folder = "../js/"+filename
         myfile=await require_a(js_folder,amode=True)
+        print("clear")
         return myfile
     

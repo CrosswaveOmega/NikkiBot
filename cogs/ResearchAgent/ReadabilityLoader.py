@@ -76,7 +76,7 @@ async def read_article_aw(html, url):
     now = discord.utils.utcnow()
     getthread = await read_article_direct(html, url)
     result = getthread
-    print(result)
+    print(type(result))
     text, header = result[0], result[1]
     return text, header
 
