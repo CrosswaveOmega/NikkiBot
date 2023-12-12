@@ -25,7 +25,7 @@ from .TCAppCommandAutoSync import (
     SpecialAppSync,
 )
 from .TCMixins import CogFieldList, StatusTicker
-from javascriptasync import init_js_a, kill_js
+from javascriptasync import JSContext
 from javascriptasync.logging import setup_logging,get_filehandler
 """ Primary Class
 
@@ -102,6 +102,7 @@ class TCBot(
         self.keys = {}
         self.gptapi = None
         self.error_channel = None
+        self.jsenv=JSContext()
         self.config: ConfigParserSub = ConfigParserSub()
 
         self.statmess: StatusMessageManager = StatusMessageManager(self)
@@ -137,7 +138,7 @@ class TCBot(
         """This function is called in on_ready, but only once."""
         if not self.bot_ready:
             # Start up the GuiPanel
-            await init_js_a()
+            await self.jsenv.init_js_a()
             setup_logging(logging.INFO,handler=get_filehandler(log_level=logging.INFO))
             guimode = self.config.getbool("gui")
             if guimode:
@@ -195,7 +196,7 @@ class TCBot(
         self.delete_queue_message.cancel()
         self.check_tc_tasks.cancel()
         self.status_ticker.cancel()
-        kill_js()
+        del self.jsenv
         if self.gui:
             await self.gui.kill()
         if self.playapi:

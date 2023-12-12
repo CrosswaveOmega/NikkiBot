@@ -14,22 +14,22 @@ from javascriptasync import require, eval_js, eval_js_a
 """This is a special loader that makes use of Mozilla's readability module. """
 
 
-def is_readable(url):
-    timeout = 30
-    readability = require("@mozilla/readability")
-    jsdom = require("jsdom")
-    TurndownService = require("turndown")
-    # Is there a better way to do this?
-    print("attempting parse")
-    out = f"""
-    let result=await check_read(`{url}`,readability,jsdom);
-    return result
-    """
-    myjs = assets.JavascriptLookup.find_javascript_file("readwebpage.js", out)
-    # myjs=myjs.replace("URL",url)
-    print(myjs)
-    rsult = eval_js(myjs)
-    return rsult
+# def is_readable(url):
+#     timeout = 30
+#     readability = require("@mozilla/readability")
+#     jsdom = require("jsdom")
+#     TurndownService = require("turndown")
+#     # Is there a better way to do this?
+#     print("attempting parse")
+#     out = f"""
+#     let result=await check_read(`{url}`,readability,jsdom);
+#     return result
+#     """
+#     myjs = assets.JavascriptLookup.find_javascript_file("readwebpage.js", out)
+#     # myjs=myjs.replace("URL",url)
+#     print(myjs)
+#     rsult = eval_js(myjs)
+#     return rsult
 
 
 def remove_links(markdown_text):
@@ -43,8 +43,8 @@ def remove_links(markdown_text):
     return no_links_string
 
 
-async def read_article_direct(html, url):
-    myfile = await assets.JavascriptLookup.get_full_pathas("readwebpage.js")
+async def read_article_direct(jsenv,html, url):
+    myfile = await assets.JavascriptLookup.get_full_pathas("readwebpage.js",'WEBJS',jsenv)
     timeout = 30
 
     htmls: str = str(html)
@@ -72,9 +72,9 @@ async def read_article_direct(html, url):
     return [simplified_text, serial]
 
 
-async def read_article_aw(html, url):
+async def read_article_aw(jsenv,html, url):
     now = discord.utils.utcnow()
-    getthread = await read_article_direct(html, url)
+    getthread = await read_article_direct(jsenv, html, url)
     result = getthread
     print(type(result))
     text, header = result[0], result[1]
@@ -191,9 +191,9 @@ class ReadableLoader(dl.WebBaseLoader):
         """Load text from the url(s) in web_path."""
         return list(self.lazy_load())
 
-    async def aload(self) -> List[Document]:
+    async def aload(self,jsenv) -> List[Document]:
         """Load text from the urls in web_path async into Documents."""
-
+        self.jsenv=jsenv
         results = await self.scrape_all(self.web_paths)
         docs = []
         for i,res in enumerate(results):

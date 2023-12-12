@@ -23,28 +23,28 @@ from .ResearchAgent import *
 from googleapiclient.discovery import build  # Import the library
 
 
-def is_readable(url):
-    timeout = 30
-    readability = require("@mozilla/readability")
-    jsdom = require("jsdom")
-    TurndownService = require("turndown")
-    # Is there a better way to do this?
-    print("attempting parse")
-    out = f"""
-    let result=await check_read(`{url}`,readability,jsdom);
-    return result
-    """
-    myjs = assets.JavascriptLookup.find_javascript_file("readwebpage.js", out)
-    # myjs=myjs.replace("URL",url)
-    print(myjs)
-    rsult = eval_js(myjs)
-    return rsult
+# def is_readable(url):
+#     timeout = 30
+#     readability = require("@mozilla/readability")
+#     jsdom = require("jsdom")
+#     TurndownService = require("turndown")
+#     # Is there a better way to do this?
+#     print("attempting parse")
+#     out = f"""
+#     let result=await check_read(`{url}`,readability,jsdom);
+#     return result
+#     """
+#     myjs = assets.JavascriptLookup.find_javascript_file("readwebpage.js", out)
+#     # myjs=myjs.replace("URL",url)
+#     print(myjs)
+#     rsult = eval_js(myjs)
+#     return rsult
 
 
 
 
-async def read_article_async(url, clearout=True):
-    myfile=await assets.JavascriptLookup.get_full_pathas('readwebpage.js')
+async def read_article_async(jsctx, url, clearout=True):
+    myfile=await assets.JavascriptLookup.get_full_pathas('readwebpage.js','WEBJS',jsctx)
     print(url)
     rsult = await myfile.read_webpage_plain(url, timeout=45)
     #print(rsult)
@@ -61,13 +61,12 @@ async def read_article_async(url, clearout=True):
         simplified_text = re.sub(r" {3,}", "  ", simplified_text)
         simplified_text = simplified_text.replace("\t", "")
         simplified_text = re.sub(r"\n+(\s*\n)*", "\n", simplified_text)
-    print(simplified_text)
+    #print(simplified_text)
     return simplified_text, serial
 
-async def read_article(url):
+async def read_article(jsctx,url):
     now = discord.utils.utcnow()
-    result = await read_article_async(url)
-    print(result)
+    result = await read_article_async(jsctx,url)
     gui.gprint("elapsed", discord.utils.utcnow() - now)
     text, header = result[0], result[1]
     return text, header
@@ -303,7 +302,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     hascount += 1
                 else:
                     try:
-                        splits = await read_and_split_link(r["link"])
+                        splits = await read_and_split_link(ctx.bot,ctx.bot,r["link"])
                         dbadd = True
                         for split in splits:
                             gui.gprint(split.page_content)
@@ -378,7 +377,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @commands.command(name="loadurl", description="loadurl test.", extras={})
     async def loader_test(self, ctx: commands.Context, link: str):
         async with ctx.channel.typing():
-            splits = await read_and_split_link(link)
+            splits = await read_and_split_link(ctx.bot,link)
         await ctx.send(
             f"[Link ]({link}) has {len(splits)} splits.", suppress_embeds=True
         )
@@ -443,7 +442,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     if has:
                         await ctx.send("removing present entries for new data...")
                         remove_url(r["link"], client=chromac)
-                    splits = await read_and_split_link(r["link"])
+                    splits = await read_and_split_link(ctx.bot,r["link"])
                     dbadd = True
                     for split in splits:
                         gui.gprint(split.page_content)
@@ -526,7 +525,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 if has:
                     await ctx.send("removing present entries for new data...")
                     remove_url(r["link"], client=chromac)
-                splits = await read_and_split_link(r["link"])
+                splits = await read_and_split_link(ctx.bot,r["link"])
                 dbadd = True
                 for split in splits:
                     gui.gprint(split.page_content)
@@ -802,7 +801,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             message = ctx.message
             guild = message.guild
             user = message.author
-            article, header = await read_article_async(url,False)
+            article, header = await read_article_async(ctx.bot.jsenv,url,False)
             pages = commands.Paginator(prefix="", suffix="",max_size=2000)
             for l in article.split("\n"):
                 pages.add_line(l)
@@ -839,7 +838,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             )
             serverrep.modify_status()
             userrep.modify_status()
-            article, header = await read_article(url)
+            article, header = await read_article(ctx.bot.jsenv,url)
             if stopat != None:
                 article = article.split(stopat)[0]
             chat = gptmod.ChatCreation(

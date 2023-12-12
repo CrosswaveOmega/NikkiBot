@@ -2,7 +2,7 @@ import asyncio
 from typing import List, Tuple
 import chromadb
 from googleapiclient.discovery import build  # Import the library
-from javascriptasync import require, eval_js
+
 import assets
 import re
 import langchain
@@ -53,10 +53,11 @@ def google_search(bot, query: str, result_limit: int):
 
 
 async def read_and_split_link(
-    url: str, chunk_size: int = 1800, chunk_overlap: int = 0
+    bot, url: str, chunk_size: int = 1800, chunk_overlap: int = 1
 ) -> List[Document]:
     # Document loader
     loader = ReadableLoader(
+        bot.jsenv,
         url,
         header_template={
             "User-Agent": "Mozilla/5.0 (X11,Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"

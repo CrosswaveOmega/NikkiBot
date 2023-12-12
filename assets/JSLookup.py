@@ -27,11 +27,12 @@ class JavascriptLookup:
             return None
 
     @staticmethod
-    async def get_full_pathas(filename: str):
-        #test=require("@mozilla/readability")
-        print('ok')
+    async def get_full_pathas(filename: str,alias:str,jsenv):
+
+        
         js_folder = "../js/"+filename
-        myfile=await require_a(js_folder,amode=True)
-        print("clear")
+        
+        myfile=await jsenv.require_a(js_folder,amode=True,store_as=alias)
+
         return myfile
     
