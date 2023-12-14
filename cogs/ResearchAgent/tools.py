@@ -57,14 +57,13 @@ async def read_and_split_link(
 ) -> List[Document]:
     # Document loader
     loader = ReadableLoader(
-        bot.jsenv,
         url,
         header_template={
             "User-Agent": "Mozilla/5.0 (X11,Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"
         },
     )
     # Index that wraps above steps
-    data = await loader.aload()
+    data = await loader.aload(bot.jsenv)
     print("ok")
     newdata = []
     for d in data:
