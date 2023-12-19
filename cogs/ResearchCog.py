@@ -302,7 +302,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     hascount += 1
                 else:
                     try:
-                        splits = await read_and_split_link(ctx.bot,ctx.bot,r["link"])
+                        splits = await read_and_split_link(ctx.bot,r["link"])
                         dbadd = True
                         for split in splits:
                             gui.gprint(split.page_content)
