@@ -144,8 +144,8 @@ class WebhookMessageWrapper:
         webhook,
         thread,
         message_content,
-        display_username,
-        avatar_url,
+        display_username=None,
+        avatar_url=None,
         embed=[],
         file=[],
     ) -> discord.WebhookMessage:
@@ -180,7 +180,7 @@ class WebhookMessageWrapper:
                     wait=True,
                 )
                 return mess
-        except:
+        except Exception as e:
             if thread != None:
                 mess = await webhook.send(
                     content=newContent,
