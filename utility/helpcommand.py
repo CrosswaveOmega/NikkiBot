@@ -26,6 +26,9 @@ class HelpSelect(discord.ui.Select):
         self.cogs = bot.cogs
         options = []
         for i, v in self.cogs.items():
+            if hasattr(v,'private'):
+                if v.private:
+                    continue
             options.append(
                 discord.SelectOption(
                     label=v.qualified_name,
@@ -47,6 +50,9 @@ class HelpSelect(discord.ui.Select):
                 option.default = True
 
         for i, v in self.cogs.items():
+            if hasattr(v,'private'):
+                if v.private:
+                    continue
             if value == v.qualified_name:
                 myembed = await self.myhelp.get_cog_help_embed(v)
                 await interaction.response.edit_message(
@@ -95,6 +101,9 @@ class Chelp(HelpCommand):
         )
         comcount = {}
         for i, v in cogs.items():
+            if hasattr(v,'private'):
+                if v.private:
+                    continue
             comcount[i] = 0
             for comm in v.get_commands():
                 if comm.hidden != True:
@@ -196,7 +205,7 @@ class Chelp(HelpCommand):
                         for ccomm in comm.walk_commands():
                             help_val += f"**{ccomm.full_parent_name} {ccomm.name}** : {ccomm.brief}\n"
                     if help_val is None:
-                        "NA"
+                        help_val="NA"
                     embed.add_field(name=name_val, value=help_val[:1024], inline=False)
                     commandSTR = commandSTR + " `{}`:{}".format(comm.name, comm.help)
         return embed

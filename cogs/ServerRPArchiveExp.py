@@ -68,9 +68,11 @@ class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
 
     def __init__(self, bot):
         self.bot: TCBot = bot
+        self.private = True
         self.loadlock = asyncio.Lock()
         self.helptext = """Extra commands for server archiving.
         """
+        self.manual_enable=True
 
     def cog_unload(self):
         # Remove the task function.

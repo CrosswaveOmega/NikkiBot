@@ -108,6 +108,7 @@ class AppGuildTreeSync(Guild_Sync_Base):
     lastsyncdate = Column(AwareDateTime, default=datetime.datetime.now())
     donotsync = Column(Boolean, default=False)
     cog_disable = Column(Text, nullable=True)  # New column
+    cog_onlist = Column(Text, nullable=True)  # New column 2
 
     def __init__(
         self, server_id: int, command_tree: dict = None, cog_disable_list: list = []
@@ -174,6 +175,29 @@ class AppGuildTreeSync(Guild_Sync_Base):
         session: Session = DatabaseSingleton.get_session()
         self.cog_disable = json.dumps(command_list, default=str)
         print(self.cog_disable)
+        session.commit()
+
+    @classmethod
+    def load_onlist(cls, server_id):
+        """
+        Loads and returns the list representation of the command tree for the specified server_id.
+        """
+        session: Session = DatabaseSingleton.get_session()
+        result = session.query(AppGuildTreeSync).filter_by(server_id=server_id).first()
+        if result:
+            if result.cog_onlist == None:
+                return []
+            return json.loads(result.cog_onlist)
+        else:
+            return []
+
+    def save_onlist(self, command_list: list):
+        """
+        Saves the list representation of the command tree for the current `AppGuildTreeSync` instance.
+        """
+        session: Session = DatabaseSingleton.get_session()
+        self.cog_onlist = json.dumps(command_list, default=str)
+        print(self.cog_onlist)
         session.commit()
 
     def update(self, command_tree: dict):
@@ -385,6 +409,7 @@ class SpecialAppSync:
         Works on a guild per guild basis in case I need to eventually provide
         code to sync different app commands between guilds."""
         ignorelist = AppGuildTreeSync.load_list(guild.id)
+        onlist =  AppGuildTreeSync.load_onlist(guild.id)
         print(ignorelist)
 
         def syncprint(*lis):
@@ -392,10 +417,16 @@ class SpecialAppSync:
             if False:
                 gui.gprint(f"Sync for {guild.name} (ID {guild.id})", *lis)
 
-        def should_skip_cog(cogname: str) -> bool:
+        def should_skip_cog(cogname: str,cog) -> bool:
             """Determine whether a cog should be skipped during synchronization."""
             """Not currently needed."""
-            if cogname in ignorelist:
+            if cogname in onlist:
+                return False
+            private_cog=False
+            if hasattr(cog,'manual_enable'):
+                print(cogname,cog.manual_enable)
+                private_cog=cog.manual_enable
+            if cogname in ignorelist or private_cog:
                 return True
             return False
 
@@ -425,7 +456,7 @@ class SpecialAppSync:
         # Note, the reason it goes one by one is because it was originally intended
         # to activate/deactivate cogs on a server per server basis.
         for cogname, cog in self.cogs.items():
-            if should_skip_cog(cogname):
+            if should_skip_cog(cogname,cog):
                 gui.gprint("skipping cog ", cogname)
                 continue
             if hasattr(cog, "ctx_menus"):
