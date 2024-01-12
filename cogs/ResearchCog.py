@@ -818,7 +818,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 mytitle=header.get('title', "notitle")
                 await ctx.send(f"# {mytitle}")
                 for p in pages.pages:
-                    await ctx.send(p)
+                    await ctx.send(d.page_content)
 
     @commands.command(
         name="summarize", description="make a summary of a url.", extras={}
