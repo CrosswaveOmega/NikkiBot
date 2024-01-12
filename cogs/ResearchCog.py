@@ -813,15 +813,22 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 filtered_markdown = filter_inline_links(article)
                 print(filtered_markdown)
 
-            
+            splitorder=['## ','### ','\n']
             #docs=await split_link([filtered_markdown],chunk_size=2000)
-            pages = commands.Paginator(prefix="", suffix="",max_size=2000)
-            for p in filtered_markdown.split('\n'):
-                pages.add_line(p)
+            fil=[filtered_markdown]
+            for s in splitorder:
+                newsplit=[]
+                for old in fil:
+                    pages = commands.Paginator(prefix="", suffix="",max_size=2000)
+                    for p in old.split(s):
+                        pages.add_line(p)
+                    for e,d in enumerate(pages.pages):
+                        newsplit.append(d)
+                fil=newsplit
             mytitle=header.get('title', "notitle")
             await ctx.send(f"# {mytitle}")
-            length=len(pages.pages)
-            for e,d in enumerate(pages.pages):
+            length=len(fil)
+            for e,d in enumerate(fil):
                 emb=discord.Embed(
                     title=f"{mytitle}: {e}/{length}",
                     description=discord.utils.escape_markdown(d)
