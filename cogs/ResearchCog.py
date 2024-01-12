@@ -816,7 +816,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             
             #docs=await split_link([filtered_markdown],chunk_size=2000)
             pages = commands.Paginator(prefix="", suffix="",max_size=2000)
-            for p in filtered_markdown.split('\n'):
+            for p in filtered_markdown.split('###'):
                 pages.add_line(p)
             mytitle=header.get('title', "notitle")
             await ctx.send(f"# {mytitle}")
@@ -824,7 +824,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             for e,d in enumerate(pages.pages):
                 emb=discord.Embed(
                     title=f"{mytitle}: {e}/{length}",
-                    description=d
+                    description=discord.utils.escape_markdown(d)
                 )
                 await ctx.send(embed=emb)
 
