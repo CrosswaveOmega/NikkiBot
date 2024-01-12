@@ -795,20 +795,30 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         description="read a website in reader mode, converted to markdown",
         extras={},
     )
-    async def webreader(self, ctx: commands.Context, url: str):
+    async def webreader(self, ctx: commands.Context, url: str, filter_links:bool=False):
         """Download the text from a website, and read it"""
         async with self.lock:
             message = ctx.message
             guild = message.guild
             user = message.author
             article, header = await read_article_async(ctx.bot.jsenv,url,False)
+
+
+            def filter_inline_links(markdown_string):
+                return re.sub(r'\[([^\]]+)\]\(([^)]+)\)', '', markdown_string)
+            filtered_markdown=article
+            if filter_links:
+                filtered_markdown = filter_inline_links(article)
+                print(filtered_markdown)
+
+            
+            docs=split_link([filtered_markdown])
             pages = commands.Paginator(prefix="", suffix="",max_size=2000)
-            for l in article.split("\n"):
-                pages.add_line(l)
-            mytitle=header.get('title', "notitle")
-            await ctx.send(f"# {mytitle}")
-            for p in pages.pages:
-                await ctx.send(p)
+            for d in docs:
+                mytitle=header.get('title', "notitle")
+                await ctx.send(f"# {mytitle}")
+                for p in pages.pages:
+                    await ctx.send(p)
 
     @commands.command(
         name="summarize", description="make a summary of a url.", extras={}

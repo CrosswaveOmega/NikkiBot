@@ -82,7 +82,25 @@ async def read_and_split_link(
     all_splits = text_splitter.split_documents(newdata)
     return all_splits
 
+async def split_link(data: List[str], chunk_size: int = 1800):
 
+    newdata = []
+    for d in data:
+        # Strip excess white space.
+        simplified_text = d.strip()
+        simplified_text = re.sub(r"(\n){4,}", "\n\n\n", simplified_text)
+        simplified_text = re.sub(r"\n\n", " ", simplified_text)
+        simplified_text = re.sub(r" {3,}", "  ", simplified_text)
+        simplified_text = simplified_text.replace("\t", "")
+        simplified_text = re.sub(r"\n+(\s*\n)*", "\n", simplified_text)
+        d.page_content = simplified_text
+        newdata.append(Document(page_content=simplified_text, metadata={'title':"EX"}))
+    text_splitter = RecursiveCharacterTextSplitter(
+        separators=tosplitby, chunk_size=chunk_size, chunk_overlap=0
+    )
+    all_splits = text_splitter.split_documents(newdata)
+    return all_splits
+    
 async def add_summary(url: str, desc: str, header, collection="web_collection", client:chromadb.ClientAPI=None):
     loader = ReadableLoader(
         url,
