@@ -93,7 +93,7 @@ async def split_link(data: List[str], chunk_size: int = 1800):
         simplified_text = re.sub(r" {3,}", "  ", simplified_text)
         simplified_text = simplified_text.replace("\t", "")
         simplified_text = re.sub(r"\n+(\s*\n)*", "\n", simplified_text)
-        d.page_content = simplified_text
+        
         newdata.append(Document(page_content=simplified_text, metadata={'title':"EX"}))
     text_splitter = RecursiveCharacterTextSplitter(
         separators=tosplitby, chunk_size=chunk_size, chunk_overlap=0
