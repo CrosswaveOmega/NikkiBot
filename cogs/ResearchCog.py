@@ -795,7 +795,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         description="read a website in reader mode, converted to markdown",
         extras={},
     )
-    async def webreader(self, ctx: commands.Context, url: str, filter_links:bool=False):
+    async def webreader(self, ctx: commands.Context, url: str, filter_links:bool=False,escape_markdown:bool=False):
         """Download the text from a website, and read it"""
         async with self.lock:
             message = ctx.message
@@ -816,7 +816,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             
             #docs=await split_link([filtered_markdown],chunk_size=2000)
             pages = commands.Paginator(prefix="", suffix="",max_size=2000)
-            for p in filtered_markdown.split('###'):
+            for p in filtered_markdown.split('\n'):
                 pages.add_line(p)
             mytitle=header.get('title', "notitle")
             await ctx.send(f"# {mytitle}")
