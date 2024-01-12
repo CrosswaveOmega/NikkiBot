@@ -807,6 +807,31 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
             def filter_inline_links(markdown_string):
                 return re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'\1', markdown_string)
+            def split_string(input_string, max_cluster_size, split_substring):
+                clusters = []
+                if len(input_string)<max_cluster_size:
+                        return [input_string]
+                # Split the input string based on the specified substring
+                substrings = input_string.split(split_substring)
+
+                current_cluster = ""
+                for substring in substrings:
+                    if len(current_cluster) + len(substring) + len(split_substring) <= max_cluster_size:
+                        # Add the substring to the current cluster
+                        current_cluster += split_substring+substring 
+                    else:
+                        # The current cluster exceeds the maximum size, start a new cluster
+                        if current_cluster:
+                            clusters.append(current_cluster)  # Remove the trailing split_substring
+                        current_cluster=""
+                        if substring:
+                            current_cluster = split_substring+substring 
+
+                # Add the last cluster
+                if current_cluster:
+                    clusters.append(current_cluster)  # Remove the trailing split_substring
+
+                return clusters
 
             filtered_markdown=article
             if filter_links:
@@ -819,11 +844,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             for s in splitorder:
                 newsplit=[]
                 for old in fil:
-                    pages = commands.Paginator(prefix="", suffix="",max_size=4096)
-                    for p in old.split(s):
-                        pages.add_line(p)
-                    for e,d in enumerate(pages.pages):
-                        newsplit.append(d)
+                    result_clusters = split_string(old, 4000, s)
+        
+                    newsplit.extend(result_clusters)
                 fil=newsplit
             mytitle=header.get('title', "notitle")
             await ctx.send(f"# {mytitle}")
