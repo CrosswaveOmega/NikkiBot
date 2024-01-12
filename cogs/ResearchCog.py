@@ -838,13 +838,13 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 filtered_markdown = filter_inline_links(article)
                 print(filtered_markdown)
 
-            splitorder=['\n## ','\n### ','\n']
+            splitorder=[('\n## ',1000),('\n### ',4000),('\n',4000)]
             #docs=await split_link([filtered_markdown],chunk_size=2000)
             fil=[filtered_markdown]
-            for s in splitorder:
+            for s,maxlen in splitorder:
                 newsplit=[]
                 for old in fil:
-                    result_clusters = split_string(old, 4000, s)
+                    result_clusters = split_string(old, maxlen, s)
         
                     newsplit.extend(result_clusters)
                 fil=newsplit
