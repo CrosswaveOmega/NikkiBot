@@ -829,9 +829,12 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(f"# {mytitle}")
             length=len(fil)
             for e,d in enumerate(fil):
+                use=d
+                if escape_markdown:
+                    use=discord.utils.escape_markdown(d)
                 emb=discord.Embed(
                     title=f"{mytitle}: {e}/{length}",
-                    description=discord.utils.escape_markdown(d)
+                    description=use
                 )
                 await ctx.send(embed=emb)
 
