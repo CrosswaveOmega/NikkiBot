@@ -812,7 +812,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 print(filtered_markdown)
 
             
-            docs=split_link([filtered_markdown])
+            docs=await split_link([filtered_markdown])
             pages = commands.Paginator(prefix="", suffix="",max_size=2000)
             for d in docs:
                 mytitle=header.get('title', "notitle")
