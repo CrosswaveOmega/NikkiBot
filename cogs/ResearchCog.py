@@ -814,11 +814,11 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             
             docs=await split_link([filtered_markdown])
             pages = commands.Paginator(prefix="", suffix="",max_size=2000)
+            
+            mytitle=header.get('title', "notitle")
+            await ctx.send(f"# {mytitle}")
             for d in docs:
-                mytitle=header.get('title', "notitle")
-                await ctx.send(f"# {mytitle}")
-                for p in pages.pages:
-                    await ctx.send(d.page_content)
+                await ctx.send(d.page_content)
 
     @commands.command(
         name="summarize", description="make a summary of a url.", extras={}
