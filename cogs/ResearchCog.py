@@ -819,7 +819,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             for s in splitorder:
                 newsplit=[]
                 for old in fil:
-                    pages = commands.Paginator(prefix="", suffix="",max_size=2000)
+                    pages = commands.Paginator(prefix="", suffix="",max_size=4096)
                     for p in old.split(s):
                         pages.add_line(p)
                     for e,d in enumerate(pages.pages):
