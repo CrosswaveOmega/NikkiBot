@@ -813,7 +813,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 filtered_markdown = filter_inline_links(article)
                 print(filtered_markdown)
 
-            splitorder=['## ','### ','\n']
+            splitorder=['\n## ','\n### ','\n']
             #docs=await split_link([filtered_markdown],chunk_size=2000)
             fil=[filtered_markdown]
             for s in splitorder:
