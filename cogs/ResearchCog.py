@@ -823,8 +823,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             length=len(pages.pages)
             for e,d in enumerate(pages.pages):
                 emb=discord.Embed(
-                    title=f"{mytitle}: {e}/{length}"
-                    description=discord_install
+                    title=f"{mytitle}: {e}/{length}",
+                    description=d
                 )
                 await ctx.send(embed=emb)
 
