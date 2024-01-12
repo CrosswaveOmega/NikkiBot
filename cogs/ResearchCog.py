@@ -814,13 +814,19 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 print(filtered_markdown)
 
             
-            docs=await split_link([filtered_markdown])
+            #docs=await split_link([filtered_markdown],chunk_size=2000)
             pages = commands.Paginator(prefix="", suffix="",max_size=2000)
-            
+            for p in filtered_markdown.split('\n'):
+                pages.add_line(p)
             mytitle=header.get('title', "notitle")
             await ctx.send(f"# {mytitle}")
-            for d in docs:
-                await ctx.send(d.page_content)
+            length=len(pages.pages)
+            for e,d in enumerate(pages.pages):
+                emb=discord.Embed(
+                    title=f"{mytitle}: {e}/{length}"
+                    description=discord_install
+                )
+                await ctx.send(embed=emb)
 
     @commands.command(
         name="summarize", description="make a summary of a url.", extras={}
