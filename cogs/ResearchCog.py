@@ -804,8 +804,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             article, header = await read_article_async(ctx.bot.jsenv,url,False)
 
 
+
             def filter_inline_links(markdown_string):
-                return re.sub(r'\[([^\]]+)\]\(([^)]+)\)', '', markdown_string)
+                return re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'\1', markdown_string)
+
             filtered_markdown=article
             if filter_links:
                 filtered_markdown = filter_inline_links(article)
