@@ -463,7 +463,35 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 await statmess.editw(
                     min_seconds=0, content=f"Overwrite ok.", embed=embed
                 )
-
+    @commands.is_owner()
+    @commands.command(name="removeurl")
+    async def remove_url(self, ctx: commands.Context, link: str):
+        """'replace a url in documents.
+        link:str
+        """
+        bot = ctx.bot
+        if not ctx.guild:
+            await ctx.send("needs to be guild")
+            return
+        if await ctx.bot.gptapi.check_oai(ctx):
+            await ctx.send(
+                "I'm sorry, but the research system is unavailable in this server."
+            )
+            return "INVALID CONTEXT"
+        if "google" not in bot.keys or "cse" not in bot.keys:
+            await ctx.send("google search keys not set up.")
+            return "insufficient keys!"
+        
+        chromac = ChromaTools.get_chroma_client()
+        has, getres = has_url(link, client=chromac)
+        if has:
+            remove_url(link, client=chromac)
+            
+            await ctx.send("removal complete")
+        else:
+            
+            await ctx.send("Link not in database")
+                    
     @commands.is_owner()
     @commands.hybrid_command(
         name="loadurlover",
@@ -718,9 +746,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             embed.add_field(name=f"s: score:{score}", value=output[:1020], inline=False)
             field_count += 1
         embeds.append(embed)
-        PCC, buttons = await pages_of_embeds_2("ANY", embeds)
+        pcc, buttons = await pages_of_embeds_2("ANY", embeds)
 
-        await ctx.channel.send(embed=PCC.make_embed(), view=buttons)
+        await ctx.channel.send(embed=pcc.make_embed(), view=buttons)
         # viewme=Followup(bot=self.bot,page_content=docs2)
         # await ctx.channel.send(f'{len(data)} sources found',view=viewme)
 
@@ -839,7 +867,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 print(filtered_markdown)
 
             splitorder=[('\n## ',1000),('\n### ',4000),('\n',4000)]
-            #docs=await split_link([filtered_markdown],chunk_size=2000)
+            
             fil=[filtered_markdown]
             for s,maxlen in splitorder:
                 newsplit=[]

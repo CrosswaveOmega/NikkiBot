@@ -123,6 +123,11 @@ async def add_summary(url: str, desc: str, header, collection="web_collection", 
         metadata["description"]=header.get("excerpt", 'NA')
         metadata["language"]=header.get("lang","en")
         metadata["sum"]="sum"
+    newdata={}
+    for i, v in metadata:
+        if v is not None:
+            newdata[i]=v
+    metadata=newdata
     docs=Document(page_content=desc, metadata=metadata)
     newdata=[docs]
     ids = [
