@@ -124,7 +124,7 @@ async def add_summary(url: str, desc: str, header, collection="web_collection", 
         metadata["language"]=header.get("lang","en")
         metadata["sum"]="sum"
     newdata={}
-    for i, v in metadata:
+    for i, v in metadata.items():
         if v is not None:
             newdata[i]=v
     metadata=newdata
