@@ -145,7 +145,7 @@ class ReadableLoader(dl.WebBaseLoader):
                 clean_html = re.sub(
                     r"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>", "", result
                 )
-                text, header = await read_article_aw(clean_html, url)
+                text, header = await read_article_aw(self.jsenv,clean_html, url)
                 final_results.append((remove_links(text), souped, header))
 
             except Exception as e:
