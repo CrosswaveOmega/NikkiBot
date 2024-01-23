@@ -63,7 +63,7 @@ async def read_and_split_link(
         },
     )
     # Index that wraps above steps
-    data = await loader.aload(bot.jsenv)
+    data = await loader.aload(bot)
     print("ok")
     newdata = []
     for d in data:
