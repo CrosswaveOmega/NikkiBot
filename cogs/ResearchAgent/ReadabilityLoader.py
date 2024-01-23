@@ -149,6 +149,7 @@ class ReadableLoader(dl.WebBaseLoader):
                 final_results.append((remove_links(text), souped, header))
 
             except Exception as e:
+                await self.bot.send_error(e)
                 text = souped.get_text(**self.bs_get_text_kwargs)
                 final_results.append((text, souped, None))
 
@@ -191,9 +192,10 @@ class ReadableLoader(dl.WebBaseLoader):
         """Load text from the url(s) in web_path."""
         return list(self.lazy_load())
 
-    async def aload(self,jsenv) -> List[Document]:
+    async def aload(self,bot) -> List[Document]:
         """Load text from the urls in web_path async into Documents."""
-        self.jsenv=jsenv
+        self.jsenv=bot.jsenv
+        self.bot=bot
         results = await self.scrape_all(self.web_paths)
         docs = []
         for i,res in enumerate(results):
