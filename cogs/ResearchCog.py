@@ -418,9 +418,11 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
     @commands.is_owner()
     @commands.command(name="loadmany")
-    async def loadmany(self, ctx: commands.Context, links: str):
+    async def loadmany(self, ctx: commands.Context, links: str, over:bool=False):
         """'Load many urls into the collection, with each link separated by a newline.
-        link:str
+        links:str
+        over:bool-> whether or not to override links.  default false.
+
         """
         bot = ctx.bot
         if not ctx.guild:
@@ -449,7 +451,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
         statmess = StatusEditMessage(target_message, ctx)
        
-        hascount,lines=await self.load_links(ctx,all_links,chromac,statmess,override=False)
+        hascount,lines=await self.load_links(ctx,all_links,chromac,statmess,override=over)
         embed = discord.Embed(
             title=f"Collection load results",
             description=f"{hascount}/{len(all_links)}\nout=\n{lines}",
