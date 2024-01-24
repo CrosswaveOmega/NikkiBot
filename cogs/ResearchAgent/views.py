@@ -28,7 +28,8 @@ class Followup(discord.ui.View):
         embed = discord.Embed(title="sauces")
         field_count = 0
         embeds = []
-        for doc, score in self.my_sources[:10]:
+        for id,tup in enumerate(self.my_sources[:10]):
+            doc, score=id
             if field_count == 3:
                 # Send the embed here or add it to a list of embeds
                 # Reset the field count and create a new embed
@@ -38,7 +39,8 @@ class Followup(discord.ui.View):
 
             meta = doc.metadata
             content = doc.page_content
-            output = f"""**Name:** {meta['title'][:100]}
+            output = f"""**ID**:{id}
+            **Name:** {meta['title'][:100]}
             **Link:** {meta['source']}
             **Text:** {content}"""
             embed.add_field(name=f"s: score:{score}", value=output[:1020], inline=False)

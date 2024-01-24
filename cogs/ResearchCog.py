@@ -22,7 +22,7 @@ import gui
 from .ResearchAgent import *
 from googleapiclient.discovery import build  # Import the library
 
-
+from utility import prioritized_string_split, select_emoji
 # def is_readable(url):
 #     timeout = 30
 #     readability = require("@mozilla/readability")
@@ -181,7 +181,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context,
         query: str,
         comment: str = "Search results:",
-        limit: int = 5,
+        limit: int = 7,
     ):
         "Search google for a query."
         bot = ctx.bot
@@ -197,7 +197,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         allstr = ""
         emb = discord.Embed(title="Search results", description=comment)
         readable_links = []
-        messages = ctx.send("Search completed, indexing.")
+        messages = await ctx.send("Search completed, indexing.")
         for r in results:
             metatags = r["pagemap"]["metatags"][0]
             desc = metatags.get("og:description", "NO DESCRIPTION")
@@ -209,6 +209,85 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             )
         returnme = await ctx.send(content=comment, embed=emb)
         return returnme
+    
+    async def load_links(self,ctx:commands.Context,all_links:List[str],chromac:Any=None,statmess:StatusEditMessage=None,override:bool=False):
+        """
+        Asynchronously loads links, checks for cached documents, and processes the split content.
+
+        Args:
+            ctx (commands.Context): The context of the command.
+            all_links (List[str]): List of links to be processed.
+            chromac (Any, optional): Chroma client for link processing. Defaults to None.
+            statmess (StatusEditMessage, optional): Status message to edit during processing. Defaults to None.
+            override (bool, optional): If True, override cache and process all links. Defaults to False.
+
+        Returns:
+            Tuple[int, str]: A tuple containing the count of successfully processed links and a formatted status string.
+        """
+        if not statmess:
+            target_message = await ctx.channel.send(
+                f"<a:SquareLoading:1143238358303264798> checking returned queries ..."
+            )
+            statmess = StatusEditMessage(target_message, ctx)
+        if not chromac: chromac = ChromaTools.get_chroma_client()
+        current,hascount="",0
+        
+        all_link_status=[('pending',link) for link in all_links]
+        lines = "\n".join([f"{select_emoji(s)} {link}" for s,link in all_link_status])
+        for e, link in enumerate(all_links):
+            embed = discord.Embed(description=f"out=\n{lines}")
+            has, getres = has_url(link, client=chromac)
+            if has and not override:
+                all_link_status[e][0]='skip'
+                current+=f"[Link {e}]({link}) has {len(getres['documents'])} cached documents.\n"
+                embed.description= "\n".join([f"{select_emoji(s)} {link}" for s,link in all_link_status])
+                await statmess.editw(
+                    min_seconds=5,
+                    content=f"<a:LetWalkR:1118191001731874856> {current}",
+                    embed=embed,
+                )
+                ver = zip(getres["documents"], getres["metadatas"])
+                for d, e in ver:
+                    if e["source"] != link:
+                        await ctx.send(f"the url in the cache doesn't match the provided url.")
+                hascount += 1
+            else:
+                try:
+                    splits = await read_and_split_link(ctx.bot,link)
+                    dbadd = True
+                    for split in splits:
+                        gui.gprint(split.page_content)
+                        for i, m in split.metadata.items():
+                            gui.gprint(i, m)
+                            if m == None:
+                                split.metadata[i] = "N/A"
+                            else:
+                                dbadd = True
+                    if dbadd:
+                        all_link_status[e][0]='add'
+                        toadd=f"[Link {e}]({link}) has {len(splits)} splits.\n"
+                        if has and override:
+                            all_link_status[e][0]='edit'
+                            toadd=f"[Link {e}]({link}) had {{len(getres['documents'])}} has {len(splits)} splits.\n"
+                        current+=toadd
+                        embed.description= "\n".join([f"{select_emoji(s)} {link}" for s,link in all_link_status])
+                        await statmess.editw(
+                            min_seconds=5,
+                            content=f"<a:LetWalkR:1118191001731874856> {current}",
+                            embed=embed,
+                        )
+                        store_splits(splits, client=chromac)
+                except Exception as err:
+                    all_link_status[e][0]='noc'
+                    current+=f"{str(err)}"
+                    embed.description= "\n".join([f"{select_emoji(s)} {link}" for s,link in all_link_status])
+                    await statmess.editw(
+                        min_seconds=5,
+                        content=f"<a:LetWalkR:1118191001731874856> {current}",
+                        embed=embed,
+                    )
+                    await ctx.bot.send_error(err)
+        return hascount, "\n".join([f"{select_emoji(s)} {link}" for s,link in all_link_status])
 
     @AILibFunction(
         name="google_detective",
@@ -272,65 +351,18 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         async with ctx.channel.typing():
             results = google_search(ctx.bot, query, result_limit)
 
-            all_links = []
+            all_links = [r['link'] for r in results]
             hascount = 0
             length = len(results)
             lines = "\n".join([f"- {r['link']}" for r in results])
 
-            embed = discord.Embed(title=f"query: {query}", description=f"out=\n{lines}")
-
             await statmess.editw(
                 min_seconds=0,
                 content=f"<a:LetWalkR:1118191001731874856> Search complete: reading {0}/{length}. {hascount}/{len(all_links)}",
-                embed=embed,
+                embed=discord.Embed(title=f"query: {query}", description=f"out=\n{lines}"),
             )
-            for e, r in enumerate(results):
-                all_links.append(r["link"])
-                embed = discord.Embed(description=f"out=\n{lines}")
-                has, getres = has_url(r["link"], client=chromac)
-                if has:
-                    current+=f"[Link {e}]({r['link']}) has{len(getres['documents'])} cached documents.\n"
-                    await statmess.editw(
-                        min_seconds=5,
-                        content=f"<a:LetWalkR:1118191001731874856> {current}",
-                        embed=embed,
-                    )
-                    ver = zip(getres["documents"], getres["metadatas"])
-                    for d, e in ver:
-                        if e["source"] != r["link"]:
-                            await ctx.send(f"docmismatch MISMATCH")
-                    hascount += 1
-                else:
-                    try:
-                        splits = await read_and_split_link(ctx.bot,r["link"])
-                        dbadd = True
-                        for split in splits:
-                            gui.gprint(split.page_content)
-                            for i, m in split.metadata.items():
-                                gui.gprint(i, m)
-                                if m == None:
-                                    split.metadata[i] = "N/A"
-                                else:
-                                    dbadd = True
-                        if dbadd:
-                            current+=f"[Link {e}]({r['link']}) has {len(splits)} splits.\n"
-                            await statmess.editw(
-                                min_seconds=5,
-                                content=f"<a:LetWalkR:1118191001731874856> {current}",
-                                embed=embed,
-                            )
-                            store_splits(splits, client=chromac)
-                    except Exception as err:
-                       current+=f"{str(err)}"
-                       await statmess.editw(
-                            min_seconds=5,
-                            content=f"<a:LetWalkR:1118191001731874856> {current}",
-                            embed=embed,
-                        )
-                       await bot.send_error(err)
-
-
-        lines = "\n".join(all_links)
+            hascount,lines=await self.load_links(ctx,all_links,chromac,statmess)
+            
         embed = discord.Embed(
             title=f"Search Query: {query} ",
             description=f"{hascount}/{len(all_links)}\nout=\n{lines}",
@@ -387,7 +419,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @commands.is_owner()
     @commands.command(name="loadmany")
     async def loadmany(self, ctx: commands.Context, links: str):
-        """'replace a url in documents.
+        """'Load many urls into the collection, with each link separated by a newline.
         link:str
         """
         bot = ctx.bot
@@ -399,9 +431,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 "I'm sorry, but the research system is unavailable in this server."
             )
             return "INVALID CONTEXT"
-        if "google" not in bot.keys or "cse" not in bot.keys:
-            await ctx.send("google search keys not set up.")
-            return "insufficient keys!"
+
         serverrep, userrep = AuditProfile.get_or_new(ctx.guild, ctx.author)
         serverrep.checktime()
         userrep.checktime()
@@ -412,57 +442,24 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 await ctx.channel.send("You have exceeded daily rate limit.")
                 return
         chromac = ChromaTools.get_chroma_client()
-        for link in links.split("\n"):
-            target_message = await ctx.send(
-                f"<a:SquareLoading:1143238358303264798> Retrieving {link} ..."
+        all_links=[link for link in links.split('\n')]
+        target_message = await ctx.send(
+                f"<a:SquareLoading:1143238358303264798> Retrieving {len(links)} ..."
             )
 
-            statmess = StatusEditMessage(target_message, ctx)
-            async with ctx.channel.typing():
-                results = [{"link": link}]
+        statmess = StatusEditMessage(target_message, ctx)
+       
+        hascount,lines=await self.load_links(ctx,all_links,chromac,statmess,override=False)
+        embed = discord.Embed(
+            title=f"Collection load results",
+            description=f"{hascount}/{len(all_links)}\nout=\n{lines}",
+        )
+        embed.set_footer(text='Operation complete.')
+        await statmess.delete()
+        await ctx.send(embed=embed)
 
-                all_links = []
-                hascount = 0
-                length = len(results)
-                lines = "\n".join([f"- {r['link']}" for r in results])
 
-                embed = discord.Embed(
-                    title=f"query: {link}.", description=f"out=\n{lines}"
-                )
 
-                await statmess.editw(
-                    min_seconds=0,
-                    content=f"<a:SquareLoading:1143238358303264798> Retrieving {link} ...",
-                    embed=embed,
-                )
-                for e, r in enumerate(results):
-                    all_links.append(r["link"])
-                    embed = discord.Embed(description=f"out=\n{lines}")
-                    has, getres = has_url(r["link"], client=chromac)
-                    if has:
-                        await ctx.send("removing present entries for new data...")
-                        remove_url(r["link"], client=chromac)
-                    splits = await read_and_split_link(ctx.bot,r["link"])
-                    dbadd = True
-                    for split in splits:
-                        gui.gprint(split.page_content)
-                        for i, m in split.metadata.items():
-                            gui.gprint(i, m)
-                            if m == None:
-                                split.metadata[i] = "N/A"
-                            else:
-                                dbadd = True
-                                # await ctx.send(f"split metadata {i} is none!")
-                    if dbadd:
-                        await ctx.send(
-                            f"[Link {e}]({r['link']}) has {len(splits)} splits.",
-                            suppress_embeds=True,
-                        )
-                        store_splits(splits, client=chromac)
-                    # await statmess.editw(min_seconds=15,content=f'reading {e}/{length}. {hascount}/{len(all_links)}',embed=embed)
-                await statmess.editw(
-                    min_seconds=0, content=f"Overwrite ok.", embed=embed
-                )
     @commands.is_owner()
     @commands.command(name="removeurl")
     async def remove_url(self, ctx: commands.Context, link: str):
@@ -478,9 +475,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 "I'm sorry, but the research system is unavailable in this server."
             )
             return "INVALID CONTEXT"
-        if "google" not in bot.keys or "cse" not in bot.keys:
-            await ctx.send("google search keys not set up.")
-            return "insufficient keys!"
+
         
         chromac = ChromaTools.get_chroma_client()
         has, getres = has_url(link, client=chromac)
@@ -512,9 +507,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 "I'm sorry, but the research system is unavailable in this server."
             )
             return "INVALID CONTEXT"
-        if "google" not in bot.keys or "cse" not in bot.keys:
-            await ctx.send("google search keys not set up.")
-            return "insufficient keys!"
+
         serverrep, userrep = AuditProfile.get_or_new(ctx.guild, ctx.author)
         serverrep.checktime()
         userrep.checktime()
@@ -532,45 +525,12 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
         statmess = StatusEditMessage(target_message, ctx)
         async with ctx.channel.typing():
-            results = [{"link": link}]
-
-            all_links = []
-            hascount = 0
-            length = len(results)
-            lines = "\n".join([f"- {r['link']}" for r in results])
-
-            embed = discord.Embed(title=f"query: {link}.", description=f"out=\n{lines}")
-
-            await statmess.editw(
-                min_seconds=0,
-                content=f"<a:SquareLoading:1143238358303264798> Retrieving {link} ...",
-                embed=embed,
+            hc,lines=await self.load_links(ctx,[link],chromac,statmess=None,override=True)
+            embed = discord.Embed(
+            title="Collection load results",
+            description=f"{1}/{1}\nout=\n{lines}",
             )
-            for e, r in enumerate(results):
-                all_links.append(r["link"])
-                embed = discord.Embed(description=f"out=\n{lines}")
-                has, getres = has_url(r["link"], client=chromac)
-                if has:
-                    await ctx.send("removing present entries for new data...")
-                    remove_url(r["link"], client=chromac)
-                splits = await read_and_split_link(ctx.bot,r["link"])
-                dbadd = True
-                for split in splits:
-                    gui.gprint(split.page_content)
-                    for i, m in split.metadata.items():
-                        gui.gprint(i, m)
-                        if m == None:
-                            split.metadata[i] = "N/A"
-                        else:
-                            dbadd = True
-                            # await ctx.send(f"split metadata {i} is none!")
-                if dbadd:
-                    await ctx.send(
-                        f"[Link {e}]({r['link']}) has {len(splits)} splits.",
-                        suppress_embeds=True,
-                    )
-                    store_splits(splits, client=chromac)
-                # await statmess.editw(min_seconds=15,content=f'reading {e}/{length}. {hascount}/{len(all_links)}',embed=embed)
+            embed.set_footer(text='Operation complete.')
             await statmess.editw(min_seconds=0, content=f"Overwrite ok.", embed=embed)
 
     @commands.is_owner()
@@ -580,6 +540,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @app_commands.guilds(int(target_server[1]))
     @app_commands.describe(question="question to be asked.")
     @app_commands.describe(k="min number of sources to grab.")
+    @app_commands.describe(use_mmr="Use the max_marginal_relevance_search")
     @app_commands.describe(
         site_title_restriction="Restrain query to websites with this in the title."
     )
@@ -589,6 +550,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         question: str,
         k: int = 5,
         site_title_restriction: str = "None",
+        use_mmr:bool= False
     ):
         """
         question:str-Question you want to ask
@@ -623,7 +585,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         await statmess.editw(min_seconds=0, content="querying db...", embed=embed)
         async with ctx.channel.typing():
             data = await search_sim(
-                question, client=chromac, titleres=site_title_restriction, k=k
+                question, client=chromac, titleres=site_title_restriction, k=k,mmr=use_mmr
             )
             print(data)
             len(data)
@@ -723,7 +685,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             content = doc.page_content  # ('page_content','Data l
             output = f"""**Name:** {meta['title'][:100]}
             **Link:** {meta['source']}
-            **Text:** {content[:256]}..."""
+            **Text:** {content[:512]}..."""
             # await ctx.send(output,suppress_embeds=True)
             embed.add_field(name=f"s: score:{score}", value=output[:1024], inline=False)
         await ctx.send(embed=embed)
@@ -740,9 +702,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
             meta = doc.metadata
             content = doc.page_content
-            output = f"""**Name:** {meta['title'][:100]}
-            **Link:** {meta['source']}
-            **Text:** {content}"""
+            output = f"""**ID**: ?
+        **Name:** {meta['title']}
+        **Link:** {meta['source']}
+        **Text:** {content}"""
             embed.add_field(name=f"s: score:{score}", value=output[:1020], inline=False)
             field_count += 1
         embeds.append(embed)
@@ -835,47 +798,15 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
             def filter_inline_links(markdown_string):
                 return re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'\1', markdown_string)
-            def split_string(input_string, max_cluster_size, split_substring):
-                clusters = []
-                if len(input_string)<max_cluster_size:
-                        return [input_string]
-                # Split the input string based on the specified substring
-                substrings = input_string.split(split_substring)
-
-                current_cluster = ""
-                for substring in substrings:
-                    if len(current_cluster) + len(substring) + len(split_substring) <= max_cluster_size:
-                        # Add the substring to the current cluster
-                        current_cluster += split_substring+substring 
-                    else:
-                        # The current cluster exceeds the maximum size, start a new cluster
-                        if current_cluster:
-                            clusters.append(current_cluster)  # Remove the trailing split_substring
-                        current_cluster=""
-                        if substring:
-                            current_cluster = split_substring+substring 
-
-                # Add the last cluster
-                if current_cluster:
-                    clusters.append(current_cluster)  # Remove the trailing split_substring
-
-                return clusters
 
             filtered_markdown=article
             if filter_links:
                 filtered_markdown = filter_inline_links(article)
                 print(filtered_markdown)
 
-            splitorder=[('\n## ',1000),('\n### ',4000),('\n',4000)]
-            
-            fil=[filtered_markdown]
-            for s,maxlen in splitorder:
-                newsplit=[]
-                for old in fil:
-                    result_clusters = split_string(old, maxlen, s)
-        
-                    newsplit.extend(result_clusters)
-                fil=newsplit
+            splitorder=[('\n## %s',1000),('\n### %s',4000),('%s\n',4000)]
+            fil=prioritized_string_split(filtered_markdown,splitorder)
+
             mytitle=header.get('title', "notitle")
             await ctx.send(f"# {mytitle}")
             length=len(fil)

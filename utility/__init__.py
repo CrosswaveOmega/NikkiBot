@@ -10,7 +10,8 @@ from .globalfunctions import (
     get_server_icon_color,
     replace_working_directory,
     filter_trace_stack,
-    split_string_with_code_blocks
+    split_string_with_code_blocks,
+    prioritized_string_split
 )
 
 from .mytemplatemessages import MessageTemplates
@@ -20,6 +21,7 @@ from .formatutil import (
     permission_print,
     explain_rrule,
     progress_bar,
+    select_emoji,
 )
 from .views import ConfirmView, RRuleView
 from .manual_load import load_manual

@@ -15,7 +15,7 @@ webload = docload.WebBaseLoader
 from langchain.indexes import VectorstoreIndexCreator
 
 from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
+from langchain.vectorstores.chroma import Chroma
 from .ReadabilityLoader import ReadableLoader
 import gptmod
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -210,7 +210,7 @@ def has_url(url, collection="web_collection", client:chromadb.ClientAPI=None) ->
             client=client,
         )
         try:
-            res = vs._collection_.get(where={"source": url})
+            res = vs._collection.get(where={"source": url})
             print(res)
             if res:
                 return True
@@ -239,7 +239,7 @@ def remove_url(url, collection="web_collection", client:chromadb.ClientAPI = Non
 
 
 async def search_sim(
-    question: str, collection="web_collection", client:chromadb.ClientAPI=None, titleres="None", k=7
+    question: str, collection="web_collection", client:chromadb.ClientAPI=None, titleres="None", k=7,mmr=False
 ) -> List[Tuple[Document, float]]:
     persist = "saveData"
     vs = Chroma(
@@ -249,17 +249,29 @@ async def search_sim(
         collection_name=collection,
     )
     if titleres == "None":
-        docs = await vs.asimilarity_search_with_relevance_scores(question, k=7)
+        if mmr:
+            docs=vs.max_marginal_relevance_search(question,k=k)
+            docs = [(doc, 0.4) for doc in docs]
+        else:
+            docs = await vs.asimilarity_search_with_relevance_scores(question, k=k)
 
         return docs
     else:
         print("here")
+        if mmr:
+            docs = vs.max_marginal_relevance_search(
+                question,
+                k=k,
+                filter={"title": {"$like": f"%{titleres}%"}},  # {'':titleres}}
+            )
+            docs = [(doc, 0.4) for doc in docs]
+        else:
 
-        docs = await vs.asimilarity_search_with_relevance_scores(
-            question,
-            k=k,
-            filter={"title": {"$like": f"%{titleres}%"}},  # {'':titleres}}
-        )
+            docs = await vs.asimilarity_search_with_relevance_scores(
+                question,
+                k=k,
+                filter={"title": {"$like": f"%{titleres}%"}},  # {'':titleres}}
+            )
         return docs
 
 
@@ -293,6 +305,7 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
     Use the provided sources to answer question provided to you by the user.  Each of your source web pages will be in their own system messags, slimmed down to a series of relevant snippits,
     and are in the following template:
         BEGIN
+        **ID:** [Source ID number here]
         **Name:** [Name Here]
         **Link:** [Link Here]
         **Text:** [Text Content Here]
@@ -301,7 +314,9 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
         Your answer must be 3-7 medium-length paragraphs with 5-10 sentences per paragraph. 
         Preserve key information from the sources and maintain a descriptive tone. 
         Your goal is not to summarize, your goal is to answer the user's question based on the provided sources.  
-        If there is no information related to the user's question, simply state that you could not find an answer and leave it at that. Exclude any concluding remarks from the answer.
+        Please include an inline citation with the source id for each website you retrieved data from in this format: [ID here].
+        If there is no information related to the user's question, simply state that you could not find an answer and leave it at that. 
+        Exclude any concluding remarks from the answer.
 
     """
     formatted_docs = []
@@ -315,14 +330,16 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
         [{"role": "system", "content": prompt}, {"role": "user", "content": question}],
         "gpt-3.5-turbo-1106",
     )
-    for doc, score in docs:
+    for e,tup in enumerate(docs):
+        doc, score=tup
         # print(doc)
         meta = doc.metadata  #'metadata',{'title':'UNKNOWN','source':'unknown'})
         content = doc.page_content  # ('page_content','Data lost!')
         tile = "NOTITLE"
         if "title" in meta:
             tile = meta["title"]
-        output = f"""**Name:** {tile}
+        output = f"""**ID**:{e}
+        **Name:** {tile}
         **Link:** {meta['source']}
         **Text:** {content}"""
         formatted_docs.append(output)
