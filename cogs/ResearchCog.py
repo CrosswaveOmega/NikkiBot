@@ -232,7 +232,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         if not chromac: chromac = ChromaTools.get_chroma_client()
         current,hascount="",0
         
-        all_link_status=[('pending',link) for link in all_links]
+        all_link_status=['pending',link] for link in all_links]
         lines = "\n".join([f"{select_emoji(s)} {link}" for s,link in all_link_status])
         for e, link in enumerate(all_links):
             embed = discord.Embed(description=f"out=\n{lines}")
