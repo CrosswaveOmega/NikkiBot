@@ -619,8 +619,11 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 await ctx.send("NO RELEVANT DATA.")
                 return
             pages=[]
+            found=[]
             for p in data:
-                pages.append(discord.Embed(description=str(p)[:4000]))
+                if p['source'] not in found:
+                    found.append(p['source'])
+                    pages.append(discord.Embed(description=str(p)[:4000]))
             await pages_of_embeds(ctx, pages, ephemeral=True)
 
 
