@@ -308,7 +308,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         description="Get a list of results from a google search query.",
         extras={},
     )
-    @oai_check
+    @oai_check()
     async def google_detective(
         self,
         ctx: commands.Context,
@@ -418,7 +418,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
     @commands.is_owner()
     @commands.command(name="loadmany")
-    @oai_check
+    @oai_check()
     async def loadmany(self, ctx: commands.Context, links: str, over:bool=False):
         """'Load many urls into the collection, with each link separated by a newline.
         links:str
