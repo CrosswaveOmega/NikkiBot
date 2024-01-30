@@ -129,14 +129,22 @@ async def on_command_error(ctx, error):
     command: discord.ext.commands.command = ctx.command
     log.error("Ignoring exception in command %s", command, exc_info=error)
     errormess = "Command not found I think..."
+    command_details=f" Command {ctx.message.content}"
     if ctx.command:
+        command_details=f" Command {command.name}"
         errormess = client_error_message(error, name=f" Command {command.name}")
     else:
+        
         errormess = client_error_message(error, name=f"{ctx.message.content}")
     gui.gprint(errormess)
-    emb = MessageTemplates.get_error_embed(
-        title=f"Error with {ctx.message.content}", description=f"{errormess}"
-    )
+    if isinstance(error,discord.ext.commands.errors.CheckFailure):
+        emb = MessageTemplates.get_checkfail_embed(
+            title=f"Check failed for {command_details}", description=f"{errormess}"
+        )
+    else:
+        emb = MessageTemplates.get_error_embed(
+            title=f"Error with {ctx.message.content}", description=f"{errormess}"
+        )
     await bot.send_error(error, title=f"Error with {ctx.message.content}")
     try:
         await ctx.send(embed=emb)

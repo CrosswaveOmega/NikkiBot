@@ -283,8 +283,6 @@ async def debug_get(
     )
     if titleres == "None":
         return "NONE"
-
-        return docs
     else:
         print("here")
 

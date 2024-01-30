@@ -28,12 +28,33 @@ from utility import prioritized_string_split, select_emoji
 SERVER_ONLY_ERROR="This command may only be used in a guild."
 INVALID_SERVER_ERROR="I'm sorry, but the research system is unavailable in this server."
 
+async def check_ai_rate(ctx):
+    serverrep, userrep = AuditProfile.get_or_new(ctx.guild, ctx.author)
+    serverrep.checktime()
+    userrep.checktime()
+    ok, reason = userrep.check_if_ok()
+    if not ok:
+        denyied="Something went wrong, please try again later."
+        if reason in ["messagelimit", "ban"]:
+            denyied="You have exceeded the daily rate limit."
+        await ctx.send(content=denyied,ephemeral=True)
+        return False
+    serverrep.modify_status()
+    userrep.modify_status()
+    return True
+        
+def ai_rate_check():
+  # the check
+  async def check_2(ctx):
+      return await check_ai_rate(ctx)
+  return commands.check(check_2)
+
 async def oai_check_actual(ctx):
     if not ctx.guild:
-        await ctx.send(SERVER_ONLY_ERROR)
+        await ctx.send(SERVER_ONLY_ERROR,ephemeral=True)
         return False
     if await ctx.bot.gptapi.check_oai(ctx):
-        await ctx.send(INVALID_SERVER_ERROR)
+        await ctx.send(INVALID_SERVER_ERROR,ephemeral=True)
         return False
     return True
 
@@ -41,7 +62,7 @@ def oai_check():
   # the check
   async def oai_check_2(ctx):
       return await oai_check_actual(ctx)
-  return commands.check(oai_check_actual)
+  return commands.check(oai_check_2)
 
 async def read_article_async(jsctx, url, clearout=True):
     myfile=await assets.JavascriptLookup.get_full_pathas('readwebpage.js','WEBJS',jsctx)
@@ -114,15 +135,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         user = interaction.user
         if not await oai_check_actual(context):
             return
-
-        serverrep, userrep = AuditProfile.get_or_new(guild, user)
-        userrep.checktime()
-        ok, reason = userrep.check_if_ok()
-        if not ok:
-            if reason in ["messagelimit", "ban"]:
-                await context.send("You have exceeded daily rate limit.")
-                return
-        userrep.modify_status()
+        if not await check_ai_rate(context):
+            return
+        
         chat = gptmod.ChatCreation(
             messages=[{"role": "system", "content": self.translationprompt}]
         )
@@ -309,6 +324,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         extras={},
     )
     @oai_check()
+    @ai_rate_check()
     async def google_detective(
         self,
         ctx: commands.Context,
@@ -332,15 +348,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         if "google" not in bot.keys or "cse" not in bot.keys:
             await ctx.send("google search keys not set up.")
             return "insufficient keys!"
-        serverrep, userrep = AuditProfile.get_or_new(ctx.guild, ctx.author)
-        serverrep.checktime()
-        userrep.checktime()
 
-        ok, reason = userrep.check_if_ok()
-        if not ok:
-            if reason in ["messagelimit", "ban"]:
-                await ctx.channel.send("You have exceeded daily rate limit.")
-                return
         chromac = ChromaTools.get_chroma_client()
 
         target_message = await ctx.channel.send(
@@ -419,6 +427,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @commands.is_owner()
     @commands.command(name="loadmany")
     @oai_check()
+    @ai_rate_check()
     async def loadmany(self, ctx: commands.Context, links: str, over:bool=False):
         """'Load many urls into the collection, with each link separated by a newline.
         links:str
@@ -428,15 +437,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         bot = ctx.bot
 
 
-        serverrep, userrep = AuditProfile.get_or_new(ctx.guild, ctx.author)
-        serverrep.checktime()
-        userrep.checktime()
-
-        ok, reason = userrep.check_if_ok()
-        if not ok:
-            if reason in ["messagelimit", "ban"]:
-                await ctx.channel.send("You have exceeded daily rate limit.")
-                return
+        
         chromac = ChromaTools.get_chroma_client()
         all_links=[link for link in links.split('\n')]
         target_message = await ctx.send(
@@ -458,6 +459,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
     @commands.is_owner()
     @commands.command(name="removeurl")
+    @oai_check()
     async def remove_url(self, ctx: commands.Context, link: str):
         """'replace a url in documents.
         link:str
@@ -487,6 +489,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         description="replace or load a url into my document_store documents.",
         extras={},
     )
+    @oai_check()
     @app_commands.describe(link="URL to add to my database.")
     async def loadover(self, ctx: commands.Context, link: str):
         """'replace a url in documents.
@@ -500,15 +503,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(INVALID_SERVER_ERROR)
             return "INVALID CONTEXT"
 
-        serverrep, userrep = AuditProfile.get_or_new(ctx.guild, ctx.author)
-        serverrep.checktime()
-        userrep.checktime()
-
-        ok, reason = userrep.check_if_ok()
-        if not ok:
-            if reason in ["messagelimit", "ban"]:
-                await ctx.channel.send("You have exceeded daily rate limit.")
-                return
+        
         chromac = ChromaTools.get_chroma_client()
 
         target_message = await ctx.send(
@@ -529,6 +524,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @commands.hybrid_command(
         name="researchcached", description="Research a topic.", extras={}
     )
+    @oai_check()
+    @ai_rate_check()
     @app_commands.guilds(int(target_server[1]))
     @app_commands.describe(question="question to be asked.")
     @app_commands.describe(k="min number of sources to grab.")
@@ -558,15 +555,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             )
             return "INVALID CONTEXT"
 
-        serverrep, userrep = AuditProfile.get_or_new(ctx.guild, ctx.author)
-        serverrep.checktime()
-        userrep.checktime()
-
-        ok, reason = userrep.check_if_ok()
-        if not ok:
-            if reason in ["messagelimit", "ban"]:
-                await ctx.channel.send("You have exceeded daily rate limit.")
-                return
+        
         chromac = ChromaTools.get_chroma_client()
         res = await ctx.send("ok")
         statmess = StatusEditMessage(res, ctx)
@@ -604,31 +593,18 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     messageresp = ms
             await ctx.channel.send("complete", view=viewme)
 
-    @commands.command(name="titecheck")
+    @commands.command(name="titlecheck")
+    @oai_check()
+    @ai_rate_check()
     async def get_matching_titles(self, ctx, titleres):
-        if not ctx.guild:
-            await ctx.send("needs to be guild")
-            return
-        if await ctx.bot.gptapi.check_oai(ctx):
-            await ctx.send(
-                INVALID_SERVER_ERROR
-            )
-            return "INVALID CONTEXT"
 
-        serverrep, userrep = AuditProfile.get_or_new(ctx.guild, ctx.author)
-        serverrep.checktime()
-        userrep.checktime()
 
-        question = "unimportant"
-        site_title_restriction = titleres
-        ok, reason = userrep.check_if_ok()
-        if not ok:
-            if reason in ["messagelimit", "ban"]:
-                await ctx.channel.send("You have exceeded daily rate limit.")
-                return
+        site_title_restriction=titleres
         chromac = ChromaTools.get_chroma_client()
         res = await ctx.send("ok")
         statmess = StatusEditMessage(res, ctx)
+        
+        question = "unimportant"
         embed = discord.Embed(title=f"Search Query: {question} ", description=f"ok")
         embed.add_field(name="Question", value=question, inline=False)
         if site_title_restriction != "None":
@@ -638,7 +614,6 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             data = await debug_get(
                 question, client=chromac, titleres=site_title_restriction
             )
-            len(data)
             if len(data) <= 0:
                 return "NO RELEVANT DATA."
             docs2 = sorted(data, key=lambda x: x[1], reverse=False)
@@ -663,6 +638,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await ctx.channel.send("complete", view=viewme)
 
     @commands.command(name="get_source", description="get sources.", extras={})
+    @oai_check()
     async def source_get(self, ctx: commands.Context, question: str):
         chromac = ChromaTools.get_chroma_client()
         data = await search_sim(question, client=chromac, titleres="None")
@@ -710,20 +686,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @commands.hybrid_command(
         name="translate_simple", description="Translate a block of text."
     )
+    @oai_check()
+    @ai_rate_check()
     async def translatesimple(self, context, text: str):
-        if not context.guild:
-            return
-        if await context.bot.gptapi.check_oai(context):
-            return
-        guild, user = context.guild, context.author
-        serverrep, userrep = AuditProfile.get_or_new(guild, user)
-        userrep.checktime()
-        ok, reason = userrep.check_if_ok()
-        if not ok:
-            if reason in ["messagelimit", "ban"]:
-                await context.send("You have exceeded daily rate limit.")
-                return
-        userrep.modify_status()
+        
         chat = gptmod.ChatCreation(
             messages=[{"role": "system", "content": self.simpletranslationprompt}]
         )
@@ -826,6 +792,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @commands.command(
         name="summarize", description="make a summary of a url.", extras={}
     )
+    @oai_check()
+    @ai_rate_check()
     async def summarize(
         self, ctx: commands.Context, url: str, over: bool = False, stopat: str = None
     ):
@@ -835,23 +803,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             guild = message.guild
             user = message.author
 
-            if await ctx.bot.gptapi.check_oai(ctx):
-                
-                return
-            serverrep, userrep = AuditProfile.get_or_new(guild, user)
-            serverrep.checktime()
-            userrep.checktime()
 
-            ok, reason = userrep.check_if_ok()
-            if not ok:
-                if reason in ["messagelimit", "ban"]:
-                    await ctx.channel.send("You have exceeded daily rate limit.")
-                    return
-            mes = await ctx.channel.send(
-                f"<a:SquareLoading:1143238358303264798> Reading Article"
-            )
-            serverrep.modify_status()
-            userrep.modify_status()
+
             article, header = await read_article(ctx.bot.jsenv,url)
             if stopat != None:
                 article = article.split(stopat)[0]
@@ -890,28 +843,28 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                             print(link_text, url2)
                             # sources.append(f"[{link_text}]({url})")
                             result = result.replace(link_text, f"{link_text}")
-                    page = commands.Paginator(prefix="", suffix=None, max_size=4000)
-
-                    for p in result.split("\n"):
-                        page.add_line(p)
-                    for p in page.pages:
+                    splitorder=['%s\n','%s.','%s,','%s ']
+                    fil=prioritized_string_split(result,splitorder,4072)
+                    for p in fil:
                         embed = discord.Embed(title=header.get('title', "notitle"), description=p)
                         await ctx.send(content=header.get('title', "notitle")[:200], embed=embed)
-                    embed = discord.Embed()
+                    embed = discord.Embed(title=f"Sources for {header.get('title', 'notitle')}")
                     name, res = "", ""
                     if len(sources) < 20:
-                        for i in sources:
-                            if len(res + i) > 1020:
-                                embed.add_field(
-                                    name="Sources Located", value=res, inline=False
-                                )
-                                res = ""
-                                await ctx.send(content=header.get('title', "notitle"), embed=embed)
-                                embed = discord.Embed()
-                            res += f"{i}\n"
-                        embed.add_field(name="Sources Located", value=res, inline=False)
+                        fil=prioritized_string_split("\n".join(sources),['%s\n'],1020)
+                        needadd=False
+                        for e,i in enumerate(fil):
 
-                        await ctx.send(content=header.get('title',"???"), embed=embed)
+                            embed.add_field(
+                                name=f"Sources Located: {e}", value=i, inline=False
+                            )
+                            needadd=True
+                            if (e+1)%6==0:
+                                await ctx.send(embed=embed)
+                                needadd=False
+                                embed = discord.Embed(title=f"Sources for {header.get('title', 'notitle')}")
+                        if needadd:
+                            await ctx.send(content=header.get('title',"???"), embed=embed)
                     if over:
                         target_message = await ctx.send(
                             f"<a:SquareLoading:1143238358303264798> Saving {url} summary..."
@@ -920,6 +873,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                         await add_summary(url, result, header, client=chromac)
                         await target_message.edit(content="SUMMARY SAVED!")
                 except Exception as e:
+                    await ctx.bot.send_error(e)
                     return await ctx.send(e)
 
 

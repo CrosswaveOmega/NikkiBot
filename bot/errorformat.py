@@ -22,5 +22,7 @@ def client_error_message(error_main, name="command"):
         if len(error.missing_permissions) > 1:
             missing += "s"
         return f"I'm sorry, but I can not invoke {name} without the {missing}."
+    if isinstance(error,discord.ext.commands.errors.CheckFailure):
+        return f"{name} failed a check."
     else:
         return f"{name} failed due to {str(error)}"
