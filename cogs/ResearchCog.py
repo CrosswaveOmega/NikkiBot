@@ -628,8 +628,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 await statmess.editw(min_seconds=4, content=f"filtering results {e}/{length}", embed=embed)
             for _, v in found.items():
                 e=discord.Embed(description=v[1])
-                e.add_field('values:',f"count:{v[0]}")
-                pages.append()
+                e.add_field(name='values:',value=f"count:{v[0]}")
+                pages.append(e)
             await pages_of_embeds(ctx, pages, ephemeral=True)
 
 
