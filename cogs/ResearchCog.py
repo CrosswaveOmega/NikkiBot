@@ -23,25 +23,23 @@ from .ResearchAgent import *
 from googleapiclient.discovery import build  # Import the library
 
 from utility import prioritized_string_split, select_emoji
-# def is_readable(url):
-#     timeout = 30
-#     readability = require("@mozilla/readability")
-#     jsdom = require("jsdom")
-#     TurndownService = require("turndown")
-#     # Is there a better way to do this?
-#     print("attempting parse")
-#     out = f"""
-#     let result=await check_read(`{url}`,readability,jsdom);
-#     return result
-#     """
-#     myjs = assets.JavascriptLookup.find_javascript_file("readwebpage.js", out)
-#     # myjs=myjs.replace("URL",url)
-#     print(myjs)
-#     rsult = eval_js(myjs)
-#     return rsult
 
 
+SERVER_ONLY_ERROR="This command may only be used in a guild."
+INVALID_SERVER_ERROR="I'm sorry, but the research system is unavailable in this server."
 
+async def oai_check_actual(ctx):
+    if not ctx.guild:
+        await ctx.send(SERVER_ONLY_ERROR)
+        return False
+    if await ctx.bot.gptapi.check_oai(ctx):
+        await ctx.send(INVALID_SERVER_ERROR)
+        return False
+    return True
+
+def oai_check():
+  # the check
+  return commands.check(oai_check_actual)
 
 async def read_article_async(jsctx, url, clearout=True):
     myfile=await assets.JavascriptLookup.get_full_pathas('readwebpage.js','WEBJS',jsctx)
@@ -88,7 +86,7 @@ target_server = AssetLookup.get_asset("oai_server")
 
 
 class ResearchCog(commands.Cog, TC_Cog_Mixin):
-    """For Timers."""
+    """Collection of commands."""
 
     def __init__(self, bot):
         self.helptext = "This cog is for AI powered websearch and summarization."
@@ -112,7 +110,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         context = await self.bot.get_context(interaction)
         guild = interaction.guild
         user = interaction.user
-        if await context.bot.gptapi.check_oai(context):
+        if not await oai_check_actual(context):
             return
 
         serverrep, userrep = AuditProfile.get_or_new(guild, user)
@@ -308,6 +306,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         description="Get a list of results from a google search query.",
         extras={},
     )
+    @oai_check
     async def google_detective(
         self,
         ctx: commands.Context,
@@ -325,7 +324,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             return
         if await ctx.bot.gptapi.check_oai(ctx):
             await ctx.send(
-                "I'm sorry, but the research system is unavailable in this server."
+                INVALID_SERVER_ERROR
             )
             return "INVALID CONTEXT"
         if "google" not in bot.keys or "cse" not in bot.keys:
@@ -377,8 +376,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 question, client=chromac, titleres=site_title_restriction
             )
             len(data)
-            if len(data) <= 0:
-                return "NO RELEVANT DATA."
+            if len(data) <= 0: return "NO RELEVANT DATA."
             docs2 = sorted(data, key=lambda x: x[1], reverse=False)
             embed.add_field(
                 name="Cache_Query",
@@ -418,6 +416,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
     @commands.is_owner()
     @commands.command(name="loadmany")
+    @oai_check
     async def loadmany(self, ctx: commands.Context, links: str, over:bool=False):
         """'Load many urls into the collection, with each link separated by a newline.
         links:str
@@ -425,14 +424,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
         """
         bot = ctx.bot
-        if not ctx.guild:
-            await ctx.send("needs to be guild")
-            return
-        if await ctx.bot.gptapi.check_oai(ctx):
-            await ctx.send(
-                "I'm sorry, but the research system is unavailable in this server."
-            )
-            return "INVALID CONTEXT"
+
 
         serverrep, userrep = AuditProfile.get_or_new(ctx.guild, ctx.author)
         serverrep.checktime()
@@ -470,12 +462,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         """
         bot = ctx.bot
         if not ctx.guild:
-            await ctx.send("needs to be guild")
+            await ctx.send(SERVER_ONLY_ERROR)
             return
         if await ctx.bot.gptapi.check_oai(ctx):
-            await ctx.send(
-                "I'm sorry, but the research system is unavailable in this server."
-            )
+            await ctx.send(INVALID_SERVER_ERROR)
             return "INVALID CONTEXT"
 
         
@@ -502,12 +492,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         """
         bot = ctx.bot
         if not ctx.guild:
-            await ctx.send("needs to be guild")
+            await ctx.send(SERVER_ONLY_ERROR)
             return
         if await ctx.bot.gptapi.check_oai(ctx):
-            await ctx.send(
-                "I'm sorry, but the research system is unavailable in this server."
-            )
+            await ctx.send(INVALID_SERVER_ERROR)
             return "INVALID CONTEXT"
 
         serverrep, userrep = AuditProfile.get_or_new(ctx.guild, ctx.author)
@@ -564,7 +552,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             return
         if await ctx.bot.gptapi.check_oai(ctx):
             await ctx.send(
-                "I'm sorry, but the research system is unavailable in this server."
+                INVALID_SERVER_ERROR
             )
             return "INVALID CONTEXT"
 
@@ -621,7 +609,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             return
         if await ctx.bot.gptapi.check_oai(ctx):
             await ctx.send(
-                "I'm sorry, but the research system is unavailable in this server."
+                INVALID_SERVER_ERROR
             )
             return "INVALID CONTEXT"
 
@@ -789,7 +777,18 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         extras={},
     )
     async def webreader(self, ctx: commands.Context, url: str, filter_links:bool=False,escape_markdown:bool=False):
-        """Download the text from a website, and read it"""
+        """
+        Asynchronously load a web page's text, optionally filtering out links and/or escaping markdown special characters.
+
+        Parameters
+        ----------
+        url : str
+            The URL of the web page to be read.
+        filter_links : bool, optional
+            Whether to filter out markdown style links from the text, by default False.
+        escape_markdown : bool, optional
+            Whether to escape markdown special characters in the text, by default False.
+        """
         async with self.lock:
             message = ctx.message
             guild = message.guild
@@ -835,6 +834,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             user = message.author
 
             if await ctx.bot.gptapi.check_oai(ctx):
+                
                 return
             serverrep, userrep = AuditProfile.get_or_new(guild, user)
             serverrep.checktime()

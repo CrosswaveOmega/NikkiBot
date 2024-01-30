@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 from typing import List, Tuple
 import chromadb
 from googleapiclient.discovery import build  # Import the library
@@ -102,12 +103,6 @@ async def split_link(data: List[str], chunk_size: int = 1800):
     return all_splits
     
 async def add_summary(url: str, desc: str, header, collection="web_collection", client:chromadb.ClientAPI=None):
-    loader = ReadableLoader(
-        url,
-        header_template={
-            "User-Agent": "Mozilla/5.0 (X11,Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"
-        },
-    )
     # Index that wraps above steps
     persist = "saveData"
     newdata = []
@@ -122,6 +117,7 @@ async def add_summary(url: str, desc: str, header, collection="web_collection", 
         metadata["source"]=url
         metadata["description"]=header.get("excerpt", 'NA')
         metadata["language"]=header.get("lang","en")
+        metadata["dateadded"]=datetime.datetime.utcnow().timestamp()
         metadata["sum"]="sum"
     newdata={}
     for i, v in metadata.items():
@@ -287,7 +283,6 @@ async def debug_get(
     )
     if titleres == "None":
         return "NONE"
-        docs = await vs.asimilarity_search_with_relevance_scores(question, k=7)
 
         return docs
     else:
@@ -310,13 +305,13 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
         **Link:** [Link Here]
         **Text:** [Text Content Here]
         END
-        The websites may contradict each other, prioritize information from encyclopedia pages and wikis.  Valid news sources follow.  
-        Your answer must be 3-7 medium-length paragraphs with 5-10 sentences per paragraph. 
-        Preserve key information from the sources and maintain a descriptive tone. 
-        Your goal is not to summarize, your goal is to answer the user's question based on the provided sources.  
-        Please include an inline citation with the source id for each website you retrieved data from in this format: [ID here].
-        If there is no information related to the user's question, simply state that you could not find an answer and leave it at that. 
-        Exclude any concluding remarks from the answer.
+    The websites may contradict each other, prioritize information from encyclopedia pages and wikis.  Valid news sources follow.  
+    Your answer must be 3-7 medium-length paragraphs with 5-10 sentences per paragraph. 
+    Preserve key information from the sources and maintain a descriptive tone. 
+    Your goal is not to summarize, your goal is to answer the user's question based on the provided sources.  
+    Please include an inline citation with the source id for each website you retrieved data from in this format: [ID here].
+    If there is no information related to the user's question, simply state that you could not find an answer and leave it at that. 
+    Exclude any concluding remarks from the answer.
 
     """
     formatted_docs = []
