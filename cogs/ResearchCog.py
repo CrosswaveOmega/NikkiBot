@@ -614,6 +614,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             data = await debug_get(
                 question, client=chromac, titleres=site_title_restriction
             )
+            data=data["metadatas"]
             if len(data) <= 0:
                 await ctx.send("NO RELEVANT DATA.")
                 return
