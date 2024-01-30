@@ -288,7 +288,7 @@ async def debug_get(
 
         collectionvar = client.get_collection(collection)
         res = collectionvar.get(
-            where={"title": {"$like": f"%{titleres}%"}}, include=["metadatas"]
+            where={"title": {"$like": f"%{titleres}%"}}, include=["metadatas","ids"]
         )
         return res
 

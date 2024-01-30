@@ -605,14 +605,12 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         statmess = StatusEditMessage(res, ctx)
         
         question = "unimportant"
-        embed = discord.Embed(title=f"Search Query: {question} ", description=f"ok")
-        embed.add_field(name="Question", value=question, inline=False)
-        if site_title_restriction != "None":
-            embed.add_field(name="restrict", value=site_title_restriction, inline=False)
-        await statmess.editw(min_seconds=0, content="querying db...")
+        
+    
+        await statmess.editw(min_seconds=0, content=f"querying db using `{titleres}`...")
         async with ctx.channel.typing():
             data = await debug_get(
-                question, client=chromac, titleres=site_title_restriction
+                'not_important.', client=chromac, titleres=site_title_restriction
             )
             data=data["metadatas"]
             length=len(data)
