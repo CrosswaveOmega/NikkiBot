@@ -8,6 +8,7 @@ import inspect
 import aiohttp
 import discord
 import requests
+from html_date import find_date
 import assets
 from javascriptasync import require, eval_js, eval_js_a
 
@@ -90,6 +91,14 @@ def _build_metadata(soup: Any, url: str) -> dict:
         metadata["description"] = description.get("content", "No description found.")
     if html := soup.find("html"):
         metadata["language"] = html.get("lang", "No language found.")
+    
+    metadata["date"]="None"
+    try:
+        dt=find_date(url)
+        if dt:
+            metadata["date"]=dt
+    except Exception as e:
+        print(e)
     return metadata
 
 
