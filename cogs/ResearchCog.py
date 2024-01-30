@@ -615,15 +615,21 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 question, client=chromac, titleres=site_title_restriction
             )
             data=data["metadatas"]
-            if len(data) <= 0:
+            length=len(data)
+            if length <= 0:
                 await ctx.send("NO RELEVANT DATA.")
                 return
             pages=[]
-            found=[]
-            for p in data:
+            found={}
+            for e, p in enumerate(data):
                 if p['source'] not in found:
-                    found.append(p['source'])
-                    pages.append(discord.Embed(description=str(p)[:4000]))
+                    found[p['source']]=[0,str(p)[:4000]]
+                found[p['source']][0]+=1
+                await statmess.editw(min_seconds=4, content=f"filtering results {e}/{length}", embed=embed)
+            for _, v in found.items():
+                e=discord.Embed(description=v[1])
+                e.add_field('values:',f"count:{v[0]}")
+                pages.append()
             await pages_of_embeds(ctx, pages, ephemeral=True)
 
 
