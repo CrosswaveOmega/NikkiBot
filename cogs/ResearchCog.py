@@ -621,11 +621,14 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 return
             pages=[]
             found={}
+            keylen=0
             for e, p in enumerate(data):
                 if p['source'] not in found:
                     found[p['source']]=[0,str(p)[:4000]]
+                    keylen+=1
                 found[p['source']][0]+=1
                 await statmess.editw(min_seconds=4, content=f"filtering results {e}/{length}", embed=embed)
+            await statmess.editw(min_seconds=0, content=f"results found: {length}.  Sorted into {keylen} buckets.", embed=embed)
             for _, v in found.items():
                 e=discord.Embed(description=v[1])
                 e.add_field(name='values:',value=f"count:{v[0]}")
