@@ -609,7 +609,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         embed.add_field(name="Question", value=question, inline=False)
         if site_title_restriction != "None":
             embed.add_field(name="restrict", value=site_title_restriction, inline=False)
-        await statmess.editw(min_seconds=0, content="querying db...", embed=embed)
+        await statmess.editw(min_seconds=0, content="querying db...")
         async with ctx.channel.typing():
             data = await debug_get(
                 question, client=chromac, titleres=site_title_restriction
@@ -619,16 +619,18 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             if length <= 0:
                 await ctx.send("NO RELEVANT DATA.")
                 return
-            pages=[]
-            found={}
-            keylen=0
+            pages,found,keylen=[],{},0
             for e, p in enumerate(data):
                 if p['source'] not in found:
                     found[p['source']]=[0,str(p)[:4000]]
                     keylen+=1
                 found[p['source']][0]+=1
-                await statmess.editw(min_seconds=4, content=f"filtering results {e}/{length}", embed=embed)
-            await statmess.editw(min_seconds=0, content=f"results found: {length}.  Sorted into {keylen} buckets.", embed=embed)
+                await statmess.editw(min_seconds=4, content=f"Filtering results {e}/{length}")
+            await statmess.editw(
+                min_seconds=0,
+                content=f"**Results found:** {length}"+"\n"+\
+                f"Sorted into {keylen} buckets."
+                )
             for _, v in found.items():
                 e=discord.Embed(description=v[1])
                 e.add_field(name='values:',value=f"count:{v[0]}")
