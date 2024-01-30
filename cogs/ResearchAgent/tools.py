@@ -19,6 +19,7 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores.chroma import Chroma
 from .ReadabilityLoader import ReadableLoader
 import gptmod
+from htmldate import find_date
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 tosplitby = [
     # First, try to split along Markdown headings (starting with level 2)
@@ -119,6 +120,13 @@ async def add_summary(url: str, desc: str, header, collection="web_collection", 
         metadata["language"]=header.get("lang","en")
         metadata["dateadded"]=datetime.datetime.utcnow().timestamp()
         metadata["sum"]="sum"
+        metadata["date"]="None"
+        try:
+            dt=find_date(url)
+            if dt:
+                metadata["date"]=dt
+        except Exception as e:
+            print(e)
     newdata={}
     for i, v in metadata.items():
         if v is not None:
