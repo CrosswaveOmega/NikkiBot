@@ -23,7 +23,7 @@ from .ResearchAgent import *
 from googleapiclient.discovery import build  # Import the library
 
 from utility import prioritized_string_split, select_emoji
-
+from utility.embed_paginator import pages_of_embeds
 
 SERVER_ONLY_ERROR="This command may only be used in a guild."
 INVALID_SERVER_ERROR="I'm sorry, but the research system is unavailable in this server."
@@ -615,27 +615,13 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 question, client=chromac, titleres=site_title_restriction
             )
             if len(data) <= 0:
-                return "NO RELEVANT DATA."
-            docs2 = sorted(data, key=lambda x: x[1], reverse=False)
-            embed.add_field(
-                name="Cache_Query",
-                value=f"About {len(docs2)} entries where found.  Max score is {docs2[0][1]}",
-            )
-            # docs2 = sorted(data, key=lambda x: x[1],reverse=True)
-            await statmess.editw(
-                min_seconds=0, content="drawing conclusion...", embed=embed
-            )
-            answer = "NO ANSWER"
-            page = commands.Paginator(prefix="", suffix=None)
-            viewme = Followup(bot=self.bot, page_content=docs2)
-            for p in answer.split("\n"):
-                page.add_line(p)
-            messageresp = None
-            for pa in page.pages:
-                ms = await ctx.channel.send(pa)
-                if messageresp == None:
-                    messageresp = ms
-            await ctx.channel.send("complete", view=viewme)
+                await ctx.send("NO RELEVANT DATA.")
+                return
+            pages=[]
+            for p in data:
+                pages.append(discord.Embed(description=str(p)[:4000]))
+            await pages_of_embeds(ctx, pages, ephemeral=True)
+
 
     @commands.command(name="get_source", description="get sources.", extras={})
     @oai_check()
