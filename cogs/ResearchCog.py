@@ -39,6 +39,8 @@ async def oai_check_actual(ctx):
 
 def oai_check():
   # the check
+  async def oai_check_2(ctx):
+      return await oai_check_actual(ctx)
   return commands.check(oai_check_actual)
 
 async def read_article_async(jsctx, url, clearout=True):
