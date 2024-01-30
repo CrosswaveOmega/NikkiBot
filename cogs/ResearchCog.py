@@ -612,13 +612,14 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             data = await debug_get(
                 'not_important.', client=chromac, titleres=site_title_restriction
             )
-            data=data["metadatas"]
+            data=zip(data["ids"],data["metadatas"])
             length=len(data)
             if length <= 0:
                 await ctx.send("NO RELEVANT DATA.")
                 return
             pages,found,keylen=[],{},0
-            for e, p in enumerate(data):
+            for e, pa in enumerate(data):
+                _,p=pa
                 if p['source'] not in found:
                     found[p['source']]=[0,str(p)[:4000]]
                     keylen+=1
