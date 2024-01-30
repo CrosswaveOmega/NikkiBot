@@ -8,7 +8,7 @@ import inspect
 import aiohttp
 import discord
 import requests
-from html_date import find_date
+from htmldate import find_date
 import assets
 from javascriptasync import require, eval_js, eval_js_a
 
