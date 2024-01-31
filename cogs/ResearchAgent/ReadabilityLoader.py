@@ -1,5 +1,6 @@
 """Web base loader class."""
 import asyncio
+import datetime
 import logging
 import re
 import warnings
@@ -91,7 +92,7 @@ def _build_metadata(soup: Any, url: str) -> dict:
         metadata["description"] = description.get("content", "No description found.")
     if html := soup.find("html"):
         metadata["language"] = html.get("lang", "No language found.")
-    
+    metadata["dateadded"]=datetime.datetime.utcnow().timestamp()
     metadata["date"]="None"
     try:
         dt=find_date(url)
@@ -99,6 +100,7 @@ def _build_metadata(soup: Any, url: str) -> dict:
             metadata["date"]=dt
     except Exception as e:
         print(e)
+    metadata['reader'] = False
     return metadata
 
 
@@ -219,6 +221,7 @@ class ReadableLoader(dl.WebBaseLoader):
                     metadata["authors"] = header["byline"]
                 metadata["website"] = header.get("siteName", "siteunknown")
                 metadata["title"] = header.get("title")
+                metadata['reader'] = True
 
             metadata["sum"] = "source"
             docs.append(Document(page_content=text, metadata=metadata))

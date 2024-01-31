@@ -120,6 +120,7 @@ async def add_summary(url: str, desc: str, header, collection="web_collection", 
         metadata["language"]=header.get("lang","en")
         metadata["dateadded"]=datetime.datetime.utcnow().timestamp()
         metadata["sum"]="sum"
+        metadata['reader'] = True
         metadata["date"]="None"
         try:
             dt=find_date(url)
