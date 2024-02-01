@@ -1,3 +1,5 @@
+from .Tasks.TCTasks import TCTask, TCTaskManager
+from database import DatabaseSingleton, AwareDateTime
 import sqlalchemy
 import gui
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
@@ -13,8 +15,6 @@ import discord
 from dateutil.rrule import rrule, rrulestr, WEEKLY, SU
 
 Guild_Task_Base = declarative_base(name="Guild Scheduled Task Base")
-from database import DatabaseSingleton, AwareDateTime
-from .Tasks.TCTasks import TCTask, TCTaskManager
 
 
 class Guild_Task_Functions:

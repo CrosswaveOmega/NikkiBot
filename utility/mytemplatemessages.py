@@ -115,7 +115,7 @@ class MessageTemplates:
         embed = Embed(title=title, description=description, color=Color(0xFF0000))
         embed.set_author(name="Error Message", icon_url=embedicon)
         return embed
-    
+
     @staticmethod
     def get_checkfail_embed(title: str, description: str):
         embed = Embed(title=title, description=description, color=Color(0xFF0000))

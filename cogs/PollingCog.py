@@ -1,3 +1,4 @@
+from typing import NewType
 import gui
 import asyncio
 import discord
@@ -16,7 +17,8 @@ from discord.ext import commands, tasks
 from discord.utils import find
 from discord import Webhook
 
-import random, operator
+import random
+import operator
 from random import randint, seed
 from bot import TCGuildTask, Guild_Task_Functions, TCBot, TC_Cog_Mixin
 import traceback
@@ -132,8 +134,6 @@ class Feedback(discord.ui.Modal, title="Feedback"):
             "Oops! Something went wrong.", ephemeral=True
         )
 
-
-from typing import NewType
 
 PollChoices = NewType("PollChoices", int)
 

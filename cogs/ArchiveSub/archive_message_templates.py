@@ -1,3 +1,4 @@
+from database import ServerArchiveProfile
 from discord import Embed, Color, Guild, ChannelType
 from discord.ext import commands
 
@@ -7,7 +8,6 @@ from assets import AssetLookup
 
 upper_ignore_limit = 50
 upper_cat_limit = 10
-from database import ServerArchiveProfile
 
 """
 This template will only ever be used inside ArchiveSub

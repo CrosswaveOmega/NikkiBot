@@ -9,7 +9,19 @@ import re
 from discord.ext import commands
 
 from discord import app_commands
-from bot import TC_Cog_Mixin, StatusEditMessage, super_context_menu
+from bot import TC_Cog_Mixin, StatusEditMessage, super_context_menu, TCBot
+from .ResearchAgent.tools import (
+    search_sim,
+    extract_embed_text,
+    google_search,
+    has_url,
+    read_and_split_link,
+    store_splits,
+    format_answer,
+    remove_url,
+    debug_get,
+    add_summary,
+)
 import gptmod
 from gptfunctionutil import *
 import gptmod.error
@@ -19,14 +31,19 @@ from database.database_ai import AuditProfile
 from javascriptasync import require, eval_js
 import assets
 import gui
-from .ResearchAgent import *
+
+from .ResearchAgent.chromatools import ChromaTools
+from .ResearchAgent.views import *
 from googleapiclient.discovery import build  # Import the library
 
 from utility import prioritized_string_split, select_emoji
 from utility.embed_paginator import pages_of_embeds
 
-SERVER_ONLY_ERROR="This command may only be used in a guild."
-INVALID_SERVER_ERROR="I'm sorry, but the research system is unavailable in this server."
+SERVER_ONLY_ERROR = "This command may only be used in a guild."
+INVALID_SERVER_ERROR = (
+    "I'm sorry, but the research system is unavailable in this server."
+)
+
 
 async def check_ai_rate(ctx):
     serverrep, userrep = AuditProfile.get_or_new(ctx.guild, ctx.author)
@@ -34,60 +51,69 @@ async def check_ai_rate(ctx):
     userrep.checktime()
     ok, reason = userrep.check_if_ok()
     if not ok:
-        denyied="Something went wrong, please try again later."
+        denyied = "Something went wrong, please try again later."
         if reason in ["messagelimit", "ban"]:
-            denyied="You have exceeded the daily rate limit."
-        await ctx.send(content=denyied,ephemeral=True)
+            denyied = "You have exceeded the daily rate limit."
+        await ctx.send(content=denyied, ephemeral=True)
         return False
     serverrep.modify_status()
     userrep.modify_status()
     return True
-        
+
+
 def ai_rate_check():
-  # the check
-  async def check_2(ctx):
-      return await check_ai_rate(ctx)
-  return commands.check(check_2)
+    # the check
+    async def check_2(ctx):
+        return await check_ai_rate(ctx)
+
+    return commands.check(check_2)
+
 
 async def oai_check_actual(ctx):
     if not ctx.guild:
-        await ctx.send(SERVER_ONLY_ERROR,ephemeral=True)
+        await ctx.send(SERVER_ONLY_ERROR, ephemeral=True)
         return False
     if await ctx.bot.gptapi.check_oai(ctx):
-        await ctx.send(INVALID_SERVER_ERROR,ephemeral=True)
+        await ctx.send(INVALID_SERVER_ERROR, ephemeral=True)
         return False
     return True
 
+
 def oai_check():
-  # the check
-  async def oai_check_2(ctx):
-      return await oai_check_actual(ctx)
-  return commands.check(oai_check_2)
+    # the check
+    async def oai_check_2(ctx):
+        return await oai_check_actual(ctx)
+
+    return commands.check(oai_check_2)
+
 
 async def read_article_async(jsctx, url, clearout=True):
-    myfile=await assets.JavascriptLookup.get_full_pathas('readwebpage.js','WEBJS',jsctx)
+    myfile = await assets.JavascriptLookup.get_full_pathas(
+        "readwebpage.js", "WEBJS", jsctx
+    )
     print(url)
     rsult = await myfile.read_webpage_plain(url, timeout=45)
-    #print(rsult)
-    output= await rsult.get_a('mark')
-    header=await rsult.get_a('orig')
-    serial=await header.get_dict_a()
-    #print(serial)
+    # print(rsult)
+    output = await rsult.get_a("mark")
+    header = await rsult.get_a("orig")
+    serial = await header.get_dict_a()
+    # print(serial)
     simplified_text = output.strip()
-    simplified_text = simplified_text.replace("*   ","* ")
+    simplified_text = simplified_text.replace("*   ", "* ")
     if clearout:
         simplified_text = re.sub(r"(\n){4,}", "\n\n\n", simplified_text)
         simplified_text = re.sub(r"\n\n", "\n", simplified_text)
-        
+
         simplified_text = re.sub(r" {3,}", "  ", simplified_text)
         simplified_text = simplified_text.replace("\t", "")
         simplified_text = re.sub(r"\n+(\s*\n)*", "\n", simplified_text)
-    #print(simplified_text)
+    # print(simplified_text)
     return simplified_text, serial
 
-async def read_article(jsctx,url):
+
+async def read_article(jsctx, url):
     now = discord.utils.utcnow()
-    result = await read_article_async(jsctx,url)
+    result = await read_article_async(jsctx, url)
     gui.gprint("elapsed", discord.utils.utcnow() - now)
     text, header = result[0], result[1]
     return text, header
@@ -111,9 +137,9 @@ target_server = AssetLookup.get_asset("oai_server")
 class ResearchCog(commands.Cog, TC_Cog_Mixin):
     """Collection of commands."""
 
-    def __init__(self, bot):
+    def __init__(self, bot: TCBot):
         self.helptext = "This cog is for AI powered websearch and summarization."
-        self.bot = bot
+        self.bot: TCBot = bot
         self.lock = asyncio.Lock()
         self.prompt = """
         Summarize general news articles, forum posts, and wiki pages that have been converted into Markdown. Condense the content into 2-4 medium-length paragraphs with 3-7 sentences per paragraph. Preserve key information and maintain a descriptive tone. The summary should be easily understood by a 10th grader. Exclude any concluding remarks from the summary.
@@ -137,7 +163,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             return
         if not await check_ai_rate(context):
             return
-        
+
         chat = gptmod.ChatCreation(
             messages=[{"role": "system", "content": self.translationprompt}]
         )
@@ -202,13 +228,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         bot = ctx.bot
         if "google" not in bot.keys or "cse" not in bot.keys:
             return "insufficient keys!"
-        query_service = build("customsearch", "v1", developerKey=bot.keys["google"])
-        query_results = (
-            query_service.cse()
-            .list(q=query, cx=bot.keys["cse"], num=limit)  # Query  # CSE ID
-            .execute()
-        )
-        results = query_results["items"]
+
+        results = google_search(ctx.bot, query, limit)
         allstr = ""
         emb = discord.Embed(title="Search results", description=comment)
         readable_links = []
@@ -224,8 +245,15 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             )
         returnme = await ctx.send(content=comment, embed=emb)
         return returnme
-    
-    async def load_links(self,ctx:commands.Context,all_links:List[str],chromac:Any=None,statmess:StatusEditMessage=None,override:bool=False):
+
+    async def load_links(
+        self,
+        ctx: commands.Context,
+        all_links: List[str],
+        chromac: Any = None,
+        statmess: StatusEditMessage = None,
+        override: bool = False,
+    ):
         """
         Asynchronously loads links, checks for cached documents, and processes the split content.
 
@@ -244,18 +272,21 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 f"<a:SquareLoading:1143238358303264798> checking returned queries ..."
             )
             statmess = StatusEditMessage(target_message, ctx)
-        if not chromac: chromac = ChromaTools.get_chroma_client()
-        current,hascount="",0
-        
-        all_link_status=[['pending',link] for link in all_links]
-        lines = "\n".join([f"{select_emoji(s)} {link}" for s,link in all_link_status])
+        if not chromac:
+            chromac = ChromaTools.get_chroma_client()
+        current, hascount = "", 0
+
+        all_link_status = [["pending", link] for link in all_links]
+        lines = "\n".join([f"{select_emoji(s)} {link}" for s, link in all_link_status])
         for e, link in enumerate(all_links):
             embed = discord.Embed(description=f"out=\n{lines}")
             has, getres = has_url(link, client=chromac)
             if has and not override:
-                all_link_status[e][0]='skip'
-                current+=f"[Link {e}]({link}) has {len(getres['documents'])} cached documents.\n"
-                embed.description= "\n".join([f"{select_emoji(s)} {link}" for s,link in all_link_status])
+                all_link_status[e][0] = "skip"
+                current += f"[Link {e}]({link}) has {len(getres['documents'])} cached documents.\n"
+                embed.description = "\n".join(
+                    [f"{select_emoji(s)} {link}" for s, link in all_link_status]
+                )
                 await statmess.editw(
                     min_seconds=5,
                     content=f"<a:LetWalkR:1118191001731874856> {current}",
@@ -264,11 +295,13 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 ver = zip(getres["documents"], getres["metadatas"])
                 for d, e in ver:
                     if e["source"] != link:
-                        await ctx.send(f"the url in the cache doesn't match the provided url.")
+                        await ctx.send(
+                            f"the url in the cache doesn't match the provided url."
+                        )
                 hascount += 1
             else:
                 try:
-                    splits = await read_and_split_link(ctx.bot,link)
+                    splits = await read_and_split_link(ctx.bot, link)
                     dbadd = True
                     for split in splits:
                         gui.gprint(split.page_content)
@@ -279,13 +312,15 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                             else:
                                 dbadd = True
                     if dbadd:
-                        all_link_status[e][0]='add'
-                        toadd=f"[Link {e}]({link}) has {len(splits)} splits.\n"
+                        all_link_status[e][0] = "add"
+                        toadd = f"[Link {e}]({link}) has {len(splits)} splits.\n"
                         if has and override:
-                            all_link_status[e][0]='edit'
-                            toadd=f"[Link {e}]({link}) had {{len(getres['documents'])}} has {len(splits)} splits.\n"
-                        current+=toadd
-                        embed.description= "\n".join([f"{select_emoji(s)} {link}" for s,link in all_link_status])
+                            all_link_status[e][0] = "edit"
+                            toadd = f"[Link {e}]({link}) had {{len(getres['documents'])}} has {len(splits)} splits.\n"
+                        current += toadd
+                        embed.description = "\n".join(
+                            [f"{select_emoji(s)} {link}" for s, link in all_link_status]
+                        )
                         await statmess.editw(
                             min_seconds=5,
                             content=f"<a:LetWalkR:1118191001731874856> {current}",
@@ -293,16 +328,21 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                         )
                         store_splits(splits, client=chromac)
                 except Exception as err:
-                    all_link_status[e][0]='noc'
-                    current+=f"{str(err)}"
-                    embed.description= "\n".join([f"{select_emoji(s)} {link}" for s,link in all_link_status])
+                    all_link_status[e][0] = "noc"
+                    current += f"{str(err)}"
+                    await ctx.send(str(err))
+                    embed.description = "\n".join(
+                        [f"{select_emoji(s)} {link}" for s, link in all_link_status]
+                    )
                     await statmess.editw(
                         min_seconds=5,
                         content=f"<a:LetWalkR:1118191001731874856> {current}",
                         embed=embed,
                     )
-                    await ctx.bot.send_error(err)
-        return hascount, "\n".join([f"{select_emoji(s)} {link}" for s,link in all_link_status])
+                    await self.bot.send_error(err)
+        return hascount, "\n".join(
+            [f"{select_emoji(s)} {link}" for s, link in all_link_status]
+        )
 
     @AILibFunction(
         name="google_detective",
@@ -341,9 +381,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send("needs to be guild")
             return
         if await ctx.bot.gptapi.check_oai(ctx):
-            await ctx.send(
-                INVALID_SERVER_ERROR
-            )
+            await ctx.send(INVALID_SERVER_ERROR)
             return "INVALID CONTEXT"
         if "google" not in bot.keys or "cse" not in bot.keys:
             await ctx.send("google search keys not set up.")
@@ -356,11 +394,11 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         )
 
         statmess = StatusEditMessage(target_message, ctx)
-        current=""
+        current = ""
         async with ctx.channel.typing():
             results = google_search(ctx.bot, query, result_limit)
 
-            all_links = [r['link'] for r in results]
+            all_links = [r["link"] for r in results]
             hascount = 0
             length = len(results)
             lines = "\n".join([f"- {r['link']}" for r in results])
@@ -368,10 +406,12 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await statmess.editw(
                 min_seconds=0,
                 content=f"<a:LetWalkR:1118191001731874856> Search complete: reading {0}/{length}. {hascount}/{len(all_links)}",
-                embed=discord.Embed(title=f"query: {query}", description=f"out=\n{lines}"),
+                embed=discord.Embed(
+                    title=f"query: {query}", description=f"out=\n{lines}"
+                ),
             )
-            hascount,lines=await self.load_links(ctx,all_links,chromac,statmess)
-            
+            hascount, lines = await self.load_links(ctx, all_links, chromac, statmess)
+
         embed = discord.Embed(
             title=f"Search Query: {query} ",
             description=f"{hascount}/{len(all_links)}\nout=\n{lines}",
@@ -386,7 +426,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 question, client=chromac, titleres=site_title_restriction
             )
             len(data)
-            if len(data) <= 0: return "NO RELEVANT DATA."
+            if len(data) <= 0:
+                return "NO RELEVANT DATA."
             docs2 = sorted(data, key=lambda x: x[1], reverse=False)
             embed.add_field(
                 name="Cache_Query",
@@ -402,22 +443,22 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             for p in answer.split("\n"):
                 page.add_line(p)
             messageresp = None
-            pages=[p for p in page.pages]
-            pl=len(pages)
-            for e,pa in enumerate(pages):
-                if e==pl-1:
-                    ms = await ctx.channel.send(pa,view=viewme)
+            pages = [p for p in page.pages]
+            pl = len(pages)
+            for e, pa in enumerate(pages):
+                if e == pl - 1:
+                    ms = await ctx.channel.send(pa, view=viewme)
                 else:
                     ms = await ctx.channel.send(pa)
                 if messageresp is None:
                     messageresp = ms
-            #await ctx.channel.send("complete", view=viewme)
+            # await ctx.channel.send("complete", view=viewme)
             return messageresp
 
     @commands.command(name="loadurl", description="loadurl test.", extras={})
     async def loader_test(self, ctx: commands.Context, link: str):
         async with ctx.channel.typing():
-            splits = await read_and_split_link(ctx.bot,link)
+            splits = await read_and_split_link(ctx.bot, link)
         await ctx.send(
             f"[Link ]({link}) has {len(splits)} splits.", suppress_embeds=True
         )
@@ -428,7 +469,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @commands.command(name="loadmany")
     @oai_check()
     @ai_rate_check()
-    async def loadmany(self, ctx: commands.Context, links: str, over:bool=False):
+    async def loadmany(self, ctx: commands.Context, links: str, over: bool = False):
         """'Load many urls into the collection, with each link separated by a newline.
         links:str
         over:bool-> whether or not to override links.  default false.
@@ -436,26 +477,24 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         """
         bot = ctx.bot
 
-
-        
         chromac = ChromaTools.get_chroma_client()
-        all_links=[link for link in links.split('\n')]
+        all_links = [link for link in links.split("\n")]
         target_message = await ctx.send(
-                f"<a:SquareLoading:1143238358303264798> Retrieving {len(links)} ..."
-            )
+            f"<a:SquareLoading:1143238358303264798> Retrieving {len(links)} ..."
+        )
 
         statmess = StatusEditMessage(target_message, ctx)
-       
-        hascount,lines=await self.load_links(ctx,all_links,chromac,statmess,override=over)
+
+        hascount, lines = await self.load_links(
+            ctx, all_links, chromac, statmess, override=over
+        )
         embed = discord.Embed(
             title=f"Collection load results",
             description=f"{hascount}/{len(all_links)}\nout=\n{lines}",
         )
-        embed.set_footer(text='Operation complete.')
+        embed.set_footer(text="Operation complete.")
         await statmess.delete()
         await ctx.send(embed=embed)
-
-
 
     @commands.is_owner()
     @commands.command(name="removeurl")
@@ -472,17 +511,15 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(INVALID_SERVER_ERROR)
             return "INVALID CONTEXT"
 
-        
         chromac = ChromaTools.get_chroma_client()
         has, getres = has_url(link, client=chromac)
         if has:
             remove_url(link, client=chromac)
-            
+
             await ctx.send("removal complete")
         else:
-            
             await ctx.send("Link not in database")
-                    
+
     @commands.is_owner()
     @commands.hybrid_command(
         name="loadurlover",
@@ -503,7 +540,6 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(INVALID_SERVER_ERROR)
             return "INVALID CONTEXT"
 
-        
         chromac = ChromaTools.get_chroma_client()
 
         target_message = await ctx.send(
@@ -512,12 +548,14 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
         statmess = StatusEditMessage(target_message, ctx)
         async with ctx.channel.typing():
-            hc,lines=await self.load_links(ctx,[link],chromac,statmess=None,override=True)
-            embed = discord.Embed(
-            title="Collection load results",
-            description=f"{1}/{1}\nout=\n{lines}",
+            hc, lines = await self.load_links(
+                ctx, [link], chromac, statmess=None, override=True
             )
-            embed.set_footer(text='Operation complete.')
+            embed = discord.Embed(
+                title="Collection load results",
+                description=f"{1}/{1}\nout=\n{lines}",
+            )
+            embed.set_footer(text="Operation complete.")
             await statmess.editw(min_seconds=0, content=f"Overwrite ok.", embed=embed)
 
     @commands.is_owner()
@@ -539,7 +577,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         question: str,
         k: int = 5,
         site_title_restriction: str = "None",
-        use_mmr:bool= False
+        use_mmr: bool = False,
     ):
         """
         question:str-Question you want to ask
@@ -550,12 +588,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send("needs to be guild")
             return
         if await ctx.bot.gptapi.check_oai(ctx):
-            await ctx.send(
-                INVALID_SERVER_ERROR
-            )
+            await ctx.send(INVALID_SERVER_ERROR)
             return "INVALID CONTEXT"
 
-        
         chromac = ChromaTools.get_chroma_client()
         res = await ctx.send("ok")
         statmess = StatusEditMessage(res, ctx)
@@ -566,7 +601,11 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         await statmess.editw(min_seconds=0, content="querying db...", embed=embed)
         async with ctx.channel.typing():
             data = await search_sim(
-                question, client=chromac, titleres=site_title_restriction, k=k,mmr=use_mmr
+                question,
+                client=chromac,
+                titleres=site_title_restriction,
+                k=k,
+                mmr=use_mmr,
             )
             print(data)
             len(data)
@@ -597,45 +636,46 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @oai_check()
     @ai_rate_check()
     async def get_matching_titles(self, ctx, titleres):
-
-
-        site_title_restriction=titleres
+        site_title_restriction = titleres
         chromac = ChromaTools.get_chroma_client()
         res = await ctx.send("ok")
         statmess = StatusEditMessage(res, ctx)
-        
+
         question = "unimportant"
-        
-    
-        await statmess.editw(min_seconds=0, content=f"querying db using `{titleres}`...")
+
+        await statmess.editw(
+            min_seconds=0, content=f"querying db using `{titleres}`..."
+        )
         async with ctx.channel.typing():
             data = await debug_get(
-                'not_important.', client=chromac, titleres=site_title_restriction
+                "not_important.", client=chromac, titleres=site_title_restriction
             )
-            datas=zip(data["ids"],data["metadatas"])
-            length=len(data)
+            datas = zip(data["ids"], data["metadatas"])
+            length = len(data)
             if length <= 0:
                 await ctx.send("NO RELEVANT DATA.")
                 return
-            pages,found,keylen=[],{},0
+            pages, found, keylen = [], {}, 0
             for e, pa in enumerate(datas):
-                _,p=pa
-                if p['source'] not in found:
-                    found[p['source']]=[0,str(p)[:4000]]
-                    keylen+=1
-                found[p['source']][0]+=1
-                await statmess.editw(min_seconds=4, content=f"Filtering results {e}/{length}")
+                _, p = pa
+                if p["source"] not in found:
+                    found[p["source"]] = [0, str(p)[:4000]]
+                    keylen += 1
+                found[p["source"]][0] += 1
+                await statmess.editw(
+                    min_seconds=4, content=f"Filtering results {e}/{length}"
+                )
             await statmess.editw(
                 min_seconds=0,
-                content=f"**Results found:** {length}"+"\n"+\
-                f"Sorted into {keylen} buckets."
-                )
+                content=f"**Results found:** {length}"
+                + "\n"
+                + f"Sorted into {keylen} buckets.",
+            )
             for _, v in found.items():
-                e=discord.Embed(description=v[1])
-                e.add_field(name='values:',value=f"count:{v[0]}")
+                e = discord.Embed(description=v[1])
+                e.add_field(name="values:", value=f"count:{v[0]}")
                 pages.append(e)
             await pages_of_embeds(ctx, pages, ephemeral=True)
-
 
     @commands.command(name="get_source", description="get sources.", extras={})
     @oai_check()
@@ -649,7 +689,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         embed = discord.Embed(title="sauces")
         for doc, score in docs2[:10]:
             # print(doc)
-            meta = doc.metadata  #'metadata',{'title':'UNKNOWN','source':'unknown'})
+            # 'metadata',{'title':'UNKNOWN','source':'unknown'})
+            meta = doc.metadata
             content = doc.page_content  # ('page_content','Data l
             output = f"""**Name:** {meta['title'][:100]}
             **Link:** {meta['source']}
@@ -689,7 +730,6 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @oai_check()
     @ai_rate_check()
     async def translatesimple(self, context, text: str):
-        
         chat = gptmod.ChatCreation(
             messages=[{"role": "system", "content": self.simpletranslationprompt}]
         )
@@ -744,7 +784,13 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         description="read a website in reader mode, converted to markdown",
         extras={},
     )
-    async def webreader(self, ctx: commands.Context, url: str, filter_links:bool=False,escape_markdown:bool=False):
+    async def webreader(
+        self,
+        ctx: commands.Context,
+        url: str,
+        filter_links: bool = False,
+        escape_markdown: bool = False,
+    ):
         """
         Asynchronously load a web page's text, optionally filtering out links and/or escaping markdown special characters.
 
@@ -761,32 +807,27 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             message = ctx.message
             guild = message.guild
             user = message.author
-            article, header = await read_article_async(ctx.bot.jsenv,url,False)
-
-
+            article, header = await read_article_async(ctx.bot.jsenv, url, False)
 
             def filter_inline_links(markdown_string):
-                return re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'\1', markdown_string)
+                return re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r"\1", markdown_string)
 
-            filtered_markdown=article
+            filtered_markdown = article
             if filter_links:
                 filtered_markdown = filter_inline_links(article)
                 print(filtered_markdown)
 
-            splitorder=[('\n## %s',1000),('\n### %s',4000),('%s\n',4000)]
-            fil=prioritized_string_split(filtered_markdown,splitorder)
+            splitorder = [("\n## %s", 1000), ("\n### %s", 4000), ("%s\n", 4000)]
+            fil = prioritized_string_split(filtered_markdown, splitorder)
 
-            mytitle=header.get('title', "notitle")
+            mytitle = header.get("title", "notitle")
             await ctx.send(f"# {mytitle}")
-            length=len(fil)
-            for e,d in enumerate(fil):
-                use=d
+            length = len(fil)
+            for e, d in enumerate(fil):
+                use = d
                 if escape_markdown:
-                    use=discord.utils.escape_markdown(d)
-                emb=discord.Embed(
-                    title=f"{mytitle}: {e}/{length}",
-                    description=use
-                )
+                    use = discord.utils.escape_markdown(d)
+                emb = discord.Embed(title=f"{mytitle}: {e}/{length}", description=use)
                 await ctx.send(embed=emb)
 
     @commands.command(
@@ -803,9 +844,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             guild = message.guild
             user = message.author
 
-
-
-            article, header = await read_article(ctx.bot.jsenv,url)
+            mes = await ctx.channel.send(
+                f"<a:SquareLoading:1143238358303264798> Reading Article"
+            )
+            article, header = await read_article(ctx.bot.jsenv, url)
             if stopat != None:
                 article = article.split(stopat)[0]
             chat = gptmod.ChatCreation(
@@ -831,8 +873,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     res = await bot.gptapi.callapi(chat)
 
                     # await ctx.send(res)
-                    print('clear',res)
-                    
+                    print("clear", res)
+
                     result = res.choices[0].message.content
                     print(result)
                     for link in mylinks:
@@ -843,28 +885,39 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                             print(link_text, url2)
                             # sources.append(f"[{link_text}]({url})")
                             result = result.replace(link_text, f"{link_text}")
-                    splitorder=['%s\n','%s.','%s,','%s ']
-                    fil=prioritized_string_split(result,splitorder,4072)
+                    splitorder = ["%s\n", "%s.", "%s,", "%s "]
+                    fil = prioritized_string_split(result, splitorder, 4072)
                     for p in fil:
-                        embed = discord.Embed(title=header.get('title', "notitle"), description=p)
-                        await ctx.send(content=header.get('title', "notitle")[:200], embed=embed)
-                    embed = discord.Embed(title=f"Sources for {header.get('title', 'notitle')}")
+                        embed = discord.Embed(
+                            title=header.get("title", "notitle"), description=p
+                        )
+                        await ctx.send(
+                            content=header.get("title", "notitle")[:200], embed=embed
+                        )
+                    embed = discord.Embed(
+                        title=f"Sources for {header.get('title', 'notitle')}"
+                    )
                     name, res = "", ""
                     if len(sources) < 20:
-                        fil=prioritized_string_split("\n".join(sources),['%s\n'],1020)
-                        needadd=False
-                        for e,i in enumerate(fil):
-
+                        fil = prioritized_string_split(
+                            "\n".join(sources), ["%s\n"], 1020
+                        )
+                        needadd = False
+                        for e, i in enumerate(fil):
                             embed.add_field(
                                 name=f"Sources Located: {e}", value=i, inline=False
                             )
-                            needadd=True
-                            if (e+1)%6==0:
+                            needadd = True
+                            if (e + 1) % 6 == 0:
                                 await ctx.send(embed=embed)
-                                needadd=False
-                                embed = discord.Embed(title=f"Sources for {header.get('title', 'notitle')}")
+                                needadd = False
+                                embed = discord.Embed(
+                                    title=f"Sources for {header.get('title', 'notitle')}"
+                                )
                         if needadd:
-                            await ctx.send(content=header.get('title',"???"), embed=embed)
+                            await ctx.send(
+                                content=header.get("title", "???"), embed=embed
+                            )
                     if over:
                         target_message = await ctx.send(
                             f"<a:SquareLoading:1143238358303264798> Saving {url} summary..."

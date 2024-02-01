@@ -1,3 +1,6 @@
+from .AICalling import AIMessageTemplates
+from .StepCalculator import evaluate_expression
+from gptfunctionutil import *
 import base64
 from typing import Any, Literal, Optional
 import discord
@@ -55,9 +58,6 @@ reasons = {
         "cooldown": "There's a one minute delay between messages, slow down man!",
     },
 }
-from gptfunctionutil import *
-from .StepCalculator import evaluate_expression
-from .AICalling import AIMessageTemplates
 
 
 class MyLib(GPTFunctionLibrary):
@@ -119,21 +119,24 @@ async def process_result(ctx: commands.Context, result: Any, mylib: GPTFunctionL
 
     if finish_reason == "tool_calls" or i.message.tool_calls:
         # Call the corresponding funciton, and set that to content.
-        function=str(i.message.tool_calls)
+        function = str(i.message.tool_calls)
         for tool_call in i.message.tool_calls:
             audit = await AIMessageTemplates.add_function_audit(
-                ctx, tool_call, tool_call.function.name, json.loads(tool_call.function.arguments)
+                ctx,
+                tool_call,
+                tool_call.function.name,
+                json.loads(tool_call.function.arguments),
             )
-            outcome=await mylib.call_by_tool_ctx(ctx,tool_call)
-            content=outcome['content']
-        #content = resp
+            outcome = await mylib.call_by_tool_ctx(ctx, tool_call)
+            content = outcome["content"]
+        # content = resp
     if isinstance(content, str):
         # Split up content by line if it's too long.
-        
+
         page = commands.Paginator(prefix="", suffix=None)
         for p in content.split("\n"):
             page.add_line(p)
-        split_by=split_string_with_code_blocks(content,2000)
+        split_by = split_string_with_code_blocks(content, 2000)
         messageresp = None
         for pa in split_by:
             ms = await ctx.channel.send(pa)
@@ -150,7 +153,10 @@ async def process_result(ctx: commands.Context, result: Any, mylib: GPTFunctionL
 
 
 async def ai_message_invoke(
-    bot: TCBot, message: discord.Message, mylib: GPTFunctionLibrary = None, thread_id=None
+    bot: TCBot,
+    message: discord.Message,
+    mylib: GPTFunctionLibrary = None,
+    thread_id=None,
 ):
     """Evaluate if a message should be processed."""
     permissions = message.channel.permissions_for(message.channel.guild.me)
@@ -174,7 +180,7 @@ async def ai_message_invoke(
     # Get the 'profile' of the active guild.
     profile = ServerAIConfig.get_or_new(guild.id)
     # prune message chains with length greater than X
-    profile.prune_message_chains(limit=5,thread_id=thread_id)
+    profile.prune_message_chains(limit=5, thread_id=thread_id)
     # retrieve the saved messages
     chain = profile.list_message_chains(thread_id=thread_id)
     # Convert into a list of messages
@@ -182,18 +188,14 @@ async def ai_message_invoke(
     # create new ChatCreation
     chat = gptmod.ChatCreation(presence_penalty=0.3, messages=[])
     # ,model="gpt-3.5-turbo-1106"
-    chat.add_message(
-        "system",
-        nikkiprompt
-        
-    )
+    chat.add_message("system", nikkiprompt)
     for f in mes[:5]:  # Load old messags into ChatCreation
         chat.add_message(f["role"], f["content"])
     # Load current message into chat creation.
     chat.add_message("user", message.content)
     print(len(chat.messages))
     # Load in functions
-    forcecheck=None
+    forcecheck = None
     if mylib != None:
         forcecheck = mylib.force_word_check(message.content)
         if forcecheck:
@@ -201,15 +203,15 @@ async def ai_message_invoke(
             chat.tool_choice = forcecheck[0]
         else:
             pass
-            #chat.tools = mylib.get_tool_schema()
-            #chat.tool_choice = "auto"
+            # chat.tools = mylib.get_tool_schema()
+            # chat.tool_choice = "auto"
 
     audit = await AIMessageTemplates.add_user_audit(ctx, chat)
 
     async with message.channel.typing():
         # Call the API.
         result = await bot.gptapi.callapi(chat)
-    
+
     # only add messages after they're finished processing.
 
     bot.logs.info(str(result))
@@ -226,10 +228,19 @@ async def ai_message_invoke(
     # Add
     if tools:
         profile.add_message_to_chain(
-            messageresp.id, messageresp.created_at, thread_id=thread_id, role=role, content="", function=tools
+            messageresp.id,
+            messageresp.created_at,
+            thread_id=thread_id,
+            role=role,
+            content="",
+            function=tools,
         )
     profile.add_message_to_chain(
-        messageresp.id, messageresp.created_at, thread_id=thread_id, role=role, content=content
+        messageresp.id,
+        messageresp.created_at,
+        thread_id=thread_id,
+        role=role,
+        content=content,
     )
 
     audit = await AIMessageTemplates.add_resp_audit(ctx, messageresp, result)
@@ -270,14 +281,14 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         await MessageTemplates.server_ai_message(ctx, "Here is your server's data.")
 
     @ai_setup.command(name="clear_history", brief="clear ai chat history.")
-    async def chear_history(self, ctx:commands.Context):
+    async def chear_history(self, ctx: commands.Context):
         guild = ctx.guild
         profile = ServerAIConfig.get_or_new(guild.id)
-        thread_id=None
-        if isinstance(ctx.channel,discord.Thread):
-            thread_id=ctx.channel.id
+        thread_id = None
+        if isinstance(ctx.channel, discord.Thread):
+            thread_id = ctx.channel.id
 
-        m1=await MessageTemplates.server_ai_message(ctx, "purging")
+        m1 = await MessageTemplates.server_ai_message(ctx, "purging")
         messages = profile.clear_message_chains(thread_id=thread_id)
         await m1.delete()
         await MessageTemplates.server_ai_message(ctx, f"{messages} purged")
@@ -408,7 +419,9 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         name="add_ai_channel",
         description="add a channel that Nikki will talk freely in.",
     )
-    async def add_ai_channel(self, ctx, target_channel: Union[discord.TextChannel,discord.ForumChannel]):
+    async def add_ai_channel(
+        self, ctx, target_channel: Union[discord.TextChannel, discord.ForumChannel]
+    ):
         "Add a channel that nikki can talk freely in"
         guild = ctx.guild
         guildid = guild.id
@@ -431,7 +444,9 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         description="use to stop Nikki from talking in an added AI Channel.",
     )
     @app_commands.describe(target_channel="channel to disable.")
-    async def remove_ai_channel(self, ctx, target_channel:  Union[discord.TextChannel,discord.ForumChannel]):
+    async def remove_ai_channel(
+        self, ctx, target_channel: Union[discord.TextChannel, discord.ForumChannel]
+    ):
         """remove a channel."""
         guild = ctx.guild
         guildid = guild.id
@@ -462,21 +477,23 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             if not self.walked:
                 self.flib.add_in_commands(self.bot)
             profile = ServerAIConfig.get_or_new(message.guild.id)
-            thread_id=None
-            targetid=message.channel.id
-            thread_id=None
-            if (isinstance(message.channel, discord.Thread)):
-                targetid=message.channel.parent.id;
-                thread_id=message.channel.id
+            thread_id = None
+            targetid = message.channel.id
+            thread_id = None
+            if isinstance(message.channel, discord.Thread):
+                targetid = message.channel.parent.id
+                thread_id = message.channel.id
             if self.bot.user.mentioned_in(message) and not message.mention_everyone:
-                
-                if (isinstance(message.channel, discord.Thread)):
-                    thread_id=message.channel.id
-                await ai_message_invoke(self.bot, message, mylib=self.flib,thread_id=thread_id)
+                if isinstance(message.channel, discord.Thread):
+                    thread_id = message.channel.id
+                await ai_message_invoke(
+                    self.bot, message, mylib=self.flib, thread_id=thread_id
+                )
             else:
-                
                 if profile.has_channel(targetid):
-                    await ai_message_invoke(self.bot, message, mylib=self.flib, thread_id=thread_id)
+                    await ai_message_invoke(
+                        self.bot, message, mylib=self.flib, thread_id=thread_id
+                    )
         except Exception as error:
             try:
                 emb = MessageTemplates.get_error_embed(

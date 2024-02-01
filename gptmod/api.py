@@ -24,7 +24,7 @@ class GptmodAPI:
 
     def __init__(self, token: str = None):
         self.base_url = gptmod.base_url
-        self.client=openai.AsyncOpenAI()
+        self.client = openai.AsyncOpenAI()
         if token != None:
             if not isinstance(token, str):
                 self._key = "None"
@@ -88,7 +88,7 @@ class GptmodAPI:
 
     async def callapi(self, obj: ApiCore):
         if self.openaimode:
-            return await obj.calloai( self.client)
+            return await obj.calloai(self.client)
         else:
             if not self.base_url:
                 raise error.GptmodError("There is no set base url.")
@@ -99,7 +99,8 @@ class GptmodAPI:
                 payload = obj.to_dict(pro=True)
 
             response_dict = await self._make_call(endpoint, payload)
-            openaiobject = response_dict#util.convert_to_openai_object(response_dict)
+            # util.convert_to_openai_object(response_dict)
+            openaiobject = response_dict
             return openaiobject
 
     async def models(self):
@@ -118,7 +119,7 @@ class GptmodAPI:
     async def check_oai(self, ctx):
         if ctx.bot.gptapi.openaimode:
             target_server = AssetLookup.get_asset("oai_server")
-            targetserverlist=json.loads(target_server)
+            targetserverlist = json.loads(target_server)
             print(targetserverlist, type(targetserverlist))
             if not ctx.guild:
                 return True

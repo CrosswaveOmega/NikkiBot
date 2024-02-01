@@ -131,14 +131,16 @@ def progress_bar(current, total, width=5):
     return bar
 
 
-status_emoji={
-'onc': '<:checkboxon:1199756987471241346>',
-'noc':'<:checkboxoff:1199756988410777610>',
-'emptyc':  '<:checkboxempty:1199756989887172639>',
-'edit': '<:edit:1199769314929164319>',
-'add': '<:add:1199770854112890890>'
+status_emoji = {
+    "onc": "<:checkboxon:1199756987471241346>",
+    "noc": "<:checkboxoff:1199756988410777610>",
+    "emptyc": "<:checkboxempty:1199756989887172639>",
+    "edit": "<:edit:1199769314929164319>",
+    "add": "<:add:1199770854112890890>",
 }
+
+
 def select_emoji(key):
     if key in status_emoji:
         return status_emoji.get(key)
-    return status_emoji['emptyc']
+    return status_emoji["emptyc"]

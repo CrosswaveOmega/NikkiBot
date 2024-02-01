@@ -11,7 +11,7 @@ from .globalfunctions import (
     replace_working_directory,
     filter_trace_stack,
     split_string_with_code_blocks,
-    prioritized_string_split
+    prioritized_string_split,
 )
 
 from .mytemplatemessages import MessageTemplates

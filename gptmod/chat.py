@@ -9,8 +9,6 @@ from gptmod.util import num_tokens_from_messages
 import openai
 
 
-
-
 class ChatCreation(ApiCore):
     """Base Class for the chat/completion endpoint."""
 
@@ -29,18 +27,17 @@ class ChatCreation(ApiCore):
         stop: Optional[Union[List[str], str]] = None,
         presence_penalty: Optional[float] = None,
         frequency_penalty: Optional[float] = None,
-        tools:Optional[List[Dict[str, str]]] = None,
-        tool_choice:Optional[Union[Dict[str, str], str]] = None,
+        tools: Optional[List[Dict[str, str]]] = None,
+        tool_choice: Optional[Union[Dict[str, str], str]] = None,
         model="gpt-3.5-turbo",
     ):
-        
         self.messages = []
         if messages is not None:
             self.messages = messages
-        #self.functions = functions
-        #self.function_call = function_call
-        self.tools=tools
-        self.tool_choice=tool_choice
+        # self.functions = functions
+        # self.function_call = function_call
+        self.tools = tools
+        self.tool_choice = tool_choice
         self.temperature = temperature
         self.top_p = top_p
         self.stream = stream
@@ -49,7 +46,7 @@ class ChatCreation(ApiCore):
         self.frequency_penalty = frequency_penalty
         self.use_model = model
 
-    async def calloai(self,client):
+    async def calloai(self, client):
         """return a completion through openai instead."""
         dictme = self.to_dict(pro=False)
         modelv = dictme["model"]
@@ -65,7 +62,7 @@ class ChatCreation(ApiCore):
     def summary(self):
         messages = len(self.messages)
         message_tokens = num_tokens_from_messages(self.messages)
-        functions='none'
+        functions = "none"
         if self.tools:
             functions = ",".join([f"{str(f['function']['name'])}" for f in self.tools])
         output = f"Messages: {messages}, tokens: {message_tokens}"

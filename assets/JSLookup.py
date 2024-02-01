@@ -6,6 +6,7 @@ from typing import Optional
 
 from javascriptasync import require_a, require
 
+
 class JavascriptLookup:
     @staticmethod
     def find_javascript_file(filename: str, appendwith: Optional[str] = None):
@@ -27,12 +28,9 @@ class JavascriptLookup:
             return None
 
     @staticmethod
-    async def get_full_pathas(filename: str,alias:str,jsenv):
+    async def get_full_pathas(filename: str, alias: str, jsenv):
+        js_folder = "../js/" + filename
 
-        
-        js_folder = "../js/"+filename
-        
-        myfile=await jsenv.require_a(js_folder,amode=True,store_as=alias)
+        myfile = await jsenv.require_a(js_folder, amode=True, store_as=alias)
 
         return myfile
-    

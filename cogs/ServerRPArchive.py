@@ -1162,7 +1162,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await edit_if_needed(cL)
             gui.gprint(f"New posted_url value for ChannelSep")
 
-    #####################################FOR ACTIVE MODE##################################
+    ##################################### FOR ACTIVE MODE##################################
     # Disabled for now.
     """
     def guild_check(self,guildid):

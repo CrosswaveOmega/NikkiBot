@@ -410,7 +410,8 @@ class MusicCog(commands.Cog, TC_Cog_Mixin):
                 ctx, "Repeat", "I've turned **repeat one** mode on."
             )
         if MusicManager.get(guild).repeat:
-            pass  # await MusicManager.get(guild).send_message(ctx, "Repeat", "I've turned **repeat** mode on.")
+            # await MusicManager.get(guild).send_message(ctx, "Repeat", "I've turned **repeat** mode on.")
+            pass
         else:
             await MusicManager.get(guild).send_message(
                 ctx, "Repeat", "I've turned **repeat** mode off."

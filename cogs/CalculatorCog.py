@@ -11,7 +11,8 @@ from discord.ext import commands, tasks
 from discord.utils import find
 from discord import Webhook
 
-import random, operator
+import random
+import operator
 from random import randint, seed
 
 import traceback

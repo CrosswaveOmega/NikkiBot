@@ -11,7 +11,8 @@ from pathlib import Path
 import logging
 import logging.handlers
 
-import sys, random
+import sys
+import random
 
 
 from queue import Queue
@@ -129,15 +130,14 @@ async def on_command_error(ctx, error):
     command: discord.ext.commands.command = ctx.command
     log.error("Ignoring exception in command %s", command, exc_info=error)
     errormess = "Command not found I think..."
-    command_details=f" Command {ctx.message.content}"
+    command_details = f" Command {ctx.message.content}"
     if ctx.command:
-        command_details=f" Command {command.name}"
+        command_details = f" Command {command.name}"
         errormess = client_error_message(error, name=f" Command {command.name}")
     else:
-        
         errormess = client_error_message(error, name=f"{ctx.message.content}")
     gui.gprint(errormess)
-    if isinstance(error,discord.ext.commands.errors.CheckFailure):
+    if isinstance(error, discord.ext.commands.errors.CheckFailure):
         emb = MessageTemplates.get_checkfail_embed(
             title=f"Check failed for {command_details}", description=f"{errormess}"
         )

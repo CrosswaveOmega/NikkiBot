@@ -13,8 +13,10 @@ from discord import Webhook, ui
 import site
 import gui
 from discord.utils import escape_markdown
-
+import re
 from typing import Union
+
+
 def split_and_cluster_strings(
     input_string: str, max_cluster_size: int, split_substring: str
 ) -> list[str]:
@@ -37,13 +39,19 @@ def split_and_cluster_strings(
     if len(input_string) < max_cluster_size:
         return [input_string]
 
-    split_by=split_substring
-    if '%s' not in split_substring:
-        split_by="%s"+split_by
-    split_character=split_by.replace("%s","")
+    split_by = split_substring
 
-    # Split the input string based on the specified substring
-    substrings = input_string.split(split_character)
+    is_regex = isinstance(split_substring, re.Pattern)
+    if is_regex:
+        result = split_substring.split(input_string)
+        substrings = [r for r in result if r]
+    else:
+        if "%s" not in split_substring:
+            split_by = "%s" + split_by
+        split_character = split_by.replace("%s", "")
+
+        # Split the input string based on the specified substring
+        substrings = input_string.split(split_character)
     # No reason to run the loop if there's less than two
     # strings within the substrings list.  That means
     # it couldn't find anything to split up.
@@ -52,7 +60,10 @@ def split_and_cluster_strings(
 
     current_cluster = substrings[0]
     for substring in substrings[1:]:
-        new_string=split_by.replace("%s",substring,1)
+        if not is_regex:
+            new_string = split_by.replace("%s", substring, 1)
+        else:
+            new_string = substring
         sublength = len(new_string)
         if len(current_cluster) + sublength <= max_cluster_size:
             # Add the substring to the current cluster
@@ -66,7 +77,8 @@ def split_and_cluster_strings(
             current_cluster = ""
             if substring:
                 # Don't add to current_cluster if substring is empty.
-                current_cluster = new_string    # Add the last cluster if not empty.
+                # Add the last cluster if not empty.
+                current_cluster = new_string
     if current_cluster:
         clusters.append(current_cluster)  # Remove the trailing split_substring
 
@@ -75,10 +87,9 @@ def split_and_cluster_strings(
 
 def prioritized_string_split(
     input_string: str,
-    substring_split_order: list[Union[str,tuple[str, int]]],
-    default_max_len:int= 1024,
-    trim=False
-    
+    substring_split_order: list[Union[str, tuple[str, int]]],
+    default_max_len: int = 1024,
+    trim=False,
 ) -> list[str]:
     """
     Segment the input string based on the delimiters specified in `substring_split_order`.
@@ -86,11 +97,11 @@ def prioritized_string_split(
     ensuring that no cluster surpasses a specified maximum length.
     The maximum length for each cluster addition
     can be individually adjusted along with the list of delimiters.
-    
+
 
     Args:
         input_string (str): The string to be split.
-        substring_split_order (list[Union[str, tuple[str, int]]]): 
+        substring_split_order (list[Union[str, tuple[str, int]]]):
             A list of strings or tuples containing
             the delimiters to split by and their max lengths.
             If an argument here is "%s \n", then the input string will be split by " \n" and will
@@ -108,13 +119,15 @@ def prioritized_string_split(
     for e, arg in enumerate(substring_split_order):
         if isinstance(arg, str):
             s, max_len = arg, None
+        elif isinstance(arg, re.Pattern):
+            s, max_len = arg, None
         elif len(arg) == 1:
             s, max_len = arg[0], None
         else:
             s, max_len = arg
 
         max_len = max_len or default_max_len  # Use default if not specified
-        split_substring=s
+        split_substring = s
         new_splits = []
 
         for cluster in current_clusters:
@@ -125,7 +138,7 @@ def prioritized_string_split(
         for c_num, cluster in enumerate(new_splits):
             print(f"Pass {e},  Cluster {c_num + 1}: {len(cluster)}, {len(cluster)}")
         current_clusters = new_splits
-    
+
     # Optional trimming of leading and trailing whitespaces
     if trim:
         current_clusters = [cluster.strip() for cluster in current_clusters]
@@ -133,29 +146,33 @@ def prioritized_string_split(
     return current_clusters
 
 
-def split_string_with_code_blocks(input_str, max_length,oncode=False):
+def split_string_with_code_blocks(input_str, max_length, oncode=False):
     tosplitby = [
-    # First, try to split along Markdown headings (starting with level 2)
-    "\n#{1,6} ",
-    # Note the alternative syntax for headings (below) is not handled here
-    # Heading level 2
-    # ---------------
-    
-    # Horizontal lines
-    "\n\\*\\*\\*+\n",
-    "\n---+\n",
-    "\n___+\n",
-    " #{1,6} ",
-    # Note that this splitter doesn't handle horizontal lines defined
-    # by *three or more* of ***, ---, or ___, but this is not handled
-    "\n\n",
-    "\n",
-    " ",
-    "",
+        # First, try to split along Markdown headings (starting with level 2)
+        "\n#{1,6} ",
+        # Note the alternative syntax for headings (below) is not handled here
+        # Heading level 2
+        # ---------------
+        # Horizontal lines
+        "\n\\*\\*\\*+\n",
+        "\n---+\n",
+        "\n___+\n",
+        " #{1,6} ",
+        # Note that this splitter doesn't handle horizontal lines defined
+        # by *three or more* of ***, ---, or ___, but this is not handled
+        "\n\n",
+        "\n",
+        " ",
+        "",
     ]
     if len(input_str) <= max_length:
         return [input_str]
+    symbol = re.escape("```")
+    pattern = re.compile(f"({symbol}(?:(?!{symbol}).)+{symbol})")
 
+    splitorder = [pattern, "\n### %s", "%s\n", " %s"]
+    fil = prioritized_string_split(input_str, splitorder, default_max_len=max_length)
+    return fil
     # Prioritize code block delimiters
     code_block_delimiters = ["```"]
     for code_block_delimiter in code_block_delimiters:
@@ -163,18 +180,28 @@ def split_string_with_code_blocks(input_str, max_length,oncode=False):
             parts = input_str.split(code_block_delimiter, 1)
             if len(parts) == 2 and parts[0] and parts[1]:
                 # Recursively split the second part and concatenate the results
-                if oncode==False:                    
-                    return [parts[0]] + split_string_with_code_blocks(code_block_delimiter+parts[1], max_length,oncode=not oncode)
-                return [parts[0]+code_block_delimiter] + split_string_with_code_blocks(parts[1], max_length,oncode=not oncode)
+                if oncode == False:
+                    return [parts[0]] + split_string_with_code_blocks(
+                        code_block_delimiter + parts[1], max_length, oncode=not oncode
+                    )
+                return [
+                    parts[0] + code_block_delimiter
+                ] + split_string_with_code_blocks(
+                    parts[1], max_length, oncode=not oncode
+                )
 
     # If no code block delimiter is found, use the regular delimiters
     for separator in tosplitby:
         parts = input_str.split(separator, 1)
         if len(parts) == 2 and parts[0] and parts[1]:
-            return [parts[0]] + split_string_with_code_blocks(parts[1], max_length,oncode=oncode)
+            return [parts[0]] + split_string_with_code_blocks(
+                parts[1], max_length, oncode=oncode
+            )
 
     # If no suitable separator is found, split at the max length
-    return [input_str[:max_length]] + split_string_with_code_blocks(input_str[max_length:], max_length,oncode=oncode)
+    return [input_str[:max_length]] + split_string_with_code_blocks(
+        input_str[max_length:], max_length, oncode=oncode
+    )
 
 
 def replace_working_directory(string):

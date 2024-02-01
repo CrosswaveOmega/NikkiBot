@@ -462,7 +462,7 @@ def url_basename(url):
 
 
 async def special_playlist_download(bot, ctx, ie_result):
-    ##This was included because downloading from a playlist blocked the loop.
+    # This was included because downloading from a playlist blocked the loop.
     result_type = ie_result.get("_type", "video")
     if result_type in ("playlist", "multi_video"):
         # We process each entry in the playlist

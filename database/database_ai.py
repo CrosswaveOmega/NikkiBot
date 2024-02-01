@@ -220,7 +220,14 @@ class ServerAIConfig(AIBase):
         return count
 
     def add_message_to_chain(
-        self, message_id, created_at, thread_id=None,role=None, content=None, name=None, function=None
+        self,
+        message_id,
+        created_at,
+        thread_id=None,
+        role=None,
+        content=None,
+        name=None,
+        function=None,
     ):
         session = DatabaseSingleton.get_session()
         message_chain = MessageChain(
@@ -250,10 +257,9 @@ class ServerAIConfig(AIBase):
     def list_message_chains(self, thread_id=None):
         session = DatabaseSingleton.get_session()
         if thread_id:
-
             message_chains = (
                 session.query(MessageChain)
-                .filter_by(server_id=self.server_id,thread_id=thread_id)
+                .filter_by(server_id=self.server_id, thread_id=thread_id)
                 .order_by(MessageChain.created_at)
                 .limit(10)
                 .all()
@@ -268,7 +274,7 @@ class ServerAIConfig(AIBase):
         )
         return message_chains
 
-    def prune_message_chains(self, limit=15,thread_id=None):
+    def prune_message_chains(self, limit=15, thread_id=None):
         session = DatabaseSingleton.get_session()
         message_chains = (
             session.query(MessageChain)
@@ -286,7 +292,9 @@ class ServerAIConfig(AIBase):
     def clear_message_chains(self, thread_id=None):
         session = DatabaseSingleton.get_session()
         message_chains = (
-            session.query(MessageChain).filter_by(server_id=self.server_id,thread_id=thread_id).all()
+            session.query(MessageChain)
+            .filter_by(server_id=self.server_id, thread_id=thread_id)
+            .all()
         )
         purged = 0
         for message_chain in message_chains:
@@ -328,7 +336,9 @@ class MessageChain(AIBase):
             "role": self.role,
             "content": self.content,
             "name": self.name,
-            "tool_calls": json.loads(self.function) if self.function is not None else None,
+            "tool_calls": json.loads(self.function)
+            if self.function is not None
+            else None,
         }
 
 

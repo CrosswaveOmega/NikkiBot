@@ -58,7 +58,7 @@ def toNumber(i):
     if isinstance(i, str):
         # The Negative Sign is represented by a different symbol for the
         # Expression parser for the sake of simpicity
-        #'\u2212' is the negative symbol.
+        # '\u2212' is the negative symbol.
         stri = i.replace("\u2212", "-")
         if i == "-":
             return 0

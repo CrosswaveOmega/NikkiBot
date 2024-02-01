@@ -97,7 +97,8 @@ def extract_attack_table(html_content):
     output = {}
     for table in tables:
         rows = table.find_all("tr")
-        attack_name = rows[0].find("a").text  # Extract attack name from the first row
+        # Extract attack name from the first row
+        attack_name = rows[0].find("a").text
 
         # Extract parameters and values from subsequent rows
         params = {}

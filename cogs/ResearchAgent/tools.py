@@ -1,4 +1,14 @@
+from gptfunctionutil import GPTFunctionLibrary, AILibFunction, LibParam
+from utility import prioritized_string_split
+from langchain_community.document_loaders import PyPDFLoader, PDFMinerLoader
+from htmldate import find_date
+import gptmod
+from .ReadabilityLoader import ReadableLoader
+from langchain.vectorstores.chroma import Chroma
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain.indexes import VectorstoreIndexCreator
 import asyncio
+import copy
 import datetime
 from typing import List, Tuple
 import chromadb
@@ -6,21 +16,14 @@ from googleapiclient.discovery import build  # Import the library
 
 import assets
 import re
-import langchain
-import langchain.document_loaders as docload
+
+import langchain_community.document_loaders as docload
 import uuid
 import openai
 from langchain.docstore.document import Document
 
 webload = docload.WebBaseLoader
-from langchain.indexes import VectorstoreIndexCreator
 
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores.chroma import Chroma
-from .ReadabilityLoader import ReadableLoader
-import gptmod
-from htmldate import find_date
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 tosplitby = [
     # First, try to split along Markdown headings (starting with level 2)
     "\n#{1,6} ",
@@ -41,6 +44,47 @@ tosplitby = [
     " ",
     "",
 ]
+symbol = re.escape("```")
+pattern = re.compile(f"({symbol}(?:(?!{symbol}).)+{symbol})")
+
+splitorder = [
+    pattern,
+    "\n# %s",
+    "\n## %s",
+    "\n### %s",
+    "\n#### %s",
+    "\n##### %s",
+    "\n###### %s",
+    "%s\n",
+    "%s.  ",
+    "%s. ",
+    "%s ",
+]
+
+
+class MyLib(GPTFunctionLibrary):
+    @AILibFunction(
+        name="get_pdf_data",
+        description="Return the title, authors, abstract, and date when given the first page of a PDF, if the info can be found.",
+        enabled=True,
+        force_words=["extract", "pdf"],
+        required=["title"],
+    )
+    @LibParam(
+        title="Title of the PDF given the first page.",
+        authors="All authors of the PDF, given the first page.  If not available, pass in None",
+        date="Date of publication of the PDF, in YYYY-MM-DD format.  If it can't be found, return None.",
+        abstract="Abstract found on the PDF.  If it can't be found, return not available.",
+    )
+    async def get_pdf_data(
+        self,
+        title: str,
+        authors: str = "None",
+        date: str = "None",
+        abstract: str = "NA",
+    ):
+        # Wait for a set period of time.
+        return title, authors, date, abstract
 
 
 def google_search(bot, query: str, result_limit: int):
@@ -54,87 +98,152 @@ def google_search(bot, query: str, result_limit: int):
     return results
 
 
+async def read_and_split_pdf(
+    bot, url: str, chunk_size: int = 1800, chunk_overlap: int = 1
+):
+    mylib = MyLib()
+    client = openai.AsyncClient()
+    loader = PDFMinerLoader(url)
+    data = loader.load()
+    completion = await client.chat.completions.create(
+        model="gpt-3.5-turbo-1106",
+        messages=[
+            {
+                "role": "system",
+                "content": "Given the raw text of the first page of a pdf, execute the get_pdf_data data function.",
+            },
+            {
+                "role": "user",
+                "content": f"Please extract the data for this pdf: {data[0].page_content}",
+            },
+        ],
+        tools=mylib.get_tool_schema(),
+        tool_choice="auto",
+    )
+    metadata = {}
+    new_docs = []
+    message = completion.choices[0].message
+    if message.tool_calls:
+        for tool in message.tool_calls:
+            title, authors, date, abstract = await mylib.call_by_tool_async(tool)
+            metadata["authors"] = authors
+            metadata["website"] = "PDF_ORIGIN"
+            metadata["title"] = title
+            metadata["source"] = url
+            metadata["description"] = abstract
+            metadata["language"] = "en"
+            metadata["dateadded"] = datetime.datetime.utcnow().timestamp()
+            metadata["sum"] = "PDF"
+            metadata["reader"] = True
+            metadata["date"] = date
+            for e, pagedata in enumerate(data):
+                print(pagedata.metadata)
+                page = f"Page {e}"
+                newdata = copy.deepcopy(metadata)
+                newdata["page"] = page
+                text = pagedata.page_content
+                # dealing with awkward spacing
+                filtered_text = re.sub(r"-\s*\n", "", text)
+                filtered_text = re.sub(r" +", " ", filtered_text)
+                doc = Document(page_content=filtered_text, metadata=newdata)
+                print(doc)
+                new_docs.append(doc)
+            return new_docs
+    else:
+        raise Exception("ERROR:" + str(completion.choices[0].message.content))
+
+
 async def read_and_split_link(
     bot, url: str, chunk_size: int = 1800, chunk_overlap: int = 1
 ) -> List[Document]:
     # Document loader
-    loader = ReadableLoader(
-        url,
-        header_template={
-            "User-Agent": "Mozilla/5.0 (X11,Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"
-        },
-    )
-    # Index that wraps above steps
-    data = await loader.aload(bot)
+    prioritysplit = []
+    if url.endswith(".pdf") or ".pdf?" in url:
+        pdfmode = True
+        symbol3 = re.escape("  ")
+        pattern3 = re.compile(f"({symbol3}(?:(?!{symbol3}).)+{symbol3})")
+        prioritysplit.append((pattern3, 100))
+        data = await read_and_split_pdf(bot, url, chunk_size)
+    else:
+        loader = ReadableLoader(
+            url,
+            header_template={
+                "User-Agent": "Mozilla/5.0 (X11,Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"
+            },
+        )
+        # Index that wraps above steps
+        data = await loader.aload(bot)
     print("ok")
     newdata = []
     for d in data:
         # Strip excess white space.
         simplified_text = d.page_content.strip()
         simplified_text = re.sub(r"(\n){4,}", "\n\n\n", simplified_text)
-        simplified_text = re.sub(r"\n\n", " ", simplified_text)
         simplified_text = re.sub(r" {3,}", "  ", simplified_text)
-        simplified_text = simplified_text.replace("\t", "")
+        simplified_text = simplified_text.replace("\t{3,}", "\t")
         simplified_text = re.sub(r"\n+(\s*\n)*", "\n", simplified_text)
         d.page_content = simplified_text
-        newdata.append(d)
-    text_splitter = RecursiveCharacterTextSplitter(
-        separators=tosplitby, chunk_size=chunk_size, chunk_overlap=chunk_overlap
-    )
-    all_splits = text_splitter.split_documents(newdata)
+        split = await split_link(d, chunk_size=chunk_size, prior=prioritysplit)
+        newdata.extend(split)
+
+    all_splits = newdata
     return all_splits
 
-async def split_link(data: List[str], chunk_size: int = 1800):
 
+async def split_link(doc: Document, chunk_size: int = 1800, prior=[]):
     newdata = []
-    for d in data:
-        # Strip excess white space.
-        simplified_text = d.strip()
-        simplified_text = re.sub(r"(\n){4,}", "\n\n\n", simplified_text)
-        simplified_text = re.sub(r"\n\n", " ", simplified_text)
-        simplified_text = re.sub(r" {3,}", "  ", simplified_text)
-        simplified_text = simplified_text.replace("\t", "")
-        simplified_text = re.sub(r"\n+(\s*\n)*", "\n", simplified_text)
-        
-        newdata.append(Document(page_content=simplified_text, metadata={'title':"EX"}))
-    text_splitter = RecursiveCharacterTextSplitter(
-        separators=tosplitby, chunk_size=chunk_size, chunk_overlap=0
+
+    metadata = doc.metadata
+    tosplitby = prior
+    tosplitby.extend(splitorder)
+    fil = prioritized_string_split(
+        doc.page_content, tosplitby, default_max_len=chunk_size
     )
-    all_splits = text_splitter.split_documents(newdata)
-    return all_splits
-    
-async def add_summary(url: str, desc: str, header, collection="web_collection", client:chromadb.ClientAPI=None):
+    for chunk in fil:
+        metadatac = copy.deepcopy(metadata)
+        new_doc = Document(page_content=chunk, metadata=metadatac)
+        newdata.append(new_doc)
+    return newdata
+
+
+async def add_summary(
+    url: str,
+    desc: str,
+    header,
+    collection="web_collection",
+    client: chromadb.ClientAPI = None,
+):
     # Index that wraps above steps
     persist = "saveData"
     newdata = []
-    #data = await loader.aload()
-    metadata={}
+    # data = await loader.aload()
+    metadata = {}
     if header is not None:
         print(header["byline"])
         if "byline" in header:
             metadata["authors"] = header["byline"]
         metadata["website"] = header.get("siteName", "siteunknown")
-        metadata["title"] = header.get("title","TitleError")
-        metadata["source"]=url
-        metadata["description"]=header.get("excerpt", 'NA')
-        metadata["language"]=header.get("lang","en")
-        metadata["dateadded"]=datetime.datetime.utcnow().timestamp()
-        metadata["sum"]="sum"
-        metadata['reader'] = True
-        metadata["date"]="None"
+        metadata["title"] = header.get("title", "TitleError")
+        metadata["source"] = url
+        metadata["description"] = header.get("excerpt", "NA")
+        metadata["language"] = header.get("lang", "en")
+        metadata["dateadded"] = datetime.datetime.utcnow().timestamp()
+        metadata["sum"] = "sum"
+        metadata["reader"] = True
+        metadata["date"] = "None"
         try:
-            dt=find_date(url)
+            dt = find_date(url)
             if dt:
-                metadata["date"]=dt
+                metadata["date"] = dt
         except Exception as e:
             print(e)
-    newdata={}
+    newdata = {}
     for i, v in metadata.items():
         if v is not None:
-            newdata[i]=v
-    metadata=newdata
-    docs=Document(page_content=desc, metadata=metadata)
-    newdata=[docs]
+            newdata[i] = v
+    metadata = newdata
+    docs = Document(page_content=desc, metadata=metadata)
+    newdata = [docs]
     ids = [
         f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,doc.metadata['source']))}],sid:[{e}]"
         for e, doc in enumerate(newdata)
@@ -160,7 +269,9 @@ async def add_summary(url: str, desc: str, header, collection="web_collection", 
         # vectorstore.persist()
 
 
-def store_splits(splits, collection="web_collection", client:chromadb.ClientAPI=None):
+def store_splits(
+    splits, collection="web_collection", client: chromadb.ClientAPI = None
+):
     persist = "saveData"
     ids = [
         f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,doc.metadata['source']))}],sid:[{e+1}]"
@@ -189,7 +300,9 @@ def store_splits(splits, collection="web_collection", client:chromadb.ClientAPI=
         # vectorstore.persist()
 
 
-def has_url(url, collection="web_collection", client:chromadb.ClientAPI=None) -> bool:
+def has_url(
+    url, collection="web_collection", client: chromadb.ClientAPI = None
+) -> bool:
     persist = "saveData"
     if client != None:
         try:
@@ -226,7 +339,9 @@ def has_url(url, collection="web_collection", client:chromadb.ClientAPI=None) ->
             return False
 
 
-def remove_url(url, collection="web_collection", client:chromadb.ClientAPI = None) -> bool:
+def remove_url(
+    url, collection="web_collection", client: chromadb.ClientAPI = None
+) -> bool:
     persist = "saveData"
     if client != None:
         try:
@@ -244,7 +359,12 @@ def remove_url(url, collection="web_collection", client:chromadb.ClientAPI = Non
 
 
 async def search_sim(
-    question: str, collection="web_collection", client:chromadb.ClientAPI=None, titleres="None", k=7,mmr=False
+    question: str,
+    collection="web_collection",
+    client: chromadb.ClientAPI = None,
+    titleres="None",
+    k=7,
+    mmr=False,
 ) -> List[Tuple[Document, float]]:
     persist = "saveData"
     vs = Chroma(
@@ -255,7 +375,7 @@ async def search_sim(
     )
     if titleres == "None":
         if mmr:
-            docs=vs.max_marginal_relevance_search(question,k=k)
+            docs = vs.max_marginal_relevance_search(question, k=k)
             docs = [(doc, 0.4) for doc in docs]
         else:
             docs = await vs.asimilarity_search_with_relevance_scores(question, k=k)
@@ -271,7 +391,6 @@ async def search_sim(
             )
             docs = [(doc, 0.4) for doc in docs]
         else:
-
             docs = await vs.asimilarity_search_with_relevance_scores(
                 question,
                 k=k,
@@ -281,7 +400,11 @@ async def search_sim(
 
 
 async def debug_get(
-    question: str, collection="web_collection", client:chromadb.ClientAPI=None, titleres="None", k=7
+    question: str,
+    collection="web_collection",
+    client: chromadb.ClientAPI = None,
+    titleres="None",
+    k=7,
 ) -> List[Tuple[Document, float]]:
     persist = "saveData"
     vs = Chroma(
@@ -332,10 +455,11 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
         [{"role": "system", "content": prompt}, {"role": "user", "content": question}],
         "gpt-3.5-turbo-1106",
     )
-    for e,tup in enumerate(docs):
-        doc, score=tup
+    for e, tup in enumerate(docs):
+        doc, score = tup
         # print(doc)
-        meta = doc.metadata  #'metadata',{'title':'UNKNOWN','source':'unknown'})
+        # 'metadata',{'title':'UNKNOWN','source':'unknown'})
+        meta = doc.metadata
         content = doc.page_content  # ('page_content','Data lost!')
         tile = "NOTITLE"
         if "title" in meta:
@@ -358,7 +482,7 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
         if total_tokens >= 12000:
             break
     messages.append({"role": "user", "content": question})
-    client=openai.AsyncOpenAI()
+    client = openai.AsyncOpenAI()
     completion = await client.chat.completions.create(
         model="gpt-3.5-turbo-1106", messages=messages
     )

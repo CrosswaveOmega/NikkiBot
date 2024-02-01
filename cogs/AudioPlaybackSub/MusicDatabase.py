@@ -350,7 +350,8 @@ class MusicJSONMemoryDB(MusicBase):
             # Time to check for partial matches.
             if is_url(query):
                 gui.gprint("searching urls")
-                parts = [query]  # Include the whole query as one part initially
+                # Include the whole query as one part initially
+                parts = [query]
                 # Split the query by the URL components: domain, basename, and GET parameters
                 url_components = urlsplit(query)
                 print(url_components)

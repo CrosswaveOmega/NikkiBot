@@ -1,3 +1,24 @@
+from .historycollect import collect_server_history_lazy
+from .archive_database import ChannelSep, ArchivedRPMessage, ChannelArchiveStatus
+from .collect_group_index import do_group
+from database import ServerArchiveProfile
+from bot import (
+    TCBot,
+    TCGuildTask,
+    Guild_Task_Functions,
+    StatusEditMessage,
+    TC_Cog_Mixin,
+)
+from utility import WebhookMessageWrapper as web, urltomessage, ConfirmView, RRuleView
+from utility import (
+    serverOwner,
+    serverAdmin,
+    seconds_to_time_string,
+    get_time_since_delta,
+    formatutil,
+)
+import asyncio
+import gui
 from datetime import timezone, datetime
 import json
 import discord
@@ -99,33 +120,6 @@ class LazyContext(LazyBase):
 
 
 DatabaseSingleton("setup").load_base(LazyBase)
-
-import gui
-import discord
-
-import asyncio
-
-from utility import (
-    serverOwner,
-    serverAdmin,
-    seconds_to_time_string,
-    get_time_since_delta,
-    formatutil,
-)
-from utility import WebhookMessageWrapper as web, urltomessage, ConfirmView, RRuleView
-from bot import (
-    TCBot,
-    TCGuildTask,
-    Guild_Task_Functions,
-    StatusEditMessage,
-    TC_Cog_Mixin,
-)
-
-
-from database import ServerArchiveProfile
-from .collect_group_index import do_group
-from .archive_database import ChannelSep, ArchivedRPMessage, ChannelArchiveStatus
-from .historycollect import collect_server_history_lazy
 
 
 async def lazy_archive(self, ctx):

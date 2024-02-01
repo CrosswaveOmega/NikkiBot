@@ -1,3 +1,6 @@
+from collections.abc import Mapping
+import discord
+import json
 import logging
 import traceback
 from typing import Any, Dict, List, Tuple, Union
@@ -16,8 +19,6 @@ from queue import Queue
 
 Guild_Sync_Base = declarative_base(name="Guild AppCommand Cache Sync")
 
-import json
-import discord
 
 """
 All the convienence of automatic command syncing with fewer drawbacks.
@@ -28,8 +29,6 @@ This is to avoid excessive api calls.
 
 
 """
-
-from collections.abc import Mapping
 
 
 logger = logging.getLogger("TCLogger")
@@ -409,7 +408,7 @@ class SpecialAppSync:
         Works on a guild per guild basis in case I need to eventually provide
         code to sync different app commands between guilds."""
         ignorelist = AppGuildTreeSync.load_list(guild.id)
-        onlist =  AppGuildTreeSync.load_onlist(guild.id)
+        onlist = AppGuildTreeSync.load_onlist(guild.id)
         print(ignorelist)
 
         def syncprint(*lis):
@@ -417,15 +416,15 @@ class SpecialAppSync:
             if False:
                 gui.gprint(f"Sync for {guild.name} (ID {guild.id})", *lis)
 
-        def should_skip_cog(cogname: str,cog) -> bool:
+        def should_skip_cog(cogname: str, cog) -> bool:
             """Determine whether a cog should be skipped during synchronization."""
             """Not currently needed."""
             if cogname in onlist:
                 return False
-            private_cog=False
-            if hasattr(cog,'manual_enable'):
-                print(cogname,cog.manual_enable)
-                private_cog=cog.manual_enable
+            private_cog = False
+            if hasattr(cog, "manual_enable"):
+                print(cogname, cog.manual_enable)
+                private_cog = cog.manual_enable
             if cogname in ignorelist or private_cog:
                 return True
             return False
@@ -456,7 +455,7 @@ class SpecialAppSync:
         # Note, the reason it goes one by one is because it was originally intended
         # to activate/deactivate cogs on a server per server basis.
         for cogname, cog in self.cogs.items():
-            if should_skip_cog(cogname,cog):
+            if should_skip_cog(cogname, cog):
                 gui.gprint("skipping cog ", cogname)
                 continue
             if hasattr(cog, "ctx_menus"):

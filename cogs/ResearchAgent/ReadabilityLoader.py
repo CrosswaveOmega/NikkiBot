@@ -1,6 +1,9 @@
 """Web base loader class."""
+import langchain_community.document_loaders as dl
+from langchain.docstore.document import Document
 import asyncio
 import datetime
+from io import StringIO
 import logging
 import re
 import warnings
@@ -45,8 +48,10 @@ def remove_links(markdown_text):
     return no_links_string
 
 
-async def read_article_direct(jsenv,html, url):
-    myfile = await assets.JavascriptLookup.get_full_pathas("readwebpage.js",'WEBJS',jsenv)
+async def read_article_direct(jsenv, html, url):
+    myfile = await assets.JavascriptLookup.get_full_pathas(
+        "readwebpage.js", "WEBJS", jsenv
+    )
     timeout = 30
 
     htmls: str = str(html)
@@ -60,7 +65,7 @@ async def read_article_direct(jsenv,html, url):
     return [result[0],result[1]];
     """
 
-    rsult = await myfile.read_webpage_html_direct(htmls, url,timeout=45)
+    rsult = await myfile.read_webpage_html_direct(htmls, url, timeout=45)
     output = await rsult.get_a("mark")
     header = await rsult.get_a("orig")
     serial = await header.get_dict_a()
@@ -74,7 +79,7 @@ async def read_article_direct(jsenv,html, url):
     return [simplified_text, serial]
 
 
-async def read_article_aw(jsenv,html, url):
+async def read_article_aw(jsenv, html, url):
     now = discord.utils.utcnow()
     getthread = await read_article_direct(jsenv, html, url)
     result = getthread
@@ -92,21 +97,17 @@ def _build_metadata(soup: Any, url: str) -> dict:
         metadata["description"] = description.get("content", "No description found.")
     if html := soup.find("html"):
         metadata["language"] = html.get("lang", "No language found.")
-    metadata["dateadded"]=datetime.datetime.utcnow().timestamp()
-    metadata["date"]="None"
+    metadata["dateadded"] = datetime.datetime.utcnow().timestamp()
+    metadata["date"] = "None"
+    print(metadata)
     try:
-        dt=find_date(url)
+        dt = find_date(url)
         if dt:
-            metadata["date"]=dt
+            metadata["date"] = dt
     except Exception as e:
         print(e)
-    metadata['reader'] = False
+    metadata["reader"] = False
     return metadata
-
-
-from langchain.docstore.document import Document
-import langchain.document_loaders as dl
-from langchain.document_loaders import PDFMinerPDFasHTMLLoader
 
 
 class ReadableLoader(dl.WebBaseLoader):
@@ -121,16 +122,11 @@ class ReadableLoader(dl.WebBaseLoader):
 
         for url in urls:
             if url.endswith(".pdf") or ".pdf?" in url:
-                pdf_urls.append(url)
+                raise Exception("Should not be PDF.")
             else:
                 regular_urls.append(url)
 
         results = await self.fetch_all(regular_urls)
-        for pdfurl in pdf_urls:
-            loader = PDFMinerPDFasHTMLLoader(pdfurl)
-            data = loader.load()[0]
-            results.append(data)
-            regular_urls.append(pdfurl)
 
         final_results = []
 
@@ -156,7 +152,7 @@ class ReadableLoader(dl.WebBaseLoader):
                 clean_html = re.sub(
                     r"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>", "", result
                 )
-                text, header = await read_article_aw(self.jsenv,clean_html, url)
+                text, header = await read_article_aw(self.jsenv, clean_html, url)
                 final_results.append((remove_links(text), souped, header))
 
             except Exception as e:
@@ -203,13 +199,13 @@ class ReadableLoader(dl.WebBaseLoader):
         """Load text from the url(s) in web_path."""
         return list(self.lazy_load())
 
-    async def aload(self,bot) -> List[Document]:
+    async def aload(self, bot) -> List[Document]:
         """Load text from the urls in web_path async into Documents."""
-        self.jsenv=bot.jsenv
-        self.bot=bot
+        self.jsenv = bot.jsenv
+        self.bot = bot
         results = await self.scrape_all(self.web_paths)
         docs = []
-        for i,res in enumerate(results):
+        for i, res in enumerate(results):
             text, soup, header = results[i]
 
             metadata = _build_metadata(soup, self.web_paths[i])
@@ -221,7 +217,7 @@ class ReadableLoader(dl.WebBaseLoader):
                     metadata["authors"] = header["byline"]
                 metadata["website"] = header.get("siteName", "siteunknown")
                 metadata["title"] = header.get("title")
-                metadata['reader'] = True
+                metadata["reader"] = True
 
             metadata["sum"] = "source"
             docs.append(Document(page_content=text, metadata=metadata))

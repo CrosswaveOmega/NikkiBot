@@ -1,3 +1,4 @@
+from enum import Enum
 from .c_util import *
 import math
 import re
@@ -33,8 +34,6 @@ operatorList = [
     "≥",
     "⊜",
 ]
-
-from enum import Enum
 
 
 class DatabitType(Enum):

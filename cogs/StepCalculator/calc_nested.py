@@ -791,7 +791,6 @@ def parse_and_calculate_string(
     strings: str, spartA: str, spartB: str, outputFunc=defaultOutput
 ):
     # Calculates based on String
-
     """Preform math operations on string"""
     # make single character replacements.
     # Minus a negative equals positive.

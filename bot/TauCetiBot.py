@@ -1,3 +1,9 @@
+import gptmod
+from discord.app_commands import CommandTree
+from discord import Interaction
+from .PlaywrightAPI import PlaywrightMixin
+from .StatusMessages import StatusMessageManager, StatusMessage, StatusMessageMixin
+from database import DatabaseSingleton, Users_DoNotTrack, ServerData
 import configparser
 from typing import Any, List
 import discord
@@ -26,7 +32,8 @@ from .TCAppCommandAutoSync import (
 )
 from .TCMixins import CogFieldList, StatusTicker
 from javascriptasync import JSContext
-from javascriptasync.logging import setup_logging,get_filehandler
+from javascriptasync.logging import setup_logging, get_filehandler
+
 """ Primary Class
 
 This file is for an extended Bot Class for this Discord Bot.
@@ -39,13 +46,6 @@ intent.presences = True
 intent.message_content = True
 intent.guilds = True
 intent.members = True
-from database import DatabaseSingleton, Users_DoNotTrack, ServerData
-from .StatusMessages import StatusMessageManager, StatusMessage, StatusMessageMixin
-from .PlaywrightAPI import PlaywrightMixin
-from discord import Interaction
-from discord.app_commands import CommandTree
-import gptmod
-import gui
 
 
 class ConfigParserSub(configparser.ConfigParser):
@@ -102,7 +102,7 @@ class TCBot(
         self.keys = {}
         self.gptapi = None
         self.error_channel = None
-        self.jsenv=JSContext()
+        self.jsenv = JSContext()
         self.config: ConfigParserSub = ConfigParserSub()
 
         self.statmess: StatusMessageManager = StatusMessageManager(self)
@@ -139,7 +139,7 @@ class TCBot(
         if not self.bot_ready:
             # Start up the GuiPanel
             await self.jsenv.init_js_a()
-            setup_logging(logging.INFO,handler=get_filehandler(log_level=logging.INFO))
+            setup_logging(logging.INFO, handler=get_filehandler(log_level=logging.INFO))
             guimode = self.config.getbool("gui")
             if guimode:
                 self.guimode = True

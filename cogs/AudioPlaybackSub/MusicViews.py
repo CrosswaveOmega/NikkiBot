@@ -61,9 +61,9 @@ class PlayerButtons(discord.ui.View):
             self.backpage_button.emoji = PartialEmoji.from_str(
                 "a:trianglepointerleft:1133097547645341848"
             )
-            #'⬅️'
+            # '⬅️'
 
-            #'➡️'
+            # '➡️'
             self.nextpage_button.emoji = PartialEmoji.from_str(
                 "a:trianglepointer:1132773635195686924"
             )

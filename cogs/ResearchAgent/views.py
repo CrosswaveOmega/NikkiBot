@@ -28,8 +28,8 @@ class Followup(discord.ui.View):
         embed = discord.Embed(title="sauces")
         field_count = 0
         embeds = []
-        for id,tup in enumerate(self.my_sources[:10]):
-            doc, score=tup
+        for id, tup in enumerate(self.my_sources[:10]):
+            doc, score = tup
             if field_count == 3:
                 # Send the embed here or add it to a list of embeds
                 # Reset the field count and create a new embed

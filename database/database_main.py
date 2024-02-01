@@ -1,3 +1,6 @@
+import traceback
+from utility import filter_trace_stack
+from sqlalchemy import types
 from typing import Union
 from sqlalchemy import (
     Column,
@@ -18,10 +21,6 @@ import datetime
 
 """This defines a few universal tables."""
 """As well as a function for the singleton to collect the base it's defined within."""
-
-from sqlalchemy import types
-from utility import filter_trace_stack
-import traceback
 
 
 class AwareDateTime(types.TypeDecorator):
@@ -71,7 +70,7 @@ class ServerData(Main_DB_Base):
     """the last time a guild used any command."""
 
     # my_channel=Column(Integer, nullable=True)
-    #'''the bot's personal fallback channel.'''
+    # '''the bot's personal fallback channel.'''
 
     policy_agree = Column(Boolean, default=False)
     """

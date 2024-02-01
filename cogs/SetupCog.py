@@ -118,17 +118,19 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         profile = AppGuildTreeSync.get(server_id=ctx.guild.id)
         list = AppGuildTreeSync.load_list(server_id=ctx.guild.id)
-        onlist =  AppGuildTreeSync.load_onlist(server_id=ctx.guild.id)
+        onlist = AppGuildTreeSync.load_onlist(server_id=ctx.guild.id)
         if cogname.lower() == "setup":
             await ctx.send("you can't disable setup, sorry", ephemeral=True)
             return
         if ctx.bot.get_cog(cogname) is not None:
-            cog=ctx.bot.get_cog(cogname)
-            manual=private=False
-            
-            if hasattr(cog,'manual_enable'): manual=cog.manual_enable
+            cog = ctx.bot.get_cog(cogname)
+            manual = private = False
+
+            if hasattr(cog, "manual_enable"):
+                manual = cog.manual_enable
             if manual:
-                if hasattr(cog,'private'): private=cog.private
+                if hasattr(cog, "private"):
+                    private = cog.private
 
                 if cogname in onlist:
                     onlist.remove(cogname)
@@ -137,20 +139,15 @@ class Setup(commands.Cog, TC_Cog_Mixin):
                     )
                 else:
                     if private:
-                        if ctx.author.id!=ctx.bot.application.owner.id:
-                            await ctx.send(
-                                f"{cogname} is owner only.", ephemeral=True
-                            )
+                        if ctx.author.id != ctx.bot.application.owner.id:
+                            await ctx.send(f"{cogname} is owner only.", ephemeral=True)
                             return
                     onlist.append(cogname)
-                    await ctx.send(
-                        f"I will sync cog {cogname} here.", ephemeral=True
-                    )
+                    await ctx.send(f"I will sync cog {cogname} here.", ephemeral=True)
                 profile.save_onlist(onlist)
                 ctx.bot.tree.clear_commands(guild=ctx.guild)
                 await ctx.bot.all_guild_startup()
             else:
-
                 if cogname in list:
                     list.remove(cogname)
                     await ctx.send(
@@ -318,14 +315,15 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         description="check the bot permissions for this server or another.",
     )
     async def permission_check(self, ctx, guild_id: int = 0):
-
         "DEBUG: check the bot permissions for this server."
         # Get the bot member object for this guild or the passed in guild_id
         if guild_id == 0:
             guild_id = ctx.guild.id
         else:
-            if ctx.author.id!=ctx.bot.application.owner.id:
-                await ctx.send("This is for my owner only, to help when something is wrong.")
+            if ctx.author.id != ctx.bot.application.owner.id:
+                await ctx.send(
+                    "This is for my owner only, to help when something is wrong."
+                )
                 return
         guild = ctx.bot.get_guild(guild_id)
         bot_member = await guild.fetch_member(ctx.bot.user.id)

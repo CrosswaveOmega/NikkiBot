@@ -1,3 +1,4 @@
+from gptmod import ChatCreation
 from typing import Literal
 import discord
 import operator
@@ -67,7 +68,6 @@ Enemy: Cog Regional Manager - Rainmaker
 Tattle: "Every two rounds, Rainmaker will change the weather to a different phase.  Oil rain will make all toons take 10 damage and heal all cogs for 50 HP. Fog will obscure all data on screen.  Heavy Rain will amplify everyone's damage by 20%.  Storm Cell will drop damaging lightning bolts on your toons.  Moonsoon will only be used when Raimnaker is below 880 HP, prevent you from using Toon Up and Sound Gags, significantly increase her defense, and summon buffed cogs to fight for her side!  When she's at 1 HP, she'll dispell the current weather and her flunkies.  You'll get a special cutscene if you go three turns without attacking her, meaning this is a boss you can spare if you're feeling merciful!"
 
 Remember, if you do not have enough information, feel free to provide a short amusing remark based on the information you do have."""
-from gptmod import ChatCreation
 
 
 async def tattle(bot, tattlewith=""):
