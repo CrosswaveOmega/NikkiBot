@@ -36,6 +36,7 @@ from database.database_ai import AuditProfile, ServerAIConfig
 import utility.hash as hash
 from utility import split_string_with_code_blocks
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+import json
 
 lock = asyncio.Lock()
 
