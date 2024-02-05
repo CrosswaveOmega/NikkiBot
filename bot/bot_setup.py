@@ -325,7 +325,7 @@ class Main(commands.Cog):
         guild = ctx.guild
         message = await ctx.send("Target Message.")
         myurl = message.jump_url
-        robj = rrule(freq=WEEKLY, byweekday=SU, dtstart=datetime(2023, 1, 1, 15, 0))
+        robj = rrule(freq=WEEKLY, byweekday=SU, dtstart=datetime.datetime(2023, 1, 1, 15, 0))
         new = TCGuildTask.add_guild_task(guild.id, "COMPILE", message, robj)
         new.to_task(bot)
 

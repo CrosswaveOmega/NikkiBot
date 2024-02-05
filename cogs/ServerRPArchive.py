@@ -86,6 +86,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
     def cog_unload(self):
         # Remove the task function.
         Guild_Task_Functions.remove_task_function("COMPILE")
+        Guild_Task_Functions.remove_task_function("LAZYARCHIVE")
         pass
 
     def server_profile_field_ext(self, guild: discord.Guild):
@@ -149,7 +150,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             raise e
 
     @commands.command(hidden=True)
-    async def channelcount(self, ctx):
+    async def channelcount(self, ctx:commands.Context):
         """
         Get a count of all channels in your server
         """

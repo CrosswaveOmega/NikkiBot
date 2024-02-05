@@ -2,6 +2,8 @@ import gui
 import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Tuple
+
+from utility.globalfunctions import get_server_icon_color
 from .archive_database import HistoryMakers, ChannelArchiveStatus
 from database import ServerArchiveProfile
 import discord
@@ -38,6 +40,7 @@ class ArchiveContext:
         character_len=0,
         latest_time=None,
         total_ignored=0,
+        color=0
     ):
         """Initializes the ArchiveContext instance.
 
@@ -66,6 +69,7 @@ class ArchiveContext:
         self.character_len = character_len
         self.latest_time = latest_time
         self.total_ignored = total_ignored
+        self.server_color = color
 
     def evaluate_add(self, thisMessage):
         """Determines whether a message should be added based on scope.
@@ -117,7 +121,7 @@ class ArchiveContext:
         """
         self.latest_time = max(new, self.latest_time)
 
-    async def edit_mess(self, pre="", cname=""):
+    async def edit_mess(self, pre="", cname="",seconds=15):
         """Edits the status message to update the progress of the archival process.
 
         Args:
@@ -125,8 +129,18 @@ class ArchiveContext:
             cname: current channel name.
         """
         place = f"{self.total_archived} messages collected in total.\n"
-        text = f"{place} \n On channel {self.channel_spot}/{self.channel_count},\n {cname},\n Please wait. <a:SquareLoading:1143238358303264798>"
-        await self.status_mess.editw(min_seconds=15, content=text)
+        current_index=f"{self.channel_spot}/{self.channel_count}"
+        text = f"{place} \n On channel {current_index},\n {cname},\n Please wait. <a:SquareLoading:1143238358303264798>"
+        emb=discord.Embed(
+
+            description=text,
+            color=self.server_color
+        )
+        emb.add_field(name='Server Channels',value=self.channel_count,inline=True)
+        emb.add_field(name="Currently Indexed",value=current_index,inline=True)
+        emb.add_field(name='Total Messages archived.',value=self.total_archived)
+
+        await self.status_mess.editw(min_seconds=seconds, content=text)
 
 
 async def iter_hist_messages(cobj: discord.TextChannel, actx: ArchiveContext):
@@ -377,7 +391,7 @@ async def collect_server_history(ctx, **kwargs):
 
     messages = []
     statusMessToEdit = await channel.send(
-        "I'm getting everything in the given RP channels, this may take a moment!"
+        "I'm counting up the given RP channels, this may take a moment!"
     )
 
     statmess = StatusEditMessage(statusMessToEdit, ctx)
@@ -397,7 +411,7 @@ async def collect_server_history(ctx, **kwargs):
 
     chantups.extend(("textchan", chan) for chan in guild.text_channels)
     chanlen = len(chantups)
-
+    hex = await get_server_icon_color(ctx.guild)
     arch_ctx = ArchiveContext(
         bot=bot,
         profile=profile,
@@ -405,30 +419,14 @@ async def collect_server_history(ctx, **kwargs):
         last_stored_time=last_time,
         latest_time=new_last_time,
         channel_count=chanlen,
+        color=hex,
         **kwargs,
     )
 
     current_channel_count = 0
     current_channel_every = 50
     totalcharlen = 0
-
-    """for chan in guild.forums:
-            arch_ctx.channel_spot+=1
-            if profile.has_channel(chan.id)==False and chan.permissions_for(guild.me).view_channel==True and chan.permissions_for(guild.me).read_message_history==True:
-                threads=chan.threads
-                archived=[]
-                async for thread in chan.archived_threads():
-                    archived.append(thread)
-                threads=threads+archived
-                for thread in threads:
-                    mess=await iter_hist_messages(thread, arch_ctx)
-                    messages=messages+mess
-                    current_channel_count+=1
-                
-                await arch_ctx.edit_mess(f"",chan.name)
-                if current_channel_count >current_channel_every:
-                    await asyncio.sleep(1)
-                    current_channel_count=0"""
+    await statmess.editw(0,content="Channel count: {chanlen} Channels")
     for tup, chan in chantups:
         arch_ctx.channel_spot += 1
 
