@@ -1374,7 +1374,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             ml=1
         )
         me = await ctx.channel.send(
-            content=f"<a:LetWalk:1118184074239021209> This is going to take about...{seconds_to_time_string(int(remaining_time_float))}"
+            embed=embed
         )
         mt = StatusEditMessage(me, ctx)
         gui.gprint(archive_channel.name)
