@@ -233,7 +233,7 @@ class Main(commands.Cog):
 
     @commands.command()
     async def task_view(self, ctx):
-        """debugging only."""
+        """View all current tasks."""
         bot = ctx.bot
         guild = ctx.guild
         list = TCTaskManager.task_check()
@@ -243,6 +243,15 @@ class Main(commands.Cog):
             await ctx.send(i)
 
     @commands.command()
+    async def flag_view(self, ctx):
+        """View the guild flags."""
+        bot = ctx.bot
+        guild = ctx.guild
+        value=taskflags[str(ctx.guild.id)]
+        await ctx.send(f"guild command flags={value}")
+
+    
+    @commands.command(hidden=True)
     async def config_view(self, ctx):
         """view the config.ini file"""
         # bot=ctx.bot
@@ -259,7 +268,7 @@ class Main(commands.Cog):
         for p in pages.pages:
             await ctx.send(p)
 
-    @commands.command()
+    @commands.command(hidden=True)
     async def config_set(self, ctx, section: str, option: str, value: str):
         """set a value in the config.ini file"""
         # bot=ctx.bot
