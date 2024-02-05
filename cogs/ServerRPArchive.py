@@ -1366,6 +1366,13 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             return embed
 
         await m.edit( content=outstring)
+        embed=format_embed(
+            1,length,
+            0,message_total,
+            time=remaining_time_float,
+            index=0,
+            ml=1
+        )
         me = await ctx.channel.send(
             content=f"<a:LetWalk:1118184074239021209> This is going to take about...{seconds_to_time_string(int(remaining_time_float))}"
         )
