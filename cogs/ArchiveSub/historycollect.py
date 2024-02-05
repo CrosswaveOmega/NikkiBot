@@ -140,7 +140,7 @@ class ArchiveContext:
         emb.add_field(name="Currently Indexed",value=current_index,inline=True)
         emb.add_field(name='Total Messages archived.',value=self.total_archived)
 
-        await self.status_mess.editw(min_seconds=seconds, content=text)
+        await self.status_mess.editw(min_seconds=seconds, content=text,embed=emb),
 
 
 async def iter_hist_messages(cobj: discord.TextChannel, actx: ArchiveContext):

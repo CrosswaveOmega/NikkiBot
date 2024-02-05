@@ -1354,8 +1354,11 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
         remaining_time_float = total_time_for_cluster
         print(remaining_time_float)
+        outstring=f"It will take {seconds_to_time_string(int(remaining_time_float))} to post in the archive channel."
+        if int(remaining_time_float) <=0.1:
+            outstring="The Archive Channel is already up to date!"
         await m.edit(
-            content=f"It will take {seconds_to_time_string(int(remaining_time_float))} to post in the archive channel."
+            content=outstring
         )
         me = await ctx.channel.send(
             content=f"<a:LetWalk:1118184074239021209> This is going to take about...{seconds_to_time_string(int(remaining_time_float))}"
