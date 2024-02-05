@@ -426,7 +426,7 @@ async def collect_server_history(ctx, **kwargs):
     current_channel_count = 0
     current_channel_every = 50
     totalcharlen = 0
-    await statmess.editw(0,content="Channel count: {chanlen} Channels")
+    await arch_ctx.edit_mess(seconds=0)
     for tup, chan in chantups:
         arch_ctx.channel_spot += 1
 
@@ -462,9 +462,8 @@ async def collect_server_history(ctx, **kwargs):
                 current_channel_count += 1
 
             await arch_ctx.edit_mess(f"", chan.name)
-            if current_channel_count > current_channel_every:
+            if current_channel_count% current_channel_every==0:
                 await asyncio.sleep(1)
-                current_channel_count = 0
 
     if statusMessToEdit != None:
         await statusMessToEdit.delete()
