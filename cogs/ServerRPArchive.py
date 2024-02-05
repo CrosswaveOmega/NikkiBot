@@ -1330,8 +1330,6 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         profile.update(last_group_num=group_id)
 
         gui.gprint(lastgroup, group_id)
-        if dynamicwait:
-            remaining_time_float += totalcharlen * characterdelay
 
         gui.gprint("next")
 
@@ -1353,13 +1351,21 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         total_time_for_cluster += length * 2
 
         remaining_time_float = total_time_for_cluster
-        print(remaining_time_float)
+        if dynamicwait:  remaining_time_float += totalcharlen * characterdelay
+
         outstring=f"It will take {seconds_to_time_string(int(remaining_time_float))} to post in the archive channel."
-        if int(remaining_time_float) <=0.1:
-            outstring="The Archive Channel is already up to date!"
-        await m.edit(
-            content=outstring
-        )
+        if int(remaining_time_float) <=0.1: outstring="The Archive Channel is already up to date!"
+        def format_embed(group,grouplen,ma,mt,time, index=1,ml=1):
+
+            total=f"<a:LetWalk:1118184074239021209> Currently on group {group}/{grouplen}.\n"\
+                 + f"Current group is{int((index/ml)*100)}% archived\n Currently archived {ma} messages out of {mt} total.\n"\
+                + f"This is going to take another...{seconds_to_time_string(int(time))}",
+            embed=discord.Embed(
+                description=total
+            )
+            return embed
+
+        await m.edit( content=outstring)
         me = await ctx.channel.send(
             content=f"<a:LetWalk:1118184074239021209> This is going to take about...{seconds_to_time_string(int(remaining_time_float))}"
         )
@@ -1434,17 +1440,20 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 else:
                     await asyncio.sleep(timebetweenmess)
                     remaining_time_float = remaining_time_float - (timebetweenmess)
+                    embed=format_embed(e+1,length,messagearchived, message_total,time=remaining_time_float,index=index,ml=messagelength)
                     await mt.editw(
                         min_seconds=45,
-                        content=f"<a:LetWalk:1118184074239021209> Currently on group {e+1}/{length}.\n {int((index/messagelength)*100)}%\n Currently archived {messagearchived} messages out of {message_total}\n This is going to take another...{seconds_to_time_string(int(remaining_time_float))}",
+                        embed=embed
                     )
             sep.update(all_ok=True)
             self.bot.database.commit()
             await asyncio.sleep(2)
             remaining_time_float -= 2
+            embed=format_embed(e+1,length,messagearchived, message_total,time=remaining_time_float,index=messagelength,ml=messagelength)
             await mt.editw(
                 min_seconds=30,
-                content=f"<a:LetWalk:1118184074239021209> Currently on group {e+1}/{length}.\n {0}% \n Currently archived {messagearchived} messages out of {message_total}\n This is going to take another...{seconds_to_time_string(int(remaining_time_float))}",
+                embed=embed,
+                
             )
             # await edittime.invoke_if_time(content=f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
             bot.add_act(
