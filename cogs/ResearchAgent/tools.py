@@ -125,7 +125,8 @@ async def read_and_split_pdf(
     message = completion.choices[0].message
     if message.tool_calls:
         for tool in message.tool_calls:
-            title, authors, date, abstract = await mylib.call_by_tool_async(tool)
+            out=await mylib.call_by_tool_async(tool)
+            title, authors, date, abstract = out['content']
             metadata["authors"] = authors
             metadata["website"] = "PDF_ORIGIN"
             metadata["title"] = title
