@@ -56,7 +56,7 @@ class ChatCreation(ApiCore):
 
     def to_dict(self, pro=True):
         data = super().to_dict()
-        data["model"] = "gpt-3.5-turbo-1106"
+        data["model"] = "gpt-3.5-turbo-0125"
         return data
 
     def summary(self):

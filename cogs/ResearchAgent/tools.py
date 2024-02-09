@@ -5,7 +5,7 @@ from htmldate import find_date
 import gptmod
 from .ReadabilityLoader import ReadableLoader
 from langchain.vectorstores.chroma import Chroma
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain.indexes import VectorstoreIndexCreator
 import asyncio
 import copy
@@ -106,7 +106,7 @@ async def read_and_split_pdf(
     loader = PDFMinerLoader(url)
     data = loader.load()
     completion = await client.chat.completions.create(
-        model="gpt-3.5-turbo-1106",
+        model="gpt-3.5-turbo-0125",
         messages=[
             {
                 "role": "system",
@@ -454,7 +454,7 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
     # print(docs2)
     total_tokens = gptmod.util.num_tokens_from_messages(
         [{"role": "system", "content": prompt}, {"role": "user", "content": question}],
-        "gpt-3.5-turbo-1106",
+        "gpt-3.5-turbo-0125",
     )
     for e, tup in enumerate(docs):
         doc, score = tup
@@ -472,7 +472,7 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
         formatted_docs.append(output)
         # print(output)
         tokens = gptmod.util.num_tokens_from_messages(
-            [{"role": "system", "content": output}], "gpt-3.5-turbo-1106"
+            [{"role": "system", "content": output}], "gpt-3.5-turbo-0125"
         )
 
         if total_tokens + tokens >= 14000:
@@ -485,7 +485,7 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
     messages.append({"role": "user", "content": question})
     client = openai.AsyncOpenAI()
     completion = await client.chat.completions.create(
-        model="gpt-3.5-turbo-1106", messages=messages
+        model="gpt-3.5-turbo-0125", messages=messages
     )
     return completion.choices[0].message.content
 

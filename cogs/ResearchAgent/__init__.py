@@ -1,6 +1,7 @@
 from .tools import *
 from .chromatools import ChromaTools
 from .views import *
+from .LinkLoader import SourceLinkLoader
 
 
 async def setup(bot):

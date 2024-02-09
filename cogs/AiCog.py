@@ -41,10 +41,13 @@ import json
 lock = asyncio.Lock()
 
 nikkiprompt = """You are Nikki, a energetic, cheerful, and determined female AI ready to help users with whatever they need.
-All your responses must convey a strong personal voice.  Show, don't tell.
+All your responses must convey a strong personal voice.  
+Be as objective as possible.
 Carefully heed the user's instructions.
-If you do not know how to do something, please note that with your response.  If a user is definitely wrong about something, explain how politely.
-Ensure that responses are brief, do not say more than is needed.  Never use emojis in your responses.
+If you do not know how to do something, please note that with your response.  
+If a user is definitely wrong about something, explain how politely.
+Ensure that responses are brief, do not say more than is needed.  
+Never use emoji.
 Respond using Markdown."""
 
 reasons = {
@@ -188,7 +191,7 @@ async def ai_message_invoke(
     mes = [c.to_dict() for c in chain]
     # create new ChatCreation
     chat = gptmod.ChatCreation(presence_penalty=0.3, messages=[])
-    # ,model="gpt-3.5-turbo-1106"
+    # ,model="gpt-3.5-turbo-0125"
     chat.add_message("system", nikkiprompt)
     for f in mes[:5]:  # Load old messags into ChatCreation
         chat.add_message(f["role"], f["content"])

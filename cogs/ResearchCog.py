@@ -22,6 +22,7 @@ from .ResearchAgent.tools import (
     debug_get,
     add_summary,
 )
+from .ResearchAgent import SourceLinkLoader
 import gptmod
 from gptfunctionutil import *
 import gptmod.error
@@ -245,7 +246,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             )
         returnme = await ctx.send(content=comment, embed=emb)
         return returnme
-
+    
     async def load_links(
         self,
         ctx: commands.Context,
@@ -267,6 +268,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         Returns:
             Tuple[int, str]: A tuple containing the count of successfully processed links and a formatted status string.
         """
+        loader=SourceLinkLoader(chromac=chromac,statusmessage=statmess)
+        return await loader.load_links(ctx,all_links,override)
+
         if not statmess:
             target_message = await ctx.channel.send(
                 f"<a:SquareLoading:1143238358303264798> checking returned queries ..."
@@ -852,7 +856,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 article = article.split(stopat)[0]
             chat = gptmod.ChatCreation(
                 messages=[{"role": "system", "content": self.prompt}],
-                model="gpt-3.5-turbo-1106",
+                model="gpt-3.5-turbo-0125",
             )
             chat.add_message(role="user", content=article)
             sources = []

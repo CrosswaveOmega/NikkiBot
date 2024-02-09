@@ -72,7 +72,7 @@ Remember, if you do not have enough information, feel free to provide a short am
 
 async def tattle(bot, tattlewith=""):
     object = ChatCreation(
-        model="gpt-3.5-turbo-1106",
+        model="gpt-3.5-turbo-0125",
         messages=[
             {"role": "system", "content": tattle_prompt},
             {"role": "user", "content": tattlewith},
