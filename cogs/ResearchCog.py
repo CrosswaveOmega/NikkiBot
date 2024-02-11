@@ -10,24 +10,13 @@ from discord.ext import commands
 
 from discord import app_commands
 from bot import TC_Cog_Mixin, StatusEditMessage, super_context_menu, TCBot
-from .ResearchAgent.tools import (
-    search_sim,
-    extract_embed_text,
-    google_search,
-    has_url,
-    read_and_split_link,
-    store_splits,
-    format_answer,
-    remove_url,
-    debug_get,
-    add_summary,
-)
+
 from .ResearchAgent import SourceLinkLoader
 import gptmod
 from gptfunctionutil import *
 import gptmod.error
 from database.database_ai import AuditProfile
-
+import javascriptasync
 # I need the readability npm package to work, so
 from javascriptasync import require, eval_js
 import assets
@@ -39,7 +28,7 @@ from googleapiclient.discovery import build  # Import the library
 
 from utility import prioritized_string_split, select_emoji
 from utility.embed_paginator import pages_of_embeds
-
+import  cogs.ResearchAgent.tools as tools
 SERVER_ONLY_ERROR = "This command may only be used in a guild."
 INVALID_SERVER_ERROR = (
     "I'm sorry, but the research system is unavailable in this server."
@@ -172,7 +161,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         totranslate = message.content
         if message.embeds:
             for m in message.embeds:
-                result = extract_embed_text(m)
+                result = tools.extract_embed_text(m)
                 totranslate += f"\n {result}"
         chat.add_message(role="user", content=totranslate)
 
@@ -230,7 +219,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         if "google" not in bot.keys or "cse" not in bot.keys:
             return "insufficient keys!"
 
-        results = google_search(ctx.bot, query, limit)
+        results = tools.google_search(ctx.bot, query, limit)
         allstr = ""
         emb = discord.Embed(title="Search results", description=comment)
         readable_links = []
@@ -284,7 +273,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         lines = "\n".join([f"{select_emoji(s)} {link}" for s, link in all_link_status])
         for e, link in enumerate(all_links):
             embed = discord.Embed(description=f"out=\n{lines}")
-            has, getres = has_url(link, client=chromac)
+            has, getres = tools.has_url(link, client=chromac)
             if has and not override:
                 all_link_status[e][0] = "skip"
                 current += f"[Link {e}]({link}) has {len(getres['documents'])} cached documents.\n"
@@ -305,7 +294,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 hascount += 1
             else:
                 try:
-                    splits = await read_and_split_link(ctx.bot, link)
+                    splits = await tools.read_and_split_link(ctx.bot, link)
                     dbadd = True
                     for split in splits:
                         gui.gprint(split.page_content)
@@ -330,7 +319,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                             content=f"<a:LetWalkR:1118191001731874856> {current}",
                             embed=embed,
                         )
-                        store_splits(splits, client=chromac)
+                        tools.store_splits(splits, client=chromac)
                 except Exception as err:
                     all_link_status[e][0] = "noc"
                     current += f"{str(err)}"
@@ -400,7 +389,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         statmess = StatusEditMessage(target_message, ctx)
         current = ""
         async with ctx.channel.typing():
-            results = google_search(ctx.bot, query, result_limit)
+            results = tools.google_search(ctx.bot, query, result_limit)
 
             all_links = [r["link"] for r in results]
             hascount = 0
@@ -426,7 +415,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         embed.set_footer(text=comment)
         await statmess.editw(min_seconds=0, content="querying db...", embed=embed)
         async with ctx.channel.typing():
-            data = await search_sim(
+            data = await tools.search_sim(
                 question, client=chromac, titleres=site_title_restriction
             )
             len(data)
@@ -441,7 +430,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await statmess.editw(
                 min_seconds=0, content="drawing conclusion...", embed=embed
             )
-            answer = await format_answer(question, docs2)
+            answer = await tools.format_answer(question, docs2)
             page = commands.Paginator(prefix="", suffix=None)
             viewme = Followup(bot=self.bot, page_content=docs2)
             for p in answer.split("\n"):
@@ -462,7 +451,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @commands.command(name="loadurl", description="loadurl test.", extras={})
     async def loader_test(self, ctx: commands.Context, link: str):
         async with ctx.channel.typing():
-            splits = await read_and_split_link(ctx.bot, link)
+            splits = await tools.read_and_split_link(ctx.bot, link)
         await ctx.send(
             f"[Link ]({link}) has {len(splits)} splits.", suppress_embeds=True
         )
@@ -516,9 +505,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             return "INVALID CONTEXT"
 
         chromac = ChromaTools.get_chroma_client()
-        has, getres = has_url(link, client=chromac)
+        has, getres = tools.has_url(link, client=chromac)
         if has:
-            remove_url(link, client=chromac)
+            tools.remove_url(link, client=chromac)
 
             await ctx.send("removal complete")
         else:
@@ -604,7 +593,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             embed.add_field(name="restrict", value=site_title_restriction, inline=False)
         await statmess.editw(min_seconds=0, content="querying db...", embed=embed)
         async with ctx.channel.typing():
-            data = await search_sim(
+            data = await tools.search_sim(
                 question,
                 client=chromac,
                 titleres=site_title_restriction,
@@ -624,7 +613,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await statmess.editw(
                 min_seconds=0, content="drawing conclusion...", embed=embed
             )
-            answer = await format_answer(question, docs2)
+            answer = await tools.format_answer(question, docs2)
             page = commands.Paginator(prefix="", suffix=None)
             viewme = Followup(bot=self.bot, page_content=docs2)
             for p in answer.split("\n"):
@@ -651,7 +640,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             min_seconds=0, content=f"querying db using `{titleres}`..."
         )
         async with ctx.channel.typing():
-            data = await debug_get(
+            data = await tools.debug_get(
                 "not_important.", client=chromac, titleres=site_title_restriction
             )
             datas = zip(data["ids"], data["metadatas"])
@@ -685,7 +674,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @oai_check()
     async def source_get(self, ctx: commands.Context, question: str):
         chromac = ChromaTools.get_chroma_client()
-        data = await search_sim(question, client=chromac, titleres="None")
+        data = await tools.search_sim(question, client=chromac, titleres="None")
         len(data)
         if len(data) <= 0:
             await ctx.send("NO RELEVANT DATA.")
@@ -811,8 +800,16 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             message = ctx.message
             guild = message.guild
             user = message.author
-            article, header = await read_article_async(ctx.bot.jsenv, url, False)
-
+            mes = await ctx.channel.send(
+                f"<a:LoadingBlue:1206301904863502337> Reading Article <a:LoadingBlue:1206301904863502337>"
+            )
+            try:
+                async with ctx.channel.typing():
+                    article, header = await read_article_async(ctx.bot.jsenv, url)
+            except Exception as e:
+                await mes.edit(content="I couldn't read the link, sorry.  It might be too large.")
+                raise e;
+            await mes.delete()
             def filter_inline_links(markdown_string):
                 return re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r"\1", markdown_string)
 
@@ -827,12 +824,18 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             mytitle = header.get("title", "notitle")
             await ctx.send(f"# {mytitle}")
             length = len(fil)
+            embeds=[]
             for e, d in enumerate(fil):
                 use = d
                 if escape_markdown:
                     use = discord.utils.escape_markdown(d)
                 emb = discord.Embed(title=f"{mytitle}: {e}/{length}", description=use)
-                await ctx.send(embed=emb)
+                embeds.append(emb)
+            if len(embeds)>5:
+                message=await pages_of_embeds(ctx,display=embeds)
+            else:
+                for e in embeds: await ctx.send(embed=e)
+
 
     @commands.command(
         name="summarize", description="make a summary of a url.", extras={}
@@ -849,9 +852,14 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             user = message.author
 
             mes = await ctx.channel.send(
-                f"<a:SquareLoading:1143238358303264798> Reading Article"
+                f"<a:LoadingBlue:1206301904863502337> Reading Article <a:LoadingBlue:1206301904863502337>"
             )
-            article, header = await read_article(ctx.bot.jsenv, url)
+            try:
+                article, header = await read_article(ctx.bot.jsenv, url)
+            except Exception as e:
+                await mes.edit(content="I couldn't read the link, sorry.  It might be too large.")
+                raise e;
+            await mes.delete()
             if stopat != None:
                 article = article.split(stopat)[0]
             chat = gptmod.ChatCreation(
@@ -927,7 +935,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                             f"<a:SquareLoading:1143238358303264798> Saving {url} summary..."
                         )
                         chromac = ChromaTools.get_chroma_client()
-                        await add_summary(url, result, header, client=chromac)
+                        await tools.add_summary(url, result, header, client=chromac)
                         await target_message.edit(content="SUMMARY SAVED!")
                 except Exception as e:
                     await ctx.bot.send_error(e)

@@ -427,6 +427,16 @@ async def debug_get(
 
 
 async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> str:
+    """
+    Formats an answer to a given question using the provided documents.
+
+    Args:
+        question (str): The question to answer.
+        docs (List[Tuple[Document, float]]): A list of tuples containing Document objects and relevance scores.
+
+    Returns:
+        str: The formatted answer as a string.
+    """
     prompt = """
     Use the provided sources to answer question provided to you by the user.  Each of your source web pages will be in their own system messags, slimmed down to a series of relevant snippits,
     and are in the following template:
@@ -449,9 +459,7 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
     messages = [
         {"role": "system", "content": prompt},
     ]
-    # print(docs)
 
-    # print(docs2)
     total_tokens = gptmod.util.num_tokens_from_messages(
         [{"role": "system", "content": prompt}, {"role": "user", "content": question}],
         "gpt-3.5-turbo-0125",
@@ -491,6 +499,15 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
 
 
 def extract_embed_text(embed):
+    """
+    Extracts the text from an embed object and formats it as a bullet list.
+    
+    Args:
+        embed (Embed): The embed object to extract text from.
+    
+    Returns:
+        str: A string containing the title, description, and fields of the embed, formatted as a bullet list.
+    """
     bullet_list = []
 
     # Extract title, description, and fields from the Embed
@@ -505,5 +522,4 @@ def extract_embed_text(embed):
 
     # Join the extracted text with bullet points
     bullet_string = "\n".join([f"• {line}" for line in bullet_list])
-
     return bullet_string

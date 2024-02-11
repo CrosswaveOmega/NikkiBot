@@ -39,8 +39,9 @@ class Followup(discord.ui.View):
 
             meta = doc.metadata
             content = doc.page_content
+            
             output = f"""**ID**:{id}
-            **Name:** {meta['title'][:100]}
+            **Name:** {meta.get('title','TITLE UNAVAILABLE')[:100]}
             **Link:** {meta['source']}
             **Text:** {content}"""
             embed.add_field(name=f"s: score:{score}", value=output[:1020], inline=False)

@@ -219,14 +219,16 @@ async def pages_of_embeds_2(
 ) -> Tuple[PageClassContainer, EmbedPageButtons]:
     """
     Creates a PageClassContainer and a EmbedPageButtons object and returns them as a tuple.
-    This function is similar to pages_of_embeds() but returns the EmbedPageButtons object along with the PageClassContainer.
+    This function is similar to pages_of_embeds() but returns 
+    the EmbedPageButtons object along with the PageClassContainer without sending a 
+    new message to discord.
 
     Parameters:
     -----------
     ctx: commands.Context
         The context object of the message that triggered the command.
     display: List[discord.Embed]
-        A list of tuples, each containing an Embed object and a string.
+        A list of Embed objects and a string.
 
     Returns:
     --------
@@ -246,14 +248,16 @@ async def pages_of_embeds(
     ctx: commands.Context, display: List[discord.Embed], **kwargs
 ) -> discord.Message:
     """
-    Sends iteratable pages of embeds as messages.
+    Creates a new PageClassContainer filled with embeds, and sends it as 
+     a message with buttons.
 
     Parameters:
     -----------
     ctx: commands.Context
         The context object of the message that triggered the command.
     display: List[discord.Embed]
-        A list of tuples, each containing an Embed object and a string.
+        A list of Embeds.
+    kwargs: Keyword arguments for discord.message.
 
     Returns:
     --------

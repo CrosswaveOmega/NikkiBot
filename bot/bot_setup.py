@@ -1,4 +1,6 @@
 import datetime
+import io
+import re
 from typing import Any
 import discord
 import traceback
@@ -45,7 +47,8 @@ import database.database_main as dbmain
 from assets import AssetLookup
 import openai
 
-
+from utility import WebhookMessageWrapper as web
+from utility import urltomessage
 bot: TCBot = TCBot()
 
 
@@ -338,6 +341,7 @@ class Main(commands.Cog):
     async def ping_tester(self, ctx: commands.Context, content: str = "new"):
         """debugging only."""
         await ctx.send(content=content)
+
 
     @commands.command(hidden=True)
     async def purge_guild_data(self, ctx, guildid: int):
