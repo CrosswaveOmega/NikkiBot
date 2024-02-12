@@ -104,7 +104,7 @@ async def read_and_split_pdf(
 ):
     mylib = MyLib()
     client = openai.AsyncClient()
-    loader = PDFMinerLoader(url)
+    loader = PyPDFLoader(url)
     data = loader.load()
     completion = await client.chat.completions.create(
         model="gpt-3.5-turbo-0125",
