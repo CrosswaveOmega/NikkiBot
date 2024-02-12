@@ -1,3 +1,4 @@
+import discord
 from gptfunctionutil import GPTFunctionLibrary, AILibFunction, LibParam
 from utility import prioritized_string_split
 from langchain_community.document_loaders import PyPDFLoader, PDFMinerLoader
@@ -138,10 +139,10 @@ async def read_and_split_pdf(
             metadata["reader"] = True
             metadata["date"] = date
             for e, pagedata in enumerate(data):
-                print(pagedata.metadata)
-                page = f"Page {e}"
+                print(e,pagedata.metadata)
                 newdata = copy.deepcopy(metadata)
-                newdata["page"] = page
+                newdata["page"] = f"Page {e}"
+                await bot.send_error_embed(discord.Embed(title="Paging"),content=f"{e},{len(data)},{newdata['page']}")
                 text = pagedata.page_content
                 # dealing with awkward spacing
                 filtered_text = re.sub(r"-\s*\n", "", text)
