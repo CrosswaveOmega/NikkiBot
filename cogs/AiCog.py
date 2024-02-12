@@ -472,7 +472,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         thread_id = thread.id
         if profile.has_channel(thread.parent_id):
             em=discord.Embed(title="clear")
-            self.bot.send_error_embed(em,"thread removed!")
+            await self.bot.send_error_embed(em,"thread removed!")
             messages = profile.clear_message_chains(thread_id=thread_id)
             print('Purged.')
     @commands.Cog.listener()
