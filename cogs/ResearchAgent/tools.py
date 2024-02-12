@@ -200,8 +200,9 @@ async def split_link(doc: Document, chunk_size: int = 1800, prior=[]):
     fil = prioritized_string_split(
         doc.page_content, tosplitby, default_max_len=chunk_size
     )
-    for chunk in fil:
+    for e, chunk in enumerate(fil):
         metadatac = copy.deepcopy(metadata)
+        metadatac['split']=e
         new_doc = Document(page_content=chunk, metadata=metadatac)
         newdata.append(new_doc)
     return newdata
