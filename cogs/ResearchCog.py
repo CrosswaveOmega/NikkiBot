@@ -345,6 +345,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
         # 
         async with ctx.channel.typing():
+            #Preform Simularity Search on Collection.
             data = await tools.search_sim(
                 question, client=chromac, titleres=site_title_restriction
             )
@@ -356,7 +357,6 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 name="Cache_Query",
                 value=f"About {len(docs2)} entries where found.  Max score is {docs2[0][1]}",
             )
-            # docs2 = sorted(data, key=lambda x: x[1],reverse=True)
             await statmess.editw(
                 min_seconds=0, content="drawing conclusion...", embed=embed
             )
@@ -808,8 +808,6 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
             # Call API
             bot = ctx.bot
-            messageresp = None
-            await mes.delete()
             async with ctx.channel.typing():
                 try:
                     res = await bot.gptapi.callapi(chat)

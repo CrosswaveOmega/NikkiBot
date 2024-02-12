@@ -468,12 +468,13 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         )
     @commands.Cog.listener()
     async def on_raw_thread_delete(self,thread:discord.RawThreadDeleteEvent):
-        profile = ServerAIConfig.get_or_new(thread.guild_id)
-        thread_id = thread.thread_id
-        em=discord.Embed(title="clear")
-        await self.bot.send_error_embed(em,"thread removed!")
-        messages = profile.clear_message_chains(thread_id=thread_id)
-        print('Purged.')
+        try:
+            profile = ServerAIConfig.get_or_new(thread.guild_id)
+            thread_id = thread.thread_id
+            messages = profile.clear_message_chains(thread_id=thread_id)
+            print('Purged.')
+        except Exception as e:
+            await self.bot.send_error(e)
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         """Listener that will invoke the AI upon a message."""
