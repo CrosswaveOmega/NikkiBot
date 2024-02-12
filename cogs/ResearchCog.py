@@ -260,86 +260,11 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         loader=SourceLinkLoader(chromac=chromac,statusmessage=statmess)
         return await loader.load_links(ctx,all_links,override)
 
-        if not statmess:
-            target_message = await ctx.channel.send(
-                f"<a:SquareLoading:1143238358303264798> checking returned queries ..."
-            )
-            statmess = StatusEditMessage(target_message, ctx)
-        if not chromac:
-            chromac = ChromaTools.get_chroma_client()
-        current, hascount = "", 0
-
-        all_link_status = [["pending", link] for link in all_links]
-        lines = "\n".join([f"{select_emoji(s)} {link}" for s, link in all_link_status])
-        for e, link in enumerate(all_links):
-            embed = discord.Embed(description=f"out=\n{lines}")
-            has, getres = tools.has_url(link, client=chromac)
-            if has and not override:
-                all_link_status[e][0] = "skip"
-                current += f"[Link {e}]({link}) has {len(getres['documents'])} cached documents.\n"
-                embed.description = "\n".join(
-                    [f"{select_emoji(s)} {link}" for s, link in all_link_status]
-                )
-                await statmess.editw(
-                    min_seconds=5,
-                    content=f"<a:LetWalkR:1118191001731874856> {current}",
-                    embed=embed,
-                )
-                ver = zip(getres["documents"], getres["metadatas"])
-                for d, e in ver:
-                    if e["source"] != link:
-                        await ctx.send(
-                            f"the url in the cache doesn't match the provided url."
-                        )
-                hascount += 1
-            else:
-                try:
-                    splits = await tools.read_and_split_link(ctx.bot, link)
-                    dbadd = True
-                    for split in splits:
-                        gui.gprint(split.page_content)
-                        for i, m in split.metadata.items():
-                            gui.gprint(i, m)
-                            if m == None:
-                                split.metadata[i] = "N/A"
-                            else:
-                                dbadd = True
-                    if dbadd:
-                        all_link_status[e][0] = "add"
-                        toadd = f"[Link {e}]({link}) has {len(splits)} splits.\n"
-                        if has and override:
-                            all_link_status[e][0] = "edit"
-                            toadd = f"[Link {e}]({link}) had {{len(getres['documents'])}} has {len(splits)} splits.\n"
-                        current += toadd
-                        embed.description = "\n".join(
-                            [f"{select_emoji(s)} {link}" for s, link in all_link_status]
-                        )
-                        await statmess.editw(
-                            min_seconds=5,
-                            content=f"<a:LetWalkR:1118191001731874856> {current}",
-                            embed=embed,
-                        )
-                        tools.store_splits(splits, client=chromac)
-                except Exception as err:
-                    all_link_status[e][0] = "noc"
-                    current += f"{str(err)}"
-                    await ctx.send(str(err))
-                    embed.description = "\n".join(
-                        [f"{select_emoji(s)} {link}" for s, link in all_link_status]
-                    )
-                    await statmess.editw(
-                        min_seconds=5,
-                        content=f"<a:LetWalkR:1118191001731874856> {current}",
-                        embed=embed,
-                    )
-                    await self.bot.send_error(err)
-        return hascount, "\n".join(
-            [f"{select_emoji(s)} {link}" for s, link in all_link_status]
-        )
+        
 
     @AILibFunction(
         name="google_detective",
-        description="Solve a question using a google search.  Form the query based on the question, and then use the page text from the search results to create an answer..",
+        description="Solve a question using a google search.  Form the query based on the question, and then use the page text from the search results to create an answer.",
         enabled=False,
         force_words=["research"],
         required=["comment"],
@@ -370,6 +295,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         "Search google for a query."
 
         bot = ctx.bot
+        #Pre check.
         if not ctx.guild:
             await ctx.send("needs to be guild")
             return
@@ -388,6 +314,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
         statmess = StatusEditMessage(target_message, ctx)
         current = ""
+        # SEARCH FOR AND LOAD.
         async with ctx.channel.typing():
             results = tools.google_search(ctx.bot, query, result_limit)
 
@@ -404,7 +331,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 ),
             )
             hascount, lines = await self.load_links(ctx, all_links, chromac, statmess)
-
+        #DISPLAY RESULTS OF SEARCH.
         embed = discord.Embed(
             title=f"Search Query: {query} ",
             description=f"{hascount}/{len(all_links)}\nout=\n{lines}",
@@ -413,7 +340,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         if site_title_restriction != "None":
             embed.add_field(name="restrict", value=site_title_restriction, inline=False)
         embed.set_footer(text=comment)
+        
         await statmess.editw(min_seconds=0, content="querying db...", embed=embed)
+
+        # 
         async with ctx.channel.typing():
             data = await tools.search_sim(
                 question, client=chromac, titleres=site_title_restriction

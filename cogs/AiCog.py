@@ -466,7 +466,15 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         await MessageTemplates.server_ai_message(
             ctx, "I will stop listening there, ok?  Pings will still work, though."
         )
-
+    @commands.Cog.listener()
+    async def on_raw_thread_delete(self,thread:discord.RawThreadDeleteEvent):
+        profile = ServerAIConfig.get_or_new(thread.guild_id)
+        thread_id = thread.id
+        if profile.has_channel(thread.parent_id):
+            em=discord.Embed(title="clear")
+            self.bot.send_error_embed(em,"thread removed!")
+            messages = profile.clear_message_chains(thread_id=thread_id)
+            print('Purged.')
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         """Listener that will invoke the AI upon a message."""
