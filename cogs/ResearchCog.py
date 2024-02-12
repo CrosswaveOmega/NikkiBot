@@ -893,6 +893,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             )
             out = zip(res['metadatas'], res['documents'])
             out = sorted(out, key=lambda x: x[0]['split'])
+            header=res['metadatas'][0]
             for c in out:
                 article += c[1] + "\n"
             await mes.delete()
