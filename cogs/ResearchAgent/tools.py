@@ -176,6 +176,7 @@ async def read_and_split_link(
         data = await loader.aload(bot)
     print("ok")
     newdata = []
+    splitnum=0
     for d in data:
         # Strip excess white space.
         simplified_text = d.page_content.strip()
@@ -184,14 +185,14 @@ async def read_and_split_link(
         simplified_text = simplified_text.replace("\t{3,}", "\t")
         simplified_text = re.sub(r"\n+(\s*\n)*", "\n", simplified_text)
         d.page_content = simplified_text
-        split = await split_link(d, chunk_size=chunk_size, prior=prioritysplit)
+        split,splitnum = await split_link(d, chunk_size=chunk_size, prior=prioritysplit,add=splitnum)
         newdata.extend(split)
 
     all_splits = newdata
     return all_splits
 
 
-async def split_link(doc: Document, chunk_size: int = 1800, prior=[]):
+async def split_link(doc: Document, chunk_size: int = 1800, prior=[],add=0):
     newdata = []
 
     metadata = doc.metadata
@@ -200,12 +201,15 @@ async def split_link(doc: Document, chunk_size: int = 1800, prior=[]):
     fil = prioritized_string_split(
         doc.page_content, tosplitby, default_max_len=chunk_size
     )
+
     for e, chunk in enumerate(fil):
         metadatac = copy.deepcopy(metadata)
-        metadatac['split']=e
+        
+        metadatac['split']=add
+        add+=1
         new_doc = Document(page_content=chunk, metadata=metadatac)
         newdata.append(new_doc)
-    return newdata
+    return newdata, add
 
 
 async def add_summary(
