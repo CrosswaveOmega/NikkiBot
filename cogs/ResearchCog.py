@@ -915,7 +915,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             # Call API
             bot = ctx.bot
             async with ctx.channel.typing():
-                try:
+                if True:
                     res = await bot.gptapi.callapi(chat)
     
                     # await ctx.send(res)
