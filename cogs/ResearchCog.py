@@ -554,6 +554,74 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 if messageresp == None:
                     messageresp = ms
             await ctx.channel.send("complete", view=viewme)
+            
+    @commands.is_owner()
+    @commands.hybrid_command(
+        name="researchpoint", description="Extract relevant information from the given source", extras={}
+    )
+    @oai_check()
+    @ai_rate_check()
+    @app_commands.guilds(int(target_server[1]))
+    @app_commands.describe(question="question to be asked.")
+    @app_commands.describe(k="min number of sources to grab.")
+    @app_commands.describe(use_mmr="Use the max_marginal_relevance_search")
+    @app_commands.describe(
+        site_title_restriction="Restrain query to websites with this in the title."
+    )
+    async def research_bullet(
+        self,
+        ctx: commands.Context,
+        question: str,
+        k: int = 5,
+        site_title_restriction: str = "None",
+        use_mmr: bool = False,
+    ):
+        """
+        question:str-Question you want to ask
+        site_title_restriction-Restrict to all with this in the title.
+        """
+        bot = ctx.bot
+        if not ctx.guild:
+            await ctx.send("needs to be guild")
+            return
+        if await ctx.bot.gptapi.check_oai(ctx):
+            await ctx.send(INVALID_SERVER_ERROR)
+            return "INVALID CONTEXT"
+
+        chromac = ChromaTools.get_chroma_client()
+        res = await ctx.send("ok")
+        statmess = StatusEditMessage(res, ctx)
+        embed = discord.Embed(title=f"Search Query: {question} ", description=f"ok")
+        embed.add_field(name="Question", value=question, inline=False)
+        if site_title_restriction != "None":
+            embed.add_field(name="restrict", value=site_title_restriction, inline=False)
+        await statmess.editw(min_seconds=0, content="querying db...", embed=embed)
+        async with ctx.channel.typing():
+            data = await tools.search_sim(
+                question,
+                client=chromac,
+                titleres=site_title_restriction,
+                k=k,
+                mmr=use_mmr,
+            )
+
+            if len(data) <= 0:
+                return "NO RELEVANT DATA."
+            docs2 = sorted(data, key=lambda x: x[1], reverse=False)
+            embed.add_field(
+                name="Cache_Query",
+                value=f"About {len(docs2)} entries where found.  Max score is {docs2[0][1]}",
+            )
+            # docs2 = sorted(data, key=lambda x: x[1],reverse=True)
+            await statmess.editw(
+                min_seconds=0, content="drawing conclusion...", embed=embed
+            )
+            answer = await tools.get_points(question, docs2)
+            for a in answer:
+                d,c=a
+                emb=discord.Embed(title=d.metadata.get("title","?"), description=c)
+                await ctx.send(embed=emb)
+
 
     @commands.command(name="titlecheck")
     @oai_check()

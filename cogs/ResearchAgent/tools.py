@@ -430,6 +430,69 @@ async def debug_get(
         )
         return res
 
+async def get_points(question:str,docs:List[Tuple[Document, float]])->str:
+    prompt = """
+    Use the provided source to extract important bullet points
+     to answer the question provided to you by the user.  
+    The source will be in the system messags, 
+    slimmed down to a series of relevant snippits,
+    in the following template:
+        BEGIN
+        **ID:** [Source ID number here]
+        **Name:** [Name Here]
+        **Link:** [Link Here]
+        **Text:** [Text Content Here]
+        END
+    The websites may contradict each other, prioritize information from encyclopedia pages 
+    Your and wikis.  Valid news sources follow.  
+    Your answer must be 5-10 descriptive bullet points related to the given source
+     and question, dependent on the length or descriptiveness of the snippit.
+    Preserve key information from the sources and maintain a descriptive tone. 
+    Your goal is not to summarize, your goal is to extract the relevant information
+      from the source that will answer the user's question.
+    Exclude any concluding remarks from the answer.
+    """
+    
+    client = openai.AsyncOpenAI()
+    formatted_docs = []
+    lastv=[]
+    for e, tup in enumerate(docs):
+        doc, score = tup
+        # print(doc)
+        # 'metadata',{'title':'UNKNOWN','source':'unknown'})
+        meta = doc.metadata
+        content = doc.page_content  # ('page_content','Data lost!')
+        tile = "NOTITLE"
+        if "title" in meta:
+            tile = meta["title"]
+        output = f"""**ID**:{e}
+        **Name:** {tile}
+        **Link:** {meta['source']}
+        **Text:** {content}"""
+        formatted_docs.append(output)
+        # print(output)
+        tokens = gptmod.util.num_tokens_from_messages(
+            [{"role": "system", "content": output}], "gpt-3.5-turbo-0125"
+        )
+
+        if total_tokens + tokens >= 14000:
+            break
+        total_tokens += tokens
+        messages=[]
+        messages = [
+        {"role": "system", "content": prompt},
+    ]
+        messages.append({"role": "system", "content": output})
+        if total_tokens >= 12000:
+            break
+        messages.append({"role": "user", "content": question})
+        
+        completion = await client.chat.completions.create(
+            model="gpt-3.5-turbo-0125", messages=messages
+        )
+        docs=(doc,completion.choices[0].message.content)
+        lastv.append(docs)
+    return lastv 
 
 async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> str:
     """
