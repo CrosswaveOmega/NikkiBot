@@ -475,16 +475,13 @@ async def get_points(question:str,docs:List[Tuple[Document, float]])->str:
             [{"role": "system", "content": output}], "gpt-3.5-turbo-0125"
         )
 
-        if total_tokens + tokens >= 14000:
-            break
-        total_tokens += tokens
+
         messages=[]
         messages = [
         {"role": "system", "content": prompt},
-    ]
+        ]
         messages.append({"role": "system", "content": output})
-        if total_tokens >= 12000:
-            break
+
         messages.append({"role": "user", "content": question})
         
         completion = await client.chat.completions.create(
