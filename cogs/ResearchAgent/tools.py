@@ -235,7 +235,7 @@ async def add_summary(
         metadata["language"] = header.get("lang", "en")
         metadata["dateadded"] = datetime.datetime.utcnow().timestamp()
         metadata["sum"] = "sum"
-        metadata["split"]=""
+        metadata["split"]="NA"
         metadata["reader"] = True
         metadata["date"] = "None"
         try:
@@ -252,7 +252,7 @@ async def add_summary(
     docs = Document(page_content=desc, metadata=metadata)
     newdata = [docs]
     ids = [
-        f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,doc.metadata['source']))}],sid:[{e}]"
+        f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,doc.metadata['source']))}],sum:[{e}]"
         for e, doc in enumerate(newdata)
     ]
     if client == None:
