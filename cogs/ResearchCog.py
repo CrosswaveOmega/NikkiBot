@@ -132,7 +132,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         self.bot: TCBot = bot
         self.lock = asyncio.Lock()
         self.prompt = """
-        Summarize general news articles, forum posts, and wiki pages that have been converted into Markdown. Condense the content into 2-4 medium-length paragraphs with 3-7 sentences per paragraph. Preserve key information and maintain a descriptive tone. The summary should be easily understood by a 10th grader. Exclude any concluding remarks from the summary.
+        Summarize general news articles, forum posts, and wiki pages that have been converted into Markdown. Condense the content into 2-4 medium-length paragraphs with 3-7 sentences per paragraph. Preserve key information and maintain a descriptive tone, including the purpose of the article. The summary should be easily understood by a 10th grader. Exclude any concluding remarks from the summary.
         """
         self.translationprompt = """
         Given text from a non-English language, provide an accurate English translation, followed by contextual explanations for why and how the text's components conveys that meaning. Organize the explanations in a list format, with each word/phrase/component followed by its corresponding definition and explanation.  Note any double meanings within these explanations.
@@ -466,7 +466,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         chromac = ChromaTools.get_chroma_client()
 
         target_message = await ctx.send(
-            f"<a:SquareLoading:1143238358303264798> Retrieving {link} ..."
+            f"<a:LoadingBlue:1206301904863502337> Retrieving {link} ..."
         )
 
         statmess = StatusEditMessage(target_message, ctx)
@@ -928,7 +928,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                             )
                     if over:
                         target_message = await ctx.send(
-                            f"<a:SquareLoading:1143238358303264798> Saving {url} summary..."
+                            f"<a:LoadingBlue:1206301904863502337> Saving {url} summary..."
                         )
                         chromac = ChromaTools.get_chroma_client()
                         await tools.add_summary(url, result, header, client=chromac)
@@ -944,12 +944,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     async def summarize_db(
         self, ctx: commands.Context, url: str, over: bool = False, stopat: str = None
     ):
-        """Download the reader mode view of a passed in URL, and summarize it."""
+        """Generate a summary of an already loaded source."""
         async with self.lock:
             message = ctx.message
-            guild = message.guild
-            user = message.author
-    
             mes = await ctx.channel.send(
                 f"<a:LoadingBlue:1206301904863502337> Reading Article <a:LoadingBlue:1206301904863502337>"
             )
@@ -972,67 +969,26 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 model="gpt-3.5-turbo-0125",
             )
             chat.add_message(role="user", content=article)
-            sources = []
-    
-            mylinks = extract_masked_links(article)
-            for link in mylinks:
-                link_text, url4 = link
-                link_text = link_text.replace("_", "")
-                print(link_text, url4)
-                sources.append(f"[{link_text}]({url4})")
-    
             # Call API
             bot = ctx.bot
             async with ctx.channel.typing():
-                if True:
-                    res = await bot.gptapi.callapi(chat)
-    
-                    # await ctx.send(res)
-                    print("clear", res)
-    
-                    result = res.choices[0].message.content
-                    print(result)
-                    for link in mylinks:
-                        link_text, url2 = link
-                        link_text = link_text.replace("_", "")
-                        print(link_text, url2)
-                        if link_text in result:
-                            print(link_text, url2)
-                            # sources.append(f"[{link_text}]({url})")
-                            result = result.replace(link_text, f"{link_text}")
-                    splitorder = ["%s\n", "%s.", "%s,", "%s "]
-                    fil = prioritized_string_split(result, splitorder, 4072)
-                    for p in fil:
-                        embed = discord.Embed(
-                            title=header.get("title", "notitle"), description=p
-                        )
-                        await ctx.send(
-                            content=header.get("title", "notitle")[:200], embed=embed
-                        )
+                res = await bot.gptapi.callapi(chat)
+                result = res.choices[0].message.content
+                splitorder = ["%s\n", "%s.", "%s,", "%s "]
+                fil = prioritized_string_split(result, splitorder, 4072)
+                for p in fil:
                     embed = discord.Embed(
-                        title=f"Sources for {header.get('title', 'notitle')}"
+                        title=header.get("title", "notitle"), description=p
                     )
-                    name, res = "", ""
-                    if len(sources) < 20:
-                        fil = prioritized_string_split(
-                            "\n".join(sources), ["%s\n"], 1020
-                        )
-                        needadd = False
-                        for e, i in enumerate(fil):
-                            embed.add_field(
-                                name=f"Sources Located: {e}", value=i, inline=False
-                            )
-                            needadd = True
-                            if (e + 1) % 6 == 0:
-                                await ctx.send(embed=embed)
-                                needadd = False
-                                embed = discord.Embed(
-                                    title=f"Sources for {header.get('title', 'notitle')}"
-                                )
-                        if needadd:
-                            await ctx.send(
-                                content=header.get("title", "???"), embed=embed
-                            )
+                    await ctx.send(embed=embed)
+                if over:
+                    target_message = await ctx.send(
+                        f"<a:LoadingBlue:1206301904863502337> Saving {url} summary..."
+                    )
+                    chromac = ChromaTools.get_chroma_client()
+                    await tools.add_summary(url, result, header, client=chromac)
+                    await target_message.edit(content="SUMMARY SAVED!")
+
 
 async def setup(bot):
     await bot.add_cog(ResearchCog(bot))
