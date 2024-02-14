@@ -74,7 +74,7 @@ class MyLib(GPTFunctionLibrary):
     @LibParam(
         title="Title of the PDF given the first page.",
         authors="All authors of the PDF, given the first page.  If not available, pass in None",
-        date="Date of publication of the PDF, in YYYY-MM-DD format.  If it can't be found, return None.",
+        date="Date of publication of the PDF, in YYYY-MM-DD format.  You must return the Year, Month, and Day.  If it can't be found, return None.",
         abstract="Abstract found on the PDF.  If it can't be found, return not available.",
     )
     async def get_pdf_data(
@@ -135,7 +135,7 @@ async def read_and_split_pdf(
             metadata["description"] = abstract
             metadata["language"] = "en"
             metadata["dateadded"] = datetime.datetime.utcnow().timestamp()
-            metadata["sum"] = "PDF"
+            metadata["sum"] = "source"
             metadata["reader"] = True
             metadata["date"] = date
             for e, pagedata in enumerate(data):
@@ -235,6 +235,7 @@ async def add_summary(
         metadata["language"] = header.get("lang", "en")
         metadata["dateadded"] = datetime.datetime.utcnow().timestamp()
         metadata["sum"] = "sum"
+        metadata["split"]=""
         metadata["reader"] = True
         metadata["date"] = "None"
         try:
@@ -434,8 +435,7 @@ async def get_points(question:str,docs:List[Tuple[Document, float]])->str:
     prompt = """
     Use the provided source to extract important bullet points
      to answer the question provided to you by the user.  
-    The source will be in the system messags, 
-    slimmed down to a series of relevant snippits,
+    The sources will be in the system messages, slimmed down to a series of relevant snippits,
     in the following template:
         BEGIN
         **ID:** [Source ID number here]
@@ -443,14 +443,15 @@ async def get_points(question:str,docs:List[Tuple[Document, float]])->str:
         **Link:** [Link Here]
         **Text:** [Text Content Here]
         END
-    The websites may contradict each other, prioritize information from encyclopedia pages 
-    Your and wikis.  Valid news sources follow.  
-    Your answer must be 5-10 descriptive bullet points related to the given source
-     and question, dependent on the length or descriptiveness of the snippit.
-    Preserve key information from the sources and maintain a descriptive tone. 
-    Your goal is not to summarize, your goal is to extract the relevant information
-      from the source that will answer the user's question.
-    Exclude any concluding remarks from the answer.
+    You responce must be in the following format:
+    Concise Summary (2-4 sentences):
+        Begin with a brief summary of the key points from the source snippet. 
+        Direct quotes are allowed if they enhance understanding.
+
+    Detailed Response (5-10 bullet points):
+     Expand on the summary by providing detailed information in bullet points. 
+     Ensure each bullet point captures essential details from the source, and be as descriptive as possible. 
+     The goal is not to summarize but to extract and convey relevant information.
     """
     
     client = openai.AsyncOpenAI()
