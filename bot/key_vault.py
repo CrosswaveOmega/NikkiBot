@@ -17,8 +17,10 @@ import nacl.exceptions
 import base64
 from typing import List
 
+def print_package():
+    print(f"__package__ is {__package__}")
 # 
-def get_or_generate_key(botname:str,regenerate: bool = True):
+def get_or_generate_key(botname:str,regenerate: bool = False):
     '''Get the current options key, or generate a new one.'''
     option_name=f"{botname}_optionkey"
     oldkey = keyring.get_password("bot_service", option_name)
@@ -47,7 +49,7 @@ def decrypt_data(key, encrypted_data):
     return decrypted_data
 
 def parse_ini_data(data):
-    config = configparser.ConfigParser()
+    config = ConfigParserSub()
     config.read_string(data.decode())
     return config
 
@@ -93,19 +95,28 @@ def file_checker(filenames:List[str]):
 
 @file_checker(["bot_setup.py","bot_main.py"])
 def get_token(keys,name='botname'):
+
     token= keyring.get_password("bot_service",keys.get('vital',name))
     return token
 
-def keyring_setup(keys):
+def keyring_setup(keys:ConfigParserSub):
+    """
+     Keys.ini is used to load new keys into the secure keys file.
+     Any API keys in keys.ini will be replaced with PRESENT,
+     while the bot's token is replaced with TOKENLOADED.
+     Replace TOKENLOADED with a new bot token to change the bot token.
+     Replace PRESENT with a new api key to change that particular
+     API Key.
+     Set an API key to REMOVE to remove it from the optional key vault.
+     """
     skey_file="securekeys.keybox"
     token=keys.get("vital", "cipher", fallback='TOKENLOADED')
     botname=keys.get("vital","botname",fallback=None)
     changes=False
     if token != 'TOKENLOADED':
         gui.gprint("Bot token detected in Cipher!  Transferring to lockup!")
-        
         if botname is None:
-            botname = input("Please enter your bot's name (this can not be changed.): ")
+            botname = input("Please enter your bot's name (this can not be changed): ")
             keys["vital"] = {"botname": botname}
         keyring.set_password("bot_service",botname,token)
         keys.set('vital','cipher','TOKENLOADED')

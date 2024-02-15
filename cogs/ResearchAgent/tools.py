@@ -443,6 +443,7 @@ async def get_points(question:str,docs:List[Tuple[Document, float]])->str:
         **Link:** [Link Here]
         **Text:** [Text Content Here]
         END
+    If a source appears to be unrelated to the question, note it.
     You responce must be in the following format:
     Concise Summary (2-4 sentences):
         Begin with a brief summary of the key points from the source snippet. 
@@ -452,6 +453,7 @@ async def get_points(question:str,docs:List[Tuple[Document, float]])->str:
      Expand on the summary by providing detailed information in bullet points. 
      Ensure each bullet point captures essential details from the source, and be as descriptive as possible. 
      The goal is not to summarize but to extract and convey relevant information.
+    
     """
     
     client = openai.AsyncOpenAI()

@@ -12,7 +12,7 @@ import nacl.utils
 import nacl.exceptions
 import base64
 
-from .key_vault import keyring_setup
+from .key_vault import keyring_setup, print_package
 
 default_config = {
     # The default configuration.
@@ -70,6 +70,7 @@ def setup(args):
 
             keys["vital"] = {"botname": botname}
             keyring.set_password("bot_service",botname,token)
+            keys["vital"] = {"cipher": token}
             config["optional"] = {"error_channel_id": error_channel_id}
             gui.gprint("Writing config files")
             config.write(open("config.ini", "w"))
@@ -89,7 +90,8 @@ def setup(args):
         return None, None
 
     else:
-        # Read File
+        # Read File.
+        print_package()
         keys.read("keys.ini")
         config.read("config.ini")
         if config.get("vital", "cipher", fallback=None) != None:
