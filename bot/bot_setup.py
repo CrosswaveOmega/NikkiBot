@@ -37,7 +37,7 @@ from .TcGuildTaskDB import TCGuildTask
 from .TCAppCommandAutoSync import AppGuildTreeSync
 from .errorformat import client_error_message
 from .config_gen import setup, config_update
-
+from .key_vault import get_token
 """
 Initalizes TCBot, defines some checks, and contains the main setup coroutine.
 
@@ -457,4 +457,4 @@ async def main(args):
             bot.keys["cse"] = c
             openai.api_key = keys.get("optional", "openai")
 
-            await bot.start(keys.get("vital", "cipher"))
+            await bot.start(get_token(keys))

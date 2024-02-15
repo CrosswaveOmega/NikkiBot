@@ -42,6 +42,8 @@ Python 3.11 or higher!
 - ~~JSPyBridge~~ [JSPyBridge_Async](https://github.com/CrosswaveOmega/JSPyBridge_Async)
 - gptfunctionutil
 - openai
+- keyring
+- chromadb
 
 please make sure to install the latest node.js runtime on your system to ensure that the Summarizer works.
 

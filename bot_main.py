@@ -10,6 +10,7 @@ def recovery_mode(error):
     import traceback
     import configparser
     import os
+    import keyring
 
     def setup():
         config = configparser.ConfigParser()
@@ -28,7 +29,7 @@ def recovery_mode(error):
     from discord.ext import commands
     import configparser
     import subprocess
-
+    from bot.key_vault import get_token
     intent = discord.Intents.default()
     intent.presences = True
     intent.message_content = True
@@ -37,7 +38,9 @@ def recovery_mode(error):
     config = configparser.ConfigParser()
     config.read("config.ini")
 
-    token = keys.get("vital", "cipher")
+    token =get_token(keys.get('vital','botname'))
+    if token==None:
+        print("TOKEN IS NONE!")
     eid = config.get("optional", "error_channel_id")
 
     recoverbot = commands.Bot(command_prefix="!", intents=intent)
@@ -102,5 +105,6 @@ if __name__ == "__main__":
 
             asyncio.run(main(sys.argv))
         except Exception as e:
+            raise(e)
             continueme = recovery_mode(e)
             print(continueme)
