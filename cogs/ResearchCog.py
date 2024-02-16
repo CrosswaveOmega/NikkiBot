@@ -343,12 +343,19 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         await statmess.editw(min_seconds=0, content="<a:LoadingBlue:1206301904863502337> querying db...", embed=embed)
 
         # 
+        answer,ms=await self.research(
+            ctx,
+            question,
+            k=7,
+            site_title_restriction=site_title_restriction
+        )
+        return ms
         async with ctx.channel.typing():
             #Preform Simularity Search on Collection.
             data = await tools.search_sim(
                 question, client=chromac, titleres=site_title_restriction
             )
-            len(data)
+
             if len(data) <= 0:
                 return "NO RELEVANT DATA."
             docs2 = sorted(data, key=lambda x: x[1], reverse=False)
@@ -541,10 +548,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 k=k,
                 mmr=use_mmr,
             )
-            print(data)
-            len(data)
+
             if len(data) <= 0:
-                return "NO RELEVANT DATA."
+                return "NO RELEVANT DATA.", None
             docs2 = sorted(data, key=lambda x: x[1], reverse=False)
             all_links=[doc.metadata.get("source",'???') for doc, e in docs2]
             links=set(doc.metadata.get("source",'???') for doc, e in docs2)
@@ -554,26 +560,30 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             used="\n".join(f"{ie(all_links,l)}{l}" for l in links)
             fil = prioritized_string_split(used, ["%s\n"], 4000 )
             cont = '...' if len(fil)>2 else ""
-            embed.description=f"{fil[0]}{cont}"
+            embed.description=f"Sources:\n{fil[0]}{cont}"
             embed.add_field(
                 name="Cache_Query",
                 value=f"About {len(docs2)} entries where found.  Max score is {docs2[0][1]}",
             )
-            # docs2 = sorted(data, key=lambda x: x[1],reverse=True)
             await statmess.editw(
-                min_seconds=0, content="drawing conclusion...", embed=embed
+                min_seconds=0, content="drawing conclusion.", embed=embed
             )
             answer = await tools.format_answer(question, docs2)
             page = commands.Paginator(prefix="", suffix=None)
             viewme = Followup(bot=self.bot, page_content=docs2)
             for p in answer.split("\n"):
                 page.add_line(p)
-            messageresp = None
-            for pa in page.pages:
-                ms = await ctx.channel.send(pa)
-                if messageresp == None:
+            pages = [p for p in page.pages]
+            pl = len(pages)
+            for e, pa in enumerate(pages):
+                if e == pl - 1:
+                    ms = await ctx.channel.send(pa, view=viewme)
+                else:
+                    ms = await ctx.channel.send(pa)
+                if messageresp is None:
                     messageresp = ms
-            await ctx.channel.send("complete", view=viewme)
+            #await ctx.channel.send("Click button for sources.", view=viewme)
+            return answer,messageresp
             
     @commands.is_owner()
     @commands.hybrid_command(
