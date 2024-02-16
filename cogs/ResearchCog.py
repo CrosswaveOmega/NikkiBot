@@ -340,7 +340,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             embed.add_field(name="restrict", value=site_title_restriction, inline=False)
         embed.set_footer(text=comment)
         
-        await statmess.editw(min_seconds=0, content="querying db...", embed=embed)
+        await statmess.editw(min_seconds=0, content="<a:LoadingBlue:1206301904863502337> querying db...", embed=embed)
 
         # 
         async with ctx.channel.typing():
@@ -532,7 +532,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         embed.add_field(name="Question", value=question, inline=False)
         if site_title_restriction != "None":
             embed.add_field(name="restrict", value=site_title_restriction, inline=False)
-        await statmess.editw(min_seconds=0, content="querying db...", embed=embed)
+        await statmess.editw(min_seconds=0, content="<a:LoadingBlue:1206301904863502337> querying db...", embed=embed)
         async with ctx.channel.typing():
             data = await tools.search_sim(
                 question,
@@ -615,7 +615,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         embed.add_field(name="Question", value=question, inline=False)
         if site_title_restriction != "None":
             embed.add_field(name="restrict", value=site_title_restriction, inline=False)
-        await statmess.editw(min_seconds=0, content="querying db...", embed=embed)
+        await statmess.editw(min_seconds=0, content="<a:LoadingBlue:1206301904863502337> querying db...", embed=embed)
         async with ctx.channel.typing():
             data = await tools.search_sim(
                 question,
@@ -661,7 +661,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         question = "unimportant"
 
         await statmess.editw(
-            min_seconds=0, content=f"querying db using `{titleres}`..."
+            min_seconds=0, content=f"<a:LoadingBlue:1206301904863502337>  querying db using `{titleres}`..."
         )
         async with ctx.channel.typing():
             data = await tools.debug_get(
