@@ -223,7 +223,8 @@ class ReadableLoader(dl.WebBaseLoader):
                 metadata["website"] = header.get("siteName", "siteunknown")
                 metadata["title"] = header.get("title")
                 typev= MetadataDocType.readertext
-            metadata["type"] = typev
+            
+            metadata["type"] = int(typev)
 
             metadata["sum"] = "source"
             docs.append(Document(page_content=text, metadata=metadata))

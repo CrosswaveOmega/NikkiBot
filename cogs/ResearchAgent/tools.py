@@ -126,6 +126,7 @@ async def read_and_split_pdf(
     message = completion.choices[0].message
     if message.tool_calls:
         for tool in message.tool_calls:
+            typev=int(MetadataDocType.pdftext)
             out=await mylib.call_by_tool_async(tool)
             title, authors, date, abstract = out['content']
             metadata["authors"] = authors
@@ -136,7 +137,7 @@ async def read_and_split_pdf(
             metadata["language"] = "en"
             metadata["dateadded"] = datetime.datetime.utcnow().timestamp()
             metadata["sum"] = "source"
-            metadata["type"] = MetadataDocType.pdftext
+            metadata["type"] = typev
             metadata["date"] = date
             for e, pagedata in enumerate(data):
 
@@ -149,7 +150,7 @@ async def read_and_split_pdf(
                 doc = Document(page_content=filtered_text, metadata=newdata)
 
                 new_docs.append(doc)
-            return new_docs,MetadataDocType.pdftext
+            return new_docs,typev
     else:
         raise Exception("ERROR:" + str(completion.choices[0].message.content))
 
@@ -236,7 +237,7 @@ async def add_summary(
         metadata["dateadded"] = datetime.datetime.utcnow().timestamp()
         metadata["sum"] = "sum"
         metadata["split"]="NA"
-        metadata["type"] = MetadataDocType.readertext
+        metadata["type"] = int(MetadataDocType.readertext)
         metadata["date"] = "None"
         try:
             dt = find_date(url)
