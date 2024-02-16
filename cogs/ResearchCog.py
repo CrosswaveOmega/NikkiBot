@@ -627,7 +627,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
             if len(data) <= 0:
                 return "NO RELEVANT DATA."
-            docs2 = sorted(data, key=lambda x: x[1], reverse=False)
+            docs2 = sorted(data, key=lambda x: x[1], reverse=True)
             all_links=[doc.metadata.get("source",'???') for doc, e in docs2]
             links=set(doc.metadata.get("source",'???') for doc, e in docs2)
             def ie(all_links: List[str], value: str) -> List[int]:
@@ -646,10 +646,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 min_seconds=0, content="drawing conclusion...", embed=embed
             )
             answer = await tools.get_points(question, docs2,ctx=ctx)
-            for a in answer:
-                d,c=a
-                emb=discord.Embed(title=d.metadata.get("title","?"), description=c)
-                await ctx.send(embed=emb)
+            return answer
 
 
     @commands.command(name="titlecheck")
