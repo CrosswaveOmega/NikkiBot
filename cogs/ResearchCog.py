@@ -645,7 +645,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await statmess.editw(
                 min_seconds=0, content="drawing conclusion...", embed=embed
             )
-            answer = await tools.get_points(question, docs2)
+            answer = await tools.get_points(question, docs2,ctx=ctx)
             for a in answer:
                 d,c=a
                 emb=discord.Embed(title=d.metadata.get("title","?"), description=c)

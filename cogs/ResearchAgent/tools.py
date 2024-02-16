@@ -432,7 +432,7 @@ async def debug_get(
         )
         return res
 
-async def get_points(question:str,docs:List[Tuple[Document, float]])->str:
+async def get_points(question:str,docs:List[Tuple[Document, float]],ctx=None)->str:
     prompt = """
     Use the provided source to extract important bullet points
      to answer the question provided to you by the user.  
@@ -492,6 +492,13 @@ async def get_points(question:str,docs:List[Tuple[Document, float]])->str:
             model="gpt-3.5-turbo-0125", messages=messages
         )
         docs=(doc,completion.choices[0].message.content)
+        if ctx:
+            d,c=docs
+            emb=discord.Embed(title=d.metadata.get("title","?"), description=c)
+            emb.add_field(name="source",value=meta['source'],inline=False)
+            emb.add_field(name="score",value="{:.4f}".format(score*100.0),inline=False)
+            await ctx.send(embed=emb)
+
         lastv.append(docs)
     return lastv 
 
@@ -538,7 +545,7 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
         # print(doc)
         # 'metadata',{'title':'UNKNOWN','source':'unknown'})
         meta = doc.metadata
-        content = doc.page_content  # ('page_content','Data lost!')
+        content = doc.page_content 
         tile = "NOTITLE"
         if "title" in meta:
             tile = meta["title"]
