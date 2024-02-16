@@ -411,7 +411,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         chromac = ChromaTools.get_chroma_client()
         all_links = [link for link in links.split("\n")]
         target_message = await ctx.send(
-            f"<a:SquareLoading:1143238358303264798> Retrieving {len(links)} ..."
+            f"<a:SquareLoading:1143238358303264798> Retrieving {len(all_links)} ..."
         )
 
         statmess = StatusEditMessage(target_message, ctx)
@@ -525,7 +525,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         chromac = ChromaTools.get_chroma_client()
         res = await ctx.send("ok")
         statmess = StatusEditMessage(res, ctx)
-        embed = discord.Embed(title=f"Search Query: {question} ", description=f"ok")
+        
+
+        embed = discord.Embed(title=f"Search Query: {question} ")
+
         embed.add_field(name="Question", value=question, inline=False)
         if site_title_restriction != "None":
             embed.add_field(name="restrict", value=site_title_restriction, inline=False)
@@ -543,6 +546,15 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             if len(data) <= 0:
                 return "NO RELEVANT DATA."
             docs2 = sorted(data, key=lambda x: x[1], reverse=False)
+            all_links=[doc.metadata.get("source",'???') for doc, e in docs2]
+            links=set(doc.metadata.get("source",'???') for doc, e in docs2)
+            def ie(all_links: List[str], value: str) -> List[int]:
+                return [index for index, link in enumerate(all_links) if link == value]
+            
+            used="\n".join(f"{ie(all_links,l)}{l}" for l in links)
+            fil = prioritized_string_split(used, ["%s\n"], 4000 )
+            cont = '...' if len(fil)>2 else ""
+            embed.description=f"{fil[0]}{cont}"
             embed.add_field(
                 name="Cache_Query",
                 value=f"About {len(docs2)} entries where found.  Max score is {docs2[0][1]}",
