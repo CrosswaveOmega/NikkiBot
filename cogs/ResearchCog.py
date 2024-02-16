@@ -628,6 +628,15 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             if len(data) <= 0:
                 return "NO RELEVANT DATA."
             docs2 = sorted(data, key=lambda x: x[1], reverse=False)
+            all_links=[doc.metadata.get("source",'???') for doc, e in docs2]
+            links=set(doc.metadata.get("source",'???') for doc, e in docs2)
+            def ie(all_links: List[str], value: str) -> List[int]:
+                return [index for index, link in enumerate(all_links) if link == value]
+            
+            used="\n".join(f"{ie(all_links,l)}{l}" for l in links)
+            fil = prioritized_string_split(used, ["%s\n"], 4000 )
+            cont = '...' if len(fil)>2 else ""
+            embed.description=f"{fil[0]}{cont}"
             embed.add_field(
                 name="Cache_Query",
                 value=f"About {len(docs2)} entries where found.  Max score is {docs2[0][1]}",
