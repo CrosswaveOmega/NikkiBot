@@ -114,7 +114,7 @@ async function read_webpage_plain(targeturl) {
 
     console.log('clear c')
     
-    let reader = new Readability.Readability(window.document);
+    let reader = new Readability(window.document);
     let article = reader.parse();
     let articleHtml = article.content;
     window.happyDOM.cancelAsync()
@@ -144,7 +144,7 @@ async function read_webpage_plain(targeturl) {
 
     window.document.write(html2)
     console.log('clear c')
-    let reader = new Readability.Readability(window.document);
+    let reader = new Readability(window.document);
     let article = reader.parse();
     let articleHtml = article.content;
     //The heading style recognized by discord apps.
