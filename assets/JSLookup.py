@@ -30,8 +30,5 @@ class JavascriptLookup:
     @staticmethod
     async def get_full_pathas(filename: str, alias: str, jsenv:JSContext):
         js_folder = "../js/" + filename
-        if alias in jsenv.__imported:
-            myfile = jsenv[alias]
-        else:
-            myfile = await jsenv.require_a(filename, amode=True, store_as=alias)
+        myfile = await jsenv.require_a(filename, amode=True, store_as=alias)
         return myfile
