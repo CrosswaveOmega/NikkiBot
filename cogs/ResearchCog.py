@@ -359,7 +359,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             def ie(all_links: List[str], value: str) -> List[int]:
                 return [index for index, link in enumerate(all_links) if link == value]
             
-            used="\n".join(f"{ie(l)}{l}" for l in links)
+            used="\n".join(f"{ie(all_links,l)}{l}" for l in links)
             fil = prioritized_string_split(used, ["%s\n"], 1020 )
             cont = '...' if len(fil)>2 else ""
             embed.add_field(name="Links_Used",value=f"{fil[0]}{cont}")

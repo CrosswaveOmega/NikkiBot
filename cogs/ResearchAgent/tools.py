@@ -189,7 +189,7 @@ async def read_and_split_link(
         newdata.extend(split)
 
     all_splits = newdata
-    return all_splits
+    return all_splits,typev
 
 
 async def split_link(doc: Document, chunk_size: int = 1800, prior=[],add=0):
