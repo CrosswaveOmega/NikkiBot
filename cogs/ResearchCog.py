@@ -28,6 +28,7 @@ from .ResearchAgent.views import *
 from utility import prioritized_string_split, select_emoji
 from utility.embed_paginator import pages_of_embeds
 import  cogs.ResearchAgent.tools as tools
+from openai import AsyncClient
 SERVER_ONLY_ERROR = "This command may only be used in a guild."
 INVALID_SERVER_ERROR = (
     "I'm sorry, but the research system is unavailable in this server."
@@ -116,9 +117,20 @@ def extract_masked_links(markdown_text):
     for match in matches:
         link_text, url = match
         masked_links.append((link_text, url))
-
     return masked_links
 
+
+class Followups(GPTFunctionLibrary):
+    @AILibFunction(
+        name="followupquestions",
+        description="Create a list of follow up questions to expand on a query.",
+    )
+    @LibParamSpec(name="followup", description="A list of followup questions.", minItems=3, maxItems=10)
+    async def make_followups(self, followup: List[str]):
+        # Wait for a set period of time.
+        print("foll:", followup)
+
+        return followup
 
 target_server = AssetLookup.get_asset("oai_server")
 
@@ -259,39 +271,12 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         loader=SourceLinkLoader(chromac=chromac,statusmessage=statmess)
         return await loader.load_links(ctx,all_links,override)
 
-        
-
-    @AILibFunction(
-        name="google_detective",
-        description="Solve a question using a google search.  Form the query based on the question, and then use the page text from the search results to create an answer.",
-        enabled=False,
-        force_words=["research"],
-        required=["comment"],
-    )
-    @LibParam(
-        comment="An interesting, amusing remark.",
-        query="The query to search google with.  Must be related to the question.",
-        question="the question that is to be solved with this search.  Must be a complete sentence.",
-        site_title_restriction="Optional restrictions for sources.  Only sources with this substring in the title will be considered when writing the answer.  Include only if user explicitly asks.",
-        result_limit="Number of search results to retrieve.  Minimum of 3,  Maximum of 16.",
-    )
-    @commands.command(
-        name="google_detective",
-        description="Get a list of results from a google search query.",
-        extras={},
-    )
-    @oai_check()
-    @ai_rate_check()
-    async def google_detective(
-        self,
-        ctx: commands.Context,
-        question: str,
-        query: str,
-        comment: str = "Search results:",
-        site_title_restriction: str = "None",
-        result_limit: int = 7,
-    ):
-        "Search google for a query."
+    async def web_search(
+            self,
+            ctx: commands.Context,
+            query: str,
+            result_limit: int = 7,
+    ) -> Tuple[int, str]:
 
         bot = ctx.bot
         #Pre check.
@@ -330,18 +315,54 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 ),
             )
             hascount, lines = await self.load_links(ctx, all_links, chromac, statmess)
+            await statmess.delete()
+            return hascount, lines
+
+    @AILibFunction(
+        name="google_detective",
+        description="Solve a question using a google search.  Form the query based on the question, and then use the page text from the search results to create an answer.",
+        enabled=False,
+        force_words=["research"],
+        required=["comment"],
+    )
+    @LibParam(
+        comment="An interesting, amusing remark.",
+        query="The query to search google with.  Must be related to the question.",
+        question="the question that is to be solved with this search.  Must be a complete sentence.",
+        site_title_restriction="Optional restrictions for sources.  Only sources with this substring in the title will be considered when writing the answer.  Include only if user explicitly asks.",
+        result_limit="Number of search results to retrieve.  Minimum of 3,  Maximum of 16.",
+    )
+    @commands.command(
+        name="google_detective",
+        description="Get a list of results from a google search query.",
+        extras={},
+    )
+    @oai_check()
+    @ai_rate_check()
+    async def google_detective(
+        self,
+        ctx: commands.Context,
+        question: str,
+        query: str,
+        comment: str = "Search results:",
+        site_title_restriction: str = "None",
+        result_limit: int = 7,
+    ):
+        "Search google for a query."
+        
+
+        _,lines=await self.web_search(ctx,query,result_limit=result_limit)
         #DISPLAY RESULTS OF SEARCH.
         embed = discord.Embed(
             title=f"Web Search Results for: {query} ",
-            description=f"{hascount}/{len(all_links)}\nout=\n{lines}",
+            description=f"Links\n{lines}",
         )
         embed.add_field(name="Question", value=question, inline=False)
         if site_title_restriction != "None":
             embed.add_field(name="restrict", value=site_title_restriction, inline=False)
         embed.set_footer(text=comment)
         
-        await statmess.editw(min_seconds=0, content="<a:LoadingBlue:1206301904863502337> querying db...", embed=embed)
-
+        await ctx.send(embed=embed)
         # 
         answer,ms=await self.research(
             ctx,
@@ -516,6 +537,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         k: int = 5,
         site_title_restriction: str = "None",
         use_mmr: bool = False,
+        send_message : bool = True
     ):
         """
         question:str-Question you want to ask
@@ -573,15 +595,17 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             viewme = Followup(bot=self.bot, page_content=docs2)
             for p in answer.split("\n"):
                 page.add_line(p)
+            messageresp=None
             pages = [p for p in page.pages]
             pl = len(pages)
-            for e, pa in enumerate(pages):
-                if e == pl - 1:
-                    ms = await ctx.channel.send(pa, view=viewme)
-                else:
-                    ms = await ctx.channel.send(pa)
-                if messageresp is None:
-                    messageresp = ms
+            if send_message:
+                for e, pa in enumerate(pages):
+                    if e == pl - 1:
+                        ms = await ctx.channel.send(pa, view=viewme)
+                    else:
+                        ms = await ctx.channel.send(pa)
+                    if messageresp is None:
+                        messageresp = ms
             #await ctx.channel.send("Click button for sources.", view=viewme)
             return answer,messageresp
             
@@ -1024,6 +1048,91 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     chromac = ChromaTools.get_chroma_client()
                     await tools.add_summary(url, result, header, client=chromac)
                     await target_message.edit(content="SUMMARY SAVED!")
+    
+    
+    @commands.is_owner()
+    @commands.hybrid_command(
+        name="research_recursive", description="Research a topic with multiple queries.", extras={}
+    )
+    @oai_check()
+    @ai_rate_check()
+    @app_commands.guilds(int(target_server[1]))
+    @app_commands.describe(question="question to be asked.")
+    @app_commands.describe(k="min number of sources to grab.")
+    @app_commands.describe(use_mmr="Use the max_marginal_relevance_search")
+    @app_commands.describe(
+        site_title_restriction="Restrain query to websites with this in the title."
+    )
+    async def research_recursive(
+        self,
+        ctx: commands.Context,
+        question: str,
+        k: int = 5,
+        site_title_restriction: str = "None",
+        use_mmr: bool = False,
+        depth:commands.Range[int,1,4]=1,
+        followup:commands.Range[int,1,5]=2,
+
+    ):
+        """
+        question:str-Question you want to ask
+        site_title_restriction-Restrict to all with this in the title.
+        """
+        bot = ctx.bot
+        if not ctx.guild:
+            await ctx.send("needs to be guild")
+            return
+        if await ctx.bot.gptapi.check_oai(ctx):
+            await ctx.send(INVALID_SERVER_ERROR)
+            return "INVALID CONTEXT"
+
+        res = await ctx.send("recursively researching.")
+        statmess=StatusEditMessage(res,ctx)
+        inital=(question,"",0)
+        stack=[]
+        stack.append(inital)
+        while stack:
+            current = stack.pop(0)
+            quest, context, dep = current
+            await statmess.editw(min_seconds=5, content="<a:LoadingBlue:1206301904863502337> q", embed=embed)
+            # Custom logic for recursive search and adding results to stack
+            _,lines=await self.web_search(ctx,quest,result_limit=7)
+            embed = discord.Embed(
+            title=f"depth{dep}, Web Search Results for: {quest} ",
+            description=f"Links\n{lines}",
+            )
+            embed.add_field(name="Question", value=question, inline=False)
+            if site_title_restriction != "None":
+                embed.add_field(name="restrict", value=site_title_restriction, inline=False)
+            embed.set_footer(text=f"stacklen={len(stack)}")
+            answer,ms=await self.research(
+                ctx,
+                quest,
+                k=k,
+                site_title_restriction=site_title_restriction,
+                use_mmr=use_mmr,
+                send_message=False
+            )
+            embedres=discord.Embed(
+                title=f"{quest}, depth{dep}",
+                description=answer
+            )
+            context=context+f"{dep}:{quest}\n{answer}"
+            client = AsyncClient()
+            sc = SingleCallAsync(mylib=Followups(), client=client)
+            new_depth = dep + 1
+            if new_depth > depth:
+                continue
+            command = await sc.call_single(
+                f'Generate {followup} followup questions to expand on the results'+\
+                f'results given the prior question/answer pairs: \n{context}',
+                "followupquestions",
+            )
+            print(command)
+            for new_question in command[0][1]['content']:
+                stack.append((new_question, context, new_depth))
+                
+
 
 
 async def setup(bot):

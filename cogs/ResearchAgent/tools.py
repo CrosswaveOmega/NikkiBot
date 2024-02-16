@@ -115,7 +115,7 @@ async def read_and_split_pdf(
             },
             {
                 "role": "user",
-                "content": f"Please extract the data for this pdf: {data[0].page_content}",
+                "content": f"Please extract the data for this pdf: {(data[0].page_content)[:2000]}",
             },
         ],
         tools=mylib.get_tool_schema(),
