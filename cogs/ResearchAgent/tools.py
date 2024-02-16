@@ -478,6 +478,7 @@ async def get_points(question:str,docs:List[Tuple[Document, float]],ctx=None)->s
         tokens = gptmod.util.num_tokens_from_messages(
             [{"role": "system", "content": output}], "gpt-3.5-turbo-0125"
         )
+        
 
 
         messages=[]
@@ -496,7 +497,9 @@ async def get_points(question:str,docs:List[Tuple[Document, float]],ctx=None)->s
             d,c=docs
             emb=discord.Embed(title=d.metadata.get("title","?"), description=c)
             emb.add_field(name="source",value=meta['source'],inline=False)
-            emb.add_field(name="score",value="{:.4f}".format(score*100.0),inline=False)
+            emb.add_field(name="score",value="{:.4f}".format(score*100.0))
+            emb.add_field(name="split value",value=f"{meta.get('split','?')}")
+            emb.add_field(name="source_tokens",value=f"{tokens}")
             await ctx.send(embed=emb)
 
         lastv.append(docs)
