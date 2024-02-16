@@ -400,11 +400,11 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @commands.command(name="loadmany")
     @oai_check()
     @ai_rate_check()
-    async def loadmany(self, ctx: commands.Context, links: commands.Greedy[str], over: bool = False):
+    async def loadmany(self, ctx: commands.Context,  over: bool = False, *,links: str):
         """'Load many urls into the collection, with each link separated by a newline.
-        links:str
+        
         over:bool-> whether or not to override links.  default false.
-
+        links:str
         """
         bot = ctx.bot
 
