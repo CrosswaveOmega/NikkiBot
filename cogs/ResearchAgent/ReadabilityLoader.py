@@ -15,7 +15,7 @@ import requests
 from htmldate import find_date
 import assets
 from javascriptasync import require, eval_js, eval_js_a
-
+from .metadataenums import MetadataDocType
 """This is a special loader that makes use of Mozilla's readability module. """
 
 
@@ -200,26 +200,32 @@ class ReadableLoader(dl.WebBaseLoader):
         return list(self.lazy_load())
 
     async def aload(self, bot) -> List[Document]:
-        """Load text from the urls in web_path async into Documents."""
+        """Load text from the urls in web_path async into Documents.
+        Despite the return type, it only loads one url.
+        """
         self.jsenv = bot.jsenv
         self.bot = bot
         results = await self.scrape_all(self.web_paths)
-        docs = []
+        docs,typev = [], -1
+
         for i, res in enumerate(results):
             text, soup, header = results[i]
 
             metadata = _build_metadata(soup, self.web_paths[i])
+            typev=MetadataDocType.htmltext
+
             if not "title" in metadata:
-                metadata["title"] = "LoadedPDF"
+                metadata["title"] = "No Title"
             if header is not None:
                 print(header["byline"])
                 if "byline" in header:
                     metadata["authors"] = header["byline"]
                 metadata["website"] = header.get("siteName", "siteunknown")
                 metadata["title"] = header.get("title")
-                metadata["reader"] = True
+                typev= MetadataDocType.readertext
+            metadata["type"] = typev
 
             metadata["sum"] = "source"
             docs.append(Document(page_content=text, metadata=metadata))
 
-        return docs
+        return docs, typev

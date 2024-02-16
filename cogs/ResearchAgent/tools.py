@@ -22,7 +22,7 @@ import langchain_community.document_loaders as docload
 import uuid
 import openai
 from langchain.docstore.document import Document
-
+from .metadataenums import MetadataDocType
 webload = docload.WebBaseLoader
 
 tosplitby = [
@@ -136,10 +136,10 @@ async def read_and_split_pdf(
             metadata["language"] = "en"
             metadata["dateadded"] = datetime.datetime.utcnow().timestamp()
             metadata["sum"] = "source"
-            metadata["reader"] = True
+            metadata["type"] = MetadataDocType.pdftext
             metadata["date"] = date
             for e, pagedata in enumerate(data):
-                print(e,pagedata.metadata)
+
                 newdata = copy.deepcopy(metadata)
                 newdata["page"] = f"Page {e}"
                 text = pagedata.page_content
@@ -147,9 +147,9 @@ async def read_and_split_pdf(
                 filtered_text = re.sub(r"-\s*\n", "", text)
                 filtered_text = re.sub(r" +", " ", filtered_text)
                 doc = Document(page_content=filtered_text, metadata=newdata)
-                print(doc)
+
                 new_docs.append(doc)
-            return new_docs
+            return new_docs,MetadataDocType.pdftext
     else:
         raise Exception("ERROR:" + str(completion.choices[0].message.content))
 
@@ -164,7 +164,7 @@ async def read_and_split_link(
         symbol3 = re.escape("  ")
         pattern3 = re.compile(f"({symbol3}(?:(?!{symbol3}).)+{symbol3})")
         prioritysplit.append((pattern3, 100))
-        data = await read_and_split_pdf(bot, url, chunk_size)
+        data, typev= await read_and_split_pdf(bot, url, chunk_size)
     else:
         loader = ReadableLoader(
             url,
@@ -173,7 +173,7 @@ async def read_and_split_link(
             },
         )
         # Index that wraps above steps
-        data = await loader.aload(bot)
+        data, typev = await loader.aload(bot)
     print("ok")
     newdata = []
     splitnum=0
@@ -236,7 +236,7 @@ async def add_summary(
         metadata["dateadded"] = datetime.datetime.utcnow().timestamp()
         metadata["sum"] = "sum"
         metadata["split"]="NA"
-        metadata["reader"] = True
+        metadata["type"] = MetadataDocType.readertext
         metadata["date"] = "None"
         try:
             dt = find_date(url)

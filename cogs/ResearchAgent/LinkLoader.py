@@ -1,3 +1,4 @@
+from typing import List
 import chromadb
 import discord
 import asyncio
@@ -74,7 +75,7 @@ class SourceLinkLoader:
         self.all_link_status = [["pending", link] for link in all_links]
 
         for link_num, link in enumerate(all_links):
-            embed = discord.Embed(description=f"out=\n{self.get_status_lines()}")
+            embed = discord.Embed(description=f"google search\n{self.get_status_lines()}")
 
             has, getres = self.check_cached_documents(ctx, link, override)
             
@@ -157,7 +158,7 @@ class SourceLinkLoader:
 
         """
         try:
-            splits = await read_and_split_link(ctx.bot, link)
+            splits,type = await read_and_split_link(ctx.bot, link)
             dbadd = True
             for split in splits:
                 for i, m in split.metadata.items():

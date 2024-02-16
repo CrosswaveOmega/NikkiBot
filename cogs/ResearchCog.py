@@ -1,3 +1,4 @@
+from typing import Any, List
 import discord
 import asyncio
 from assets import AssetLookup
@@ -333,7 +334,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             hascount, lines = await self.load_links(ctx, all_links, chromac, statmess)
         #DISPLAY RESULTS OF SEARCH.
         embed = discord.Embed(
-            title=f"Search Query: {query} ",
+            title=f"Web Search Results for: {query} ",
             description=f"{hascount}/{len(all_links)}\nout=\n{lines}",
         )
         embed.add_field(name="Question", value=question, inline=False)
@@ -353,6 +354,12 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             if len(data) <= 0:
                 return "NO RELEVANT DATA."
             docs2 = sorted(data, key=lambda x: x[1], reverse=False)
+            links=set(doc.metadata.get("source",'???') for doc, e in docs2)
+
+            used="\n".join(l for l in links)
+            fil = prioritized_string_split(used, ["%s\n"], 1020 )
+            cont = '...' if len(fil)>2 else ""
+            embed.add_field(name="Links_Used",value=f"{fil[0]}{cont}")
             embed.add_field(
                 name="Cache_Query",
                 value=f"About {len(docs2)} entries where found.  Max score is {docs2[0][1]}",
@@ -381,7 +388,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @commands.command(name="loadurl", description="loadurl test.", extras={})
     async def loader_test(self, ctx: commands.Context, link: str):
         async with ctx.channel.typing():
-            splits = await tools.read_and_split_link(ctx.bot, link)
+            splits,dat = await tools.read_and_split_link(ctx.bot, link)
         await ctx.send(
             f"[Link ]({link}) has {len(splits)} splits.", suppress_embeds=True
         )
