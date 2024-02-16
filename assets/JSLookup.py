@@ -4,7 +4,7 @@ import json
 
 from typing import Optional
 
-from javascriptasync import require_a, require
+from javascriptasync import require_a, require, JSContext
 
 
 class JavascriptLookup:
@@ -28,9 +28,10 @@ class JavascriptLookup:
             return None
 
     @staticmethod
-    async def get_full_pathas(filename: str, alias: str, jsenv):
+    async def get_full_pathas(filename: str, alias: str, jsenv:JSContext):
         js_folder = "../js/" + filename
-
-        myfile = await jsenv.require_a(js_folder, amode=True, store_as=alias)
-
+        if alias in jsenv.__imported:
+            myfile = jsenv[alias]
+        else:
+            myfile = await jsenv.require_a(filename, amode=True, store_as=alias)
         return myfile

@@ -17,15 +17,13 @@ import gptmod
 from gptfunctionutil import *
 import gptmod.error
 from database.database_ai import AuditProfile
-import javascriptasync
-# I need the readability npm package to work, so
-from javascriptasync import require, eval_js
+
+from javascriptasync import JSContext
 import assets
 import gui
 
 from .ResearchAgent.chromatools import ChromaTools
 from .ResearchAgent.views import *
-from googleapiclient.discovery import build  # Import the library
 
 from utility import prioritized_string_split, select_emoji
 from utility.embed_paginator import pages_of_embeds
@@ -78,7 +76,7 @@ def oai_check():
     return commands.check(oai_check_2)
 
 
-async def read_article_async(jsctx, url, clearout=True):
+async def read_article_async(jsctx:JSContext, url, clearout=True):
     myfile = await assets.JavascriptLookup.get_full_pathas(
         "readwebpage.js", "WEBJS", jsctx
     )
@@ -402,7 +400,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @commands.command(name="loadmany")
     @oai_check()
     @ai_rate_check()
-    async def loadmany(self, ctx: commands.Context, links: str, over: bool = False):
+    async def loadmany(self, ctx: commands.Context, links: commands.Greedy[str], over: bool = False):
         """'Load many urls into the collection, with each link separated by a newline.
         links:str
         over:bool-> whether or not to override links.  default false.
@@ -485,7 +483,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 ctx, [link], chromac, statmess=None, override=True
             )
             embed = discord.Embed(
-                title="Collection load results",
+                title="Website Load Results",
                 description=f"{1}/{1}\nout=\n{lines}",
             )
             embed.set_footer(text="Operation complete.")

@@ -47,6 +47,13 @@ def remove_links(markdown_text):
 
     return no_links_string
 
+async def check_readability(jsenv,html,url):
+    myfile = await assets.JavascriptLookup.get_full_pathas(
+        "readwebpage.js", "WEBJS", jsenv
+    )
+    htmls: str = str(html)
+    rsult = await myfile.check_read(url,htmls, timeout=45)
+    return rsult
 
 async def read_article_direct(jsenv, html, url):
     myfile = await assets.JavascriptLookup.get_full_pathas(
@@ -57,13 +64,6 @@ async def read_article_direct(jsenv, html, url):
     htmls: str = str(html)
 
     pythonObject = {"var": htmls, "url": url}
-    out = """
-    let html2=await pythonObject.var
-    let urlV=await pythonObject.url
-    const turndownService = new TurndownService({ headingStyle: 'atx' });
-    let result=await read_webpage_html_direct(html2,urlV,readability,jsdom, turndownService);
-    return [result[0],result[1]];
-    """
 
     rsult = await myfile.read_webpage_html_direct(htmls, url, timeout=45)
     output = await rsult.get_a("mark")
@@ -147,11 +147,14 @@ class ReadableLoader(dl.WebBaseLoader):
                 souped = BeautifulSoup(result.page_content, "html.parser")
             else:
                 souped = BeautifulSoup(result, parser)
-
-            try:
-                clean_html = re.sub(
+            clean_html = re.sub(
                     r"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>", "", result
                 )
+            readable=await check_readability(self.jsenv,clean_html,url)
+            if not readable:
+                raise Exception("Link is not readable.")
+            try:
+                
                 text, header = await read_article_aw(self.jsenv, clean_html, url)
                 final_results.append((remove_links(text), souped, header))
 

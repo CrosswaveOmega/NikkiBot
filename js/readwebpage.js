@@ -12,7 +12,7 @@ This script is intended to be used in conjunction with JsPyBridgeAsync.
 
 INTENDED TO BE EXECUTED THROUGH JsPyBridgeAsync!
 */
-const Readability=require('@mozilla/readability')
+const {isProbablyReaderable, Readability}=require('@mozilla/readability')
 const {Window}=require('happy-dom')
 const TurndownService=require('turndown')
 var turndownService=new TurndownService({ 'headingStyle': 'atx' });
@@ -68,14 +68,14 @@ async function setup(mod1, mod2, mod3){
     });
 }
 
-async function check_read(targeturl) {
-
-
-
-
-
-  const response = await fetch(targeturl);
-  const html2 = await response.text();
+async function check_read(targeturl,html_use = null) {
+  let html2;
+  if (!html_use) {
+    const response = await fetch(targeturl);
+    html2 = await response.text();
+  } else {
+    html2 = html_use;
+  }
   const window = new Window({
     innerWidth: 1024,
     innerHeight: 768,
@@ -86,8 +86,8 @@ async function check_read(targeturl) {
   window.document.write(html2)
 
   console.log('clear c')
-  
-  var outcome= Readability.isProbablyReaderable(window.document)
+
+  var outcome= isProbablyReaderable(window.document)
   window.happyDOM.cancelAsync()
   return outcome
 }

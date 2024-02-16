@@ -102,7 +102,7 @@ class TCBot(
         self.keys = {}
         self.gptapi = None
         self.error_channel = None
-        self.jsenv = JSContext()
+        self.jsenv = JSContext(usecwd=True)
         self.config: ConfigParserSub = ConfigParserSub()
 
         self.statmess: StatusMessageManager = StatusMessageManager(self)
