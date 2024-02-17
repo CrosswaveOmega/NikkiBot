@@ -54,7 +54,7 @@ from collections import defaultdict
 class ToChoice(commands.Converter):
     async def convert(self, ctx, argument):
         if not ctx.interaction:
-            print(type(argument))
+            gui.dprint(type(argument))
             if type(argument) == str:
                 choice = Choice(name="fallback", value=argument)
                 return choice
@@ -735,12 +735,12 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 "user": "User Messages Only",
                 "both": "Every message, reguardless of sender",
             }
-            print(scope)
+            gui.dprint(scope)
             profile = ServerArchiveProfile.get_or_new(ctx.guild.id)
             oldscope = profile.archive_scope
             if not oldscope:
                 oldscope = "ws"
-            print(oldscope)
+            gui.dprint(oldscope)
             if scope not in ["ws", "user", "both"]:
                 await ctx.send(f"The specified scope {scope} is invalid.")
             steps = [
@@ -1088,7 +1088,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
     async def correct(self, ctx, guildid: int, channel: str):
         myseps = ChannelSep.get_channel_seps_by_channel(channel, guildid)
-        print(len(myseps))
+        gui.dprint(len(myseps))
 
         async def edit_if_needed(target):
             if isinstance(target, ChannelSep):
@@ -1125,9 +1125,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 await message.delete()
             session.delete(sep)
             session.commit()
-            print(iN, iL)
+            gui.dprint(iN, iL)
             await edit_if_needed(iN)
-            print(iL)
+            gui.dprint(iL)
             await edit_if_needed(iL)
             # cN,cL=self.get_neighbor(True,True),self.get_neighbor(True,False)
         await ctx.channel.send("All target messags deleted.")
@@ -1171,11 +1171,11 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         if self.guild_cache[str(guildid)]==0:
             profile=ServerArchiveProfile.get(guildid)
             if not profile: 
-                print('unset')
+                gui.dprint('unset')
                 self.guild_cache[str(guildid)]=1
                 return 1
             if profile.archive_dynamic==True:
-                print("Set")
+                gui.dprint("Set")
                 self.guild_cache[str(guildid)]=2
             else:
                 self.guild_cache[str(guildid)]=1
@@ -1382,7 +1382,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         for e, sep in enumerate(grouped):
             # Start posting
             gui.gprint(e, sep)
-            print(remaining_time_float)
+            gui.dprint(remaining_time_float)
             if not sep.posted_url:
                 currjob = "rem: {}".format(
                     seconds_to_time_string(int(remaining_time_float))
@@ -1501,7 +1501,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         channel = ctx.message.channel
         guild = channel.guild
         guildid = guild.id
-        print("calendar maek")
+        gui.dprint("calendar maek")
         profile = ServerArchiveProfile.get_or_new(guildid)
 
         if profile.history_channel_id == 0:
@@ -1527,8 +1527,6 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             type=discord.ChannelType.public_thread,
         )
 
-        print("ok")
-
         async def calendarMake(
             guildid,
             lastday=None,
@@ -1538,15 +1536,12 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         ):
             this_dates = ["█", "█", "█", "█", "█", "█", "█"]
             au = ctx.bot.user.avatar.url
-            print("starting up")
-
             def get_seps_between_dates(start, end):
                 """this generator returns lists of all separators that are on the specified dates."""
                 cd = start
-                print("starting")
                 while cd <= end:
                     dc = 0
-                    print(cd)
+                    gui.dprint(cd)
                     se = ChannelSep.get_all_separators_on_date(guildid, cd)
                     if se:
                         for tm in se:
@@ -1594,7 +1589,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             end = end.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(
                 days=1
             )
-            print(";ok")
+            gui.dprint(";ok")
             for day in get_seps_between_dates(start, end):
                 date, url, mc = day["date"], day["url"], day["mc"]
                 if current_calendar_embed_object == None:
@@ -1627,7 +1622,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
 
 async def setup(bot):
-    print(__name__)
+    gui.dprint(__name__)
     # from .ArchiveSub import setup
     # await bot.load_extension(setup.__module__)
     await bot.add_cog(ServerRPArchive(bot))

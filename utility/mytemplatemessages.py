@@ -214,7 +214,6 @@ class MessageTemplates:
         """
         Return a simple overview of a server & basic data provided by the cogs.
         """
-        print(tag)
         embed = MessageTemplates.get_tag_edit_embed(title, description, tag=tag)
         if ctx.interaction and ephemeral:
             message: Message = await ctx.send(embed=embed, ephemeral=True, **kwargs)

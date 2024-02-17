@@ -12,16 +12,16 @@ from discord.ext import commands
 from discord import app_commands
 from bot import TC_Cog_Mixin, StatusEditMessage, super_context_menu, TCBot
 
-from .ResearchAgent import SourceLinkLoader
 import gptmod
 from gptfunctionutil import *
 import gptmod.error
 from database.database_ai import AuditProfile
-
+from io import StringIO
 from javascriptasync import JSContext
 import assets
 import gui
 
+from .ResearchAgent import SourceLinkLoader
 from .ResearchAgent.chromatools import ChromaTools
 from .ResearchAgent.views import *
 
@@ -81,13 +81,13 @@ async def read_article_async(jsctx:JSContext, url, clearout=True):
     myfile = await assets.JavascriptLookup.get_full_pathas(
         "readwebpage.js", "WEBJS", jsctx
     )
-    print(url)
+    gui.dprint(url)
     rsult = await myfile.read_webpage_plain(url, timeout=45)
-    # print(rsult)
+
     output = await rsult.get_a("mark")
     header = await rsult.get_a("orig")
     serial = await header.get_dict_a()
-    # print(serial)
+
     simplified_text = output.strip()
     simplified_text = simplified_text.replace("*   ", "* ")
     if clearout:
@@ -97,7 +97,7 @@ async def read_article_async(jsctx:JSContext, url, clearout=True):
         simplified_text = re.sub(r" {3,}", "  ", simplified_text)
         simplified_text = simplified_text.replace("\t", "")
         simplified_text = re.sub(r"\n+(\s*\n)*", "\n", simplified_text)
-    # print(simplified_text)
+
     return simplified_text, serial
 
 
@@ -123,14 +123,38 @@ def extract_masked_links(markdown_text):
 class Followups(GPTFunctionLibrary):
     @AILibFunction(
         name="followupquestions",
-        description="Create a list of follow up questions to expand on a query.",
+        description="Create a list of follow up questions to expand on a query.  Each follup question should contain a portion of the prior query!",
     )
     @LibParamSpec(name="followup", description="A list of followup questions.", minItems=3, maxItems=10)
     async def make_followups(self, followup: List[str]):
         # Wait for a set period of time.
-        print("foll:", followup)
+        gui.dprint("foll:", followup)
 
         return followup
+    
+    @AILibFunction(
+    name="google_search",
+    description="Solve a question using a google search.  Form the query based on the question, and then use the page text from the search results to create an answer.",
+    required=['comment','question','query']
+    )
+    @LibParam(
+        comment="An interesting, amusing remark.",
+        query="The query to search google with.  Must be related to the question.",
+        question="The question that is to be solved with this search.  Must be a complete sentence.",
+        result_limit="Number of search results to retrieve.  Minimum of 3,  Maximum of 16.",
+    )
+    async def google_search(
+        self,
+        question: str,
+        query: str,
+        comment: str = "Search results:",
+        result_limit: int = 7
+        ):
+        # Wait for a set period of time.
+        gui.dprint("foll:", query, question)
+
+        return query,question,comment
+
 
 target_server = AssetLookup.get_asset("oai_server")
 
@@ -185,7 +209,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
         res = await bot.gptapi.callapi(chat)
         # await ctx.send(res)
-        print(res)
+        gui.dprint(res)
         result = res.choices[0].message.content
         embeds = []
         pages = commands.Paginator(prefix="", suffix="", max_size=3890)
@@ -297,7 +321,6 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         )
 
         statmess = StatusEditMessage(target_message, ctx)
-        current = ""
         # SEARCH FOR AND LOAD.
         async with ctx.channel.typing():
             results = tools.google_search(ctx.bot, query, result_limit)
@@ -314,9 +337,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     title=f"query: {query}", description=f"out=\n{lines}"
                 ),
             )
-            hascount, lines = await self.load_links(ctx, all_links, chromac, statmess)
-            await statmess.delete()
-            return hascount, lines
+        hascount, lines = await self.load_links(ctx, all_links, chromac, statmess)
+        await statmess.delete()
+        return hascount, lines
 
     @AILibFunction(
         name="google_detective",
@@ -371,48 +394,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             site_title_restriction=site_title_restriction
         )
         return ms
-        async with ctx.channel.typing():
-            #Preform Simularity Search on Collection.
-            data = await tools.search_sim(
-                question, client=chromac, titleres=site_title_restriction
-            )
 
-            if len(data) <= 0:
-                return "NO RELEVANT DATA."
-            docs2 = sorted(data, key=lambda x: x[1], reverse=False)
-            all_links=[doc.metadata.get("source",'???') for doc, e in docs2]
-            links=set(doc.metadata.get("source",'???') for doc, e in docs2)
-            def ie(all_links: List[str], value: str) -> List[int]:
-                return [index for index, link in enumerate(all_links) if link == value]
-            
-            used="\n".join(f"{ie(all_links,l)}{l}" for l in links)
-            fil = prioritized_string_split(used, ["%s\n"], 1020 )
-            cont = '...' if len(fil)>2 else ""
-            embed.add_field(name="Links_Used",value=f"{fil[0]}{cont}")
-            embed.add_field(
-                name="Cache_Query",
-                value=f"About {len(docs2)} entries where found.  Max score is {docs2[0][1]}",
-            )
-            await statmess.editw(
-                min_seconds=0, content="drawing conclusion...", embed=embed
-            )
-            answer = await tools.format_answer(question, docs2)
-            page = commands.Paginator(prefix="", suffix=None)
-            viewme = Followup(bot=self.bot, page_content=docs2)
-            for p in answer.split("\n"):
-                page.add_line(p)
-            messageresp = None
-            pages = [p for p in page.pages]
-            pl = len(pages)
-            for e, pa in enumerate(pages):
-                if e == pl - 1:
-                    ms = await ctx.channel.send(pa, view=viewme)
-                else:
-                    ms = await ctx.channel.send(pa)
-                if messageresp is None:
-                    messageresp = ms
-            # await ctx.channel.send("complete", view=viewme)
-            return messageresp
 
     @commands.command(name="loadurl", description="loadurl test.", extras={})
     async def loader_test(self, ctx: commands.Context, link: str):
@@ -530,6 +512,27 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @app_commands.describe(
         site_title_restriction="Restrain query to websites with this in the title."
     )
+    async def researchcached(
+        self,
+        ctx: commands.Context,
+        question: str,
+        k: int = 5,
+        site_title_restriction: str = "None",
+        use_mmr: bool = False
+    ):
+        bot = ctx.bot
+        if not ctx.guild:
+            await ctx.send("needs to be guild")
+            return
+        if await ctx.bot.gptapi.check_oai(ctx):
+            await ctx.send(INVALID_SERVER_ERROR)
+            return "INVALID CONTEXT"
+        answer,message=await self.research(ctx,question,k,site_title_restriction,use_mmr)
+        return answer,message
+        
+        
+
+
     async def research(
         self,
         ctx: commands.Context,
@@ -538,23 +541,30 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         site_title_restriction: str = "None",
         use_mmr: bool = False,
         send_message : bool = True
-    ):
+    ) -> Tuple[str, Optional[discord.Message]]:
+        """Search the chroma db for relevant documents pertaining to the
+        question, and return a formatted result.
+
+        Args:
+            ctx (commands.Context): The context in which the command is being invoked.
+            question (str): The research question.
+            k (int, optional): The number of search results to consider. Defaults to 5.
+            site_title_restriction (str, optional): Restricts search to sites with this title.
+              Defaults to "None".
+            use_mmr (bool, optional): Whether to use Maximal Marginal Relevance for deduplication. 
+            Defaults to False.
+            send_message (bool, optional): Whether to send the research result as a message in the channel. 
+            Defaults to True.
+
+        Returns:
+            Tuple[str, Optional[discord.Message]]: A tuple containing the research answer and the sent message object (if any).
         """
-        question:str-Question you want to ask
-        site_title_restriction-Restrict to all with this in the title.
-        """
-        bot = ctx.bot
-        if not ctx.guild:
-            await ctx.send("needs to be guild")
-            return
-        if await ctx.bot.gptapi.check_oai(ctx):
-            await ctx.send(INVALID_SERVER_ERROR)
-            return "INVALID CONTEXT"
+
 
         chromac = ChromaTools.get_chroma_client()
         res = await ctx.send("ok")
         statmess = StatusEditMessage(res, ctx)
-        
+
 
         embed = discord.Embed(title=f"Search Query: {question} ")
 
@@ -578,7 +588,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             links=set(doc.metadata.get("source",'???') for doc, e in docs2)
             def ie(all_links: List[str], value: str) -> List[int]:
                 return [index for index, link in enumerate(all_links) if link == value]
-            
+
             used="\n".join(f"{ie(all_links,l)}{l}" for l in links)
             fil = prioritized_string_split(used, ["%s\n"], 4000 )
             cont = '...' if len(fil)>2 else ""
@@ -739,7 +749,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         docs2 = sorted(data, key=lambda x: x[1], reverse=False)
         embed = discord.Embed(title="sauces")
         for doc, score in docs2[:10]:
-            # print(doc)
+            # gui.dprint(doc)
             # 'metadata',{'title':'UNKNOWN','source':'unknown'})
             meta = doc.metadata
             content = doc.page_content  # ('page_content','Data l
@@ -793,7 +803,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
         res = await bot.gptapi.callapi(chat)
         # await ctx.send(res)
-        print(res)
+        gui.dprint(res)
         result = res["choices"][0]["message"]["content"]
         embeds = []
         pages = commands.Paginator(prefix="", suffix="", max_size=2000)
@@ -874,7 +884,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             filtered_markdown = article
             if filter_links:
                 filtered_markdown = filter_inline_links(article)
-                print(filtered_markdown)
+                gui.dprint(filtered_markdown)
 
             splitorder = [("\n## %s", 1000), ("\n### %s", 4000), ("%s\n", 4000)]
             fil = prioritized_string_split(filtered_markdown, splitorder)
@@ -931,7 +941,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             for link in mylinks:
                 link_text, url4 = link
                 link_text = link_text.replace("_", "")
-                print(link_text, url4)
+                gui.dprint(link_text, url4)
                 sources.append(f"[{link_text}]({url4})")
 
             # Call API
@@ -941,16 +951,16 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     res = await bot.gptapi.callapi(chat)
 
                     # await ctx.send(res)
-                    print("clear", res)
+                    gui.dprint("clear", res)
 
                     result = res.choices[0].message.content
-                    print(result)
+                    gui.dprint(result)
                     for link in mylinks:
                         link_text, url2 = link
                         link_text = link_text.replace("_", "")
-                        print(link_text, url2)
+                        gui.dprint(link_text, url2)
                         if link_text in result:
-                            print(link_text, url2)
+                            gui.dprint(link_text, url2)
                             # sources.append(f"[{link_text}]({url})")
                             result = result.replace(link_text, f"{link_text}")
                     splitorder = ["%s\n", "%s.", "%s,", "%s "]
@@ -1060,6 +1070,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @app_commands.describe(question="question to be asked.")
     @app_commands.describe(k="min number of sources to grab.")
     @app_commands.describe(use_mmr="Use the max_marginal_relevance_search")
+    @app_commands.describe(depth="Maximum query depth.")
+    @app_commands.describe(followup="number of followup questions after each search.")
     @app_commands.describe(
         site_title_restriction="Restrain query to websites with this in the title."
     )
@@ -1087,16 +1099,31 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             return "INVALID CONTEXT"
 
         res = await ctx.send("recursively researching.")
+        channel=ctx.channel
         statmess=StatusEditMessage(res,ctx)
-        inital=(question,"",0)
+        inital=(question,"",0,res)
         stack=[]
+        answered=[]
         stack.append(inital)
+        alllines=set()
+        client = AsyncClient()
+        sc = SingleCallAsync(mylib=Followups(), client=client)
         while stack:
             current = stack.pop(0)
-            quest, context, dep = current
-            await statmess.editw(min_seconds=5, content="<a:LoadingBlue:1206301904863502337> q", embed=embed)
+            quest, context, dep, parent= current
+            await statmess.editw(min_seconds=5, content=f"<a:LoadingBlue:1206301904863502337> {quest},{dep}, stacklen={len(stack)}")
             # Custom logic for recursive search and adding results to stack
-            _,lines=await self.web_search(ctx,quest,result_limit=7)
+            answer = await sc.call_single(
+                f'{quest}',
+                "google_search",
+            )
+            query,question,comment=answer[0][1]['content']
+            await ctx.send(str((query,question,comment)))
+            _,lines=await self.web_search(ctx,query,result_limit=7)
+            s=lines.split("\n")
+            for e in s:
+                se=e.split(' ')
+                alllines.add(se[1])
             embed = discord.Embed(
             title=f"depth{dep}, Web Search Results for: {quest} ",
             description=f"Links\n{lines}",
@@ -1114,24 +1141,46 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 send_message=False
             )
             embedres=discord.Embed(
-                title=f"{quest}, depth{dep}",
+                title=f"{quest}, depth: {dep}",
                 description=answer
             )
+            embedres.add_field(name="query",value=f"{query}"[:1000])
+            embedres.set_footer(text=comment)
+            this_message=await channel.send(embed=embedres,reference=parent)
             context=context+f"{dep}:{quest}\n{answer}"
-            client = AsyncClient()
-            sc = SingleCallAsync(mylib=Followups(), client=client)
+            answered.append(quest)
+            
+            
             new_depth = dep + 1
-            if new_depth > depth:
+            if new_depth >= depth:
                 continue
             command = await sc.call_single(
-                f'Generate {followup} followup questions to expand on the results'+\
-                f'results given the prior question/answer pairs: \n{context}',
+                f'Generate {followup} followup questions to expand on the '+\
+                f'results given the prior question/answer pairs: \n{context}.  '+\
+                f'\nDo not generate a followup if it is similar to the questions answered here:{answered}',
                 "followupquestions",
             )
-            print(command)
-            for new_question in command[0][1]['content']:
-                stack.append((new_question, context, new_depth))
-                
+            gui.dprint(command)
+            questions=command[0][1]['content']
+            followups="\n".join(f"* {q}" for q in questions)
+            embedres.add_field(name="Followup questions",value=followups[:1020],inline=False)
+            await this_message.edit(embed=embedres)
+            await ctx.send(content=f"from {quest}:{str(questions)}"[:1980])
+            for new_question in questions:
+                stack.append((new_question, context, new_depth,this_message))
+        await statmess.editw(min_seconds=0,content=f"about {len(alllines)} links where added.")
+
+        # Use a memory buffer instead of saving to a file
+        file_buffer = StringIO()
+        for line in alllines:
+            file_buffer.write(f"{line}\n")
+        file_buffer.seek(0)  # Go back to the start of the StringIO buffer
+
+        # Send the buffer as a file
+        await ctx.send(content="Websites", file=discord.File(file_buffer, filename="all_links.txt"))
+        file_buffer.close()  # Close the buffer
+
+        
 
 
 

@@ -55,7 +55,6 @@ import gptmod
 class ToChoice(commands.Converter):
     async def convert(self, ctx, argument):
         if not ctx.interaction:
-            print(type(argument))
             if type(argument) == str:
                 choice = Choice(name="fallback", value=argument)
                 return choice
@@ -101,7 +100,7 @@ class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
         )
 
 async def setup(bot):
-    print(__name__)
+    gui.dprint(__name__)
     # from .ArchiveSub import setup
     # await bot.load_extension(setup.__module__)
     await bot.add_cog(ServerRPArchiveExtra(bot))

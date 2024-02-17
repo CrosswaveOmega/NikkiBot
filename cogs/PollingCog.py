@@ -118,7 +118,7 @@ class Feedback(discord.ui.Modal, title="Feedback"):
                 icon_url=interaction.user.avatar.url,
             )
             mychannel = self.bot.config.get("optional", "feedback_channel_id")
-            print("ok")
+            gui.dprint("ok")
             if mychannel:
                 chan = self.bot.get_channel(int(mychannel))
                 await chan.send(embed=embed)
@@ -428,7 +428,7 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
 
 
 async def setup(bot):
-    print(__name__)
+    gui.dprint(__name__)
     # from .Polling import setup
     # await bot.load_extension(setup.__module__)
     await bot.add_cog(PollingCog(bot))

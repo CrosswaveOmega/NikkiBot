@@ -259,12 +259,12 @@ class Main(commands.Cog):
         """view the config.ini file"""
         # bot=ctx.bot
         # guild=ctx.guild
-        print(bot.config.values())
+        gui.dprint(bot.config.values())
         listv = []
         for v in bot.config.values():
             for k, s in v.items():
                 listv.append(f"{v.name}, {k}, `{s}`")
-            print(listv)
+            gui.dprint(listv)
         pages = commands.Paginator(prefix="", suffix="")
         for l in listv:
             pages.add_line(l)
@@ -276,12 +276,12 @@ class Main(commands.Cog):
         """set a value in the config.ini file"""
         # bot=ctx.bot
         # guild=ctx.guild
-        print(bot.config.values())
+        gui.dprint(bot.config.values())
         list = []
         for v in bot.config.values():
             for k, s in v.items():
                 list.append(f"{v.name}, {k}, `{s}`")
-            print(list)
+            gui.dprint(list)
 
         pages = commands.Paginator(prefix="", suffix="")
         for l in list:

@@ -263,7 +263,7 @@ class MusicJSONMemoryDB(MusicBase):
         conditions = and_(*cls.get_part_conditionals(sub_count))
 
         matched_elements = session.query(cls).filter(conditions).limit(15).all()
-        print("outcome", matched_elements)
+        gui.dprint("outcome", matched_elements)
         if not matched_elements:
             return []
         return matched_elements
@@ -309,13 +309,13 @@ class MusicJSONMemoryDB(MusicBase):
         # If there are none, move on to max_search.
         andsearch = cls.and_search(parts, subcount, session=session)
         if andsearch:
-            print("found result with and search.")
+            gui.dprint("found result with and search.")
             return andsearch
         if do_maxsearch:
             # Max Search searches for all entries that contain at least one substring,
             # Ordering by the total number of matched substrings.
             p3 = cls.max_search(subcount, session=session)
-            print("found resutl with max search")
+            gui.dprint("found resutl with max search")
             return [i for i, s in p3 if s > 0]
         return []
 
@@ -354,7 +354,7 @@ class MusicJSONMemoryDB(MusicBase):
                 parts = [query]
                 # Split the query by the URL components: domain, basename, and GET parameters
                 url_components = urlsplit(query)
-                print(url_components)
+                gui.dprint(url_components)
                 if (
                     url_components.scheme and url_components.netloc
                 ):  # Ensure it's a valid URL

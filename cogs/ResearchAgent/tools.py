@@ -1,6 +1,7 @@
 import discord
 from gptfunctionutil import GPTFunctionLibrary, AILibFunction, LibParam
 from utility import prioritized_string_split
+
 from langchain_community.document_loaders import PyPDFLoader, PDFMinerLoader
 from htmldate import find_date
 import gptmod
@@ -23,6 +24,7 @@ import uuid
 import openai
 from langchain.docstore.document import Document
 from .metadataenums import MetadataDocType
+import gui
 webload = docload.WebBaseLoader
 
 tosplitby = [
@@ -175,7 +177,6 @@ async def read_and_split_link(
         )
         # Index that wraps above steps
         data, typev = await loader.aload(bot)
-    print("ok")
     newdata = []
     splitnum=0
     for d in data:
@@ -186,14 +187,14 @@ async def read_and_split_link(
         simplified_text = simplified_text.replace("\t{3,}", "\t")
         simplified_text = re.sub(r"\n+(\s*\n)*", "\n", simplified_text)
         d.page_content = simplified_text
-        split,splitnum = await split_link(d, chunk_size=chunk_size, prior=prioritysplit,add=splitnum)
+        split,splitnum = await asyncio.to_thread(split_link,d, chunk_size=chunk_size, prior=prioritysplit,add=splitnum)
         newdata.extend(split)
 
     all_splits = newdata
     return all_splits,typev
 
 
-async def split_link(doc: Document, chunk_size: int = 1800, prior=[],add=0):
+def split_link(doc: Document, chunk_size: int = 1800, prior=[],add=0):
     newdata = []
 
     metadata = doc.metadata
@@ -226,7 +227,7 @@ async def add_summary(
     # data = await loader.aload()
     metadata = {}
     if header is not None:
-        print(header["byline"])
+        gui.dprint(header["byline"])
         if "byline" in header:
             metadata["authors"] = header["byline"]
         metadata["website"] = header.get("siteName", "siteunknown")
@@ -244,7 +245,7 @@ async def add_summary(
             if dt:
                 metadata["date"] = dt
         except Exception as e:
-            print(e)
+            gui.dprint(e)
     newdata = {}
     for i, v in metadata.items():
         if v is not None:
@@ -285,8 +286,8 @@ def store_splits(
         f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,doc.metadata['source']))}],sid:[{e+1}]"
         for e, doc in enumerate(splits)
     ]
-    print(splits)
-    print(ids)
+    gui.dprint(splits)
+    gui.dprint(ids)
     if client == None:
         vectorstore = Chroma.from_documents(
             documents=splits,
@@ -314,18 +315,19 @@ def has_url(
     persist = "saveData"
     if client != None:
         try:
+             
             collectionvar = client.get_collection(collection)
-            sres = collectionvar.peek()
+
             res = collectionvar.get(
                 where={"source": url}, include=["documents", "metadatas"]
             )
 
             if res.get("ids", None):
-                print("hasres", res)
+                gui.dprint("hasres", res)
                 return True, res
             return False, None
         except ValueError as e:
-            print(e)
+            gui.dprint(e)
             raise e
             return False
     else:
@@ -337,13 +339,13 @@ def has_url(
         )
         try:
             res = vs._collection.get(where={"source": url})
-            print(res)
+            gui.dprint(res)
             if res:
                 return True
             else:
                 return False
         except Exception as e:
-            print(e)
+            gui.dprint(e)
             return False
 
 
@@ -359,7 +361,7 @@ def remove_url(
 
             return True
         except ValueError as e:
-            print(e)
+            gui.dprint(e)
             raise e
             return False
     else:
@@ -390,7 +392,7 @@ async def search_sim(
 
         return docs
     else:
-        print("here")
+        gui.dprint("here")
         if mmr:
             docs = vs.max_marginal_relevance_search(
                 question,
@@ -424,7 +426,7 @@ async def debug_get(
     if titleres == "None":
         return "NONE"
     else:
-        print("here")
+        gui.dprint("here")
 
         collectionvar = client.get_collection(collection)
         res = collectionvar.get(
@@ -462,7 +464,7 @@ async def get_points(question:str,docs:List[Tuple[Document, float]],ctx=None)->s
     lastv=[]
     for e, tup in enumerate(docs):
         doc, score = tup
-        # print(doc)
+        # gui.dprint(doc)
         # 'metadata',{'title':'UNKNOWN','source':'unknown'})
         meta = doc.metadata
         content = doc.page_content  # ('page_content','Data lost!')
@@ -474,7 +476,7 @@ async def get_points(question:str,docs:List[Tuple[Document, float]],ctx=None)->s
         **Link:** {meta['source']}
         **Text:** {content}"""
         formatted_docs.append(output)
-        # print(output)
+        # gui.dprint(output)
         tokens = gptmod.util.num_tokens_from_messages(
             [{"role": "system", "content": output}], "gpt-3.5-turbo-0125"
         )
@@ -545,7 +547,7 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
     )
     for e, tup in enumerate(docs):
         doc, score = tup
-        # print(doc)
+        # gui.dprint(doc)
         # 'metadata',{'title':'UNKNOWN','source':'unknown'})
         meta = doc.metadata
         content = doc.page_content 
@@ -557,7 +559,7 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
         **Link:** {meta['source']}
         **Text:** {content}"""
         formatted_docs.append(output)
-        # print(output)
+        # gui.dprint(output)
         tokens = gptmod.util.num_tokens_from_messages(
             [{"role": "system", "content": output}], "gpt-3.5-turbo-0125"
         )

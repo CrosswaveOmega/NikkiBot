@@ -5,7 +5,7 @@ import json
 import urllib
 import gptmod
 import openai
-
+import gui
 from gptmod.object_core import ApiCore
 import gptmod.error as error
 from assets import AssetLookup
@@ -51,15 +51,15 @@ class GptmodAPI:
             "Authorization": f"Bearer {self._key}",
         }
         data = payload
-        # print(data)
+        # gui.dprint(data)
 
         if self._key == None:
             raise error.KeyException("API Key not set.")
         # data['key']= self._key
-        # print()
+        # gui.dprint()
         timeout = aiohttp.ClientTimeout(total=TIMEOUT_SECS)
         async with aiohttp.ClientSession() as session:
-            print(f"{self.base_url}{endpoint}")
+            gui.dprint(f"{self.base_url}{endpoint}")
             try:
                 async with session.post(
                     f"{self.base_url}{endpoint}",
@@ -68,14 +68,14 @@ class GptmodAPI:
                     timeout=timeout,
                 ) as response:
                     if response.content_type == "application/json":
-                        print(response)
+                        gui.dprint(response)
                         result = await response.json()
-                        print(result)
+                        gui.dprint(result)
                         return result
                     else:
-                        print(response.status, response.reason)
+                        gui.dprint(response.status, response.reason)
                         result = await response.text()
-                        print(result)
+                        gui.dprint(result)
                         # if 'err:' in result:  raise error.GptmodError(f"{response.status}: {response.reason}", code=response.status)
                         raise error.GptmodError(
                             f"{response.status}: {response.reason}",
@@ -120,7 +120,7 @@ class GptmodAPI:
         if ctx.bot.gptapi.openaimode:
             target_server = AssetLookup.get_asset("oai_server")
             targetserverlist = json.loads(target_server)
-            print(targetserverlist, type(targetserverlist))
+            gui.dprint(targetserverlist, type(targetserverlist))
             if not ctx.guild:
                 return True
             if ctx.guild.id not in (targetserverlist):

@@ -96,7 +96,7 @@ async def api_get(url, params: dict = {}):
                 f"{url}", params=params, headers=headers, timeout=timeout
             ) as response:
                 if response.content_type == "application/json":
-                    print(response)
+                    gui.dprint(response)
                     result = await response.json()
                     return result
         except (aiohttp.ServerTimeoutError, asyncio.TimeoutError) as e:
@@ -148,7 +148,7 @@ class ToonTownCog(commands.Cog, TC_Cog_Mixin):
             )
             pages = []
             for i, v in overdata["query"]["pages"].items():
-                print(v.keys())
+                gui.dprint(v.keys())
                 call = v["title"].replace(" ", "_")
                 params = {
                     "action": "parse",
@@ -167,7 +167,7 @@ class ToonTownCog(commands.Cog, TC_Cog_Mixin):
                     if desoup["position"][1] in positions:
                         pages.append(desoup)
                 except Exception as e:
-                    print(call, e)
+                    gui.dprint(call, e)
             self.db.update({"directory": pages})
             self.db.commit()
             dict = self.db["directory"]
@@ -198,7 +198,7 @@ class ToonTownCog(commands.Cog, TC_Cog_Mixin):
         embeds = []
         for data in result:
             # Create an empty embed
-            print(data)
+            gui.dprint(data)
             embed = discord.Embed(title=data["name"])
             embed.set_author(name="Toontown Corporate Clash", icon_url=bot.user.avatar)
             # Set the title

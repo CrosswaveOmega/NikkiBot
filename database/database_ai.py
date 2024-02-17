@@ -298,7 +298,6 @@ class ServerAIConfig(AIBase):
         )
         purged = 0
         for message_chain in message_chains:
-            print(message_chain)
             purged += 1
             session.delete(message_chain)
         session.commit()

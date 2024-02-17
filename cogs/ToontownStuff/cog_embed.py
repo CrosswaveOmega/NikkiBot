@@ -4,7 +4,7 @@ import discord
 import requests
 import json
 import re
-
+import gui
 
 def remove_link_node(data):
     value = data
@@ -105,7 +105,7 @@ def extract_attack_table(html_content):
         for r in rows[1:]:
             parameters = [cell.text.strip() for cell in r.find_all("td")]
             name, value = parameters[0], parameters[1:]
-            print(name, value)
+            gui.dprint(name, value)
             if "Limit" in value:
                 value.remove("Limit")
             if name == "Level Continued...":
@@ -300,7 +300,7 @@ async def formatembed(
             embed.add_field(name=name, value=f"{text}", inline=True)
 
         if cheat_tattle:
-            print(cheat_tattle)
+            gui.dprint(cheat_tattle)
             embed.add_field(
                 name=f"Cheat Tattle", value=cheat_tattle[:1020], inline=False
             )

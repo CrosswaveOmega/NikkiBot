@@ -947,7 +947,7 @@ async def setup(bot: commands.Bot) -> None:
 
 
 async def setup(bot):
-    print(__name__)
+    gui.dprint(__name__)
     from .AudioPlaybackSub import setup
 
     await bot.load_extension(setup.__module__)

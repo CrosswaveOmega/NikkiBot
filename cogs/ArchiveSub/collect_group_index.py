@@ -30,10 +30,10 @@ async def iterate_backlog(backlog: Queue, group_id: int, count=0):
     while not backlog.empty():
         time = datetime.now()
         if DEBUG_MODE:
-            gui.gprint(f"Backlog Pass {group_id}:")
+            gui.dprint(f"Backlog Pass {group_id}:")
 
         if (datetime.now() - now).total_seconds() > 1:
-            gui.gprint(
+            gui.dprint(
                 f"Backlog Pass {group_id}: {archived} out of {initial} messages, with {count} remaining."
             )
             # await asyncio.sleep(0.02)
@@ -64,18 +64,18 @@ async def iterate_backlog(backlog: Queue, group_id: int, count=0):
                         HistoryMakers.add_channel_sep_if_needed(
                             hm, buckets[channelind]["group_id"]
                         )
-                        gui.gprint(
+                        gui.dprint(
                             f"Backlog Pass {group_id}: {archived} out of {initial} messages, making a new bucket for {channelind}"
                         )
                     else:
-                        gui.gprint(
+                        gui.dprint(
                             f"Backlog Pass {group_id}: Author is in older bucket, it's ok to overwrite."
                         )
 
         # If the bucket doesn't exist, create a new one
         if not bucket:
             group_id += 1
-            gui.gprint(
+            gui.dprint(
                 f"Backlog Pass {group_id}: {archived} out of {initial} messages, making a new bucket for {channelind}"
             )
             bucket = {"messages": 0, "authors": 0, "group_id": group_id}
@@ -94,9 +94,9 @@ async def iterate_backlog(backlog: Queue, group_id: int, count=0):
         res = datetime.now() - time
         optotal += res.total_seconds()
         await asyncio.sleep(float(0.01))
-    gui.gprint(optotal / max(1, archived))
+    gui.dprint(optotal / max(1, archived))
     if DEBUG_MODE:
-        gui.gprint("Pass complete.")
+        gui.dprint("Pass complete.")
 
     DatabaseSingleton("voc").commit()
     return tosend, group_id
@@ -109,7 +109,7 @@ async def iterate_backlog_old(backlog: Queue, group_id: int, count=0):
     archived = 0
     while backlog.empty() == False:
         if DEBUG_MODE:
-            gui.gprint(f"Backlog Pass {group_id}:")
+            gui.dprint(f"Backlog Pass {group_id}:")
         new_backlog = Queue()
         charsinotherbacklog = set()
         current_chana = None
@@ -119,7 +119,7 @@ async def iterate_backlog_old(backlog: Queue, group_id: int, count=0):
             now = datetime.now()
         while backlog.empty() == False:
             if (datetime.now() - now).total_seconds() > 1:
-                gui.gprint(
+                gui.dprint(
                     f"Backlog Pass {group_id}: {archived} out of {inital} messages, with {count} remaining."
                 )
                 await asyncio.sleep(0.1)
@@ -132,11 +132,11 @@ async def iterate_backlog_old(backlog: Queue, group_id: int, count=0):
             if current_chana is None:
                 group_id += 1
                 if DEBUG_MODE:
-                    gui.gprint("inb", current_chana, hm.get_chan_sep(), group_id)
+                    gui.dprint("inb", current_chana, hm.get_chan_sep(), group_id)
                 current_chana = channelind
             if channelind == current_chana and running:
                 if DEBUG_MODE:
-                    gui.gprint("in", current_chana, hm.get_chan_sep(), group_id)
+                    gui.dprint("in", current_chana, hm.get_chan_sep(), group_id)
                 hm.update(channel_sep_id=group_id)
                 archived += 1
                 HistoryMakers.add_channel_sep_if_needed(hm, group_id)
@@ -144,7 +144,7 @@ async def iterate_backlog_old(backlog: Queue, group_id: int, count=0):
                 new_backlog.put(hm)
                 charsinotherbacklog.add(hm.author)
         if DEBUG_MODE:
-            gui.gprint("Pass complete.")
+            gui.dprint("Pass complete.")
         DatabaseSingleton("voc").commit()
         backlog = new_backlog
     return tosend, group_id
@@ -175,7 +175,7 @@ async def do_group_old(
     Returns:
         tuple: Number of messages grouped and last used group ID.
     """
-    gui.gprint("Starting run.")
+    gui.dprint("Starting run.")
 
     count = ArchivedRPMessage().count_messages_without_group(server_id)
     new_list, new_count = [], 0
@@ -205,7 +205,7 @@ async def do_group_old(
         stopcount += 1
         if stopcount > countlim:
             raise RecursionError("something has gone horribly wrong.")
-        gui.gprint(f"Now at: {new_count}/{count}.")
+        gui.dprint(f"Now at: {new_count}/{count}.")
         await asyncio.sleep(0.1)
         if status_mess:
             await status_mess.editw(
@@ -218,19 +218,19 @@ async def do_group_old(
 
     for i, hm in enumerate(new_list):
         if (datetime.now() - now).total_seconds() > 1:
-            gui.gprint(f"Now at: {i}/{length}, group_id:{group_id}.")
+            gui.dprint(f"Now at: {i}/{length}, group_id:{group_id}.")
             await asyncio.sleep(0.1)
             now = datetime.now()
 
         if status_mess:
-            gui.gprint(f"Now at: {i}/{length}, group_id:{group_id}.")
+            gui.dprint(f"Now at: {i}/{length}, group_id:{group_id}.")
             await status_mess.editw(
                 min_seconds=10,
                 content=f"<a:LetWalkR:1118191001731874856> Now at: {i}/{count}, group_id:{group_id}.<a:LetWalkR:1118191001731874856> ",
             )
 
         if DEBUG_MODE:
-            gui.gprint("i", hm)
+            gui.dprint("i", hm)
 
         my_time = (hm.created_at).replace(tzinfo=timezone.utc)
         chanin = hm.get_chan_sep()
@@ -263,15 +263,15 @@ async def do_group_old(
                 DatabaseSingleton("voc").commit()
                 ts, group_id = await iterate_backlog(backlog, group_id, length)
                 to_send += ts
-                print("done")
+                gui.dprint("done")
                 return to_send, group_id
 
             if DEBUG_MODE:
-                gui.gprint("inb", current_chana, hm.get_chan_sep(), group_id)
+                gui.dprint("inb", current_chana, hm.get_chan_sep(), group_id)
 
         if chanin == current_chana:
             if DEBUG_MODE:
-                gui.gprint("in", current_chana, hm.get_chan_sep(), group_id)
+                gui.dprint("in", current_chana, hm.get_chan_sep(), group_id)
             backlog.put(hm)
             cc_count += 1
         else:
@@ -314,7 +314,7 @@ async def do_group(
     Returns:
         tuple: Number of messages grouped and last used group ID.
     """
-    gui.gprint("Starting run.")
+    gui.dprint("Starting run.")
 
     count = ArchivedRPMessage().count_messages_without_group(server_id)
     new_list, new_count = [], 0
@@ -347,7 +347,7 @@ async def do_group(
         first = thesemessages[0]
         last = thesemessages[-1]
         toprint = f"Now at: {new_count}/{count}. [{first.simplerep()}]-{thiscount}-[{last.simplerep()}]"
-        print(toprint)
+        gui.dprint(toprint)
         stopcount += 1
         if stopcount > countlim:
             raise RecursionError("something has gone horribly wrong.")
@@ -375,7 +375,7 @@ async def do_group(
         # new_list.extend(get_msg_result[0])
         # new_count = get_msg_result[1]
         new_count += thiscount
-        gui.gprint(f"Now at: {new_count}/{count}.")
+        gui.dprint(f"Now at: {new_count}/{count}.")
         await asyncio.sleep(0.1)
 
     length, old_group_id = count, group_id

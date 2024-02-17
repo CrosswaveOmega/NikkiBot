@@ -173,7 +173,7 @@ class AppGuildTreeSync(Guild_Sync_Base):
         """
         session: Session = DatabaseSingleton.get_session()
         self.cog_disable = json.dumps(command_list, default=str)
-        print(self.cog_disable)
+        gui.dprint(self.cog_disable)
         session.commit()
 
     @classmethod
@@ -196,7 +196,7 @@ class AppGuildTreeSync(Guild_Sync_Base):
         """
         session: Session = DatabaseSingleton.get_session()
         self.cog_onlist = json.dumps(command_list, default=str)
-        print(self.cog_onlist)
+        gui.dprint(self.cog_onlist)
         session.commit()
 
     def update(self, command_tree: dict):
@@ -409,7 +409,7 @@ class SpecialAppSync:
         code to sync different app commands between guilds."""
         ignorelist = AppGuildTreeSync.load_list(guild.id)
         onlist = AppGuildTreeSync.load_onlist(guild.id)
-        print(ignorelist)
+        gui.dprint(ignorelist)
 
         def syncprint(*lis):
             pass
@@ -423,7 +423,7 @@ class SpecialAppSync:
                 return False
             private_cog = False
             if hasattr(cog, "manual_enable"):
-                print(cogname, cog.manual_enable)
+                gui.dprint(cogname, cog.manual_enable)
                 private_cog = cog.manual_enable
             if cogname in ignorelist or private_cog:
                 return True

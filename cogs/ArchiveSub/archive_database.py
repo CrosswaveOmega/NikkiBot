@@ -110,14 +110,14 @@ class ChannelArchiveStatus(ArchiveBase):
     async def get_first_and_last(self, channel: discord.TextChannel, force=False):
         if self.first_message_time == None or force:
             async for thisMessage in channel.history(oldest_first=True, limit=1):
-                print(thisMessage.created_at, thisMessage.created_at.tzinfo)
+                gui.dprint(thisMessage.created_at, thisMessage.created_at.tzinfo)
                 self.first_message_time = thisMessage.created_at
                 self.first_message_id = thisMessage.id
                 # self.latest_archive_time=thisMessage.created_at
 
         if self.last_message_time == None or force:
             async for thisMessage in channel.history(oldest_first=False, limit=1):
-                print(thisMessage.created_at, thisMessage.created_at.tzinfo)
+                gui.dprint(thisMessage.created_at, thisMessage.created_at.tzinfo)
                 self.last_message_time = thisMessage.created_at
                 self.last_message_id = thisMessage.id
 
@@ -130,7 +130,7 @@ class ChannelArchiveStatus(ArchiveBase):
 
     def increment(self, date):
         self.stored += 1
-        print(
+        gui.dprint(
             "inc",
             date,
             self.latest_archive_time,
@@ -912,7 +912,7 @@ class ArchivedRPMessage(ArchiveBase):
         ) % timedelta(minutes=15)
 
         end_time = start_time + timedelta(minutes=interval)
-        print(start_time, end_time)
+        gui.dprint(start_time, end_time)
         session: Session = DatabaseSingleton.get_session()
         return (
             session.query(ArchivedRPMessage)
@@ -1175,7 +1175,7 @@ class HistoryMakers:
                         "description": fd.description,
                         "spoiler": fd.spoiler,
                     }
-                    print(ms, fdv)
+                    gui.dprint(ms, fdv)
                     file = create_archived_rp_file(ms, count, vekwargs=fdv)
                     if file != None:
                         archived_rp_files.append(file)
@@ -1232,7 +1232,7 @@ class HistoryMakers:
                             archived_rp_files.append(rps)
                             fsize += attach.size
                 except Exception as e:
-                    print(e)
+                    gui.dprint(e)
             if thisMessage.content.isspace() and not filecount <= 0 and not hasembed:
                 # Skip if no content or file.
                 continue

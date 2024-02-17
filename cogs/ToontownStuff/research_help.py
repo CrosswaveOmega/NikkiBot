@@ -2,21 +2,21 @@ import asyncio
 from javascriptasync import require, eval_js
 import assets
 import re
-
+import gui
 
 def read_article_sync(url):
     readability = require("@mozilla/readability")
     jsdom = require("jsdom")
     TurndownService = require("turndown")
     # Is there a better way to do this?
-    print("attempting parse")
+    gui.dprint("attempting parse")
     out = f"""
     let result=await read_webpage_plain(`{url}`,readability,jsdom);
     return [result[0],result[1]];
     """
     myjs = assets.JavascriptLookup.find_javascript_file("readwebpage.js", out)
     # myjs=myjs.replace("URL",url)
-    print(myjs)
+    gui.dprint(myjs)
     rsult = eval_js(myjs)
 
     output, header = rsult[0], rsult[1]
@@ -32,6 +32,6 @@ def read_article_sync(url):
 async def read_article(url):
     getthread = asyncio.to_thread(read_article_sync, url)
     result = await getthread
-    print(result)
+    gui.dprint(result)
     text, header = result[0], result[1]
     return text, header

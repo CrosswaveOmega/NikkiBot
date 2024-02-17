@@ -12,6 +12,7 @@ import inspect
 import aiohttp
 import discord
 import requests
+import gui
 from htmldate import find_date
 import assets
 from javascriptasync import require, eval_js, eval_js_a
@@ -19,22 +20,6 @@ from .metadataenums import MetadataDocType
 """This is a special loader that makes use of Mozilla's readability module. """
 
 
-# def is_readable(url):
-#     timeout = 30
-#     readability = require("@mozilla/readability")
-#     jsdom = require("jsdom")
-#     TurndownService = require("turndown")
-#     # Is there a better way to do this?
-#     print("attempting parse")
-#     out = f"""
-#     let result=await check_read(`{url}`,readability,jsdom);
-#     return result
-#     """
-#     myjs = assets.JavascriptLookup.find_javascript_file("readwebpage.js", out)
-#     # myjs=myjs.replace("URL",url)
-#     print(myjs)
-#     rsult = eval_js(myjs)
-#     return rsult
 
 
 def remove_links(markdown_text):
@@ -83,7 +68,6 @@ async def read_article_aw(jsenv, html, url):
     now = discord.utils.utcnow()
     getthread = await read_article_direct(jsenv, html, url)
     result = getthread
-    print(type(result))
     text, header = result[0], result[1]
     return text, header
 
@@ -99,13 +83,12 @@ def _build_metadata(soup: Any, url: str) -> dict:
         metadata["language"] = html.get("lang", "No language found.")
     metadata["dateadded"] = datetime.datetime.utcnow().timestamp()
     metadata["date"] = "None"
-    print(metadata)
     try:
         dt = find_date(url)
         if dt:
             metadata["date"] = dt
     except Exception as e:
-        print(e)
+        gui.dprint(e)
     metadata["reader"] = False
     return metadata
 
@@ -152,7 +135,7 @@ class ReadableLoader(dl.WebBaseLoader):
                 )
             readable=await check_readability(self.jsenv,clean_html,url)
             if not readable:
-                raise Exception("Link is not readable.")
+                gui.dprint("Not readable link.")
             try:
                 
                 text, header = await read_article_aw(self.jsenv, clean_html, url)
@@ -220,7 +203,6 @@ class ReadableLoader(dl.WebBaseLoader):
             if not "title" in metadata:
                 metadata["title"] = "No Title"
             if header is not None:
-                print(header["byline"])
                 if "byline" in header:
                     metadata["authors"] = header["byline"]
                 metadata["website"] = header.get("siteName", "siteunknown")

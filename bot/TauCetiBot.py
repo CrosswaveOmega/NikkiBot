@@ -141,6 +141,9 @@ class TCBot(
             await self.jsenv.init_js_a()
             setup_logging(logging.INFO, handler=get_filehandler(log_level=logging.INFO))
             guimode = self.config.getbool("gui")
+            debugmode = self.config.getbool("debug")
+            if debugmode:
+                gui.toggle_debug_mode(debugmode)
             if guimode:
                 self.guimode = True
                 self.gui = gui.Gui()

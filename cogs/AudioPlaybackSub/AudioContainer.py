@@ -428,7 +428,7 @@ class AudioContainer:
                 filename = str(dictionary["id"]) + ".json"
             else:
                 # Handle the case when 'title' or 'id' field is missing
-                print("Could not find 'title' or 'id' field in the dictionary.")
+                gui.dprint("Could not find 'title' or 'id' field in the dictionary.")
                 return
             filename = filename.replace("/", "").replace("\\", "")
             directory = "saveData"
@@ -439,7 +439,7 @@ class AudioContainer:
 
             with open(filepath, "w") as file:
                 json.dump(dictionary, file, indent=3, sort_keys=True)
-            print("Dictionary saved to", filepath)
+            gui.dprint("Dictionary saved to", filepath)
 
     def remember_song(self):
         """Store song in database."""

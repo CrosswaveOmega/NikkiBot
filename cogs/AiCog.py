@@ -4,7 +4,7 @@ from gptfunctionutil import *
 import base64
 from typing import Any, Literal, Optional
 import discord
-
+import gui
 import io
 
 import aiohttp
@@ -106,7 +106,7 @@ async def process_result(ctx: commands.Context, result: Any, mylib: GPTFunctionL
 
     When a function is invoked, the output of the function is added to the chain instead.
     """
-    print()
+    gui.dprint()
     if result.model == "you":
         i = result.choices[0]
         role, content = i.message.role, i.message.content
@@ -115,7 +115,7 @@ async def process_result(ctx: commands.Context, result: Any, mylib: GPTFunctionL
         return role, content, messageresp, None
 
     i = result.choices[0]
-    print(i)
+    gui.dprint(i)
     role, content = i.message.role, i.message.content
     messageresp = None
     function = None
@@ -150,7 +150,7 @@ async def process_result(ctx: commands.Context, result: Any, mylib: GPTFunctionL
         messageresp = content
         content = messageresp.content
     else:
-        print(result, content)
+        gui.dprint(result, content)
         messageresp = await ctx.channel.send("No output from this command.")
         content = "No output from this command."
     return role, content, messageresp, function
@@ -197,7 +197,7 @@ async def ai_message_invoke(
         chat.add_message(f["role"], f["content"])
     # Load current message into chat creation.
     chat.add_message("user", message.content)
-    print(len(chat.messages))
+    gui.dprint(len(chat.messages))
     # Load in functions
     forcecheck = None
     if mylib != None:
@@ -472,7 +472,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             profile = ServerAIConfig.get_or_new(thread.guild_id)
             thread_id = thread.thread_id
             messages = profile.clear_message_chains(thread_id=thread_id)
-            print('Purged.')
+            gui.dprint('Purged.')
         except Exception as e:
             await self.bot.send_error(e)
     @commands.Cog.listener()

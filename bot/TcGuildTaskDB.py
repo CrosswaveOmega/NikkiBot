@@ -234,7 +234,7 @@ class TCGuildTask(Guild_Task_Base):
     async def guild_task(self, bot, server_id, task_name):
         """This function is passed into TCTask as the wrapped function."""
         try:
-            print(server_id, task_name)
+            gui.dprint(server_id, task_name)
             channel = bot.get_channel(self.target_channel_id)
             source_message = await channel.send(
                 f"Auto Guild Task {self.task_name} launching."
@@ -244,11 +244,11 @@ class TCGuildTask(Guild_Task_Base):
             )
         except Exception as e:
             if isinstance(e, sqlalchemy.orm.exc.DetachedInstanceError):
-                print("DetachedInstanceError occurred.")
+                gui.dprint("DetachedInstanceError occurred.")
                 TCGuildTask.remove_guild_task(server_id, task_name)
             else:
                 await bot.send_error(e, "AUTO COMMAND ERROR.")
-                print("Another error occurred.")
+                gui.dprint("Another error occurred.")
         await asyncio.sleep(2)
         gui.gprint(f"{self.name} Task done at", datetime.now(), "excution ok.")
         if self.remove_after:

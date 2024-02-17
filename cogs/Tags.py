@@ -89,9 +89,7 @@ async def execute_javascript(tagtext, browser):
     matches = re.finditer(pattern, tagtext)
     for match in reversed(list(matches)):
         extracted_text = match.group(1)
-        print(extracted_text)
         processed_text = await process_text(extracted_text, page)
-        print(result)
         result = result.replace(f"{start}{extracted_text}{end}", processed_text, 1)
     await page.close()
     return result
@@ -288,7 +286,6 @@ class Tags(commands.Cog):
             text = tag.get("text")
             output = await dynamic_tag_get(self.db, text)
             to_send = f"{output}"
-            print(re.search(r"<js\:\{(.*?)\}>", to_send))
             pattern_exists = bool(re.search(r"<js\:\{(.*?)\}>", to_send))
             if pattern_exists:
                 mes = await ctx.send("Javascript running")
@@ -321,7 +318,6 @@ class Tags(commands.Cog):
                 return
             text = tag.get("text")
             output = text
-            print(tag)
             await MessageTemplates.tag_message(
                 ctx, f"Displaying raw tag text.", tag=tag, title="Raw Tag Text."
             )
@@ -359,7 +355,7 @@ class Tags(commands.Cog):
                 if i == "taglist":
                     continue
                 text = v["text"]
-                print(i, v)
+                gui.dprint(i, v)
                 result = is_cyclic_i(data, i)
                 assert result == v["out"]
             await ctx.send("pass complete")

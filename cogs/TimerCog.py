@@ -92,7 +92,7 @@ class TimerTable(Base):
             )
             expired_timers = expired_timers_query.scalars().all()
             for timer in expired_timers:
-                print("attempting to remove: timer")
+                gui.dprint("attempting to remove: timer")
                 await session.delete(timer)
             await session.commit()
 
@@ -182,8 +182,8 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send("There already is a reminder by that name!")
             return
         message = ctx.message
-        print(message.jump_url)
-        print(alarm_time)
+        gui.dprint(message.jump_url)
+        gui.dprint(alarm_time)
         target_message = await ctx.send(
             f"{comment}\n Reminder {name} is set for <t:{int(alarm_time.timestamp())}:R>"
         )
@@ -221,7 +221,7 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send("There already is a timer by that name!")
             return
         message = ctx.message
-        print(message.jump_url)
+        gui.dprint(message.jump_url)
         target_message = await ctx.send(
             f"{comment}\nTimer {name} is set for <t:{int(target.timestamp())}:R>"
         )

@@ -78,7 +78,7 @@ class EngineContainer:
             self.connected_a = True
 
     def load_in_base(self, Base):
-        print("loading in: ", Base.__name__, Base)
+        gui.dprint("loading in: ", Base.__name__, Base)
         if not Base in self.bases:
             self.bases.append(Base)
         if self.connected:
@@ -166,12 +166,12 @@ class DatabaseSingleton:
                 self.connected_a = True
 
         def load_in_base(self, Base, ename="main"):
-            print("loading in: ", Base.__name__, Base)
+            gui.dprint("loading in: ", Base.__name__, Base)
             if ename in self.engines:
                 self.engines[ename].load_in_base(Base)
             if not Base in self.bases:
                 self.bases.append(Base)
-            print("done")
+            gui.dprint("done")
             if self.connected:
                 Base.metadata.create_all(self.engine)
                 self.session: Session = self.SessionLocal()
@@ -186,7 +186,7 @@ class DatabaseSingleton:
             self.session: Session = None
 
         def print_arg(self):
-            print(self.val)
+            gui.dprint(self.val)
 
         def compare_db(self):
             """compare current metadata with sqlalchemy metadata"""
@@ -272,7 +272,7 @@ class DatabaseSingleton:
         async def close_async(self):
             if self.connected_a:
                 await self.aengine.dispose()
-                print("disposed")
+                gui.dprint("disposed")
                 self.connected_a = False
 
         def get_session(self) -> Session:
@@ -292,7 +292,7 @@ class DatabaseSingleton:
 
     def __init__(self, arg, **kwargs):
         if not DatabaseSingleton._instance:
-            print("Running singleton 2")
+            gui.dprint("Running singleton 2")
             instance = self.__DatabaseSingleton(arg, **kwargs)
             DatabaseSingleton._instance = instance
 

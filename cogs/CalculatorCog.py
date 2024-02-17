@@ -221,7 +221,7 @@ example: (2d20reroll>10) will reroll any dice that has a value greater than 10."
                     title="Result of {}".format(out.formatStr(rollv)),
                     description=string,
                 )
-                embedv.add_field(name="To be continued...")
+                embedv.add_field(name="To be continued...",value='tbc')
                 await ctx.send(embed=embedv)
                 string = "`" + c + "` \n"
             elif c != "":
@@ -297,7 +297,7 @@ if __name__ == "__main__":  # testing
 
 
 async def setup(bot):
-    print(__name__)
+    gui.dprint(__name__)
     from .StepCalculator import setup
 
     await bot.load_extension(setup.__module__)

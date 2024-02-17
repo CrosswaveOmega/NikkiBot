@@ -36,6 +36,8 @@ from googleapiclient.discovery import build  # Import the library
 from utility import prioritized_string_split, select_emoji
 from utility.embed_paginator import pages_of_embeds
 
+
+
 class SourceLinkLoader:
     """
     Manages the loading of links, including checking if they're cached, splitting content,
@@ -77,7 +79,7 @@ class SourceLinkLoader:
         for link_num, link in enumerate(all_links):
             embed = discord.Embed(description=f"google search\n{self.get_status_lines()}")
 
-            has, getres = self.check_cached_documents(ctx, link, override)
+            has, getres = await self.check_cached_documents(ctx, link, override)
             
             if has and not override:
                 self.current += self.process_cached_link(link_num, link, getres)
@@ -111,7 +113,7 @@ class SourceLinkLoader:
         """
         return "\n".join([f"{select_emoji(s)} {link}" for s, link in self.all_link_status])
 
-    def check_cached_documents(self, ctx,link, override):
+    async def check_cached_documents(self, ctx,link, override):
         """
         Checks if the provided link is already cached, unless overriding is requested.
 
@@ -123,13 +125,20 @@ class SourceLinkLoader:
         Returns:
             tuple: A tuple where the first element indicates if the link is cached, and the second element is the cached data if any.
         """
-        has, getres = has_url(link, client=self.chromac)
+        
+        result=await asyncio.to_thread(has_url,link, client=self.chromac)
+        has,getres=result
+        # Accessing traced results
+        # The results object contains information about executed lines, missing lines, and more
+
+
         if has and not override:
             for d, me in zip(getres["documents"], getres["metadatas"]):
                 if me["source"] != link:
                     raise Exception("the url in the cache doesn't match the provided url.")
             return True, getres
         return False, None
+
 
     def process_cached_link(self, link_num, link, getres):
         """
@@ -188,8 +197,9 @@ class SourceLinkLoader:
         toadd = f"[Link {link_num}]({link}) has {len(splits)} splits.\n"
         self.current += toadd
         embed.description = self.get_status_lines()
+        await asyncio.to_thread(store_splits,splits, client=self.chromac)
         await self.statmess.editw(min_seconds=5, content=f"<a:LetWalkR:1118191001731874856> {self.current}", embed=embed)
-        store_splits(splits, client=self.chromac)
+        
 
     async def process_uncached_link_error(self, ctx, link_num, link, err, embed):
         """

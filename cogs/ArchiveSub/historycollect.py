@@ -172,8 +172,8 @@ async def iter_hist_messages(cobj: discord.TextChannel, actx: ArchiveContext):
 
     await carch.get_first_and_last(cobj)
     if carch.first_message_time != None:
-        # print(carch.first_message_time.replace(tzinfo=timezone.utc))
-        # print(carch.first_message_time,carch.first_message_time.tzinfo,actx.last_stored_time,actx.last_stored_time.tzinfo)
+        # gui.dprint(carch.first_message_time.replace(tzinfo=timezone.utc))
+        # gui.dprint(carch.first_message_time,carch.first_message_time.tzinfo,actx.last_stored_time,actx.last_stored_time.tzinfo)
 
         if carch.first_message_time > actx.last_stored_time:
             timev = carch.first_message_time
@@ -225,7 +225,7 @@ async def lazy_grab(cobj: discord.TextChannel, actx: ArchiveContext):
     mlen = 0
     haveany, count = False, 0
     carch = ChannelArchiveStatus.get_by_tc(cobj)
-    print(carch.latest_archive_time)
+    gui.dprint(carch.latest_archive_time)
     async for thisMessage in cobj.history(
         limit=LAZYGRAB_LIMIT, oldest_first=True, after=carch.latest_archive_time
     ):
@@ -278,7 +278,7 @@ async def collect_server_history_lazy(ctx, statmess=None, **kwargs):
 
         statmess = StatusEditMessage(statusMessToEdit, ctx)
     time = profile.last_archive_time
-    print(time)
+    gui.dprint(time)
     # await channel.send("Starting at time:{}".format(time.strftime("%B %d, %Y %I:%M:%S %p")))
 
     if time:
@@ -310,7 +310,7 @@ async def collect_server_history_lazy(ctx, statmess=None, **kwargs):
         if channel:
             gui.gprint("Channel", channel)
             mes, have, count = await lazy_grab(channel, arch_ctx)
-            print(count)
+            gui.dprint(count)
             await statmess.editw(
                 min_seconds=0,
                 content=f"channels:{len(channels)},{count},{ChannelArchiveStatus.get_total_unarchived_time(guildid)}",
@@ -396,7 +396,7 @@ async def collect_server_history(ctx, **kwargs):
 
     statmess = StatusEditMessage(statusMessToEdit, ctx)
     time = profile.last_archive_time
-    print(time)
+    gui.dprint(time)
     if time:
         # await channel.send(            "Starting at time:{}".format(time.strftime("%B %d, %Y %I:%M:%S %p"))        )
         time = time.timestamp()

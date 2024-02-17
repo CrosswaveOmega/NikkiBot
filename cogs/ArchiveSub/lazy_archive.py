@@ -288,7 +288,7 @@ async def lazy_archive(self, ctx):
                     await self.edit_embed_and_neighbors(sep)
                     self.bot.database.commit()
                     duration = datetime.now() - startedsep
-                    gui.gprint(f"Gui print took at least {str(duration)}")
+                    gui.gprint(f"Gui gui.dprint took at least {str(duration)}")
                 elif sep.posted_url and not sep.all_ok:
                     old_message = await urltomessage(sep.posted_url, bot)
                     emb, count = sep.create_embed(cfrom=sep.posted_url)
@@ -316,7 +316,7 @@ async def lazy_archive(self, ctx):
                     remaining_time_float = remaining_time_float - (timebetweenmess)
                     lazycontext.increment_count()
                     archived_this_session += 1
-                    print(
+                    gui.dprint(
                         f"groupid: {sep.channel_sep_id}/{allgroups}.\n messages:{lazycontext.archived_so_far}/{lazycontext.message_count}\n  at least {seconds_to_time_string(upper_time_limit(total_time_for_cluster))} remaining."
                     )
                     await mt.editw(
@@ -327,7 +327,7 @@ async def lazy_archive(self, ctx):
                 sep.update(all_ok=True)
                 self.bot.database.commit()
                 await asyncio.sleep(2)
-                print(
+                gui.dprint(
                     f"groupid: {sep.channel_sep_id}/{allgroups}.\n messages:{lazycontext.archived_so_far}/{lazycontext.message_count}\n  at least {seconds_to_time_string(upper_time_limit(total_time_for_cluster))} remaining."
                 )
                 await mt.editw(
