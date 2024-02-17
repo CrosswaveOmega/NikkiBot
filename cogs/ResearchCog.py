@@ -1097,7 +1097,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         if await ctx.bot.gptapi.check_oai(ctx):
             await ctx.send(INVALID_SERVER_ERROR)
             return "INVALID CONTEXT"
-
+        if 0>=depth or depth>5:
+            await ctx.send("Depth is too high error.")
+        if 0>=followup or followup>5:
+            await ctx.send("Followup questions are too high.")
         res = await ctx.send("recursively researching.")
         channel=ctx.channel
         statmess=StatusEditMessage(res,ctx)
@@ -1107,6 +1110,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         stack.append(inital)
         alllines=set()
         client = AsyncClient()
+
         sc = SingleCallAsync(mylib=Followups(), client=client,timeout=30)
         while stack:
             current = stack.pop(0)
