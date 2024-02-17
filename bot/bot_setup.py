@@ -455,6 +455,6 @@ async def main(args):
             c = keys.get("optional", "cse_id", fallback=None)
             bot.keys["google"] = g
             bot.keys["cse"] = c
-            openai.api_key = keys.get("optional", "openai")
+            
 
             await bot.start(get_token(keys))
