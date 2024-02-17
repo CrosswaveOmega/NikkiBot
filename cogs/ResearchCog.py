@@ -1137,7 +1137,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             s=lines.split("\n")
             for e in s:
                 se=e.split(' ')
-                if se=='<:add:1199770854112890890>':
+                if se[0]=='<:add:1199770854112890890>':
                     alllines.add(se[1])
             embed = discord.Embed(
             title=f"depth{dep}, Web Search Results for: {quest} ",
