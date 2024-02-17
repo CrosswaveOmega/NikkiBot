@@ -25,7 +25,7 @@ from .ResearchAgent import SourceLinkLoader
 from .ResearchAgent.chromatools import ChromaTools
 from .ResearchAgent.views import *
 
-from utility import prioritized_string_split, select_emoji
+from utility import prioritized_string_split, select_emoji, urltomessage
 from utility.embed_paginator import pages_of_embeds
 import  cogs.ResearchAgent.tools as tools
 from openai import AsyncClient
@@ -1107,23 +1107,33 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         stack.append(inital)
         alllines=set()
         client = AsyncClient()
-        sc = SingleCallAsync(mylib=Followups(), client=client)
+        sc = SingleCallAsync(mylib=Followups(), client=client,timeout=30)
         while stack:
             current = stack.pop(0)
             quest, context, dep, parent= current
             await statmess.editw(min_seconds=5, content=f"<a:LoadingBlue:1206301904863502337> {quest},{dep}, stacklen={len(stack)}")
             # Custom logic for recursive search and adding results to stack
-            answer = await sc.call_single(
-                f'{quest}',
-                "google_search",
-            )
+            answer,tries=None,0
+            while answer is None and tries<3:
+                try:
+                    answer = await sc.call_single(
+                        f'{quest}',
+                        "google_search",
+                    )
+                except Exception as e:
+                    await ctx.send('retrying...')
+                    tries+=1
+                    if tries>=3:
+                        raise e
+            
             query,question,comment=answer[0][1]['content']
-            await ctx.send(str((query,question,comment)))
+            #await ctx.send(str((query,question,comment)))
             _,lines=await self.web_search(ctx,query,result_limit=7)
             s=lines.split("\n")
             for e in s:
                 se=e.split(' ')
-                alllines.add(se[1])
+                if se=='<:add:1199770854112890890>':
+                    alllines.add(se[1])
             embed = discord.Embed(
             title=f"depth{dep}, Web Search Results for: {quest} ",
             description=f"Links\n{lines}",
@@ -1149,26 +1159,42 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             this_message=await channel.send(embed=embedres,reference=parent)
             context=context+f"{dep}:{quest}\n{answer}"
             answered.append(quest)
-            
+            if parent!=res:
+                par=await urltomessage(parent.jump_url,bot)
+                
+                embed=par.embeds[0]
+                field=embed.fields[1]
+                
+                val=field.value
+                val=val.replace(quest,f"[{query}]({this_message.jump_url})")
+                embed.set_field_at(1,name=field.name,value=val,inline=False)
+                await par.edit(embed=embed)
             
             new_depth = dep + 1
             if new_depth >= depth:
                 continue
-            command = await sc.call_single(
-                f'Generate {followup} followup questions to expand on the '+\
-                f'results given the prior question/answer pairs: \n{context}.  '+\
-                f'\nDo not generate a followup if it is similar to the questions answered here:{answered}',
-                "followupquestions",
-            )
-            gui.dprint(command)
+            command,tries=None,0
+            while command is None and tries<3:
+                try:
+                    command = await sc.call_single(
+                        f'Generate {followup} followup questions to expand on the '+\
+                        f'results given the prior question/answer pairs: \n{context}.  '+\
+                        f'\nDo not generate a followup if it is similar to the questions answered here:{answered}',
+                        "followupquestions"
+                    )
+                except Exception as e:
+                    await ctx.send('retrying...')
+                    tries+=1
+                    if tries>=3:
+                        raise e
+
             questions=command[0][1]['content']
             followups="\n".join(f"* {q}" for q in questions)
             embedres.add_field(name="Followup questions",value=followups[:1020],inline=False)
             await this_message.edit(embed=embedres)
-            await ctx.send(content=f"from {quest}:{str(questions)}"[:1980])
             for new_question in questions:
                 stack.append((new_question, context, new_depth,this_message))
-        await statmess.editw(min_seconds=0,content=f"about {len(alllines)} links where added.")
+        await statmess.editw(min_seconds=0,content=f"about {len(alllines)} links where gathered.")
 
         # Use a memory buffer instead of saving to a file
         file_buffer = StringIO()
