@@ -1111,7 +1111,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         alllines=set()
         client = AsyncClient()
 
-        sc = SingleCallAsync(mylib=Followups(), client=client,timeout=30)
+        lib=Followups()
         while stack:
             current = stack.pop(0)
             quest, context, dep, parent= current
@@ -1120,6 +1120,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             answer,tries=None,0
             while answer is None and tries<3:
                 try:
+                    sc = SingleCallAsync(mylib=lib, client=client,timeout=30)
                     answer = await sc.call_single(
                         f'{quest}',
                         "google_search",
@@ -1180,6 +1181,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             command,tries=None,0
             while command is None and tries<3:
                 try:
+                    sc = SingleCallAsync(mylib=lib, client=client,timeout=30)
                     command = await sc.call_single(
                         f'Generate {followup} followup questions to expand on the '+\
                         f'results given the prior question/answer pairs: \n{context}.  '+\
