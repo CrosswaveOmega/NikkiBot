@@ -95,11 +95,12 @@ class Questions(discord.ui.View):
             button = QuestionButton(label=q, custom_id=f"quest+{e}", myvalue=val)
             self.question_buttons.append(button)
             self.add_item(button)
-        await inter.edit_original_response(view=self)
+        await inter.response.edit_message(view=self)
 
     async def destroy_button(self, custom_id,inter: discord.Interaction):
         for button in self.question_buttons:
             if button.custom_id==custom_id:
                 self.remove_item(button)
-        await inter.edit_original_response(view=self)
+        
+        await inter.response.edit_message(view=self)
 
