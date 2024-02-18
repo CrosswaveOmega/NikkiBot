@@ -1050,6 +1050,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     embed = discord.Embed(
                         title=header.get("title", "notitle"), description=p
                     )
+                    questions=Questions(bot=bot,questions=["One","two","three"])
                     await ctx.send(embed=embed)
                 if over:
                     target_message = await ctx.send(
@@ -1101,6 +1102,11 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send("Depth is too high error.")
         if 0>=followup or followup>5:
             await ctx.send("Followup questions are too high.")
+
+        max_runs=(1-followup**(depth+1))/(1-followup)
+        if max_runs>50:
+            await ctx.send("too many runs!  Lower your followup or depth.")
+            return
         res = await ctx.send("recursively researching.")
         channel=ctx.channel
         statmess=StatusEditMessage(res,ctx)
@@ -1139,14 +1145,14 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 se=e.split(' ')
                 if se[0]=='<:add:1199770854112890890>':
                     alllines.add(se[1])
-            embed = discord.Embed(
+            embeds = discord.Embed(
             title=f"depth{dep}, Web Search Results for: {quest} ",
             description=f"Links\n{lines}",
             )
-            embed.add_field(name="Question", value=question, inline=False)
+            embeds.add_field(name="Question", value=question, inline=False)
             if site_title_restriction != "None":
-                embed.add_field(name="restrict", value=site_title_restriction, inline=False)
-            embed.set_footer(text=f"stacklen={len(stack)}")
+                embeds.add_field(name="restrict", value=site_title_restriction, inline=False)
+            embeds.set_footer(text=f"stacklen={len(stack)}")
             answer,ms=await self.research(
                 ctx,
                 quest,

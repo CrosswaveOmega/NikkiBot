@@ -51,3 +51,49 @@ class Followup(discord.ui.View):
 
         await interaction.response.send_message(embed=PCC.make_embed(), view=buttons)
         # await self.callbacker.playlistcallback(interaction,self,"back")
+
+class QuestionButton(discord.ui.Button):
+    def __init__(self, myvalue=False, **kwargs):
+        self.value = myvalue
+        super().__init__(**kwargs)
+
+        if self.value:
+            self.style = discord.ButtonStyle.green
+        else:
+            self.style = discord.ButtonStyle.grey
+
+    async def callback(self, interaction: discord.Interaction):
+        self.value = not self.value
+        await self.view.destroy_button(self.custom_id,interaction)
+
+
+class Questions(discord.ui.View):
+    """followup questions"""
+
+    def __init__(self, *, bot=None, timeout=None, questions=[]):
+        super().__init__(timeout=timeout)
+        self.questions = questions
+        self.bot = bot
+        self.question_buttons=[]
+
+    async def on_error(
+        self, interaction: discord.Interaction, error: Exception, item
+    ) -> None:
+        gui.gprint(str(error))
+        await self.bot.send_error(error, "followuperror")
+        # await interaction.response.send_message(f'Oops! Something went wrong: {str(error)}.', ephemeral=True)
+
+    async def create_question_buttons(self, inter: discord.Interaction):
+        for e,q in enumerate(self.questions):
+            val = False
+            button = QuestionButton(label=q, custom_id=f"quest+{e}", myvalue=val)
+            self.question_buttons.append(button)
+            self.add_item(button)
+        await inter.edit_original_response(view=self)
+
+    async def destroy_button(self, custom_id,inter: discord.Interaction):
+        for button in self.question_buttons:
+            if button.custom_id==custom_id:
+                self.remove_item(button)
+        await inter.edit_original_response(view=self)
+
