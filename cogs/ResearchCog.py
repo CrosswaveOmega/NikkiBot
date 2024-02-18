@@ -965,12 +965,14 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                             result = result.replace(link_text, f"{link_text}")
                     splitorder = ["%s\n", "%s.", "%s,", "%s "]
                     fil = prioritized_string_split(result, splitorder, 4072)
+                    questions=Questions(bot=bot,questions=["One","two","three"])
                     for p in fil:
                         embed = discord.Embed(
                             title=header.get("title", "notitle"), description=p
                         )
                         await ctx.send(
-                            content=header.get("title", "notitle")[:200], embed=embed
+                            content=header.get("title", "notitle")[:200], embed=embed,
+                            view=questions
                         )
                     embed = discord.Embed(
                         title=f"Sources for {header.get('title', 'notitle')}"
@@ -1006,6 +1008,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 except Exception as e:
                     await ctx.bot.send_error(e)
                     return await ctx.send(e)
+                
     @commands.command(
         name="summarize_db", description="make a summary of a url.", extras={}
     )
@@ -1050,7 +1053,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     embed = discord.Embed(
                         title=header.get("title", "notitle"), description=p
                     )
-                    questions=Questions(bot=bot,questions=["One","two","three"])
+                    
                     await ctx.send(embed=embed)
                 if over:
                     target_message = await ctx.send(
