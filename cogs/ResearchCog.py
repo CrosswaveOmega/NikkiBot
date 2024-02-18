@@ -965,14 +965,15 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                             result = result.replace(link_text, f"{link_text}")
                     splitorder = ["%s\n", "%s.", "%s,", "%s "]
                     fil = prioritized_string_split(result, splitorder, 4072)
-                    questions=Questions(bot=bot,questions=["One","two","three"])
+                    questview=Questions(bot=bot,timeout=30,questions=["One","two","three"])
                     for p in fil:
                         embed = discord.Embed(
                             title=header.get("title", "notitle"), description=p
                         )
                         await ctx.send(
-                            content=header.get("title", "notitle")[:200], embed=embed,
-                            view=questions
+                            content=header.get("title", "notitle")[:200], 
+                            embed=embed,
+                            view=questview
                         )
                     embed = discord.Embed(
                         title=f"Sources for {header.get('title', 'notitle')}"
