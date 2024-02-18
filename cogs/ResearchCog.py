@@ -400,8 +400,11 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     async def loader_test(self, ctx: commands.Context, link: str):
         async with ctx.channel.typing():
             splits,dat = await tools.read_and_split_link(ctx.bot, link)
-        await ctx.send(
-            f"[Link ]({link}) has {len(splits)} splits.", suppress_embeds=True
+        questview=Questions(bot=ctx.bot,timeout=30,questions=["One","two","three"])
+        views=await ctx.send(
+            f"[Link ]({link}) has {len(splits)} splits.", 
+            suppress_embeds=True,
+            view=questview
         )
         for i in splits[0:3]:
             await ctx.send(f"```{str(i.page_content)}```"[:1980], suppress_embeds=True)
@@ -965,15 +968,14 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                             result = result.replace(link_text, f"{link_text}")
                     splitorder = ["%s\n", "%s.", "%s,", "%s "]
                     fil = prioritized_string_split(result, splitorder, 4072)
-                    questview=Questions(bot=bot,timeout=30,questions=["One","two","three"])
+                    
                     for p in fil:
                         embed = discord.Embed(
                             title=header.get("title", "notitle"), description=p
                         )
                         await ctx.send(
                             content=header.get("title", "notitle")[:200], 
-                            embed=embed,
-                            view=questview
+                            embed=embed
                         )
                     embed = discord.Embed(
                         title=f"Sources for {header.get('title', 'notitle')}"
