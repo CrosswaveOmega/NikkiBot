@@ -74,12 +74,13 @@ class Questions(discord.ui.View):
         super().__init__(timeout=timeout)
         self.questions = questions
         self.bot = bot
+        self.question_buttons=[]
         for e,q in enumerate(self.questions):
             val = False
             button = QuestionButton(label=q, custom_id=f"quest+{e}", myvalue=val)
             self.question_buttons.append(button)
             self.add_item(button)
-        self.question_buttons=[]
+        
 
     async def on_error(
         self, interaction: discord.Interaction, error: Exception, item
