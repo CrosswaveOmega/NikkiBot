@@ -502,7 +502,6 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             embed.set_footer(text="Operation complete.")
             await statmess.editw(min_seconds=0, content=f"Overwrite ok.", embed=embed)
 
-    @commands.is_owner()
     @commands.hybrid_command(
         name="researchcached", description="Research a topic.", extras={}
     )
@@ -622,7 +621,6 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             #await ctx.channel.send("Click button for sources.", view=viewme)
             return answer,messageresp
             
-    @commands.is_owner()
     @commands.hybrid_command(
         name="researchpoint", description="Extract relevant information from the given source", extras={}
     )
@@ -1067,7 +1065,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     await target_message.edit(content="SUMMARY SAVED!")
     
     
-    @commands.is_owner()
+    
     @commands.hybrid_command(
         name="research_recursive", description="Research a topic with multiple queries.", extras={}
     )
