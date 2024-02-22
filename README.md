@@ -44,7 +44,7 @@ Python 3.11 or higher!
 - openai
 - keyring
 - chromadb
-
+- google-api-python-client
 please make sure to install the latest node.js runtime on your system to ensure that the Summarizer works.
 
 ## Technical Features

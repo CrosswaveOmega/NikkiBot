@@ -139,7 +139,7 @@ class TCBot(
         if not self.bot_ready:
             # Start up the GuiPanel
             await self.jsenv.init_js_a()
-            setup_logging(logging.INFO, handler=get_filehandler(log_level=logging.INFO))
+            setup_logging(logging.ERROR, handler=get_filehandler(log_level=logging.WARNING))
             guimode = self.config.getbool("gui")
             debugmode = self.config.getbool("debug")
             if debugmode:
@@ -233,13 +233,13 @@ class TCBot(
             "[LINE] [{asctime}] [{levelname:<8}] {name}: {message}", dt_fmt, style="{"
         )
         handler2.setFormatter(formatter2)
-        discord.utils.setup_logging(level=logging.INFO, handler=handler2, root=False)
+        discord.utils.setup_logging(level=logging.WARNING, handler=handler2, root=False)
         # SQLALCHEMY LOGGER.
 
         # Sqlalchemylogger.
 
         self.logs = logging.getLogger("TCLogger")
-        self.logs.setLevel(logging.INFO)
+        self.logs.setLevel(logging.WARNING)
         handlerTC = logging.handlers.RotatingFileHandler(
             filename="./logs/tauceti__log.log",
             encoding="utf-8",
@@ -253,7 +253,7 @@ class TCBot(
         handlerTC.setFormatter(formatter4)
         self.logs.addHandler(handlerTC)
         zehttp = logging.getLogger("discord.http")
-        zehttp.setLevel(logging.INFO)
+        zehttp.setLevel(logging.WARNING)
         handler = logging.handlers.RotatingFileHandler(
             filename="./logs/discord_http.log",
             encoding="utf-8",

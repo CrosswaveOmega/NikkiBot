@@ -1,3 +1,4 @@
+import json
 from typing import Any, List
 import discord
 import asyncio
@@ -1130,6 +1131,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             answer,tries=None,0
             while answer is None and tries<3:
                 try:
+                    print()
                     sc = SingleCallAsync(mylib=lib, client=client,timeout=30)
                     answer = await sc.call_single(
                         f'{quest}',
@@ -1139,6 +1141,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     await ctx.send('retrying...')
                     tries+=1
                     if tries>=3:
+                        await ctx.send(f"{json.dumps(lib.get_tool_schema())}"[:1800])
                         raise e
             
             query,question,comment=answer[0][1]['content']

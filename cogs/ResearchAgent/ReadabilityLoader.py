@@ -142,7 +142,6 @@ class ReadableLoader(dl.WebBaseLoader):
                 final_results.append((remove_links(text), souped, header))
 
             except Exception as e:
-                await self.bot.send_error(e)
                 text = souped.get_text(**self.bs_get_text_kwargs)
                 final_results.append((text, souped, None))
 
