@@ -208,3 +208,5 @@ logs/tauceti__log.log.4
 logs/tauceti__log.log.5
 keys copy.ini
 *.keybox
+*.svg
+*.puml
