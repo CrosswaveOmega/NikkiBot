@@ -1107,7 +1107,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         if 0>=followup or followup>5:
             await ctx.send("Followup questions are too high.")
 
-        max_runs=(1-followup**(depth+1))/(1-followup)
+        max_runs=(1-followup**(depth+1))/max((1-followup),1)
         if max_runs>50:
             await ctx.send("too many runs!  Lower your followup or depth.")
             return
