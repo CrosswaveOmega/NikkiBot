@@ -598,10 +598,15 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
             break
     messages.append({"role": "user", "content": question})
     client = openai.AsyncOpenAI()
-    completion = await client.chat.completions.create(
-        model="gpt-3.5-turbo-0125", messages=messages
-    )
-    return completion.choices[0].message.content
+    for tries in range(0,4):
+        try:
+            completion = await client.chat.completions.create(
+                model="gpt-3.5-turbo-0125", messages=messages, timeout=60
+            )
+            return completion.choices[0].message.content
+        except Exception as e:
+            if tries>=3:
+                raise e
 
 
 def extract_embed_text(embed):

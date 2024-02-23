@@ -1174,7 +1174,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 field=embed.fields[1]
                 
                 val=field.value
-                val=val.replace(quest,f"[{query}]({this_message.jump_url})")
+                val=val.replace(quest,f"[{quest}]({this_message.jump_url})")
                 embed.set_field_at(1,name=field.name,value=val,inline=False)
                 await par.edit(embed=embed)
             
