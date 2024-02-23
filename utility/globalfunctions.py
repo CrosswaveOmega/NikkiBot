@@ -104,7 +104,7 @@ def prioritized_string_split(
         substring_split_order (list[Union[str, tuple[str, int]]]):
             A list of strings or tuples containing
             the delimiters to split by and their max lengths.
-            If an argument here is "%s \n", then the input string will be split by " \n" and will
+            If an argument here is "%s\\n", then the input string will be split by "\\n" and will
             place the relevant substrings in the position given by %s.
         default_max_len (int): The maximum length a string in a cluster may be if not given
             within a specific tuple for that delimiter.

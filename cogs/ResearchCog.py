@@ -266,7 +266,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             allstr += r["link"] + "\n"
             emb.add_field(
                 name=f"{r['title'][:200]}",
-                value=f"{r['link']}\n{desc}"[:1200],
+                value=f"{r['link']}\n{desc}"[:1000],
                 inline=False,
             )
         returnme = await ctx.send(content=comment, embed=emb)
@@ -388,7 +388,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         
         await ctx.send(embed=embed)
         # 
-        answer,ms=await self.research(
+        answer,links,ms=await self.research(
             ctx,
             question,
             k=7,
@@ -530,7 +530,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         if await ctx.bot.gptapi.check_oai(ctx):
             await ctx.send(INVALID_SERVER_ERROR)
             return "INVALID CONTEXT"
-        answer,message=await self.research(ctx,question,k,site_title_restriction,use_mmr)
+        answer,links,message=await self.research(ctx,question,k,site_title_restriction,use_mmr)
         return answer,message
         
         
@@ -544,14 +544,14 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         site_title_restriction: str = "None",
         use_mmr: bool = False,
         send_message : bool = True
-    ) -> Tuple[str, Optional[discord.Message]]:
+    ) -> Tuple[str, Optional[str],Optional[discord.Message],]:
         """Search the chroma db for relevant documents pertaining to the
         question, and return a formatted result.
 
         Args:
             ctx (commands.Context): The context in which the command is being invoked.
             question (str): The research question.
-            k (int, optional): The number of search results to consider. Defaults to 5.
+            k (int, optional): The number of query results to consider. Defaults to 5.
             site_title_restriction (str, optional): Restricts search to sites with this title.
               Defaults to "None".
             use_mmr (bool, optional): Whether to use Maximal Marginal Relevance for deduplication. 
@@ -569,13 +569,14 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         statmess = StatusEditMessage(res, ctx)
 
 
-        embed = discord.Embed(title=f"Search Query: {question} ")
+        embed = discord.Embed(title=f"Query: {question} ")
 
         embed.add_field(name="Question", value=question, inline=False)
         if site_title_restriction != "None":
             embed.add_field(name="restrict", value=site_title_restriction, inline=False)
         await statmess.editw(min_seconds=0, content="<a:LoadingBlue:1206301904863502337> querying db...", embed=embed)
         async with ctx.channel.typing():
+            #Search For Sources
             data = await tools.search_sim(
                 question,
                 client=chromac,
@@ -585,17 +586,13 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             )
 
             if len(data) <= 0:
-                return "NO RELEVANT DATA.", None
-            docs2 = sorted(data, key=lambda x: x[1], reverse=False)
-            all_links=[doc.metadata.get("source",'???') for doc, e in docs2]
-            links=set(doc.metadata.get("source",'???') for doc, e in docs2)
-            def ie(all_links: List[str], value: str) -> List[int]:
-                return [index for index, link in enumerate(all_links) if link == value]
+                return "NO RELEVANT DATA.", None, None
 
-            used="\n".join(f"{ie(all_links,l)}{l}" for l in links)
-            fil = prioritized_string_split(used, ["%s\n"], 4000 )
-            cont = '...' if len(fil)>2 else ""
-            embed.description=f"Sources:\n{fil[0]}{cont}"
+            # Sort documents by score
+            docs2 = sorted(data, key=lambda x: x[1], reverse=False)
+            # Get string containing most relevant source urls:
+            url_desc, allsources=tools.get_doc_sources(docs2)
+            embed.description=f"Sources:\n{url_desc}"
             embed.add_field(
                 name="Cache_Query",
                 value=f"About {len(docs2)} entries where found.  Max score is {docs2[0][1]}",
@@ -604,14 +601,13 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 min_seconds=0, content="drawing conclusion.", embed=embed
             )
             answer = await tools.format_answer(question, docs2)
-            page = commands.Paginator(prefix="", suffix=None)
+            
+            
             viewme = Followup(bot=self.bot, page_content=docs2)
-            for p in answer.split("\n"):
-                page.add_line(p)
             messageresp=None
-            pages = [p for p in page.pages]
-            pl = len(pages)
             if send_message:
+                pages = prioritized_string_split(answer, ["%s\n"], 2000 )
+                pl = len(pages)
                 for e, pa in enumerate(pages):
                     if e == pl - 1:
                         ms = await ctx.channel.send(pa, view=viewme)
@@ -620,7 +616,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     if messageresp is None:
                         messageresp = ms
             #await ctx.channel.send("Click button for sources.", view=viewme)
-            return answer,messageresp
+            return answer,messageresp, allsources
             
     @commands.hybrid_command(
         name="researchpoint", description="Extract relevant information from the given source", extras={}
@@ -673,16 +669,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
             if len(data) <= 0:
                 return "NO RELEVANT DATA."
-            docs2 = sorted(data, key=lambda x: x[1], reverse=True)
-            all_links=[doc.metadata.get("source",'???') for doc, e in docs2]
-            links=set(doc.metadata.get("source",'???') for doc, e in docs2)
-            def ie(all_links: List[str], value: str) -> List[int]:
-                return [index for index, link in enumerate(all_links) if link == value]
-            
-            used="\n".join(f"{ie(all_links,l)}{l}" for l in links)
-            fil = prioritized_string_split(used, ["%s\n"], 4000 )
-            cont = '...' if len(fil)>2 else ""
-            embed.description=f"{fil[0]}{cont}"
+            docs2 = sorted(data, key=lambda x: x[1], reverse=False)
+            # Get string containing most relevant source urls:
+            url_desc=tools.get_doc_sources(docs2)
+            embed.description=f"{url_desc}"
             embed.add_field(
                 name="Cache_Query",
                 value=f"About {len(docs2)} entries where found.  Max score is {docs2[0][1]}",
@@ -1090,6 +1080,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         use_mmr: bool = False,
         depth:commands.Range[int,1,4]=1,
         followup:commands.Range[int,1,5]=2,
+        search_web: bool=False
 
     ):
         """
@@ -1123,44 +1114,41 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         client = AsyncClient()
 
         lib=Followups()
+        results={}
         while stack:
             current = stack.pop(0)
             quest, context, dep, parent= current
             await statmess.editw(min_seconds=5, content=f"<a:LoadingBlue:1206301904863502337> {quest},{dep}, stacklen={len(stack)}")
             # Custom logic for recursive search and adding results to stack
-            answer,tries=None,0
-            while answer is None and tries<3:
-                try:
-                    print()
-                    sc = SingleCallAsync(mylib=lib, client=client,timeout=30)
-                    answer = await sc.call_single(
-                        f'{quest}',
-                        "google_search",
-                    )
-                except Exception as e:
-                    await ctx.send('retrying...')
-                    tries+=1
-                    if tries>=3:
-                        await ctx.send(f"{json.dumps(lib.get_tool_schema())}"[:1800])
-                        raise e
-            
-            query,question,comment=answer[0][1]['content']
-            #await ctx.send(str((query,question,comment)))
-            _,lines=await self.web_search(ctx,query,result_limit=7)
-            s=lines.split("\n")
-            for e in s:
-                se=e.split(' ')
-                if se[0]=='<:add:1199770854112890890>':
-                    alllines.add(se[1])
-            embeds = discord.Embed(
-            title=f"depth{dep}, Web Search Results for: {quest} ",
-            description=f"Links\n{lines}",
-            )
-            embeds.add_field(name="Question", value=question, inline=False)
-            if site_title_restriction != "None":
-                embeds.add_field(name="restrict", value=site_title_restriction, inline=False)
-            embeds.set_footer(text=f"stacklen={len(stack)}")
-            answer,ms=await self.research(
+            querytuple,tries=None,0
+            if search_web:
+                while querytuple is None and tries<3:
+                    try:
+                        sc = SingleCallAsync(mylib=lib, model="gpt-3.5-turbo-0125", client=client,timeout=30)
+                        querytuple = await sc.call_single(
+                            f'{quest}',
+                            "google_search",
+                        )
+                    except Exception as e:
+                        await ctx.send('retrying...')
+                        tries+=1
+                        if tries>=3:
+                            await ctx.send(f"{json.dumps(lib.get_tool_schema())}"[:1800])
+                            raise e
+                
+                query,question,comment=querytuple[0][1]['content']
+
+                _,lines=await self.web_search(ctx,query,result_limit=7)
+                s=lines.split("\n")
+                for e in s:
+                    se=e.split(' ')
+                    if se[0]=='<:add:1199770854112890890>':
+                        alllines.add(se[1])
+            else:
+                query,question,comment="No search.",query,"Let's find out."
+
+            #Preform research.
+            answer,links,ms=await self.research(
                 ctx,
                 quest,
                 k=k,
@@ -1168,6 +1156,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 use_mmr=use_mmr,
                 send_message=False
             )
+
+            #Format_results
             embedres=discord.Embed(
                 title=f"{quest}, depth: {dep}",
                 description=answer
@@ -1189,30 +1179,41 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 await par.edit(embed=embed)
             
             new_depth = dep + 1
-            if new_depth >= depth:
-                continue
-            command,tries=None,0
-            while command is None and tries<3:
-                try:
-                    sc = SingleCallAsync(mylib=lib, client=client,timeout=30)
-                    command = await sc.call_single(
-                        f'Generate {followup} followup questions to expand on the '+\
-                        f'results given the prior question/answer pairs: \n{context}.  '+\
-                        f'\nDo not generate a followup if it is similar to the questions answered here:{answered}',
-                        "followupquestions"
-                    )
-                except Exception as e:
-                    await ctx.send('retrying...')
-                    tries+=1
-                    if tries>=3:
-                        raise e
+            followups="None"
+            if new_depth < depth:
+                command,tries=None,0
+                while command is None and tries<3:
+                    try:
+                        sc = SingleCallAsync(mylib=lib, model="gpt-3.5-turbo-0125", client=client,timeout=30)
+                        command = await sc.call_single(
+                            f'Generate {followup} followup questions to expand on the '+\
+                            f'results given the prior question/answer pairs: \n{context}.  '+\
+                            f'\nDo not generate a followup if it is similar to the questions answered here:{answered}',
+                            "followupquestions"
+                        )
+                    except Exception as e:
+                        await ctx.send('retrying...')
+                        tries+=1
+                        if tries>=3:
+                            raise e
+                
+                questions=command[0][1]['content']
+                followups="\n".join(f"* {q}" for q in questions)
+                embedres.add_field(name="Followup questions",value=followups[:1020],inline=False)
+                await this_message.edit(embed=embedres)
+                for new_question in questions:
+                    stack.append((new_question, context, new_depth,this_message))
 
-            questions=command[0][1]['content']
-            followups="\n".join(f"* {q}" for q in questions)
-            embedres.add_field(name="Followup questions",value=followups[:1020],inline=False)
-            await this_message.edit(embed=embedres)
-            for new_question in questions:
-                stack.append((new_question, context, new_depth,this_message))
+
+            resultdict={
+                'question':question,
+                'answer':answer,
+                'sources':links,
+                'depth':dep,
+                'followups':followups
+            }
+            results[quest]=resultdict
+
         await statmess.editw(min_seconds=0,content=f"about {len(alllines)} links where gathered.")
 
         # Use a memory buffer instead of saving to a file
@@ -1224,6 +1225,14 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         # Send the buffer as a file
         await ctx.send(content="Websites", file=discord.File(file_buffer, filename="all_links.txt"))
         file_buffer.close()  # Close the buffer
+
+        file_buffer2 = StringIO()
+        file_buffer2.write(f"{json.dumps(results)}\n")
+        file_buffer2.seek(0)  # Go back to the start of the StringIO buffer
+
+        # Send the buffer as a file
+        await ctx.send(content="File Results", file=discord.File(file_buffer2, filename="research.json"))
+        file_buffer2.close()  # Close the buffer
 
         
 

@@ -384,31 +384,49 @@ async def search_sim(
         embedding_function=OpenAIEmbeddings(),
         collection_name=collection,
     )
-    if titleres == "None":
-        if mmr:
-            docs = vs.max_marginal_relevance_search(question, k=k)
-            docs = [(doc, 0.4) for doc in docs]
-        else:
-            docs = await vs.asimilarity_search_with_relevance_scores(question, k=k)
+    filterwith={}
+    if titleres !='None':
+        filterwith["title"]={"$like": f"%{titleres}%"}
 
-        return docs
+    gui.dprint("here")
+    if mmr:
+        docs = vs.max_marginal_relevance_search(
+            question,
+            k=k,
+            filter=filterwith,  # {'':titleres}}
+        )
+        docs = [(doc, 0.4) for doc in docs]
     else:
-        gui.dprint("here")
-        if mmr:
-            docs = vs.max_marginal_relevance_search(
-                question,
-                k=k,
-                filter={"title": {"$like": f"%{titleres}%"}},  # {'':titleres}}
-            )
-            docs = [(doc, 0.4) for doc in docs]
-        else:
-            docs = await vs.asimilarity_search_with_relevance_scores(
-                question,
-                k=k,
-                filter={"title": {"$like": f"%{titleres}%"}},  # {'':titleres}}
-            )
-        return docs
+        docs = await vs.asimilarity_search_with_relevance_scores(
+            question,
+            k=k,
+            filter=filterwith  # {'':titleres}}
+        )
+    return docs
 
+def get_doc_sources(docs:List[Tuple[Document,float]]):
+    """
+    Takes a list of Document objects, counts the appearances of unique sources amoung them,
+    and return a string indicating the used sources.
+
+    Args:
+        docs (List[Tuple[Document,float]]): A list of tuples containing Document objects and their associated float score.
+
+    Returns:
+        str: A string formatted to list unique sources and the indices of their appearances in the provided list.
+    """
+    all_links=[doc.metadata.get("source",'???') for doc, e in docs]
+    links=set(doc.metadata.get("source",'???') for doc, e in docs)
+    def ie(all_links: List[str], value: str) -> List[int]:
+        return [index for index, link in enumerate(all_links) if link == value]
+    used="\n".join(f"{ie(all_links,l)}{l}" for l in links)
+    source_pages = prioritized_string_split(used, ["%s\n"], 4000 )
+    cont =""
+    if len(source_pages)>2:
+        new="\n"
+        cont = f"...and {sum(len(se.split(new)) for se in source_pages[1:])} more."
+    source_string=f"{source_pages[0]}{cont}"
+    return source_string, used
 
 async def debug_get(
     question: str,
@@ -520,23 +538,27 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
         str: The formatted answer as a string.
     """
     prompt = """
-    Use the provided sources to answer question provided to you by the user.  Each of your source web pages will be in their own system messags, slimmed down to a series of relevant snippits,
+    Use the provided sources to answer question provided by the user.  
+    Each of the source web pages will be in their own system messags, slimmed down to a series of relevant snippits,
     and are in the following template:
-        BEGIN
+                    BEGIN
         **ID:** [Source ID number here]
         **Name:** [Name Here]
         **Link:** [Link Here]
         **Text:** [Text Content Here]
         END
-    The websites may contradict each other, prioritize information from encyclopedia pages and wikis.  Valid news sources follow.  
+    
     Your answer must be 3-7 medium-length paragraphs with 5-10 sentences per paragraph. 
     Preserve key information from the sources and maintain a descriptive tone. 
-    Your goal is not to summarize, your goal is to answer the user's question based on the provided sources.  
+       
     Please include an inline citation with the source id for each website you retrieved data from in this format: [ID here].
-    If there is no information related to the user's question, simply state that you could not find an answer and leave it at that. 
+    If there is no insufficient provided information from the sources, please state as such.
     Exclude any concluding remarks from the answer.
 
     """
+    #The websites may contradict each other, prioritize information from encyclopedia pages and wikis.  
+    #Valid news sources follow. 
+    #Your goal is not to summarize, your goal is to answer the user's question based on the provided sources.  
     formatted_docs = []
     messages = [
         {"role": "system", "content": prompt},
@@ -566,11 +588,13 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
         )
 
         if total_tokens + tokens >= 14000:
+            print("token break")
             break
         total_tokens += tokens
 
         messages.append({"role": "system", "content": output})
-        if total_tokens >= 12000:
+        if total_tokens >= 14000:
+            print("token break")
             break
     messages.append({"role": "user", "content": question})
     client = openai.AsyncOpenAI()
