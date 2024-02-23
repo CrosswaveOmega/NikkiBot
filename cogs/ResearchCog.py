@@ -1227,7 +1227,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         file_buffer.close()  # Close the buffer
 
         file_buffer2 = StringIO()
-        file_buffer2.write(f"{json.dumps(results)}\n")
+        file_buffer2.write(f"{json.dumps(results,indent=2)}\n")
         file_buffer2.seek(0)  # Go back to the start of the StringIO buffer
 
         # Send the buffer as a file
