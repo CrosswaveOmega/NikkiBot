@@ -1215,16 +1215,16 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             results[quest]=resultdict
 
         await statmess.editw(min_seconds=0,content=f"about {len(alllines)} links where gathered.")
+        if search_web:
+            # Use a memory buffer instead of saving to a file
+            file_buffer = StringIO()
+            for line in alllines:
+                file_buffer.write(f"{line}\n")
+            file_buffer.seek(0)  # Go back to the start of the StringIO buffer
 
-        # Use a memory buffer instead of saving to a file
-        file_buffer = StringIO()
-        for line in alllines:
-            file_buffer.write(f"{line}\n")
-        file_buffer.seek(0)  # Go back to the start of the StringIO buffer
-
-        # Send the buffer as a file
-        await ctx.send(content="Websites", file=discord.File(file_buffer, filename="all_links.txt"))
-        file_buffer.close()  # Close the buffer
+            # Send the buffer as a file
+            await ctx.send(content="Websites", file=discord.File(file_buffer, filename="all_links.txt"))
+            file_buffer.close()  # Close the buffer
 
         file_buffer2 = StringIO()
         file_buffer2.write(f"{json.dumps(results,indent=2)}\n")
