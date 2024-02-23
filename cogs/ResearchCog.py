@@ -1145,7 +1145,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     if se[0]=='<:add:1199770854112890890>':
                         alllines.add(se[1])
             else:
-                query,question,comment="No search.",query,"Let's find out."
+                query,question,comment="No search.",quest,"Let's find out."
 
             #Preform research.
             answer,links,ms=await self.research(
