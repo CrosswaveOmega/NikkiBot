@@ -401,11 +401,11 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     async def loader_test(self, ctx: commands.Context, link: str):
         async with ctx.channel.typing():
             splits,dat = await tools.read_and_split_link(ctx.bot, link)
-        questview=Questions(bot=ctx.bot,timeout=30,questions=["One","two","three"])
+        #vi=FollowupActionView(user=ctx.author)
         views=await ctx.send(
             f"[Link ]({link}) has {len(splits)} splits.", 
             suppress_embeds=True,
-            view=questview
+            #view=vi
         )
         for i in splits[0:3]:
             await ctx.send(f"```{str(i.page_content)}```"[:1980], suppress_embeds=True)
@@ -616,7 +616,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     if messageresp is None:
                         messageresp = ms
             #await ctx.channel.send("Click button for sources.", view=viewme)
-            return answer,messageresp, allsources
+            return answer,allsources,messageresp
             
     @commands.hybrid_command(
         name="researchpoint", description="Extract relevant information from the given source", extras={}
@@ -671,7 +671,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 return "NO RELEVANT DATA."
             docs2 = sorted(data, key=lambda x: x[1], reverse=False)
             # Get string containing most relevant source urls:
-            url_desc=tools.get_doc_sources(docs2)
+            url_desc,all_sources=tools.get_doc_sources(docs2)
             embed.description=f"{url_desc}"
             embed.add_field(
                 name="Cache_Query",
@@ -681,7 +681,18 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await statmess.editw(
                 min_seconds=0, content="drawing conclusion...", embed=embed
             )
-            answer = await tools.get_points(question, docs2,ctx=ctx)
+            answer=[]
+            async for doctup in tools.get_points(question, docs2):
+                doc,score,content,tokens=doctup
+                meta=doc.metadata
+                emb = discord.Embed(title=meta.get("title", "?"), description=content)
+                emb.add_field(name="source", value=meta['source'], inline=False)
+                emb.add_field(name="score", value=f"{score *  100.0:.4f}")
+                emb.add_field(name="split value", value=f"{meta.get('split', '?')}")
+                emb.add_field(name="source_tokens", value=f"{tokens}")
+                answer.append(doctup)
+                await ctx.send(embed=emb)
+
             return answer
 
 
@@ -1181,6 +1192,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             new_depth = dep + 1
             followups="None"
             if new_depth < depth:
+                #Generate Followups
                 command,tries=None,0
                 while command is None and tries<3:
                     try:
@@ -1198,6 +1210,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                             raise e
                 
                 questions=command[0][1]['content']
+                #Append followups to Query
                 followups="\n".join(f"* {q}" for q in questions)
                 embedres.add_field(name="Followup questions",value=followups[:1020],inline=False)
                 await this_message.edit(embed=embedres)

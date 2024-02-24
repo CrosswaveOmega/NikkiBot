@@ -12,7 +12,7 @@ from langchain.indexes import VectorstoreIndexCreator
 import asyncio
 import copy
 import datetime
-from typing import List, Tuple
+from typing import AsyncGenerator, List, Tuple
 import chromadb
 from googleapiclient.discovery import build  # Import the library
 
@@ -89,7 +89,28 @@ class MyLib(GPTFunctionLibrary):
         # Wait for a set period of time.
         return title, authors, date, abstract
 
+async def try_until_ok(async_func, *args, **kwargs):
+    """
+    Attempts to run an asynchronous function up to  4 times.
 
+    Parameters:
+    async_func (Callable): The asynchronous function to run.
+    *args: Positional arguments to pass to the asynchronous function.
+    **kwargs: Keyword arguments to pass to the asynchronous function.
+
+    Returns:
+    Any: The result of the asynchronous function if it succeeds.
+
+    Raises:
+    Exception: If the asynchronous function fails after  4 attempts.
+    """
+    for tries in range(4):
+        try:
+            return await async_func(*args, **kwargs)
+        except Exception as err:  # pylint: disable=broad-except
+            if tries >=  3:
+                raise err
+            
 def google_search(bot, query: str, result_limit: int):
     query_service = build("customsearch", "v1", developerKey=bot.keys["google"])
     query_results = (
@@ -453,10 +474,27 @@ async def debug_get(
         )
         return res
 
-async def get_points(question:str,docs:List[Tuple[Document, float]],ctx=None)->str:
+async def get_points(
+        question: str, 
+        docs: List[Tuple[Document, float]]
+    ) -> AsyncGenerator[Tuple[Document, float, str, int], None]:
+    """
+    Extracts important bullet points from the provided sources to answer a given question.
+
+    Args:
+        question (str): The question to answer.
+        docs (List[Tuple[Document, float]]): A list of tuples containing Document objects and their associated relevance scores.
+        ctx (Optional[Context]): The context in which the function is called, if applicable.
+
+    Returns:
+        AsyncGenerator[Tuple[Document, float, str, int], None]: An asynchronous generator that yields tuples containing the Document object, its relevance score, the extracted bullet points, and the number of tokens used.
+
+    Yields:
+        Tuple[Document, float, str, int]: A tuple containing the Document object, its relevance score, the extracted bullet points, and the number of tokens used.
+    """
     prompt = """
     Use the provided source to extract important bullet points
-     to answer the question provided to you by the user.  
+     to answer the question provided to you by the user.
     The sources will be in the system messages, slimmed down to a series of relevant snippits,
     in the following template:
         BEGIN
@@ -467,65 +505,58 @@ async def get_points(question:str,docs:List[Tuple[Document, float]],ctx=None)->s
         END
     If a source appears to be unrelated to the question, note it.
     You responce must be in the following format:
-    Concise Summary (2-4 sentences):
-        Begin with a brief summary of the key points from the source snippet. 
+    Concise Summary (3-7 sentences):
+        Begin with a brief summary of the key points from the source snippet.
         Direct quotes are allowed if they enhance understanding.
 
     Detailed Response (5-10 bullet points):
-     Expand on the summary by providing detailed information in bullet points. 
-     Ensure each bullet point captures essential details from the source, and be as descriptive as possible. 
-     The goal is not to summarize but to extract and convey relevant information.
-    
+     Expand on the summary by providing detailed information in bullet points.
+     Ensure each bullet point captures essential details from the source, and be as descriptive as possible.
+     The goal is not to summarize but to extract and convey relevant information,
+      along with any context that could be important.
+     Justify each bullet point by including 1-3 small direct snippits from the source, like this:
+       * Bullet point with information.
+        - 'the first snippit which justifies'
+        - 'the second snippit that justifies the point'
+       * The second bullet point with information.
+        - 'the snippit which justifies point'
+    Direct Quotes(3-4):
+     Relevant, 1-5 sentence snippits from the original source which answer the question,
+     If there is code in the source, you must place it here.
+     
+
     """
-    
+
     client = openai.AsyncOpenAI()
-    formatted_docs = []
-    lastv=[]
     for e, tup in enumerate(docs):
         doc, score = tup
-        # gui.dprint(doc)
-        # 'metadata',{'title':'UNKNOWN','source':'unknown'})
-        meta = doc.metadata
-        content = doc.page_content  # ('page_content','Data lost!')
-        tile = "NOTITLE"
-        if "title" in meta:
-            tile = meta["title"]
+        tile = "NOTITLE" if "title" not in doc.metadata else doc.metadata["title"]
         output = f"""**ID**:{e}
         **Name:** {tile}
-        **Link:** {meta['source']}
-        **Text:** {content}"""
-        formatted_docs.append(output)
-        # gui.dprint(output)
+        **Link:** {doc.metadata['source']}
+        **Text:** {doc.page_content}"""
         tokens = gptmod.util.num_tokens_from_messages(
             [{"role": "system", "content": output}], "gpt-3.5-turbo-0125"
         )
-        
 
-
-        messages=[]
         messages = [
-        {"role": "system", "content": prompt},
+            {"role": "system", "content": prompt},
+            {"role": "system", "content": output},
+            {"role": "user", "content": question},
         ]
-        messages.append({"role": "system", "content": output})
+        completion=None
 
-        messages.append({"role": "user", "content": question})
+        completion = await try_until_ok(
+            client.chat.completions.create, 
+            model="gpt-3.5-turbo-0125", 
+            messages=messages,
+            timeout=60
+            )
+
+        doctup = (doc, score, completion.choices[0].message.content, tokens)
+
+        yield doctup
         
-        completion = await client.chat.completions.create(
-            model="gpt-3.5-turbo-0125", messages=messages
-        )
-        docs=(doc,completion.choices[0].message.content)
-        if ctx:
-            d,c=docs
-            emb=discord.Embed(title=d.metadata.get("title","?"), description=c)
-            emb.add_field(name="source",value=meta['source'],inline=False)
-            emb.add_field(name="score",value="{:.4f}".format(score*100.0))
-            emb.add_field(name="split value",value=f"{meta.get('split','?')}")
-            emb.add_field(name="source_tokens",value=f"{tokens}")
-            await ctx.send(embed=emb)
-
-        lastv.append(docs)
-    return lastv 
-
 async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> str:
     """
     Formats an answer to a given question using the provided documents.
@@ -569,9 +600,8 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
         "gpt-3.5-turbo-0125",
     )
     for e, tup in enumerate(docs):
-        doc, score = tup
-        # gui.dprint(doc)
-        # 'metadata',{'title':'UNKNOWN','source':'unknown'})
+        doc, _ = tup
+
         meta = doc.metadata
         content = doc.page_content 
         tile = "NOTITLE"
@@ -582,7 +612,7 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
         **Link:** {meta['source']}
         **Text:** {content}"""
         formatted_docs.append(output)
-        # gui.dprint(output)
+
         tokens = gptmod.util.num_tokens_from_messages(
             [{"role": "system", "content": output}], "gpt-3.5-turbo-0125"
         )
