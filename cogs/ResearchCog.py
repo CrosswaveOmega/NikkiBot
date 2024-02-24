@@ -392,7 +392,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             ctx,
             question,
             k=7,
-            site_title_restriction=site_title_restriction
+            site_title_restriction=site_title_restriction,
             send_message=True
         )
         return ms
