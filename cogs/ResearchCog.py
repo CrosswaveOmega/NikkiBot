@@ -1104,6 +1104,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @app_commands.describe(
         site_title_restriction="Restrain query to websites with this in the title."
     )
+    @app_commands.describe(
+        search_web="set to 1-10 if additional web searches will be needed."
+    )
     async def research_recursive(
         self,
         ctx: commands.Context,
@@ -1113,7 +1116,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         use_mmr: bool = False,
         depth: commands.Range[int, 1, 4] = 1,
         followup: commands.Range[int, 1, 5] = 2,
-        search_web: bool = False,
+        search_web: commands.Range[int, 0, 10] = 0,
     ):
         if not ctx.guild:
             await ctx.send("needs to be guild")
