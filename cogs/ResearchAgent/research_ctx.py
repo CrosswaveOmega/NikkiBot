@@ -69,7 +69,7 @@ class ResearchContext:
         use_mmr: bool = False,
         depth: int = 1,
         followup: int = 2,
-        search_web: bool = False,
+        search_web: int = 0,
     ) -> None:
         self.cog = cog
         self.ctx = ctx
@@ -110,7 +110,9 @@ class ResearchContext:
         if 0 >= self.followup or self.followup > 5:
             await self.ctx.send("Followup questions are too high.")
             return False
-
+        if 0 > self.search_web or self.search_web > 10:
+            await self.ctx.send("Invalid searchweb term.")
+            return False
         if self.all_runs > 50:
             await self.ctx.send("Too many runs! Lower your followup or depth.")
             return False
@@ -142,7 +144,7 @@ class ResearchContext:
                     await self.ctx.send(f"{json.dumps(lib.get_tool_schema())}"[:1800])
                     raise e
         query, question, comment = querytuple[0][1]["content"]
-        _, lines = await self.cog.web_search(self.ctx, query, result_limit=7)
+        _, lines = await self.cog.web_search(self.ctx, query, result_limit=self.search_web)
         s = lines.split("\n")
         for e in s:
             se = e.split(" ")
