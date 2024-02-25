@@ -17,9 +17,8 @@ from htmldate import find_date
 import assets
 from javascriptasync import require, eval_js, eval_js_a
 from .metadataenums import MetadataDocType
+
 """This is a special loader that makes use of Mozilla's readability module. """
-
-
 
 
 def remove_links(markdown_text):
@@ -32,13 +31,15 @@ def remove_links(markdown_text):
 
     return no_links_string
 
-async def check_readability(jsenv,html,url):
+
+async def check_readability(jsenv, html, url):
     myfile = await assets.JavascriptLookup.get_full_pathas(
         "readwebpage.js", "WEBJS", jsenv
     )
     htmls: str = str(html)
-    rsult = await myfile.check_read(url,htmls, timeout=45)
+    rsult = await myfile.check_read(url, htmls, timeout=45)
     return rsult
+
 
 async def read_article_direct(jsenv, html, url):
     myfile = await assets.JavascriptLookup.get_full_pathas(
@@ -131,13 +132,12 @@ class ReadableLoader(dl.WebBaseLoader):
             else:
                 souped = BeautifulSoup(result, parser)
             clean_html = re.sub(
-                    r"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>", "", result
-                )
-            readable=await check_readability(self.jsenv,clean_html,url)
+                r"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>", "", result
+            )
+            readable = await check_readability(self.jsenv, clean_html, url)
             if not readable:
                 gui.dprint("Not readable link.")
             try:
-                
                 text, header = await read_article_aw(self.jsenv, clean_html, url)
                 final_results.append((remove_links(text), souped, header))
 
@@ -191,13 +191,13 @@ class ReadableLoader(dl.WebBaseLoader):
         self.jsenv = bot.jsenv
         self.bot = bot
         results = await self.scrape_all(self.web_paths)
-        docs,typev = [], -1
+        docs, typev = [], -1
 
         for i, res in enumerate(results):
             text, soup, header = results[i]
 
             metadata = _build_metadata(soup, self.web_paths[i])
-            typev=MetadataDocType.htmltext
+            typev = MetadataDocType.htmltext
 
             if not "title" in metadata:
                 metadata["title"] = "No Title"
@@ -206,8 +206,8 @@ class ReadableLoader(dl.WebBaseLoader):
                     metadata["authors"] = header["byline"]
                 metadata["website"] = header.get("siteName", "siteunknown")
                 metadata["title"] = header.get("title")
-                typev= MetadataDocType.readertext
-            
+                typev = MetadataDocType.readertext
+
             metadata["type"] = int(typev)
 
             metadata["sum"] = "source"

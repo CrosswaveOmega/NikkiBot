@@ -13,14 +13,12 @@ from discord.ext import commands
 from discord import app_commands
 from bot import TC_Cog_Mixin, StatusEditMessage, super_context_menu, TCBot
 from .tools import (
-
     has_url,
     read_and_split_link,
     store_splits,
-
 )
 import gptmod
-from gptfunctionutil import *
+import gptfunctionutil as gptu
 import gptmod.error
 from database.database_ai import AuditProfile
 
@@ -37,23 +35,22 @@ from utility import prioritized_string_split, select_emoji
 from utility.embed_paginator import pages_of_embeds
 
 
-
 class SourceLinkLoader:
     """
     Manages the loading of links, including checking if they're cached, splitting content,
     and updating or adding entries to the database as necessary.
     """
-    def __init__(self, chromac:chromadb.ClientAPI,statusmessage:StatusEditMessage):
-        self.chromac=chromac
-        self.statmess=statusmessage
-        self.current=""
+
+    def __init__(self, chromac: chromadb.ClientAPI, statusmessage: StatusEditMessage):
+        self.chromac = chromac
+        self.statmess = statusmessage
+        self.current = ""
         pass
-    
+
     async def load_links(
         self,
         ctx: commands.Context,
         all_links: List[str],
-        
         override: bool = False,
     ):
         """
@@ -77,10 +74,12 @@ class SourceLinkLoader:
         self.all_link_status = [["pending", link] for link in all_links]
 
         for link_num, link in enumerate(all_links):
-            embed = discord.Embed(description=f"google search\n{self.get_status_lines()}")
+            embed = discord.Embed(
+                description=f"google search\n{self.get_status_lines()}"
+            )
 
             has, getres = await self.check_cached_documents(ctx, link, override)
-            
+
             if has and not override:
                 self.current += self.process_cached_link(link_num, link, getres)
                 hascount += 1
@@ -111,9 +110,11 @@ class SourceLinkLoader:
         Returns:
             str: A formatted string representing the current status of all links.
         """
-        return "\n".join([f"{select_emoji(s)} {link}" for s, link in self.all_link_status])
+        return "\n".join(
+            [f"{select_emoji(s)} {link}" for s, link in self.all_link_status]
+        )
 
-    async def check_cached_documents(self, ctx,link, override):
+    async def check_cached_documents(self, ctx, link, override):
         """
         Checks if the provided link is already cached, unless overriding is requested.
 
@@ -125,20 +126,20 @@ class SourceLinkLoader:
         Returns:
             tuple: A tuple where the first element indicates if the link is cached, and the second element is the cached data if any.
         """
-        
-        result=await asyncio.to_thread(has_url,link, client=self.chromac)
-        has,getres=result
+
+        result = await asyncio.to_thread(has_url, link, client=self.chromac)
+        has, getres = result
         # Accessing traced results
         # The results object contains information about executed lines, missing lines, and more
-
 
         if has and not override:
             for d, me in zip(getres["documents"], getres["metadatas"]):
                 if me["source"] != link:
-                    raise Exception("the url in the cache doesn't match the provided url.")
+                    raise Exception(
+                        "the url in the cache doesn't match the provided url."
+                    )
             return True, getres
         return False, None
-
 
     def process_cached_link(self, link_num, link, getres):
         """
@@ -155,7 +156,13 @@ class SourceLinkLoader:
         self.all_link_status[link_num][0] = "skip"
         return f"[Link {link_num}]({link}) has {len(getres['documents'])} cached documents.\n"
 
-    async def process_uncached_link(self, ctx, link_num, link, embed, ):
+    async def process_uncached_link(
+        self,
+        ctx,
+        link_num,
+        link,
+        embed,
+    ):
         """
         Processes a link that was not found in the cache.
 
@@ -167,7 +174,7 @@ class SourceLinkLoader:
 
         """
         try:
-            splits,type = await read_and_split_link(ctx.bot, link)
+            splits, type = await read_and_split_link(ctx.bot, link)
             dbadd = True
             for split in splits:
                 for i, m in split.metadata.items():
@@ -182,7 +189,13 @@ class SourceLinkLoader:
         except Exception as err:
             await self.process_uncached_link_error(ctx, link_num, link, err, embed)
 
-    async def process_uncached_link_add(self, link_num, link, splits, embed, ):
+    async def process_uncached_link_add(
+        self,
+        link_num,
+        link,
+        splits,
+        embed,
+    ):
         """
         Adds a link and its splits to the database and updates the status message.
 
@@ -197,9 +210,12 @@ class SourceLinkLoader:
         toadd = f"[Link {link_num}]({link}) has {len(splits)} splits.\n"
         self.current += toadd
         embed.description = self.get_status_lines()
-        await asyncio.to_thread(store_splits,splits, client=self.chromac)
-        await self.statmess.editw(min_seconds=5, content=f"<a:LetWalkR:1118191001731874856> {self.current}", embed=embed)
-        
+        await asyncio.to_thread(store_splits, splits, client=self.chromac)
+        await self.statmess.editw(
+            min_seconds=5,
+            content=f"<a:LetWalkR:1118191001731874856> {self.current}",
+            embed=embed,
+        )
 
     async def process_uncached_link_error(self, ctx, link_num, link, err, embed):
         """
@@ -217,5 +233,9 @@ class SourceLinkLoader:
         self.current += f"{str(err)}"
         await ctx.send(str(err))
         embed.description = self.get_status_lines()
-        await self.statmess.editw(min_seconds=5, content=f"<a:LetWalkR:1118191001731874856> {self.current}", embed=embed)
+        await self.statmess.editw(
+            min_seconds=5,
+            content=f"<a:LetWalkR:1118191001731874856> {self.current}",
+            embed=embed,
+        )
         await ctx.bot.send_error(err)

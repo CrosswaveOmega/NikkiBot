@@ -150,7 +150,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             raise e
 
     @commands.command(hidden=True)
-    async def channelcount(self, ctx:commands.Context):
+    async def channelcount(self, ctx: commands.Context):
         """
         Get a count of all channels in your server
         """
@@ -1351,31 +1351,27 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         total_time_for_cluster += length * 2
 
         remaining_time_float = total_time_for_cluster
-        if dynamicwait:  remaining_time_float += totalcharlen * characterdelay
+        if dynamicwait:
+            remaining_time_float += totalcharlen * characterdelay
 
-        outstring=f"It will take {seconds_to_time_string(int(remaining_time_float))} to post in the archive channel."
-        if int(remaining_time_float) <=0.1: outstring="The Archive Channel is already up to date!"
-        def format_embed(group,grouplen,ma,mt,time, index=1,ml=1):
+        outstring = f"It will take {seconds_to_time_string(int(remaining_time_float))} to post in the archive channel."
+        if int(remaining_time_float) <= 0.1:
+            outstring = "The Archive Channel is already up to date!"
 
-            total=f"<a:LetWalk:1118184074239021209> Currently on group {group}/{grouplen}.\n"\
-                 + f"Current group is{int((index/ml)*100)}% archived\n Currently archived {ma} messages out of {mt} total.\n"\
+        def format_embed(group, grouplen, ma, mt, time, index=1, ml=1):
+            total = (
+                f"<a:LetWalk:1118184074239021209> Currently on group {group}/{grouplen}.\n"
+                + f"Current group is{int((index/ml)*100)}% archived\n Currently archived {ma} messages out of {mt} total.\n"
                 + f"This is going to take another...{seconds_to_time_string(int(time))}",
-            embed=discord.Embed(
-                description=total
             )
+            embed = discord.Embed(description=total)
             return embed
 
-        await m.edit( content=outstring)
-        embed=format_embed(
-            1,length,
-            0,message_total,
-            time=remaining_time_float,
-            index=0,
-            ml=1
+        await m.edit(content=outstring)
+        embed = format_embed(
+            1, length, 0, message_total, time=remaining_time_float, index=0, ml=1
         )
-        me = await ctx.channel.send(
-            embed=embed
-        )
+        me = await ctx.channel.send(embed=embed)
         mt = StatusEditMessage(me, ctx)
         gui.gprint(archive_channel.name)
         messagearchived = 0
@@ -1447,20 +1443,32 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 else:
                     await asyncio.sleep(timebetweenmess)
                     remaining_time_float = remaining_time_float - (timebetweenmess)
-                    embed=format_embed(e+1,length,messagearchived, message_total,time=remaining_time_float,index=index,ml=messagelength)
-                    await mt.editw(
-                        min_seconds=45,
-                        embed=embed
+                    embed = format_embed(
+                        e + 1,
+                        length,
+                        messagearchived,
+                        message_total,
+                        time=remaining_time_float,
+                        index=index,
+                        ml=messagelength,
                     )
+                    await mt.editw(min_seconds=45, embed=embed)
             sep.update(all_ok=True)
             self.bot.database.commit()
             await asyncio.sleep(2)
             remaining_time_float -= 2
-            embed=format_embed(e+1,length,messagearchived, message_total,time=remaining_time_float,index=messagelength,ml=messagelength)
+            embed = format_embed(
+                e + 1,
+                length,
+                messagearchived,
+                message_total,
+                time=remaining_time_float,
+                index=messagelength,
+                ml=messagelength,
+            )
             await mt.editw(
                 min_seconds=30,
                 embed=embed,
-                
             )
             # await edittime.invoke_if_time(content=f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
             bot.add_act(
@@ -1536,6 +1544,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         ):
             this_dates = ["█", "█", "█", "█", "█", "█", "█"]
             au = ctx.bot.user.avatar.url
+
             def get_seps_between_dates(start, end):
                 """this generator returns lists of all separators that are on the specified dates."""
                 cd = start

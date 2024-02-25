@@ -22,8 +22,6 @@ default_config = {
 }
 
 
-
-
 def setup(args):
     "get or create the config.ini file."
     arglength = len(args)
@@ -37,7 +35,6 @@ def setup(args):
         gui.gprint("No keys.ini file detected.")
         c2 = False
     if not os.path.exists("config.ini") or not os.path.exists("keys.ini"):
-        
         if c1 and not c2:
             config.read("config.ini")
             gui.gprint("config.ini found but no keys.ini")
@@ -52,7 +49,7 @@ def setup(args):
             config.write(open("config.ini", "w+"))
             keys.write(open("keys.ini", "w+"))
         else:
-            botname,token, error_channel_id = "","", ""
+            botname, token, error_channel_id = "", "", ""
             if arglength > 1:
                 botname = args[1]
             if arglength > 2:
@@ -60,7 +57,9 @@ def setup(args):
             if arglength > 3:
                 error_channel_id = args[3]
             if not botname:
-                botname = input("Please enter your bot's name (this can not be changed.): ")
+                botname = input(
+                    "Please enter your bot's name (this can not be changed.): "
+                )
             if not token:
                 token = input("Please enter your bot token: ")
             if not error_channel_id:
@@ -69,7 +68,7 @@ def setup(args):
                 )
 
             keys["vital"] = {"botname": botname}
-            keyring.set_password("bot_service",botname,token)
+            keyring.set_password("bot_service", botname, token)
             keys["vital"] = {"cipher": token}
             config["optional"] = {"error_channel_id": error_channel_id}
             gui.gprint("Writing config files")
@@ -105,7 +104,7 @@ def setup(args):
                         config.remove_option(section, option)
             config.write(open("config.ini", "w+"))
             keys.write(open("keys.ini", "w+"))
-        keys=keyring_setup(keys)
+        keys = keyring_setup(keys)
 
         return config, keys
 

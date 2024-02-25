@@ -40,7 +40,7 @@ class ArchiveContext:
         character_len=0,
         latest_time=None,
         total_ignored=0,
-        color=0
+        color=0,
     ):
         """Initializes the ArchiveContext instance.
 
@@ -121,7 +121,7 @@ class ArchiveContext:
         """
         self.latest_time = max(new, self.latest_time)
 
-    async def edit_mess(self, pre="", cname="",seconds=15):
+    async def edit_mess(self, pre="", cname="", seconds=15):
         """Edits the status message to update the progress of the archival process.
 
         Args:
@@ -129,18 +129,14 @@ class ArchiveContext:
             cname: current channel name.
         """
         place = f"{self.total_archived} messages collected in total.\n"
-        current_index=f"{self.channel_spot}/{self.channel_count}"
+        current_index = f"{self.channel_spot}/{self.channel_count}"
         text = f"{place} \n On channel {current_index},\n {cname},\n Please wait. <a:SquareLoading:1143238358303264798>"
-        emb=discord.Embed(
+        emb = discord.Embed(description=text, color=self.server_color)
+        emb.add_field(name="Server Channels", value=self.channel_count, inline=True)
+        emb.add_field(name="Currently Indexed", value=current_index, inline=True)
+        emb.add_field(name="Total Messages archived.", value=self.total_archived)
 
-            description=text,
-            color=self.server_color
-        )
-        emb.add_field(name='Server Channels',value=self.channel_count,inline=True)
-        emb.add_field(name="Currently Indexed",value=current_index,inline=True)
-        emb.add_field(name='Total Messages archived.',value=self.total_archived)
-
-        await self.status_mess.editw(min_seconds=seconds, content=text,embed=emb),
+        await self.status_mess.editw(min_seconds=seconds, content=text, embed=emb),
 
 
 async def iter_hist_messages(cobj: discord.TextChannel, actx: ArchiveContext):
@@ -462,7 +458,7 @@ async def collect_server_history(ctx, **kwargs):
                 current_channel_count += 1
 
             await arch_ctx.edit_mess(f"", chan.name)
-            if current_channel_count% current_channel_every==0:
+            if current_channel_count % current_channel_every == 0:
                 await asyncio.sleep(1)
 
     if statusMessToEdit != None:

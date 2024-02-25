@@ -99,6 +99,7 @@ class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
             f"Number of messages in the 15-minute interval starting from {timestamp}: {len(messages)}"
         )
 
+
 async def setup(bot):
     gui.dprint(__name__)
     # from .ArchiveSub import setup

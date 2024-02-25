@@ -25,6 +25,7 @@ import openai
 from langchain.docstore.document import Document
 from .metadataenums import MetadataDocType
 import gui
+
 webload = docload.WebBaseLoader
 
 tosplitby = [
@@ -89,6 +90,7 @@ class MyLib(GPTFunctionLibrary):
         # Wait for a set period of time.
         return title, authors, date, abstract
 
+
 async def try_until_ok(async_func, *args, **kwargs):
     """
     Attempts to run an asynchronous function up to  4 times.
@@ -108,9 +110,10 @@ async def try_until_ok(async_func, *args, **kwargs):
         try:
             return await async_func(*args, **kwargs)
         except Exception as err:  # pylint: disable=broad-except
-            if tries >=  3:
+            if tries >= 3:
                 raise err
-            
+
+
 def google_search(bot, query: str, result_limit: int):
     query_service = build("customsearch", "v1", developerKey=bot.keys["google"])
     query_results = (
@@ -150,9 +153,9 @@ async def read_and_split_pdf(
     message = completion.choices[0].message
     if message.tool_calls:
         for tool in message.tool_calls:
-            typev=int(MetadataDocType.pdftext)
-            out=await mylib.call_by_tool_async(tool)
-            title, authors, date, abstract = out['content']
+            typev = int(MetadataDocType.pdftext)
+            out = await mylib.call_by_tool_async(tool)
+            title, authors, date, abstract = out["content"]
             metadata["authors"] = authors
             metadata["website"] = "PDF_ORIGIN"
             metadata["title"] = title
@@ -164,7 +167,6 @@ async def read_and_split_pdf(
             metadata["type"] = typev
             metadata["date"] = date
             for e, pagedata in enumerate(data):
-
                 newdata = copy.deepcopy(metadata)
                 newdata["page"] = f"Page {e}"
                 text = pagedata.page_content
@@ -174,7 +176,7 @@ async def read_and_split_pdf(
                 doc = Document(page_content=filtered_text, metadata=newdata)
 
                 new_docs.append(doc)
-            return new_docs,typev
+            return new_docs, typev
     else:
         raise Exception("ERROR:" + str(completion.choices[0].message.content))
 
@@ -189,7 +191,7 @@ async def read_and_split_link(
         symbol3 = re.escape("  ")
         pattern3 = re.compile(f"({symbol3}(?:(?!{symbol3}).)+{symbol3})")
         prioritysplit.append((pattern3, 100))
-        data, typev= await read_and_split_pdf(bot, url, chunk_size)
+        data, typev = await read_and_split_pdf(bot, url, chunk_size)
     else:
         loader = ReadableLoader(
             url,
@@ -200,7 +202,7 @@ async def read_and_split_link(
         # Index that wraps above steps
         data, typev = await loader.aload(bot)
     newdata = []
-    splitnum=0
+    splitnum = 0
     for d in data:
         # Strip excess white space.
         simplified_text = d.page_content.strip()
@@ -209,14 +211,16 @@ async def read_and_split_link(
         simplified_text = simplified_text.replace("\t{3,}", "\t")
         simplified_text = re.sub(r"\n+(\s*\n)*", "\n", simplified_text)
         d.page_content = simplified_text
-        split,splitnum = await asyncio.to_thread(split_link,d, chunk_size=chunk_size, prior=prioritysplit,add=splitnum)
+        split, splitnum = await asyncio.to_thread(
+            split_link, d, chunk_size=chunk_size, prior=prioritysplit, add=splitnum
+        )
         newdata.extend(split)
 
     all_splits = newdata
-    return all_splits,typev
+    return all_splits, typev
 
 
-def split_link(doc: Document, chunk_size: int = 1800, prior=[],add=0):
+def split_link(doc: Document, chunk_size: int = 1800, prior=[], add=0):
     newdata = []
 
     metadata = doc.metadata
@@ -228,9 +232,9 @@ def split_link(doc: Document, chunk_size: int = 1800, prior=[],add=0):
 
     for e, chunk in enumerate(fil):
         metadatac = copy.deepcopy(metadata)
-        
-        metadatac['split']=add
-        add+=1
+
+        metadatac["split"] = add
+        add += 1
         new_doc = Document(page_content=chunk, metadata=metadatac)
         newdata.append(new_doc)
     return newdata, add
@@ -259,7 +263,7 @@ async def add_summary(
         metadata["language"] = header.get("lang", "en")
         metadata["dateadded"] = datetime.datetime.utcnow().timestamp()
         metadata["sum"] = "sum"
-        metadata["split"]="NA"
+        metadata["split"] = "NA"
         metadata["type"] = int(MetadataDocType.readertext)
         metadata["date"] = "None"
         try:
@@ -337,7 +341,6 @@ def has_url(
     persist = "saveData"
     if client != None:
         try:
-             
             collectionvar = client.get_collection(collection)
 
             res = collectionvar.get(
@@ -405,9 +408,9 @@ async def search_sim(
         embedding_function=OpenAIEmbeddings(),
         collection_name=collection,
     )
-    filterwith={}
-    if titleres !='None':
-        filterwith["title"]={"$like": f"%{titleres}%"}
+    filterwith = {}
+    if titleres != "None":
+        filterwith["title"] = {"$like": f"%{titleres}%"}
 
     gui.dprint("here")
     if mmr:
@@ -419,13 +422,12 @@ async def search_sim(
         docs = [(doc, 0.4) for doc in docs]
     else:
         docs = await vs.asimilarity_search_with_relevance_scores(
-            question,
-            k=k,
-            filter=filterwith  # {'':titleres}}
+            question, k=k, filter=filterwith  # {'':titleres}}
         )
     return docs
 
-def get_doc_sources(docs:List[Tuple[Document,float]]):
+
+def get_doc_sources(docs: List[Tuple[Document, float]]):
     """
     Takes a list of Document objects, counts the appearances of unique sources amoung them,
     and return a string indicating the used sources.
@@ -436,18 +438,21 @@ def get_doc_sources(docs:List[Tuple[Document,float]]):
     Returns:
         str: A string formatted to list unique sources and the indices of their appearances in the provided list.
     """
-    all_links=[doc.metadata.get("source",'???') for doc, e in docs]
-    links=set(doc.metadata.get("source",'???') for doc, e in docs)
+    all_links = [doc.metadata.get("source", "???") for doc, e in docs]
+    links = set(doc.metadata.get("source", "???") for doc, e in docs)
+
     def ie(all_links: List[str], value: str) -> List[int]:
         return [index for index, link in enumerate(all_links) if link == value]
-    used="\n".join(f"{ie(all_links,l)}{l}" for l in links)
-    source_pages = prioritized_string_split(used, ["%s\n"], 4000 )
-    cont =""
-    if len(source_pages)>2:
-        new="\n"
+
+    used = "\n".join(f"{ie(all_links,l)}{l}" for l in links)
+    source_pages = prioritized_string_split(used, ["%s\n"], 4000)
+    cont = ""
+    if len(source_pages) > 2:
+        new = "\n"
         cont = f"...and {sum(len(se.split(new)) for se in source_pages[1:])} more."
-    source_string=f"{source_pages[0]}{cont}"
+    source_string = f"{source_pages[0]}{cont}"
     return source_string, used
+
 
 async def debug_get(
     question: str,
@@ -474,10 +479,10 @@ async def debug_get(
         )
         return res
 
+
 async def get_points(
-        question: str, 
-        docs: List[Tuple[Document, float]]
-    ) -> AsyncGenerator[Tuple[Document, float, str, int], None]:
+    question: str, docs: List[Tuple[Document, float]]
+) -> AsyncGenerator[Tuple[Document, float, str, int], None]:
     """
     Extracts important bullet points from the provided sources to answer a given question.
 
@@ -544,19 +549,20 @@ async def get_points(
             {"role": "system", "content": output},
             {"role": "user", "content": question},
         ]
-        completion=None
+        completion = None
 
         completion = await try_until_ok(
-            client.chat.completions.create, 
-            model="gpt-3.5-turbo-0125", 
+            client.chat.completions.create,
+            model="gpt-3.5-turbo-0125",
             messages=messages,
-            timeout=60
-            )
+            timeout=60,
+        )
 
         doctup = (doc, score, completion.choices[0].message.content, tokens)
 
         yield doctup
-        
+
+
 async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> str:
     """
     Formats an answer to a given question using the provided documents.
@@ -587,9 +593,9 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
     Exclude any concluding remarks from the answer.
 
     """
-    #The websites may contradict each other, prioritize information from encyclopedia pages and wikis.  
-    #Valid news sources follow. 
-    #Your goal is not to summarize, your goal is to answer the user's question based on the provided sources.  
+    # The websites may contradict each other, prioritize information from encyclopedia pages and wikis.
+    # Valid news sources follow.
+    # Your goal is not to summarize, your goal is to answer the user's question based on the provided sources.
     formatted_docs = []
     messages = [
         {"role": "system", "content": prompt},
@@ -603,7 +609,7 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
         doc, _ = tup
 
         meta = doc.metadata
-        content = doc.page_content 
+        content = doc.page_content
         tile = "NOTITLE"
         if "title" in meta:
             tile = meta["title"]
@@ -628,24 +634,24 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
             break
     messages.append({"role": "user", "content": question})
     client = openai.AsyncOpenAI()
-    for tries in range(0,4):
+    for tries in range(0, 4):
         try:
             completion = await client.chat.completions.create(
                 model="gpt-3.5-turbo-0125", messages=messages, timeout=60
             )
             return completion.choices[0].message.content
         except Exception as e:
-            if tries>=3:
+            if tries >= 3:
                 raise e
 
 
 def extract_embed_text(embed):
     """
     Extracts the text from an embed object and formats it as a bullet list.
-    
+
     Args:
         embed (Embed): The embed object to extract text from.
-    
+
     Returns:
         str: A string containing the title, description, and fields of the embed, formatted as a bullet list.
     """

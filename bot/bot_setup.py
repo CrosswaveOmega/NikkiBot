@@ -38,6 +38,7 @@ from .TCAppCommandAutoSync import AppGuildTreeSync
 from .errorformat import client_error_message
 from .config_gen import setup, config_update
 from .key_vault import get_token
+
 """
 Initalizes TCBot, defines some checks, and contains the main setup coroutine.
 
@@ -49,6 +50,7 @@ import openai
 
 from utility import WebhookMessageWrapper as web
 from utility import urltomessage
+
 bot: TCBot = TCBot()
 
 
@@ -250,10 +252,9 @@ class Main(commands.Cog):
         """View the guild flags."""
         bot = ctx.bot
         guild = ctx.guild
-        value=taskflags[str(ctx.guild.id)]
+        value = taskflags[str(ctx.guild.id)]
         await ctx.send(f"guild command flags={value}")
 
-    
     @commands.command(hidden=True)
     async def config_view(self, ctx):
         """view the config.ini file"""
@@ -328,7 +329,9 @@ class Main(commands.Cog):
         guild = ctx.guild
         message = await ctx.send("Target Message.")
         myurl = message.jump_url
-        robj = rrule(freq=WEEKLY, byweekday=SU, dtstart=datetime.datetime(2023, 1, 1, 15, 0))
+        robj = rrule(
+            freq=WEEKLY, byweekday=SU, dtstart=datetime.datetime(2023, 1, 1, 15, 0)
+        )
         new = TCGuildTask.add_guild_task(guild.id, "COMPILE", message, robj)
         new.to_task(bot)
 
@@ -341,7 +344,6 @@ class Main(commands.Cog):
     async def ping_tester(self, ctx: commands.Context, content: str = "new"):
         """debugging only."""
         await ctx.send(content=content)
-
 
     @commands.command(hidden=True)
     async def purge_guild_data(self, ctx, guildid: int):
@@ -455,6 +457,5 @@ async def main(args):
             c = keys.get("optional", "cse_id", fallback=None)
             bot.keys["google"] = g
             bot.keys["cse"] = c
-            
 
             await bot.start(get_token(keys))

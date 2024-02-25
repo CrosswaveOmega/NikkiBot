@@ -6,6 +6,7 @@ import json
 import re
 import gui
 
+
 def remove_link_node(data):
     value = data
     if "<" in value:

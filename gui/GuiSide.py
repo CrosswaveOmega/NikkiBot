@@ -14,10 +14,12 @@ queued = Queue()
 GUI_MODE = False
 DEBUG_MODE = False
 
-def toggle_debug_mode(mode:bool):
+
+def toggle_debug_mode(mode: bool):
     print("DEBUG MODE IS ON.")
     global DEBUG_MODE
-    DEBUG_MODE=mode
+    DEBUG_MODE = mode
+
 
 def special_string_split(string, max_length):
     words = string.split()  # Split the string into individual words
@@ -36,9 +38,11 @@ def special_string_split(string, max_length):
 
 current_list = []
 
+
 def dprint(*args, **kwargs):
     if DEBUG_MODE:
-        gprint(*args,**kwargs)
+        gprint(*args, **kwargs)
+
 
 def gprint(*args, **kwargs):
     print(*args, **kwargs)
@@ -60,10 +64,11 @@ def gprint(*args, **kwargs):
 
 MAX_SIZE = 52
 
+
 class Gui:
     def __init__(self):
         global GUI_MODE
-        GUI_MODE=True
+        GUI_MODE = True
         self.window = tk.Tk()
         fontv = font.Font(size=8)
         self.window.title("Nikki Panel")
@@ -74,7 +79,6 @@ class Gui:
             "time": "00:00",
         }
         self.current_list = []
-        
 
         # Use grid layout manager for the framestack
         framestack = tk.Frame(self.window)

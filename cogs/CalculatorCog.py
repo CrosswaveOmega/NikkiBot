@@ -221,7 +221,7 @@ example: (2d20reroll>10) will reroll any dice that has a value greater than 10."
                     title="Result of {}".format(out.formatStr(rollv)),
                     description=string,
                 )
-                embedv.add_field(name="To be continued...",value='tbc')
+                embedv.add_field(name="To be continued...", value="tbc")
                 await ctx.send(embed=embedv)
                 string = "`" + c + "` \n"
             elif c != "":

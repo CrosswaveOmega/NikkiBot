@@ -1,8 +1,14 @@
 from .AICalling import AIMessageTemplates
 from .StepCalculator import evaluate_expression
-from gptfunctionutil import *
+from gptfunctionutil import (
+    GPTFunctionLibrary,
+    AILibFunction,
+    LibParam,
+    SingleCall,
+    SingleCallAsync,
+)
 import base64
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Union
 import discord
 import gui
 import io
@@ -466,15 +472,17 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         await MessageTemplates.server_ai_message(
             ctx, "I will stop listening there, ok?  Pings will still work, though."
         )
+
     @commands.Cog.listener()
-    async def on_raw_thread_delete(self,thread:discord.RawThreadDeleteEvent):
+    async def on_raw_thread_delete(self, thread: discord.RawThreadDeleteEvent):
         try:
             profile = ServerAIConfig.get_or_new(thread.guild_id)
             thread_id = thread.thread_id
             messages = profile.clear_message_chains(thread_id=thread_id)
-            gui.dprint('Purged.')
+            gui.dprint("Purged.")
         except Exception as e:
             await self.bot.send_error(e)
+
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         """Listener that will invoke the AI upon a message."""

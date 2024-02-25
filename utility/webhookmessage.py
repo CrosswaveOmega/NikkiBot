@@ -157,7 +157,9 @@ class WebhookMessageWrapper:
             gui.gprint("Empty,no file, and no embed.")
             return None
         if display_username:
-            display_username=re.sub('discord', 'Captain', display_username, flags=re.IGNORECASE)
+            display_username = re.sub(
+                "discord", "Captain", display_username, flags=re.IGNORECASE
+            )
         newContent = message_content
         mess = None
         try:

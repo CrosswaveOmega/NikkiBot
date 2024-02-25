@@ -2,6 +2,7 @@ from .tools import *
 from .chromatools import ChromaTools
 from .views import *
 from .LinkLoader import SourceLinkLoader
+from .research_ctx import ResearchContext
 
 
 async def setup(bot):
