@@ -74,9 +74,8 @@ class SourceLinkLoader:
         self.all_link_status = [["pending", link] for link in all_links]
 
         for link_num, link in enumerate(all_links):
-            embed = discord.Embed(
-                description=f"google search\n{self.get_status_lines()}"
-            )
+            embed = self.statmess.embed
+            embed.description = f"Web Link Loading: \n{self.get_status_lines()}"
 
             has, getres = await self.check_cached_documents(ctx, link, override)
 
@@ -99,9 +98,12 @@ class SourceLinkLoader:
             StatusEditMessage: The object for editing and updating the status message.
         """
         target_message = await ctx.channel.send(
-            f"<a:SquareLoading:1143238358303264798> checking returned queries ..."
+            "<a:SquareLoading:1143238358303264798> checking returned queries ...",
+            emb=discord.Embed(title="Searching"),
         )
-        return StatusEditMessage(target_message, ctx)
+        stmes = StatusEditMessage(target_message, ctx)
+        stmes.embed = discord.Embed(title="Searching")
+        return stmes
 
     def get_status_lines(self):
         """

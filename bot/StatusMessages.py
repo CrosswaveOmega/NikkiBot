@@ -18,6 +18,9 @@ class StatusEditMessage:
         self.message = message
         self.last_update_time = datetime.datetime.now()
         self.initial_deploy_time = datetime.datetime.now()
+        self.embed = None
+        if message.embeds:
+            self.embed = message.embeds[0]
 
     def check_update_interval(self):
         """get the time between now and the last time updatew was called."""
@@ -34,6 +37,8 @@ class StatusEditMessage:
         if self.check_update_interval() > min_seconds and self.message != None:
             try:
                 gui.gprint(str(kwargs))
+                if "embed" in kwargs:
+                    self.embed = kwargs["embed"]
                 await self.message.edit(**kwargs)
             except Exception as e:
                 gui.gprint(e)

@@ -114,15 +114,15 @@ async def try_until_ok(async_func, *args, **kwargs):
                 raise err
 
 
-def google_search(bot, query: str, result_limit: int):
+def google_search(bot, query: str, result_limit: int) -> dict:
     query_service = build("customsearch", "v1", developerKey=bot.keys["google"])
     query_results = (
         query_service.cse()
         .list(q=query, cx=bot.keys["cse"], num=result_limit)  # Query  # CSE ID
         .execute()
     )
-    results = query_results["items"]
-    return results
+    print(query_results["items"])
+    return query_results
 
 
 async def read_and_split_pdf(
@@ -643,6 +643,92 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
         except Exception as e:
             if tries >= 3:
                 raise e
+
+
+summary_prompt_old = """
+    Summarize general news articles, forum posts, and wiki pages that have been converted into Markdown. 
+    Condense the content into 2-5 medium-length paragraphs with 5-10 sentences per paragraph. 
+    Preserve key information and maintain a descriptive tone.
+    Exclude any concluding remarks.
+"""
+
+summary_prompt = """
+    As a professional summarizer, create a concise and comprehensive summary of the provided text, 
+    be it an article, post, conversation, or passage, while adhering to these guidelines:
+    * Craft a summary that is detailed, thorough, in-depth, and complex, while maintaining clarity and conciseness.
+    * Incorporate main ideas and essential information, eliminating extraneous language and focusing on critical aspects.
+    * Rely strictly on the provided text, without including external information.
+    * Format the summary into 2-5 medium-length paragraphs with 5-10 sentences per paragraph.
+    * Large texts WILL be split up, but you will not be given the other parts of the text.
+
+"""
+
+
+async def summarize(prompt: str, article: str, mylinks: List[str]):
+    client = openai.AsyncOpenAI()
+
+    def local_length(st):
+        
+        return gptmod.util.num_tokens_from_messages(
+            [{"role": "system", "content": summary_prompt+prompt}, {"role": "user", "content": st}],
+            "gpt-3.5-turbo-0125",
+        )
+
+    result = ""
+    fil = prioritized_string_split(article, splitorder, 10000, length=local_length)
+    filelength=len(fil)
+    for num,articlepart in enumerate(fil):
+        print(num,filelength)
+        messages = [
+            {"role": "system", "content": f"{summary_prompt}\n{prompt}\n You are viewing part {num+1}/{filelength} "},
+            {"role": "user", "content": f"\n {articlepart}"},
+        ]
+        completion = await try_until_ok(
+            client.chat.completions.create,
+            model="gpt-3.5-turbo-0125",
+            messages=messages,
+            timeout=60,
+        )
+
+        result = completion.choices[0].message.content
+        for link in mylinks:
+            link_text, url2 = link
+            link_text = link_text.replace("_", "")
+            gui.dprint(link_text, url2)
+            if link_text in result:
+                gui.dprint(link_text, url2)
+                # sources.append(f"[{link_text}]({url})")
+                result = result.replace(link_text, f"{link_text}")
+        yield result
+
+
+
+async def list_sources(
+    ctx: discord.ext.commands.Context, title: str, sources: List[str]
+) -> None:
+    """
+    Sends an embed to the context with a list of sources for a given title, split into multiple messages if necessary.
+
+    Args:
+        ctx (discord.ext.commands.Context): The context of where to send the embed.
+        title (str): The title for the embed.
+        sources (List[str]): A list of source URLs to include in the embed.
+    """
+
+    if len(sources) > 20:
+        return
+    embed = discord.Embed(title=f"Sources for {title}")
+    sause = ""
+    for i, source in enumerate(
+        prioritized_string_split("\n".join(sources), ["%s\n"], 1020)
+    ):
+        embed.add_field(name=f"Sources Located: {i}", value=source, inline=False)
+        sause += source
+        if (i + 1) % 6 == 0 or i == len(sources) - 1:
+            await ctx.send(embed=embed)
+            embed, sause = discord.Embed(title=f"Sources for {title}"), ""
+    if sause:
+        await ctx.send(embed=embed)
 
 
 def extract_embed_text(embed):

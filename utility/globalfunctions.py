@@ -18,7 +18,7 @@ from typing import Union
 
 
 def split_and_cluster_strings(
-    input_string: str, max_cluster_size: int, split_substring: str
+    input_string: str, max_cluster_size: int, split_substring: str, length=len
 ) -> list[str]:
     """
     Split up the input_string by the split_substring
@@ -36,7 +36,7 @@ def split_and_cluster_strings(
     """
     clusters = []
     # There's no reason to split if input is already less than max_cluster_size
-    if len(input_string) < max_cluster_size:
+    if length(input_string) < max_cluster_size:
         return [input_string]
 
     split_by = split_substring
@@ -64,8 +64,8 @@ def split_and_cluster_strings(
             new_string = split_by.replace("%s", substring, 1)
         else:
             new_string = substring
-        sublength = len(new_string)
-        if len(current_cluster) + sublength <= max_cluster_size:
+        sublength = length(new_string)
+        if length(current_cluster) + sublength <= max_cluster_size:
             # Add the substring to the current cluster
             current_cluster += new_string
         else:
@@ -90,6 +90,7 @@ def prioritized_string_split(
     substring_split_order: list[Union[str, tuple[str, int]]],
     default_max_len: int = 1024,
     trim=False,
+    length=len,
 ) -> list[str]:
     """
     Segment the input string based on the delimiters specified in `substring_split_order`.
@@ -132,7 +133,7 @@ def prioritized_string_split(
 
         for cluster in current_clusters:
             result_clusters = split_and_cluster_strings(
-                cluster, max_len, split_substring
+                cluster, max_len, split_substring, length=length
             )
             new_splits.extend(result_clusters)
         # for c_num, cluster in enumerate(new_splits):

@@ -17,12 +17,14 @@ from bot import TC_Cog_Mixin, StatusEditMessage, super_context_menu, TCBot
 
 import gptfunctionutil.functionlib as gptum
 from gptfunctionutil import SingleCall, SingleCallAsync
+from .chromatools import ChromaTools
 
 from utility import urltomessage
 
 """
 This special context class is for the research commands.
 """
+
 
 class Followups(gptum.GPTFunctionLibrary):
     @gptum.AILibFunction(
@@ -82,7 +84,7 @@ class ResearchContext:
 
         self.bot: TCBot = ctx.bot
 
-        self.all_runs = sum(self.followup ** i for i in range(self.depth))
+        self.all_runs = sum(self.followup**i for i in range(self.depth))
         self.res: Optional[discord.Message] = None
         self.channel: discord.TextChannel = ctx.channel
         self.statmess: Optional[StatusEditMessage] = None
@@ -91,9 +93,11 @@ class ResearchContext:
         self.answered: List[str] = []
         self.alllines: Set[str] = set()
         self.results: Dict[str, Any] = {}
-        self.pending:Set[str]=set()
+        self.pending: Set[str] = set()
 
-    def add_to_stack(self,  question:str,cont:str,dep:int,message:discord.Message):
+    def add_to_stack(
+        self, question: str, cont: str, dep: int, message: discord.Message
+    ):
         self.pending.add(question)
         self.stack.append((question, cont, dep, message))
 
@@ -117,16 +121,19 @@ class ResearchContext:
             await self.ctx.send("Too many runs! Lower your followup or depth.")
             return False
 
-        self.res = await self.ctx.send(f"<a:LoadingBlue:1206301904863502337>{len(self.stack)}/{self.all_runs} ")
+        self.res = await self.ctx.send(
+            f"<a:LoadingBlue:1206301904863502337>{len(self.stack)}/{self.all_runs} "
+        )
         self.statmess = StatusEditMessage(self.res, self.ctx)
         self.client = openai.AsyncClient()
 
-        
         return True
 
     async def websearch(self, quest: str) -> Tuple[str, str, str]:
         querytuple: Optional[Tuple[Any, ...]] = None
         tries: int = 0
+        
+        chromac = ChromaTools.get_chroma_client()
         while querytuple is None and tries < 3:
             try:
                 lib = Followups()
@@ -144,7 +151,20 @@ class ResearchContext:
                     await self.ctx.send(f"{json.dumps(lib.get_tool_schema())}"[:1800])
                     raise e
         query, question, comment = querytuple[0][1]["content"]
-        _, lines = await self.cog.web_search(self.ctx, query, result_limit=self.search_web)
+        links, res = await self.cog.web_search(
+            self.ctx, query, result_limit=self.search_web
+        )
+        embed = discord.Embed(
+            title=f"Web Search Results for: {query} ",
+        )
+        for v in res:
+            embed.add_field(name=v["title"], value=v["desc"], inline=True)
+        target_message = await self.ctx.send(embed=embed)
+
+        statmess = StatusEditMessage(target_message, self.ctx)
+
+        hascount, lines = await self.cog.load_links(self.ctx, links, chromac, statmess)
+        await statmess.delete()
         s = lines.split("\n")
         for e in s:
             se = e.split(" ")
@@ -202,9 +222,30 @@ class ResearchContext:
         context += f"{depth}:{quest}\n{answer}"
         self.answered.append(quest)
         new_depth = depth + 1
-        questions, followups = await self.process_followups(
-            context, new_depth, this_message
-        )
+        return context, new_depth
+
+    async def add_followups_to_stack(
+        self,
+        questions: List[str],
+        followups: str,
+        context: str,
+        depth: int,
+        this_message: discord.Message,
+    ):
+        """
+        Asynchronously adds follow-up questions to the pending stack and update the
+        current research's Message.
+
+        Parameters:
+        questions (List[str]): A list of follow-up questions to be added.
+        followups (str): A string containing the follow-up questions concatenated together.
+        context (str): The context in which the follow-up questions are being asked.
+        depth (int): The recursion depth at which the follow-up questions were generated.
+        this_message (discord.Message): The discord message object to be updated with follow-ups.
+
+        Returns:
+        str: The string of follow-up questions.
+        """
         if questions:
             embedres = this_message.embeds[0]
             embedres.add_field(
@@ -213,15 +254,32 @@ class ResearchContext:
             await this_message.edit(embed=embedres)
 
             for new_question in questions:
-                self.add_to_stack(new_question,context,new_depth,this_message)
+                self.add_to_stack(new_question, context, depth, this_message)
         return followups
 
     async def process_followups(
         self, context: str, new_depth: int, this_message: discord.Message
     ) -> Tuple[List[str], str]:
+        """
+        Generates follow-up questions based on the provided context and the current depth.
+
+        This method leverages a GPT model to dynamically generate follow-up questions that
+        aim to expand upon the information provided in `context`. Questions similar to those
+        already answered (`self.answered`) or currently being processed (`self.pending`) are
+        excluded from generation to ensure a diverse range of enquiries.
+
+        Parameters:
+        - context: The combined context of prior questions and answers, formatted as a single string.
+        - new_depth: The current depth in the follow-up question generation process.
+        - this_message: The discord.Message object associated with the current question.
+
+        Returns:
+        - Tuple[List[str], str]: A tuple consisting of a list of follow-up questions and a string representation
+          of these questions formatted for display purposes.
+        """
         questions: List[str] = []
         followups: str = "None"
-        donotask=[a for a in self.answered]
+        donotask = [a for a in self.answered]
         donotask.extend(a for a in self.pending)
         if new_depth < self.depth:
             command: Optional[List[Any]] = None
@@ -302,5 +360,6 @@ class ResearchContext:
         answer, links, ms = await self.research(quest)
         emb, mess = await self.format_results(quest, qatup, answer, parent)
 
-        followups = await self.change_context(quest, answer, context, dep, mess)
+        newcontext, depth = await self.change_context(quest, answer, context, dep, mess)
+        questions, followups = await self.process_followups(newcontext, depth, mess)
         self.add_output_dict(quest, answer, links, dep, followups)

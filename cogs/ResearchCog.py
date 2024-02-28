@@ -1,5 +1,5 @@
 import json
-from typing import Any, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional
 import discord
 import asyncio
 from assets import AssetLookup
@@ -129,6 +129,29 @@ def extract_masked_links(markdown_text):
         masked_links.append((link_text, url))
     return masked_links
 
+def generate_article_metatemplate(article_data):
+    template_parts = []
+    values = []
+    if 'title' in article_data:
+        template_parts.append("Article Title: {}")
+        values.append(article_data['title'])
+    if 'length' in article_data:
+        template_parts.append("Length : {} characters")
+        values.append(str(article_data.get('length', 'UNKNOWN')))
+    if 'byline' in article_data:
+        template_parts.append("byline: {}")
+        values.append(article_data['byline'])
+    if 'siteName' in article_data:
+        template_parts.append("siteName: {}")
+        values.append(article_data['siteName'])
+    if 'publishedTime' in article_data:
+        template_parts.append("publishedTime: {}")
+        values.append(article_data['publishedTime'])
+
+    template = ";\n    ".join(template_parts)
+    template = "Article Metadata: \n    " + template + ";\n    "
+
+    return template.format(*values)
 
 class Followups(gptum.GPTFunctionLibrary):
     @gptum.AILibFunction(
@@ -181,9 +204,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         self.helptext = "This cog is for AI powered websearch and summarization."
         self.bot: TCBot = bot
         self.lock = asyncio.Lock()
-        self.prompt = """
-        Summarize general news articles, forum posts, and wiki pages that have been converted into Markdown. Condense the content into 2-4 medium-length paragraphs with 3-7 sentences per paragraph. Preserve key information and maintain a descriptive tone, including the purpose of the article. The summary should be easily understood by a 10th grader. Exclude any concluding remarks from the summary.
-        """
+
         self.translationprompt = """
         Given text from a non-English language, provide an accurate English translation, followed by contextual explanations for why and how the text's components conveys that meaning. Organize the explanations in a list format, with each word/phrase/component followed by its corresponding definition and explanation.  Note any double meanings within these explanations.
         """
@@ -274,9 +295,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         emb = discord.Embed(title="Search results", description=comment)
         readable_links = []
         messages = await ctx.send("Search completed, indexing.")
-        for r in results:
-            metatags = r["pagemap"]["metatags"][0]
-            desc = metatags.get("og:description", "NO DESCRIPTION")
+
+        for r in results["items"]:
+            desc = r.get("snippet", "NA")
             allstr += r["link"] + "\n"
             emb.add_field(
                 name=f"{r['title'][:200]}",
@@ -284,6 +305,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 inline=False,
             )
         returnme = await ctx.send(content=comment, embed=emb)
+
         return returnme
 
     async def load_links(
@@ -315,7 +337,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context,
         query: str,
         result_limit: int = 7,
-    ) -> Tuple[int, str]:
+    ) -> Tuple[List[str], List[Dict[str, str]]]:
         bot = ctx.bot
         # Pre check.
         if not ctx.guild:
@@ -328,32 +350,27 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send("google search keys not set up.")
             return "insufficient keys!"
 
-        chromac = ChromaTools.get_chroma_client()
-
         target_message = await ctx.channel.send(
             f"<a:SquareLoading:1143238358303264798> Searching google for {query} ..."
         )
 
-        statmess = StatusEditMessage(target_message, ctx)
         # SEARCH FOR AND LOAD.
+        res = []
         async with ctx.channel.typing():
             results = tools.google_search(ctx.bot, query, result_limit)
 
-            all_links = [r["link"] for r in results]
+            all_links = [r["link"] for r in results["items"]]
             hascount = 0
             length = len(results)
-            lines = "\n".join([f"- {r['link']}" for r in results])
-
-            await statmess.editw(
-                min_seconds=0,
-                content=f"<a:LetWalkR:1118191001731874856> Search complete: reading {0}/{length}. {hascount}/{len(all_links)}",
-                embed=discord.Embed(
-                    title=f"query: {query}", description=f"out=\n{lines}"
-                ),
+            lines = "\n".join([f"- {r['link']}" for r in results["items"]])
+            emb = discord.Embed(
+                title=f"query: {query}", description=f"Links: \n{lines}"
             )
-        hascount, lines = await self.load_links(ctx, all_links, chromac, statmess)
-        await statmess.delete()
-        return hascount, lines
+            for r in results["items"]:
+                desc = r.get("snippet", "NA")
+                res.append({"title": r["title"], "link": r["link"], "desc": desc})
+
+        return all_links, res
 
     @AILibFunction(
         name="google_detective",
@@ -387,25 +404,39 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     ):
         "Search google for a query."
 
-        _, lines = await self.web_search(ctx, query, result_limit=result_limit)
+        chromac = ChromaTools.get_chroma_client()
+        all_links, res = await self.web_search(ctx, query, result_limit=result_limit)
+        embed = discord.Embed(
+            title=f"Web Search Results for: {query} ",
+        )
+        for v in res:
+            embed.add_field(name=v["title"], value=v["desc"], inline=True)
+        target_message = await ctx.send(embed=embed)
+
+        statmess = StatusEditMessage(target_message, ctx)
+
+        hascount, lines = await self.load_links(ctx, all_links, chromac, statmess)
+        await statmess.delete()
         # DISPLAY RESULTS OF SEARCH.
         embed = discord.Embed(
             title=f"Web Search Results for: {query} ",
             description=f"Links\n{lines}",
         )
+        for v in res:
+            embed.add_field(name=v["title"], value=v["desc"], inline=True)
         embed.add_field(name="Question", value=question, inline=False)
         if site_title_restriction != "None":
             embed.add_field(name="restrict", value=site_title_restriction, inline=False)
         embed.set_footer(text=comment)
 
         await ctx.send(embed=embed)
-        # 
-        answer,links,ms=await self.research(
+        #
+        answer, links, ms = await self.research(
             ctx,
             question,
             k=7,
             site_title_restriction=site_title_restriction,
-            send_message=True
+            send_message=True,
         )
         return ms
 
@@ -610,9 +641,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 name="Cache_Query",
                 value=f"About {len(docs2)} entries where found.  Max score is {docs2[0][1]}",
             )
-            await statmess.editw(
-                min_seconds=0, content="", embed=embed
-            )
+            await statmess.editw(min_seconds=0, content="", embed=embed)
             answer = await tools.format_answer(question, docs2)
 
             viewme = Followup(bot=self.bot, page_content=docs2)
@@ -696,9 +725,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 value=f"About {len(docs2)} entries where found.  Max score is {docs2[0][1]}",
             )
             # docs2 = sorted(data, key=lambda x: x[1],reverse=True)
-            await statmess.editw(
-                min_seconds=0, content="", embed=embed
-            )
+            await statmess.editw(min_seconds=0, content="", embed=embed)
             answer = []
             async for doctup in tools.get_points(question, docs2):
                 doc, score, content, tokens = doctup
@@ -954,85 +981,39 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 )
                 raise e
             await mes.delete()
-            if stopat != None:
-                article = article.split(stopat)[0]
-            chat = gptmod.ChatCreation(
-                messages=[{"role": "system", "content": self.prompt}],
-                model="gpt-3.5-turbo-0125",
-            )
-            chat.add_message(role="user", content=article)
-            sources = []
 
+            prompt=generate_article_metatemplate(header)
+            sources = []
             mylinks = extract_masked_links(article)
             for link in mylinks:
                 link_text, url4 = link
                 link_text = link_text.replace("_", "")
                 gui.dprint(link_text, url4)
                 sources.append(f"[{link_text}]({url4})")
+            await ctx.send(prompt,suppress_embeds=True)
+            try:
+                all=""
+                async with ctx.channel.typing():
+                    async for result in tools.summarize(prompt, article,mylinks):
+                    
+                        splitorder = ["%s\n", "%s.", "%s,", "%s "]
+                        fil = prioritized_string_split(result, splitorder, 4072)
+                        title = header.get("title", "notitle")
+                        for p in fil:
+                            embed = discord.Embed(title=title, description=p)
+                            await ctx.send(embed=embed)
+                        all+=result
 
-            # Call API
-            bot = ctx.bot
-            async with ctx.channel.typing():
-                try:
-                    res = await bot.gptapi.callapi(chat)
-
-                    # await ctx.send(res)
-                    gui.dprint("clear", res)
-
-                    result = res.choices[0].message.content
-                    gui.dprint(result)
-                    for link in mylinks:
-                        link_text, url2 = link
-                        link_text = link_text.replace("_", "")
-                        gui.dprint(link_text, url2)
-                        if link_text in result:
-                            gui.dprint(link_text, url2)
-                            # sources.append(f"[{link_text}]({url})")
-                            result = result.replace(link_text, f"{link_text}")
-                    splitorder = ["%s\n", "%s.", "%s,", "%s "]
-                    fil = prioritized_string_split(result, splitorder, 4072)
-
-                    for p in fil:
-                        embed = discord.Embed(
-                            title=header.get("title", "notitle"), description=p
-                        )
-                        await ctx.send(
-                            content=header.get("title", "notitle")[:200], embed=embed
-                        )
-                    embed = discord.Embed(
-                        title=f"Sources for {header.get('title', 'notitle')}"
+                if over:
+                    target_message = await ctx.send(
+                        f"<a:LoadingBlue:1206301904863502337> Saving {url} summary..."
                     )
-                    name, res = "", ""
-                    if len(sources) < 20:
-                        fil = prioritized_string_split(
-                            "\n".join(sources), ["%s\n"], 1020
-                        )
-                        needadd = False
-                        for e, i in enumerate(fil):
-                            embed.add_field(
-                                name=f"Sources Located: {e}", value=i, inline=False
-                            )
-                            needadd = True
-                            if (e + 1) % 6 == 0:
-                                await ctx.send(embed=embed)
-                                needadd = False
-                                embed = discord.Embed(
-                                    title=f"Sources for {header.get('title', 'notitle')}"
-                                )
-                        if needadd:
-                            await ctx.send(
-                                content=header.get("title", "???"), embed=embed
-                            )
-                    if over:
-                        target_message = await ctx.send(
-                            f"<a:LoadingBlue:1206301904863502337> Saving {url} summary..."
-                        )
-                        chromac = ChromaTools.get_chroma_client()
-                        await tools.add_summary(url, result, header, client=chromac)
-                        await target_message.edit(content="SUMMARY SAVED!")
-                except Exception as e:
-                    await ctx.bot.send_error(e)
-                    return await ctx.send(e)
+                    chromac = ChromaTools.get_chroma_client()
+                    await tools.add_summary(url, all, header, client=chromac)
+                    await target_message.edit(content="SUMMARY SAVED!")
+            except Exception as e:
+                await ctx.bot.send_error(e)
+                return await ctx.send(e)
 
     @commands.command(
         name="summarize_db", description="make a summary of a url.", extras={}
@@ -1056,30 +1037,33 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             )
             out = zip(res["metadatas"], res["documents"])
             out = sorted(out, key=lambda x: x[0]["split"])
-            header = res["metadatas"][0]
+            header_one = res["metadatas"][0]
             for c in out:
                 article += c[1] + "\n"
             await mes.delete()
-            if stopat is not None:
-                article = article.split(stopat)[0]
-            chat = gptmod.ChatCreation(
-                messages=[{"role": "system", "content": self.prompt}],
-                model="gpt-3.5-turbo-0125",
-            )
-            chat.add_message(role="user", content=article)
+            header={
+                'title':header_one.get('title',None),
+                'length':len(article),
+                'publishedTime':header_one.get('title',None),
+                'byline':header_one.get('authors',None),
+                'siteName':header_one.get('website',None),
+            }
+            
+            prompt=generate_article_metatemplate(header)
             # Call API
             bot = ctx.bot
             async with ctx.channel.typing():
-                res = await bot.gptapi.callapi(chat)
-                result = res.choices[0].message.content
-                splitorder = ["%s\n", "%s.", "%s,", "%s "]
-                fil = prioritized_string_split(result, splitorder, 4072)
-                for p in fil:
-                    embed = discord.Embed(
-                        title=header.get("title", "notitle"), description=p
-                    )
+                all=""
+                async for result in tools.summarize(prompt,res,[]):
+                    splitorder = ["%s\n", "%s.", "%s,", "%s "]
+                    fil = prioritized_string_split(result, splitorder, 4072)
+                    for p in fil:
+                        embed = discord.Embed(
+                            title=header.get("title", "notitle"), description=p
+                        )
 
-                    await ctx.send(embed=embed)
+                        await ctx.send(embed=embed)
+                    all+=result
                 if over:
                     target_message = await ctx.send(
                         f"<a:LoadingBlue:1206301904863502337> Saving {url} summary..."
@@ -1148,7 +1132,6 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             min_seconds=0,
             content=f"about {len(research_context.alllines)} links where gathered.",
         )
-
 
 
 async def setup(bot):
