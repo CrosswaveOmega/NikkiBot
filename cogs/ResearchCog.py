@@ -314,6 +314,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         all_links: List[str],
         chromac: Any = None,
         statmess: StatusEditMessage = None,
+        embed: discord.Embed=None,
         override: bool = False,
     ):
         """
@@ -329,7 +330,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         Returns:
             Tuple[int, str]: A tuple containing the count of successfully processed links and a formatted status string.
         """
-        loader = SourceLinkLoader(chromac=chromac, statusmessage=statmess)
+        loader = SourceLinkLoader(chromac=chromac, statusmessage=statmess,embed=embed)
         return await loader.load_links(ctx, all_links, override)
 
     async def web_search(
@@ -369,7 +370,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             for r in results["items"]:
                 desc = r.get("snippet", "NA")
                 res.append({"title": r["title"], "link": r["link"], "desc": desc})
-
+        await target_message.delete()
         return all_links, res
 
     @AILibFunction(
@@ -405,6 +406,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         "Search google for a query."
 
         chromac = ChromaTools.get_chroma_client()
+        #Preform web search
         all_links, res = await self.web_search(ctx, query, result_limit=result_limit)
         embed = discord.Embed(
             title=f"Web Search Results for: {query} ",
@@ -1102,6 +1104,21 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         followup: commands.Range[int, 1, 5] = 2,
         search_web: commands.Range[int, 0, 10] = 0,
     ):
+        """
+        Begin to recursively research the user's query, deriving an answer
+        using the stored documents in the chroma database.  
+
+        Args:
+            ctx (commands.Context): commands:context
+            question (str): Question to be asked
+            k (int, optional): Sources per call to research. Defaults to 5.
+            site_title_restriction (str, optional): _description_. Defaults to "None".
+            use_mmr (bool, optional): Whether or not to use Max Marginal Search. Defaults to False.
+            depth (commands.Range[int, 1, 4], optional): The max depth of the recursive query. Defaults to 1.
+            followup (commands.Range[int, 1, 5], optional): The number of followup questions to ask per run. Defaults to 2.
+            search_web (commands.Range[int, 0, 10], optional): Number of google search results to add per run. Defaults to 0.
+
+        """
         if not ctx.guild:
             await ctx.send("needs to be guild")
             return
@@ -1132,6 +1149,121 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             min_seconds=0,
             content=f"about {len(research_context.alllines)} links where gathered.",
         )
+
+    
+    @commands.hybrid_command(
+        name="research_manual",
+        description="Manually research a topic.",
+        extras={},
+    )
+    @oai_check()
+    @ai_rate_check()
+    @app_commands.guilds(int(target_server[1]))
+    @app_commands.describe(question="question to be asked.")
+    @app_commands.describe(k="min number of sources to grab.")
+    @app_commands.describe(use_mmr="Use the max_marginal_relevance_search")
+    @app_commands.describe(depth="Maximum query depth.")
+    @app_commands.describe(followup="number of followup questions after each search.")
+    @app_commands.describe(
+        site_title_restriction="Restrain query to websites with this in the title."
+    )
+    @app_commands.describe(
+        search_web="set to 1-10 if additional web searches will be needed."
+    )
+    async def research_manual(
+        self,
+        ctx: commands.Context,
+        question: str,
+        k: int = 5,
+        site_title_restriction: str = "None",
+        use_mmr: bool = False,
+        depth: commands.Range[int, 1, 4] = 1,
+        followup: commands.Range[int, 1, 5] = 2,
+        search_web: commands.Range[int, 0, 10] = 0,
+    ):
+        """
+        Begin to recursively research the user's query, deriving an answer
+        using the stored documents in the chroma database.  
+
+        Args:
+            ctx (commands.Context): commands:context
+            question (str): Question to be asked
+            k (int, optional): Sources per call to research. Defaults to 5.
+            site_title_restriction (str, optional): _description_. Defaults to "None".
+            use_mmr (bool, optional): Whether or not to use Max Marginal Search. Defaults to False.
+            depth (commands.Range[int, 1, 4], optional): The max depth of the recursive query. Defaults to 1.
+            followup (commands.Range[int, 1, 5], optional): The number of followup questions to ask per run. Defaults to 2.
+            search_web (commands.Range[int, 0, 10], optional): Number of google search results to add per run. Defaults to 0.
+
+        """
+        if not ctx.guild:
+            await ctx.send("needs to be guild")
+            return
+        if await ctx.bot.gptapi.check_oai(ctx):
+            await ctx.send(INVALID_SERVER_ERROR)
+            return "INVALID CONTEXT"
+
+        research_context = ResearchContext(
+            self,
+            ctx,
+            k,
+            site_title_restriction,
+            use_mmr,
+            depth,
+            followup,
+            search_web,
+        )
+        
+        
+        
+        
+        if not await research_context.setup():
+            return
+        research_context.add_to_stack(question, "", 0, research_context.res)
+        
+        while research_context.stack:
+
+            current = research_context.stack.pop(0)
+            
+            qatup = ("No search.", current[0], "Let's find out.")
+            if search_web:
+                vie=PreCheck(user=ctx.author, timeout=75,rctx=research_context,current=current)
+                message = await ctx.send(
+                        embed=discord.Embed(title="getting started?"),
+                        view=vie,
+                    )
+                await vie.wait()
+                await message.edit(view=None)
+                print(vie.links)
+                if vie.links:
+                    await research_context.load_links(vie.qatup,vie.links,vie.details)
+            quest, context, dep, parent = current
+            answer, links, ms = await research_context.research(quest)
+            emb, mess = await research_context.format_results(quest, qatup, answer, parent)
+            newcontext, depth = await research_context.change_context(quest, answer, context, dep, mess)
+            if depth < research_context.depth and len(research_context.stack)<=0:
+                cur=(quest,newcontext,depth,parent)
+                vie=FollowupActionView(user=ctx.author, timeout=60*7,rctx=research_context,current=cur)
+                message = await ctx.send(
+                        embed=discord.Embed(title="Add up to 5 followup questions, or have the AI make them."),
+                        view=vie,
+                    )
+                await vie.wait()
+                await message.edit(view=None)
+                if vie.value and vie.followup_questions:
+                    followups = "\n".join(f"* {q}" for q in vie.followup_questions)
+                    await research_context.add_followups_to_stack(vie.followup_questions,followups,newcontext,depth,mess)
+                    await research_context.load_links(vie.qatup,vie.links,vie.details)
+        
+            research_context.add_output_dict(quest, answer, links, dep, followups)
+
+
+        await research_context.send_file_results()
+        await research_context.statmess.editw(
+            min_seconds=0,
+            content=f"about {len(research_context.alllines)} links where gathered.",
+        )
+
 
 
 async def setup(bot):

@@ -139,7 +139,9 @@ class TCBot(
         if not self.bot_ready:
             # Start up the GuiPanel
             await self.jsenv.init_js_a()
-            setup_logging(logging.ERROR, handler=get_filehandler(log_level=logging.WARNING))
+            setup_logging(
+                logging.ERROR, handler=get_filehandler(log_level=logging.WARNING)
+            )
             guimode = self.config.getbool("gui")
             debugmode = self.config.getbool("debug")
             if debugmode:

@@ -33,7 +33,7 @@ class StatusEditMessage:
         return time_diff.total_seconds()
 
     async def editw(self, min_seconds=0, **kwargs):
-        """Update status message asyncronously."""
+        """Update status message asyncronously if min_seconds have passed."""
         if self.check_update_interval() > min_seconds and self.message != None:
             try:
                 gui.gprint(str(kwargs))

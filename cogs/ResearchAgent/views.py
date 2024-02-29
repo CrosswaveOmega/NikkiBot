@@ -86,14 +86,14 @@ class FollowupAddModal(discord.ui.Modal, title="Add Followup"):
         self.stop()
 
 
-class FollowupSuggestModal(discord.ui.Modal, title="Suggest"):
+class FollowupSuggestModal(discord.ui.Modal, title="Suggest followups"):
     """Modal for suggesting."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.done = None
         self.suggestion_input = discord.ui.TextInput(
-            label="Suggestion", max_length=256, required=True
+            label="Focus", max_length=256, required=True
         )
         self.add_item(self.suggestion_input)
 
@@ -146,8 +146,8 @@ class FollowupSourceDetailModal(discord.ui.Modal, title="Source Detail"):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.done = None
-        self.source_detail_input = discord.ui.NumberInput(
-            label="Source Detail", min_value=1, max_value=100, required=True
+        self.source_detail_input = discord.ui.TextInput(
+            label="Source Detail", required=True
         )
         self.add_item(self.source_detail_input)
 
@@ -158,7 +158,48 @@ class FollowupSourceDetailModal(discord.ui.Modal, title="Source Detail"):
         self.stop()
 
 
-class FollowupActionView(discord.ui.View):
+
+
+
+class Dropdown(discord.ui.Select):
+    def __init__(self, option_kwarg, this_label="default", key="", user=None):
+        self.user = user
+        options = []
+        for i in option_kwarg:
+            options.append(discord.SelectOption(**i))
+
+        self.key = key
+        self.selected=None
+        super().__init__(
+            placeholder=this_label, min_values=1, max_values=1, options=options
+        )
+
+    async def interaction_check(self, interaction: Interaction[discord.Client]):
+        if interaction.user == self.user:
+            return True
+        return False
+
+    async def on_error(
+        self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item
+    ):
+        gui.gprint(str(error))
+        await interaction.response.send_message(
+            f"Oops! Something went wrong: {str(error)}.", ephemeral=True
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        value = self.values[0]
+        for f in self.options:
+            if f.value == value:
+                f.default = True
+            else:
+                f.default = False
+        self.selected=value
+        await self.view.defer(interaction)
+
+
+
+class TimedResponseView(discord.ui.View):
     def __init__(self, *, user, timeout=30 * 15):
         super().__init__(timeout=timeout)
         self.user = user
@@ -175,6 +216,178 @@ class FollowupActionView(discord.ui.View):
             f"Oops! Something went wrong: {str(error)}.", ephemeral=True
         )
 
+
+    async def toggle_child(self,label,mode=False):
+        for child in self.children:
+            if child.label==label:
+                child.disabled=mode
+
+    async def on_timeout(self) -> None:
+        self.value=False
+        self.stop()
+
+    async def defer(self, interaction:discord.Interaction):
+        await interaction.response.edit_message(view=self)
+    
+    async def continue_action(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
+        # Assuming there's a function to handle continuing
+
+        self.value = True
+        self.stop()
+
+    async def cancel_action(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.value = False
+        self.stop()
+
+class PreCheck(TimedResponseView):
+    def __init__(self, *, rctx,current, user, timeout=30 * 15):
+        super().__init__(user=user,timeout=timeout)
+        self.rctx=rctx
+        self.links=[]
+        self.details=[]
+        self.current=current
+        self.mydrop=None
+        self.qatup= ("NA", self.current[0], "Let's find out.")
+
+    @discord.ui.button(
+        label="Run search",
+        style=discord.ButtonStyle.blurple,
+        row=1,
+    )
+    async def add_query(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
+        await interaction.response.edit_message(content="Stand by... searching.")
+        self.qatup=await self.rctx.get_query_from_question(self.current[0])
+        links,res=await self.rctx.websearch(self.qatup)
+        self.links=links
+        self.details=res
+        embed = discord.Embed(
+            title=f"Web Search Results for: {self.qatup[0]} ",
+        )
+        for v in self.details:
+            embed.add_field(name=v["title"], value=v["desc"], inline=True)
+        dl = []
+        for e,i in enumerate(self.links):
+            dl.append({"label": e, "description": f"{i}"[:90]})
+        d=Dropdown(
+            dl,"Current Links","NA",user=self.user
+        )
+        if self.mydrop:
+            self.remove_item(self.mydrop)
+        self.mydrop=d
+        self.add_item(self.mydrop)
+        button.disabled=True
+        await interaction.edit_original_response(content=str(self.qatup),embed=embed,view=self)
+
+    # @discord.ui.button(
+    #     label='google search',
+    #     row=1,
+    #     disabled=True
+    # )
+    # async def gsearch(
+    #     self,interaction,button
+    # ):
+    #     if self.qatup[0]=="NA":
+    #         await interaction.response.edit_message(content=str(self.qatup),view=self)
+    #         return
+    #     links,res=await self.rctx.websearch(self.qatup)
+    #     self.links=links
+    #     self.details=res
+    #     embed = discord.Embed(
+    #         title=f"Web Search Results for: {self.qatup[0]} ",
+    #     )
+    #     for v in self.details:
+    #         embed.add_field(name=v["title"], value=v["desc"], inline=True)
+    #     dl = []
+    #     for i in self.links:
+    #         dl.append({"label": i, "description": f"remove link {i}"})
+    #     d=Dropdown(
+    #         dl,"Current Links","NA",user=self.user
+    #     )
+    #     if self.mydrop:
+    #         self.remove_item(self.mydrop)
+    #     self.mydrop=d
+    #     self.add_item(self.mydrop)
+    #     await interaction.response.edit_message(embed=embed,view=self)
+
+    @discord.ui.button(
+        label="REMOVE_LINK",
+        style=discord.ButtonStyle.blurple,
+        row=2,
+        disabled=False
+    )
+    async def remove_link(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
+        #self.qatup=await self.rctx.get_query_from_question(self.current[0])
+        #await interaction.response.edit_message(content=str(self.qatup),view=self)
+        if not self.mydrop:
+            await interaction.response.send_message(content='You need to add links first',ephemeral=True)
+            return
+        if self.mydrop.selected==None:
+            await interaction.response.send_message(content='Select a link to remove.',ephemeral=True)
+            return
+        
+        sel=int(self.mydrop.selected)
+        if len(self.links)<sel :
+            await interaction.response.send_message(content='This link is not in links',ephemeral=True)
+            return
+        l=self.links.pop(sel)
+        for i in self.details:
+            if i['link']==l:
+                self.details.remove(i)
+        dl = []
+        for e,i in enumerate(self.links):
+            dl.append({"label": e, "description": f"{i}"[:90]})
+        d=Dropdown(
+            dl,"Current Links","NA",user=self.user
+        )
+        if self.mydrop:
+            self.remove_item(self.mydrop)
+        self.mydrop=d
+        self.add_item(self.mydrop)
+        embed = discord.Embed(
+            title=f"Web Search Results for: {self.qatup[0]} ",
+        )
+        for v in self.details:
+            embed.add_field(name=v["title"], value=v["desc"], inline=True)
+        
+        await interaction.response.edit_message(embed=embed,view=self)
+
+
+    @discord.ui.button(
+        label='next search',
+        row=3
+    )
+    async def continuenext(self,interaction: discord.Interaction, button: discord.ui.Button):
+        self.value = True
+        self.stop()
+        await interaction.response.defer()
+
+
+
+class FollowupActionView(TimedResponseView):
+    def __init__(self, *, rctx,current, user, timeout=30 * 15):
+        super().__init__(user=user,timeout=timeout)
+        self.rctx=rctx
+        self.links=[]
+        self.details=[]
+        self.followup_questions=[]
+        self.current=current
+        self.mydrop=None
+        self.qatup= ("NA", self.current[0], "Let's find out.")
+
+    def make_embed(self):
+        foll="\n".join(f"* {q}" for q in self.followup_questions)
+        emb=discord.Embed(
+            title="Current Followups:",
+            description=f"out:\n{foll}"
+        )
+        return emb
+    
     @discord.ui.button(
         label="Add Followup",
         style=discord.ButtonStyle.blurple,
@@ -183,17 +396,33 @@ class FollowupActionView(discord.ui.View):
     async def add_followup(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
+        if len(self.followup_questions)>5:
+            await interaction.response.send_message("Too many followups have been added.",ephemeral=True)
+            return
         modal = FollowupAddModal()
         await interaction.response.send_modal(modal)
         await modal.wait()
         if modal.done is not None:
             # Assuming there's a function to handle adding followups
             print(modal.done)
-            await interaction.edit_original_response(content="Followup added!")
+            
+            if modal.done not in self.followup_questions:
+                self.followup_questions.append(modal.done)
+            dl = []
+            for e,i in enumerate(self.followup_questions):
+                dl.append({"label": e, "description": f"{i}"[:80]})
+            d=Dropdown(
+                dl,"Current Followups","NA",user=self.user
+            )
+            if self.mydrop:
+                self.remove_item(self.mydrop)
+            self.mydrop=d
+            self.add_item(self.mydrop)
+            await interaction.edit_original_response(content="Followup added!",embed=self.make_embed(),view=self)
         else:
             await interaction.edit_original_response(
                 content="Cancelled",
-                embed=discord.Embed(description="Followup addition cancelled."),
+                embed=self.make_embed(),
             )
 
     @discord.ui.button(
@@ -204,16 +433,29 @@ class FollowupActionView(discord.ui.View):
     async def suggest(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
+        #await interaction.response.send_message("This feature isn't ready yet!",ephemeral=True)
+        # return
         modal = FollowupSuggestModal()
         await interaction.response.send_modal(modal)
         await modal.wait()
         if modal.done is not None:
             # Assuming there's a function to handle suggestion
-            print(modal.done)
-            await interaction.edit_original_response(
-                content="Suggestion made!",
-                embed=discord.Embed(description=f"Suggested: {modal.done}"),
+
+            suggestion=f"Ensure the questions are related to {modal.done}."
+            questions,foll=await self.rctx.process_followups(self.current[1],self.current[2],suggestion)
+
+            self.followup_questions=questions
+            dl = []
+            for e,i in enumerate(self.followup_questions):
+                dl.append({"label": e, "description": f"{i}"[:80]})
+            d=Dropdown(
+                dl,"Current Followups","NA",user=self.user
             )
+            if self.mydrop:
+                self.remove_item(self.mydrop)
+            self.mydrop=d
+            self.add_item(self.mydrop)
+            await interaction.edit_original_response(content="Generated new questions based on suggention!",embed=self.make_embed(),view=self)
         else:
             await interaction.edit_original_response(
                 content="Cancelled",
@@ -228,21 +470,35 @@ class FollowupActionView(discord.ui.View):
     async def remove_followup(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        modal = FollowupRemoveModal()
-        await interaction.response.send_modal(modal)
-        await modal.wait()
-        if modal.done is not None:
-            # Assuming there's a function to handle removing followups
-            print(modal.done)
-            await interaction.edit_original_response(
-                content="Followup removed!",
-                embed=discord.Embed(description=f"Removed: {modal.done}"),
+        if not self.mydrop:
+            await interaction.response.send_message(content='You need to add followups first!',ephemeral=True)
+            return
+        if self.mydrop.selected==None:
+            await interaction.response.send_message(content='Select a followup to remove with the dropdown.',ephemeral=True)
+            return
+        
+        sel=int(self.mydrop.selected)
+        print(sel)
+        if len(self.followup_questions)<sel :
+            await interaction.response.send_message(content='This index is out of range.',ephemeral=True)
+            return
+
+        self.followup_questions.pop(sel)
+
+        dl = []
+        if self.mydrop:
+            self.remove_item(self.mydrop)
+        if self.followup_questions:
+            for e,i in enumerate(self.followup_questions):
+                dl.append({"label": e, "description": f"{i}"[:80]})
+            d=Dropdown(
+                dl,"Current Followups","NA",user=self.user
             )
-        else:
-            await interaction.edit_original_response(
-                content="Cancelled",
-                embed=discord.Embed(description="Followup removal cancelled."),
-            )
+            self.mydrop=d
+            self.add_item(self.mydrop)
+            
+        await interaction.response.edit_message(content="removed.",embed=self.make_embed(),view=self)
+
 
     @discord.ui.button(
         label="Justify",
@@ -252,6 +508,8 @@ class FollowupActionView(discord.ui.View):
     async def justify(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
+        await interaction.response.send_message("This feature isn't ready yet!",ephemeral=True)
+        return
         modal = FollowupJustifyModal()
         await interaction.response.send_modal(modal)
         await modal.wait()
@@ -276,6 +534,8 @@ class FollowupActionView(discord.ui.View):
     async def source_detail(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
+        await interaction.response.send_message("This feature isn't ready yet!",ephemeral=True)
+        return
         modal = FollowupSourceDetailModal()
         await interaction.response.send_modal(modal)
         await modal.wait()
@@ -301,13 +561,12 @@ class FollowupActionView(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         # Assuming there's a function to handle continuing
-
         self.value = True
-        await interaction.edit_original_response(content="Continuing...")
         self.stop()
+        await interaction.response.defer()
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.grey, row=4)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.edit_message(content="Canceled")
         self.value = False
         self.stop()
+        await interaction.response.defer()

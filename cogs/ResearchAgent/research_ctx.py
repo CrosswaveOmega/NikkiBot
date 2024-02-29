@@ -18,6 +18,7 @@ from bot import TC_Cog_Mixin, StatusEditMessage, super_context_menu, TCBot
 import gptfunctionutil.functionlib as gptum
 from gptfunctionutil import SingleCall, SingleCallAsync
 from .chromatools import ChromaTools
+from .LinkLoader import SourceLinkLoader
 
 from utility import urltomessage
 
@@ -98,10 +99,19 @@ class ResearchContext:
     def add_to_stack(
         self, question: str, cont: str, dep: int, message: discord.Message
     ):
+        """
+        Adds the given parameters to the internal pending stack.
+        """
         self.pending.add(question)
         self.stack.append((question, cont, dep, message))
 
+    async def send_preview(self):
+        self.preview=await self.ctx.send("Preview")
+
     async def setup(self) -> bool:
+        '''
+        Preform an asyncronous check of the internal results.
+        '''
         if not self.ctx.guild:
             await self.ctx.send("needs to be guild")
             return False
@@ -128,12 +138,12 @@ class ResearchContext:
         self.client = openai.AsyncClient()
 
         return True
-
-    async def websearch(self, quest: str) -> Tuple[str, str, str]:
+    
+    async def get_query_from_question(self,quest:str) -> Tuple[str, str, str]:
+        """Given a question, generate a searchable query"""
         querytuple: Optional[Tuple[Any, ...]] = None
         tries: int = 0
         
-        chromac = ChromaTools.get_chroma_client()
         while querytuple is None and tries < 3:
             try:
                 lib = Followups()
@@ -151,28 +161,62 @@ class ResearchContext:
                     await self.ctx.send(f"{json.dumps(lib.get_tool_schema())}"[:1800])
                     raise e
         query, question, comment = querytuple[0][1]["content"]
+        return (query, question, comment)
+    async def websearch(self, questtup: Tuple[str, str, str]) -> Tuple[List[str], List[Dict]]:
+        """
+        Perform a web search based on the given query tuple and return a tuple containing links and results.
+
+        Parameters:
+        questtup (Tuple[str, str, str]): A tuple containing the query, question, and comment.
+
+        Returns:
+        Tuple[List[str], Dict]: A tuple containing a list of links and dictionaries with additional details.
+        """
+        #Preform web search.
         links, res = await self.cog.web_search(
-            self.ctx, query, result_limit=self.search_web
+            self.ctx, questtup[0], result_limit=self.search_web
         )
+        return links, res
+
+    async def load_links(self,questtup: Tuple[str, str, str],links:List[str],res:List[Dict[str, str]]=[]):
+        """
+        Load links into the system and update the corresponding status message with the results.
+
+        Parameters:
+        questtup (Tuple[str, str, str]): A tuple containing the query, question, and comment used for the search.
+        links (List[str]): A list of links returned from the web search.
+        res (List[Dict[str, str]]): A list of dictionaries containing the search results.
+        """
+        chromac = ChromaTools.get_chroma_client()
+        #create status message for load_links.
         embed = discord.Embed(
-            title=f"Web Search Results for: {query} ",
+            title=f"Web Search Results for: {questtup[0]} ",
         )
         for v in res:
             embed.add_field(name=v["title"], value=v["desc"], inline=True)
         target_message = await self.ctx.send(embed=embed)
 
         statmess = StatusEditMessage(target_message, self.ctx)
-
-        hascount, lines = await self.cog.load_links(self.ctx, links, chromac, statmess)
+        loader = SourceLinkLoader(chromac=chromac, statusmessage=statmess,embed=embed)
+        _, lines = await loader.load_links(self.ctx, links, False)
         await statmess.delete()
         s = lines.split("\n")
         for e in s:
             se = e.split(" ")
             if se[0] == "<:add:1199770854112890890>":
                 self.alllines.add(se[1])
-        return (query, question, comment)
 
-    async def research(self, quest: str) -> Tuple[str, List[str], str]:
+    async def research(self, quest: str) -> Tuple[str, List[str], discord.Message]:
+        """
+        Queries the database for relevant documents and formats an answer to the user's question.
+
+        Parameters:
+        - quest (str): The user's query/question.
+
+        Returns:
+        - Tuple[str, List[str], discord.Message]: A tuple containing the formatted answer, 
+             list of document links, and a sent discord message pertaining to the results.
+        """
         answer, links, ms = await self.cog.research(
             self.ctx,
             quest,
@@ -182,7 +226,7 @@ class ResearchContext:
             send_message=False,
         )
         return answer, links, ms
-
+    
     async def format_results(
         self,
         quest: str,
@@ -190,6 +234,17 @@ class ResearchContext:
         answer: str,
         parent: Optional[discord.Message] = None,
     ) -> Tuple[discord.Embed, discord.Message]:
+        '''Generates and sends a Discord message embed containing the supplied question and answer.
+
+        Args:
+            quest (str): The initial question that prompted the research.
+            qatup (Tuple[str, str, str]): A tuple containing the query used for research, the reformulated question, and an accompanying comment.
+            answer (str): The answer or information found as a result of the research.
+            parent (Optional[discord.Message], optional): A reference to the parent message to which this message should be linked. Defaults to None.
+
+        Returns:
+            Tuple[discord.Embed, discord.Message]: A tuple consisting of the constructed Embed object and the sent Discord message containing the research answer.
+        '''
         query, question, comment = qatup
         embedres = discord.Embed(
             title=f"{quest}, depth: {self.depth}", description=answer
@@ -219,6 +274,7 @@ class ResearchContext:
         depth: int,
         this_message: discord.Message,
     ) -> str:
+        
         context += f"{depth}:{quest}\n{answer}"
         self.answered.append(quest)
         new_depth = depth + 1
@@ -258,7 +314,7 @@ class ResearchContext:
         return followups
 
     async def process_followups(
-        self, context: str, new_depth: int, this_message: discord.Message
+        self, context: str, new_depth: int, focus: str=""
     ) -> Tuple[List[str], str]:
         """
         Generates follow-up questions based on the provided context and the current depth.
@@ -294,9 +350,10 @@ class ResearchContext:
                         timeout=30,
                     )
                     command = await sc.call_single(
-                        f"Generate {self.followup} followup questions to expand on the "
-                        f"results given the prior question/answer pairs: \n{context}.  "
-                        f"\nDo not generate a followup if it is similar to the questions answered here:{self.answered}",
+                        f"Generate {self.followup} followup questions to expand on the "+\
+                        f"results given the prior question/answer pairs \n{context}.  "+\
+                        f"\nDo not generate a followup if it is similar to the questions answered here:{donotask}.\n"+\
+                        f"{focus}",
                         "followupquestions",
                     )
                 except Exception as e:
@@ -314,6 +371,15 @@ class ResearchContext:
     def add_output_dict(
         self, quest: str, answer: str, links: List[str], depth: int, followups: str
     ) -> None:
+        """Add a dictionary with the answer to a research query to the list.
+
+        Args:
+            quest (str): Question being answered
+            answer (str): Answer generated by LLM.
+            links (List[str]): Links used to generate answer.
+            depth (int): The depth a question was asked at
+            followups (str): Followup Questions.
+        """
         result_dict = {
             "question": quest,
             "answer": answer,
@@ -324,6 +390,7 @@ class ResearchContext:
         self.results[quest] = result_dict
 
     async def send_file_results(self) -> None:
+        """Send Files containing the results of the research operations back."""
         if self.search_web:
             file_buffer = StringIO()
             for line in self.alllines:
@@ -347,19 +414,37 @@ class ResearchContext:
     async def single_iteration(
         self, current: Tuple[str, str, int, discord.Message]
     ) -> None:
+        """
+        1: Preform a web query (generate query, websearch, load_links),
+        2: research a question using the collection, 
+        3: Format the results and display, 
+        4: add to the context
+        5: generate followup questions
+        6: add followup questions to the internal stack
+        7: add output to the results dictionary.
+
+
+        Args:
+            current (Tuple[str, str, int, discord.Message]): _description_
+        """
         quest, context, dep, parent = current
         self.pending.remove(quest)
+        s1=f"<a:LoadingBlue:1206301904863502337>{len(self.answered)}/{self.all_runs}."+\
+            f"stacklen={len(self.stack)} {quest},{dep}"
         await self.statmess.editw(
             min_seconds=5,
-            content=f"<a:LoadingBlue:1206301904863502337>{len(self.answered)}/{self.all_runs}.  stacklen={len(self.stack)} {quest},{dep}",
+            content=s1,
         )
         qatup = ("No search.", quest, "Let's find out.")
         if self.search_web:
-            qatup = await self.websearch(quest)
+            qatup= await self.get_query_from_question(quest)
+            links, details = await self.websearch(quest)
+            await self.load_links(qatup,links,details)
 
         answer, links, ms = await self.research(quest)
         emb, mess = await self.format_results(quest, qatup, answer, parent)
 
         newcontext, depth = await self.change_context(quest, answer, context, dep, mess)
-        questions, followups = await self.process_followups(newcontext, depth, mess)
+        questions, followups = await self.process_followups(newcontext, depth)
+        await self.add_followups_to_stack(questions,followups,newcontext,depth,mess)
         self.add_output_dict(quest, answer, links, dep, followups)

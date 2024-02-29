@@ -10,5 +10,6 @@ class ChromaTools:
 
     @staticmethod
     def get_chroma_client() -> chromadb.ClientAPI:
+        '''Create a new chroma client.'''
         client = chromadb.PersistentClient(path="saveData")
         return client

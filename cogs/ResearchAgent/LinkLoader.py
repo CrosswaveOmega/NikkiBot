@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 import chromadb
 import discord
 import asyncio
@@ -41,10 +41,16 @@ class SourceLinkLoader:
     and updating or adding entries to the database as necessary.
     """
 
-    def __init__(self, chromac: chromadb.ClientAPI, statusmessage: StatusEditMessage):
+    def __init__(self, chromac: chromadb.ClientAPI, statusmessage: StatusEditMessage=None,embed:Optional[discord.Embed]=None):
         self.chromac = chromac
         self.statmess = statusmessage
         self.current = ""
+        self.embed=embed
+        if statusmessage and not embed:
+            if statusmessage.embed:
+                self.embed=statusmessage.embed
+        if not self.embed:
+            self.embed=discord.Embed(title="URL load results.")
         pass
 
     async def load_links(
@@ -74,8 +80,8 @@ class SourceLinkLoader:
         self.all_link_status = [["pending", link] for link in all_links]
 
         for link_num, link in enumerate(all_links):
-            embed = self.statmess.embed
-            embed.description = f"Web Link Loading: \n{self.get_status_lines()}"
+            embed = self.embed
+            self.embed.description = f"Web Link Loading: \n{self.get_status_lines()}"
 
             has, getres = await self.check_cached_documents(ctx, link, override)
 
@@ -99,10 +105,9 @@ class SourceLinkLoader:
         """
         target_message = await ctx.channel.send(
             "<a:SquareLoading:1143238358303264798> checking returned queries ...",
-            emb=discord.Embed(title="Searching"),
+            emb=self.embed,
         )
         stmes = StatusEditMessage(target_message, ctx)
-        stmes.embed = discord.Embed(title="Searching")
         return stmes
 
     def get_status_lines(self):
@@ -211,7 +216,7 @@ class SourceLinkLoader:
         self.all_link_status[link_num][0] = "add"
         toadd = f"[Link {link_num}]({link}) has {len(splits)} splits.\n"
         self.current += toadd
-        embed.description = self.get_status_lines()
+        self.embed.description = self.get_status_lines()
         await asyncio.to_thread(store_splits, splits, client=self.chromac)
         await self.statmess.editw(
             min_seconds=5,
@@ -234,10 +239,10 @@ class SourceLinkLoader:
         self.all_link_status[link_num][0] = "noc"
         self.current += f"{str(err)}"
         await ctx.send(str(err))
-        embed.description = self.get_status_lines()
+        self.embed.description = self.get_status_lines()
         await self.statmess.editw(
             min_seconds=5,
             content=f"<a:LetWalkR:1118191001731874856> {self.current}",
-            embed=embed,
+            embed=self.embed,
         )
         await ctx.bot.send_error(err)
