@@ -204,6 +204,7 @@ class TimedResponseView(discord.ui.View):
         super().__init__(timeout=timeout)
         self.user = user
         self.value = False
+        self.mydrop = None
 
     async def interaction_check(self, interaction: Interaction[discord.Client]):
         return interaction.user == self.user
@@ -229,6 +230,20 @@ class TimedResponseView(discord.ui.View):
     async def defer(self, interaction:discord.Interaction):
         await interaction.response.edit_message(view=self)
     
+    async def change_dropdown_elements(self,elements,title):
+        if self.mydrop:
+            self.remove_item(self.mydrop)
+        if elements:
+            dl = []
+            for e,i in enumerate(elements):
+                dl.append({"label": e, "description": f"{i}"[:90]})
+            d=Dropdown(
+                dl,title,"NA",user=self.user
+            )
+            
+            self.mydrop=d
+            self.add_item(self.mydrop)
+
     async def continue_action(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
@@ -269,16 +284,7 @@ class PreCheck(TimedResponseView):
         )
         for v in self.details:
             embed.add_field(name=v["title"], value=v["desc"], inline=True)
-        dl = []
-        for e,i in enumerate(self.links):
-            dl.append({"label": e, "description": f"{i}"[:90]})
-        d=Dropdown(
-            dl,"Current Links","NA",user=self.user
-        )
-        if self.mydrop:
-            self.remove_item(self.mydrop)
-        self.mydrop=d
-        self.add_item(self.mydrop)
+        await self.change_dropdown_elements(self.links,"Current Links")
         button.disabled=True
         await interaction.edit_original_response(content=str(self.qatup),embed=embed,view=self)
 
@@ -327,7 +333,7 @@ class PreCheck(TimedResponseView):
         if not self.mydrop:
             await interaction.response.send_message(content='You need to add links first',ephemeral=True)
             return
-        if self.mydrop.selected==None:
+        if self.mydrop.selected is None:
             await interaction.response.send_message(content='Select a link to remove.',ephemeral=True)
             return
         
@@ -339,16 +345,7 @@ class PreCheck(TimedResponseView):
         for i in self.details:
             if i['link']==l:
                 self.details.remove(i)
-        dl = []
-        for e,i in enumerate(self.links):
-            dl.append({"label": e, "description": f"{i}"[:90]})
-        d=Dropdown(
-            dl,"Current Links","NA",user=self.user
-        )
-        if self.mydrop:
-            self.remove_item(self.mydrop)
-        self.mydrop=d
-        self.add_item(self.mydrop)
+        await self.change_dropdown_elements(self.links,"Current Links")
         embed = discord.Embed(
             title=f"Web Search Results for: {self.qatup[0]} ",
         )
@@ -359,7 +356,7 @@ class PreCheck(TimedResponseView):
 
 
     @discord.ui.button(
-        label='next search',
+        label='continue',
         row=3
     )
     async def continuenext(self,interaction: discord.Interaction, button: discord.ui.Button):
@@ -408,16 +405,7 @@ class FollowupActionView(TimedResponseView):
             
             if modal.done not in self.followup_questions:
                 self.followup_questions.append(modal.done)
-            dl = []
-            for e,i in enumerate(self.followup_questions):
-                dl.append({"label": e, "description": f"{i}"[:80]})
-            d=Dropdown(
-                dl,"Current Followups","NA",user=self.user
-            )
-            if self.mydrop:
-                self.remove_item(self.mydrop)
-            self.mydrop=d
-            self.add_item(self.mydrop)
+            await self.change_dropdown_elements(self.followup_questions,"Current Followups")
             await interaction.edit_original_response(content="Followup added!",embed=self.make_embed(),view=self)
         else:
             await interaction.edit_original_response(
@@ -445,16 +433,7 @@ class FollowupActionView(TimedResponseView):
             questions,foll=await self.rctx.process_followups(self.current[1],self.current[2],suggestion)
 
             self.followup_questions=questions
-            dl = []
-            for e,i in enumerate(self.followup_questions):
-                dl.append({"label": e, "description": f"{i}"[:80]})
-            d=Dropdown(
-                dl,"Current Followups","NA",user=self.user
-            )
-            if self.mydrop:
-                self.remove_item(self.mydrop)
-            self.mydrop=d
-            self.add_item(self.mydrop)
+            await self.change_dropdown_elements(self.followup_questions,"Current Followups")
             await interaction.edit_original_response(content="Generated new questions based on suggention!",embed=self.make_embed(),view=self)
         else:
             await interaction.edit_original_response(
@@ -485,17 +464,7 @@ class FollowupActionView(TimedResponseView):
 
         self.followup_questions.pop(sel)
 
-        dl = []
-        if self.mydrop:
-            self.remove_item(self.mydrop)
-        if self.followup_questions:
-            for e,i in enumerate(self.followup_questions):
-                dl.append({"label": e, "description": f"{i}"[:80]})
-            d=Dropdown(
-                dl,"Current Followups","NA",user=self.user
-            )
-            self.mydrop=d
-            self.add_item(self.mydrop)
+        await self.change_dropdown_elements(self.followup_questions,"Current Followups")
             
         await interaction.response.edit_message(content="removed.",embed=self.make_embed(),view=self)
 

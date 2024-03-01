@@ -3,7 +3,7 @@ import json
 import discord
 import io
 import chromadb
-
+chromadb.CollectionMetadata
 
 class ChromaTools:
     """Class full of static methods for simple Chroma DB ops."""
@@ -13,3 +13,4 @@ class ChromaTools:
         '''Create a new chroma client.'''
         client = chromadb.PersistentClient(path="saveData")
         return client
+    

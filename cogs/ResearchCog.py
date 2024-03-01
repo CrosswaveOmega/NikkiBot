@@ -33,10 +33,10 @@ from .ResearchAgent import SourceLinkLoader
 from .ResearchAgent import ResearchContext
 from .ResearchAgent.chromatools import ChromaTools
 from .ResearchAgent.views import *
-
 from utility import prioritized_string_split, select_emoji, urltomessage
 from utility.embed_paginator import pages_of_embeds
 import cogs.ResearchAgent.tools as tools
+import cogs.ResearchAgent.actions as actions
 from openai import AsyncClient
 
 SERVER_ONLY_ERROR = "This command may only be used in a guild."
@@ -608,7 +608,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         """
 
         chromac = ChromaTools.get_chroma_client()
-        res = await ctx.send("ok")
+        res = await ctx.send("<a:LoadingBlue:1206301904863502337> querying db...")
         statmess = StatusEditMessage(res, ctx)
 
         embed = discord.Embed(title=f"Query: {question} ")
@@ -618,35 +618,35 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             embed.add_field(name="restrict", value=site_title_restriction, inline=False)
         await statmess.editw(
             min_seconds=0,
-            content="<a:LoadingBlue:1206301904863502337> querying db...",
             embed=embed,
         )
         async with ctx.channel.typing():
             # Search For Sources
-            data = await tools.search_sim(
-                question,
-                client=chromac,
-                titleres=site_title_restriction,
-                k=k,
-                mmr=use_mmr,
-            )
+            answer, allsources,docs2=await actions.research_op(question,k,site_title_restriction,use_mmr,statmess)
+            # data = await tools.search_sim(
+            #     question,
+            #     client=chromac,
+            #     titleres=site_title_restriction,
+            #     k=k,
+            #     mmr=use_mmr,
+            # )
 
-            if len(data) <= 0:
-                return "NO RELEVANT DATA.", None, None
+            # if len(data) <= 0:
+            #     return "NO RELEVANT DATA.", None, None
 
-            # Sort documents by score
-            docs2 = sorted(data, key=lambda x: x[1], reverse=False)
-            # Get string containing most relevant source urls:
-            url_desc, allsources = tools.get_doc_sources(docs2)
-            embed.description = f"Sources:\n{url_desc}"
-            embed.add_field(
-                name="Cache_Query",
-                value=f"About {len(docs2)} entries where found.  Max score is {docs2[0][1]}",
-            )
-            await statmess.editw(min_seconds=0, content="", embed=embed)
-            answer = await tools.format_answer(question, docs2)
+            # # Sort documents by score
+            # docs2 = sorted(data, key=lambda x: x[1], reverse=False)
+            # # Get string containing most relevant source urls:
+            # url_desc, allsources = tools.get_doc_sources(docs2)
+            # embed.description = f"Sources:\n{url_desc}"
+            # embed.add_field(
+            #     name="Cache_Query",
+            #     value=f"About {len(docs2)} entries where found.  Max score is {docs2[0][1]}",
+            # )
+            # await statmess.editw(min_seconds=0, content="", embed=embed)
+            # answer = await tools.format_answer(question, docs2)
 
-            viewme = Followup(bot=self.bot, page_content=docs2)
+            viewme = Followup(bot=ctx.bot, page_content=docs2)
             messageresp = None
             if send_message:
                 pages = prioritized_string_split(answer, ["%s\n"], 2000)
@@ -1226,6 +1226,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             current = research_context.stack.pop(0)
             
             qatup = ("No search.", current[0], "Let's find out.")
+            # WEB SEARCH.
             if search_web:
                 vie=PreCheck(user=ctx.author, timeout=75,rctx=research_context,current=current)
                 message = await ctx.send(
@@ -1234,7 +1235,6 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     )
                 await vie.wait()
                 await message.edit(view=None)
-                print(vie.links)
                 if vie.links:
                     await research_context.load_links(vie.qatup,vie.links,vie.details)
             quest, context, dep, parent = current

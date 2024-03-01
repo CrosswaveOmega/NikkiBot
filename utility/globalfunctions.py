@@ -30,6 +30,7 @@ def split_and_cluster_strings(
     input_string (str): The string to be split and clustered.
     max_cluster_size (int): The preferred maximum length of each cluster.
     split_substring (str): The substring used to split the input_string.
+    length(Callable):  function to determine string length with.
 
     Returns:
     list[str]: A list of clusters.

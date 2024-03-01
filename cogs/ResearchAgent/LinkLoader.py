@@ -82,8 +82,9 @@ class SourceLinkLoader:
         for link_num, link in enumerate(all_links):
             embed = self.embed
             self.embed.description = f"Web Link Loading: \n{self.get_status_lines()}"
-
-            has, getres = await self.check_cached_documents(ctx, link, override)
+            has=False
+            if not override:
+                has, getres = await self.check_cached_documents(ctx, link, override)
 
             if has and not override:
                 self.current += self.process_cached_link(link_num, link, getres)
@@ -105,7 +106,7 @@ class SourceLinkLoader:
         """
         target_message = await ctx.channel.send(
             "<a:SquareLoading:1143238358303264798> checking returned queries ...",
-            emb=self.embed,
+            embed=self.embed,
         )
         stmes = StatusEditMessage(target_message, ctx)
         return stmes

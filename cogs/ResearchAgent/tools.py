@@ -286,7 +286,7 @@ async def add_summary(
     if client == None:
         vectorstore = Chroma.from_documents(
             documents=newdata,
-            embedding=OpenAIEmbeddings(),
+            embedding=OpenAIEmbeddings(model='text-embedding-3-small'),
             ids=ids,
             collection_name=collection,
             persist_directory=persist,
@@ -295,7 +295,7 @@ async def add_summary(
     else:
         vectorstore = Chroma.from_documents(
             documents=newdata,
-            embedding=OpenAIEmbeddings(),
+            embedding=OpenAIEmbeddings(model='text-embedding-3-small'),
             ids=ids,
             collection_name=collection,
             client=client,
@@ -317,7 +317,7 @@ def store_splits(
     if client == None:
         vectorstore = Chroma.from_documents(
             documents=splits,
-            embedding=OpenAIEmbeddings(),
+            embedding=OpenAIEmbeddings(model='text-embedding-3-small'),
             ids=ids,
             collection_name=collection,
             persist_directory=persist,
@@ -326,7 +326,7 @@ def store_splits(
     else:
         vectorstore = Chroma.from_documents(
             documents=splits,
-            embedding=OpenAIEmbeddings(),
+            embedding=OpenAIEmbeddings(model='text-embedding-3-small'),
             ids=ids,
             collection_name=collection,
             client=client,
@@ -341,7 +341,9 @@ def has_url(
     persist = "saveData"
     if client != None:
         try:
-            collectionvar = client.get_collection(collection)
+            collectionvar = client.get_collection(
+                collection,
+                )
 
             res = collectionvar.get(
                 where={"source": url}, include=["documents", "metadatas"]
@@ -353,12 +355,11 @@ def has_url(
             return False, None
         except ValueError as e:
             gui.dprint(e)
-            raise e
-            return False
+            return False, None
     else:
         vs = Chroma(
             persist_directory=persist,
-            embedding_function=OpenAIEmbeddings(),
+            embedding_function=OpenAIEmbeddings(model="text-embedding-3-small"),
             collection_name=collection,
             client=client,
         )
@@ -398,6 +399,7 @@ async def search_sim(
     collection="web_collection",
     client: chromadb.ClientAPI = None,
     titleres="None",
+    linkres=[],
     k=7,
     mmr=False,
 ) -> List[Tuple[Document, float]]:
@@ -405,13 +407,14 @@ async def search_sim(
     vs = Chroma(
         client=client,
         persist_directory=persist,
-        embedding_function=OpenAIEmbeddings(),
+        embedding_function=OpenAIEmbeddings(model="text-embedding-3-small"),
         collection_name=collection,
     )
     filterwith = {}
     if titleres != "None":
         filterwith["title"] = {"$like": f"%{titleres}%"}
-
+    if linkres:
+        filterwith["source"]= {"$in":[linkres]}
     gui.dprint("here")
     if mmr:
         docs = vs.max_marginal_relevance_search(
@@ -465,7 +468,7 @@ async def debug_get(
     vs = Chroma(
         client=client,
         persist_directory=persist,
-        embedding_function=OpenAIEmbeddings(),
+        embedding_function=OpenAIEmbeddings(model='text-embedding-3-small'),
         collection_name=collection,
     )
     if titleres == "None":

@@ -19,9 +19,9 @@ import gptfunctionutil.functionlib as gptum
 from gptfunctionutil import SingleCall, SingleCallAsync
 from .chromatools import ChromaTools
 from .LinkLoader import SourceLinkLoader
-
 from utility import urltomessage
-
+from langchain.docstore.document import Document
+import cogs.ResearchAgent.actions as actions
 """
 This special context class is for the research commands.
 """
@@ -162,6 +162,7 @@ class ResearchContext:
                     raise e
         query, question, comment = querytuple[0][1]["content"]
         return (query, question, comment)
+    
     async def websearch(self, questtup: Tuple[str, str, str]) -> Tuple[List[str], List[Dict]]:
         """
         Perform a web search based on the given query tuple and return a tuple containing links and results.
@@ -206,7 +207,7 @@ class ResearchContext:
             if se[0] == "<:add:1199770854112890890>":
                 self.alllines.add(se[1])
 
-    async def research(self, quest: str) -> Tuple[str, List[str], discord.Message]:
+    async def research(self, quest: str) -> Tuple[str, List[str], List[Document]]:
         """
         Queries the database for relevant documents and formats an answer to the user's question.
 
@@ -217,15 +218,16 @@ class ResearchContext:
         - Tuple[str, List[str], discord.Message]: A tuple containing the formatted answer, 
              list of document links, and a sent discord message pertaining to the results.
         """
-        answer, links, ms = await self.cog.research(
-            self.ctx,
+        res = await self.ctx.send("<a:LoadingBlue:1206301904863502337> querying db...")
+        statmess = StatusEditMessage(res, self.ctx)
+        answer, links, _ = await actions.research_op(
             quest,
             k=self.k,
             site_title_restriction=self.site_title_restriction,
             use_mmr=self.use_mmr,
-            send_message=False,
+            statmess=statmess
         )
-        return answer, links, ms
+        return answer, links, _
     
     async def format_results(
         self,
