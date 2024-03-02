@@ -102,35 +102,67 @@ async function read_webpage_plain(targeturl) {
 
       return urlPattern.test(url);
     }
-
-    const response = await fetch(targeturl);
-    const html2 = await response.text();
-    const window = new Window({
-      innerWidth: 1024,
-      innerHeight: 768,
-      url: targeturl,
-      settings:settings
-    });
-
-    window.document.write(html2)
-
-
     
-    let reader = new Readability(window.document);
-    let article = reader.parse();
-    let articleHtml = article.content;
-    window.happyDOM.cancelAsync()
+    let html2="";
+    let article={};
+    let articleHtml='';
+    let markdownContent='';
+    let c=await runthroughfilters('',targeturl);
+    console.log(c.t);
+    if (c.t=='skip'){
+      return {'mark':'bad link', 'orig':article};
+    }
+    if (c.t=='all'){
+      markdownContent=c.o.mark;
+      article=c.o.article;
+      return {'mark':markdownContent, 'orig':article};
+    }
+    if (c.t == 'html') {
+      //No need to fetch, the html is here.
+      html2 = c['o'];
+    }
+    if (c.v != true) { //no reason to fetch.
+      const response = await fetch(targeturl);
+      html2 = await response.text();
+    }
+    if (c.t!='htmlout'){
+      const window = new Window({
+        innerWidth: 1024,
+        innerHeight: 768,
+        url: targeturl,
+        settings:settings
+      });
+
+      window.document.write(html2)
 
 
-    const markdownContent = turndownService.turndown(articleHtml);
+      
+      let reader = new Readability(window.document);
+      article = reader.parse();
+      articleHtml = article.content;
+      window.happyDOM.cancelAsync()
+    }
+    else{
+      article=c.o.article;
+      articleHtml=c.o.articleHtml;
+    }
+
+    markdownContent = turndownService.turndown(articleHtml);
     return {'mark':markdownContent, 'orig':article};
   }
 
  async function read_webpage_html_direct(htmldoc,targeturl) {
-
+  let html2=htmldoc;
+  let article={};
+  let articleHtml='';
+  let markdownContent='';
     let c=await runthroughfilters(htmldoc,targeturl);
-    if(c['v']){
-      return c['o']
+
+    if (c.t=='skip'){
+      return {'mark':'bad link', 'orig':article};
+    }
+    if(c.t='all'){
+      return c['o'];
     }
 
     function isValidLink(url) {
@@ -140,22 +172,28 @@ async function read_webpage_plain(targeturl) {
       return urlPattern.test(url);
     }
 
-    const html2 = htmldoc
-    const window = new Window({
-      innerWidth: 1024,
-      innerHeight: 768,
-      url: targeturl,
-      settings:settings
-    });
+    if (c.t!='htmlout'){
+      const window = new Window({
+        innerWidth: 1024,
+        innerHeight: 768,
+        url: targeturl,
+        settings:settings
+      });
 
-    window.document.write(html2)
+      window.document.write(html2)
 
-    let reader = new Readability(window.document);
-    let article = reader.parse();
-    let articleHtml = article.content;
-    //The heading style recognized by discord apps.
-    window.happyDOM.cancelAsync()
-    const markdownContent = turndownService.turndown(articleHtml);
+
+      
+      let reader = new Readability(window.document);
+      article = reader.parse();
+      articleHtml = article.content;
+      window.happyDOM.cancelAsync()
+    }
+    else{
+      article=c.o.article;
+      articleHtml=c.o.articleHtml;
+    }
+    markdownContent = turndownService.turndown(articleHtml);
     return  {'mark':markdownContent, 'orig':article};
 }
 module.exports={setup, check_read,read_webpage_plain,read_webpage_html_direct}

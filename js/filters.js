@@ -21,7 +21,7 @@ class Filter {
     async action(doc, url) {
       // Define the action to perform if triggered.
       throw new Error('not defined');
-      return {}; // Must return an object
+      return {'t':'outputtype', o:{}}; // Must return an object like this.
     }
 }
 
@@ -35,13 +35,18 @@ function addFilterIfNotExists(newFilter) {
 
 async function runthroughfilters(htmldoc,targeturl) {
 
-    let outcome = null;
+    let found = false;
+    let returntype='NA';
+    //return types are all, html, out, and skip
+    let output=null;
     for (const filter of filters) {
         if (await filter.trigger(htmldoc, targeturl)) {
-            outcome = await filter.action(htmldoc, targeturl);
+            let out= await filter.action(htmldoc, targeturl);
+            returntype=out.t;
+            output=out.o;
             break; // Execute action for the first triggered filter and stop.
         }
     }
-    return {'v': outcome !== null, 'o':outcome};
+    return {'v': found, 't':returntype,'o':output};
 }
 module.exports={addFilterIfNotExists,runthroughfilters,Filter}
