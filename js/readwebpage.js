@@ -14,7 +14,8 @@ INTENDED TO BE EXECUTED THROUGH JsPyBridgeAsync!
 */
 const {isProbablyReaderable, Readability}=require('@mozilla/readability')
 const {Window}=require('happy-dom')
-const {runthroughfilters}=require('./custom_filters.js')
+const {runthroughfilters}=require('./filters.js')
+const {load_filters}=require('./custom_filters.js')
 const TurndownService=require('turndown')
 var turndownService=new TurndownService({ 'headingStyle': 'atx' });
 turndownService.addRule('removeInvalidLinks', {
@@ -53,7 +54,10 @@ function isValidLink(url) {
   return urlPattern.test(url);
 }
 
-async function setup(mod1, mod2, mod3){
+
+load_filters();
+
+async function setup(){
   
 
   core.ts=new TurndownService({ 'headingStyle': 'atx' });    
@@ -68,7 +72,6 @@ async function setup(mod1, mod2, mod3){
       }
     });
 }
-
 async function check_read(targeturl,html_use = null) {
   let html2;
   if (!html_use) {
@@ -125,7 +128,7 @@ async function read_webpage_plain(targeturl) {
 
  async function read_webpage_html_direct(htmldoc,targeturl) {
 
-    let c=await runthroughfilters(htmldoc,targeturl)
+    let c=await runthroughfilters(htmldoc,targeturl);
     if(c['v']){
       return c['o']
     }
