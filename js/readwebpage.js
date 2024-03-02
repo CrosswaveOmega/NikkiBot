@@ -14,6 +14,7 @@ INTENDED TO BE EXECUTED THROUGH JsPyBridgeAsync!
 */
 const {isProbablyReaderable, Readability}=require('@mozilla/readability')
 const {Window}=require('happy-dom')
+const {runthroughfilters}=require('./custom_filters.js')
 const TurndownService=require('turndown')
 var turndownService=new TurndownService({ 'headingStyle': 'atx' });
 turndownService.addRule('removeInvalidLinks', {
@@ -124,6 +125,10 @@ async function read_webpage_plain(targeturl) {
 
  async function read_webpage_html_direct(htmldoc,targeturl) {
 
+    let c=await runthroughfilters(htmldoc,targeturl)
+    if(c['v']){
+      return c['o']
+    }
 
     function isValidLink(url) {
       // Regular expression pattern to validate URL format

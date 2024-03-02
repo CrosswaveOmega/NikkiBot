@@ -440,7 +440,7 @@ class ResearchContext:
         qatup = ("No search.", quest, "Let's find out.")
         if self.search_web:
             qatup= await self.get_query_from_question(quest)
-            links, details = await self.websearch(quest)
+            links, details = await self.websearch(qatup)
             await self.load_links(qatup,links,details)
 
         answer, links, ms = await self.research(quest)
