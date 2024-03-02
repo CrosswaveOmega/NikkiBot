@@ -118,9 +118,10 @@ def google_search(bot, query: str, result_limit: int, kwargs:dict={}) -> dict:
     query_service = build("customsearch", "v1", developerKey=bot.keys["google"])
     query_results = (
         query_service.cse()
-        .list(q=query, cx=bot.keys["cse"], num=result_limit, **kwargs)  # Query  # CSE ID
+        .list(q=query, cx=bot.keys["cse"], num=result_limit)  # Query  # CSE ID
         .execute()
     )
+    print(query_results)
     print(query_results["items"])
     return query_results
 

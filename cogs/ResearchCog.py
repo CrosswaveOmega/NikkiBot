@@ -357,9 +357,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
         # SEARCH FOR AND LOAD.
         res = []
-        additional={}
         async with ctx.channel.typing():
-            results = tools.google_search(ctx.bot, query, result_limit,kwargs=additional)
+            results = tools.google_search(ctx.bot, query, result_limit)
 
             all_links = [r["link"] for r in results["items"]]
             hascount = 0
