@@ -114,11 +114,11 @@ async def try_until_ok(async_func, *args, **kwargs):
                 raise err
 
 
-def google_search(bot, query: str, result_limit: int) -> dict:
+def google_search(bot, query: str, result_limit: int, kwargs:dict={}) -> dict:
     query_service = build("customsearch", "v1", developerKey=bot.keys["google"])
     query_results = (
         query_service.cse()
-        .list(q=query, cx=bot.keys["cse"], num=result_limit)  # Query  # CSE ID
+        .list(q=query, cx=bot.keys["cse"], num=result_limit, **kwargs)  # Query  # CSE ID
         .execute()
     )
     print(query_results["items"])
