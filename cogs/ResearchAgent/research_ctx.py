@@ -220,14 +220,14 @@ class ResearchContext:
         """
         res = await self.ctx.send("<a:LoadingBlue:1206301904863502337> querying db...")
         statmess = StatusEditMessage(res, self.ctx)
-        answer, links, _ = await actions.research_op(
+        answer, links, docs = await actions.research_op(
             quest,
             k=self.k,
             site_title_restriction=self.site_title_restriction,
             use_mmr=self.use_mmr,
             statmess=statmess
         )
-        return answer, links, _
+        return answer, links, docs
     
     async def format_results(
         self,

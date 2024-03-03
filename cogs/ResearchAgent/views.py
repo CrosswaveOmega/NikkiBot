@@ -68,14 +68,15 @@ class QuestionButton(discord.ui.Button):
         await self.view.destroy_button(self.custom_id, interaction)
 
 
-class FollowupAddModal(discord.ui.Modal, title="Add Followup"):
+class FollowupAddModal(discord.ui.Modal, title="Add Followup Questions"):
     """Modal for adding a followup."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.done = None
         self.followup_input = discord.ui.TextInput(
-            label="Followup", max_length=256, required=True
+            label="Add followup quesitons", max_length=1024, required=True, 
+            style=discord.TextStyle.paragraph
         )
         self.add_item(self.followup_input)
 
@@ -104,20 +105,20 @@ class FollowupSuggestModal(discord.ui.Modal, title="Suggest followups"):
         self.stop()
 
 
-class FollowupRemoveModal(discord.ui.Modal, title="Remove Followup"):
+class ChangeQueryModal(discord.ui.Modal, title="Enter a different google search query."):
     """Modal for removing a followup."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.done = None
-        self.followup_to_remove_input = discord.ui.TextInput(
-            label="Followup to Remove", max_length=256, required=True
+        self.titlev = discord.ui.TextInput(
+            label="Enter a different google search query here", max_length=256, required=True
         )
-        self.add_item(self.followup_to_remove_input)
+        self.add_item(self.titlev)
 
     async def on_submit(self, interaction):
-        followup_to_remove = self.followup_to_remove_input.value
-        self.done = followup_to_remove
+        output = self.titlev.value
+        self.done = output
         await interaction.response.defer()
         self.stop()
 
@@ -189,17 +190,21 @@ class Dropdown(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         value = self.values[0]
+        place=''
         for f in self.options:
             if f.value == value:
                 f.default = True
+                place=f"{f.label}:{f.description}"
             else:
                 f.default = False
         self.selected=value
+        self.placeholder=place
         await self.view.defer(interaction)
 
 
 
 class TimedResponseView(discord.ui.View):
+    '''Base class for the research views.'''
     def __init__(self, *, user, timeout=30 * 15):
         super().__init__(timeout=timeout)
         self.user = user
@@ -220,8 +225,9 @@ class TimedResponseView(discord.ui.View):
 
     async def toggle_child(self,label,mode=False):
         for child in self.children:
-            if child.label==label:
-                child.disabled=mode
+            if isinstance(child,discord.ui.Button) or  isinstance(child,discord.ui.Select):
+                if child.custom_id==label:
+                    child.disabled=mode
 
     async def on_timeout(self) -> None:
         self.value=False
@@ -264,18 +270,12 @@ class PreCheck(TimedResponseView):
         self.details=[]
         self.current=current
         self.mydrop=None
+        self.embed=discord.Embed(title="waiting for something to happen?")
         self.qatup= ("NA", self.current[0], "Let's find out.")
 
-    @discord.ui.button(
-        label="Run search",
-        style=discord.ButtonStyle.blurple,
-        row=1,
-    )
-    async def add_query(
-        self, interaction: discord.Interaction, button: discord.ui.Button
-    ):
-        await interaction.response.edit_message(content="Stand by... searching.")
-        self.qatup=await self.rctx.get_query_from_question(self.current[0])
+    async def search(self, interaction, edit=True):
+        '''Run a google search with the current qatup'''
+        
         links,res=await self.rctx.websearch(self.qatup)
         self.links=links
         self.details=res
@@ -284,40 +284,58 @@ class PreCheck(TimedResponseView):
         )
         for v in self.details:
             embed.add_field(name=v["title"], value=v["desc"], inline=True)
+        self.embed=embed
         await self.change_dropdown_elements(self.links,"Current Links")
-        button.disabled=True
-        await interaction.edit_original_response(content=str(self.qatup),embed=embed,view=self)
 
-    # @discord.ui.button(
-    #     label='google search',
-    #     row=1,
-    #     disabled=True
-    # )
-    # async def gsearch(
-    #     self,interaction,button
-    # ):
-    #     if self.qatup[0]=="NA":
-    #         await interaction.response.edit_message(content=str(self.qatup),view=self)
-    #         return
-    #     links,res=await self.rctx.websearch(self.qatup)
-    #     self.links=links
-    #     self.details=res
-    #     embed = discord.Embed(
-    #         title=f"Web Search Results for: {self.qatup[0]} ",
-    #     )
-    #     for v in self.details:
-    #         embed.add_field(name=v["title"], value=v["desc"], inline=True)
-    #     dl = []
-    #     for i in self.links:
-    #         dl.append({"label": i, "description": f"remove link {i}"})
-    #     d=Dropdown(
-    #         dl,"Current Links","NA",user=self.user
-    #     )
-    #     if self.mydrop:
-    #         self.remove_item(self.mydrop)
-    #     self.mydrop=d
-    #     self.add_item(self.mydrop)
-    #     await interaction.response.edit_message(embed=embed,view=self)
+        await self.toggle_child('manualsearch',True)
+        await self.toggle_child('gsearch',False)
+        if edit:
+            await interaction.edit_original_response(content=str(self.qatup),embed=self.embed,view=self)
+
+    async def gen_query(self):
+        '''auto generate the google search query.'''
+        self.qatup=await self.rctx.get_query_from_question(self.current[0])
+
+
+    @discord.ui.button(
+        label="Run search",
+        custom_id='manualsearch',
+        style=discord.ButtonStyle.blurple,
+        row=1,
+    )
+    async def add_query(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
+        await interaction.response.edit_message(content="Stand by... searching.")
+        button.disabled=True
+        await self.gen_query()
+        await self.search(interaction)
+
+    @discord.ui.button(
+        label='google search',
+        custom_id='gsearch',
+        row=1,
+        disabled=True
+    )
+    async def gsearch(
+        self,interaction: discord.Interaction, button: discord.ui.Button
+    ):
+        modal = ChangeQueryModal()
+        await interaction.response.send_modal(modal)
+        await modal.wait()
+        if modal.done is not None:
+            print(modal.done)
+            query=modal.done
+            _, que, com=self.qatup
+            self.qatup=(query,que,com)
+            await self.search(interaction)
+
+        else:
+            await interaction.edit_original_response(
+                content="Cancelled"
+            )
+
+
 
     @discord.ui.button(
         label="REMOVE_LINK",
@@ -351,8 +369,8 @@ class PreCheck(TimedResponseView):
         )
         for v in self.details:
             embed.add_field(name=v["title"], value=v["desc"], inline=True)
-        
-        await interaction.response.edit_message(embed=embed,view=self)
+        self.embed=embed
+        await interaction.response.edit_message(embed=self.embed,view=self)
 
 
     @discord.ui.button(
@@ -361,6 +379,17 @@ class PreCheck(TimedResponseView):
     )
     async def continuenext(self,interaction: discord.Interaction, button: discord.ui.Button):
         self.value = True
+        self.stop()
+        await interaction.response.defer()
+
+    
+    @discord.ui.button(
+        label="Cancel",
+        row=3
+    )
+    async def no_search(self,interaction: discord.Interaction, button: discord.ui.Button):
+        self.value = False
+        self.links=[]
         self.stop()
         await interaction.response.defer()
 
@@ -400,13 +429,14 @@ class FollowupActionView(TimedResponseView):
         await interaction.response.send_modal(modal)
         await modal.wait()
         if modal.done is not None:
-            # Assuming there's a function to handle adding followups
             print(modal.done)
-            
-            if modal.done not in self.followup_questions:
-                self.followup_questions.append(modal.done)
+            followups=modal.done.split("\n")
+            for fol in followups:
+                if fol not in self.followup_questions and len(self.followup_questions)<=5:
+                    self.followup_questions.append(fol)
+
             await self.change_dropdown_elements(self.followup_questions,"Current Followups")
-            await interaction.edit_original_response(content="Followup added!",embed=self.make_embed(),view=self)
+            await interaction.edit_original_response(content="Added followups.",embed=self.make_embed(),view=self)
         else:
             await interaction.edit_original_response(
                 content="Cancelled",

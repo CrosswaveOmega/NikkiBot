@@ -6,16 +6,17 @@ from langchain_community.document_loaders import PyPDFLoader, PDFMinerLoader
 from htmldate import find_date
 import gptmod
 from .ReadabilityLoader import ReadableLoader
-from langchain.vectorstores.chroma import Chroma
+from .chromatools import ChromaBetter as Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain.indexes import VectorstoreIndexCreator
 import asyncio
 import copy
 import datetime
-from typing import AsyncGenerator, List, Tuple
+from typing import Any, AsyncGenerator, List, Tuple
 import chromadb
 from googleapiclient.discovery import build  # Import the library
 
+from chromadb.types import Vector
 import assets
 import re
 
@@ -122,7 +123,6 @@ def google_search(bot, query: str, result_limit: int, kwargs:dict={}) -> dict:
         .execute()
     )
     print(query_results)
-    print(query_results["items"])
     return query_results
 
 
@@ -403,7 +403,7 @@ async def search_sim(
     linkres=[],
     k=7,
     mmr=False,
-) -> List[Tuple[Document, float]]:
+) -> List[Tuple[Document, float,Vector]]:
     persist = "saveData"
     vs = Chroma(
         client=client,
@@ -425,7 +425,7 @@ async def search_sim(
         )
         docs = [(doc, 0.4) for doc in docs]
     else:
-        docs = await vs.asimilarity_search_with_relevance_scores(
+        docs = await vs.asimilarity_search_with_score_and_embedding(
             question, k=k, filter=filterwith  # {'':titleres}}
         )
     return docs
@@ -442,8 +442,8 @@ def get_doc_sources(docs: List[Tuple[Document, float]]):
     Returns:
         str: A string formatted to list unique sources and the indices of their appearances in the provided list.
     """
-    all_links = [doc.metadata.get("source", "???") for doc, e in docs]
-    links = set(doc.metadata.get("source", "???") for doc, e in docs)
+    all_links = [doc.metadata.get("source", "???") for doc, e,i in docs]
+    links = set(doc.metadata.get("source", "???") for doc, e,i, in docs)
 
     def ie(all_links: List[str], value: str) -> List[int]:
         return [index for index, link in enumerate(all_links) if link == value]
@@ -485,7 +485,7 @@ async def debug_get(
 
 
 async def get_points(
-    question: str, docs: List[Tuple[Document, float]]
+    question: str, docs: List[Tuple[Document, float,Vector]]
 ) -> AsyncGenerator[Tuple[Document, float, str, int], None]:
     """
     Extracts important bullet points from the provided sources to answer a given question.
@@ -538,7 +538,7 @@ async def get_points(
 
     client = openai.AsyncOpenAI()
     for e, tup in enumerate(docs):
-        doc, score = tup
+        doc, score,emb = tup
         tile = "NOTITLE" if "title" not in doc.metadata else doc.metadata["title"]
         output = f"""**ID**:{e}
         **Name:** {tile}
@@ -567,7 +567,7 @@ async def get_points(
         yield doctup
 
 
-async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> str:
+async def format_answer(question: str, docs: List[Tuple[Document, float,Any]]) -> str:
     """
     Formats an answer to a given question using the provided documents.
 
@@ -578,11 +578,12 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
     Returns:
         str: The formatted answer as a string.
     """
-    prompt = """
+    oldprompt = """
     Use the provided sources to answer question provided by the user.  
-    Each of the source web pages will be in their own system messags, slimmed down to a series of relevant snippits,
+    Each of the sources will be in their own system messags, 
+    slimmed down to a series of relevant snippits,
     and are in the following template:
-                    BEGIN
+        BEGIN
         **ID:** [Source ID number here]
         **Name:** [Name Here]
         **Link:** [Link Here]
@@ -595,6 +596,33 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
     Please include an inline citation with the source id for each website you retrieved data from in this format: [ID here].
     If there is no insufficient provided information from the sources, please state as such.
     Exclude any concluding remarks from the answer.
+
+    """
+    prompt ="""
+
+**Task:**
+Use the provided sources, 
+presented in individual system messages with relevant snippets, 
+to craft a comprehensive response to the user's question. 
+Each source is formatted in the following template:
+
+```
+BEGIN
+**ID:** [Source ID number here]
+**Name:** [Name Here]
+**Link:** [Link Here]
+**Text:** [Text Content Here]
+END
+```
+
+**Guidelines:**
+1. Your response should consist of 3-7 medium-length paragraphs, containing 5-10 sentences each.
+2. Preserve crucial information from the sources and maintain a descriptive tone in your writing.
+3. Ensure the inclusion of an inline citation for each piece of information obtained from a specific source,
+   using this format: [ID here].
+   **This is crucially important, as the inline citations are used to verify the response accuracy.**
+4. If the sources do not provide sufficient information on a particular aspect of the question, explicitly state this limitation in your answer.
+5. Omit any concluding remarks from your response.
 
     """
     # The websites may contradict each other, prioritize information from encyclopedia pages and wikis.
@@ -610,7 +638,7 @@ async def format_answer(question: str, docs: List[Tuple[Document, float]]) -> st
         "gpt-3.5-turbo-0125",
     )
     for e, tup in enumerate(docs):
-        doc, _ = tup
+        doc, _, emb = tup
 
         meta = doc.metadata
         content = doc.page_content

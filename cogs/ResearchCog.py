@@ -359,7 +359,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         res = []
         async with ctx.channel.typing():
             results = tools.google_search(ctx.bot, query, result_limit)
-
+            if not 'items' in results:
+                return [],[{"title": 'No results', "link": 'NA', "desc": 'no results for that query.'}]
             all_links = [r["link"] for r in results["items"]]
             hascount = 0
             length = len(results)
@@ -1214,6 +1215,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             search_web,
         )
         
+        automode=True
         
         
         
@@ -1229,18 +1231,23 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             # WEB SEARCH.
             if search_web:
                 vie=PreCheck(user=ctx.author, timeout=75,rctx=research_context,current=current)
+                if automode:
+                    await vie.gen_query()
+                    await vie.search(None,edit=False)
                 message = await ctx.send(
-                        embed=discord.Embed(title="getting started?"),
+                        embed=vie.embed,
                         view=vie,
                     )
                 await vie.wait()
                 await message.edit(view=None)
                 if vie.links:
+                    qatup=vie.qatup
                     await research_context.load_links(vie.qatup,vie.links,vie.details)
             quest, context, dep, parent = current
             answer, links, ms = await research_context.research(quest)
             emb, mess = await research_context.format_results(quest, qatup, answer, parent)
             newcontext, depth = await research_context.change_context(quest, answer, context, dep, mess)
+            
             if depth < research_context.depth and len(research_context.stack)<=0:
                 cur=(quest,newcontext,depth,parent)
                 vie=FollowupActionView(user=ctx.author, timeout=60*7,rctx=research_context,current=cur)
