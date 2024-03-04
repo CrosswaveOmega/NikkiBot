@@ -20,11 +20,15 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.utils import xor_args
 from langchain_core.runnables.config import run_in_executor
 from langchain.vectorstores.chroma import Chroma
-chromadb.QueryResult
-def _results_to_docs_scores_emb(results: Any) -> List[Tuple[Document, float,Vector]]:
+
+from langchain_community.vectorstores.utils import maximal_marginal_relevance
+import numpy as np
+
+
+DocumentScoreVector=Tuple[Document, float,Vector]
+
+def _results_to_docs_scores_emb(results: Any) -> List[DocumentScoreVector]:
     return [
-        # TODO: Chroma can do batch querying,
-        # we shouldn't hard code to the 1st result
         (Document(page_content=result[0], metadata=result[1] or {}), result[2],result[3])
         for result in zip(
             results["documents"][0],
@@ -45,7 +49,8 @@ class ChromaTools:
         return client
     
 class ChromaBetter(Chroma):
-    """Extension of Langchain's Chroma class """
+    """Extension of Langchain's Chroma class that will return the 
+    embeddings as well as the Document distance."""
     
     @xor_args(("query_texts", "query_embeddings"))
     def __query_collection(
@@ -77,7 +82,7 @@ class ChromaBetter(Chroma):
 
     async def asimilarity_search_with_score_and_embedding(
         self, *args: Any, **kwargs: Any
-    ) -> List[Tuple[Document, float,Vector]]:
+    ) -> List[DocumentScoreVector]:
         """Run similarity search with distance asynchronously."""
 
         # This is a temporary workaround to make the similarity search
@@ -94,7 +99,7 @@ class ChromaBetter(Chroma):
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float,Vector]]:
+    ) -> List[DocumentScoreVector]:
         """Run similarity search with Chroma with distance.
 
         Args:
@@ -103,8 +108,8 @@ class ChromaBetter(Chroma):
             filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
-            List[Tuple[Document, float]]: List of documents most similar to
-            the query text and cosine distance in float for each.
+            List[Tuple[Document, float,Vector]]: List of documents most similar to
+            the query text, cosine distance in float for each, and the Embedding.
             Lower score represents more similarity.
         """
         if self._embedding_function is None:
@@ -126,3 +131,95 @@ class ChromaBetter(Chroma):
             )
 
         return _results_to_docs_scores_emb(results)
+    
+    def max_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = DEFAULT_K,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[DocumentScoreVector]:
+        """Return docs selected using the maximal marginal relevance.
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+        Will return the Document, distance, and embedding.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+
+        results = self.__query_collection(
+            query_embeddings=embedding,
+            n_results=fetch_k,
+            where=filter,
+            where_document=where_document,
+            include=["metadatas", "documents", "distances", "embeddings"],
+            **kwargs,
+        )
+        mmr_selected = maximal_marginal_relevance(
+            np.array(embedding, dtype=np.float32),
+            results["embeddings"][0],
+            k=k,
+            lambda_mult=lambda_mult,
+        )
+
+        candidates = _results_to_docs_scores_emb(results)
+
+        selected_results = [r for i, r in enumerate(candidates) if i in mmr_selected]
+        return selected_results
+
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = DEFAULT_K,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        filter: Optional[Dict[str, str]] = None,
+        where_document: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs selected using the maximal marginal relevance.
+        Maximal marginal relevance optimizes for similarity to query AND diversity
+        among selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
+            lambda_mult: Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+
+        Returns:
+            List of Documents selected by maximal marginal relevance.
+        """
+        if self._embedding_function is None:
+            raise ValueError(
+                "For MMR search, you must specify an embedding function on" "creation."
+            )
+
+        embedding = self._embedding_function.embed_query(query)
+        docs = self.max_marginal_relevance_search_by_vector(
+            embedding,
+            k,
+            fetch_k,
+            lambda_mult=lambda_mult,
+            filter=filter,
+            where_document=where_document,
+        )
+        return docs

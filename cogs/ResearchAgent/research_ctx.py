@@ -17,7 +17,7 @@ from bot import TC_Cog_Mixin, StatusEditMessage, super_context_menu, TCBot
 
 import gptfunctionutil.functionlib as gptum
 from gptfunctionutil import SingleCall, SingleCallAsync
-from .chromatools import ChromaTools
+from .chromatools import ChromaTools,DocumentScoreVector
 from .LinkLoader import SourceLinkLoader
 from utility import urltomessage
 from langchain.docstore.document import Document
@@ -207,7 +207,7 @@ class ResearchContext:
             if se[0] == "<:add:1199770854112890890>":
                 self.alllines.add(se[1])
 
-    async def research(self, quest: str) -> Tuple[str, List[str], List[Document]]:
+    async def research(self, quest: str) -> Tuple[str, List[str], List[DocumentScoreVector]]:
         """
         Queries the database for relevant documents and formats an answer to the user's question.
 
@@ -443,7 +443,7 @@ class ResearchContext:
             links, details = await self.websearch(qatup)
             await self.load_links(qatup,links,details)
 
-        answer, links, ms = await self.research(quest)
+        answer, links, docs = await self.research(quest)
         emb, mess = await self.format_results(quest, qatup, answer, parent)
 
         newcontext, depth = await self.change_context(quest, answer, context, dep, mess)

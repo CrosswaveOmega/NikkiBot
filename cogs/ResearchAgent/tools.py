@@ -7,6 +7,7 @@ from htmldate import find_date
 import gptmod
 from .ReadabilityLoader import ReadableLoader
 from .chromatools import ChromaBetter as Chroma
+from .chromatools import DocumentScoreVector
 from langchain_openai import OpenAIEmbeddings
 from langchain.indexes import VectorstoreIndexCreator
 import asyncio
@@ -28,6 +29,7 @@ from .metadataenums import MetadataDocType
 import gui
 
 webload = docload.WebBaseLoader
+
 
 tosplitby = [
     # First, try to split along Markdown headings (starting with level 2)
@@ -403,7 +405,7 @@ async def search_sim(
     linkres=[],
     k=7,
     mmr=False,
-) -> List[Tuple[Document, float,Vector]]:
+) -> List[DocumentScoreVector]:
     persist = "saveData"
     vs = Chroma(
         client=client,

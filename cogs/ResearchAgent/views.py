@@ -1,15 +1,18 @@
 import discord
 from discord import Interaction, PartialEmoji
 import gui
+from typing import List, Tuple, Optional, Set, Dict, Any
 from utility import pages_of_embeds_2
-
+from .actions import sentence_sim_op
 
 class Followup(discord.ui.View):
     """buttons for the audio player."""
 
-    def __init__(self, *, bot=None, timeout=None, page_content=[]):
+    def __init__(self, *, bot=None, timeout=None, answer="", page_content=[]):
         super().__init__(timeout=timeout)
         self.my_sources = page_content
+        self.answer=answer
+        self.sent_detail:List[Tuple[int, str, List[int], float, float]]=[]
         self.bot = bot
 
     async def on_error(
@@ -25,17 +28,30 @@ class Followup(discord.ui.View):
     async def showsauce(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        embed = discord.Embed(title="sauces")
+        
         field_count = 0
         embeds = []
+        await interaction.response.defer()
+        if not self.sent_detail:
+            self.sent_detail:List[Tuple[int, str, List[int], float, float]]=await sentence_sim_op(self.answer,self.my_sources)
+
+        sentence_sum=""
+        sentence_sum = ", ".join([
+            f"\"{detail[1]}([{','.join(map(str, detail[2]))}],{detail[3]},{detail[4]})\""
+            for detail in self.sent_detail
+        ])
+
+
+        embed = discord.Embed(title="sauces",description=sentence_sum)
+        embed.set_author(name="sentence,([souce ids],avg,max)")
         for id, tup in enumerate(self.my_sources[:10]):
-            doc, score = tup
+            doc, score, emb = tup
             if field_count == 3:
                 # Send the embed here or add it to a list of embeds
                 # Reset the field count and create a new embed
                 field_count = 0
                 embeds.append(embed)
-                embed = discord.Embed(title="sauces")
+                embed = discord.Embed(title="sauces",description=sentence_sum)
 
             meta = doc.metadata
             content = doc.page_content
@@ -44,12 +60,12 @@ class Followup(discord.ui.View):
             **Name:** {meta.get('title','TITLE UNAVAILABLE')[:100]}
             **Link:** {meta['source']}
             **Text:** {content}"""
-            embed.add_field(name=f"s: score:{score}", value=output[:1020], inline=False)
+            embed.add_field(name=f"s: score:{score}", value=output[:500], inline=False)
             field_count += 1
         embeds.append(embed)
         PCC, buttons = await pages_of_embeds_2("ANY", embeds)
-
-        await interaction.response.send_message(embed=PCC.make_embed(), view=buttons)
+        foll=interaction.followup
+        await interaction.edit_original_response(embed=PCC.make_embed(), view=buttons)
         # await self.callbacker.playlistcallback(interaction,self,"back")
 
 

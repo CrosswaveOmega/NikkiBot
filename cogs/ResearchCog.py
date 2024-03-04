@@ -437,7 +437,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         answer, links, ms = await self.research(
             ctx,
             question,
-            k=7,
+            k=10,
             site_title_restriction=site_title_restriction,
             send_message=True,
         )
@@ -647,7 +647,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             # await statmess.editw(min_seconds=0, content="", embed=embed)
             # answer = await tools.format_answer(question, docs2)
 
-            viewme = Followup(bot=ctx.bot, page_content=docs2)
+            viewme = Followup(bot=ctx.bot, answer=answer,page_content=docs2)
             messageresp = None
             if send_message:
                 pages = prioritized_string_split(answer, ["%s\n"], 2000)

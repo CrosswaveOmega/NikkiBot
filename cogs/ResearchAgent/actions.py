@@ -17,7 +17,7 @@ from bot import TC_Cog_Mixin, StatusEditMessage, super_context_menu, TCBot
 
 import gptfunctionutil.functionlib as gptum
 from gptfunctionutil import SingleCall, SingleCallAsync
-from .chromatools import ChromaTools
+from .chromatools import ChromaTools, DocumentScoreVector
 from .LinkLoader import SourceLinkLoader
 from .tools import search_sim,get_doc_sources,format_answer
 from langchain.docstore.document import Document
@@ -80,7 +80,7 @@ def chunk_sentences(sentences: List[str], chunk_size: int = 10) -> List[List[str
     '''Chunk sentences into blocks of 10.'''
     return [sentences[i:i + chunk_size] for i in range(0, len(sentences), chunk_size)]
 
-async def sentence_sim_op(answer: str, docs: List[Tuple[Document, float, Vector]]) -> List[Tuple[int, str, List[int], float, float]]:
+async def sentence_sim_op(answer: str, docs: List[DocumentScoreVector]) -> List[Tuple[int, str, List[int], float, float]]:
     '''EXPERIMENTAL.  Evaluate how well each sentence matches with the sources.'''
     client = AsyncClient()
 
@@ -107,7 +107,10 @@ async def sentence_sim_op(answer: str, docs: List[Tuple[Document, float, Vector]
             sorted_docs = sorted_docs[:4]
 
             #out=(id, sentence_id, list of val0 in sorted_docs, average val1 score, max val1 score.)
-            out = (id, sent, [doc[0] for doc in sorted_docs], np.mean([doc[1] for doc in sorted_docs]), max([doc[1] for doc in sorted_docs]))
+            val=[doc[1] for doc in sorted_docs]
+            mean=round(float(np.mean(val))*100,1)
+            maxv=round(float(max(val))*100,1)
+            out = (id, sent, [doc[0] for doc in sorted_docs], mean, maxv)
             result.append(out)
             id += 1
 
@@ -120,7 +123,7 @@ async def research_op(
         use_mmr: bool = False,
         statmess:Optional[StatusEditMessage]=None,
         linkRestrict:List[str]=None
-    ) -> Tuple[str, Optional[str],List[Document]]:
+    ) -> Tuple[str, Optional[str],List[DocumentScoreVector]]:
     """
     Search the chroma db for relevant documents pertaining to the
     question, and return a formatted result.
