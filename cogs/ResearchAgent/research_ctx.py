@@ -17,11 +17,12 @@ from bot import TC_Cog_Mixin, StatusEditMessage, super_context_menu, TCBot
 
 import gptfunctionutil.functionlib as gptum
 from gptfunctionutil import SingleCall, SingleCallAsync
-from .chromatools import ChromaTools,DocumentScoreVector
+from .chromatools import ChromaTools, DocumentScoreVector
 from .LinkLoader import SourceLinkLoader
 from utility import urltomessage
 from langchain.docstore.document import Document
 import cogs.ResearchAgent.actions as actions
+
 """
 This special context class is for the research commands.
 """
@@ -106,12 +107,12 @@ class ResearchContext:
         self.stack.append((question, cont, dep, message))
 
     async def send_preview(self):
-        self.preview=await self.ctx.send("Preview")
+        self.preview = await self.ctx.send("Preview")
 
     async def setup(self) -> bool:
-        '''
+        """
         Preform an asyncronous check of the internal results.
-        '''
+        """
         if not self.ctx.guild:
             await self.ctx.send("needs to be guild")
             return False
@@ -138,12 +139,12 @@ class ResearchContext:
         self.client = openai.AsyncClient()
 
         return True
-    
-    async def get_query_from_question(self,quest:str) -> Tuple[str, str, str]:
+
+    async def get_query_from_question(self, quest: str) -> Tuple[str, str, str]:
         """Given a question, generate a searchable query"""
         querytuple: Optional[Tuple[Any, ...]] = None
         tries: int = 0
-        
+
         while querytuple is None and tries < 3:
             try:
                 lib = Followups()
@@ -162,8 +163,10 @@ class ResearchContext:
                     raise e
         query, question, comment = querytuple[0][1]["content"]
         return (query, question, comment)
-    
-    async def websearch(self, questtup: Tuple[str, str, str]) -> Tuple[List[str], List[Dict]]:
+
+    async def websearch(
+        self, questtup: Tuple[str, str, str]
+    ) -> Tuple[List[str], List[Dict]]:
         """
         Perform a web search based on the given query tuple and return a tuple containing links and results.
 
@@ -173,13 +176,18 @@ class ResearchContext:
         Returns:
         Tuple[List[str], Dict]: A tuple containing a list of links and dictionaries with additional details.
         """
-        #Preform web search.
+        # Preform web search.
         links, res = await self.cog.web_search(
             self.ctx, questtup[0], result_limit=self.search_web
         )
         return links, res
 
-    async def load_links(self,questtup: Tuple[str, str, str],links:List[str],res:List[Dict[str, str]]=[]):
+    async def load_links(
+        self,
+        questtup: Tuple[str, str, str],
+        links: List[str],
+        res: List[Dict[str, str]] = [],
+    ):
         """
         Load links into the system and update the corresponding status message with the results.
 
@@ -189,7 +197,7 @@ class ResearchContext:
         res (List[Dict[str, str]]): A list of dictionaries containing the search results.
         """
         chromac = ChromaTools.get_chroma_client()
-        #create status message for load_links.
+        # create status message for load_links.
         embed = discord.Embed(
             title=f"Web Search Results for: {questtup[0]} ",
         )
@@ -198,7 +206,7 @@ class ResearchContext:
         target_message = await self.ctx.send(embed=embed)
 
         statmess = StatusEditMessage(target_message, self.ctx)
-        loader = SourceLinkLoader(chromac=chromac, statusmessage=statmess,embed=embed)
+        loader = SourceLinkLoader(chromac=chromac, statusmessage=statmess, embed=embed)
         _, lines = await loader.load_links(self.ctx, links, False)
         await statmess.delete()
         s = lines.split("\n")
@@ -207,7 +215,9 @@ class ResearchContext:
             if se[0] == "<:add:1199770854112890890>":
                 self.alllines.add(se[1])
 
-    async def research(self, quest: str) -> Tuple[str, List[str], List[DocumentScoreVector]]:
+    async def research(
+        self, quest: str
+    ) -> Tuple[str, List[str], List[DocumentScoreVector]]:
         """
         Queries the database for relevant documents and formats an answer to the user's question.
 
@@ -215,7 +225,7 @@ class ResearchContext:
         - quest (str): The user's query/question.
 
         Returns:
-        - Tuple[str, List[str], discord.Message]: A tuple containing the formatted answer, 
+        - Tuple[str, List[str], discord.Message]: A tuple containing the formatted answer,
              list of document links, and a sent discord message pertaining to the results.
         """
         res = await self.ctx.send("<a:LoadingBlue:1206301904863502337> querying db...")
@@ -225,10 +235,10 @@ class ResearchContext:
             k=self.k,
             site_title_restriction=self.site_title_restriction,
             use_mmr=self.use_mmr,
-            statmess=statmess
+            statmess=statmess,
         )
         return answer, links, docs
-    
+
     async def format_results(
         self,
         quest: str,
@@ -236,7 +246,7 @@ class ResearchContext:
         answer: str,
         parent: Optional[discord.Message] = None,
     ) -> Tuple[discord.Embed, discord.Message]:
-        '''Generates and sends a Discord message embed containing the supplied question and answer.
+        """Generates and sends a Discord message embed containing the supplied question and answer.
 
         Args:
             quest (str): The initial question that prompted the research.
@@ -246,7 +256,7 @@ class ResearchContext:
 
         Returns:
             Tuple[discord.Embed, discord.Message]: A tuple consisting of the constructed Embed object and the sent Discord message containing the research answer.
-        '''
+        """
         query, question, comment = qatup
         embedres = discord.Embed(
             title=f"{quest}, depth: {self.depth}", description=answer
@@ -276,7 +286,6 @@ class ResearchContext:
         depth: int,
         this_message: discord.Message,
     ) -> str:
-        
         context += f"{depth}:{quest}\n{answer}"
         self.answered.append(quest)
         new_depth = depth + 1
@@ -316,7 +325,7 @@ class ResearchContext:
         return followups
 
     async def process_followups(
-        self, context: str, new_depth: int, focus: str=""
+        self, context: str, new_depth: int, focus: str = ""
     ) -> Tuple[List[str], str]:
         """
         Generates follow-up questions based on the provided context and the current depth.
@@ -352,10 +361,10 @@ class ResearchContext:
                         timeout=30,
                     )
                     command = await sc.call_single(
-                        f"Generate {self.followup} followup questions to expand on the "+\
-                        f"results given the prior question/answer pairs \n{context}.  "+\
-                        f"\nDo not generate a followup if it is similar to the questions answered here:{donotask}.\n"+\
-                        f"{focus}",
+                        f"Generate {self.followup} followup questions to expand on the "
+                        + f"results given the prior question/answer pairs \n{context}.  "
+                        + f"\nDo not generate a followup if it is similar to the questions answered here:{donotask}.\n"
+                        + f"{focus}",
                         "followupquestions",
                     )
                 except Exception as e:
@@ -418,8 +427,8 @@ class ResearchContext:
     ) -> None:
         """
         1: Preform a web query (generate query, websearch, load_links),
-        2: research a question using the collection, 
-        3: Format the results and display, 
+        2: research a question using the collection,
+        3: Format the results and display,
         4: add to the context
         5: generate followup questions
         6: add followup questions to the internal stack
@@ -431,22 +440,24 @@ class ResearchContext:
         """
         quest, context, dep, parent = current
         self.pending.remove(quest)
-        s1=f"<a:LoadingBlue:1206301904863502337>{len(self.answered)}/{self.all_runs}."+\
-            f"stacklen={len(self.stack)} {quest},{dep}"
+        s1 = (
+            f"<a:LoadingBlue:1206301904863502337>{len(self.answered)}/{self.all_runs}."
+            + f"stacklen={len(self.stack)} {quest},{dep}"
+        )
         await self.statmess.editw(
             min_seconds=5,
             content=s1,
         )
         qatup = ("No search.", quest, "Let's find out.")
         if self.search_web:
-            qatup= await self.get_query_from_question(quest)
+            qatup = await self.get_query_from_question(quest)
             links, details = await self.websearch(qatup)
-            await self.load_links(qatup,links,details)
+            await self.load_links(qatup, links, details)
 
         answer, links, docs = await self.research(quest)
         emb, mess = await self.format_results(quest, qatup, answer, parent)
 
         newcontext, depth = await self.change_context(quest, answer, context, dep, mess)
         questions, followups = await self.process_followups(newcontext, depth)
-        await self.add_followups_to_stack(questions,followups,newcontext,depth,mess)
+        await self.add_followups_to_stack(questions, followups, newcontext, depth, mess)
         self.add_output_dict(quest, answer, links, dep, followups)

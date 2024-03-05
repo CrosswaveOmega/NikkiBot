@@ -1,42 +1,29 @@
-from typing import List, Tuple, Optional, Set, Dict, Any
-import chromadb
-import discord
 import asyncio
-from assets import AssetLookup
-import re
-import openai
 
 # import datetime
-import json
-from io import StringIO
+from collections import defaultdict
+from typing import List, Optional, Tuple
 
-from discord.ext import commands
-
-from discord import app_commands
-from bot import TC_Cog_Mixin, StatusEditMessage, super_context_menu, TCBot
-
-import gptfunctionutil.functionlib as gptum
-from gptfunctionutil import SingleCall, SingleCallAsync
-from .chromatools import ChromaTools, DocumentScoreVector
-from .LinkLoader import SourceLinkLoader
-from .tools import search_sim,get_doc_sources,format_answer
-from langchain.docstore.document import Document
-from utility import urltomessage,prioritized_string_split
-from openai import AsyncClient
-import chromadb
-from chromadb.types import Vector
-from nltk.tokenize import sent_tokenize
+import discord
 import numpy as np
+from nltk.tokenize import sent_tokenize
+from openai import AsyncClient
 from sklearn.metrics.pairwise import cosine_similarity
+
+from bot import StatusEditMessage
+
+from .chromatools import ChromaTools, DocumentScoreVector
+from .tools import format_answer, get_doc_sources, search_sim, try_until_ok
+
 
 def advanced_sentence_splitter(text):
     sentences = sent_tokenize(text)
     return sentences
-    
-def split_sentences(text: str) -> List[str]:
-    return re.split(r'(?<=[.!?]) +', text)
 
-def get_closest(sentemb: List[float], docs: List[Tuple[Document, float, List[float]]]) -> List[Tuple[int,float]]:
+
+def get_closest(
+    sentemb: List[float], docs: List[DocumentScoreVector]
+) -> List[Tuple[int, float]]:
     """
     Find the documents closest to a given sentence embedding within a list of documents.
 
@@ -45,8 +32,8 @@ def get_closest(sentemb: List[float], docs: List[Tuple[Document, float, List[flo
         docs: A list of tuples, each containing a document, unspecified data, and the document's embedding.
 
     Returns:
-        A tuple of two lists: the first list contains the top 4 closest documents,
-        and the second list contains their corresponding similarity scores.
+        a sorted list of tuples: the first value contains the id of each close source
+        and the second value contains their corresponding similarity scores.
     """
     sentemb_array = np.array(sentemb)
     sentemb_array = sentemb_array.reshape(1, -1)
@@ -54,7 +41,7 @@ def get_closest(sentemb: List[float], docs: List[Tuple[Document, float, List[flo
     similarity_scores = []  # Initialize with empty list to collect similarity scores
 
     for id, doc in enumerate(docs):
-        doc,_,emb=doc
+        doc, _, emb = doc
 
         # Assuming emb and sentemb are lists containing embeddings
         emb_array = np.array(emb)
@@ -62,84 +49,138 @@ def get_closest(sentemb: List[float], docs: List[Tuple[Document, float, List[flo
         # Reshaping to 2D arrays for cosine similarity comparison
         emb_array = emb_array.reshape(1, -1)
 
-
         # Compute cosine similarity
         similarity_score = cosine_similarity(emb_array, sentemb_array)
 
         # Collect all similarity scores and corresponding documents
-        similarity_scores.append(similarity_score[0])
-        top_docs.append((id, similarity_score[0]))
+        similarity_scores.append(similarity_score[0][0])
+        top_docs.append((id, similarity_score[0][0]))
 
-    
     top_docs = sorted(top_docs, key=lambda x: x[1], reverse=True)
 
     # Extracting documents and their scores into separate lists
     return top_docs
-        
-def chunk_sentences(sentences: List[str], chunk_size: int = 10) -> List[List[str]]:
-    '''Chunk sentences into blocks of 10.'''
-    return [sentences[i:i + chunk_size] for i in range(0, len(sentences), chunk_size)]
 
-async def sentence_sim_op(answer: str, docs: List[DocumentScoreVector]) -> List[Tuple[int, str, List[int], float, float]]:
-    '''EXPERIMENTAL.  Evaluate how well each sentence matches with the sources.'''
+
+def chunk_sentences(sentences: List[str], chunk_size: int = 10) -> List[List[str]]:
+    """Chunk sentences into blocks of 10."""
+    return [sentences[i : i + chunk_size] for i in range(0, len(sentences), chunk_size)]
+
+
+SentenceRes = List[Tuple[int, str, List[int], float, float]]
+
+
+async def sentence_sim_op(
+    answer: str, docs: List[DocumentScoreVector]
+) -> Tuple[SentenceRes, List[Tuple[int, float, float]], float]:
+    """Evaluate how well each sentence in an answer matches with sources.
+
+    This method calculates and returns the similarity scores between the sentences in an answer
+    and a list of document embeddings provided. It performs this calculation for each sentence,
+    chunking the sentences for efficiency, and returns a comprehensive list of matches,
+    along with averaged and maximum similarity scores for each source document.
+
+    Args:
+        answer (str): The answer containing sentences to be scored.
+        docs (List[DocumentScoreVector]): A list of DocumentScoreVector,
+        representing each document's metadata and embeddings.
+
+    Returns:
+        Tuple of a list of matches per sentence, list of averaged and maximum similarity
+        scores per document,
+        and the overall mean similarity score across all documents.
+    """
     client = AsyncClient()
 
     sentences = advanced_sentence_splitter(answer)
     sentence_length = len(sentences)
-    chunks = chunk_sentences(sentences)
-
-    id = 0
+    chunks = chunk_sentences(sentences, 25)
+    all_distances = []
+    sent_id = 0
     result = []
+    doc_map = defaultdict(list)
     for chunk in chunks:
-        resp = await client.embeddings.create(
+        resp = await try_until_ok(
+            client.embeddings.create,
             model="text-embedding-3-small",
             input=chunk,
             encoding_format="float",
-            timeout=25
-            )
+            timeout=25,
+        )
         for sent, c in zip(chunk, resp.data):
-            sentemb = c.embedding
-            top_docs: List[Tuple[int, float]] = await asyncio.to_thread(get_closest, sentemb, docs)
+            top_docs: List[Tuple[int, float]] = await asyncio.to_thread(
+                get_closest, c.embedding, docs
+            )
+
+            # Extract embeddings of the top-related documents
+            related_embeddings = [docs[doc_idx][2] for doc_idx, _ in top_docs]
 
             filtered_docs = [doc for doc in top_docs if doc[1] > 0.05]
+
+            # Add to map.
+            for i, score in filtered_docs:
+                doc_map[i].append((i, score))
+
             sorted_docs = sorted(filtered_docs, key=lambda x: x[1], reverse=True)
+            all_distances.extend([distance for _, distance in filtered_docs])
 
+            # get first 4 entries (the closest matches, and return the ids, mean, and max)
             sorted_docs = sorted_docs[:4]
-
-            #out=(id, sentence_id, list of val0 in sorted_docs, average val1 score, max val1 score.)
-            val=[doc[1] for doc in sorted_docs]
-            mean=round(float(np.mean(val))*100,1)
-            maxv=round(float(max(val))*100,1)
-            out = (id, sent, [doc[0] for doc in sorted_docs], mean, maxv)
+            val = [doc[1] for doc in sorted_docs]
+            out = (
+                sent_id,
+                sent,
+                [doc[0] for doc in sorted_docs],
+                round(float(np.mean(val)) * 100, 1),
+                round(float(max(val)) * 100, 1),
+            )
             result.append(out)
-            id += 1
+            sent_id += 1
 
-    return result
+    # Get averages and max for each source separately
+    averages_and_maxes = [
+        (
+            id,
+            np.mean([score for _, score in sublist]),
+            np.max([score for _, score in sublist]),
+        )
+        for id, sublist in doc_map.items()
+    ]
+    mean_similarity = 1 - np.mean(all_distances)
+    averages_and_maxes = sorted(averages_and_maxes, key=lambda x: x[0])
+    return result, averages_and_maxes, mean_similarity
+
 
 async def research_op(
-        question: str,
-        k: int = 5,
-        site_title_restriction: str = "None",
-        use_mmr: bool = False,
-        statmess:Optional[StatusEditMessage]=None,
-        linkRestrict:List[str]=None
-    ) -> Tuple[str, Optional[str],List[DocumentScoreVector]]:
+    question: str,
+    k: int = 5,
+    site_title_restriction: str = "None",
+    use_mmr: bool = False,
+    statmess: Optional[StatusEditMessage] = None,
+    link_restrict: Optional[List[str]] = None,
+) -> Tuple[str, Optional[str], List[DocumentScoreVector]]:
     """
     Search the chroma db for relevant documents pertaining to the
-    question, and return a formatted result.
+    question, and return a formatted result with the source links and original documents.
 
     Args:
         question (str): The question to be researched.
         k (int, optional): The number of results to return. Defaults to 5.
-        site_title_restriction (str, optional): Restricts search results to a specific site if set. Defaults to "None".
-        use_mmr (bool, optional): If set to True, uses Maximal Marginal Relevance for sorting results. Defaults to False.
-        statmess (Optional[StatusEditMessage], optional): The status message object for updating search progress. Defaults to None.
+        site_title_restriction (str, optional):
+            Restricts search results to a specific site if set. Defaults to "None".
+        use_mmr (bool, optional):
+            If set to True, uses Maximal Marginal Relevance for sorting results.
+              Defaults to False.
+        statmess (StatusEditMessage, optional):
+            The status message object for updating search progress. Defaults to None.
+        link_restrict (List[str],optional): Restrict database search to these links.
 
     Returns:
-        Tuple[str, Optional[str]]: A tuple containing the best answer to the question as a string,
-                                    and an optional string of all sourced URLs if available.
-    """
+        Tuple[str, Optional[str], List[DocumentScoreVector]]:
+            A tuple comprising the best answer, an optional string containing
+            URLs of all sources, and a list of DocumentScoreVector objects for the top documents.
 
+    """
 
     chromac = ChromaTools.get_chroma_client()
 
@@ -159,6 +200,7 @@ async def research_op(
         titleres=site_title_restriction,
         k=k,
         mmr=use_mmr,
+        linkres=link_restrict,
     )
 
     if len(data) <= 0:
@@ -176,5 +218,5 @@ async def research_op(
     if statmess:
         await statmess.editw(min_seconds=0, content="", embed=embed)
     answer = await format_answer(question, docs2)
-    
+
     return answer, allsources, docs2

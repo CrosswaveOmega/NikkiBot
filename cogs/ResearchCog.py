@@ -1,43 +1,39 @@
-import json
-from typing import Any, Dict, List, Tuple, Optional
-import discord
 import asyncio
-from assets import AssetLookup
+import json
 import re
+from io import StringIO
+from typing import Any, Dict, List, Optional, Tuple
 
-# import datetime
-
-
-from discord.ext import commands
-
+import discord
+import gptfunctionutil.functionlib as gptum
 from discord import app_commands
-from bot import TC_Cog_Mixin, StatusEditMessage, super_context_menu, TCBot
-
-import gptmod
+from discord.ext import commands
 from gptfunctionutil import (
-    GPTFunctionLibrary,
     AILibFunction,
+    GPTFunctionLibrary,
     LibParam,
     SingleCall,
     SingleCallAsync,
 )
-import gptfunctionutil.functionlib as gptum
-import gptmod.error
-from database.database_ai import AuditProfile
-from io import StringIO
 from javascriptasync import JSContext
-import assets
-import gui
+from openai import AsyncClient
 
-from .ResearchAgent import SourceLinkLoader
-from .ResearchAgent import ResearchContext
-from .ResearchAgent.chromatools import ChromaTools
-from .ResearchAgent.views import *
+import assets
+import cogs.ResearchAgent.actions as actions
+import cogs.ResearchAgent.tools as tools
+import gptmod
+import gptmod.error
+import gui
+from assets import AssetLookup
+from bot import StatusEditMessage, TC_Cog_Mixin, TCBot, super_context_menu
+from database.database_ai import AuditProfile
 from utility import prioritized_string_split, select_emoji, urltomessage
 from utility.embed_paginator import pages_of_embeds
-import cogs.ResearchAgent.tools as tools
-import cogs.ResearchAgent.actions as actions
-from openai import AsyncClient
+
+from .ResearchAgent import ResearchContext, SourceLinkLoader
+from .ResearchAgent.chromatools import ChromaTools
+from .ResearchAgent.views import *
+
 
 SERVER_ONLY_ERROR = "This command may only be used in a guild."
 INVALID_SERVER_ERROR = (
@@ -129,29 +125,31 @@ def extract_masked_links(markdown_text):
         masked_links.append((link_text, url))
     return masked_links
 
+
 def generate_article_metatemplate(article_data):
     template_parts = []
     values = []
-    if 'title' in article_data:
+    if "title" in article_data:
         template_parts.append("Article Title: {}")
-        values.append(article_data['title'])
-    if 'length' in article_data:
+        values.append(article_data["title"])
+    if "length" in article_data:
         template_parts.append("Length : {} characters")
-        values.append(str(article_data.get('length', 'UNKNOWN')))
-    if 'byline' in article_data:
+        values.append(str(article_data.get("length", "UNKNOWN")))
+    if "byline" in article_data:
         template_parts.append("byline: {}")
-        values.append(article_data['byline'])
-    if 'siteName' in article_data:
+        values.append(article_data["byline"])
+    if "siteName" in article_data:
         template_parts.append("siteName: {}")
-        values.append(article_data['siteName'])
-    if 'publishedTime' in article_data:
+        values.append(article_data["siteName"])
+    if "publishedTime" in article_data:
         template_parts.append("publishedTime: {}")
-        values.append(article_data['publishedTime'])
+        values.append(article_data["publishedTime"])
 
     template = ";\n    ".join(template_parts)
     template = "Article Metadata: \n    " + template + ";\n    "
 
     return template.format(*values)
+
 
 class Followups(gptum.GPTFunctionLibrary):
     @gptum.AILibFunction(
@@ -314,7 +312,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         all_links: List[str],
         chromac: Any = None,
         statmess: StatusEditMessage = None,
-        embed: discord.Embed=None,
+        embed: discord.Embed = None,
         override: bool = False,
     ):
         """
@@ -330,7 +328,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         Returns:
             Tuple[int, str]: A tuple containing the count of successfully processed links and a formatted status string.
         """
-        loader = SourceLinkLoader(chromac=chromac, statusmessage=statmess,embed=embed)
+        loader = SourceLinkLoader(chromac=chromac, statusmessage=statmess, embed=embed)
         return await loader.load_links(ctx, all_links, override)
 
     async def web_search(
@@ -359,8 +357,14 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         res = []
         async with ctx.channel.typing():
             results = tools.google_search(ctx.bot, query, result_limit)
-            if not 'items' in results:
-                return [],[{"title": 'No results', "link": 'NA', "desc": 'no results for that query.'}]
+            if not "items" in results:
+                return [], [
+                    {
+                        "title": "No results",
+                        "link": "NA",
+                        "desc": "no results for that query.",
+                    }
+                ]
             all_links = [r["link"] for r in results["items"]]
             hascount = 0
             length = len(results)
@@ -407,7 +411,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         "Search google for a query."
 
         chromac = ChromaTools.get_chroma_client()
-        #Preform web search
+        # Preform web search
         all_links, res = await self.web_search(ctx, query, result_limit=result_limit)
         embed = discord.Embed(
             title=f"Web Search Results for: {query} ",
@@ -601,11 +605,13 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
               Defaults to "None".
             use_mmr (bool, optional): Whether to use Maximal Marginal Relevance for deduplication.
             Defaults to False.
-            send_message (bool, optional): Whether to send the research result as a message in the channel.
+            send_message (bool, optional): Whether to send the research result as a message
+                in the channel.
             Defaults to True.
 
         Returns:
-            Tuple[str, Optional[discord.Message]]: A tuple containing the research answer and the sent message object (if any).
+            Tuple[str, Optional[discord.Message]]:
+                A tuple containing the research answer and the sent message object (if any).
         """
 
         chromac = ChromaTools.get_chroma_client()
@@ -623,7 +629,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         )
         async with ctx.channel.typing():
             # Search For Sources
-            answer, allsources,docs2=await actions.research_op(question,k,site_title_restriction,use_mmr,statmess)
+            answer, allsources, docs2 = await actions.research_op(
+                question, k, site_title_restriction, use_mmr, statmess
+            )
             # data = await tools.search_sim(
             #     question,
             #     client=chromac,
@@ -647,7 +655,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             # await statmess.editw(min_seconds=0, content="", embed=embed)
             # answer = await tools.format_answer(question, docs2)
 
-            viewme = Followup(bot=ctx.bot, answer=answer,page_content=docs2)
+            viewme = Followup(bot=ctx.bot, answer=answer, page_content=docs2)
             messageresp = None
             if send_message:
                 pages = prioritized_string_split(answer, ["%s\n"], 2000)
@@ -985,7 +993,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 raise e
             await mes.delete()
 
-            prompt=generate_article_metatemplate(header)
+            prompt = generate_article_metatemplate(header)
             sources = []
             mylinks = extract_masked_links(article)
             for link in mylinks:
@@ -993,19 +1001,18 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 link_text = link_text.replace("_", "")
                 gui.dprint(link_text, url4)
                 sources.append(f"[{link_text}]({url4})")
-            await ctx.send(prompt,suppress_embeds=True)
+            await ctx.send(prompt, suppress_embeds=True)
             try:
-                all=""
+                all = ""
                 async with ctx.channel.typing():
-                    async for result in tools.summarize(prompt, article,mylinks):
-                    
+                    async for result in tools.summarize(prompt, article, mylinks):
                         splitorder = ["%s\n", "%s.", "%s,", "%s "]
                         fil = prioritized_string_split(result, splitorder, 4072)
                         title = header.get("title", "notitle")
                         for p in fil:
                             embed = discord.Embed(title=title, description=p)
                             await ctx.send(embed=embed)
-                        all+=result
+                        all += result
 
                 if over:
                     target_message = await ctx.send(
@@ -1044,20 +1051,20 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             for c in out:
                 article += c[1] + "\n"
             await mes.delete()
-            header={
-                'title':header_one.get('title',None),
-                'length':len(article),
-                'publishedTime':header_one.get('title',None),
-                'byline':header_one.get('authors',None),
-                'siteName':header_one.get('website',None),
+            header = {
+                "title": header_one.get("title", None),
+                "length": len(article),
+                "publishedTime": header_one.get("title", None),
+                "byline": header_one.get("authors", None),
+                "siteName": header_one.get("website", None),
             }
-            
-            prompt=generate_article_metatemplate(header)
+
+            prompt = generate_article_metatemplate(header)
             # Call API
             bot = ctx.bot
             async with ctx.channel.typing():
-                all=""
-                async for result in tools.summarize(prompt,res,[]):
+                all = ""
+                async for result in tools.summarize(prompt, res, []):
                     splitorder = ["%s\n", "%s.", "%s,", "%s "]
                     fil = prioritized_string_split(result, splitorder, 4072)
                     for p in fil:
@@ -1066,7 +1073,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                         )
 
                         await ctx.send(embed=embed)
-                    all+=result
+                    all += result
                 if over:
                     target_message = await ctx.send(
                         f"<a:LoadingBlue:1206301904863502337> Saving {url} summary..."
@@ -1107,7 +1114,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     ):
         """
         Begin to recursively research the user's query, deriving an answer
-        using the stored documents in the chroma database.  
+        using the stored documents in the chroma database.
 
         Args:
             ctx (commands.Context): commands:context
@@ -1151,7 +1158,6 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             content=f"about {len(research_context.alllines)} links where gathered.",
         )
 
-    
     @commands.hybrid_command(
         name="research_manual",
         description="Manually research a topic.",
@@ -1184,7 +1190,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     ):
         """
         Begin to recursively research the user's query, deriving an answer
-        using the stored documents in the chroma database.  
+        using the stored documents in the chroma database.
 
         Args:
             ctx (commands.Context): commands:context
@@ -1214,63 +1220,70 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             followup,
             search_web,
         )
-        
-        automode=True
-        
-        
-        
+
+        automode = True
+
         if not await research_context.setup():
             return
         research_context.add_to_stack(question, "", 0, research_context.res)
-        
-        while research_context.stack:
 
+        while research_context.stack:
             current = research_context.stack.pop(0)
-            
+
             qatup = ("No search.", current[0], "Let's find out.")
             # WEB SEARCH.
             if search_web:
-                vie=PreCheck(user=ctx.author, timeout=75,rctx=research_context,current=current)
+                vie = PreCheck(
+                    user=ctx.author, timeout=75, rctx=research_context, current=current
+                )
                 if automode:
                     await vie.gen_query()
-                    await vie.search(None,edit=False)
+                    await vie.search(None, edit=False)
                 message = await ctx.send(
-                        embed=vie.embed,
-                        view=vie,
-                    )
+                    embed=vie.embed,
+                    view=vie,
+                )
                 await vie.wait()
                 await message.edit(view=None)
                 if vie.links:
-                    qatup=vie.qatup
-                    await research_context.load_links(vie.qatup,vie.links,vie.details)
+                    qatup = vie.qatup
+                    await research_context.load_links(vie.qatup, vie.links, vie.details)
             quest, context, dep, parent = current
             answer, links, ms = await research_context.research(quest)
-            emb, mess = await research_context.format_results(quest, qatup, answer, parent)
-            newcontext, depth = await research_context.change_context(quest, answer, context, dep, mess)
-            
-            if depth < research_context.depth and len(research_context.stack)<=0:
-                cur=(quest,newcontext,depth,parent)
-                vie=FollowupActionView(user=ctx.author, timeout=60*7,rctx=research_context,current=cur)
+            emb, mess = await research_context.format_results(
+                quest, qatup, answer, parent
+            )
+            newcontext, depth = await research_context.change_context(
+                quest, answer, context, dep, mess
+            )
+
+            if depth < research_context.depth and len(research_context.stack) <= 0:
+                cur = (quest, newcontext, depth, parent)
+                vie = FollowupActionView(
+                    user=ctx.author, timeout=60 * 7, rctx=research_context, current=cur
+                )
                 message = await ctx.send(
-                        embed=discord.Embed(title="Add up to 5 followup questions, or have the AI make them."),
-                        view=vie,
-                    )
+                    embed=discord.Embed(
+                        title="Add up to 5 followup questions, or have the AI make them."
+                    ),
+                    view=vie,
+                )
                 await vie.wait()
                 await message.edit(view=None)
                 if vie.value and vie.followup_questions:
                     followups = "\n".join(f"* {q}" for q in vie.followup_questions)
-                    await research_context.add_followups_to_stack(vie.followup_questions,followups,newcontext,depth,mess)
-                    await research_context.load_links(vie.qatup,vie.links,vie.details)
-        
-            research_context.add_output_dict(quest, answer, links, dep, followups)
+                    await research_context.add_followups_to_stack(
+                        vie.followup_questions, followups, newcontext, depth, mess
+                    )
+                    await research_context.load_links(vie.qatup, vie.links, vie.details)
 
+            research_context.add_output_dict(quest, answer, links, dep, followups)
 
         await research_context.send_file_results()
         await research_context.statmess.editw(
             min_seconds=0,
             content=f"about {len(research_context.alllines)} links where gathered.",
         )
-
 
 
 async def setup(bot):

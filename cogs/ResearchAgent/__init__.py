@@ -5,6 +5,7 @@ from .LinkLoader import SourceLinkLoader
 from .research_ctx import ResearchContext
 from .actions import *
 
+
 async def setup(bot):
     import gui
 

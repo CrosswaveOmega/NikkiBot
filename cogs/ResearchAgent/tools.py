@@ -97,17 +97,21 @@ class MyLib(GPTFunctionLibrary):
 async def try_until_ok(async_func, *args, **kwargs):
     """
     Attempts to run an asynchronous function up to  4 times.
-
-    Parameters:
-    async_func (Callable): The asynchronous function to run.
-    *args: Positional arguments to pass to the asynchronous function.
-    **kwargs: Keyword arguments to pass to the asynchronous function.
+    Example:
+        completion = await try_until_ok(
+                    asyncio.sleep(3),
+                    timeout=60,
+                )
+    Args:
+        async_func (Callable): The asynchronous function to run.
+        *args: Positional arguments to pass to the asynchronous function.
+        **kwargs: Keyword arguments to pass to the asynchronous function.
 
     Returns:
-    Any: The result of the asynchronous function if it succeeds.
+        Any: The result of the asynchronous function if it succeeds.
 
     Raises:
-    Exception: If the asynchronous function fails after  4 attempts.
+        Exception: If the asynchronous function fails after  4 attempts.
     """
     for tries in range(4):
         try:
@@ -117,7 +121,7 @@ async def try_until_ok(async_func, *args, **kwargs):
                 raise err
 
 
-def google_search(bot, query: str, result_limit: int, kwargs:dict={}) -> dict:
+def google_search(bot, query: str, result_limit: int, kwargs: dict = {}) -> dict:
     query_service = build("customsearch", "v1", developerKey=bot.keys["google"])
     query_results = (
         query_service.cse()
@@ -289,7 +293,7 @@ async def add_summary(
     if client == None:
         vectorstore = Chroma.from_documents(
             documents=newdata,
-            embedding=OpenAIEmbeddings(model='text-embedding-3-small'),
+            embedding=OpenAIEmbeddings(model="text-embedding-3-small"),
             ids=ids,
             collection_name=collection,
             persist_directory=persist,
@@ -298,7 +302,7 @@ async def add_summary(
     else:
         vectorstore = Chroma.from_documents(
             documents=newdata,
-            embedding=OpenAIEmbeddings(model='text-embedding-3-small'),
+            embedding=OpenAIEmbeddings(model="text-embedding-3-small"),
             ids=ids,
             collection_name=collection,
             client=client,
@@ -320,7 +324,7 @@ def store_splits(
     if client == None:
         vectorstore = Chroma.from_documents(
             documents=splits,
-            embedding=OpenAIEmbeddings(model='text-embedding-3-small'),
+            embedding=OpenAIEmbeddings(model="text-embedding-3-small"),
             ids=ids,
             collection_name=collection,
             persist_directory=persist,
@@ -329,7 +333,7 @@ def store_splits(
     else:
         vectorstore = Chroma.from_documents(
             documents=splits,
-            embedding=OpenAIEmbeddings(model='text-embedding-3-small'),
+            embedding=OpenAIEmbeddings(model="text-embedding-3-small"),
             ids=ids,
             collection_name=collection,
             client=client,
@@ -346,7 +350,7 @@ def has_url(
         try:
             collectionvar = client.get_collection(
                 collection,
-                )
+            )
 
             res = collectionvar.get(
                 where={"source": url}, include=["documents", "metadatas"]
@@ -417,7 +421,7 @@ async def search_sim(
     if titleres != "None":
         filterwith["title"] = {"$like": f"%{titleres}%"}
     if linkres:
-        filterwith["source"]= {"$in":[linkres]}
+        filterwith["source"] = {"$in": [linkres]}
     gui.dprint("here")
     if mmr:
         docs = vs.max_marginal_relevance_search(
@@ -444,8 +448,8 @@ def get_doc_sources(docs: List[Tuple[Document, float]]):
     Returns:
         str: A string formatted to list unique sources and the indices of their appearances in the provided list.
     """
-    all_links = [doc.metadata.get("source", "???") for doc, e,i in docs]
-    links = set(doc.metadata.get("source", "???") for doc, e,i, in docs)
+    all_links = [doc.metadata.get("source", "???") for doc, e, i in docs]
+    links = set(doc.metadata.get("source", "???") for doc, e, i, in docs)
 
     def ie(all_links: List[str], value: str) -> List[int]:
         return [index for index, link in enumerate(all_links) if link == value]
@@ -471,7 +475,7 @@ async def debug_get(
     vs = Chroma(
         client=client,
         persist_directory=persist,
-        embedding_function=OpenAIEmbeddings(model='text-embedding-3-small'),
+        embedding_function=OpenAIEmbeddings(model="text-embedding-3-small"),
         collection_name=collection,
     )
     if titleres == "None":
@@ -487,7 +491,7 @@ async def debug_get(
 
 
 async def get_points(
-    question: str, docs: List[Tuple[Document, float,Vector]]
+    question: str, docs: List[Tuple[Document, float, Vector]]
 ) -> AsyncGenerator[Tuple[Document, float, str, int], None]:
     """
     Extracts important bullet points from the provided sources to answer a given question.
@@ -540,7 +544,7 @@ async def get_points(
 
     client = openai.AsyncOpenAI()
     for e, tup in enumerate(docs):
-        doc, score,emb = tup
+        doc, score, emb = tup
         tile = "NOTITLE" if "title" not in doc.metadata else doc.metadata["title"]
         output = f"""**ID**:{e}
         **Name:** {tile}
@@ -569,7 +573,7 @@ async def get_points(
         yield doctup
 
 
-async def format_answer(question: str, docs: List[Tuple[Document, float,Any]]) -> str:
+async def format_answer(question: str, docs: List[Tuple[Document, float, Any]]) -> str:
     """
     Formats an answer to a given question using the provided documents.
 
@@ -600,7 +604,7 @@ async def format_answer(question: str, docs: List[Tuple[Document, float,Any]]) -
     Exclude any concluding remarks from the answer.
 
     """
-    prompt ="""
+    prompt = """
 
 **Task:**
 Use the provided sources, 
@@ -702,19 +706,24 @@ async def summarize(prompt: str, article: str, mylinks: List[str]):
     client = openai.AsyncOpenAI()
 
     def local_length(st):
-        
         return gptmod.util.num_tokens_from_messages(
-            [{"role": "system", "content": summary_prompt+prompt}, {"role": "user", "content": st}],
+            [
+                {"role": "system", "content": summary_prompt + prompt},
+                {"role": "user", "content": st},
+            ],
             "gpt-3.5-turbo-0125",
         )
 
     result = ""
     fil = prioritized_string_split(article, splitorder, 10000, length=local_length)
-    filelength=len(fil)
-    for num,articlepart in enumerate(fil):
-        print(num,filelength)
+    filelength = len(fil)
+    for num, articlepart in enumerate(fil):
+        print(num, filelength)
         messages = [
-            {"role": "system", "content": f"{summary_prompt}\n{prompt}\n You are viewing part {num+1}/{filelength} "},
+            {
+                "role": "system",
+                "content": f"{summary_prompt}\n{prompt}\n You are viewing part {num+1}/{filelength} ",
+            },
             {"role": "user", "content": f"\n {articlepart}"},
         ]
         completion = await try_until_ok(
@@ -734,7 +743,6 @@ async def summarize(prompt: str, article: str, mylinks: List[str]):
                 # sources.append(f"[{link_text}]({url})")
                 result = result.replace(link_text, f"{link_text}")
         yield result
-
 
 
 async def list_sources(

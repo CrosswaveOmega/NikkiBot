@@ -41,16 +41,21 @@ class SourceLinkLoader:
     and updating or adding entries to the database as necessary.
     """
 
-    def __init__(self, chromac: chromadb.ClientAPI, statusmessage: StatusEditMessage=None,embed:Optional[discord.Embed]=None):
+    def __init__(
+        self,
+        chromac: chromadb.ClientAPI,
+        statusmessage: StatusEditMessage = None,
+        embed: Optional[discord.Embed] = None,
+    ):
         self.chromac = chromac
         self.statmess = statusmessage
         self.current = ""
-        self.embed=embed
+        self.embed = embed
         if statusmessage and not embed:
             if statusmessage.embed:
-                self.embed=statusmessage.embed
+                self.embed = statusmessage.embed
         if not self.embed:
-            self.embed=discord.Embed(title="URL load results.")
+            self.embed = discord.Embed(title="URL load results.")
         pass
 
     async def load_links(
@@ -82,7 +87,7 @@ class SourceLinkLoader:
         for link_num, link in enumerate(all_links):
             embed = self.embed
             self.embed.description = f"Web Link Loading: \n{self.get_status_lines()}"
-            has=False
+            has = False
             if not override:
                 has, getres = await self.check_cached_documents(ctx, link, override)
 

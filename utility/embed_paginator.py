@@ -4,7 +4,7 @@ from typing import List, Tuple
 from discord import Embed
 import gui
 
-"""This is for returning pages of embeds"""
+"""This is for returning pages of embeds."""
 
 
 class PageSelect(discord.ui.Select):
@@ -120,7 +120,7 @@ class PageClassContainer:
         """
         if result in ("timeout", "exit"):
             ve = view.clear_items()
-            await interaction.response.edit_message(content="done", view=ve)
+            await interaction.response.edit_message(view=ve)
         else:
             if result in self.custom_callbacks:
                 await self.custom_callbacks[result](self, interaction, view, result)
@@ -162,7 +162,7 @@ class EmbedPageButtons(discord.ui.View):
             self.add_item(self.pageselect)
         else:
             self.remove_item(self.pageselect)
-            self.pagebutton_button = None
+            # self.pagebutton_button = None
             self.pageselect = None
         await self.callbacker.mycallback(interaction, self, "pass")
 
@@ -205,13 +205,6 @@ class EmbedPageButtons(discord.ui.View):
     ) -> None:
         # Call mycallback method of the callbacker object with "last" argument
         await self.callbacker.mycallback(interaction, self, "last")
-
-
-class SelectView(discord.ui.View):
-    # This is a view for the navigation buttons.
-    def __init__(self, *, timeout=180, myhelp=None):
-        super().__init__(timeout=timeout)
-        self.add_item(EmbedPageButtons())
 
 
 async def pages_of_embeds_2(

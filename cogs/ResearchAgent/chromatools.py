@@ -25,33 +25,42 @@ from langchain_community.vectorstores.utils import maximal_marginal_relevance
 import numpy as np
 
 
-DocumentScoreVector=Tuple[Document, float,Vector]
+DocumentScoreVector = Tuple[Document, float, Vector]
+
 
 def _results_to_docs_scores_emb(results: Any) -> List[DocumentScoreVector]:
     return [
-        (Document(page_content=result[0], metadata=result[1] or {}), result[2],result[3])
+        (
+            Document(page_content=result[0], metadata=result[1] or {}),
+            result[2],
+            result[3],
+        )
         for result in zip(
             results["documents"][0],
             results["metadatas"][0],
             results["distances"][0],
-            results["embeddings"][0]
+            results["embeddings"][0],
         )
     ]
 
+
 DEFAULT_K = 4  # Number of Documents to return.
+
+
 class ChromaTools:
     """Class full of static methods for simple Chroma DB ops."""
 
     @staticmethod
     def get_chroma_client() -> chromadb.ClientAPI:
-        '''Create a new chroma client.'''
+        """Create a new chroma client."""
         client = chromadb.PersistentClient(path="saveData")
         return client
-    
+
+
 class ChromaBetter(Chroma):
-    """Extension of Langchain's Chroma class that will return the 
+    """Extension of Langchain's Chroma class that will return the
     embeddings as well as the Document distance."""
-    
+
     @xor_args(("query_texts", "query_embeddings"))
     def __query_collection(
         self,
@@ -76,7 +85,7 @@ class ChromaBetter(Chroma):
             n_results=n_results,
             where=where,
             where_document=where_document,
-            include=['documents','metadatas','distances','embeddings'],
+            include=["documents", "metadatas", "distances", "embeddings"],
             **kwargs,
         )
 
@@ -131,7 +140,7 @@ class ChromaBetter(Chroma):
             )
 
         return _results_to_docs_scores_emb(results)
-    
+
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: List[float],
