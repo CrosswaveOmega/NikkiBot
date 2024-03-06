@@ -973,7 +973,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @oai_check()
     @ai_rate_check()
     async def summarize(
-        self, ctx: commands.Context, url: str, over: bool = False, stopat: str = None
+        self, ctx: commands.Context, url: str, over: bool = False, srange: str = '2-5'
     ):
         """Download the reader mode view of a passed in URL, and summarize it."""
         async with self.lock:
@@ -1005,7 +1005,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             try:
                 all = ""
                 async with ctx.channel.typing():
-                    async for result in tools.summarize(prompt, article, mylinks):
+                    async for result in tools.summarize(prompt, article, mylinks, srange=srange):
                         splitorder = ["%s\n", "%s.", "%s,", "%s "]
                         fil = prioritized_string_split(result, splitorder, 4072)
                         title = header.get("title", "notitle")

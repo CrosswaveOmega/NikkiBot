@@ -696,19 +696,18 @@ summary_prompt = """
     * Craft a summary that is detailed, thorough, in-depth, and complex, while maintaining clarity and conciseness.
     * Incorporate main ideas and essential information, eliminating extraneous language and focusing on critical aspects.
     * Rely strictly on the provided text, without including external information.
-    * Format the summary into 2-5 medium-length paragraphs with 5-10 sentences per paragraph.
+    * Format the summary into [RANGE] medium-length paragraphs with 5-10 sentences per paragraph.
     * Large texts WILL be split up, but you will not be given the other parts of the text.
 
 """
 
-
-async def summarize(prompt: str, article: str, mylinks: List[str]):
+async def summarize(prompt: str, article: str, mylinks: List[str],srange:str='2-5'):
     client = openai.AsyncOpenAI()
 
     def local_length(st):
         return gptmod.util.num_tokens_from_messages(
             [
-                {"role": "system", "content": summary_prompt + prompt},
+                {"role": "system", "content": summary_prompt.replace("[RANGE]",srange) + prompt},
                 {"role": "user", "content": st},
             ],
             "gpt-3.5-turbo-0125",

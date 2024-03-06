@@ -112,9 +112,6 @@ async def sentence_sim_op(
                 get_closest, c.embedding, docs
             )
 
-            # Extract embeddings of the top-related documents
-            related_embeddings = [docs[doc_idx][2] for doc_idx, _ in top_docs]
-
             filtered_docs = [doc for doc in top_docs if doc[1] > 0.05]
 
             # Add to map.
