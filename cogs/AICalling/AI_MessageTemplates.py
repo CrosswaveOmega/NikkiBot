@@ -41,7 +41,7 @@ class AIMessageTemplates(MessageTemplates):
     ):
         """Create an embed that sums up the server archive information for this server."""
         # add a message to the 'audit channel'
-        emb = Embed(title="Audit", description=f"```{message.content}```")
+        emb = Embed(title="Audit", description=f"```{message.content[:4000]}```")
         if chat:
             if "model" in chat:
                 emb.add_field(name="Model", value=chat["model"], inline=True)

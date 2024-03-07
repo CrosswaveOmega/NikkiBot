@@ -69,6 +69,9 @@ reasons = {
     },
 }
 
+class DummyMessage():
+    def __init__(self,cont):
+        self.content=cont
 
 class MyLib(GPTFunctionLibrary):
     @AILibFunction(name="get_time", description="Get the current time and day in UTC.")
@@ -105,7 +108,7 @@ async def precheck_context(ctx: commands.Context) -> bool:
     return True
 
 
-async def process_result(ctx: commands.Context, result: Any, mylib: GPTFunctionLibrary):
+async def process_result(ctx: commands.Context, result: Any, mylib: GPTFunctionLibrary, chat):
     """
     process the result.  Will either send a message, or invoke a function.
 
@@ -113,12 +116,7 @@ async def process_result(ctx: commands.Context, result: Any, mylib: GPTFunctionL
     When a function is invoked, the output of the function is added to the chain instead.
     """
     gui.dprint()
-    if result.model == "you":
-        i = result.choices[0]
-        role, content = i.message.role, i.message.content
-        messageresp = await ctx.channel.send(content)
 
-        return role, content, messageresp, None
 
     i = result.choices[0]
     gui.dprint(i)
@@ -126,10 +124,12 @@ async def process_result(ctx: commands.Context, result: Any, mylib: GPTFunctionL
     messageresp = None
     function = None
     finish_reason = i.finish_reason
-
+    id=None
+    
     if finish_reason == "tool_calls" or i.message.tool_calls:
         # Call the corresponding funciton, and set that to content.
         function = str(i.message.tool_calls)
+        chat.messages.append({'role':role,'content':content,'tool_calls':i.message.tool_calls})
         for tool_call in i.message.tool_calls:
             audit = await AIMessageTemplates.add_function_audit(
                 ctx,
@@ -138,11 +138,33 @@ async def process_result(ctx: commands.Context, result: Any, mylib: GPTFunctionL
                 json.loads(tool_call.function.arguments),
             )
             outcome = await mylib.call_by_tool_ctx(ctx, tool_call)
+            print(content)
             content = outcome["content"]
+            if isinstance(content, discord.Message):
+                messageresp = content
+                content = messageresp.content
+                return role, content, messageresp, function
+            chat.messages.append({'role':'tool','content':content,'tool_call_id':tool_call.id})
+            audit = await AIMessageTemplates.add_resp_audit(
+                ctx,
+                DummyMessage(content),
+                chat,
+            )
+            print(chat.messages)
+            chat.tools=None
+            chat.tool_choice=None
+            result2 = await ctx.bot.gptapi.callapi(chat)
+            print(result2)
+            i2 = result2.choices[0]
+            role, content = i2.message.role, i2.message.content
+            break
+
+
+
         # content = resp
     if isinstance(content, str):
         # Split up content by line if it's too long.
-
+       
         page = commands.Paginator(prefix="", suffix=None)
         for p in content.split("\n"):
             page.add_line(p)
@@ -226,7 +248,7 @@ async def ai_message_invoke(
 
     bot.logs.info(str(result))
     # Process the result.
-    role, content, messageresp, tools = await process_result(ctx, result, mylib)
+    role, content, messageresp, tools = await process_result(ctx, result, mylib, chat)
     profile.add_message_to_chain(
         message.id,
         message.created_at,

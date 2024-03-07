@@ -21,7 +21,7 @@ def urlto_gcm_ids(link="") -> Tuple[int, int, int]:
         LinkError: If the passed in link is either not a string or does not contain the needed ids.
 
     Returns:
-        guild
+        guild_id, channel_id, message_id
     """
     # Attempt to extract guild, channel, and messageids from url.
     if not isinstance(link, str):

@@ -445,7 +445,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             site_title_restriction=site_title_restriction,
             send_message=True,
         )
-        return ms
+        formatted=f"**Answer:**\n{answer}\n\n**Sources:**\n{links}"
+        return formatted
 
     @commands.command(name="loadurl", description="loadurl test.", extras={})
     async def loader_test(self, ctx: commands.Context, link: str):

@@ -623,13 +623,14 @@ END
 
 **Guidelines:**
 1. Your response should consist of 3-7 medium-length paragraphs, containing 5-10 sentences each.
-2. Preserve crucial information from the sources and maintain a descriptive tone in your writing.
+2. Preserve crucial information from the sources and maintain an objective, descriptive tone in your writing.  
 3. Ensure the inclusion of an inline citation for each piece of information obtained from a specific source,
    using this format: [ID here].
    **This is crucially important, as the inline citations are used to verify the response accuracy.**
-4. If the sources do not provide sufficient information on a particular aspect of the question, explicitly state this limitation in your answer.
-5. Omit any concluding remarks from your response.
-
+4. If the sources do not provide sufficient information on a particular aspect of the question, explicitly state this limitation.
+5. Do not write a conclusion under any circumstance.  This is not an essay.
+6. Do not include the terms "summary", "conclusion", or "overall" in the response.
+7. Do not utilize superfluous language.
     """
     # The websites may contradict each other, prioritize information from encyclopedia pages and wikis.
     # Valid news sources follow.
