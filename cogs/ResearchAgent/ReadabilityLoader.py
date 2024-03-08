@@ -7,7 +7,7 @@ from io import StringIO
 import logging
 import re
 import warnings
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, AsyncGenerator, Dict, Iterator, List, Optional, Tuple, Union
 import inspect
 import aiohttp
 import discord
@@ -95,28 +95,48 @@ def _build_metadata(soup: Any, url: str) -> dict:
 
 
 class ReadableLoader(dl.WebBaseLoader):
+    async def _fetch_with_rate_limit(
+        self, url: str, semaphore: asyncio.Semaphore
+    ) -> str:
+        async with semaphore:
+            try:
+                return await self._fetch(url)
+            except Exception as e:
+                await self.bot.send_error(e, title="fetching a url.", uselog=True)
+                if self.continue_on_failure:
+                    self.bot.logs.warning(
+                        f"Error fetching {url}, skipping due to"
+                        f" continue_on_failure=True"
+                    )
+                    return ""
+                self.bot.logs.exception(
+                    f"Error fetching {url} and aborting, use continue_on_failure=True "
+                    "to continue loading urls after encountering an error."
+                )
+                raise e
+
     async def scrape_all(
         self, urls: List[str], parser: Union[str, None] = None
-    ) -> List[Any]:
+    ):
         """Fetch all urls, then return soups for all results."""
         from bs4 import BeautifulSoup
 
         pdf_urls = []
         regular_urls = []
 
-        for url in urls:
-            if url.endswith(".pdf") or ".pdf?" in url:
-                raise Exception("Should not be PDF.")
-            else:
-                regular_urls.append(url)
+        for e,url in urls:
+            regular_urls.append(url)
 
         results = await self.fetch_all(regular_urls)
 
         final_results = []
 
         for i, result in enumerate(results):
+            if not result:
+                yield i, urls[i][0], None
+                continue
             url = regular_urls[i]
-
+            print(url)
             if parser is None:
                 if url.endswith(".xml"):
                     parser = "xml"
@@ -139,13 +159,18 @@ class ReadableLoader(dl.WebBaseLoader):
                 gui.dprint("Not readable link.")
             try:
                 text, header = await read_article_aw(self.jsenv, clean_html, url)
-                final_results.append((remove_links(text), souped, header))
+                #YIELD THIS:
+                out=(remove_links(text), souped, header)
+                yield i, urls[i][0],out
 
             except Exception as e:
+                gui.dprint(e)
                 text = souped.get_text(**self.bs_get_text_kwargs)
-                final_results.append((text, souped, None))
+                #YIELD THIS:
+                out=(remove_links(text), souped, None)
+                yield i, urls[i][0],out
 
-        return final_results
+        #return final_results
 
     def _scrape(self, url: str, parser: Union[str, None] = None) -> Any:
         from bs4 import BeautifulSoup
@@ -184,33 +209,35 @@ class ReadableLoader(dl.WebBaseLoader):
         """Load text from the url(s) in web_path."""
         return list(self.lazy_load())
 
-    async def aload(self, bot) -> List[Document]:
+    async def aload(self, bot) -> AsyncGenerator[Tuple[List[Document], int, int], None]:
         """Load text from the urls in web_path async into Documents.
         Despite the return type, it only loads one url.
         """
         self.jsenv = bot.jsenv
         self.bot = bot
-        results = await self.scrape_all(self.web_paths)
+        self.continue_on_failure=True
         docs, typev = [], -1
 
-        for i, res in enumerate(results):
-            text, soup, header = results[i]
+        async for i,e, result in self.scrape_all(self.web_paths):
+            if result is None:
+                yield None,e,-5
+            if result is not None:
 
-            metadata = _build_metadata(soup, self.web_paths[i])
-            typev = MetadataDocType.htmltext
+                text, soup, header = result
 
-            if not "title" in metadata:
-                metadata["title"] = "No Title"
-            if header is not None:
-                if "byline" in header:
-                    metadata["authors"] = header["byline"]
-                metadata["website"] = header.get("siteName", "siteunknown")
-                metadata["title"] = header.get("title")
-                typev = MetadataDocType.readertext
+                metadata = _build_metadata(soup, self.web_paths[i][1])
+                typev = MetadataDocType.htmltext
 
-            metadata["type"] = int(typev)
+                if not "title" in metadata:
+                    metadata["title"] = "No Title"
+                if header is not None:
+                    if "byline" in header:
+                        metadata["authors"] = header["byline"]
+                    metadata["website"] = header.get("siteName", "siteunknown")
+                    metadata["title"] = header.get("title")
+                    typev = MetadataDocType.readertext
 
-            metadata["sum"] = "source"
-            docs.append(Document(page_content=text, metadata=metadata))
+                metadata["type"] = int(typev)
 
-        return docs, typev
+                metadata["sum"] = "source"
+                yield Document(page_content=text, metadata=metadata), e, typev

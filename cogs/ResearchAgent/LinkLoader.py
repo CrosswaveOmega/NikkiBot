@@ -15,6 +15,7 @@ from bot import TC_Cog_Mixin, StatusEditMessage, super_context_menu, TCBot
 from .tools import (
     has_url,
     read_and_split_link,
+    read_and_split_links,
     store_splits,
 )
 import gptmod
@@ -33,7 +34,7 @@ from googleapiclient.discovery import build  # Import the library
 
 from utility import prioritized_string_split, select_emoji
 from utility.embed_paginator import pages_of_embeds
-
+from utility import Timer
 
 class SourceLinkLoader:
     """
@@ -50,6 +51,7 @@ class SourceLinkLoader:
         self.chromac = chromac
         self.statmess = statusmessage
         self.current = ""
+        self.hascount = 0
         self.embed = embed
         if statusmessage and not embed:
             if statusmessage.embed:
@@ -57,6 +59,7 @@ class SourceLinkLoader:
         if not self.embed:
             self.embed = discord.Embed(title="URL load results.")
         pass
+
 
     async def load_links(
         self,
@@ -81,11 +84,12 @@ class SourceLinkLoader:
         if not self.chromac:
             self.chromac = ChromaTools.get_chroma_client()
 
-        self.current, hascount = "", 0
+        self.current, self.hascount = "", 0
         self.all_link_status = [["pending", link] for link in all_links]
 
+        links,linknums = [],[]
+
         for link_num, link in enumerate(all_links):
-            embed = self.embed
             self.embed.description = f"Web Link Loading: \n{self.get_status_lines()}"
             has = False
             if not override:
@@ -93,11 +97,16 @@ class SourceLinkLoader:
 
             if has and not override:
                 self.current += self.process_cached_link(link_num, link, getres)
-                hascount += 1
+                self.hascount += 1
             else:
-                await self.process_uncached_link(ctx, link_num, link, embed)
+                links.append((link_num,link))
+                #await self.process_uncached_link(ctx, link_num, link, self.embed)
+                #task = asyncio.create_task()
+                #tasks.append(task)
+        #await asyncio.gather(*tasks)
+        await self.process_uncached_links(ctx,links)
 
-        return hascount, self.get_status_lines()
+        return self.hascount, self.get_status_lines()
 
     async def initialize_status_message(self, ctx: commands.Context):
         """
@@ -168,39 +177,40 @@ class SourceLinkLoader:
         """
         self.all_link_status[link_num][0] = "skip"
         return f"[Link {link_num}]({link}) has {len(getres['documents'])} cached documents.\n"
-
-    async def process_uncached_link(
+    async def process_uncached_links(
         self,
         ctx,
-        link_num,
-        link,
-        embed,
+        links,
     ):
         """
         Processes a link that was not found in the cache.
 
         Args:
-            ctx (commands.Context): The context of the command.
-            link_num (int): The index of the link in the list.
-            link (str): The URL of the link.
+            ctx (commands.Context): The context of the command
+            links (Tuple[int,str]): The URL of the link.
             embed (discord.Embed): The embed object for display updates.
 
         """
-        try:
-            splits, type = await read_and_split_link(ctx.bot, link)
-            dbadd = True
-            for split in splits:
-                for i, m in split.metadata.items():
-                    if m is None:
-                        split.metadata[i] = "N/A"
-                    else:
-                        dbadd = True
+        
+        async for dat, e, typev in read_and_split_links(ctx.bot,links):
+            try:
+                if typev==-5:
+                    raise Exception(f"Could not load link {e}!")
+                dbadd = True
+                for split in dat:
+                    for i, m in split.metadata.items():
+                        if m is None:
+                            split.metadata[i] = "N/A"
+                        else:
+                            dbadd = True
 
-            if dbadd:
-                await self.process_uncached_link_add(link_num, link, splits, embed)
+                if dbadd:
+                    await self.process_uncached_link_add(e, dat[0].metadata.get('source'), dat, self.embed)
 
-        except Exception as err:
-            await self.process_uncached_link_error(ctx, link_num, link, err, embed)
+            except Exception as err:
+                await ctx.bot.send_error(err)
+                await self.process_uncached_link_error(ctx, e, '', err, self.embed)
+
 
     async def process_uncached_link_add(
         self,
@@ -223,7 +233,12 @@ class SourceLinkLoader:
         toadd = f"[Link {link_num}]({link}) has {len(splits)} splits.\n"
         self.current += toadd
         self.embed.description = self.get_status_lines()
-        await asyncio.to_thread(store_splits, splits, client=self.chromac)
+        print(splits)
+        with Timer() as timer:
+            await asyncio.to_thread(store_splits, splits, client=self.chromac)
+        elapsed_time = timer.get_time()
+        print(f"Time elapsed STORE: {elapsed_time:.4f} seconds")
+        
         await self.statmess.editw(
             min_seconds=5,
             content=f"<a:LetWalkR:1118191001731874856> {self.current}",

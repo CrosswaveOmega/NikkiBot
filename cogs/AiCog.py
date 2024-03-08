@@ -138,7 +138,7 @@ async def process_result(ctx: commands.Context, result: Any, mylib: GPTFunctionL
                 json.loads(tool_call.function.arguments),
             )
             outcome = await mylib.call_by_tool_ctx(ctx, tool_call)
-            print(content)
+
             content = outcome["content"]
             if isinstance(content, discord.Message):
                 messageresp = content
@@ -150,11 +150,11 @@ async def process_result(ctx: commands.Context, result: Any, mylib: GPTFunctionL
                 DummyMessage(content),
                 chat,
             )
-            print(chat.messages)
+
             chat.tools=None
             chat.tool_choice=None
             result2 = await ctx.bot.gptapi.callapi(chat)
-            print(result2)
+
             i2 = result2.choices[0]
             role, content = i2.message.role, i2.message.content
             break

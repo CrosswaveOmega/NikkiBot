@@ -133,85 +133,152 @@ def google_search(bot, query: str, result_limit: int, kwargs: dict = {}) -> dict
 
 
 async def read_and_split_pdf(
-    bot, url: str, chunk_size: int = 1800, chunk_overlap: int = 1
+    bot, url: str, extract_meta:bool=False
 ):
-    mylib = MyLib()
-    client = openai.AsyncClient()
 
-    loader = PDFMinerLoader(url)
-    data = await asyncio.wait_for(asyncio.to_thread(loader.load), timeout=25)
-    completion = await client.chat.completions.create(
-        model="gpt-3.5-turbo-0125",
-        messages=[
-            {
-                "role": "system",
-                "content": "Given the raw text of the first page of a pdf, execute the get_pdf_data data function.",
-            },
-            {
-                "role": "user",
-                "content": f"Please extract the data for this pdf: {(data[0].page_content)[:2000]}",
-            },
-        ],
-        tools=mylib.get_tool_schema(),
-        tool_choice="auto",
+    try:
+        loader = PDFMinerLoader(url)
+
+        data = await asyncio.wait_for(asyncio.to_thread(loader.load), timeout=25)
+
+        metadata = {}
+        new_docs = []
+        title,authors,date,abstract="Unset","NotFound","1-1-2020","NotFound"
+        if extract_meta:
+            mylib = MyLib()
+            client = openai.AsyncClient()
+
+            completion = await client.chat.completions.create(
+                model="gpt-3.5-turbo-0125",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Given the raw text of the first page of a pdf, execute the get_pdf_data data function.",
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Please extract the data for this pdf: {(data[0].page_content)[:2000]}",
+                    },
+                ],
+                tools=mylib.get_tool_schema(),
+                tool_choice="auto",
+            )
+            message = completion.choices[0].message
+            if message.tool_calls:
+                for tool in message.tool_calls:
+                    typev = int(MetadataDocType.pdftext)
+                    out = await mylib.call_by_tool_async(tool)
+                    title, authors, date, abstract = out["content"]
+                    break
+        metadata["authors"] = authors
+        metadata["website"] = "PDF_ORIGIN"
+        metadata["title"] = title
+        metadata["source"] = url
+        metadata["description"] = abstract
+        metadata["language"] = "en"
+        metadata["dateadded"] = datetime.datetime.utcnow().timestamp()
+        metadata["sum"] = "source"
+        metadata["type"] = typev
+        metadata["date"] = date
+        for e, pagedata in enumerate(data):
+            newdata = copy.deepcopy(metadata)
+            newdata["page"] = f"Page {e}"
+            text = pagedata.page_content
+            # dealing with awkward spacing
+            filtered_text = re.sub(r"-\s*\n", "", text)
+            filtered_text = re.sub(r" +", " ", filtered_text)
+            doc = Document(page_content=filtered_text, metadata=newdata)
+
+            new_docs.append(doc)
+        return new_docs, typev
+    except Exception as ex:
+        await bot.send_error(ex);
+        return None,-5
+
+async def read_and_split_links(
+    bot, urls: List[str], chunk_size: int = 1800, chunk_overlap: int = 1
+) -> Tuple[List[Document], int]:
+    # Document loader
+    prioritysplit = []
+    pdfsplit=[]
+    pdf_urls = []
+    regular_urls = []
+    symbol3 = re.escape("  ")
+    pattern3 = re.compile(f"({symbol3}(?:(?!{symbol3}).)+{symbol3})")
+    pdfsplit.append((pattern3, 100))
+    for e,url in urls:
+        if url.endswith(".pdf") or ".pdf" in url:
+            pdf_urls.append((e,url))
+        else:
+            regular_urls.append((e,url))
+    for e, pdfurl in pdf_urls:
+        pdfmode = True
+        newdata=[]
+        data, typev = await read_and_split_pdf(bot, pdfurl, chunk_size)
+        if data is None:
+            yield None, e, typev
+            continue
+        splitnum = 0
+        for d in data:
+            newdat=await simplify_and_split_output(d,chunk_size,prioritysplit,splitnum)
+            splitnum+=len(newdat)
+            newdata.extend(newdat)
+        yield newdata, e, typev
+
+    loader = ReadableLoader(
+        regular_urls,
+        header_template={
+            "User-Agent": "Mozilla/5.0 (X11,Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"
+        },
     )
-    metadata = {}
-    new_docs = []
-    message = completion.choices[0].message
-    if message.tool_calls:
-        for tool in message.tool_calls:
-            typev = int(MetadataDocType.pdftext)
-            out = await mylib.call_by_tool_async(tool)
-            title, authors, date, abstract = out["content"]
-            metadata["authors"] = authors
-            metadata["website"] = "PDF_ORIGIN"
-            metadata["title"] = title
-            metadata["source"] = url
-            metadata["description"] = abstract
-            metadata["language"] = "en"
-            metadata["dateadded"] = datetime.datetime.utcnow().timestamp()
-            metadata["sum"] = "source"
-            metadata["type"] = typev
-            metadata["date"] = date
-            for e, pagedata in enumerate(data):
-                newdata = copy.deepcopy(metadata)
-                newdata["page"] = f"Page {e}"
-                text = pagedata.page_content
-                # dealing with awkward spacing
-                filtered_text = re.sub(r"-\s*\n", "", text)
-                filtered_text = re.sub(r" +", " ", filtered_text)
-                doc = Document(page_content=filtered_text, metadata=newdata)
-
-                new_docs.append(doc)
-            return new_docs, typev
-    else:
-        raise Exception("ERROR:" + str(completion.choices[0].message.content))
-
+    # Index that wraps above steps
+    async for d, e, typev2 in loader.aload(bot):
+        if typev2==-5:
+            yield None, e, typev2
+        newdata = await simplify_and_split_output(d, chunk_size, prioritysplit)
+        yield newdata, e, typev2
 
 async def read_and_split_link(
     bot, url: str, chunk_size: int = 1800, chunk_overlap: int = 1
-) -> List[Document]:
+) -> Tuple[List[Document],int]:
     # Document loader
     prioritysplit = []
+
     if url.endswith(".pdf") or ".pdf?" in url:
         pdfmode = True
         symbol3 = re.escape("  ")
         pattern3 = re.compile(f"({symbol3}(?:(?!{symbol3}).)+{symbol3})")
         prioritysplit.append((pattern3, 100))
         data, typev = await read_and_split_pdf(bot, url, chunk_size)
+        newdata=[]
+        splitnum=0
+        if data is None:
+            return None, 0, typev
+            
+        for d in data:
+            newdat=await simplify_and_split_output(d,chunk_size,prioritysplit,splitnum)
+            splitnum+=len(newdat)
+            newdata.extend(newdat)
+        return newdata, 0, typev
+
     else:
         loader = ReadableLoader(
-            url,
+            [(0,url)],
             header_template={
                 "User-Agent": "Mozilla/5.0 (X11,Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"
             },
         )
         # Index that wraps above steps
-        data, typev = await loader.aload(bot)
-    newdata = []
-    splitnum = 0
-    for d in data:
-        # Strip excess white space.
+        async for d, e, typev2 in loader.aload(bot):
+            if typev2==-5:
+                return None, e, typev2
+            newdata = await simplify_and_split_output(d, chunk_size, prioritysplit)
+            return newdata, e, typev2
+
+
+async def simplify_and_split_output(d:Document, chunk_size,prioritysplit,split_num=0):
+        newdata = []
+        splitnum = split_num
         simplified_text = d.page_content.strip()
         simplified_text = re.sub(r"(\n){4,}", "\n\n\n", simplified_text)
         simplified_text = re.sub(r" {3,}", "  ", simplified_text)
@@ -222,9 +289,7 @@ async def read_and_split_link(
             split_link, d, chunk_size=chunk_size, prior=prioritysplit, add=splitnum
         )
         newdata.extend(split)
-
-    all_splits = newdata
-    return all_splits, typev
+        return newdata
 
 
 def split_link(doc: Document, chunk_size: int = 1800, prior=[], add=0):
@@ -703,10 +768,10 @@ summary_prompt = """
 """
 
 
-async def summarize(prompt: str, article: str, mylinks: List[str]):
+async def summarize(prompt: str, article: str, mylinks: List[Tuple[str, str]]) -> AsyncGenerator[str, None]:
     client = openai.AsyncOpenAI()
 
-    def local_length(st):
+    def local_length(st: str) -> int:
         return gptmod.util.num_tokens_from_messages(
             [
                 {"role": "system", "content": summary_prompt + prompt},
@@ -715,9 +780,9 @@ async def summarize(prompt: str, article: str, mylinks: List[str]):
             "gpt-3.5-turbo-0125",
         )
 
-    result = ""
+    result: str = ""
     fil = prioritized_string_split(article, splitorder, 10000, length=local_length)
-    filelength = len(fil)
+    filelength: int = len(fil)
     for num, articlepart in enumerate(fil):
         print(num, filelength)
         messages = [
@@ -744,7 +809,6 @@ async def summarize(prompt: str, article: str, mylinks: List[str]):
                 # sources.append(f"[{link_text}]({url})")
                 result = result.replace(link_text, f"{link_text}")
         yield result
-
 
 async def list_sources(
     ctx: discord.ext.commands.Context, title: str, sources: List[str]

@@ -215,7 +215,7 @@ class TCBot(
                 print()
             except Exception as e:
                 # l=logging.getLogger("TCLogger")
-                self.logs.error("here", str(e))
+                self.logs.error(str(e),exc_info=e)
         print("close done?")
 
         await super().close()

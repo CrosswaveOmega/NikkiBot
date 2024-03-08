@@ -293,7 +293,11 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         emb = discord.Embed(title="Search results", description=comment)
         readable_links = []
         messages = await ctx.send("Search completed, indexing.")
-
+        def indent_string(inputString, spaces=2):
+            indentation = ' ' * spaces
+            indentedString = '\n'.join([indentation + line for line in inputString.split('\n')])
+            return indentedString
+        outputthis=f"### Search results for {query} \n\n"
         for r in results["items"]:
             desc = r.get("snippet", "NA")
             allstr += r["link"] + "\n"
@@ -302,9 +306,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 value=f"{r['link']}\n{desc}"[:1000],
                 inline=False,
             )
+            outputthis+=f"+ **Title: {r['title']}**\n **Link:**{r['link']}\n **Snippit:**\n{indent_string(desc,1)}"
         returnme = await ctx.send(content=comment, embed=emb)
 
-        return returnme
+        return outputthis
 
     async def load_links(
         self,
@@ -451,7 +456,12 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @commands.command(name="loadurl", description="loadurl test.", extras={})
     async def loader_test(self, ctx: commands.Context, link: str):
         async with ctx.channel.typing():
-            splits, dat = await tools.read_and_split_link(ctx.bot, link)
+            splits, e, dat = await tools.read_and_split_link(ctx.bot,link)
+        if not splits:
+            views = await ctx.send(
+                f"Could not embed.",
+            )
+            return
         # vi=FollowupActionView(user=ctx.author)
         views = await ctx.send(
             f"[Link ]({link}) has {len(splits)} splits.",
@@ -480,7 +490,13 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         )
 
         statmess = StatusEditMessage(target_message, ctx)
-
+        # async for dat, e, typev in tools.read_and_split_links(bot,all_links):
+        #      views = await ctx.send(
+        #         f"{len(dat)} splits.",
+        #         suppress_embeds=True,
+        #         # view=vi
+        #     )
+        # return
         hascount, lines = await self.load_links(
             ctx, all_links, chromac, statmess, override=over
         )

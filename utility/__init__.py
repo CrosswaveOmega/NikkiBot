@@ -25,3 +25,4 @@ from .formatutil import (
 )
 from .views import ConfirmView, RRuleView
 from .manual_load import load_manual
+from .debug import Timer

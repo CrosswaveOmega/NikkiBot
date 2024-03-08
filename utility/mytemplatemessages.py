@@ -147,7 +147,7 @@ class MessageTemplates:
 
         description = re.sub(r"\\+n", r"\n", description)
         for p in description.split("\n"):
-            if len(p) > 4096:
+            if len(p) > 4000:
                 sub = MessageTemplates.split_lines(p, 2000)
                 for pe in sub:
                     pageme.add_line(pe)

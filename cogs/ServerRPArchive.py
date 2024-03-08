@@ -1359,11 +1359,10 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             outstring = "The Archive Channel is already up to date!"
 
         def format_embed(group, grouplen, ma, mt, time, index=1, ml=1):
-            total = (
-                f"<a:LetWalk:1118184074239021209> Currently on group {group}/{grouplen}.\n"
-                + f"Current group is{int((index/ml)*100)}% archived\n Currently archived {ma} messages out of {mt} total.\n"
-                + f"This is going to take another...{seconds_to_time_string(int(time))}",
-            )
+            total = f"<a:LetWalk:1118184074239021209> Currently on group {group}/{grouplen}.\n"
+            total+=f"Current group is {int((index/ml)*100)}% archived\n Currently archived {ma} messages out of {mt} total.\n" 
+            total+=f"This is going to take another... {seconds_to_time_string(int(time))}"
+            
             embed = discord.Embed(description=total)
             return embed
 
