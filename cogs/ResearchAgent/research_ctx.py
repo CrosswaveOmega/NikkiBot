@@ -17,7 +17,7 @@ from bot import TC_Cog_Mixin, StatusEditMessage, super_context_menu, TCBot
 
 import gptfunctionutil.functionlib as gptum
 from gptfunctionutil import SingleCall, SingleCallAsync
-from .chromatools import ChromaTools, DocumentScoreVector
+from gptmod.chromatools import ChromaTools, DocumentScoreVector
 from .LinkLoader import SourceLinkLoader
 from utility import urltomessage
 from langchain.docstore.document import Document

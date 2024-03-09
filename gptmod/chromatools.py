@@ -21,6 +21,7 @@ from langchain_core.utils import xor_args
 from langchain_core.runnables.config import run_in_executor
 from langchain.vectorstores.chroma import Chroma
 from chromadb.utils.batch_utils import create_batches
+from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 import numpy as np
 
@@ -55,6 +56,17 @@ class ChromaTools:
         """Create a new chroma client."""
         client = chromadb.PersistentClient(path="saveData")
         return client
+
+    @staticmethod
+    def get_collection(collection="web_collection"):
+        client = chromadb.PersistentClient(path="saveData")
+        vs = ChromaBetter(
+            client=client,
+            persist_directory="saveData",
+            embedding_function=OpenAIEmbeddings(model="text-embedding-3-small"),
+            collection_name=collection,
+        )
+        return vs
 
 
 class ChromaBetter(Chroma):

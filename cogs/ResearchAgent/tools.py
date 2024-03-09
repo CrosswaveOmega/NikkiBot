@@ -25,10 +25,11 @@ import gui
 from utility import chunk_list, prioritized_string_split
 from utility.debug import Timer
 
-from .chromatools import ChromaBetter as Chroma
-from .chromatools import DocumentScoreVector
-from .metadataenums import MetadataDocType
-from .ReadabilityLoader import ReadableLoader
+from gptmod.chromatools import ChromaBetter as Chroma
+from gptmod.chromatools import DocumentScoreVector
+from gptmod.metadataenums import MetadataDocType
+
+from gptmod.ReadabilityLoader import ReadableLoader
 
 webload = docload.WebBaseLoader
 
@@ -537,10 +538,13 @@ async def search_sim(
         collection_name=collection,
     )
     filterwith = {}
-    if titleres != "None":
-        filterwith["title"] = {"$like": f"%{titleres}%"}
-    if linkres:
-        filterwith["source"] = {"$in": [linkres]}
+    if titleres != "None" or linkres:
+        filterwith = {"$and": []}
+        if titleres != "None":
+            filterwith["$and"].append = {"title": {"$like": f"%{titleres}%"}}
+        if linkres:
+            filterwith["$and"].append = {"source": {"$in": [linkres]}}
+
     gui.dprint("here")
     if mmr:
         docs = vs.max_marginal_relevance_search(
@@ -744,7 +748,8 @@ END
 1. Your response should consist of 3-7 medium-length paragraphs, containing 5-10 sentences each.
 2. Preserve crucial information from the sources and maintain an objective, descriptive tone in your writing.  
 3. Ensure the inclusion of an inline citation for each piece of information obtained from a specific source,
-   using this format: [ID here].
+   using this format: 
+    Sentence goes here[0].
    **This is crucially important, as the inline citations are used to verify the response accuracy.**
 4. If the sources do not provide sufficient information on a particular aspect of the question, explicitly state this limitation.
 5. Do not write a conclusion under any circumstance.  This is not an essay.
@@ -920,3 +925,18 @@ def extract_embed_text(embed):
     # Join the extracted text with bullet points
     bullet_string = "\n".join([f"• {line}" for line in bullet_list])
     return bullet_string
+
+
+def mask_links(text, links):
+    # Create a dictionary with link numbers as keys and URLs as values
+    link_pattern = re.compile(r"\[([\d,]+)\](https?://[^\s]+)")
+    matches = link_pattern.findall(links)
+    links_dict = {tuple(map(int, numbers.split(","))): url for numbers, url in matches}
+
+    # Replace occurrences of [number] with masked links
+    for link_numbers, url in links_dict.items():
+        for number in link_numbers:
+            masked_link = f"[{number}]({url})"
+            text = re.sub(rf"\[{number}\]", masked_link, text)
+
+    return text

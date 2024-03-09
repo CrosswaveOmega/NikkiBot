@@ -1,4 +1,4 @@
-from .AICalling import AIMessageTemplates
+from .AICalling import AIMessageTemplates, SentenceMemory
 from .StepCalculator import evaluate_expression
 from gptfunctionutil import (
     GPTFunctionLibrary,
@@ -43,6 +43,8 @@ import utility.hash as hash
 from utility import split_string_with_code_blocks
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import json
+
+import database.database_main as dbmain
 
 lock = asyncio.Lock()
 
@@ -111,7 +113,11 @@ async def precheck_context(ctx: commands.Context) -> bool:
 
 
 async def process_result(
-    ctx: commands.Context, result: Any, mylib: GPTFunctionLibrary, chat
+    ctx: commands.Context,
+    result: Any,
+    mylib: GPTFunctionLibrary,
+    chat,
+    mem: SentenceMemory = None,
 ):
     """
     process the result.  Will either send a message, or invoke a function.
@@ -128,6 +134,7 @@ async def process_result(
     function = None
     finish_reason = i.finish_reason
     id = None
+    toolcont = ""
 
     if finish_reason == "tool_calls" or i.message.tool_calls:
         # Call the corresponding funciton, and set that to content.
@@ -148,7 +155,10 @@ async def process_result(
             if isinstance(content, discord.Message):
                 messageresp = content
                 content = messageresp.content
+                await mem.add_to_mem(ctx, messageresp)
                 return role, content, messageresp, function
+
+            toolcont = str(content)
             chat.messages.append(
                 {"role": "tool", "content": content, "tool_call_id": tool_call.id}
             )
@@ -179,6 +189,7 @@ async def process_result(
             ms = await ctx.channel.send(pa)
             if messageresp == None:
                 messageresp = ms
+        await mem.add_to_mem(ctx, messageresp, cont=f"{toolcont}\n{content}")
     elif isinstance(content, discord.Message):
         messageresp = content
         content = messageresp.content
@@ -226,6 +237,10 @@ async def ai_message_invoke(
     chat = gptmod.ChatCreation(presence_penalty=0.3, messages=[])
     # ,model="gpt-3.5-turbo-0125"
     chat.add_message("system", nikkiprompt)
+    mem = SentenceMemory(guild, user)
+    docs, mems = await mem.search_sim(message)
+    chat.add_message("system", f"### MEMORY:\n{mems}")
+
     for f in mes[:5]:  # Load old messags into ChatCreation
         chat.add_message(f["role"], f["content"])
     # Load current message into chat creation.
@@ -253,7 +268,9 @@ async def ai_message_invoke(
 
     bot.logs.info(str(result))
     # Process the result.
-    role, content, messageresp, tools = await process_result(ctx, result, mylib, chat)
+    role, content, messageresp, tools = await process_result(
+        ctx, result, mylib, chat, mem
+    )
     profile.add_message_to_chain(
         message.id,
         message.created_at,
@@ -297,7 +314,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
     """General commands"""
 
     def __init__(self, bot):
-        self.helptext = "This is Nikki's AI features"
+        self.helptext = "Currently disabled in non-testing servers."
         self.bot = bot
         self.init_context_menus()
         self.flib = MyLib()
@@ -523,6 +540,9 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         try:
             if not self.walked:
                 self.flib.add_in_commands(self.bot)
+
+            if dbmain.Users_DoNotTrack.check_entry(message.author.id):
+                return
             profile = ServerAIConfig.get_or_new(message.guild.id)
             thread_id = None
             targetid = message.channel.id

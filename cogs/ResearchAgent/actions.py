@@ -12,7 +12,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from bot import StatusEditMessage
 
-from .chromatools import ChromaTools, DocumentScoreVector
+from gptmod.chromatools import ChromaTools, DocumentScoreVector
 from .tools import format_answer, get_doc_sources, search_sim, try_until_ok
 
 UPPER_VALIDATION_LIM = 5

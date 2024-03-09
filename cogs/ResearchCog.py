@@ -31,7 +31,7 @@ from utility import prioritized_string_split, select_emoji, urltomessage
 from utility.embed_paginator import pages_of_embeds
 
 from .ResearchAgent import ResearchContext, SourceLinkLoader
-from .ResearchAgent.chromatools import ChromaTools
+from gptmod.chromatools import ChromaTools
 from .ResearchAgent.views import *
 
 
@@ -454,8 +454,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             site_title_restriction=site_title_restriction,
             send_message=True,
         )
-        formatted = f"**Answer:**\n{answer}\n\n**Sources:**\n{links}"
-        return formatted
+
+        return tools.mask_links(answer, links)
 
     @commands.command(name="loadurl", description="loadurl test.", extras={})
     async def loader_test(self, ctx: commands.Context, link: str):

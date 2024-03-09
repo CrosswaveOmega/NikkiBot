@@ -30,7 +30,7 @@ from javascriptasync import require, eval_js
 import assets
 import gui
 
-from .chromatools import ChromaTools
+from gptmod.chromatools import ChromaTools
 
 from googleapiclient.discovery import build  # Import the library
 
