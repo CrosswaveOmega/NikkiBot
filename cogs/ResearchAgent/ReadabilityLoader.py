@@ -17,8 +17,11 @@ from htmldate import find_date
 import assets
 from javascriptasync import require, eval_js, eval_js_a
 from .metadataenums import MetadataDocType
+from bs4 import BeautifulSoup
 
-"""This is a special loader that makes use of Mozilla's readability module. """
+"""This is a special loader that makes use of Mozilla's readability library."""
+
+from utility import Timer
 
 
 def remove_links(markdown_text):
@@ -94,10 +97,15 @@ def _build_metadata(soup: Any, url: str) -> dict:
     return metadata
 
 
+ScrapeResult = Tuple[str, BeautifulSoup, Dict[str, Any]]
+
+
 class ReadableLoader(dl.WebBaseLoader):
     async def _fetch_with_rate_limit(
         self, url: str, semaphore: asyncio.Semaphore
     ) -> str:
+        # Extended from WebBaseLoader so that it will log the errors
+        # using this app's logging system.
         async with semaphore:
             try:
                 return await self._fetch(url)
@@ -108,7 +116,7 @@ class ReadableLoader(dl.WebBaseLoader):
                         f"Error fetching {url}, skipping due to"
                         f" continue_on_failure=True"
                     )
-                    return ""
+                    return e
                 self.bot.logs.exception(
                     f"Error fetching {url} and aborting, use continue_on_failure=True "
                     "to continue loading urls after encountering an error."
@@ -116,27 +124,24 @@ class ReadableLoader(dl.WebBaseLoader):
                 raise e
 
     async def scrape_all(
-        self, urls: List[str], parser: Union[str, None] = None
-    ):
-        """Fetch all urls, then return soups for all results."""
-        from bs4 import BeautifulSoup
+        self, urls: List[Tuple[int, str]], parser: Union[str, None] = None
+    ) -> AsyncGenerator[Tuple[int, int, Union[ScrapeResult, Exception]], None]:
+        """Fetch all urls, then return soups for all results.
+        This function is an asyncronous generator."""
 
-        pdf_urls = []
         regular_urls = []
 
-        for e,url in urls:
+        for e, url in urls:
             regular_urls.append(url)
-
-        results = await self.fetch_all(regular_urls)
-
-        final_results = []
-
+        with Timer() as timer:
+            results = await self.fetch_all(regular_urls)
+        elapsed_time = timer.get_time()
+        print(f"READ: Took {elapsed_time:.4f} seconds to gather {len(urls)}.")
         for i, result in enumerate(results):
-            if not result:
-                yield i, urls[i][0], None
+            if isinstance(result, Exception):
+                yield i, urls[i][0], result
                 continue
             url = regular_urls[i]
-            print(url)
             if parser is None:
                 if url.endswith(".xml"):
                     parser = "xml"
@@ -145,12 +150,7 @@ class ReadableLoader(dl.WebBaseLoader):
 
                 self._check_parser(parser)
 
-            # If the URL is one of the PDF URLs, we load the PDF content
-            # using PDFMinerPDFasHTMLLoader
-            if url in pdf_urls:
-                souped = BeautifulSoup(result.page_content, "html.parser")
-            else:
-                souped = BeautifulSoup(result, parser)
+            souped = BeautifulSoup(result, parser)
             clean_html = re.sub(
                 r"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>", "", result
             )
@@ -158,19 +158,24 @@ class ReadableLoader(dl.WebBaseLoader):
             if not readable:
                 gui.dprint("Not readable link.")
             try:
-                text, header = await read_article_aw(self.jsenv, clean_html, url)
-                #YIELD THIS:
-                out=(remove_links(text), souped, header)
-                yield i, urls[i][0],out
+                with Timer() as timer:
+                    text, header = await read_article_aw(self.jsenv, clean_html, url)
+                elapsed_time = timer.get_time()
+                print(
+                    f"READABILITY: Took {elapsed_time:.4f} seconds to convert {urls[i][0]} to readable."
+                )
+                # YIELD THIS:
+                out = (remove_links(text), souped, header)
+                yield i, urls[i][0], out
 
             except Exception as e:
                 gui.dprint(e)
                 text = souped.get_text(**self.bs_get_text_kwargs)
-                #YIELD THIS:
-                out=(remove_links(text), souped, None)
-                yield i, urls[i][0],out
+                # YIELD THIS:
+                out = (remove_links(text), souped, None)
+                yield i, urls[i][0], out
 
-        #return final_results
+        # return final_results
 
     def _scrape(self, url: str, parser: Union[str, None] = None) -> Any:
         from bs4 import BeautifulSoup
@@ -209,20 +214,21 @@ class ReadableLoader(dl.WebBaseLoader):
         """Load text from the url(s) in web_path."""
         return list(self.lazy_load())
 
-    async def aload(self, bot) -> AsyncGenerator[Tuple[List[Document], int, int], None]:
-        """Load text from the urls in web_path async into Documents.
-        Despite the return type, it only loads one url.
-        """
+    async def aload(
+        self, bot
+    ) -> AsyncGenerator[Tuple[Union[List[Document], Exception], int, int], None]:
+        """Load text from the urls in web_path async into Documents."""
         self.jsenv = bot.jsenv
         self.bot = bot
-        self.continue_on_failure=True
+        self.continue_on_failure = True
         docs, typev = [], -1
-
-        async for i,e, result in self.scrape_all(self.web_paths):
-            if result is None:
-                yield None,e,-5
-            if result is not None:
-
+        # e is the original fetched url position.
+        # i is the position in the self.web_paths list.
+        # Result is either a tuple or exception.
+        async for i, e, result in self.scrape_all(self.web_paths):
+            if isinstance(result, Exception):
+                yield result, e, -5
+            else:
                 text, soup, header = result
 
                 metadata = _build_metadata(soup, self.web_paths[i][1])

@@ -69,9 +69,11 @@ reasons = {
     },
 }
 
-class DummyMessage():
-    def __init__(self,cont):
-        self.content=cont
+
+class DummyMessage:
+    def __init__(self, cont):
+        self.content = cont
+
 
 class MyLib(GPTFunctionLibrary):
     @AILibFunction(name="get_time", description="Get the current time and day in UTC.")
@@ -108,7 +110,9 @@ async def precheck_context(ctx: commands.Context) -> bool:
     return True
 
 
-async def process_result(ctx: commands.Context, result: Any, mylib: GPTFunctionLibrary, chat):
+async def process_result(
+    ctx: commands.Context, result: Any, mylib: GPTFunctionLibrary, chat
+):
     """
     process the result.  Will either send a message, or invoke a function.
 
@@ -117,19 +121,20 @@ async def process_result(ctx: commands.Context, result: Any, mylib: GPTFunctionL
     """
     gui.dprint()
 
-
     i = result.choices[0]
     gui.dprint(i)
     role, content = i.message.role, i.message.content
     messageresp = None
     function = None
     finish_reason = i.finish_reason
-    id=None
-    
+    id = None
+
     if finish_reason == "tool_calls" or i.message.tool_calls:
         # Call the corresponding funciton, and set that to content.
         function = str(i.message.tool_calls)
-        chat.messages.append({'role':role,'content':content,'tool_calls':i.message.tool_calls})
+        chat.messages.append(
+            {"role": role, "content": content, "tool_calls": i.message.tool_calls}
+        )
         for tool_call in i.message.tool_calls:
             audit = await AIMessageTemplates.add_function_audit(
                 ctx,
@@ -144,27 +149,27 @@ async def process_result(ctx: commands.Context, result: Any, mylib: GPTFunctionL
                 messageresp = content
                 content = messageresp.content
                 return role, content, messageresp, function
-            chat.messages.append({'role':'tool','content':content,'tool_call_id':tool_call.id})
+            chat.messages.append(
+                {"role": "tool", "content": content, "tool_call_id": tool_call.id}
+            )
             audit = await AIMessageTemplates.add_resp_audit(
                 ctx,
                 DummyMessage(content),
                 chat,
             )
 
-            chat.tools=None
-            chat.tool_choice=None
+            chat.tools = None
+            chat.tool_choice = None
             result2 = await ctx.bot.gptapi.callapi(chat)
 
             i2 = result2.choices[0]
             role, content = i2.message.role, i2.message.content
             break
 
-
-
         # content = resp
     if isinstance(content, str):
         # Split up content by line if it's too long.
-       
+
         page = commands.Paginator(prefix="", suffix=None)
         for p in content.split("\n"):
             page.add_line(p)

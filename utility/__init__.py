@@ -22,6 +22,7 @@ from .formatutil import (
     explain_rrule,
     progress_bar,
     select_emoji,
+    chunk_list,
 )
 from .views import ConfirmView, RRuleView
 from .manual_load import load_manual

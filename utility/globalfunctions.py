@@ -53,7 +53,7 @@ def split_and_cluster_strings(
 
         # Split the input string based on the specified substring
         substrings = input_string.split(split_character)
-        
+
     # No reason to run the loop if there's less than two
     # strings within the substrings list.  That means
     # it couldn't find anything to split up.

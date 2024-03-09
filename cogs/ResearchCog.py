@@ -293,11 +293,15 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         emb = discord.Embed(title="Search results", description=comment)
         readable_links = []
         messages = await ctx.send("Search completed, indexing.")
+
         def indent_string(inputString, spaces=2):
-            indentation = ' ' * spaces
-            indentedString = '\n'.join([indentation + line for line in inputString.split('\n')])
+            indentation = " " * spaces
+            indentedString = "\n".join(
+                [indentation + line for line in inputString.split("\n")]
+            )
             return indentedString
-        outputthis=f"### Search results for {query} \n\n"
+
+        outputthis = f"### Search results for {query} \n\n"
         for r in results["items"]:
             desc = r.get("snippet", "NA")
             allstr += r["link"] + "\n"
@@ -306,7 +310,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 value=f"{r['link']}\n{desc}"[:1000],
                 inline=False,
             )
-            outputthis+=f"+ **Title: {r['title']}**\n **Link:**{r['link']}\n **Snippit:**\n{indent_string(desc,1)}"
+            outputthis += f"+ **Title: {r['title']}**\n **Link:**{r['link']}\n **Snippit:**\n{indent_string(desc,1)}"
         returnme = await ctx.send(content=comment, embed=emb)
 
         return outputthis
@@ -450,16 +454,16 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             site_title_restriction=site_title_restriction,
             send_message=True,
         )
-        formatted=f"**Answer:**\n{answer}\n\n**Sources:**\n{links}"
+        formatted = f"**Answer:**\n{answer}\n\n**Sources:**\n{links}"
         return formatted
 
     @commands.command(name="loadurl", description="loadurl test.", extras={})
     async def loader_test(self, ctx: commands.Context, link: str):
         async with ctx.channel.typing():
-            splits, e, dat = await tools.read_and_split_link(ctx.bot,link)
-        if not splits:
+            splits, e, dat = await tools.read_and_split_link(ctx.bot, link)
+        if isinstance(splits, Exception):
             views = await ctx.send(
-                f"Could not embed.",
+                f"{type(splits).__name__},{str(splits)}",
             )
             return
         # vi=FollowupActionView(user=ctx.author)
@@ -990,7 +994,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @oai_check()
     @ai_rate_check()
     async def summarize(
-        self, ctx: commands.Context, url: str, over: bool = False, additional: str = ''
+        self, ctx: commands.Context, url: str, over: bool = False, additional: str = ""
     ):
         """Download the reader mode view of a passed in URL, and summarize it."""
         async with self.lock:

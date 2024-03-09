@@ -20,7 +20,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.utils import xor_args
 from langchain_core.runnables.config import run_in_executor
 from langchain.vectorstores.chroma import Chroma
-
+from chromadb.utils.batch_utils import create_batches
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 import numpy as np
 
@@ -60,6 +60,29 @@ class ChromaTools:
 class ChromaBetter(Chroma):
     """Extension of Langchain's Chroma class that will return the
     embeddings as well as the Document distance."""
+
+    def add_documents(self, documents: List[Document], ids: List[str]):
+        if len(documents) != len(ids):
+            raise Exception("Documents does not match ids!")
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        max_batch = 200
+        if hasattr(self._client, "max_batch_size"):
+            max_batch = self._client.max_batch_size
+        if max_batch < len(documents):
+            for batch in create_batches(
+                api=self._client,
+                ids=ids,
+                metadatas=metadatas,
+                documents=texts,
+            ):
+                self.add_texts(
+                    texts=batch[3] if batch[3] else [],
+                    metadatas=batch[2] if batch[2] else None,
+                    ids=batch[0],
+                )
+        else:
+            self.add_texts(texts=texts, metadatas=metadatas, ids=ids)
 
     @xor_args(("query_texts", "query_embeddings"))
     def __query_collection(

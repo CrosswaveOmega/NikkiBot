@@ -1,32 +1,34 @@
-import discord
-from gptfunctionutil import GPTFunctionLibrary, AILibFunction, LibParam
-from utility import prioritized_string_split
-
-from langchain_community.document_loaders import PyPDFLoader, PDFMinerLoader
-from htmldate import find_date
-import gptmod
-from .ReadabilityLoader import ReadableLoader
-from .chromatools import ChromaBetter as Chroma
-from .chromatools import DocumentScoreVector
-from langchain_openai import OpenAIEmbeddings
-from langchain.indexes import VectorstoreIndexCreator
 import asyncio
 import copy
 import datetime
-from typing import Any, AsyncGenerator, List, Tuple
-import chromadb
-from googleapiclient.discovery import build  # Import the library
-
-from chromadb.types import Vector
-import assets
 import re
-
-import langchain_community.document_loaders as docload
 import uuid
+from typing import Any, AsyncGenerator, List, Tuple, Union
+
+import chromadb
+import discord
+import langchain_community.document_loaders as docload
 import openai
+from chromadb.types import Vector
+from googleapiclient.discovery import build  # Import the library
+from gptfunctionutil import AILibFunction, GPTFunctionLibrary, LibParam
+from htmldate import find_date
 from langchain.docstore.document import Document
-from .metadataenums import MetadataDocType
+from langchain.indexes import VectorstoreIndexCreator
+from langchain_community.document_loaders import PDFMinerLoader, PyPDFLoader
+from langchain_openai import OpenAIEmbeddings
+from tqdm.asyncio import tqdm_asyncio
+
+import assets
+import gptmod
 import gui
+from utility import chunk_list, prioritized_string_split
+from utility.debug import Timer
+
+from .chromatools import ChromaBetter as Chroma
+from .chromatools import DocumentScoreVector
+from .metadataenums import MetadataDocType
+from .ReadabilityLoader import ReadableLoader
 
 webload = docload.WebBaseLoader
 
@@ -132,10 +134,7 @@ def google_search(bot, query: str, result_limit: int, kwargs: dict = {}) -> dict
     return query_results
 
 
-async def read_and_split_pdf(
-    bot, url: str, extract_meta:bool=False
-):
-
+async def read_and_split_pdf(bot, url: str, extract_meta: bool = False):
     try:
         loader = PDFMinerLoader(url)
 
@@ -143,7 +142,7 @@ async def read_and_split_pdf(
 
         metadata = {}
         new_docs = []
-        title,authors,date,abstract="Unset","NotFound","1-1-2020","NotFound"
+        title, authors, date, abstract = "Unset", "NotFound", "1-1-2020", "NotFound"
         if extract_meta:
             mylib = MyLib()
             client = openai.AsyncClient()
@@ -192,36 +191,47 @@ async def read_and_split_pdf(
             new_docs.append(doc)
         return new_docs, typev
     except Exception as ex:
-        await bot.send_error(ex);
-        return None,-5
+        await bot.send_error(ex)
+        return ex, -5
+
 
 async def read_and_split_links(
     bot, urls: List[str], chunk_size: int = 1800, chunk_overlap: int = 1
 ) -> Tuple[List[Document], int]:
     # Document loader
     prioritysplit = []
-    pdfsplit=[]
+    pdfsplit = []
     pdf_urls = []
     regular_urls = []
     symbol3 = re.escape("  ")
     pattern3 = re.compile(f"({symbol3}(?:(?!{symbol3}).)+{symbol3})")
     pdfsplit.append((pattern3, 100))
-    for e,url in urls:
+    for e, url in urls:
         if url.endswith(".pdf") or ".pdf" in url:
-            pdf_urls.append((e,url))
+            pdf_urls.append((e, url))
         else:
-            regular_urls.append((e,url))
+            regular_urls.append((e, url))
     for e, pdfurl in pdf_urls:
         pdfmode = True
-        newdata=[]
-        data, typev = await read_and_split_pdf(bot, pdfurl, chunk_size)
-        if data is None:
-            yield None, e, typev
+        newdata = []
+        with Timer() as timer:
+            data, typev = await read_and_split_pdf(bot, pdfurl, chunk_size)
+        print(f"PDF READ: Took {timer.get_time():.4f} seconds to READ pdf {e}.")
+
+        if isinstance(data, Exception):
+            yield data, e, typev
             continue
         splitnum = 0
         for d in data:
-            newdat=await simplify_and_split_output(d,chunk_size,prioritysplit,splitnum)
-            splitnum+=len(newdat)
+            with Timer() as timer:
+                newdat = await simplify_and_split_output(
+                    d, chunk_size, pdfsplit, splitnum
+                )
+            print(
+                f"PDF: Took {timer.get_time():.4f} seconds to convert {e} into {len(newdat)} splits."
+            )
+
+            splitnum += len(newdat)
             newdata.extend(newdat)
         yield newdata, e, typev
 
@@ -233,14 +243,22 @@ async def read_and_split_links(
     )
     # Index that wraps above steps
     async for d, e, typev2 in loader.aload(bot):
-        if typev2==-5:
-            yield None, e, typev2
-        newdata = await simplify_and_split_output(d, chunk_size, prioritysplit)
-        yield newdata, e, typev2
+        print(type(d), e, typev2)
+        if typev2 == -5:
+            yield d, e, typev2
+        else:
+            with Timer() as timer:
+                newdata = await simplify_and_split_output(d, chunk_size, prioritysplit)
+            print(
+                f"READABILITY: Took {timer.get_time():.4f} seconds to convert {e} into {len(newdata)} splits."
+            )
+
+            yield newdata, e, typev2
+
 
 async def read_and_split_link(
     bot, url: str, chunk_size: int = 1800, chunk_overlap: int = 1
-) -> Tuple[List[Document],int]:
+) -> Tuple[Union[List[Document], Exception], int, MetadataDocType]:
     # Document loader
     prioritysplit = []
 
@@ -250,46 +268,51 @@ async def read_and_split_link(
         pattern3 = re.compile(f"({symbol3}(?:(?!{symbol3}).)+{symbol3})")
         prioritysplit.append((pattern3, 100))
         data, typev = await read_and_split_pdf(bot, url, chunk_size)
-        newdata=[]
-        splitnum=0
+        newdata = []
+        splitnum = 0
         if data is None:
             return None, 0, typev
-            
+
         for d in data:
-            newdat=await simplify_and_split_output(d,chunk_size,prioritysplit,splitnum)
-            splitnum+=len(newdat)
+            newdat = await simplify_and_split_output(
+                d, chunk_size, prioritysplit, splitnum
+            )
+            splitnum += len(newdat)
             newdata.extend(newdat)
         return newdata, 0, typev
 
     else:
         loader = ReadableLoader(
-            [(0,url)],
+            [(0, url)],
             header_template={
                 "User-Agent": "Mozilla/5.0 (X11,Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"
             },
         )
         # Index that wraps above steps
         async for d, e, typev2 in loader.aload(bot):
-            if typev2==-5:
-                return None, e, typev2
+            print(type(d), e, typev2)
+            if typev2 == -5:
+                return d, e, typev2
             newdata = await simplify_and_split_output(d, chunk_size, prioritysplit)
             return newdata, e, typev2
 
 
-async def simplify_and_split_output(d:Document, chunk_size,prioritysplit,split_num=0):
-        newdata = []
-        splitnum = split_num
-        simplified_text = d.page_content.strip()
-        simplified_text = re.sub(r"(\n){4,}", "\n\n\n", simplified_text)
-        simplified_text = re.sub(r" {3,}", "  ", simplified_text)
-        simplified_text = simplified_text.replace("\t{3,}", "\t")
-        simplified_text = re.sub(r"\n+(\s*\n)*", "\n", simplified_text)
-        d.page_content = simplified_text
-        split, splitnum = await asyncio.to_thread(
-            split_link, d, chunk_size=chunk_size, prior=prioritysplit, add=splitnum
-        )
-        newdata.extend(split)
-        return newdata
+async def simplify_and_split_output(
+    d: Document, chunk_size, prioritysplit, split_num=0
+):
+    newdata = []
+    splitnum = split_num
+    simplified_text = d.page_content.strip()
+    simplified_text = re.sub(r"(\n){4,}", "\n\n\n", simplified_text)
+    simplified_text = re.sub(r" {3,}", "  ", simplified_text)
+    simplified_text = simplified_text.replace("\t{3,}", "\t")
+    simplified_text = re.sub(r"\n+(\s*\n)*", "\n", simplified_text)
+    d.page_content = simplified_text
+    split, splitnum = await asyncio.to_thread(
+        split_link, d, chunk_size=chunk_size, prior=prioritysplit, add=splitnum
+    )
+    newdata.extend(split)
+    return newdata
 
 
 def split_link(doc: Document, chunk_size: int = 1800, prior=[], add=0):
@@ -376,35 +399,66 @@ async def add_summary(
         # vectorstore.persist()
 
 
-def store_splits(
-    splits, collection="web_collection", client: chromadb.ClientAPI = None
+async def store_many_splits(
+    splits: List[Document],
+    collection="web_collection",
+    client: chromadb.ClientAPI = None,
 ):
-    persist = "saveData"
+    """
+    Generate unique ids for each split, and then
+    load them into Chroma..
+
+    Parameters:
+    - splits (List[Document]): A list of Document objects to be stored.
+    - collection (str, optional): The name of the collection where documents will be stored.
+      Defaults to "web_collection".
+    - client (chromadb.ClientAPI, optional): An instance of a ChromaDB ClientAPI. If not provided,
+      the function will store the documents locally. Defaults to None.
+
+    Returns:
+    - None: The function performs storage operations but returns no value.
+    """
+    chunk_size = 10
     ids = [
-        f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,doc.metadata['source']))}],sid:[{e+1}]"
+        f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
         for e, doc in enumerate(splits)
     ]
-    gui.dprint(splits)
-    gui.dprint(ids)
-    if client == None:
-        vectorstore = Chroma.from_documents(
-            documents=splits,
-            embedding=OpenAIEmbeddings(model="text-embedding-3-small"),
-            ids=ids,
-            collection_name=collection,
-            persist_directory=persist,
-        )
-        vectorstore.persist()
-    else:
-        vectorstore = Chroma.from_documents(
-            documents=splits,
-            embedding=OpenAIEmbeddings(model="text-embedding-3-small"),
-            ids=ids,
-            collection_name=collection,
-            client=client,
-            persist_directory=persist,
-        )
-        # vectorstore.persist()
+    chunked = chunk_list(ids, chunk_size)
+    chunked2 = chunk_list(splits, chunk_size)
+    tasks = []
+    zipped_list = list(zip(chunked, chunked2))
+    coll = Chroma(
+        collection_name=collection,
+        embedding_function=OpenAIEmbeddings(model="text-embedding-3-small"),
+        persist_directory="saveData",
+    )
+    for i, s in zipped_list:
+        storeval = asyncio.to_thread(store_splits, s, i, coll)
+        task = asyncio.ensure_future(storeval)
+        tasks.append(task)
+
+    return await tqdm_asyncio.gather(*tasks, desc="saving", ascii=True, mininterval=1)
+
+
+def store_splits(splits: List[Document], ids: List[str], chroma: Chroma):
+    """
+    This function embeds the splits within splits and ids within the chroma client.
+
+    Parameters:
+    - splits (List[Document]): A list of Document objects to be stored.
+    - ids (List[str]): Document IDs correlating to the provided Document objects.
+    - collection (str, optional): The name of the collection where documents will be stored.
+      Defaults to "web_collection".
+    - client (chromadb.ClientAPI, optional): An instance of a ChromaDB ClientAPI. If not provided,
+      the function will store the documents locally. Defaults to None.
+
+    Returns:
+    - None: The function performs storage operations but returns no value.
+    """
+    persist = "saveData"
+    chroma.add_documents(splits, ids)
+
+    # vectorstore.persist()
 
 
 def has_url(
@@ -768,7 +822,9 @@ summary_prompt = """
 """
 
 
-async def summarize(prompt: str, article: str, mylinks: List[Tuple[str, str]]) -> AsyncGenerator[str, None]:
+async def summarize(
+    prompt: str, article: str, mylinks: List[Tuple[str, str]]
+) -> AsyncGenerator[str, None]:
     client = openai.AsyncOpenAI()
 
     def local_length(st: str) -> int:
@@ -809,6 +865,7 @@ async def summarize(prompt: str, article: str, mylinks: List[Tuple[str, str]]) -
                 # sources.append(f"[{link_text}]({url})")
                 result = result.replace(link_text, f"{link_text}")
         yield result
+
 
 async def list_sources(
     ctx: discord.ext.commands.Context, title: str, sources: List[str]

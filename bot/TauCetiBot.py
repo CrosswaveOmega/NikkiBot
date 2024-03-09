@@ -215,7 +215,7 @@ class TCBot(
                 print()
             except Exception as e:
                 # l=logging.getLogger("TCLogger")
-                self.logs.error(str(e),exc_info=e)
+                self.logs.error(str(e), exc_info=e)
         print("close done?")
 
         await super().close()
@@ -450,7 +450,8 @@ class TCBot(
         )
         # just_the_string=''.join(stack)
         er = MessageTemplates.get_paged_error_embed(
-            title=f"Error with {title}", description=f"{just_the_string},{str(error)}"
+            title=f"Error with {title}"[:200],
+            description=f"{just_the_string},{str(error)}"[:4000],
         )
         er[-1].add_field(name="Details", value=f"{title},{error}"[:1020])
         for e in er:

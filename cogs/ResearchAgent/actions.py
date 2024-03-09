@@ -15,7 +15,8 @@ from bot import StatusEditMessage
 from .chromatools import ChromaTools, DocumentScoreVector
 from .tools import format_answer, get_doc_sources, search_sim, try_until_ok
 
-UPPER_VALIDATION_LIM=5
+UPPER_VALIDATION_LIM = 5
+
 
 def advanced_sentence_splitter(text):
     sentences = sent_tokenize(text)
@@ -117,14 +118,13 @@ async def sentence_sim_op(
 
             # Add to map.
 
-
             sorted_docs = sorted(filtered_docs, key=lambda x: x[1], reverse=True)
             all_distances.extend([distance for _, distance in sorted_docs])
             for i, score in filtered_docs:
                 doc_map[i].append((i, score))
             # get first 4 entries (the closest matches, and return the ids, mean, and max)
             sorted_docs = sorted_docs[:4]
-                        
+
             val = [doc[1] for doc in sorted_docs]
             out = (
                 sent_id,

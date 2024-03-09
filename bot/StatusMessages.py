@@ -36,13 +36,11 @@ class StatusEditMessage:
         """Update status message asyncronously if min_seconds have passed."""
         if self.check_update_interval() > min_seconds and self.message != None:
             try:
-                gui.gprint(str(kwargs))
                 if "embed" in kwargs:
                     self.embed = kwargs["embed"]
                 await self.message.edit(**kwargs)
             except Exception as e:
-                gui.gprint(e)
-                self.message = urltomessage(self.message.jump_url, self.bot)
+                self.message = await urltomessage(self.message.jump_url, self.bot)
             self.last_update_time = datetime.datetime.now()
 
     async def delete(self):

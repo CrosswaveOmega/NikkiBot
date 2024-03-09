@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List
 from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY, MO, TU, WE, TH, FR, SA, SU
 from datetime import datetime, timedelta
 
@@ -112,6 +112,11 @@ bar_emoji = {
     "2h": "<a:halfright:1118209198967238716>",
     "2f": "<a:fullright:1118209194257031230>",
 }
+
+
+def chunk_list(sentences: List[Any], chunk_size: int = 10) -> List[List[str]]:
+    """Chunk list into blocks of 10."""
+    return [sentences[i : i + chunk_size] for i in range(0, len(sentences), chunk_size)]
 
 
 def progress_bar(current, total, width=5):
