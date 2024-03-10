@@ -170,7 +170,7 @@ class SentenceMemory:
         context = ""
         
         for e, tup in enumerate(docs):
-            doc = tup
+            doc, _, _ = tup
             neighbors=await self.get_neighbors(doc)
             meta = doc.metadata
             source,split=doc.metadata['source'], doc.metadata['split']

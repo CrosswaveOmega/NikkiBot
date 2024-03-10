@@ -132,7 +132,6 @@ class ChromaBetter(Chroma):
             n_results=n_results,
             where=where,
             where_document=where_document,
-            include=["documents", "metadatas", "distances", "embeddings"],
             **kwargs,
         )
 
@@ -233,6 +232,7 @@ class ChromaBetter(Chroma):
                 n_results=k,
                 where=filter,
                 where_document=where_document,
+                include=["documents", "metadatas", "distances", "embeddings"],
                 **kwargs,
             )
         else:
@@ -305,7 +305,7 @@ class ChromaBetter(Chroma):
         filter: Optional[Dict[str, str]] = None,
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> List[DocumentScoreVector]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
