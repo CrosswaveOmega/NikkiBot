@@ -242,6 +242,7 @@ class ChromaBetter(Chroma):
                 n_results=k,
                 where=filter,
                 where_document=where_document,
+                include=["documents", "metadatas", "distances", "embeddings"],
                 **kwargs,
             )
 
@@ -281,7 +282,7 @@ class ChromaBetter(Chroma):
             n_results=fetch_k,
             where=filter,
             where_document=where_document,
-            include=["metadatas", "documents", "distances", "embeddings"],
+            include=["documents", "metadatas", "distances", "embeddings"],
             **kwargs,
         )
         mmr_selected = maximal_marginal_relevance(
