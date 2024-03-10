@@ -100,7 +100,12 @@ def split_link(doc: Document,present_mem):
         else:
             print("skipping chunk")
     return newdata
-
+def indent_string(inputString, spaces=2):
+    indentation = " " * spaces
+    indentedString = "\n".join(
+        [indentation + line for line in inputString.split("\n")]
+    )
+    return indentedString
 
 class SentenceMemory:
     def __init__(self, guild, user):
@@ -112,6 +117,20 @@ class SentenceMemory:
         }
         self.coll = ChromaTools.get_collection("sentence_mem",embed=hug_embed,path='saveData/longterm')
         self.shortterm={}
+
+    async def get_neighbors(self, doc:Document):
+        source,split=doc.metadata['source'], doc.metadata['split']
+        print(source,split)
+        ids = [
+            f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,source))}],sid:[{split-1}]",
+            f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,source))}],sid:[{split}]",
+            f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,source))}],sid:[{split+1}]",
+        ]
+        docs=self.coll.get(ids=ids)
+        print(docs)
+        return docs
+
+
 
     async def add_to_mem(
         self, ctx: commands.Context, message: discord.Message, cont=None, present_mem:str=""
@@ -154,11 +173,19 @@ class SentenceMemory:
         
         for e, tup in enumerate(docs):
             doc, _ = tup
-
+            neighbors=await self.get_neighbors(doc)
             meta = doc.metadata
-            content = doc.page_content
-            output = f"+ {content}\n"
-            context += output
+            source,split=doc.metadata['source'], doc.metadata['split']
+            print("S",doc.page_content,"S",source,split)
+            newc=""
+            for n in neighbors['documents']:
+                if n not in context:
+                    newc+=n+"  "
+            
+            if newc:
+                content=indent_string(newc.strip(),1)
+                output = f"*{content}\n"
+                context += output
 
             tokens = gptmod.util.num_tokens_from_messages(
                 [{"role": "system", "content": context}], "gpt-3.5-turbo-0125"
