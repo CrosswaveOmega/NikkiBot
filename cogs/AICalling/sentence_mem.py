@@ -167,6 +167,9 @@ class SentenceMemory:
             if tokens >= 3000:
                 print("token break")
                 break
+        print("MEMORY:")
+        print(context)
+        print("MEMORY OVER.")
         return docs, context
 
     async def delete_message(self, url):

@@ -247,7 +247,11 @@ async def ai_message_invoke(
     mem = SentenceMemory(guild, user)
     docs, mems = await mem.search_sim(message)
     chat.add_message("system", f"### MEMORY:\n{mems}")
-
+    audit = await AIMessageTemplates.add_resp_audit(
+                ctx,
+                DummyMessage(mems),
+                chat,
+            )
     for f in mes[:5]:  # Load old messags into ChatCreation
         chat.add_message(f["role"], f["content"])
     # Load current message into chat creation.
