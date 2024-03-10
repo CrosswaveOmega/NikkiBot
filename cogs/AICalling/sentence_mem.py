@@ -94,7 +94,7 @@ def split_link(doc: Document,present_mem):
         metadatac["split"] = add
         add += 1
         new_doc = Document(page_content=chunk, metadata=metadatac)
-        if chunk not in present_mem:
+        if len(chunk)>8:
             print(chunk)
             newdata.append(new_doc)
         else:
@@ -164,15 +164,13 @@ class SentenceMemory:
                 {"forguild": message.guild.id},
             ]
         }
-        docs = await self.coll.asimilarity_search_with_score(
+        docs = await self.coll.amax_marginal_relevance_search(
             message.content, k=15, filter=filterwith
         )
         context = ""
         
-        docs=sorted(docs, key=lambda x: x[1], reverse=True)
-        
         for e, tup in enumerate(docs):
-            doc, _ = tup
+            doc = tup
             neighbors=await self.get_neighbors(doc)
             meta = doc.metadata
             source,split=doc.metadata['source'], doc.metadata['split']
