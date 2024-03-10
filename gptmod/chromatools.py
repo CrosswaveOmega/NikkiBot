@@ -1,3 +1,9 @@
+"""
+Class extensions that assist with the Chromadb vector store.
+
+
+"""
+
 from datetime import timedelta, timezone, datetime
 import json
 from typing import (
@@ -11,6 +17,7 @@ from typing import (
     Tuple,
     Type,
 )
+import warnings
 import discord
 import io
 import chromadb
@@ -23,6 +30,7 @@ from langchain.vectorstores.chroma import Chroma
 from chromadb.utils.batch_utils import create_batches
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
+from chromadb.config import Settings
 import numpy as np
 
 
@@ -58,13 +66,17 @@ class ChromaTools:
         return client
 
     @staticmethod
-    def get_collection(collection="web_collection"):
-        client = chromadb.PersistentClient(path="saveData")
+    def get_collection(collection="web_collection",embed=None,metadata=None,path='saveData'):
+        client = chromadb.PersistentClient(path=path,settings=Settings(anonymized_telemetry=False))
+        
+        if embed is None:
+            embed=OpenAIEmbeddings(model="text-embedding-3-small")
         vs = ChromaBetter(
             client=client,
-            persist_directory="saveData",
-            embedding_function=OpenAIEmbeddings(model="text-embedding-3-small"),
+            persist_directory=path,
+            embedding_function=embed,
             collection_name=collection,
+            collection_metadata=metadata
         )
         return vs
 
@@ -135,6 +147,65 @@ class ChromaBetter(Chroma):
         return await run_in_executor(
             None, self.similarity_search_with_score_and_embedding, *args, **kwargs
         )
+    
+    async def _asimilarity_search_with_relevance_scores_and_embeddings(
+            self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[DocumentScoreVector]:
+        relevance_score_fn = self._select_relevance_score_fn()
+        docs_and_scores = await self.asimilarity_search_with_score_and_embedding(query, k, **kwargs)
+        return [(doc, relevance_score_fn(score),emb) for doc, score,emb in docs_and_scores]
+
+    
+    async def asimilarity_search_with_relevance_scores_and_embeddings(
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> List[DocumentScoreVector]:
+        """Return docs and relevance scores in the range [0, 1], asynchronously.
+
+        0 is dissimilar, 1 is most similar.
+
+        Args:
+            query: input text
+            k: Number of Documents to return. Defaults to 4.
+            **kwargs: kwargs to be passed to similarity search. Should include:
+                score_threshold: Optional, a floating point value between 0 to 1 to
+                    filter the resulting set of retrieved docs
+
+        Returns:
+            List of Tuples of (doc, similarity_score)
+        """
+        score_threshold = kwargs.pop("score_threshold", None)
+
+        docs_and_similarities = await self._asimilarity_search_with_relevance_scores_and_embeddings(
+            query, k=k, **kwargs
+        )
+        if any(
+            similarity < 0.0 or similarity > 1.0
+            for _, similarity in docs_and_similarities
+        ):
+            warnings.warn(
+                "Relevance scores must be between"
+                f" 0 and 1, got {docs_and_similarities}"
+            )
+
+        if score_threshold is not None:
+            docs_and_similarities = [
+                (doc, similarity)
+                for doc, similarity in docs_and_similarities
+                if similarity >= score_threshold
+            ]
+            if len(docs_and_similarities) == 0:
+                warnings.warn(
+                    "No relevant docs were retrieved using the relevance score"
+                    f" threshold {score_threshold}"
+                )
+        return docs_and_similarities
+
 
     def similarity_search_with_score_and_embedding(
         self,

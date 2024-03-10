@@ -267,7 +267,7 @@ class ServerAIConfig(AIBase):
             return message_chains
         message_chains = (
             session.query(MessageChain)
-            .filter_by(server_id=self.server_id)
+            .filter_by(server_id=self.server_id, thread_id=None)
             .order_by(MessageChain.created_at)
             .limit(10)
             .all()

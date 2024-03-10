@@ -42,7 +42,7 @@ def get_closest(
     top_docs = []  # Initialize with empty list to collect top similar documents
     similarity_scores = []  # Initialize with empty list to collect similarity scores
 
-    for id, doc in enumerate(docs):
+    for docid, doc in enumerate(docs):
         doc, _, emb = doc
 
         # Assuming emb and sentemb are lists containing embeddings
@@ -56,7 +56,7 @@ def get_closest(
 
         # Collect all similarity scores and corresponding documents
         similarity_scores.append(similarity_score[0][0])
-        top_docs.append((id, similarity_score[0][0]))
+        top_docs.append((docid, similarity_score[0][0]))
 
     top_docs = sorted(top_docs, key=lambda x: x[1], reverse=True)
 

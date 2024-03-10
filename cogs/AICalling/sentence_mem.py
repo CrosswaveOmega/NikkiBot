@@ -28,9 +28,10 @@ from utility.debug import Timer
 
 from gptmod.chromatools import ChromaBetter as Chroma
 from gptmod.chromatools import DocumentScoreVector, ChromaTools
-
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from nltk.tokenize import sent_tokenize
 
+hug_embed=HuggingFaceEmbeddings(model_name="thenlper/gte-small")
 
 def advanced_sentence_splitter(text):
     sentences = sent_tokenize(text)
@@ -82,9 +83,8 @@ async def try_until_ok(async_func, *args, **kwargs):
                 raise err
 
 
-def split_link(doc: Document):
+def split_link(doc: Document,present_mem):
     newdata = []
-
     metadata = doc.metadata
     add = 0
     fil = advanced_sentence_splitter(doc.page_content)
@@ -94,22 +94,32 @@ def split_link(doc: Document):
         metadatac["split"] = add
         add += 1
         new_doc = Document(page_content=chunk, metadata=metadatac)
-        newdata.append(new_doc)
+        if chunk not in present_mem:
+            print(chunk)
+            newdata.append(new_doc)
+        else:
+            print("skipping chunk")
     return newdata
 
 
 class SentenceMemory:
     def __init__(self, guild, user):
+        #dimensions = 384
         self.guildid = guild.id
         self.userid = user.id
-        self.coll = ChromaTools.get_collection("sentence_mem")
+        metadata={
+            'desc':'Simple long term memory.  384 dimensions.'
+        }
+        self.coll = ChromaTools.get_collection("sentence_mem",embed=hug_embed,path='saveData/longterm')
+        self.shortterm={}
 
     async def add_to_mem(
-        self, ctx: commands.Context, message: discord.Message, cont=None
+        self, ctx: commands.Context, message: discord.Message, cont=None, present_mem:str=""
     ):
         content = cont
         if not content:
             content = message.content
+        print('content',content)
         meta = {}
         meta["source"] = message.jump_url
         meta["foruser"] = self.userid
@@ -117,13 +127,14 @@ class SentenceMemory:
         meta["channel"] = message.channel.id
         meta["date"] = message.created_at.timestamp()
         meta["role"] = "assistant" if message.author.id == ctx.bot.user.id else "user"
-        doc = Document(page_content=message.content, metadata=meta)
-        docs = split_link(doc)
+        doc = Document(page_content=content, metadata=meta)
+        docs = split_link(doc,present_mem)
         ids = [
             f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
             for e, doc in enumerate(docs)
         ]
-        self.coll.add_documents(docs, ids)
+        if docs:
+            self.coll.add_documents(docs, ids)
 
     async def search_sim(self, message: discord.Message) -> List[DocumentScoreVector]:
         persist = "saveData"
@@ -134,16 +145,18 @@ class SentenceMemory:
                 {"forguild": message.guild.id},
             ]
         }
-        docs = await self.coll.asimilarity_search_with_score_and_embedding(
-            message.content, k=30, filter=filterwith
+        docs = await self.coll.asimilarity_search_with_score(
+            message.content, k=15, filter=filterwith
         )
         context = ""
+        
+        docs=sorted(docs, key=lambda x: x[1], reverse=True)
+        
         for e, tup in enumerate(docs):
-            doc, _, emb = tup
+            doc, _ = tup
 
             meta = doc.metadata
             content = doc.page_content
-            tile = "NOTITLE"
             output = f"+ {content}\n"
             context += output
 

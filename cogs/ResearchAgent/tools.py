@@ -928,15 +928,23 @@ def extract_embed_text(embed):
 
 
 def mask_links(text, links):
-    # Create a dictionary with link numbers as keys and URLs as values
-    link_pattern = re.compile(r"\[([\d,]+)\](https?://[^\s]+)")
-    matches = link_pattern.findall(links)
-    links_dict = {tuple(map(int, numbers.split(","))): url for numbers, url in matches}
+    # Split links by newline
+    link_lines = links.strip().split('\n')
+    links_dict = {}
+
+    # Extract numbers for each element in newline
+    for line in link_lines:
+        print(line)
+        match = re.match(r'\[([\d, ]+)\](https?://[^\s]+)', line)
+        if match:
+            numbers, url = match.groups()
+            for number in map(int, numbers.split(',')):
+                links_dict[number] = url
 
     # Replace occurrences of [number] with masked links
-    for link_numbers, url in links_dict.items():
-        for number in link_numbers:
-            masked_link = f"[{number}]({url})"
-            text = re.sub(rf"\[{number}\]", masked_link, text)
+    for number, url in links_dict.items():
+        print(number,url)
+        num_pattern = re.compile(rf"\[({number})\]")
+        text = re.sub(num_pattern, f"[{number}]({url})", text)
 
     return text

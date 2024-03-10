@@ -44,7 +44,7 @@ from utility import split_string_with_code_blocks
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import json
 
-import database.database_main as dbmain
+from database import Users_DoNotTrack
 
 lock = asyncio.Lock()
 
@@ -52,7 +52,9 @@ nikkiprompt = """You are Nikki, a energetic, cheerful, and determined female AI 
 All your responses must convey a strong personal voice.  
 Be as objective as possible.
 Carefully heed the user's instructions.
-If you do not know how to do something, please note that with your response.  
+If you do not know how to do something, please note that with your response.
+The next system message will contain a memory bank, filled with sentences related to the incoming query.
+Only your responses will be added to the memory bank, never the users.
 If a user is definitely wrong about something, explain how politely.
 Ensure that responses are brief, do not say more than is needed.  
 Never use emoji.
@@ -118,6 +120,7 @@ async def process_result(
     mylib: GPTFunctionLibrary,
     chat,
     mem: SentenceMemory = None,
+    present_mem=""
 ):
     """
     process the result.  Will either send a message, or invoke a function.
@@ -151,20 +154,21 @@ async def process_result(
             )
             outcome = await mylib.call_by_tool_ctx(ctx, tool_call)
 
-            content = outcome["content"]
-            if isinstance(content, discord.Message):
-                messageresp = content
-                content = messageresp.content
-                await mem.add_to_mem(ctx, messageresp)
-                return role, content, messageresp, function
+            contents = outcome["content"]
+            if isinstance(contents, discord.Message):
+                messageresp = contents
+                contents = messageresp.content
+                await mem.add_to_mem(ctx, messageresp,present_mem=present_mem)
+                return role, contents, messageresp, function
 
-            toolcont = str(content)
+            toolcont = str(contents)
+            print(toolcont)
             chat.messages.append(
-                {"role": "tool", "content": content, "tool_call_id": tool_call.id}
+                {"role": "tool", "content": contents, "tool_call_id": tool_call.id}
             )
             audit = await AIMessageTemplates.add_resp_audit(
                 ctx,
-                DummyMessage(content),
+                DummyMessage(contents),
                 chat,
             )
 
@@ -189,7 +193,10 @@ async def process_result(
             ms = await ctx.channel.send(pa)
             if messageresp == None:
                 messageresp = ms
-        await mem.add_to_mem(ctx, messageresp, cont=f"{toolcont}\n{content}")
+
+        thiscont=f"{toolcont}\n{content}"
+
+        await mem.add_to_mem(ctx, messageresp, cont=thiscont,present_mem=present_mem)
     elif isinstance(content, discord.Message):
         messageresp = content
         content = messageresp.content
@@ -269,7 +276,7 @@ async def ai_message_invoke(
     bot.logs.info(str(result))
     # Process the result.
     role, content, messageresp, tools = await process_result(
-        ctx, result, mylib, chat, mem
+        ctx, result, mylib, chat, mem, present_mem=mems
     )
     profile.add_message_to_chain(
         message.id,
@@ -541,7 +548,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             if not self.walked:
                 self.flib.add_in_commands(self.bot)
 
-            if dbmain.Users_DoNotTrack.check_entry(message.author.id):
+            if Users_DoNotTrack.check_entry(message.author.id):
                 return
             profile = ServerAIConfig.get_or_new(message.guild.id)
             thread_id = None
