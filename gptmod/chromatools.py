@@ -66,17 +66,21 @@ class ChromaTools:
         return client
 
     @staticmethod
-    def get_collection(collection="web_collection",embed=None,metadata=None,path='saveData'):
-        client = chromadb.PersistentClient(path=path,settings=Settings(anonymized_telemetry=False))
-        
+    def get_collection(
+        collection="web_collection", embed=None, metadata=None, path="saveData"
+    ):
+        client = chromadb.PersistentClient(
+            path=path, settings=Settings(anonymized_telemetry=False)
+        )
+
         if embed is None:
-            embed=OpenAIEmbeddings(model="text-embedding-3-small")
+            embed = OpenAIEmbeddings(model="text-embedding-3-small")
         vs = ChromaBetter(
             client=client,
             persist_directory=path,
             embedding_function=embed,
             collection_name=collection,
-            collection_metadata=metadata
+            collection_metadata=metadata,
         )
         return vs
 
@@ -146,18 +150,21 @@ class ChromaBetter(Chroma):
         return await run_in_executor(
             None, self.similarity_search_with_score_and_embedding, *args, **kwargs
         )
-    
+
     async def _asimilarity_search_with_relevance_scores_and_embeddings(
-            self,
+        self,
         query: str,
         k: int = 4,
         **kwargs: Any,
     ) -> List[DocumentScoreVector]:
         relevance_score_fn = self._select_relevance_score_fn()
-        docs_and_scores = await self.asimilarity_search_with_score_and_embedding(query, k, **kwargs)
-        return [(doc, relevance_score_fn(score),emb) for doc, score,emb in docs_and_scores]
+        docs_and_scores = await self.asimilarity_search_with_score_and_embedding(
+            query, k, **kwargs
+        )
+        return [
+            (doc, relevance_score_fn(score), emb) for doc, score, emb in docs_and_scores
+        ]
 
-    
     async def asimilarity_search_with_relevance_scores_and_embeddings(
         self,
         query: str,
@@ -180,8 +187,10 @@ class ChromaBetter(Chroma):
         """
         score_threshold = kwargs.pop("score_threshold", None)
 
-        docs_and_similarities = await self._asimilarity_search_with_relevance_scores_and_embeddings(
-            query, k=k, **kwargs
+        docs_and_similarities = (
+            await self._asimilarity_search_with_relevance_scores_and_embeddings(
+                query, k=k, **kwargs
+            )
         )
         if any(
             similarity < 0.0 or similarity > 1.0
@@ -204,7 +213,6 @@ class ChromaBetter(Chroma):
                     f" threshold {score_threshold}"
                 )
         return docs_and_similarities
-
 
     def similarity_search_with_score_and_embedding(
         self,

@@ -1,3 +1,4 @@
+from utility.globalfunctions import prioritized_string_split
 from .AICalling import AIMessageTemplates, SentenceMemory
 from .StepCalculator import evaluate_expression
 from gptfunctionutil import (
@@ -120,7 +121,7 @@ async def process_result(
     mylib: GPTFunctionLibrary,
     chat,
     mem: SentenceMemory = None,
-    present_mem=""
+    present_mem="",
 ):
     """
     process the result.  Will either send a message, or invoke a function.
@@ -158,7 +159,7 @@ async def process_result(
             if isinstance(contents, discord.Message):
                 messageresp = contents
                 contents = messageresp.content
-                await mem.add_to_mem(ctx, messageresp,present_mem=present_mem)
+                await mem.add_to_mem(ctx, messageresp, present_mem=present_mem)
                 return role, contents, messageresp, function
 
             toolcont = str(contents)
@@ -194,9 +195,9 @@ async def process_result(
             if messageresp == None:
                 messageresp = ms
 
-        thiscont=f"{toolcont}\n{content}"
+        thiscont = f"{toolcont}\n{content}"
 
-        await mem.add_to_mem(ctx, messageresp, cont=thiscont,present_mem=present_mem)
+        await mem.add_to_mem(ctx, messageresp, cont=thiscont, present_mem=present_mem)
     elif isinstance(content, discord.Message):
         messageresp = content
         content = messageresp.content
@@ -248,10 +249,10 @@ async def ai_message_invoke(
     docs, mems = await mem.search_sim(message)
     chat.add_message("system", f"### MEMORY:\n{mems}")
     audit = await AIMessageTemplates.add_resp_audit(
-                ctx,
-                DummyMessage(mems),
-                chat,
-            )
+        ctx,
+        DummyMessage(mems),
+        chat,
+    )
     for f in mes[:5]:  # Load old messags into ChatCreation
         chat.add_message(f["role"], f["content"])
     # Load current message into chat creation.
@@ -417,6 +418,31 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             await ctx.send("OpenAI mode turned on.")
         if mode == False:
             await ctx.send("OpenAI mode turned off.")
+
+    @commands.command(brief="Check memory")
+    @commands.is_owner()
+    async def memory_check(self, ctx, prompt: str):
+        guild, user = ctx.guild, ctx.message.author
+        mem = SentenceMemory(guild, user)
+        message = ctx.message
+        message.content = prompt
+        docs, str = await mem.search_sim(message)
+        splitorder = [
+            "\n# %s",
+            "\n## %s",
+            "\n### %s",
+            "\n#### %s",
+            "\n##### %s",
+            "\n###### %s",
+            "%s\n",
+            "%s.  ",
+            "%s. ",
+            "%s ",
+        ]
+        fil = prioritized_string_split(str, splitorder, default_max_len=1980)
+
+        for e, chunk in enumerate(fil):
+            await ctx.send(chunk)
 
     @app_commands.command(name="ai_use", description="Check your current AI use.")
     async def usage(self, interaction: discord.Interaction) -> None:

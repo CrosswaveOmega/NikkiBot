@@ -1,54 +1,47 @@
-import gui
-from typing import Literal
-import discord
 import asyncio
-import csv
+from collections import defaultdict
 
 # import datetime
-from datetime import datetime, timedelta, date, timezone
-from sqlalchemy import event
+from datetime import datetime, timedelta
 
-from utility import (
-    serverOwner,
-    serverAdmin,
-    seconds_to_time_string,
-    get_time_since_delta,
-    formatutil,
-)
-from utility import WebhookMessageWrapper as web, urltomessage, ConfirmView, RRuleView
+import discord
+from dateutil.rrule import MINUTELY, SU, WEEKLY, rrule
+from discord import app_commands
+from discord.app_commands import Choice
+from discord.ext import commands
+
+import gui
 from bot import (
-    TCBot,
-    TCGuildTask,
     Guild_Task_Functions,
     StatusEditMessage,
     TC_Cog_Mixin,
+    TCBot,
+    TCGuildTask,
 )
-from random import randint
-from discord.ext import commands, tasks
+from database import DatabaseSingleton, ServerArchiveProfile
+from utility import ConfirmView, RRuleView
+from utility import WebhookMessageWrapper as web
+from utility import (
+    formatutil,
+    seconds_to_time_string,
+    serverAdmin,
+    serverOwner,
+    urltomessage,
+)
+from utility.debug import Timer
 
-from dateutil.rrule import rrule, rrulestr, WEEKLY, SU, MINUTELY, HOURLY
-
-from discord import app_commands
-from discord.app_commands import Choice
-
-from database.database_ai import AuditProfile, ServerAIConfig
-from database import ServerArchiveProfile, DatabaseSingleton
 from .ArchiveSub import (
-    do_group,
-    collect_server_history,
-    check_channel,
-    ArchiveContext,
-    collect_server_history_lazy,
-    setup_lazy_grab,
-    lazy_archive,
-    LazyContext,
-    ChannelSep,
     ArchivedRPMessage,
-    MessageTemplates,
-    HistoryMakers,
     ChannelArchiveStatus,
+    ChannelSep,
+    LazyContext,
+    MessageTemplates,
+    check_channel,
+    collect_server_history,
+    do_group,
+    lazy_archive,
+    setup_lazy_grab,
 )
-from collections import defaultdict
 
 
 class ToChoice(commands.Converter):
@@ -1346,9 +1339,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         for sep in grouped:
             message_total += len(sep.get_messages())
 
-        total_time_for_cluster = message_total * timebetweenmess
+        total_time_for_cluster = message_total * profile.average_message_archive_time
         # time between each delay.
-        total_time_for_cluster += length * 2
+        total_time_for_cluster += length * profile.average_sep_archive_time
 
         remaining_time_float = total_time_for_cluster
         if dynamicwait:
@@ -1368,6 +1361,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             embed = discord.Embed(description=total)
             return embed
 
+        message_archive_total = 0
+        sep_archive_total = 0
+
         await m.edit(content=outstring)
         embed = format_embed(
             1, length, 0, message_total, time=remaining_time_float, index=0, ml=1
@@ -1376,30 +1372,35 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         mt = StatusEditMessage(me, ctx)
         gui.gprint(archive_channel.name)
         messagearchived = 0
+        separchived = 0
         for e, sep in enumerate(grouped):
             # Start posting
+            separchived += 1
             gui.gprint(e, sep)
             gui.dprint(remaining_time_float)
-            if not sep.posted_url:
-                currjob = "rem: {}".format(
-                    seconds_to_time_string(int(remaining_time_float))
-                )
-                emb, count = sep.create_embed()
-                chansep = await archive_channel.send(embed=emb)
-                sep.update(posted_url=chansep.jump_url)
-                await self.edit_embed_and_neighbors(sep)
-                self.bot.database.commit()
+            with Timer() as sep_timer:
+                if not sep.posted_url:
+                    currjob = "rem: {}".format(
+                        seconds_to_time_string(int(remaining_time_float))
+                    )
+                    emb, count = sep.create_embed()
+                    chansep = await archive_channel.send(embed=emb)
+                    sep.update(posted_url=chansep.jump_url)
+                    await self.edit_embed_and_neighbors(sep)
 
-            elif sep.posted_url and not sep.all_ok:
-                old_message = await urltomessage(sep.posted_url, bot)
-                emb, count = sep.create_embed(cfrom=sep.posted_url)
-                new_message = await archive_channel.send(embed=emb)
-                jump_url = new_message.jump_url
-                embedit, count = sep.create_embed(cto=jump_url)
-                await old_message.edit(embed=embedit)
+                    self.bot.database.commit()
+
+                elif sep.posted_url and not sep.all_ok:
+                    old_message = await urltomessage(sep.posted_url, bot)
+                    emb, count = sep.create_embed(cfrom=sep.posted_url)
+                    new_message = await archive_channel.send(embed=emb)
+                    jump_url = new_message.jump_url
+                    embedit, count = sep.create_embed(cto=jump_url)
+                    await old_message.edit(embed=embedit)
+            pre_time = sep_timer.get_time()
+            gui.gprint("sep_timer_time", pre_time)
             messages = sep.get_messages()
             messagelength = len(messages)
-
             for index, amess in enumerate(messages):
                 c, au, av = amess.content, amess.author, amess.avatar
                 messagearchived += 1
@@ -1408,42 +1409,36 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                     this_file = attach.to_file()
                     files.append(this_file)
                 pager = commands.Paginator(prefix="", suffix="")
-                if len(c) > 2000:
-                    for l in c.split("\n"):
-                        pager.add_line(l)
-                    for page in pager.pages:
+                with Timer() as posttimer:
+                    if len(c) > 2000:
+                        for l in c.split("\n"):
+                            pager.add_line(l)
+                        for page in pager.pages:
+                            webhookmessagesent = await web.postWebhookMessageProxy(
+                                archive_channel,
+                                message_content=page,
+                                display_username=au,
+                                avatar_url=av,
+                                embed=amess.get_embed(),
+                                file=files,
+                            )
+                        if webhookmessagesent:
+                            amess.update(posted_url=webhookmessagesent.jump_url)
+                    else:
                         webhookmessagesent = await web.postWebhookMessageProxy(
                             archive_channel,
-                            message_content=page,
+                            message_content=c,
                             display_username=au,
                             avatar_url=av,
                             embed=amess.get_embed(),
                             file=files,
                         )
-                    if webhookmessagesent:
-                        amess.update(posted_url=webhookmessagesent.jump_url)
-                else:
-                    webhookmessagesent = await web.postWebhookMessageProxy(
-                        archive_channel,
-                        message_content=c,
-                        display_username=au,
-                        avatar_url=av,
-                        embed=amess.get_embed(),
-                        file=files,
-                    )
-                    if webhookmessagesent:
-                        amess.update(posted_url=webhookmessagesent.jump_url)
-
-                if dynamicwait:
-                    chars = len(c)
-                    await asyncio.sleep(characterdelay * chars)
+                        if webhookmessagesent:
+                            amess.update(posted_url=webhookmessagesent.jump_url)
                     await asyncio.sleep(timebetweenmess)
                     remaining_time_float = remaining_time_float - (
-                        timebetweenmess + characterdelay * chars
+                        timebetweenmess + 0.5
                     )
-                else:
-                    await asyncio.sleep(timebetweenmess)
-                    remaining_time_float = remaining_time_float - (timebetweenmess)
                     embed = format_embed(
                         e + 1,
                         length,
@@ -1454,27 +1449,39 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                         ml=messagelength,
                     )
                     await mt.editw(min_seconds=45, embed=embed)
+                message_archive_total += posttimer.get_time()
+
             sep.update(all_ok=True)
             self.bot.database.commit()
-            await asyncio.sleep(2)
-            remaining_time_float -= 2
-            embed = format_embed(
-                e + 1,
-                length,
-                messagearchived,
-                message_total,
-                time=remaining_time_float,
-                index=messagelength,
-                ml=messagelength,
-            )
-            await mt.editw(
-                min_seconds=30,
-                embed=embed,
-            )
-            # await edittime.invoke_if_time(content=f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
-            bot.add_act(
-                str(ctx.guild.id) + "arch",
-                f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}",
+            with Timer() as finishtime:
+                await asyncio.sleep(2)
+                remaining_time_float -= 2
+                embed = format_embed(
+                    e + 1,
+                    length,
+                    messagearchived,
+                    message_total,
+                    time=remaining_time_float,
+                    index=messagelength,
+                    ml=messagelength,
+                )
+                await mt.editw(
+                    min_seconds=30,
+                    embed=embed,
+                )
+                # await edittime.invoke_if_time(content=f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
+                bot.add_act(
+                    str(ctx.guild.id) + "arch",
+                    f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}",
+                )
+            posttime = finishtime.get_time()
+            sep_archive_total += pre_time + posttime
+            gui.gprint(
+                e,
+                "POST TIME",
+                posttime,
+                message_archive_total / messagearchived,
+                sep_archive_total / separchived,
             )
 
         await asyncio.sleep(2)
@@ -1492,6 +1499,11 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             datetime.fromtimestamp(int(new_last_time)),
         )
         profile.update(last_archive_time=latest.created_at)
+        if message_archive_total > 0 and messagearchived > 0:
+            profile.update(
+                average_sep_archive_time=sep_archive_total / separchived,
+                average_message_archive_time=message_archive_total / messagearchived,
+            )
         bot.database.commit()
         await m2.delete()
         await MessageTemplates.server_archive_message(

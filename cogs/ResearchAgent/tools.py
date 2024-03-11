@@ -929,21 +929,21 @@ def extract_embed_text(embed):
 
 def mask_links(text, links):
     # Split links by newline
-    link_lines = links.strip().split('\n')
+    link_lines = links.strip().split("\n")
     links_dict = {}
 
     # Extract numbers for each element in newline
     for line in link_lines:
         print(line)
-        match = re.match(r'\[([\d, ]+)\](https?://[^\s]+)', line)
+        match = re.match(r"\[([\d, ]+)\](https?://[^\s]+)", line)
         if match:
             numbers, url = match.groups()
-            for number in map(int, numbers.split(',')):
+            for number in map(int, numbers.split(",")):
                 links_dict[number] = url
 
     # Replace occurrences of [number] with masked links
     for number, url in links_dict.items():
-        print(number,url)
+        print(number, url)
         num_pattern = re.compile(rf"\[({number})\]")
         text = re.sub(num_pattern, f"[{number}]({url})", text)
 

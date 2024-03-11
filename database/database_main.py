@@ -136,6 +136,11 @@ class ServerArchiveProfile(Main_DB_Base):
     servername = Column(Text)
     last_archive_time = Column(AwareDateTime)
     history_channel_id = Column(Integer)
+
+    average_message_archive_time = Column(Double, default=2.5)
+
+    average_sep_archive_time = Column(Double, default=3.0)
+
     last_group_num = Column(Integer, default=0)
     status = Column(Text)
     archive_scope = Column(Text, default="ws")
