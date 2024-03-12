@@ -193,7 +193,8 @@ class SentenceMemory:
                 doc= tup
 
                 source, split = doc.metadata["source"], doc.metadata["split"]
-                sources[source].setdefault(split, {})
+                if not source in sources:
+                    sources[source][split]={}
                 sources[source][split]=(doc.page_content)
                 if doc.page_content not in context:
                     context += doc.page_content + "  "
