@@ -193,7 +193,8 @@ class SentenceMemory:
                 doc= tup
 
                 source, split = doc.metadata["source"], doc.metadata["split"]
-                sources[source].setdefault(split, []).append(doc.page_content)
+                sources[source].setdefault(split, {})
+                sources[source][split]=(doc.page_content)
                 if doc.page_content not in context:
                     context += doc.page_content + "  "
                 tokens = gptmod.util.num_tokens_from_messages(
