@@ -440,7 +440,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             "%s ",
         ]
         fil = prioritized_string_split(str, splitorder, default_max_len=1980)
-        await ctx.send(f"took about {alltime} seconds to gather neighbors.")
+        await ctx.send(f"took about {alltime.get_time()} seconds to gather neighbors.")
         for e, chunk in enumerate(fil):
             await ctx.send(chunk)
     @commands.command(brief="Check memory")
