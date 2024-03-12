@@ -1,5 +1,5 @@
 from utility.globalfunctions import prioritized_string_split
-from .AICalling import AIMessageTemplates, SentenceMemory
+from .AICalling import AIMessageTemplates
 from .StepCalculator import evaluate_expression
 from gptfunctionutil import (
     GPTFunctionLibrary,
@@ -37,6 +37,7 @@ from utility.embed_paginator import pages_of_embeds
 from bot import TCBot, TC_Cog_Mixin, super_context_menu
 import gptmod
 import gptmod.error
+from gptmod import SentenceMemory
 from assets import AssetLookup
 from datetime import datetime, timezone
 from database.database_ai import AuditProfile, ServerAIConfig

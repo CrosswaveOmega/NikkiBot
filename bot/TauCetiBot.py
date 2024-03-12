@@ -109,6 +109,8 @@ class TCBot(
 
         self.logs = logging.getLogger("TCLogger")
         self.loggersetup()
+        warmuptime=gptmod.warmup()
+        print(warmuptime)
 
         self.extensiondir, self.extension_list = "", []
         self.plugindir, self.plugin_list = "", []

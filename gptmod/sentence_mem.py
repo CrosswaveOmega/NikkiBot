@@ -19,6 +19,12 @@ from utility.debug import Timer
 
 hug_embed = HuggingFaceEmbeddings(model_name="thenlper/gte-small")
 
+def warmup():
+    with Timer() as timer:
+        res=hug_embed.embed_query("The quick brown fox jumped over the lazy frog.")
+        print(res)
+    return timer.get_time()
+
 
 def advanced_sentence_splitter(text):
     sentences = sent_tokenize(text)

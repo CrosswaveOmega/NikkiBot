@@ -13,6 +13,7 @@ feedback.txt
 .google-cookie
 *.py[cod]
 *$py.class
+TestNotebook.ipynb
 
 # Dependency directories
 node_modules/

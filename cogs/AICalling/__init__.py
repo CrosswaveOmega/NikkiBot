@@ -1,5 +1,5 @@
 from .AI_MessageTemplates import AIMessageTemplates
-from .sentence_mem import SentenceMemory
+
 
 
 async def setup(bot):
