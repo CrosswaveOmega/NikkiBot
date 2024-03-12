@@ -171,7 +171,7 @@ def split_string_with_code_blocks(input_str, max_length, oncode=False):
     if len(input_str) <= max_length:
         return [input_str]
     symbol = re.escape("```")
-    pattern = re.compile(f"({symbol}(?:(?!{symbol}).)+{symbol})")
+    pattern = re.compile(f"({symbol}(?:(?!{symbol}).)+{symbol})",re.DOTALL)
 
     splitorder = [pattern, "\n### %s", "%s\n", " %s"]
     fil = prioritized_string_split(input_str, splitorder, default_max_len=max_length)

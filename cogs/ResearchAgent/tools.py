@@ -55,7 +55,7 @@ tosplitby = [
     "",
 ]
 symbol = re.escape("```")
-pattern = re.compile(f"({symbol}(?:(?!{symbol}).)+{symbol})")
+pattern = re.compile(f"({symbol}(?:(?!{symbol}).)+{symbol})",re.DOTALL)
 
 splitorder = [
     pattern,
@@ -205,7 +205,7 @@ async def read_and_split_links(
     pdf_urls = []
     regular_urls = []
     symbol3 = re.escape("  ")
-    pattern3 = re.compile(f"({symbol3}(?:(?!{symbol3}).)+{symbol3})")
+    pattern3 = re.compile(f"({symbol3}(?:(?!{symbol3}).)+{symbol3})",re.DOTALL)
     pdfsplit.append((pattern3, 100))
     for e, url in urls:
         if url.endswith(".pdf") or ".pdf" in url:

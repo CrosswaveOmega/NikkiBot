@@ -24,7 +24,7 @@ def advanced_sentence_splitter(text):
 
 
 symbol = re.escape("```")
-pattern = re.compile(f"({symbol}(?:(?!{symbol}).)+{symbol})")
+pattern = re.compile(f"({symbol}(?:(?!{symbol}).)+{symbol})", re.DOTALL)
 
 splitorder = [
     pattern,
@@ -114,31 +114,26 @@ class SentenceMemory:
         )
         self.shortterm = {}
 
-    async def get_neighbors(self, doc: Document):
-        source, split = doc.metadata["source"], doc.metadata["split"]
+    async def get_neighbors(self, docs: List[Document]):
+        
         docs1 = None
-        docs2 = None
-        print(source, split)
-        ids = [
-            f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,source))}],sid:[{split-1}]",
-        ]
-        ids2 = [
-            f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,source))}],sid:[{split+1}]",
-        ]
+
+        ids = set()
+        for d in docs:
+            source, split = d.metadata["source"], d.metadata["split"]
+            ids.add(f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,source))}],sid:[{split}]")
+            ids.add(f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,source))}],sid:[{split-1}]")
+            ids.add(f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,source))}],sid:[{split+1}]")
+            
+
         doc1 = self.coll.get(ids=ids, include=["documents", "metadatas"])
         print(zip(doc1["documents"], doc1["metadatas"]))
         if doc1:
             dc = _results_to_docs(doc1)
             if dc:
-                docs1 = dc[0]
+                docs1 = dc
 
-        doc2 = self.coll.get(ids=ids2, include=["documents", "metadatas"])
-        print(doc2)
-        if doc2:
-            dc = _results_to_docs(doc2)
-            if dc:
-                docs2 = dc[0]
-        return docs1, docs2
+        return docs1
 
     async def add_to_mem(
         self,
@@ -181,9 +176,10 @@ class SentenceMemory:
         )
         context = ""
         sources: Dict[str : Dict[int, Any]] = {}
-
-        for e, tup in enumerate(docs):
-            doc, _, _ = tup
+        docs2 = (d[0] for d in docs)
+        all_neighbors=await self.get_neighbors(docs2)
+        for e, tup in enumerate(all_neighbors):
+            doc= tup
 
             meta = doc.metadata
             source, split = doc.metadata["source"], doc.metadata["split"]
@@ -191,13 +187,10 @@ class SentenceMemory:
                 sources[source] = {}
 
             print("S", doc.page_content, "S", source, split)
-            bef, aft = await self.get_neighbors(doc)
-            for n in [bef, doc, aft]:
-                if n:
-                    splitv = n.metadata["split"]
-                    sources[source][splitv] = n.page_content
-                    if n.page_content not in context:
-                        context += n.page_content + "  "
+            splitv = doc.metadata["split"]
+            sources[source][splitv] = doc.page_content
+            if doc.page_content not in context:
+                context += doc.page_content + "  "
             tokens = gptmod.util.num_tokens_from_messages(
                 [{"role": "system", "content": context}], "gpt-3.5-turbo-0125"
             )
