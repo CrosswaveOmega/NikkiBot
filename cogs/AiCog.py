@@ -32,7 +32,7 @@ from discord import EntityType, PrivacyLevel, Webhook, ui
 from discord import app_commands
 from discord.app_commands import Choice
 from pathlib import Path
-from utility import MessageTemplates, RRuleView, formatutil
+from utility import MessageTemplates, RRuleView, formatutil, urltomessage
 from utility.embed_paginator import pages_of_embeds
 from bot import TCBot, TC_Cog_Mixin, super_context_menu
 import gptmod
@@ -443,7 +443,15 @@ class AICog(commands.Cog, TC_Cog_Mixin):
 
         for e, chunk in enumerate(fil):
             await ctx.send(chunk)
-
+    @commands.command(brief="Check memory")
+    @commands.is_owner()
+    async def memory_remove(self, ctx, url: str):
+        guild, user = ctx.guild, ctx.message.author
+        mem = SentenceMemory(guild, user)
+        message = ctx.message
+        target=await urltomessage(url,ctx.bot)
+        out = await mem.delete_message(url)
+        await ctx.send("Removed url.")
     @app_commands.command(name="ai_use", description="Check your current AI use.")
     async def usage(self, interaction: discord.Interaction) -> None:
         """check usage"""
