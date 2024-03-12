@@ -246,7 +246,7 @@ async def ai_message_invoke(
     # ,model="gpt-3.5-turbo-0125"
     chat.add_message("system", nikkiprompt)
     mem = SentenceMemory(guild, user)
-    docs, mems = await mem.search_sim(message)
+    docs, mems,alltime = await mem.search_sim(message)
     chat.add_message("system", f"### MEMORY:\n{mems}")
     audit = await AIMessageTemplates.add_resp_audit(
         ctx,
@@ -426,7 +426,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         mem = SentenceMemory(guild, user)
         message = ctx.message
         message.content = prompt
-        docs, str = await mem.search_sim(message)
+        docs, str,alltime = await mem.search_sim(message)
         splitorder = [
             "\n# %s",
             "\n## %s",
@@ -440,7 +440,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             "%s ",
         ]
         fil = prioritized_string_split(str, splitorder, default_max_len=1980)
-
+        await ctx.send(f"took about {alltime} seconds to gather neighbors.")
         for e, chunk in enumerate(fil):
             await ctx.send(chunk)
     @commands.command(brief="Check memory")

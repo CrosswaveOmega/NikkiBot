@@ -15,6 +15,8 @@ from gptmod.chromatools import DocumentScoreVector, ChromaTools
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from nltk.tokenize import sent_tokenize
 
+from utility.debug import Timer
+
 hug_embed = HuggingFaceEmbeddings(model_name="thenlper/gte-small")
 
 
@@ -171,13 +173,15 @@ class SentenceMemory:
                 {"forguild": message.guild.id},
             ]
         }
-        docs = await self.coll.amax_marginal_relevance_search(
+        docs = await self.coll.asimilarity_search_with_relevance_scores_and_embeddings(
             message.content, k=15, filter=filterwith
         )
         context = ""
         sources: Dict[str : Dict[int, Any]] = {}
         docs2 = (d[0] for d in docs)
-        all_neighbors=await self.get_neighbors(docs2)
+        with Timer() as all_timer:
+            all_neighbors=await self.get_neighbors(docs2)
+        checktime=all_timer.get_time()
         for e, tup in enumerate(all_neighbors):
             doc= tup
 
@@ -186,7 +190,6 @@ class SentenceMemory:
             if not source in sources:
                 sources[source] = {}
 
-            print("S", doc.page_content, "S", source, split)
             splitv = doc.metadata["split"]
             sources[source][splitv] = doc.page_content
             if doc.page_content not in context:
@@ -205,20 +208,18 @@ class SentenceMemory:
             lastkey = -6
 
             for k, v in sorted_dict:
-                print(source, k, v)
+                #print(source, k, v)
                 if k != 0 and abs(k - lastkey) > 1:
-                    print(abs(k - lastkey))
+                    #print(abs(k - lastkey))
                     newc += "..."
                 lastkey = k
-                newc += v + "  "
+                newc += f"[split:{k}]:{v}" + "  "
             if newc:
                 content = indent_string(newc.strip(), 1)
                 output = f"*{content}\n"
                 new_output += output
-        print("MEMORY:")
-        print(new_output)
-        print("MEMORY OVER.")
-        return docs, new_output
+
+        return docs, new_output, all_timer
 
     async def delete_message(self, url):
         try:

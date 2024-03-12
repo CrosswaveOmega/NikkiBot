@@ -38,7 +38,7 @@ def urlto_gcm_ids(link="") -> Tuple[int, int, int]:
 async def urltomessage(
     link="", bot=None, partial=False
 ) -> Optional[Union[discord.Message, discord.PartialMessage]]:
-    """return a discord message from a mid."""
+    """return a discord message from a message url."""
     message = None
     try:
         guild = channel = message = None
