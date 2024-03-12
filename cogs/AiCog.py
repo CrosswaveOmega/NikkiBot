@@ -426,7 +426,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         mem = SentenceMemory(guild, user)
         message = ctx.message
         message.content = prompt
-        docs, str,alltime = await mem.search_sim(message)
+        docs, str,alltimes = await mem.search_sim(message)
         splitorder = [
             "\n# %s",
             "\n## %s",
@@ -439,8 +439,11 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             "%s. ",
             "%s ",
         ]
+        alltime,dtime,ltime=alltimes
         fil = prioritized_string_split(str, splitorder, default_max_len=1980)
         await ctx.send(f"took about {alltime.get_time()} seconds to gather neighbors.")
+        await ctx.send(f"took about {dtime.get_time()} seconds to load into dictionary.")
+        await ctx.send(f"took about {ltime.get_time()} seconds to sort into new_content")
         for e, chunk in enumerate(fil):
             await ctx.send(chunk)
     @commands.command(brief="Check memory")

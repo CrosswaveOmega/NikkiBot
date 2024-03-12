@@ -173,53 +173,55 @@ class SentenceMemory:
                 {"forguild": message.guild.id},
             ]
         }
-        docs = await self.coll.asimilarity_search_with_relevance_scores_and_embeddings(
-            message.content, k=15, filter=filterwith
-        )
-        context = ""
-        sources: Dict[str : Dict[int, Any]] = {}
-        docs2 = (d[0] for d in docs)
         with Timer() as all_timer:
+            docs = await self.coll.asimilarity_search_with_relevance_scores_and_embeddings(
+                message.content, k=15, filter=filterwith
+            )
+            context = ""
+            sources: Dict[str : Dict[int, Any]] = {}
+            docs2 = (d[0] for d in docs)
             all_neighbors=await self.get_neighbors(docs2)
         checktime=all_timer.get_time()
-        for e, tup in enumerate(all_neighbors):
-            doc= tup
+        with Timer() as dict_timer:
+            for e, tup in enumerate(all_neighbors):
+                doc= tup
 
-            meta = doc.metadata
-            source, split = doc.metadata["source"], doc.metadata["split"]
-            if not source in sources:
-                sources[source] = {}
+                meta = doc.metadata
+                source, split = doc.metadata["source"], doc.metadata["split"]
+                if not source in sources:
+                    sources[source] = {}
 
-            splitv = doc.metadata["split"]
-            sources[source][splitv] = doc.page_content
-            if doc.page_content not in context:
-                context += doc.page_content + "  "
-            tokens = gptmod.util.num_tokens_from_messages(
-                [{"role": "system", "content": context}], "gpt-3.5-turbo-0125"
-            )
-
-            if tokens >= 3000:
-                print("token break")
-                break
+                splitv = doc.metadata["split"]
+                sources[source][splitv] = doc.page_content
+                if doc.page_content not in context:
+                    context += doc.page_content + "  "
+                tokens = gptmod.util.num_tokens_from_messages(
+                    [{"role": "system", "content": context}], "gpt-3.5-turbo-0125"
+                )
+                if tokens >= 3000:
+                    print("token break")
+                    break
         new_output = ""
-        for source, d in sources.items():
-            newc = ""
-            sorted_dict = sorted(d.items(), key=lambda x: x[0])
-            lastkey = -6
+        with Timer() as loadtimer:
+            for source, d in sources.items():
+                newc = ""
+                sorted_dict = sorted(d.items(), key=lambda x: x[0])
+                lastkey = -6
 
-            for k, v in sorted_dict:
-                #print(source, k, v)
-                if k != 0 and abs(k - lastkey) > 1:
-                    #print(abs(k - lastkey))
-                    newc += "..."
-                lastkey = k
-                newc += f"[split:{k}]:{v}" + "  "
-            if newc:
-                content = indent_string(newc.strip(), 1)
-                output = f"*{content}\n"
-                new_output += output
+                for k, v in sorted_dict:
+                    #print(source, k, v)
+                    if k != 0 and abs(k - lastkey) > 1:
+                        #print(abs(k - lastkey))
+                        newc += "..."
+                    lastkey = k
+                    newc += f"[split:{k}]:{v}" + "  "
+                if newc:
+                    content = indent_string(newc.strip(), 1)
+                    output = f"*{content}\n"
+                    new_output += output
 
-        return docs, new_output, all_timer
+        return docs, new_output, (all_timer,dict_timer,loadtimer)
+
 
     async def delete_message(self, url):
         try:
