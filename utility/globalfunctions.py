@@ -176,35 +176,7 @@ def split_string_with_code_blocks(input_str, max_length, oncode=False):
     splitorder = [pattern, "\n### %s", "%s\n", " %s"]
     fil = prioritized_string_split(input_str, splitorder, default_max_len=max_length)
     return fil
-    # Prioritize code block delimiters
-    code_block_delimiters = ["```"]
-    for code_block_delimiter in code_block_delimiters:
-        if code_block_delimiter in input_str:
-            parts = input_str.split(code_block_delimiter, 1)
-            if len(parts) == 2 and parts[0] and parts[1]:
-                # Recursively split the second part and concatenate the results
-                if oncode == False:
-                    return [parts[0]] + split_string_with_code_blocks(
-                        code_block_delimiter + parts[1], max_length, oncode=not oncode
-                    )
-                return [
-                    parts[0] + code_block_delimiter
-                ] + split_string_with_code_blocks(
-                    parts[1], max_length, oncode=not oncode
-                )
 
-    # If no code block delimiter is found, use the regular delimiters
-    for separator in tosplitby:
-        parts = input_str.split(separator, 1)
-        if len(parts) == 2 and parts[0] and parts[1]:
-            return [parts[0]] + split_string_with_code_blocks(
-                parts[1], max_length, oncode=oncode
-            )
-
-    # If no suitable separator is found, split at the max length
-    return [input_str[:max_length]] + split_string_with_code_blocks(
-        input_str[max_length:], max_length, oncode=oncode
-    )
 
 
 def replace_working_directory(string):

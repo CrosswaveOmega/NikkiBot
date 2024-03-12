@@ -126,7 +126,7 @@ class SentenceMemory:
             ids.add(f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,source))}],sid:[{split+1}]")
             
 
-        doc1 = self.coll.get(ids=ids, include=["documents", "metadatas"])
+        doc1 = self.coll.get(ids=list(ids), include=["documents", "metadatas"])
         print(zip(doc1["documents"], doc1["metadatas"]))
         if doc1:
             dc = _results_to_docs(doc1)
