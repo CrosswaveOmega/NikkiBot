@@ -194,7 +194,7 @@ class ChromaBetter(Chroma):
         )
         if any(
             similarity < 0.0 or similarity > 1.0
-            for _, similarity in docs_and_similarities
+            for _, similarity,_ in docs_and_similarities
         ):
             warnings.warn(
                 "Relevance scores must be between"
@@ -203,8 +203,8 @@ class ChromaBetter(Chroma):
 
         if score_threshold is not None:
             docs_and_similarities = [
-                (doc, similarity)
-                for doc, similarity in docs_and_similarities
+                (doc, similarity, emb)
+                for doc, similarity, emb in docs_and_similarities
                 if similarity >= score_threshold
             ]
             if len(docs_and_similarities) == 0:
