@@ -192,13 +192,8 @@ class SentenceMemory:
             for e, tup in enumerate(all_neighbors):
                 doc= tup
 
-                meta = doc.metadata
                 source, split = doc.metadata["source"], doc.metadata["split"]
-                if not source in sources:
-                    sources[source] = {}
-
-                splitv = doc.metadata["split"]
-                sources[source][splitv] = doc.page_content
+                sources[source].setdefault(split, []).append(doc.page_content)
                 if doc.page_content not in context:
                     context += doc.page_content + "  "
                 tokens = gptmod.util.num_tokens_from_messages(
