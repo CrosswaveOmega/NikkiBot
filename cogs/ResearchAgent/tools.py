@@ -124,13 +124,15 @@ async def try_until_ok(async_func, *args, **kwargs):
                 raise err
 
 
-def google_search(bot, query: str, result_limit: int, kwargs: dict = {}) -> dict:
+def google_search(bot, query: str, result_limit: int) -> dict:
     query_service = build("customsearch", "v1", developerKey=bot.keys["google"])
+
     query_results = (
-        query_service.cse()
+        query_service.cse()  # pylint: disable=no-member
         .list(q=query, cx=bot.keys["cse"], num=result_limit)  # Query  # CSE ID
         .execute()
     )
+
     print(query_results)
     return query_results
 
@@ -457,6 +459,7 @@ def store_splits(splits: List[Document], ids: List[str], chroma: Chroma):
     - None: The function performs storage operations but returns no value.
     """
     persist = "saveData"
+    print("STORING ", ids)
     chroma.add_documents(splits, ids)
 
     # vectorstore.persist()
@@ -934,7 +937,7 @@ def mask_links(text, links):
 
     # Extract numbers for each element in newline
     for line in link_lines:
-        print(line)
+        #print(line)
         match = re.match(r"\[([\d, ]+)\](https?://[^\s]+)", line)
         if match:
             numbers, url = match.groups()
@@ -943,7 +946,7 @@ def mask_links(text, links):
 
     # Replace occurrences of [number] with masked links
     for number, url in links_dict.items():
-        print(number, url)
+        #print(number, url)
         num_pattern = re.compile(rf"\[({number})\]")
         text = re.sub(num_pattern, f"[{number}]({url})", text)
 

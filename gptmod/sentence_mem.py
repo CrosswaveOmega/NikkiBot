@@ -17,12 +17,11 @@ from nltk.tokenize import sent_tokenize
 
 from utility.debug import Timer
 
-hug_embed = HuggingFaceEmbeddings(model_name="thenlper/gte-small")
+hug_embed = HuggingFaceEmbeddings(model_name="thenlper/gte-small",show_progress=True)
 
 def warmup():
     with Timer() as timer:
-        res=hug_embed.embed_query("The quick brown fox jumped over the lazy frog.")
-        print(res)
+        hug_embed.embed_query("The quick brown fox jumped over the lazy frog.")
     return timer.get_time()
 
 
@@ -101,7 +100,7 @@ def split_link(doc: Document, present_mem):
             print(chunk)
             newdata.append(new_doc)
         else:
-            print("skipping chunk")
+            print("skipping chunk due to insufficient size.")
     return newdata
 
 

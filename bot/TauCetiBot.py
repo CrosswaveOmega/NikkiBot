@@ -98,6 +98,7 @@ class TCBot(
             intents=intent,
         )
         # The Database Singleton is initalized in here.
+        print("Starting up bot.")
         self.database = None
         self.keys = {}
         self.gptapi = None

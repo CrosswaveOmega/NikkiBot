@@ -16,6 +16,10 @@ from discord.utils import escape_markdown
 import re
 from typing import Union
 
+def find_urls(text):
+    url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+    urls = re.findall(url_pattern, text)
+    return urls
 
 def split_and_cluster_strings(
     input_string: str, max_cluster_size: int, split_substring: str, length=len

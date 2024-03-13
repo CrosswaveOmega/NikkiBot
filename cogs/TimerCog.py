@@ -158,6 +158,7 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
         name="reminder",
         description="Set a one time reminder for a future date and time.",
         required=["comment"],
+        enabled=False,
     )
     @LibParam(
         comment="An interesting, amusing remark.",
@@ -200,6 +201,7 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
         name="start_timer",
         description="Start a timer for a certain number of seconds.",
         required=["set a timer", "start a timer", "timer for", "start timer"],
+        enabled=False
     )
     @LibParam(
         comment="An interesting, amusing remark.",
@@ -234,7 +236,7 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
             await session.commit()
         return target_message
 
-    @AILibFunction(name="view_timers", description="View all currently active timers.")
+    @AILibFunction(name="view_timers", description="View all currently active timers.",enabled=False)
     @LibParam(comment="An interesting, amusing remark.")
     @commands.command(
         name="timer_view", description="View all timers you've made.", extras={}
@@ -263,6 +265,7 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
     @AILibFunction(
         name="event_schedule",
         description="Create a scheduled server event at a certain date,time, and with a name and description.",
+        enabled=False,
         required=["end_time", "description"],
     )
     @LibParam(

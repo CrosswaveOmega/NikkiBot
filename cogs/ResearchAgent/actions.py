@@ -219,3 +219,97 @@ async def research_op(
     answer = await format_answer(question, docs2)
 
     return answer, allsources, docs2
+
+
+async def get_sources(
+    question: str,
+    k: int = 5,
+    site_title_restriction: str = "None",
+    use_mmr: bool = False,
+    statmess: Optional[StatusEditMessage] = None,
+    link_restrict: Optional[List[str]] = None,
+) -> Tuple[str, Optional[str], List[DocumentScoreVector]]:
+    """
+    Search the chroma db for relevant documents pertaining to the
+    question, and return a formatted result with the source links and original documents.
+
+    Args:
+        question (str): The question to be researched.
+        k (int, optional): The number of results to return. Defaults to 5.
+        site_title_restriction (str, optional):
+            Restricts search results to a specific site if set. Defaults to "None".
+        use_mmr (bool, optional):
+            If set to True, uses Maximal Marginal Relevance for sorting results.
+              Defaults to False.
+        statmess (StatusEditMessage, optional):
+            The status message object for updating search progress. Defaults to None.
+        link_restrict (List[str],optional): Restrict database search to these links.
+
+    Returns:
+        Tuple[str, Optional[str], List[DocumentScoreVector]]:
+            A tuple comprising the best answer, an optional string containing
+            URLs of all sources, and a list of DocumentScoreVector objects for the top documents.
+
+    """
+
+    chromac = ChromaTools.get_chroma_client()
+
+    embed = discord.Embed(title=f"Query: {question} ")
+
+    embed.add_field(name="Question", value=question, inline=False)
+
+    # Search For Sources
+    if statmess:
+        await statmess.editw(
+            min_seconds=0,
+            embed=embed,
+        )
+    data = await search_sim(
+        question,
+        client=chromac,
+        titleres=site_title_restriction,
+        k=k,
+        mmr=use_mmr,
+        linkres=link_restrict,
+    )
+
+    if len(data) <= 0:
+        return "NO RELEVANT DATA.", None, None
+
+    # Sort documents by score
+    docs2 = sorted(data, key=lambda x: x[0].metadata['split'], reverse=False)
+    docs3 = {}
+    for doc in docs2:
+        source = doc[0].metadata['source']
+        if not source in docs3: docs3[source]=[]
+        docs3[source].append(doc)
+    
+    # Get string containing most relevant source urls:
+    url_desc, allsources = get_doc_sources(docs2)
+    embed.description = f"Sources:\n{url_desc}"
+    embed.add_field(
+        name="Cache_Query",
+        value=f"About {len(docs2)} entries where found.  Max score is {docs2[0][1]}",
+    )
+    if statmess:
+        await statmess.editw(min_seconds=0, content="", embed=embed)
+    formatted_docs=[]
+    for s, v in docs3.items():
+        print(s,v)
+        for tup in v:
+            doc,_,_= tup
+
+            meta = doc.metadata
+            content = doc.page_content
+
+            sentences=advanced_sentence_splitter(content)
+            for e,s in enumerate(sentences):
+                output:str=s
+                footnote = f"[{e}]({doc.metadata['source']})"
+
+                output = output.rstrip() + footnote + output[-1] if output and output[-1].isspace() else output + footnote
+
+                formatted_docs.append(output)
+
+    return "  ".join(formatted_docs)
+

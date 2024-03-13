@@ -180,6 +180,7 @@ class ToonTownCog(commands.Cog, TC_Cog_Mixin):
         name="toontown_district",
         description="retrieve all connected toontown districts",
         required=["comment"],
+        enabled=False
     )
     @LibParam(comment="An interesting, amusing remark.")
     @commands.command(
@@ -226,8 +227,7 @@ class ToonTownCog(commands.Cog, TC_Cog_Mixin):
         if embeds:
             await ctx.send(embeds=embeds)
 
-    # @AILibFunction(name='cog_data',description='Retrieve data for a cog flunky.', required=['comment'])
-    # @LibParam(comment='An interesting, amusing remark.')
+
     @commands.command(name="tattle", description="extract info for a cog.", extras={})
     async def tattle(self, ctx: commands.Context, cogname: str, force: bool = False):
         webhook_url = AssetLookup.get_asset("stathook")

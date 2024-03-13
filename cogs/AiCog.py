@@ -1,4 +1,4 @@
-from utility.globalfunctions import prioritized_string_split
+from utility.globalfunctions import find_urls, prioritized_string_split
 from .AICalling import AIMessageTemplates
 from .StepCalculator import evaluate_expression
 from gptfunctionutil import (
@@ -267,10 +267,14 @@ async def ai_message_invoke(
             chat.tools = forcecheck
             chat.tool_choice = forcecheck[0]
         else:
+            chat.tools = mylib.get_tool_schema()
+            chat.tool_choice = "auto"
+            if find_urls(message.content):
+                chat.tool_choice={"type": "function", "function": {"name": "read_url"}}
             pass
             # chat.tools = mylib.get_tool_schema()
             # chat.tool_choice = "auto"
-
+    
     audit = await AIMessageTemplates.add_user_audit(ctx, chat)
 
     async with message.channel.typing():

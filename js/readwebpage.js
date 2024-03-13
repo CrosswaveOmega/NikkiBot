@@ -152,16 +152,17 @@ async function read_webpage_plain(targeturl) {
   }
 
  async function read_webpage_html_direct(htmldoc,targeturl) {
+  console.log(targeturl);
   let html2=htmldoc;
   let article={};
   let articleHtml='';
   let markdownContent='';
     let c=await runthroughfilters(htmldoc,targeturl);
-
+    console.log(c.t);
     if (c.t=='skip'){
       return {'mark':'bad link', 'orig':article};
     }
-    if(c.t='all'){
+    if(c.t=='all'){
       return c['o'];
     }
 
@@ -171,8 +172,9 @@ async function read_webpage_plain(targeturl) {
 
       return urlPattern.test(url);
     }
-
+    console.log(c.t);
     if (c.t!='htmlout'){
+
       const window = new Window({
         innerWidth: 1024,
         innerHeight: 768,
@@ -180,14 +182,15 @@ async function read_webpage_plain(targeturl) {
         settings:settings
       });
 
-      window.document.write(html2)
+      window.document.write(html2);
 
 
       
       let reader = new Readability(window.document);
+
       article = reader.parse();
       articleHtml = article.content;
-      window.happyDOM.cancelAsync()
+      window.happyDOM.cancelAsync();
     }
     else{
       article=c.o.article;

@@ -126,7 +126,7 @@ def extract_masked_links(markdown_text):
     return masked_links
 
 
-def generate_article_metatemplate(article_data):
+def generate_article_metatemplate(article_data,include_snppit=False):
     template_parts = []
     values = []
     if "title" in article_data:
@@ -145,6 +145,9 @@ def generate_article_metatemplate(article_data):
         template_parts.append("publishedTime: {}")
         values.append(article_data["publishedTime"])
 
+    if include_snppit and "excerpt" in article_data:
+        template_parts.append("excerpt: {}")
+        values.append(article_data["excerpt"])
     template = ";\n    ".join(template_parts)
     template = "Article Metadata: \n    " + template + ";\n    "
 
@@ -456,6 +459,43 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         )
 
         return tools.mask_links(answer, links)
+    
+    @AILibFunction(
+        name="recall",
+        description="Recall up to 12 sources that could be related to the user's question.",
+        enabled=False,
+        force_words=["recall"],
+        required=["comment",'question'],
+    )
+    @LibParam(
+        comment="An interesting, amusing remark.",
+        question="the question that is to be solved with this search.  Must be a complete sentence.",
+        site_title_restriction="Optional restrictions for sources.  Only sources with this substring in the title will be considered when writing the answer.  Include only if user explicitly asks.",
+        result_limit="Number of search results to retrieve.  Minimum of 3,  Maximum of 16.",
+    )
+    @commands.command(
+        name="recall_docs",
+        description="Get a list of results from a google search query.",
+        extras={},
+    )
+    @oai_check()
+    @ai_rate_check()
+    async def recall_docs(
+        self,
+        ctx: commands.Context,
+        question: str,
+        comment: str = "Search results:",
+        site_title_restriction: str = "None",
+        result_limit: int = 7,
+    ):
+        "recall docs for question."
+        await ctx.send("RECALLING")
+        m=await ctx.send("O")
+        statmess=StatusEditMessage(m,ctx)
+        out=await actions.get_sources(question,result_limit,site_title_restriction,False,statmess=statmess,link_restrict=[])
+        print(out)
+        print("NOMOREOUT")
+        return out
 
     @commands.command(name="loadurl", description="loadurl test.", extras={})
     async def loader_test(self, ctx: commands.Context, link: str):
@@ -919,6 +959,75 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         emb = discord.Embed(title=comment, description=f"```py\n{code}\n```")
         returnme = await ctx.send(content=comment + "{code[:1024]}", embed=emb)
         return returnme
+
+    @AILibFunction(
+        name="read_url",
+        description="If given a URL, use this function to read it.",
+        enabled=True,
+        required=["url",'comment'],
+    )
+    @LibParam(
+        comment="An interesting, amusing remark.",
+        url="The url that will be read.",
+    )
+    @commands.command(
+        name="read_url",
+        description="read a url",
+        extras={},
+    )
+    @oai_check()
+    @ai_rate_check()
+    async def read_url(
+        self,
+        ctx: commands.Context,
+        url: str,
+        comment: str,
+    ):
+        "recall docs for question."
+
+        mes = await ctx.channel.send(
+            f"<a:LoadingBlue:1206301904863502337> Reading Article <a:LoadingBlue:1206301904863502337>"
+        )
+        try:
+            article, header = await read_article(ctx.bot.jsenv, url)
+        except Exception as e:
+            me=await ctx.send("I couldn't read the url.  Sorry.")
+            return me
+        await mes.delete()
+
+        prompt = generate_article_metatemplate(header,include_snppit=False)
+        sources = []
+        mylinks = extract_masked_links(article)
+        for link in mylinks:
+            link_text, url4 = link
+            link_text = link_text.replace("_", "")
+            gui.dprint(link_text, url4)
+            sources.append(f"[{link_text}]({url4})")
+
+        await ctx.send(prompt, suppress_embeds=True)
+        def local_length(st: str) -> int:
+            return gptmod.util.num_tokens_from_messages(
+                [
+                    {"role": "system", "content": prompt},
+                    {"role": "user", "content": st},
+                ],
+                "gpt-3.5-turbo-0125",
+            )
+
+        fil = prioritized_string_split(article, tools.splitorder, 1000, length=local_length)
+        filelength: int = len(fil)
+        if len(fil)>1:
+            prompt=generate_article_metatemplate(header,include_snppit=True)
+        output=f"{prompt}\n\n #Page 1/{filelength}\n{fil[0]}"
+        splitorder = ["%s\n", "%s.", "%s,", "%s "]
+        fil2 = prioritized_string_split(output, splitorder, 4072)
+        title = header.get("title", "notitle")
+        for p in fil2:
+            emb = discord.Embed(title=title, description=p)
+            await ctx.send(embed=emb)
+
+        return output
+
 
     @commands.command(
         name="reader",

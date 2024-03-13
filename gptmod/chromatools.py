@@ -112,6 +112,29 @@ class ChromaBetter(Chroma):
         else:
             self.add_texts(texts=texts, metadatas=metadatas, ids=ids)
 
+    async def aadd_documents(self, documents: List[Document], ids: List[str]):
+        if len(documents) != len(ids):
+            raise Exception("Documents does not match ids!")
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        max_batch = 200
+        if hasattr(self._client, "max_batch_size"):
+            max_batch = self._client.max_batch_size
+        if max_batch < len(documents):
+            for batch in create_batches(
+                api=self._client,
+                ids=ids,
+                metadatas=metadatas,
+                documents=texts,
+            ):
+                await self.aadd_texts(
+                    texts=batch[3] if batch[3] else [],
+                    metadatas=batch[2] if batch[2] else None,
+                    ids=batch[0],
+                )
+        else:
+            await self.aadd_texts(texts=texts, metadatas=metadatas, ids=ids)
+
     @xor_args(("query_texts", "query_embeddings"))
     def __query_collection(
         self,
@@ -123,13 +146,7 @@ class ChromaBetter(Chroma):
         **kwargs: Any,
     ) -> List[Document]:
         """Query the chroma collection."""
-        try:
-            import chromadb  # noqa: F401
-        except ImportError:
-            raise ValueError(
-                "Could not import chromadb python package. "
-                "Please install it with `pip install chromadb`."
-            )
+
         return self._collection.query(
             query_texts=query_texts,
             query_embeddings=query_embeddings,
@@ -213,6 +230,7 @@ class ChromaBetter(Chroma):
                     f" threshold {score_threshold}"
                 )
         return docs_and_similarities
+
 
     def similarity_search_with_score_and_embedding(
         self,

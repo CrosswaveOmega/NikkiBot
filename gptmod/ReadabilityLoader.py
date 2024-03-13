@@ -88,7 +88,7 @@ def _build_metadata(soup: Any, url: str) -> dict:
     metadata["dateadded"] = datetime.datetime.utcnow().timestamp()
     metadata["date"] = "None"
     try:
-        dt = find_date(url)
+        dt = find_date(str(soup))
         if dt:
             metadata["date"] = dt
     except Exception as e:
@@ -154,10 +154,12 @@ class ReadableLoader(dl.WebBaseLoader):
             clean_html = re.sub(
                 r"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>", "", result
             )
+            print("attempting read of ",urls[i][0], "length is",len(clean_html))
             readable = await check_readability(self.jsenv, clean_html, url)
             if not readable:
                 gui.dprint("Not readable link.")
             try:
+                
                 with Timer() as timer:
                     text, header = await read_article_aw(self.jsenv, clean_html, url)
                 elapsed_time = timer.get_time()
@@ -229,21 +231,25 @@ class ReadableLoader(dl.WebBaseLoader):
             if isinstance(result, Exception):
                 yield result, e, -5
             else:
-                text, soup, header = result
+                try:
+                    text, soup, header = result
 
-                metadata = _build_metadata(soup, self.web_paths[i][1])
-                typev = MetadataDocType.htmltext
+                    metadata = _build_metadata(soup, self.web_paths[i][1])
+                    typev = MetadataDocType.htmltext
 
-                if not "title" in metadata:
-                    metadata["title"] = "No Title"
-                if header is not None:
-                    if "byline" in header:
-                        metadata["authors"] = header["byline"]
-                    metadata["website"] = header.get("siteName", "siteunknown")
-                    metadata["title"] = header.get("title")
-                    typev = MetadataDocType.readertext
+                    if not "title" in metadata:
+                        metadata["title"] = "No Title"
+                    if header is not None:
+                        if "byline" in header:
+                            metadata["authors"] = header["byline"]
+                        metadata["website"] = header.get("siteName", "siteunknown")
+                        metadata["title"] = header.get("title")
+                        typev = MetadataDocType.readertext
 
-                metadata["type"] = int(typev)
+                    metadata["type"] = int(typev)
 
-                metadata["sum"] = "source"
-                yield Document(page_content=text, metadata=metadata), e, typev
+                    metadata["sum"] = "source"
+                    yield Document(page_content=text, metadata=metadata), e, typev
+                except Exception as err:
+                    gui.dprint(str(err))
+                    yield err, e, -5
