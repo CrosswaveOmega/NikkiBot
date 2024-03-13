@@ -17,7 +17,7 @@ from nltk.tokenize import sent_tokenize
 
 from utility.debug import Timer
 
-hug_embed = HuggingFaceEmbeddings(model_name="thenlper/gte-small",show_progress=True)
+hug_embed = HuggingFaceEmbeddings(model_name="thenlper/gte-small")
 
 def warmup():
     with Timer() as timer:
