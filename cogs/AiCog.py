@@ -38,6 +38,8 @@ from bot import TCBot, TC_Cog_Mixin, super_context_menu
 import gptmod
 import gptmod.error
 from gptmod import SentenceMemory
+
+from gptmod.sentence_mem import MemoryFunctions
 from assets import AssetLookup
 from datetime import datetime, timezone
 from database.database_ai import AuditProfile, ServerAIConfig
@@ -57,10 +59,12 @@ Carefully heed the user's instructions.
 If you do not know how to do something, please note that with your response.
 The next system message will contain a memory bank, filled with sentences related to the incoming query.
 Only your responses will be added to the memory bank, never the users.
-If a user is definitely wrong about something, explain how politely.
+Respond with one JSON object with two fields, 'content' and 'new_memory'.
+'content' will be what you will say to the user.
+'new_memory' should be a list of strings, each 1-3 sentences long.  The strings in new_memory will be added to long term memory.
 Ensure that responses are brief, do not say more than is needed.  
 Never use emoji.
-Respond using Markdown."""
+Respond using Markdown in content."""
 
 reasons = {
     "server": {
@@ -133,8 +137,11 @@ async def process_result(
     gui.dprint()
 
     i = result.choices[0]
-    gui.dprint(i)
+    print('i val',i)
     role, content = i.message.role, i.message.content
+    if content is not None:
+        jsonout=await gptmod.errorous_json_decode(content,ctx.bot)
+    
     messageresp = None
     function = None
     finish_reason = i.finish_reason
@@ -180,33 +187,47 @@ async def process_result(
 
             i2 = result2.choices[0]
             role, content = i2.message.role, i2.message.content
+            jsonout=await gptmod.errorous_json_decode(content,ctx.bot)
             break
 
         # content = resp
     if isinstance(content, str):
         # Split up content by line if it's too long.
-
+        mycontent=jsonout['content']
         page = commands.Paginator(prefix="", suffix=None)
         for p in content.split("\n"):
             page.add_line(p)
-        split_by = split_string_with_code_blocks(content, 2000)
+        split_by = split_string_with_code_blocks(mycontent, 2000)
         messageresp = None
         for pa in split_by:
             ms = await ctx.channel.send(pa)
             if messageresp == None:
                 messageresp = ms
 
-        thiscont = f"{toolcont}\n{content}"
+        thiscont = f"{toolcont}\n{mycontent}"
 
-        await mem.add_to_mem(ctx, messageresp, cont=thiscont, present_mem=present_mem)
+        await mem.add_list_to_mem(ctx,messageresp,jsonout['new_memory'],present_mem=present_mem)
+        # chat.messages.append(
+        #         {"role": "assistant", "content": mycontent}
+        #     )
+        # memlib=MemoryFunctions()
+        # chat.tools = memlib.get_tool_schema()
+        # chat.tool_choice = {"type": "function", "function": {"name": "add_to_memory"}}
+        # res = await ctx.bot.gptapi.callapi(chat)
+
+        # for tool_call in res.choices[0].message.tool_calls:
+        #     outcome = await memlib.call_by_tool_async(tool_call)
+        #     contents,need = outcome["content"]
+        #     print(contents,need)
+        #     if need:   await mem.add_list_to_mem(ctx, messageresp, cont=contents, present_mem=present_mem)
     elif isinstance(content, discord.Message):
         messageresp = content
-        content = messageresp.content
+        jsonout = {"content":messageresp.content,"new_memory":[]}
     else:
         gui.dprint(result, content)
         messageresp = await ctx.channel.send("No output from this command.")
         content = "No output from this command."
-    return role, content, messageresp, function
+    return role, jsonout, messageresp, function
 
 
 async def ai_message_invoke(
@@ -243,7 +264,9 @@ async def ai_message_invoke(
     # Convert into a list of messages
     mes = [c.to_dict() for c in chain]
     # create new ChatCreation
-    chat = gptmod.ChatCreation(presence_penalty=0.3, messages=[])
+    chat = gptmod.ChatCreation(presence_penalty=0.3, 
+                               messages=[],
+                               response_format={ "type": "json_object" })
     # ,model="gpt-3.5-turbo-0125"
     chat.add_message("system", nikkiprompt)
     mem = SentenceMemory(guild, user)
@@ -266,11 +289,10 @@ async def ai_message_invoke(
         if forcecheck:
             chat.tools = forcecheck
             chat.tool_choice = forcecheck[0]
-        else:
+        elif find_urls(message.content):
             chat.tools = mylib.get_tool_schema()
-            chat.tool_choice = "auto"
-            if find_urls(message.content):
-                chat.tool_choice={"type": "function", "function": {"name": "read_url"}}
+            chat.tool_choice={"type": "function", "function": {"name": "read_url"}}
+        else:
             pass
             # chat.tools = mylib.get_tool_schema()
             # chat.tool_choice = "auto"
@@ -311,7 +333,7 @@ async def ai_message_invoke(
         messageresp.created_at,
         thread_id=thread_id,
         role=role,
-        content=content,
+        content=json.dumps(content),
     )
 
     audit = await AIMessageTemplates.add_resp_audit(ctx, messageresp, result)
@@ -460,6 +482,16 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         target=await urltomessage(url,ctx.bot)
         out = await mem.delete_message(url)
         await ctx.send("Removed url.")
+
+    @commands.command(brief="clear user data")
+    @commands.is_owner()
+    async def memory_forget_user(self, ctx):
+        guild, user = ctx.guild, ctx.message.author
+        mem = SentenceMemory(guild, user)
+        message = ctx.message
+        out = await mem.delete_user_messages(user.id)
+        await ctx.send("Removed user memory.")
+        
     @app_commands.command(name="ai_use", description="Check your current AI use.")
     async def usage(self, interaction: discord.Interaction) -> None:
         """check usage"""

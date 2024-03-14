@@ -1014,7 +1014,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 "gpt-3.5-turbo-0125",
             )
 
-        fil = prioritized_string_split(article, tools.splitorder, 1000, length=local_length)
+        fil = prioritized_string_split(article, tools.splitorder, 2000, length=local_length)
         filelength: int = len(fil)
         if len(fil)>1:
             prompt=generate_article_metatemplate(header,include_snppit=True)

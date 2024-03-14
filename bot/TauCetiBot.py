@@ -1,3 +1,4 @@
+from __future__ import annotations
 import gptmod
 from discord.app_commands import CommandTree
 from discord import Interaction

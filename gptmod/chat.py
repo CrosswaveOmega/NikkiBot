@@ -27,6 +27,7 @@ class ChatCreation(ApiCore):
         stop: Optional[Union[List[str], str]] = None,
         presence_penalty: Optional[float] = None,
         frequency_penalty: Optional[float] = None,
+        response_format:Optional[Dict[str,str]]=None,
         tools: Optional[List[Dict[str, str]]] = None,
         tool_choice: Optional[Union[Dict[str, str], str]] = None,
         model="gpt-3.5-turbo",
@@ -43,6 +44,7 @@ class ChatCreation(ApiCore):
         self.stream = stream
         self.stop = stop
         self.presence_penalty = presence_penalty
+        self.response_format=response_format
         self.frequency_penalty = frequency_penalty
         self.use_model = model
 
@@ -51,6 +53,7 @@ class ChatCreation(ApiCore):
         dictme = self.to_dict(pro=False)
         modelv = dictme["model"]
         # if self.functions is not None:  dictme['messages']=[self.messages[0],self.messages[-1]]
+        print(dictme)
         result = await client.chat.completions.create(**dictme)
         return result
 

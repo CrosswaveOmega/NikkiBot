@@ -16,8 +16,35 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from nltk.tokenize import sent_tokenize
 
 from utility.debug import Timer
-
+from gptfunctionutil import (
+    GPTFunctionLibrary,
+    AILibFunction,
+    LibParam,
+    LibParamSpec,
+    SingleCall,
+    SingleCallAsync,
+)
 hug_embed = HuggingFaceEmbeddings(model_name="thenlper/gte-small")
+
+class MemoryFunctions(GPTFunctionLibrary):
+    @AILibFunction(
+        name="add_to_memory",
+        description="Based on the current chat context, update long-term memory with up to 20 sentences which can be used to remember the content.  Do not add sentences if they are already in the memory.")
+    @LibParamSpec(
+        name="sentences",
+        description="A list of 1 to 20 sentences which will be added to the long term memory.",
+        minItems=1,
+        maxItems=20,
+    )
+    @LibParamSpec(
+        name="need_to_add",
+        description="If the sentences are already present within the memory, set this to False.",
+    )
+    async def sentences(self, sentences: List[str], need_to_add:bool=True):
+        # This is an example of a decorated coroutine command.
+        return sentences, need_to_add
+
+
 
 def warmup():
     with Timer() as timer:
@@ -85,7 +112,7 @@ async def try_until_ok(async_func, *args, **kwargs):
                 raise err
 
 
-def split_link(doc: Document, present_mem):
+def split_document(doc: Document, present_mem):
     newdata = []
     metadata = doc.metadata
     add = 0
@@ -105,6 +132,16 @@ def split_link(doc: Document, present_mem):
 
 
 def indent_string(inputString, spaces=2):
+    """
+    Indents each line of the given string by a specified number of spaces.
+
+    Args:
+        inputString (str): The string to be indented.
+        spaces (int, optional): Number of spaces to indent each line. Defaults to 2.
+
+    Returns:
+        str: The indented string.
+    """
     indentation = " " * spaces
     indentedString = "\n".join([indentation + line for line in inputString.split("\n")])
     return indentedString
@@ -123,7 +160,7 @@ class SentenceMemory:
 
     async def get_neighbors(self, docs: List[Document]):
         
-        docs1 = None
+        docs1 = []
 
         ids = set()
         for d in docs:
@@ -137,8 +174,7 @@ class SentenceMemory:
         print(zip(doc1["documents"], doc1["metadatas"]))
         if doc1:
             dc = _results_to_docs(doc1)
-            if dc:
-                docs1 = dc
+            if dc:    docs1 = dc
 
         return docs1
 
@@ -161,7 +197,35 @@ class SentenceMemory:
         meta["date"] = message.created_at.timestamp()
         meta["role"] = "assistant" if message.author.id == ctx.bot.user.id else "user"
         doc = Document(page_content=content, metadata=meta)
-        docs = split_link(doc, present_mem)
+        docs = split_document(doc, present_mem)
+        ids = [
+            f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
+            for e, doc in enumerate(docs)
+        ]
+        if docs:
+            self.coll.add_documents(docs, ids)
+
+    async def add_list_to_mem(
+        self,
+        ctx: commands.Context,
+        message: discord.Message,
+        cont:List[str],
+        present_mem: str = "",
+    ):
+        content = cont
+        print("content", content)
+        docs=[]
+        for e,c in enumerate(content):
+            meta = {}
+            meta["source"] = message.jump_url
+            meta["foruser"] = self.userid
+            meta["forguild"] = self.guildid
+            meta["channel"] = message.channel.id
+            meta["date"] = message.created_at.timestamp()
+            meta["role"] = "assistant" if message.author.id == ctx.bot.user.id else "user"
+            meta["split"] = e
+            doc = Document(page_content=c, metadata=meta)
+            docs.append(doc)
         ids = [
             f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
             for e, doc in enumerate(docs)
