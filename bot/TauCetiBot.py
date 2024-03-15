@@ -178,7 +178,7 @@ class TCBot(
 
             self.bot_ready = True
             dbcheck = self.database.database_check()
-            gui.gprint(dbcheck)
+            print(dbcheck)
 
             # start playwright
             pmode = self.config.getboolean("feature", "playwright")

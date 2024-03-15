@@ -146,8 +146,6 @@ class DatabaseSingleton:
                 self.SessionLocal: sessionmaker = SessionLocal
                 self.session: Session = self.SessionLocal()
                 self.session.commit()
-                result = self.compare_db()
-                gui.gprint(result)
 
         async def connect_to_engine_a(self):
             """async variant of connect_to_engine."""
