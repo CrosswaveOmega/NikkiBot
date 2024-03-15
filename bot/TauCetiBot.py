@@ -161,7 +161,8 @@ class TCBot(
             self.database_on()
             self.update_ext_list()
             await self.reload_all()
-
+            dbcheck = self.database.database_check()
+            gui.gprint(dbcheck)
             # audit old guild data.
             await self.audit_guilds()
 
@@ -177,8 +178,7 @@ class TCBot(
                     t.to_task(self)
 
             self.bot_ready = True
-            dbcheck = self.database.database_check()
-            print(dbcheck)
+            
 
             # start playwright
             pmode = self.config.getboolean("feature", "playwright")
