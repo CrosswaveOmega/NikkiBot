@@ -1,7 +1,7 @@
 import asyncio
 import sys
 import os
-
+print("STARTING UP...")
 recoverme = False
 
 
@@ -104,8 +104,13 @@ if __name__ == "__main__":
         try:
             from bot import main
 
-            asyncio.run(main(sys.argv))
+            result=asyncio.run(main(sys.argv))
+            print('result',result)
+            if result=='shutdown':
+                sys.exit(3)
+            
         except Exception as e:
-            raise (e)
+            print(e)
             continueme = recovery_mode(e)
             print(continueme)
+    print("Op finished.")

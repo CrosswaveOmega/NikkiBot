@@ -88,7 +88,7 @@ async def guildcheck(ctx):
 
 
 @bot.on_error
-def on_error(event_method: str, /, *args: Any, **kwargs: Any):
+async def on_error(event_method: str, /, *args: Any, **kwargs: Any):
     gui.gprint("Error?")
     log = logging.getLogger("discord")
     log.exception("Ignoring exception AS in %s", event_method)
@@ -231,7 +231,7 @@ class Main(commands.Cog):
         bot.post_queue_message.cancel()
         bot.delete_queue_message.cancel()
         bot.check_tc_tasks.cancel()
-
+        ctx.bot.exit_status="Shutdown"
         await ctx.channel.send("Shutting Down")
 
         await ctx.bot.close()
@@ -459,3 +459,5 @@ async def main(args):
             bot.keys["cse"] = c
 
             await bot.start(get_token(keys))
+        return bot.exit_status
+        print("DONE with startup.")

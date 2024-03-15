@@ -37,9 +37,8 @@ from utility.embed_paginator import pages_of_embeds
 from bot import TCBot, TC_Cog_Mixin, super_context_menu
 import gptmod
 import gptmod.error
-from gptmod import SentenceMemory
+from gptmod.sentence_mem import SentenceMemory, MemoryFunctions
 
-from gptmod.sentence_mem import MemoryFunctions
 from assets import AssetLookup
 from datetime import datetime, timezone
 from database.database_ai import AuditProfile, ServerAIConfig
@@ -61,7 +60,7 @@ The next system message will contain a memory bank, filled with sentences relate
 Only your responses will be added to the memory bank, never the users.
 Respond with one JSON object with two fields, 'content' and 'new_memory'.
 'content' will be what you will say to the user.
-'new_memory' should be a list of strings, each 1-3 sentences long.  The strings in new_memory will be added to long term memory.
+'new_memory' should be a list of strings, each 1-3 sentences long.  The strings in new_memory will be added to long term memory, and will be used to remember the chat context.
 Ensure that responses are brief, do not say more than is needed.  
 Never use emoji.
 Respond using Markdown in content."""
@@ -269,7 +268,7 @@ async def ai_message_invoke(
                                response_format={ "type": "json_object" })
     # ,model="gpt-3.5-turbo-0125"
     chat.add_message("system", nikkiprompt)
-    mem = SentenceMemory(guild, user)
+    mem = SentenceMemory(ctx.bot, guild, user)
     docs, mems,alltime = await mem.search_sim(message)
     chat.add_message("system", f"### MEMORY:\n{mems}")
     audit = await AIMessageTemplates.add_resp_audit(
@@ -450,7 +449,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
     @commands.is_owner()
     async def memory_check(self, ctx, prompt: str):
         guild, user = ctx.guild, ctx.message.author
-        mem = SentenceMemory(guild, user)
+        mem = SentenceMemory(ctx.bot, guild, user)
         message = ctx.message
         message.content = prompt
         docs, str,alltimes = await mem.search_sim(message)
@@ -477,7 +476,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
     @commands.is_owner()
     async def memory_remove(self, ctx, url: str):
         guild, user = ctx.guild, ctx.message.author
-        mem = SentenceMemory(guild, user)
+        mem = SentenceMemory(ctx.bot, guild, user)
         message = ctx.message
         target=await urltomessage(url,ctx.bot)
         out = await mem.delete_message(url)
@@ -487,7 +486,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
     @commands.is_owner()
     async def memory_forget_user(self, ctx):
         guild, user = ctx.guild, ctx.message.author
-        mem = SentenceMemory(guild, user)
+        mem = SentenceMemory(ctx.bot, guild, user)
         message = ctx.message
         out = await mem.delete_user_messages(user.id)
         await ctx.send("Removed user memory.")

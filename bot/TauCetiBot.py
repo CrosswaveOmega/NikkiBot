@@ -106,13 +106,13 @@ class TCBot(
         self.error_channel = None
         self.jsenv = JSContext()
         self.config: ConfigParserSub = ConfigParserSub()
-
+        self.exit_status="none"
         self.statmess: StatusMessageManager = StatusMessageManager(self)
 
         self.logs = logging.getLogger("TCLogger")
         self.loggersetup()
-        warmuptime=gptmod.warmup()
-        print(warmuptime)
+        self.embedding=gptmod.warmup()
+        
 
         self.extensiondir, self.extension_list = "", []
         self.plugindir, self.plugin_list = "", []

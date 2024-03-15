@@ -8,7 +8,7 @@ import chromadb
 import discord
 from langchain.docstore.document import Document
 
-import gptmod
+import gptmod.util as util
 import gui
 
 from gptmod.chromatools import DocumentScoreVector, ChromaTools
@@ -19,13 +19,8 @@ from utility.debug import Timer
 from gptfunctionutil import (
     GPTFunctionLibrary,
     AILibFunction,
-    LibParam,
     LibParamSpec,
-    SingleCall,
-    SingleCallAsync,
 )
-hug_embed = HuggingFaceEmbeddings(model_name="thenlper/gte-small")
-
 class MemoryFunctions(GPTFunctionLibrary):
     @AILibFunction(
         name="add_to_memory",
@@ -48,8 +43,10 @@ class MemoryFunctions(GPTFunctionLibrary):
 
 def warmup():
     with Timer() as timer:
+        hug_embed = HuggingFaceEmbeddings(model_name="thenlper/gte-small")
         hug_embed.embed_query("The quick brown fox jumped over the lazy frog.")
-    return timer.get_time()
+    print(timer.get_time())
+    return hug_embed
 
 
 def advanced_sentence_splitter(text):
@@ -57,22 +54,22 @@ def advanced_sentence_splitter(text):
     return sentences
 
 
-symbol = re.escape("```")
-pattern = re.compile(f"({symbol}(?:(?!{symbol}).)+{symbol})", re.DOTALL)
+# symbol = re.escape("```")
+# pattern = re.compile(f"({symbol}(?:(?!{symbol}).)+{symbol})", re.DOTALL)
 
-splitorder = [
-    pattern,
-    "\n# %s",
-    "\n## %s",
-    "\n### %s",
-    "\n#### %s",
-    "\n##### %s",
-    "\n###### %s",
-    "%s\n",
-    "%s.  ",
-    "%s. ",
-    "%s ",
-]
+# splitorder = [
+#     pattern,
+#     "\n# %s",
+#     "\n## %s",
+#     "\n### %s",
+#     "\n#### %s",
+#     "\n##### %s",
+#     "\n###### %s",
+#     "%s\n",
+#     "%s.  ",
+#     "%s. ",
+#     "%s ",
+# ]
 
 
 def _results_to_docs(results: Any) -> List[Document]:
@@ -131,7 +128,7 @@ def split_document(doc: Document, present_mem):
     return newdata
 
 
-def indent_string(inputString, spaces=2):
+def indent_string(input_string:str, spaces:int=2):
     """
     Indents each line of the given string by a specified number of spaces.
 
@@ -143,23 +140,32 @@ def indent_string(inputString, spaces=2):
         str: The indented string.
     """
     indentation = " " * spaces
-    indentedString = "\n".join([indentation + line for line in inputString.split("\n")])
-    return indentedString
+    indented_string = "\n".join([indentation + line for line in input_string.split("\n")])
+    return indented_string
 
 
 class SentenceMemory:
-    def __init__(self, guild, user):
+    def __init__(self, bot, guild, user):
         # dimensions = 384
         self.guildid = guild.id
         self.userid = user.id
         metadata = {"desc": "Simple long term memory.  384 dimensions."}
         self.coll = ChromaTools.get_collection(
-            "sentence_mem", embed=hug_embed, path="saveData/longterm"
+            "sentence_mem", embed=bot.embedding, path="saveData/longterm"
         )
         self.shortterm = {}
 
     async def get_neighbors(self, docs: List[Document]):
-        
+        """Retrieve all immediate neighbors of all docs in docs.
+        Each neighbor of a doc has the same source attribute, as well as a split
+        attribute that is one more or one less.
+
+        Args:
+            docs (List[Document]): List of documents
+
+        Returns:
+            List[Document]: All neighboring documents.
+        """
         docs1 = []
 
         ids = set()
@@ -254,14 +260,13 @@ class SentenceMemory:
         with Timer() as dict_timer:
             for e, tup in enumerate(all_neighbors):
                 doc= tup
-
                 source, split = doc.metadata["source"], doc.metadata["split"]
                 if not source in sources:
                     sources[source]={}
                 sources[source][split]=(doc.page_content)
                 if doc.page_content not in context:
                     context += doc.page_content + "  "
-                tokens = gptmod.util.num_tokens_from_messages(
+                tokens = util.num_tokens_from_messages(
                     [{"role": "system", "content": context}], "gpt-3.5-turbo-0125"
                 )
                 if tokens >= 3000:

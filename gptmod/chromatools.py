@@ -4,26 +4,17 @@ Class extensions that assist with the Chromadb vector store.
 
 """
 
-from datetime import timedelta, timezone, datetime
-import json
 from typing import (
-    TYPE_CHECKING,
     Any,
-    Callable,
     Dict,
-    Iterable,
     List,
     Optional,
     Tuple,
-    Type,
 )
 import warnings
-import discord
-import io
 import chromadb
 from chromadb.types import Vector
 from langchain_core.documents import Document
-from langchain_core.embeddings import Embeddings
 from langchain_core.utils import xor_args
 from langchain_core.runnables.config import run_in_executor
 from langchain.vectorstores.chroma import Chroma

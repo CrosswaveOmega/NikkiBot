@@ -1,7 +1,5 @@
 import asyncio
-import json
 import re
-from io import StringIO
 from typing import Any, Dict, List, Optional, Tuple
 
 import discord
@@ -10,24 +8,19 @@ from discord import app_commands
 from discord.ext import commands
 from gptfunctionutil import (
     AILibFunction,
-    GPTFunctionLibrary,
     LibParam,
-    SingleCall,
-    SingleCallAsync,
 )
 from javascriptasync import JSContext
-from openai import AsyncClient
 
 import assets
 import cogs.ResearchAgent.actions as actions
 import cogs.ResearchAgent.tools as tools
 import gptmod
-import gptmod.error
 import gui
 from assets import AssetLookup
 from bot import StatusEditMessage, TC_Cog_Mixin, TCBot, super_context_menu
 from database.database_ai import AuditProfile
-from utility import prioritized_string_split, select_emoji, urltomessage
+from utility import prioritized_string_split
 from utility.embed_paginator import pages_of_embeds
 
 from .ResearchAgent import ResearchContext, SourceLinkLoader
