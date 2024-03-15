@@ -1338,10 +1338,12 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         message_total, total_time_for_cluster = 0, 0.0
         for sep in grouped:
             message_total += len(sep.get_messages())
-        avgtime=profile.average_message_archive_time
-        if not avgtime: avgtime=2.5
-        avgsep=profile.average_sep_archive_time
-        if not avgsep: avgsep=3
+        avgtime = profile.average_message_archive_time
+        if not avgtime:
+            avgtime = 2.5
+        avgsep = profile.average_sep_archive_time
+        if not avgsep:
+            avgsep = 3
         total_time_for_cluster = message_total * avgtime
         # time between each delay.
         total_time_for_cluster += length * avgsep

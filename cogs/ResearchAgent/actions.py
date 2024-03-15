@@ -277,13 +277,14 @@ async def get_sources(
         return "NO RELEVANT DATA.", None, None
 
     # Sort documents by score
-    docs2 = sorted(data, key=lambda x: x[0].metadata['split'], reverse=False)
+    docs2 = sorted(data, key=lambda x: x[0].metadata["split"], reverse=False)
     docs3 = {}
     for doc in docs2:
-        source = doc[0].metadata['source']
-        if not source in docs3: docs3[source]=[]
+        source = doc[0].metadata["source"]
+        if not source in docs3:
+            docs3[source] = []
         docs3[source].append(doc)
-    
+
     # Get string containing most relevant source urls:
     url_desc, allsources = get_doc_sources(docs2)
     embed.description = f"Sources:\n{url_desc}"
@@ -293,23 +294,25 @@ async def get_sources(
     )
     if statmess:
         await statmess.editw(min_seconds=0, content="", embed=embed)
-    formatted_docs=[]
+    formatted_docs = []
     for s, v in docs3.items():
-        print(s,v)
         for tup in v:
-            doc,_,_= tup
+            doc, _, _ = tup
 
             meta = doc.metadata
             content = doc.page_content
 
-            sentences=advanced_sentence_splitter(content)
-            for e,s in enumerate(sentences):
-                output:str=s
+            sentences = advanced_sentence_splitter(content)
+            for e, s in enumerate(sentences):
+                output: str = s
                 footnote = f"[{e}]({doc.metadata['source']})"
 
-                output = output.rstrip() + footnote + output[-1] if output and output[-1].isspace() else output + footnote
+                output = (
+                    output.rstrip() + footnote + output[-1]
+                    if output and output[-1].isspace()
+                    else output + footnote
+                )
 
                 formatted_docs.append(output)
 
     return "  ".join(formatted_docs)
-

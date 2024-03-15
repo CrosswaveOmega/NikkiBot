@@ -21,10 +21,13 @@ from gptfunctionutil import (
     AILibFunction,
     LibParamSpec,
 )
+
+
 class MemoryFunctions(GPTFunctionLibrary):
     @AILibFunction(
         name="add_to_memory",
-        description="Based on the current chat context, update long-term memory with up to 20 sentences which can be used to remember the content.  Do not add sentences if they are already in the memory.")
+        description="Based on the current chat context, update long-term memory with up to 20 sentences which can be used to remember the content.  Do not add sentences if they are already in the memory.",
+    )
     @LibParamSpec(
         name="sentences",
         description="A list of 1 to 20 sentences which will be added to the long term memory.",
@@ -35,10 +38,9 @@ class MemoryFunctions(GPTFunctionLibrary):
         name="need_to_add",
         description="If the sentences are already present within the memory, set this to False.",
     )
-    async def sentences(self, sentences: List[str], need_to_add:bool=True):
+    async def sentences(self, sentences: List[str], need_to_add: bool = True):
         # This is an example of a decorated coroutine command.
         return sentences, need_to_add
-
 
 
 def warmup():
@@ -128,7 +130,7 @@ def split_document(doc: Document, present_mem):
     return newdata
 
 
-def indent_string(input_string:str, spaces:int=2):
+def indent_string(input_string: str, spaces: int = 2):
     """
     Indents each line of the given string by a specified number of spaces.
 
@@ -140,7 +142,9 @@ def indent_string(input_string:str, spaces:int=2):
         str: The indented string.
     """
     indentation = " " * spaces
-    indented_string = "\n".join([indentation + line for line in input_string.split("\n")])
+    indented_string = "\n".join(
+        [indentation + line for line in input_string.split("\n")]
+    )
     return indented_string
 
 
@@ -172,15 +176,19 @@ class SentenceMemory:
         for d in docs:
             source, split = d.metadata["source"], d.metadata["split"]
             ids.add(f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,source))}],sid:[{split}]")
-            ids.add(f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,source))}],sid:[{split-1}]")
-            ids.add(f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,source))}],sid:[{split+1}]")
-            
+            ids.add(
+                f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,source))}],sid:[{split-1}]"
+            )
+            ids.add(
+                f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,source))}],sid:[{split+1}]"
+            )
 
         doc1 = self.coll.get(ids=list(ids), include=["documents", "metadatas"])
         print(zip(doc1["documents"], doc1["metadatas"]))
         if doc1:
             dc = _results_to_docs(doc1)
-            if dc:    docs1 = dc
+            if dc:
+                docs1 = dc
 
         return docs1
 
@@ -215,20 +223,22 @@ class SentenceMemory:
         self,
         ctx: commands.Context,
         message: discord.Message,
-        cont:List[str],
+        cont: List[str],
         present_mem: str = "",
     ):
         content = cont
         print("content", content)
-        docs=[]
-        for e,c in enumerate(content):
+        docs = []
+        for e, c in enumerate(content):
             meta = {}
             meta["source"] = message.jump_url
             meta["foruser"] = self.userid
             meta["forguild"] = self.guildid
             meta["channel"] = message.channel.id
             meta["date"] = message.created_at.timestamp()
-            meta["role"] = "assistant" if message.author.id == ctx.bot.user.id else "user"
+            meta["role"] = (
+                "assistant" if message.author.id == ctx.bot.user.id else "user"
+            )
             meta["split"] = e
             doc = Document(page_content=c, metadata=meta)
             docs.append(doc)
@@ -249,21 +259,23 @@ class SentenceMemory:
             ]
         }
         with Timer() as all_timer:
-            docs = await self.coll.asimilarity_search_with_relevance_scores_and_embeddings(
-                message.content, k=15, filter=filterwith
+            docs = (
+                await self.coll.asimilarity_search_with_relevance_scores_and_embeddings(
+                    message.content, k=15, filter=filterwith
+                )
             )
             context = ""
             sources: Dict[str : Dict[int, Any]] = {}
             docs2 = (d[0] for d in docs)
-            all_neighbors=await self.get_neighbors(docs2)
-        checktime=all_timer.get_time()
+            all_neighbors = await self.get_neighbors(docs2)
+        checktime = all_timer.get_time()
         with Timer() as dict_timer:
             for e, tup in enumerate(all_neighbors):
-                doc= tup
+                doc = tup
                 source, split = doc.metadata["source"], doc.metadata["split"]
                 if not source in sources:
-                    sources[source]={}
-                sources[source][split]=(doc.page_content)
+                    sources[source] = {}
+                sources[source][split] = doc.page_content
                 if doc.page_content not in context:
                     context += doc.page_content + "  "
                 tokens = util.num_tokens_from_messages(
@@ -280,9 +292,9 @@ class SentenceMemory:
                 lastkey = -6
 
                 for k, v in sorted_dict:
-                    #print(source, k, v)
+                    # print(source, k, v)
                     if k != 0 and abs(k - lastkey) > 1:
-                        #print(abs(k - lastkey))
+                        # print(abs(k - lastkey))
                         newc += "..."
                     lastkey = k
                     newc += f"[split:{k}]:{v}" + "  "
@@ -291,8 +303,7 @@ class SentenceMemory:
                     output = f"*{content}\n"
                     new_output += output
 
-        return docs, new_output, (all_timer,dict_timer,loadtimer)
-
+        return docs, new_output, (all_timer, dict_timer, loadtimer)
 
     async def delete_message(self, url):
         try:

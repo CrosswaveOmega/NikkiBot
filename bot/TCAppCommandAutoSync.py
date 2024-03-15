@@ -433,7 +433,6 @@ class SpecialAppSync:
             # Add a command to the command tree for the given guild.
             if command.extras:
                 if command.extras.get("homeonly"):
-                    gui.gprint("yes")
                     if guild.id != int(AssetLookup.get_asset("homeguild")):
                         return
             if isinstance(command, (commands.HybridCommand, commands.HybridGroup)):

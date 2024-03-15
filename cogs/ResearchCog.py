@@ -119,7 +119,7 @@ def extract_masked_links(markdown_text):
     return masked_links
 
 
-def generate_article_metatemplate(article_data,include_snppit=False):
+def generate_article_metatemplate(article_data, include_snppit=False):
     template_parts = []
     values = []
     if "title" in article_data:
@@ -452,13 +452,13 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         )
 
         return tools.mask_links(answer, links)
-    
+
     @AILibFunction(
         name="recall",
         description="Recall up to 12 sources that could be related to the user's question.",
         enabled=False,
         force_words=["recall"],
-        required=["comment",'question'],
+        required=["comment", "question"],
     )
     @LibParam(
         comment="An interesting, amusing remark.",
@@ -483,11 +483,17 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     ):
         "recall docs for question."
         await ctx.send("RECALLING")
-        m=await ctx.send("O")
-        statmess=StatusEditMessage(m,ctx)
-        out=await actions.get_sources(question,result_limit,site_title_restriction,False,statmess=statmess,link_restrict=[])
-        print(out)
-        print("NOMOREOUT")
+        m = await ctx.send("O")
+        statmess = StatusEditMessage(m, ctx)
+        out = await actions.get_sources(
+            question,
+            result_limit,
+            site_title_restriction,
+            False,
+            statmess=statmess,
+            link_restrict=[],
+        )
+
         return out
 
     @commands.command(name="loadurl", description="loadurl test.", extras={})
@@ -957,7 +963,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         name="read_url",
         description="If given a URL, use this function to read it.",
         enabled=True,
-        required=["url",'comment'],
+        required=["url", "comment"],
     )
     @LibParam(
         comment="An interesting, amusing remark.",
@@ -984,11 +990,11 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         try:
             article, header = await read_article(ctx.bot.jsenv, url)
         except Exception as e:
-            me=await ctx.send("I couldn't read the url.  Sorry.")
+            me = await ctx.send("I couldn't read the url.  Sorry.")
             return me
         await mes.delete()
 
-        prompt = generate_article_metatemplate(header,include_snppit=False)
+        prompt = generate_article_metatemplate(header, include_snppit=False)
         sources = []
         mylinks = extract_masked_links(article)
         for link in mylinks:
@@ -998,6 +1004,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             sources.append(f"[{link_text}]({url4})")
 
         await ctx.send(prompt, suppress_embeds=True)
+
         def local_length(st: str) -> int:
             return gptmod.util.num_tokens_from_messages(
                 [
@@ -1007,11 +1014,13 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 "gpt-3.5-turbo-0125",
             )
 
-        fil = prioritized_string_split(article, tools.splitorder, 2000, length=local_length)
+        fil = prioritized_string_split(
+            article, tools.splitorder, 2000, length=local_length
+        )
         filelength: int = len(fil)
-        if len(fil)>1:
-            prompt=generate_article_metatemplate(header,include_snppit=True)
-        output=f"{prompt}\n\n #Page 1/{filelength}\n{fil[0]}"
+        if len(fil) > 1:
+            prompt = generate_article_metatemplate(header, include_snppit=True)
+        output = f"{prompt}\n\n #Page 1/{filelength}\n{fil[0]}"
         splitorder = ["%s\n", "%s.", "%s,", "%s "]
         fil2 = prioritized_string_split(output, splitorder, 4072)
         title = header.get("title", "notitle")
@@ -1020,7 +1029,6 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(embed=emb)
 
         return output
-
 
     @commands.command(
         name="reader",

@@ -1,7 +1,6 @@
 from .AI_MessageTemplates import AIMessageTemplates
 
 
-
 async def setup(bot):
     import gui
 

@@ -136,11 +136,11 @@ async def process_result(
     gui.dprint()
 
     i = result.choices[0]
-    print('i val',i)
+
     role, content = i.message.role, i.message.content
     if content is not None:
-        jsonout=await gptmod.errorous_json_decode(content,ctx.bot)
-    
+        jsonout = await gptmod.errorous_json_decode(content, ctx.bot)
+
     messageresp = None
     function = None
     finish_reason = i.finish_reason
@@ -170,7 +170,7 @@ async def process_result(
                 return role, contents, messageresp, function
 
             toolcont = str(contents)
-            print(toolcont)
+
             chat.messages.append(
                 {"role": "tool", "content": contents, "tool_call_id": tool_call.id}
             )
@@ -186,13 +186,13 @@ async def process_result(
 
             i2 = result2.choices[0]
             role, content = i2.message.role, i2.message.content
-            jsonout=await gptmod.errorous_json_decode(content,ctx.bot)
+            jsonout = await gptmod.errorous_json_decode(content, ctx.bot)
             break
 
         # content = resp
     if isinstance(content, str):
         # Split up content by line if it's too long.
-        mycontent=jsonout['content']
+        mycontent = jsonout["content"]
         page = commands.Paginator(prefix="", suffix=None)
         for p in content.split("\n"):
             page.add_line(p)
@@ -205,7 +205,9 @@ async def process_result(
 
         thiscont = f"{toolcont}\n{mycontent}"
 
-        await mem.add_list_to_mem(ctx,messageresp,jsonout['new_memory'],present_mem=present_mem)
+        await mem.add_list_to_mem(
+            ctx, messageresp, jsonout["new_memory"], present_mem=present_mem
+        )
         # chat.messages.append(
         #         {"role": "assistant", "content": mycontent}
         #     )
@@ -221,7 +223,7 @@ async def process_result(
         #     if need:   await mem.add_list_to_mem(ctx, messageresp, cont=contents, present_mem=present_mem)
     elif isinstance(content, discord.Message):
         messageresp = content
-        jsonout = {"content":messageresp.content,"new_memory":[]}
+        jsonout = {"content": messageresp.content, "new_memory": []}
     else:
         gui.dprint(result, content)
         messageresp = await ctx.channel.send("No output from this command.")
@@ -263,13 +265,13 @@ async def ai_message_invoke(
     # Convert into a list of messages
     mes = [c.to_dict() for c in chain]
     # create new ChatCreation
-    chat = gptmod.ChatCreation(presence_penalty=0.3, 
-                               messages=[],
-                               response_format={ "type": "json_object" })
+    chat = gptmod.ChatCreation(
+        presence_penalty=0.3, messages=[], response_format={"type": "json_object"}
+    )
     # ,model="gpt-3.5-turbo-0125"
     chat.add_message("system", nikkiprompt)
     mem = SentenceMemory(ctx.bot, guild, user)
-    docs, mems,alltime = await mem.search_sim(message)
+    docs, mems, alltime = await mem.search_sim(message)
     chat.add_message("system", f"### MEMORY:\n{mems}")
     audit = await AIMessageTemplates.add_resp_audit(
         ctx,
@@ -290,12 +292,12 @@ async def ai_message_invoke(
             chat.tool_choice = forcecheck[0]
         elif find_urls(message.content):
             chat.tools = mylib.get_tool_schema()
-            chat.tool_choice={"type": "function", "function": {"name": "read_url"}}
+            chat.tool_choice = {"type": "function", "function": {"name": "read_url"}}
         else:
             pass
             # chat.tools = mylib.get_tool_schema()
             # chat.tool_choice = "auto"
-    
+
     audit = await AIMessageTemplates.add_user_audit(ctx, chat)
 
     async with message.channel.typing():
@@ -452,7 +454,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         mem = SentenceMemory(ctx.bot, guild, user)
         message = ctx.message
         message.content = prompt
-        docs, str,alltimes = await mem.search_sim(message)
+        docs, str, alltimes = await mem.search_sim(message)
         splitorder = [
             "\n# %s",
             "\n## %s",
@@ -465,20 +467,25 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             "%s. ",
             "%s ",
         ]
-        alltime,dtime,ltime=alltimes
+        alltime, dtime, ltime = alltimes
         fil = prioritized_string_split(str, splitorder, default_max_len=1980)
         await ctx.send(f"took about {alltime.get_time()} seconds to gather neighbors.")
-        await ctx.send(f"took about {dtime.get_time()} seconds to load into dictionary.")
-        await ctx.send(f"took about {ltime.get_time()} seconds to sort into new_content")
+        await ctx.send(
+            f"took about {dtime.get_time()} seconds to load into dictionary."
+        )
+        await ctx.send(
+            f"took about {ltime.get_time()} seconds to sort into new_content"
+        )
         for e, chunk in enumerate(fil):
             await ctx.send(chunk)
+
     @commands.command(brief="Check memory")
     @commands.is_owner()
     async def memory_remove(self, ctx, url: str):
         guild, user = ctx.guild, ctx.message.author
         mem = SentenceMemory(ctx.bot, guild, user)
         message = ctx.message
-        target=await urltomessage(url,ctx.bot)
+        target = await urltomessage(url, ctx.bot)
         out = await mem.delete_message(url)
         await ctx.send("Removed url.")
 
@@ -490,7 +497,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         message = ctx.message
         out = await mem.delete_user_messages(user.id)
         await ctx.send("Removed user memory.")
-        
+
     @app_commands.command(name="ai_use", description="Check your current AI use.")
     async def usage(self, interaction: discord.Interaction) -> None:
         """check usage"""

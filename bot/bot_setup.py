@@ -231,7 +231,7 @@ class Main(commands.Cog):
         bot.post_queue_message.cancel()
         bot.delete_queue_message.cancel()
         bot.check_tc_tasks.cancel()
-        ctx.bot.exit_status="Shutdown"
+        ctx.bot.exit_status = "Shutdown"
         await ctx.channel.send("Shutting Down")
 
         await ctx.bot.close()

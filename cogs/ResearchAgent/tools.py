@@ -55,7 +55,7 @@ tosplitby = [
     "",
 ]
 symbol = re.escape("```")
-pattern = re.compile(f"({symbol}(?:(?!{symbol}).)+{symbol})",re.DOTALL)
+pattern = re.compile(f"({symbol}(?:(?!{symbol}).)+{symbol})", re.DOTALL)
 
 splitorder = [
     pattern,
@@ -207,7 +207,7 @@ async def read_and_split_links(
     pdf_urls = []
     regular_urls = []
     symbol3 = re.escape("  ")
-    pattern3 = re.compile(f"({symbol3}(?:(?!{symbol3}).)+{symbol3})",re.DOTALL)
+    pattern3 = re.compile(f"({symbol3}(?:(?!{symbol3}).)+{symbol3})", re.DOTALL)
     pdfsplit.append((pattern3, 100))
     for e, url in urls:
         if url.endswith(".pdf") or ".pdf" in url:
@@ -459,7 +459,6 @@ def store_splits(splits: List[Document], ids: List[str], chroma: Chroma):
     - None: The function performs storage operations but returns no value.
     """
     persist = "saveData"
-    print("STORING ", ids)
     chroma.add_documents(splits, ids)
 
     # vectorstore.persist()
@@ -848,7 +847,7 @@ async def summarize(
     fil = prioritized_string_split(article, splitorder, 10000, length=local_length)
     filelength: int = len(fil)
     for num, articlepart in enumerate(fil):
-        print(num, filelength)
+        print("summarize operation", num, filelength)
         messages = [
             {
                 "role": "system",
@@ -937,7 +936,7 @@ def mask_links(text, links):
 
     # Extract numbers for each element in newline
     for line in link_lines:
-        #print(line)
+        # print(line)
         match = re.match(r"\[([\d, ]+)\](https?://[^\s]+)", line)
         if match:
             numbers, url = match.groups()
@@ -946,7 +945,7 @@ def mask_links(text, links):
 
     # Replace occurrences of [number] with masked links
     for number, url in links_dict.items():
-        #print(number, url)
+        # print(number, url)
         num_pattern = re.compile(rf"\[({number})\]")
         text = re.sub(num_pattern, f"[{number}]({url})", text)
 

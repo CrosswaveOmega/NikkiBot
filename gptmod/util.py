@@ -1,4 +1,3 @@
-
 import tiktoken
 import assets
 import json
@@ -52,15 +51,16 @@ def num_tokens_from_messages(messages, model="gpt-3.5-turbo-0125"):
 
 from json.decoder import JSONDecodeError
 
-async def errorous_json_decode(jsondoc,bot,depth=5):
+
+async def errorous_json_decode(jsondoc, bot, depth=5):
     decoder = json.decoder.JSONDecoder
     try:
-        return json.loads(jsondoc,cls=json.decoder.JSONDecoder,strict=False)
+        return json.loads(jsondoc, cls=json.decoder.JSONDecoder, strict=False)
     except JSONDecodeError as err:
-        if 'Extra data' in str(err.msg) and depth>0:
+        if "Extra data" in str(err.msg) and depth > 0:
             print("JSONDecodeError: Extra data")
-            await bot.send_error(err, "EXTRA DATA HAPPENED ON CALL.",uselog=True)
-            out= await errorous_json_decode(jsondoc[:err.pos],bot,depth=depth-1)
+            await bot.send_error(err, "EXTRA DATA HAPPENED ON CALL.", uselog=True)
+            out = await errorous_json_decode(jsondoc[: err.pos], bot, depth=depth - 1)
             return out
         else:
             raise err

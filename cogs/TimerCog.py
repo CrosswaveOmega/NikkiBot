@@ -201,7 +201,7 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
         name="start_timer",
         description="Start a timer for a certain number of seconds.",
         required=["set a timer", "start a timer", "timer for", "start timer"],
-        enabled=False
+        enabled=False,
     )
     @LibParam(
         comment="An interesting, amusing remark.",
@@ -236,7 +236,11 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
             await session.commit()
         return target_message
 
-    @AILibFunction(name="view_timers", description="View all currently active timers.",enabled=False)
+    @AILibFunction(
+        name="view_timers",
+        description="View all currently active timers.",
+        enabled=False,
+    )
     @LibParam(comment="An interesting, amusing remark.")
     @commands.command(
         name="timer_view", description="View all timers you've made.", extras={}

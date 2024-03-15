@@ -163,7 +163,7 @@ def keyring_setup(keys: ConfigParserSub):
     for section in secure_keys.sections():
         for k, value in secure_keys.items(section):
             # output old section, k, value for verification.
-            print(section, k, value)
+            pass
     if changes:
         with open("keys.ini", "w+") as file:
             keys.write(file)

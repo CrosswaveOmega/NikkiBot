@@ -202,7 +202,7 @@ class ChromaBetter(Chroma):
         )
         if any(
             similarity < 0.0 or similarity > 1.0
-            for _, similarity,_ in docs_and_similarities
+            for _, similarity, _ in docs_and_similarities
         ):
             warnings.warn(
                 "Relevance scores must be between"
@@ -221,7 +221,6 @@ class ChromaBetter(Chroma):
                     f" threshold {score_threshold}"
                 )
         return docs_and_similarities
-
 
     def similarity_search_with_score_and_embedding(
         self,

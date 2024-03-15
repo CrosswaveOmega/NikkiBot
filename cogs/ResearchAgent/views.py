@@ -370,7 +370,6 @@ class PreCheck(TimedResponseView):
         await interaction.response.send_modal(modal)
         await modal.wait()
         if modal.done is not None:
-            print(modal.done)
             query = modal.done
             _, que, com = self.qatup
             self.qatup = (query, que, com)
@@ -468,7 +467,6 @@ class FollowupActionView(TimedResponseView):
         await interaction.response.send_modal(modal)
         await modal.wait()
         if modal.done is not None:
-            print(modal.done)
             followups = modal.done.split("\n")
             for fol in followups:
                 if (
@@ -545,7 +543,7 @@ class FollowupActionView(TimedResponseView):
             return
 
         sel = int(self.mydrop.selected)
-        print(sel)
+
         if len(self.followup_questions) < sel:
             await interaction.response.send_message(
                 content="This index is out of range.", ephemeral=True
@@ -574,21 +572,6 @@ class FollowupActionView(TimedResponseView):
             "This feature isn't ready yet!", ephemeral=True
         )
         return
-        modal = FollowupJustifyModal()
-        await interaction.response.send_modal(modal)
-        await modal.wait()
-        if modal.done is not None:
-            # Assuming there's a function to handle justification
-            print(modal.done)
-            await interaction.edit_original_response(
-                content="Justification recorded!",
-                embed=discord.Embed(description=f"Justified: {modal.done}"),
-            )
-        else:
-            await interaction.edit_original_response(
-                content="Cancelled",
-                embed=discord.Embed(description="Justification cancelled."),
-            )
 
     @discord.ui.button(
         label="Source Detail",
@@ -602,21 +585,6 @@ class FollowupActionView(TimedResponseView):
             "This feature isn't ready yet!", ephemeral=True
         )
         return
-        modal = FollowupSourceDetailModal()
-        await interaction.response.send_modal(modal)
-        await modal.wait()
-        if modal.done is not None:
-            # Assuming there's a function to handle source details
-            print(modal.done)
-            await interaction.edit_original_response(
-                content="Source detail recorded!",
-                embed=discord.Embed(description=f"Source detail: {modal.done}"),
-            )
-        else:
-            await interaction.edit_original_response(
-                content="Cancelled",
-                embed=discord.Embed(description="Source detail recording cancelled."),
-            )
 
     @discord.ui.button(
         label="Continue",

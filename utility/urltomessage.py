@@ -62,9 +62,7 @@ async def urltomessage(
             else:
                 message = await channel.fetch_message(int(message_id))
         except discord.errors.NotFound:
-            raise BotError(
-                f"Failed to get message {message_id} from {link}."
-            )
+            raise BotError(f"Failed to get message {message_id} from {link}.")
     except Exception as e:
         gui.gprint(e)
         if bot:

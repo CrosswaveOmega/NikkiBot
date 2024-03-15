@@ -16,10 +16,14 @@ from discord.utils import escape_markdown
 import re
 from typing import Union
 
+
 def find_urls(text):
-    url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+    url_pattern = (
+        r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
+    )
     urls = re.findall(url_pattern, text)
     return urls
+
 
 def split_and_cluster_strings(
     input_string: str, max_cluster_size: int, split_substring: str, length=len
@@ -175,12 +179,11 @@ def split_string_with_code_blocks(input_str, max_length, oncode=False):
     if len(input_str) <= max_length:
         return [input_str]
     symbol = re.escape("```")
-    pattern = re.compile(f"({symbol}(?:(?!{symbol}).)+{symbol})",re.DOTALL)
+    pattern = re.compile(f"({symbol}(?:(?!{symbol}).)+{symbol})", re.DOTALL)
 
     splitorder = [pattern, "\n### %s", "%s\n", " %s"]
     fil = prioritized_string_split(input_str, splitorder, default_max_len=max_length)
     return fil
-
 
 
 def replace_working_directory(string):
