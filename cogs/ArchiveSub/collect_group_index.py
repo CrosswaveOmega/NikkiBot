@@ -93,7 +93,7 @@ async def iterate_backlog(backlog: Queue, group_id: int, count=0):
         # bucket['authors'].add(hm.author)
         res = datetime.now() - time
         optotal += res.total_seconds()
-        await asyncio.sleep(float(0.01))
+        await asyncio.sleep(float(0.002))
     gui.dprint(optotal / max(1, archived))
     if DEBUG_MODE:
         gui.dprint("Pass complete.")
@@ -366,14 +366,7 @@ async def do_group(
         to_send += ts
         backlog, chars_in_backlog = Queue(), set()
         cc_count, current_chana = 0, None
-        # firsttime = my_time - (
-        #     my_time - datetime.min.replace(tzinfo=timezone.utc)
-        # ) % timedelta(minutes=15)
-        # get_msg_result = ArchivedRPMessage().get_messages_without_group_batch(
-        #     server_id, upperlim, new_count, 250
-        # )
-        # new_list.extend(get_msg_result[0])
-        # new_count = get_msg_result[1]
+
         new_count += thiscount
         gui.dprint(f"Now at: {new_count}/{count}.")
         await asyncio.sleep(0.1)

@@ -591,7 +591,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
     @app_commands.describe(cat="Name of category to stop ignoring.")
     async def remove_ignore_category(
         self, ctx, cat: discord.CategoryChannel
-    ):  # Add ignore.
+    ):  # remove ignore.
         """
         Remove mentioned categories from this server's ignore list.
         """
@@ -829,6 +829,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         if ctx.guild:
             bot = ctx.bot
             guild = ctx.guild
+            task_name = "LAZYARCHIVE"
             profile = ServerArchiveProfile.get_or_new(guild.id)
             if profile.history_channel_id == 0:
                 await MessageTemplates.get_server_archive_embed(
@@ -857,6 +858,8 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 return False
             if LazyContext.get(guild.id) != None:
                 LazyContext.remove(guild.id)
+                if TCGuildTask.get(guild.id,task_name):
+                    TCGuildTask.remove_guild_task(guild.id,task_name)
                 # await MessageTemplates.server_archive_message(ctx,"There already is a running lazy archive.")
                 # return False
             confirm = ConfirmView(user=ctx.author)
@@ -867,13 +870,13 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await confirm.wait()
             if confirm.value:
                 await mes.delete()
-                task_name = "LAZYARCHIVE"
+                
                 message = await autochannel.send(
                     f"**ATTEMPTING SET UP OF AUTO COMMAND {task_name}**"
                 )
                 myurl = message.jump_url
                 start_date = datetime(2023, 1, 1, 15, 30)
-                robj = rrule(freq=MINUTELY, interval=10, dtstart=start_date)
+                robj = rrule(freq=MINUTELY, interval=2, dtstart=start_date)
 
                 await setup_lazy_grab(ctx)
                 totaltime = ChannelArchiveStatus.get_total_unarchived_time(guild.id)
@@ -1253,272 +1256,21 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         +`both` -compile both
 
         """
+
+        #SETUP
         bot = ctx.bot
-        auth = ctx.message.author
         channel = ctx.message.channel
         guild: discord.Guild = channel.guild
         if guild == None:
             await ctx.send("This command will only work inside a guild.")
             return
-        guildid = guild.id
-        channelid = channel.id
-        # options.
-        update = True
-        indexbot = True
-        user = False
-        scope = "ws"
-        archive_from = "server"
-
-        timebetweenmess = 2.2
-        characterdelay = 0.05
-
-        profile = ServerArchiveProfile.get_or_new(guildid)
-
-        # await channel.send(profile.history_channel_id)
-        if profile.history_channel_id == 0:
-            await MessageTemplates.get_server_archive_embed(
-                ctx, "Set a history channel first."
-            )
-            return False
-        archive_channel = guild.get_channel(profile.history_channel_id)
-        if archive_channel == None:
-            await MessageTemplates.get_server_archive_embed(
-                ctx, "I can't seem to access the history channel, it's gone!"
-            )
-            return False
-
-        passok, statusmessage = check_channel(archive_channel)
-
-        if not passok:
-            await MessageTemplates.server_archive_message(ctx, statusmessage)
-            return
-
-        m2 = await ctx.send("archiving...")
-        m = await ctx.channel.send("Initial check OK!")
-        if profile.last_archive_time == None:
-            if ctx.author.id == ctx.bot.user.id:
-                await ctx.send("This is my first time archiving this server!")
-            else:
-                await ctx.send(
-                    "## Hold up!  This is my first time archiving this server!\n"
-                    + "I highly recommend using a lazy archive depending on the number of messages in this server!"
-                )
-        dynamicwait = False
-        bot.add_act(str(ctx.guild.id) + "arch", "archiving server...")
-        await m.edit(content="Collecting server history...")
-
-        totalcharlen = 0
-        new_last_time = 0
-        if archive_from == "server":
-            messages, totalcharlen, new_last_time = await collect_server_history(
-                ctx, update=update
-            )
-
-        await m.edit(content="Grouping into separators, this may take a while.")
-
-        lastgroup = profile.last_group_num
-        ts, group_id = await do_group(guildid, profile.last_group_num, ctx=ctx)
-
-        fullcount = ts
-        profile.update(last_group_num=group_id)
-
-        gui.gprint(lastgroup, group_id)
-
-        gui.gprint("next")
-
-        needed = ChannelSep.get_posted_but_incomplete(guildid)
-        grouped = ChannelSep.get_unposted_separators(guildid)
-        if needed:
-            newgroup = []
-            newgroup.extend(needed)
-            newgroup.extend(grouped)
-            grouped = newgroup
-        length = len(grouped)
-        gui.gprint(grouped, needed)
-        message_total, total_time_for_cluster = 0, 0.0
-        for sep in grouped:
-            message_total += len(sep.get_messages())
-        avgtime = profile.average_message_archive_time
-        if not avgtime:
-            avgtime = 2.5
-        avgsep = profile.average_sep_archive_time
-        if not avgsep:
-            avgsep = 3
-        total_time_for_cluster = message_total * avgtime
-        # time between each delay.
-        total_time_for_cluster += length * avgsep
-
-        remaining_time_float = total_time_for_cluster
-        if dynamicwait:
-            remaining_time_float += totalcharlen * characterdelay
-
-        outstring = f"It will take {seconds_to_time_string(int(remaining_time_float))} to post in the archive channel."
-        if int(remaining_time_float) <= 0.1:
-            outstring = "The Archive Channel is already up to date!"
-
-        def format_embed(group, grouplen, ma, mt, time, index=1, ml=1):
-            total = f"<a:LetWalk:1118184074239021209> Currently on group {group}/{grouplen}.\n"
-            total += f"Current group is {int((index/ml)*100)}% archived\n Currently archived {ma} messages out of {mt} total.\n"
-            total += (
-                f"This is going to take another... {seconds_to_time_string(int(time))}"
-            )
-
-            embed = discord.Embed(description=total)
-            return embed
-
-        message_archive_total = 0
-        sep_archive_total = 0
-
-        await m.edit(content=outstring)
-        embed = format_embed(
-            1, length, 0, message_total, time=remaining_time_float, index=0, ml=1
-        )
-        me = await ctx.channel.send(embed=embed)
-        mt = StatusEditMessage(me, ctx)
-        gui.gprint(archive_channel.name)
-        messagearchived = 0
-        separchived = 0
-        for e, sep in enumerate(grouped):
-            # Start posting
-            separchived += 1
-            gui.gprint(e, sep)
-            gui.dprint(remaining_time_float)
-            with Timer() as sep_timer:
-                if not sep.posted_url:
-                    currjob = "rem: {}".format(
-                        seconds_to_time_string(int(remaining_time_float))
-                    )
-                    emb, count = sep.create_embed()
-                    chansep = await archive_channel.send(embed=emb)
-                    sep.update(posted_url=chansep.jump_url)
-                    await self.edit_embed_and_neighbors(sep)
-
-                    self.bot.database.commit()
-
-                elif sep.posted_url and not sep.all_ok:
-                    old_message = await urltomessage(sep.posted_url, bot)
-                    emb, count = sep.create_embed(cfrom=sep.posted_url)
-                    new_message = await archive_channel.send(embed=emb)
-                    jump_url = new_message.jump_url
-                    embedit, count = sep.create_embed(cto=jump_url)
-                    await old_message.edit(embed=embedit)
-            pre_time = sep_timer.get_time()
-            gui.gprint("sep_timer_time", pre_time)
-            messages = sep.get_messages()
-            messagelength = len(messages)
-            for index, amess in enumerate(messages):
-                c, au, av = amess.content, amess.author, amess.avatar
-                messagearchived += 1
-                files = []
-                for attach in amess.list_files():
-                    this_file = attach.to_file()
-                    files.append(this_file)
-                pager = commands.Paginator(prefix="", suffix="")
-                with Timer() as posttimer:
-                    if len(c) > 2000:
-                        for l in c.split("\n"):
-                            pager.add_line(l)
-                        for page in pager.pages:
-                            webhookmessagesent = await web.postWebhookMessageProxy(
-                                archive_channel,
-                                message_content=page,
-                                display_username=au,
-                                avatar_url=av,
-                                embed=amess.get_embed(),
-                                file=files,
-                            )
-                        if webhookmessagesent:
-                            amess.update(posted_url=webhookmessagesent.jump_url)
-                    else:
-                        webhookmessagesent = await web.postWebhookMessageProxy(
-                            archive_channel,
-                            message_content=c,
-                            display_username=au,
-                            avatar_url=av,
-                            embed=amess.get_embed(),
-                            file=files,
-                        )
-                        if webhookmessagesent:
-                            amess.update(posted_url=webhookmessagesent.jump_url)
-                    await asyncio.sleep(timebetweenmess)
-                    remaining_time_float = remaining_time_float - (
-                        timebetweenmess + 0.5
-                    )
-                    embed = format_embed(
-                        e + 1,
-                        length,
-                        messagearchived,
-                        message_total,
-                        time=remaining_time_float,
-                        index=index,
-                        ml=messagelength,
-                    )
-                    await mt.editw(min_seconds=45, embed=embed)
-                message_archive_total += posttimer.get_time()
-
-            sep.update(all_ok=True)
-            self.bot.database.commit()
-            with Timer() as finishtime:
-                await asyncio.sleep(2)
-                remaining_time_float -= 2
-                embed = format_embed(
-                    e + 1,
-                    length,
-                    messagearchived,
-                    message_total,
-                    time=remaining_time_float,
-                    index=messagelength,
-                    ml=messagelength,
-                )
-                await mt.editw(
-                    min_seconds=30,
-                    embed=embed,
-                )
-                # await edittime.invoke_if_time(content=f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}")
-                bot.add_act(
-                    str(ctx.guild.id) + "arch",
-                    f"Currently on {e+1}/{length}.\n  This is going to take about...{seconds_to_time_string(int(remaining_time_float))}",
-                )
-            posttime = finishtime.get_time()
-            sep_archive_total += pre_time + posttime
-            gui.gprint(
-                e,
-                "POST TIME",
-                posttime,
-                message_archive_total / messagearchived,
-                sep_archive_total / separchived,
-            )
-
-        await asyncio.sleep(2)
-        await me.delete()
-        game = discord.Game("{}".format("clear"))
-        await bot.change_presence(activity=game)
-
-        bot.remove_act(str(guildid) + "arch")
-        channel = await bot.fetch_channel(channelid)
-        latest = ArchivedRPMessage.get_latest_archived_rp_message(guildid)
-        gui.gprint(
-            discord.utils.utcnow(),
-            latest.created_at,
-            profile.last_archive_time,
-            datetime.fromtimestamp(int(new_last_time)),
-        )
-        profile.update(last_archive_time=latest.created_at)
-        if message_archive_total > 0 and messagearchived > 0:
-            profile.update(
-                average_sep_archive_time=sep_archive_total / separchived,
-                average_message_archive_time=message_archive_total / messagearchived,
-            )
-        bot.database.commit()
-        await m2.delete()
-        await MessageTemplates.server_archive_message(
-            channel,
-            f"Archive operation completed at <t:{int(datetime.now().timestamp())}:f>",
-        )
-        self.guild_db_cache[str(guildid)] = profile
-        bot.database.commit()
-
-        # await m.delete()
+        from cogs.ArchiveSub.archive_compiler import ArchiveCompiler
+        actx=ArchiveCompiler(ctx)
+        outcome=await actx.start()
+        if outcome:
+            self.guild_db_cache[str(guild.id)] = outcome
+            bot.database.commit()
+        
 
     @commands.command(extras={"guildtask": ["rp_history"]})
     async def makeCalendar(self, ctx):

@@ -159,8 +159,12 @@ class TCBot(
             self.gptapi = gptmod.GptmodAPI()
 
             self.database_on()
+
+            #Update extensions.
             self.update_ext_list()
             await self.reload_all()
+
+            
             dbcheck = self.database.database_check()
             gui.gprint(dbcheck)
             # audit old guild data.
@@ -169,9 +173,9 @@ class TCBot(
             # Sync to all needed servers.
             await self.all_guild_startup()
             gui.gprint("BOT SYNCED!")
-            self.delete_queue_message.start()
-            self.post_queue_message.start()
-            self.status_ticker.start()
+            self.delete_queue_message.start() #pylint:ignore
+            self.post_queue_message.start() #pylint:ignore
+            self.status_ticker.start() #pylint:ignore
             for g in self.guilds:
                 mytasks = TCGuildTask.get_tasks_by_server_id(g.id)
                 for t in mytasks:
@@ -239,9 +243,7 @@ class TCBot(
         )
         handler2.setFormatter(formatter2)
         discord.utils.setup_logging(level=logging.WARNING, handler=handler2, root=False)
-        # SQLALCHEMY LOGGER.
 
-        # Sqlalchemylogger.
 
         self.logs = logging.getLogger("TCLogger")
         self.logs.setLevel(logging.WARNING)

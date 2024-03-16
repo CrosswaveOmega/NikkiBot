@@ -16,8 +16,8 @@ from discord import ChannelType as ct
 Collects all messages in non-blacklisted channels, and adds them to the database in batches of 10.
 
 """
-BATCH_SIZE = 10
-LAZYGRAB_LIMIT = 5000
+BATCH_SIZE = 50
+LAZYGRAB_LIMIT = 10000
 
 
 class ArchiveContext:
@@ -302,6 +302,8 @@ async def collect_server_history_lazy(ctx, statmess=None, **kwargs):
     gui.gprint(len(channels))
     for c in channels:
         gui.print(c)
+        
+        arch_ctx.channel_spot += 1
         channel = guild.get_channel_or_thread(c.channel_id)
         if channel:
             gui.gprint("Channel", channel)
