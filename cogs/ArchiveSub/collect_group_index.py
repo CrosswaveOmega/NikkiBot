@@ -23,7 +23,7 @@ async def iterate_backlog(backlog: List[ArchivedRPMessage], group_id: int, count
     # Goes through queue once.
     tosend = []
     now = datetime.now()
-    initial = backlog.qsize()
+    initial = len(backlog)
     archived = 0
 
     buckets = {}  # Dictionary to hold buckets of messages
