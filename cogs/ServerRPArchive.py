@@ -998,7 +998,12 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                     server_id=ctx.guild.id
                 ).delete()
                 session.commit()
-
+                await ctx.send(ChannelArchiveStatus.count_all(ctx.guild.id))
+                ChannelArchiveStatus.delete_status_by_server_id(ctx.guild.id)
+                
+                await ctx.send(ChannelArchiveStatus.count_all(ctx.guild.id))
+                count=ArchivedRPMessage.count_all(ctx.guild.id)
+                await ctx.send(count)
                 profile.update(last_group_num=0)
                 confirm2 = ConfirmView(user=ctx.author)
                 mes = await ctx.send(

@@ -68,6 +68,32 @@ class ChannelArchiveStatus(ArchiveBase):
             session.add(new)
             session.commit()
         return new
+    
+    @staticmethod
+    def delete_status_by_server_id(server_id: int):
+        """delete all channel seps that belong to the passed in server id"""
+        session: Session = DatabaseSingleton.get_session()
+        session.query(ChannelArchiveStatus).filter(ChannelArchiveStatus.server_id == server_id).delete()
+        session.commit()
+
+    @staticmethod
+    def count_all(server_id: int):
+        """
+        Function to count all channel status table entries.
+
+        Args:
+            server_id (int): The ID of the server.
+
+        Returns:
+            The total number of channel seps being tracked
+        """
+        session: Session = DatabaseSingleton.get_session()
+        count = (
+            session.query(func.count(ChannelArchiveStatus.channel_id))
+            .filter((ChannelArchiveStatus.server_id == server_id))
+            .scalar()
+        )
+        return count
 
     @staticmethod
     def get(server_id, channel_id):
@@ -108,8 +134,11 @@ class ChannelArchiveStatus(ArchiveBase):
         return res
 
     async def get_first_and_last(self, channel: discord.TextChannel, force=False):
+        '''Get the first message sent in the channel, and the last message sent in the channel.
+        '''
         if self.first_message_time == None or force:
             async for thisMessage in channel.history(oldest_first=True, limit=1):
+                #The first Message ever.
                 gui.dprint(thisMessage.created_at, thisMessage.created_at.tzinfo)
                 self.first_message_time = thisMessage.created_at
                 self.first_message_id = thisMessage.id
@@ -117,6 +146,7 @@ class ChannelArchiveStatus(ArchiveBase):
 
         if self.last_message_time == None or force:
             async for thisMessage in channel.history(oldest_first=False, limit=1):
+                #The last message ever.
                 gui.dprint(thisMessage.created_at, thisMessage.created_at.tzinfo)
                 self.last_message_time = thisMessage.created_at
                 self.last_message_id = thisMessage.id
@@ -129,6 +159,7 @@ class ChannelArchiveStatus(ArchiveBase):
         return self.last_message_time - self.latest_archive_time
 
     def increment(self, date):
+        '''Set the latest archived time to date.'''
         self.stored += 1
         gui.dprint(
             "inc",
@@ -238,22 +269,25 @@ class ChannelSep(ArchiveBase):
         self.message_count = count
 
     @staticmethod
-    def add_channel_sep_if_needed(message, chansepid):
+    def add_channel_sep_if_needed(message, chansepid, no_check=True):
         """if there's a new channel sep id, create a new channel sep.
         otherwise, return the channel sep id passed in."""
         session: Session = DatabaseSingleton.get_session()
-        # Check if a ChannelSep with the same server_id and channel_sep_id already exists
-        existing_channel_sep = (
-            session.query(ChannelSep)
-            .filter_by(server_id=message.server_id, channel_sep_id=chansepid)
-            .first()
-        )
-        if existing_channel_sep:
-            existing_channel_sep.update_message_count()
-            return existing_channel_sep
-        channel_sep = ChannelSep.derive_from_archived_rp_message(message)
-        session.add(channel_sep)
-        session.commit()
+        if not no_check:
+            channel_sep = (
+                session.query(ChannelSep)
+                .filter_by(server_id=message.server_id, channel_sep_id=chansepid)
+                .first()
+            )
+        if no_check or not channel_sep:
+            print(chansepid, "Is not present.")
+            channel_sep = ChannelSep.derive_from_archived_rp_message(message)
+            session.add(channel_sep)
+            session.commit()
+        else:
+            
+            print("Is present.")
+            channel_sep.update_message_count()
         return channel_sep
 
     @staticmethod
@@ -345,25 +379,17 @@ class ChannelSep(ArchiveBase):
         )
 
     @staticmethod
-    def get_unposted_separators(server_id: int, limit: int = None):
+    def get_unposted_separators(server_id: int, limit: int = None, offset: int = None):
         """retrieve up to `limit` ChannelSep objects for the passed in serverid that are not posted yet."""
         filter = and_(ChannelSep.posted_url == None, ChannelSep.server_id == server_id)
         session = DatabaseSingleton.get_session()
-        if limit == None:
-            return (
-                session.query(ChannelSep)
-                .filter(filter)
-                .order_by(ChannelSep.channel_sep_id)
-                .all()
-            )
-        else:
-            return (
-                session.query(ChannelSep)
-                .filter(filter)
-                .order_by(ChannelSep.channel_sep_id)
-                .limit(limit)
-                .all()
-            )
+        query = session.query(ChannelSep).filter(filter).order_by(ChannelSep.channel_sep_id)
+        if limit is not None:
+            query = query.limit(limit)
+        if offset is not None:
+            query = query.offset(offset)
+        return query.all()
+
 
     @staticmethod
     def get_all_separators(server_id: int):
@@ -700,6 +726,7 @@ class ArchivedRPMessage(ArchiveBase):
 
     @staticmethod
     def get_latest_archived_rp_message(server_id):
+        """Get the latest archived message in server. """
         session: Session = DatabaseSingleton.get_session()
         query = (
             session.query(ArchivedRPMessage)

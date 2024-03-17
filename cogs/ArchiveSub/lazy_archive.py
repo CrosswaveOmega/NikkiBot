@@ -73,7 +73,7 @@ class LazyContext(LazyBase):
     posting = Column(Boolean, default=False)
     message_count = Column(Integer, default=0)
     archived_so_far = Column(Integer, default=0)
-    state = Column(String, default="setup")
+    state = Column(String, default="collecting")
 
     def __repr__(self):
         return f"LazyContext({self.server_id},active={self.active_id}, state={self.state},message_count={self.message_count}, archived={self.archived_so_far})"
@@ -126,7 +126,7 @@ DatabaseSingleton("setup").load_base(LazyBase)
 async def lazy_archive(self, ctx):
     """Equivalient to compile_archive, but does each step in subsequent calls of itself."""
     MESSAGES_PER_POST_CALL = 150
-    CHANNEL_SEPS_PER_CLUSTER = 1
+    CHANNEL_SEPS_PER_CLUSTER = 5
     MAX_TOTAL_MINUTES = ctx.bot.config.get("archive", "max_lazy_archive_minutes")
     if MAX_TOTAL_MINUTES == None:
         MAX_TOTAL_MINUTES = "15"
@@ -203,13 +203,12 @@ async def lazy_archive(self, ctx):
         
         m,profile,archive_channel=arc_comp.supertup
         # archived_this_session<=MESSAGES_PER_POST_CALL
-        while upper_time_limit() > 0:
-            did=await arc_comp.post(m,profile,archive_channel,CHANNEL_SEPS_PER_CLUSTER)
-            if not did:
-                lazycontext.next_state()
-            
-            
-            bot.remove_act(str(guildid) + "lazyarch")
+        #while upper_time_limit() > 0:
+        did=await arc_comp.post(m,profile,archive_channel,MAX_TOTAL_SECONDS)
+        if not did:
+            lazycontext.next_state()
+        
+        
         await arc_comp.cleanup(profile)
         await m.delete()
     elif lazycontext.state == "done":

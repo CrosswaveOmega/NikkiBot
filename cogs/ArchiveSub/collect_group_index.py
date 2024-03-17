@@ -1,11 +1,15 @@
 import asyncio
+from typing import List
 import gui
 from datetime import datetime, timedelta, timezone
 from .archive_database import ArchivedRPMessage, ChannelSep, HistoryMakers
 from database import DatabaseSingleton
 from queue import Queue
 from bot import StatusEditMessage
-
+from utility import (
+    seconds_to_time_string,
+    urltomessage,
+)
 """
 
 Groups the collected history messages into "ChannelSep" objects, that store the location and time of each set of 
@@ -15,7 +19,7 @@ server message.
 DEBUG_MODE = False
 
 
-async def iterate_backlog(backlog: Queue, group_id: int, count=0):
+async def iterate_backlog(backlog: List[ArchivedRPMessage], group_id: int, count=0):
     # Goes through queue once.
     tosend = []
     now = datetime.now()
@@ -27,7 +31,7 @@ async def iterate_backlog(backlog: Queue, group_id: int, count=0):
     optotal = 0
     opcount = 0
     chars = {}
-    while not backlog.empty():
+    for hm in backlog:
         time = datetime.now()
         if DEBUG_MODE:
             gui.dprint(f"Backlog Pass {group_id}:")
@@ -39,7 +43,7 @@ async def iterate_backlog(backlog: Queue, group_id: int, count=0):
             # await asyncio.sleep(0.02)
             now = datetime.now()
 
-        hm: ArchivedRPMessage = backlog.get()
+        #hm: ArchivedRPMessage = backlog.get()
         channelind = hm.get_chan_sep()
 
         # Find the bucket for the current channel separator
@@ -94,7 +98,7 @@ async def iterate_backlog(backlog: Queue, group_id: int, count=0):
         res = datetime.now() - time
         optotal += res.total_seconds()
         await asyncio.sleep(float(0.002))
-    gui.dprint(optotal / max(1, archived))
+    gui.dprint("PASS TOOK ", seconds_to_time_string(optotal),'with ', archived, "messages.  avg",optotal/max(1,archived))
     if DEBUG_MODE:
         gui.dprint("Pass complete.")
 
@@ -334,7 +338,7 @@ async def do_group(
         datetime.now(),
     )
     length, old_group_id = count, group_id
-    to_send, current_chana, backlog, chars_in_backlog = [], None, Queue(), set()
+    to_send, current_chana  = [], None
     stopcount = 0
     countlim = 2**64
     while new_count < count:
@@ -357,15 +361,12 @@ async def do_group(
                 content=f"<a:LetWalkR:1118191001731874856> {toprint}.<a:LetWalkR:1118191001731874856> ",
             )
 
-        for m in thesemessages:
-            backlog.put(m)
-        ts, group_id = await iterate_backlog(backlog, group_id, thiscount)
+        #for m in thesemessages: backlog.put(m)
+        ts, group_id = await iterate_backlog(thesemessages, group_id, thiscount)
 
         DatabaseSingleton("voc").commit()
         await asyncio.sleep(0.1)
         to_send += ts
-        backlog, chars_in_backlog = Queue(), set()
-        cc_count, current_chana = 0, None
 
         new_count += thiscount
         gui.dprint(f"Now at: {new_count}/{count}.")
@@ -376,7 +377,7 @@ async def do_group(
 
     DatabaseSingleton("voc").commit()
 
-    ts, group_id = await iterate_backlog(backlog, group_id, length)
+    #ts, group_id = await iterate_backlog(backlog, group_id, length)
     if status_mess:
         await status_mess.delete()
 

@@ -46,6 +46,7 @@ class ArchiveCompiler:
         self.s_arc=0
         self.remaining_time_float=0.0
         self.avgtime=2.0
+        self.t_mess=self.t_sep=0
         self.avgsep=3.0
         self.supertup=(None,None,None)
 
@@ -168,26 +169,48 @@ class ArchiveCompiler:
         """
             Get grouped list, create the staus message, and estimate the remaining time.
         """
-        needed = ChannelSep.get_posted_but_incomplete(self.guild.id)
-        grouped = ChannelSep.get_unposted_separators(self.guild.id,upper_lim)
-        if needed:
-            newgroup = []
-            newgroup.extend(needed)
-            newgroup.extend(grouped)
-            grouped = newgroup
-        self.sep_total = len(grouped)
-        gui.gprint(grouped, needed)
-        total_time_for_cluster = 0.0
-        self.m_arc = 0
-        self.s_arc = 0
-        
-        self.message_total = sum(len(sep.get_messages()) for sep in grouped)
+
         avgtime = profile.average_message_archive_time
         if not avgtime: avgtime = 2.5
         avgsep = profile.average_sep_archive_time
         if not avgsep:  avgsep = 3
         self.avgtime=avgtime
         self.avgsep=avgsep
+        self.m_arc = 0
+        self.s_arc = 0
+        needed = ChannelSep.get_posted_but_incomplete(self.guild.id)
+        if upper_lim:
+            grouped=[]
+            self.message_total = sum(len(sep.get_messages()) for sep in grouped)
+            self.sep_total = len(grouped)
+            off=0
+            self.remaining_time_float=((self.message_total-self.m_arc) * self.avgtime) +((self.sep_total-self.s_arc) * self.avgsep)
+            while self.remaining_time_float<upper_lim:
+                this_grouped=ChannelSep.get_unposted_separators(self.guild.id,1,off)
+                if not this_grouped: break
+                self.message_total += sum(len(sep.get_messages()) for sep in this_grouped)
+                self.sep_total += len(this_grouped)
+                off+=1
+                grouped.extend(this_grouped)
+                self.remaining_time_float=((self.message_total-self.m_arc) * self.avgtime) +((self.sep_total-self.s_arc) * self.avgsep)
+                print(self.remaining_time_float,upper_lim)
+
+
+
+        else:
+            grouped = ChannelSep.get_unposted_separators(self.guild.id)
+        if needed:
+            newgroup = []
+            newgroup.extend(needed)
+            newgroup.extend(grouped)
+            grouped = newgroup
+       
+        gui.gprint(grouped, needed)
+        total_time_for_cluster = 0.0
+        
+        
+        self.message_total = sum(len(sep.get_messages()) for sep in grouped)
+        self.sep_total = len(grouped)
         
         total_time_for_cluster = ((self.message_total-self.m_arc) * self.avgtime) +((self.sep_total-self.s_arc) * self.avgsep)
 
@@ -333,7 +356,7 @@ class ArchiveCompiler:
         latest = ArchivedRPMessage.get_latest_archived_rp_message(self.guild.id)
 
         profile.update(last_archive_time=latest.created_at)
-        if self.t_mess > 0 and self.m_arc > 0:
+        if self.s_arc > 0 and self.m_arc > 0:
             profile.update(
                 average_sep_archive_time=self.t_sep / self.s_arc,
                 average_message_archive_time=self.t_mess / self.m_arc,

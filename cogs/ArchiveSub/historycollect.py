@@ -1,7 +1,7 @@
 import gui
 import asyncio
 from datetime import datetime, timedelta, timezone
-from typing import Tuple
+from typing import List, Tuple
 
 from utility.globalfunctions import get_server_icon_color
 from .archive_database import HistoryMakers, ChannelArchiveStatus
@@ -41,6 +41,7 @@ class ArchiveContext:
         latest_time=None,
         total_ignored=0,
         color=0,
+        lazy=False
     ):
         """Initializes the ArchiveContext instance.
 
@@ -70,6 +71,10 @@ class ArchiveContext:
         self.latest_time = latest_time
         self.total_ignored = total_ignored
         self.server_color = color
+        self.collect_limit = None
+        self.lazy=lazy
+        if self.lazy:
+            self.collect_limit=LAZYGRAB_LIMIT
 
     def evaluate_add(self, thisMessage):
         """Determines whether a message should be added based on scope.
@@ -121,6 +126,36 @@ class ArchiveContext:
         """
         self.latest_time = max(new, self.latest_time)
 
+    async def get_first_time(self, cobj:discord.TextChannel, carch:ChannelArchiveStatus):
+        """Get the after time for the given text channel.
+
+        Args:
+            cobj (discord.TextChannel): _description_
+        """
+        if self.lazy:
+            timev=carch.latest_archive_time
+            return {'limit':self.collect_limit,'after':timev,'oldest_first':True}
+        lasttime = (
+            None
+            if cobj.last_message_id is None
+            else discord.utils.snowflake_time(cobj.last_message_id)
+        )
+        timev = self.last_stored_time
+        if lasttime and timev:
+            if lasttime < timev:
+                gui.gprint(f"probably don't need to archive {cobj.name}")
+                return 'skip'
+
+        await carch.get_first_and_last(cobj)
+        if carch.first_message_time is not None:
+            if carch.first_message_time > self.last_stored_time:
+                print("TOO BIG.")
+                timev = carch.first_message_time
+        else:
+            timev = None
+        return {'after':timev,'oldest_first':True}
+
+
     async def edit_mess(self, pre="", cname="", seconds=15):
         """Edits the status message to update the progress of the archival process.
 
@@ -139,7 +174,7 @@ class ArchiveContext:
         await self.status_mess.editw(min_seconds=seconds, content=text, embed=emb),
 
 
-async def iter_hist_messages(cobj: discord.TextChannel, actx: ArchiveContext):
+async def iter_hist_messages(cobj: discord.TextChannel, actx: ArchiveContext)->Tuple[List[discord.Message],bool,int]:
     """
     This method asynchronously iterates over the historical messages in a given discord text channel and archives them based on
     the context of the archive. The archive context determines things like the time of the last stored message, whether or not to
@@ -155,37 +190,20 @@ async def iter_hist_messages(cobj: discord.TextChannel, actx: ArchiveContext):
     messages = []
     mlen = 0
     carch = ChannelArchiveStatus.get_by_tc(cobj)
-    lasttime = (
-        None
-        if cobj.last_message_id is None
-        else discord.utils.snowflake_time(cobj.last_message_id)
-    )
-    timev = actx.last_stored_time
-    if lasttime and timev:
-        if lasttime < timev:
-            gui.gprint(f"probably don't need to archive {cobj.name}")
-            return []
-
-    await carch.get_first_and_last(cobj)
-    if carch.first_message_time != None:
-        # gui.dprint(carch.first_message_time.replace(tzinfo=timezone.utc))
-        # gui.dprint(carch.first_message_time,carch.first_message_time.tzinfo,actx.last_stored_time,actx.last_stored_time.tzinfo)
-
-        if carch.first_message_time > actx.last_stored_time:
-            timev = carch.first_message_time
-    else:
-        timev = None
-    # if carch.latest_archive==None:timev=None
+    timev=await actx.get_first_time(cobj,carch)
+    if timev=='skip': return [], False, 0
+    count = 0
     lastmess = cobj.last_message_id
-
+    lasttime=discord.utils.snowflake_time(cobj.last_message_id) if cobj.last_message_id else None
     gui.gprint(cobj.name, " ", lastmess, " ", lasttime, " ", timev)
     reallasttime = None
 
     # return [];
-    async for thisMessage in cobj.history(after=timev, oldest_first=True):
+    async for thisMessage in cobj.history(**timev):
         # if(thisMessage.created_at<=actx.last_stored_time and actx.update): break
         add_check = actx.evaluate_add(thisMessage)
         reallasttime = thisMessage.id
+        count = count + 1
         if add_check:
             thisMessage.content = thisMessage.clean_content
             actx.alter_latest_time(thisMessage.created_at.timestamp())
@@ -193,7 +211,6 @@ async def iter_hist_messages(cobj: discord.TextChannel, actx: ArchiveContext):
             messages.append(thisMessage)
             carch.increment(thisMessage.created_at)
             actx.total_archived += 1
-            gui.gprint("now:", actx.total_archived)
             mlen += 1
         else:
             actx.total_ignored += 1
@@ -213,14 +230,14 @@ async def iter_hist_messages(cobj: discord.TextChannel, actx: ArchiveContext):
     else:
         gui.gprint(f"Did not need to archive {cobj.name}")
     actx.bot.database.commit()
-    return messages
+    return messages, mlen>0, count
 
 
 async def lazy_grab(cobj: discord.TextChannel, actx: ArchiveContext):
     messages = []
     mlen = 0
-    haveany, count = False, 0
     carch = ChannelArchiveStatus.get_by_tc(cobj)
+    haveany, count = False, 0
     gui.dprint(carch.latest_archive_time)
     async for thisMessage in cobj.history(
         limit=LAZYGRAB_LIMIT, oldest_first=True, after=carch.latest_archive_time
@@ -235,7 +252,6 @@ async def lazy_grab(cobj: discord.TextChannel, actx: ArchiveContext):
             actx.alter_latest_time(thisMessage.created_at.timestamp())
             actx.character_len += len(thisMessage.content)
             messages.append(thisMessage)
-
             carch.increment(thisMessage.created_at)
             actx.total_archived += 1
             mlen += 1
@@ -251,7 +267,6 @@ async def lazy_grab(cobj: discord.TextChannel, actx: ArchiveContext):
 
     if messages:
         hmes = await HistoryMakers.get_history_message_list(messages)
-
         gui.gprint("now:", actx.total_archived)
         messages = []
 
@@ -295,6 +310,7 @@ async def collect_server_history_lazy(ctx, statmess=None, **kwargs):
         last_stored_time=last_time,
         latest_time=new_last_time,
         channel_count=chanlen,
+        lazy=True,
         **kwargs,
     )
     channels = ChannelArchiveStatus.get_all(guildid, outdated=True)
@@ -307,7 +323,7 @@ async def collect_server_history_lazy(ctx, statmess=None, **kwargs):
         channel = guild.get_channel_or_thread(c.channel_id)
         if channel:
             gui.gprint("Channel", channel)
-            mes, have, count = await lazy_grab(channel, arch_ctx)
+            mes, have, count = await iter_hist_messages(channel, arch_ctx)
             gui.dprint(count)
             await statmess.editw(
                 min_seconds=0,
@@ -347,9 +363,10 @@ async def setup_lazy_grab(ctx, **kwargs):
     current_channel_count, total_channels = 0, 0
     current_channel_every = max(chanlen // 50, 1)
 
+
+    #Get all archivable channels.
     chantups = []
     chantups.extend(("forum", chan) for chan in guild.forums)
-
     chantups.extend(("textchan", chan) for chan in guild.text_channels)
     for tup, chan in chantups:
         total_channels += 1
@@ -358,6 +375,9 @@ async def setup_lazy_grab(ctx, **kwargs):
             and chan.permissions_for(guild.me).view_channel == True
             and chan.permissions_for(guild.me).read_message_history == True
         ):
+            if chan.category:
+                if profile.has_channel(chan.category.id) == True:
+                    continue
             threads = chan.threads
             archived = []
             async for thread in chan.archived_threads():
@@ -447,12 +467,12 @@ async def collect_server_history(ctx, **kwargs):
             for thread in threads:
                 lastmessage_str = f"{tup}, {chan.name}, {thread.name}: {chan.last_message_id}, {thread.last_message_id}"
                 gui.gprint(lastmessage_str)
-                mess = await iter_hist_messages(thread, arch_ctx)
+                mess, _, _ = await iter_hist_messages(thread, arch_ctx)
                 messages = messages + mess
                 current_channel_count += 1
 
             if tup == "textchan":
-                chanmess = await iter_hist_messages(chan, arch_ctx)
+                chanmess, _, _ = await iter_hist_messages(chan, arch_ctx)
                 # new_last_time=max(new_last_time,newtime)
                 # ignored+=ign
                 # totalcharlen+=charlen
