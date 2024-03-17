@@ -554,7 +554,6 @@ async def search_sim(
             k=k,
             filter=filterwith,  # {'':titleres}}
         )
-        docs = [(doc, 0.4) for doc in docs]
     else:
         docs = await vs.asimilarity_search_with_relevance_scores_and_embeddings(
             question, k=k, filter=filterwith  # {'':titleres}}
