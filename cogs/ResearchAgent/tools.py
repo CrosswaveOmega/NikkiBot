@@ -624,7 +624,7 @@ def generate_prompt(concise_summary_range="4-7", detailed_response_range="5-10",
         **Text:** [Text Content Here]
         END
     If a source appears to be unrelated to the question, note it.
-    You responce must be a json object, with the following fields:
+    You responce must be in the template format below:
     ConciseSummary(one markdown string)
         String with {concise_summary_range} sentences.
         Begin with a brief summary of the key points from the source snippet.
@@ -641,7 +641,7 @@ def generate_prompt(concise_summary_range="4-7", detailed_response_range="5-10",
         - 'the second snippit that justifies the point'
        * The second bullet point with information.
         - 'the snippit which justifies point'
-    DirectQuotes (Array of direct_quotes_range strings)
+    DirectQuotes (Array of {direct_quotes_range} strings)
      List of {direct_quotes_range} strings.
      Relevant, 1-5 sentence snippits from the original source which answer the question,
      If there is code in the source, you must place it here.
@@ -649,9 +649,9 @@ def generate_prompt(concise_summary_range="4-7", detailed_response_range="5-10",
     return prompt
 def set_ranges_based_on_token_size(tokens):
     ranges_dict = {
-        250: ("4-7", "5-10", "3-4"),
-        500: ("5-8", "6-12", "4-5"),
-        1000: ("6-9", "7-14", "5-6")
+        250: ("4-7", "7-10", "3-4"),
+        500: ("5-8", "8-12", "4-5"),
+        1000: ("6-9", "9-14", "5-6")
     }
     for size, ranges in sorted(ranges_dict.items()):
         if tokens < size:
@@ -709,7 +709,7 @@ async def get_points(
             model="gpt-3.5-turbo-0125",
             messages=messages,
             timeout=60,
-            response_format={"type": "json_object"}
+            #response_format={"type": "json_object"}
         )
 
         doctup = (doc, 0.5, completion.choices[0].message.content, tokens)
