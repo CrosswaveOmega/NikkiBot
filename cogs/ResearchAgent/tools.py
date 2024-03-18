@@ -692,7 +692,7 @@ async def get_points(
             timeout=60,
         )
 
-        doctup = (doc, score, completion.choices[0].message.content, tokens)
+        doctup = (doc, 0.5, completion.choices[0].message.content, tokens)
 
         yield doctup
 
