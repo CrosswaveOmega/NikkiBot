@@ -207,7 +207,13 @@ async def on_ready():
     except Exception as e:
         gui.gprint(e)
         await bot.close()
-    await bot.after_startup()
+    try:
+        await bot.after_startup()
+    except Exception as e:
+        print(e)
+        bot.logs.error(str(e),exc_info=e)
+        await bot.close()
+        raise e
     gui.gprint("Setup done.")
 
 

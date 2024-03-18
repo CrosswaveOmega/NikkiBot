@@ -129,6 +129,45 @@ def split_document(doc: Document, present_mem):
             print("skipping chunk due to insufficient size.")
     return newdata
 
+async def group_documents(docs:List[Document],max_tokens=3000):
+    sources: Dict[str : Dict[int, Any]] = {}
+    with Timer() as dict_timer:
+        for e, tup in enumerate(docs):
+            doc = tup
+            source, split = doc.metadata["source"], doc.metadata["split"]
+            if not source in sources:
+                sources[source] = {}
+            sources[source][split] = doc
+            if doc.page_content not in context:
+                context += doc.page_content + "  "
+            tokens = util.num_tokens_from_messages(
+                [{"role": "system", "content": context}], "gpt-3.5-turbo-0125"
+            )
+            if tokens >= max_tokens:
+                print("token break")
+                break
+    
+    out_list=[]
+    with Timer() as loadtimer:
+        for source, d in sources.items():
+            newc = ""
+            sorted_dict = sorted(d.items(), key=lambda x: x[0])
+            lastkey = -6
+           
+            for k, v in sorted_dict:
+                # print(source, k, v)
+                if k != 0 and abs(k - lastkey) > 1:
+                    # print(abs(k - lastkey))
+                    newc += "..."
+                lastkey = k
+                newc += f"[split:{k}]:{v}" + "  "
+            if newc:
+                meta=sorted_dict[0].metadata
+                doc=Document(page_content=newc.strip(),metadata=meta)
+                out_list.append(doc)
+    return out_list
+                
+
 
 def indent_string(input_string: str, spaces: int = 2):
     """
@@ -258,6 +297,7 @@ class SentenceMemory:
                 {"forguild": message.guild.id},
             ]
         }
+        sources: Dict[str : Dict[int, Any]] = {}
         with Timer() as all_timer:
             docs = (
                 await self.coll.asimilarity_search_with_relevance_scores_and_embeddings(
@@ -265,41 +305,20 @@ class SentenceMemory:
                 )
             )
             context = ""
-            sources: Dict[str : Dict[int, Any]] = {}
+            
             docs2 = (d[0] for d in docs)
             all_neighbors = await self.get_neighbors(docs2)
+
         checktime = all_timer.get_time()
+        
         with Timer() as dict_timer:
-            for e, tup in enumerate(all_neighbors):
-                doc = tup
-                source, split = doc.metadata["source"], doc.metadata["split"]
-                if not source in sources:
-                    sources[source] = {}
-                sources[source][split] = doc.page_content
-                if doc.page_content not in context:
-                    context += doc.page_content + "  "
-                tokens = util.num_tokens_from_messages(
-                    [{"role": "system", "content": context}], "gpt-3.5-turbo-0125"
-                )
-                if tokens >= 3000:
-                    print("token break")
-                    break
+            sources=await group_documents(all_neighbors)
+
         new_output = ""
         with Timer() as loadtimer:
-            for source, d in sources.items():
-                newc = ""
-                sorted_dict = sorted(d.items(), key=lambda x: x[0])
-                lastkey = -6
-
-                for k, v in sorted_dict:
-                    # print(source, k, v)
-                    if k != 0 and abs(k - lastkey) > 1:
-                        # print(abs(k - lastkey))
-                        newc += "..."
-                    lastkey = k
-                    newc += f"[split:{k}]:{v}" + "  "
-                if newc:
-                    content = indent_string(newc.strip(), 1)
+            for source in sources:
+                if source.page_content:
+                    content = indent_string(source.page_content.strip(), 1)
                     output = f"*{content}\n"
                     new_output += output
 

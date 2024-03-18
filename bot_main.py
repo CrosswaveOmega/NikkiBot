@@ -40,7 +40,7 @@ def recovery_mode(error):
     config = configparser.ConfigParser()
     config.read("config.ini")
 
-    token = get_token(keys.get("vital", "botname"))
+    token = get_token(keys)
     if token == None:
         print("TOKEN IS NONE!")
     eid = config.get("optional", "error_channel_id")

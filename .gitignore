@@ -211,3 +211,7 @@ keys copy.ini
 *.keybox
 *.svg
 *.puml
+oldconfig.ini
+auto.py
+test_string_split.py
+database/database_autocommand.py

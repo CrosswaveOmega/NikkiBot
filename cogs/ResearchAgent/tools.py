@@ -28,7 +28,7 @@ from utility.debug import Timer
 from gptmod.chromatools import ChromaBetter as Chroma
 from gptmod.chromatools import DocumentScoreVector
 from gptmod.metadataenums import MetadataDocType
-
+from gptmod.sentence_mem import group_documents
 from gptmod.ReadabilityLoader import ReadableLoader
 
 webload = docload.WebBaseLoader
@@ -632,7 +632,7 @@ async def get_points(
         Tuple[Document, float, str, int]: A tuple containing the Document object, its relevance score, the extracted bullet points, and the number of tokens used.
     """
     prompt = """
-    Use the provided source to extract important bullet points
+    Use the provided sources to extract important bullet points
      to answer the question provided to you by the user.
     The sources will be in the system messages, slimmed down to a series of relevant snippits,
     in the following template:
@@ -644,13 +644,13 @@ async def get_points(
         END
     If a source appears to be unrelated to the question, note it.
     You responce must be in the following format:
-    Concise Summary (3-7 sentences):
+    Concise Summary (4-7 sentences):
         Begin with a brief summary of the key points from the source snippet.
         Direct quotes are allowed if they enhance understanding.
 
     Detailed Response (5-10 bullet points):
      Expand on the summary by providing detailed information in bullet points.
-     Ensure each bullet point captures essential details from the source, and be as descriptive as possible.
+     Ensure each bullet point captures essential details from the source.
      The goal is not to summarize but to extract and convey relevant information,
       along with any context that could be important.
      Justify each bullet point by including 1-3 small direct snippits from the source, like this:
@@ -665,10 +665,10 @@ async def get_points(
      
 
     """
-
+    sources=await group_documents([d[0] for d in docs])
     client = openai.AsyncOpenAI()
-    for e, tup in enumerate(docs):
-        doc, score, emb = tup
+    for e, tup in enumerate(sources):
+        doc = tup
         tile = "NOTITLE" if "title" not in doc.metadata else doc.metadata["title"]
         output = f"""**ID**:{e}
         **Name:** {tile}
@@ -708,26 +708,7 @@ async def format_answer(question: str, docs: List[Tuple[Document, float, Any]]) 
     Returns:
         str: The formatted answer as a string.
     """
-    oldprompt = """
-    Use the provided sources to answer question provided by the user.  
-    Each of the sources will be in their own system messags, 
-    slimmed down to a series of relevant snippits,
-    and are in the following template:
-        BEGIN
-        **ID:** [Source ID number here]
-        **Name:** [Name Here]
-        **Link:** [Link Here]
-        **Text:** [Text Content Here]
-        END
     
-    Your answer must be 3-7 medium-length paragraphs with 5-10 sentences per paragraph. 
-    Preserve key information from the sources and maintain a descriptive tone. 
-       
-    Please include an inline citation with the source id for each website you retrieved data from in this format: [ID here].
-    If there is no insufficient provided information from the sources, please state as such.
-    Exclude any concluding remarks from the answer.
-
-    """
     prompt = """
 
 **Task:**
@@ -746,7 +727,7 @@ END
 ```
 
 **Guidelines:**
-1. Your response should consist of 3-7 medium-length paragraphs, containing 5-10 sentences each.
+1. Your response should consist of 3-7 medium-length paragraphs, containing 6-12 sentences each.
 2. Preserve crucial information from the sources and maintain an objective, descriptive tone in your writing.  
 3. Ensure the inclusion of an inline citation for each piece of information obtained from a specific source,
    using this format: 

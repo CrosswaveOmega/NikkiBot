@@ -732,7 +732,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
     @commands.hybrid_command(
         name="researchpoint",
-        description="Extract relevant information from the given source",
+        description="Extract relevant information from the given sources.",
         extras={},
     )
     @oai_check()
