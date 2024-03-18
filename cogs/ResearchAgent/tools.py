@@ -613,6 +613,53 @@ async def debug_get(
         )
         return res
 
+def generate_prompt(concise_summary_range="4-7", detailed_response_range="5-10", direct_quotes_range="3-4"):
+    prompt = f"""
+    Use the provided sources to extract important bullet points
+     to answer the question provided to you by the user.
+    The sources will be in the system messages, slimmed down to a series of relevant snippits,
+    in the following template:
+        BEGIN
+        **ID:** [Source ID number here]
+        **Name:** [Name Here]
+        **Link:** [Link Here]
+        **Text:** [Text Content Here]
+        END
+    If a source appears to be unrelated to the question, note it.
+    You responce must be object, with the following fields:
+    ConciseSummary 
+        String with {concise_summary_range} sentences.
+        Begin with a brief summary of the key points from the source snippet.
+        Direct quotes are allowed if they enhance understanding.
+
+    DetailedResponse:
+      String with {detailed_response_range} bullet points.
+      Expand on the summary by providing detailed information in bullet points.
+     Ensure each bullet point captures essential details from the source.
+     The goal is not to summarize but to extract and convey relevant information,
+      along with any context that could be important.
+     Justify each bullet point by including 1-3 sub bullet points based on the source:
+       * Bullet point with information.
+        - 'the first snippit which justifies'
+        - 'the second snippit that justifies the point'
+       * The second bullet point with information.
+        - 'the snippit which justifies point'
+    DirectQuotes
+     list of {direct_quotes_range} strings.
+     Relevant, 1-5 sentence snippits from the original source which answer the question,
+     If there is code in the source, you must place it here.
+    """
+    return prompt
+def set_ranges_based_on_token_size(tokens):
+    ranges_dict = {
+        250: ("4-7", "5-10", "3-4"),
+        500: ("5-8", "6-12", "4-5"),
+        1000: ("6-9", "7-14", "5-6")
+    }
+    for size, ranges in sorted(ranges_dict.items()):
+        if tokens < size:
+            return ranges
+    return ("7-10", "8-16", "6-7")
 
 async def get_points(
     question: str, docs: List[Tuple[Document, float, Vector]]
@@ -631,44 +678,17 @@ async def get_points(
     Yields:
         Tuple[Document, float, str, int]: A tuple containing the Document object, its relevance score, the extracted bullet points, and the number of tokens used.
     """
-    prompt = """
-    Use the provided sources to extract important bullet points
-     to answer the question provided to you by the user.
-    The sources will be in the system messages, slimmed down to a series of relevant snippits,
-    in the following template:
-        BEGIN
-        **ID:** [Source ID number here]
-        **Name:** [Name Here]
-        **Link:** [Link Here]
-        **Text:** [Text Content Here]
-        END
-    If a source appears to be unrelated to the question, note it.
-    You responce must be in the following format:
-    Concise Summary (4-7 sentences):
-        Begin with a brief summary of the key points from the source snippet.
-        Direct quotes are allowed if they enhance understanding.
-
-    Detailed Response (5-10 bullet points):
-     Expand on the summary by providing detailed information in bullet points.
-     Ensure each bullet point captures essential details from the source.
-     The goal is not to summarize but to extract and convey relevant information,
-      along with any context that could be important.
-     Justify each bullet point by including 1-3 small direct snippits from the source, like this:
-       * Bullet point with information.
-        - 'the first snippit which justifies'
-        - 'the second snippit that justifies the point'
-       * The second bullet point with information.
-        - 'the snippit which justifies point'
-    Direct Quotes(3-4):
-     Relevant, 1-5 sentence snippits from the original source which answer the question,
-     If there is code in the source, you must place it here.
-     
-
-    """
+    
+    
     sources=await group_documents([d[0] for d in docs])
     client = openai.AsyncOpenAI()
+    
+    
+    
     for e, tup in enumerate(sources):
+        
         doc = tup
+        
         tile = "NOTITLE" if "title" not in doc.metadata else doc.metadata["title"]
         output = f"""**ID**:{e}
         **Name:** {tile}
@@ -677,6 +697,8 @@ async def get_points(
         tokens = gptmod.util.num_tokens_from_messages(
             [{"role": "system", "content": output}], "gpt-3.5-turbo-0125"
         )
+        tok=set_ranges_based_on_token_size(tokens)
+        prompt=generate_prompt(*tok)
 
         messages = [
             {"role": "system", "content": prompt},
@@ -690,6 +712,7 @@ async def get_points(
             model="gpt-3.5-turbo-0125",
             messages=messages,
             timeout=60,
+            response_format='json'
         )
 
         doctup = (doc, 0.5, completion.choices[0].message.content, tokens)

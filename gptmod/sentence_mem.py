@@ -162,6 +162,7 @@ async def group_documents(docs:List[Document],max_tokens=3000):
             newc += f"[split:{k}]:{v}" + "  "
         if newc:
             meta=sorted_dict[0][1].metadata
+            meta['splits']=len(sorted_dict)
             doc=Document(page_content=newc.strip(),metadata=meta)
             out_list.append(doc)
     return out_list
