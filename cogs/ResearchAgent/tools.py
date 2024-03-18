@@ -625,13 +625,12 @@ def generate_prompt(concise_summary_range="4-7", detailed_response_range="5-10",
         END
     If a source appears to be unrelated to the question, note it.
     You responce must be a json object, with the following fields:
-    ConciseSummary 
+    ConciseSummary(one markdown string)
         String with {concise_summary_range} sentences.
         Begin with a brief summary of the key points from the source snippet.
         Direct quotes are allowed if they enhance understanding.
 
-    DetailedResponse:
-      One markdown String with {detailed_response_range} bullet points.
+    DetailedResponse (One markdown String with {detailed_response_range} bullet points):
       Expand on the summary by providing detailed information in bullet points.
      Ensure each bullet point captures essential details from the source.
      The goal is not to summarize but to extract and convey relevant information,
@@ -642,7 +641,7 @@ def generate_prompt(concise_summary_range="4-7", detailed_response_range="5-10",
         - 'the second snippit that justifies the point'
        * The second bullet point with information.
         - 'the snippit which justifies point'
-    DirectQuotes
+    DirectQuotes (Array of direct_quotes_range strings)
      List of {direct_quotes_range} strings.
      Relevant, 1-5 sentence snippits from the original source which answer the question,
      If there is code in the source, you must place it here.
