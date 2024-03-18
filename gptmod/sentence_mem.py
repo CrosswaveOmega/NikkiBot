@@ -131,6 +131,7 @@ def split_document(doc: Document, present_mem):
 
 async def group_documents(docs:List[Document],max_tokens=3000):
     sources: Dict[str : Dict[int, Any]] = {}
+    context=""
     with Timer() as dict_timer:
         for e, tup in enumerate(docs):
             doc = tup
