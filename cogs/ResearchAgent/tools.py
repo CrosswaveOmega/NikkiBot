@@ -7,7 +7,6 @@ from typing import Any, AsyncGenerator, List, Tuple, Union
 
 import chromadb
 import discord
-import langchain_community.document_loaders as docload
 import openai
 from chromadb.types import Vector
 from googleapiclient.discovery import build  # Import the library
@@ -31,7 +30,6 @@ from gptmod.metadataenums import MetadataDocType
 from gptmod.sentence_mem import group_documents
 from gptmod.ReadabilityLoader import ReadableLoader
 
-webload = docload.WebBaseLoader
 
 
 tosplitby = [

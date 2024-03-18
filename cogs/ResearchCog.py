@@ -13,8 +13,7 @@ from gptfunctionutil import (
 from javascriptasync import JSContext
 
 import assets
-import cogs.ResearchAgent.actions as actions
-import cogs.ResearchAgent.tools as tools
+import cogs.ResearchAgent as ra
 import gptmod
 import gui
 from assets import AssetLookup
@@ -22,8 +21,8 @@ from bot import StatusEditMessage, TC_Cog_Mixin, TCBot, super_context_menu
 from database.database_ai import AuditProfile
 from utility import prioritized_string_split
 from utility.embed_paginator import pages_of_embeds
+import importlib
 
-from .ResearchAgent import ResearchContext, SourceLinkLoader
 from gptmod.chromatools import ChromaTools
 from .ResearchAgent.views import *
 
@@ -226,7 +225,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         totranslate = message.content
         if message.embeds:
             for m in message.embeds:
-                result = tools.extract_embed_text(m)
+                result = ra.tools.extract_embed_text(m)
                 totranslate += f"\n {result}"
         chat.add_message(role="user", content=totranslate)
 
@@ -284,7 +283,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         if "google" not in bot.keys or "cse" not in bot.keys:
             return "insufficient keys!"
 
-        results = tools.google_search(ctx.bot, query, limit)
+        results = ra.tools.google_search(ctx.bot, query, limit)
         allstr = ""
         emb = discord.Embed(title="Search results", description=comment)
         readable_links = []
@@ -333,7 +332,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         Returns:
             Tuple[int, str]: A tuple containing the count of successfully processed links and a formatted status string.
         """
-        loader = SourceLinkLoader(chromac=chromac, statusmessage=statmess, embed=embed)
+        loader = ra.SourceLinkLoader(chromac=chromac, statusmessage=statmess, embed=embed)
         return await loader.load_links(ctx, all_links, override)
 
     async def web_search(
@@ -361,7 +360,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         # SEARCH FOR AND LOAD.
         res = []
         async with ctx.channel.typing():
-            results = tools.google_search(ctx.bot, query, result_limit)
+            results = ra.tools.google_search(ctx.bot, query, result_limit)
             if not "items" in results:
                 return [], [
                     {
@@ -451,7 +450,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             send_message=True,
         )
 
-        return tools.mask_links(answer, links)
+        return ra.tools.mask_links(answer, links)
 
     @AILibFunction(
         name="recall",
@@ -485,7 +484,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         await ctx.send("RECALLING")
         m = await ctx.send("O")
         statmess = StatusEditMessage(m, ctx)
-        out = await actions.get_sources(
+        out = await ra.actions.get_sources(
             question,
             result_limit,
             site_title_restriction,
@@ -499,7 +498,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @commands.command(name="loadurl", description="loadurl test.", extras={})
     async def loader_test(self, ctx: commands.Context, link: str):
         async with ctx.channel.typing():
-            splits, e, dat = await tools.read_and_split_link(ctx.bot, link)
+            splits, e, dat = await ra.tools.read_and_split_link(ctx.bot, link)
         if isinstance(splits, Exception):
             views = await ctx.send(
                 f"{type(splits).__name__},{str(splits)}",
@@ -533,7 +532,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         )
 
         statmess = StatusEditMessage(target_message, ctx)
-        # async for dat, e, typev in tools.read_and_split_links(bot,all_links):
+        # async for dat, e, typev in ra.tools.read_and_split_links(bot,all_links):
         #      views = await ctx.send(
         #         f"{len(dat)} splits.",
         #         suppress_embeds=True,
@@ -567,9 +566,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             return "INVALID CONTEXT"
 
         chromac = ChromaTools.get_chroma_client()
-        has, getres = tools.has_url(link, client=chromac)
+        has, getres = ra.tools.has_url(link, client=chromac)
         if has:
-            tools.remove_url(link, client=chromac)
+            ra.tools.remove_url(link, client=chromac)
 
             await ctx.send("removal complete")
         else:
@@ -689,10 +688,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         )
         async with ctx.channel.typing():
             # Search For Sources
-            answer, allsources, docs2 = await actions.research_op(
+            answer, allsources, docs2 = await ra.actions.research_op(
                 question, k, site_title_restriction, use_mmr, statmess
             )
-            # data = await tools.search_sim(
+            # data = await ra.tools.search_sim(
             #     question,
             #     client=chromac,
             #     titleres=site_title_restriction,
@@ -706,14 +705,14 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             # # Sort documents by score
             # docs2 = sorted(data, key=lambda x: x[1], reverse=False)
             # # Get string containing most relevant source urls:
-            # url_desc, allsources = tools.get_doc_sources(docs2)
+            # url_desc, allsources = ra.tools.get_doc_sources(docs2)
             # embed.description = f"Sources:\n{url_desc}"
             # embed.add_field(
             #     name="Cache_Query",
             #     value=f"About {len(docs2)} entries where found.  Max score is {docs2[0][1]}",
             # )
             # await statmess.editw(min_seconds=0, content="", embed=embed)
-            # answer = await tools.format_answer(question, docs2)
+            # answer = await ra.tools.format_answer(question, docs2)
 
             viewme = Followup(bot=ctx.bot, answer=answer, page_content=docs2)
             messageresp = None
@@ -777,7 +776,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             embed=embed,
         )
         async with ctx.channel.typing():
-            data = await tools.search_sim(
+            data = await ra.tools.search_sim(
                 question,
                 client=chromac,
                 titleres=site_title_restriction,
@@ -789,7 +788,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 return "NO RELEVANT DATA."
             docs2 = sorted(data, key=lambda x: x[1], reverse=False)
             # Get string containing most relevant source urls:
-            url_desc, all_sources = tools.get_doc_sources(docs2)
+            url_desc, all_sources = ra.tools.get_doc_sources(docs2)
             embed.description = f"{url_desc}"
             embed.add_field(
                 name="Cache_Query",
@@ -798,7 +797,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             # docs2 = sorted(data, key=lambda x: x[1],reverse=True)
             await statmess.editw(min_seconds=0, content="", embed=embed)
             answer = []
-            async for doctup in tools.get_points(question, docs2):
+            async for doctup in ra.tools.get_points(question, docs2):
                 doc, score, content, tokens = doctup
                 meta = doc.metadata
                 emb = discord.Embed(title=meta.get("title", "?"), description=content)
@@ -827,7 +826,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             content=f"<a:LoadingBlue:1206301904863502337>  querying db using `{titleres}`...",
         )
         async with ctx.channel.typing():
-            data = await tools.debug_get(
+            data = await ra.tools.debug_get(
                 "not_important.", client=chromac, titleres=site_title_restriction
             )
             datas = zip(data["ids"], data["metadatas"])
@@ -861,7 +860,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
     @oai_check()
     async def source_get(self, ctx: commands.Context, question: str):
         chromac = ChromaTools.get_chroma_client()
-        data = await tools.search_sim(question, client=chromac, titleres="None")
+        data = await ra.tools.search_sim(question, client=chromac, titleres="None")
         len(data)
         if len(data) <= 0:
             await ctx.send("NO RELEVANT DATA.")
@@ -1015,7 +1014,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             )
 
         fil = prioritized_string_split(
-            article, tools.splitorder, 2000, length=local_length
+            article, ra.tools.splitorder, 2000, length=local_length
         )
         filelength: int = len(fil)
         if len(fil) > 1:
@@ -1137,7 +1136,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             try:
                 all = ""
                 async with ctx.channel.typing():
-                    async for result in tools.summarize(prompt, article, mylinks):
+                    async for result in ra.tools.summarize(prompt, article, mylinks):
                         splitorder = ["%s\n", "%s.", "%s,", "%s "]
                         fil = prioritized_string_split(result, splitorder, 4072)
                         title = header.get("title", "notitle")
@@ -1151,7 +1150,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                         f"<a:LoadingBlue:1206301904863502337> Saving {url} summary..."
                     )
                     chromac = ChromaTools.get_chroma_client()
-                    await tools.add_summary(url, all, header, client=chromac)
+                    await ra.tools.add_summary(url, all, header, client=chromac)
                     await target_message.edit(content="SUMMARY SAVED!")
             except Exception as e:
                 await ctx.bot.send_error(e)
@@ -1196,7 +1195,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             bot = ctx.bot
             async with ctx.channel.typing():
                 all = ""
-                async for result in tools.summarize(prompt, res, []):
+                async for result in ra.tools.summarize(prompt, res, []):
                     splitorder = ["%s\n", "%s.", "%s,", "%s "]
                     fil = prioritized_string_split(result, splitorder, 4072)
                     for p in fil:
@@ -1211,7 +1210,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                         f"<a:LoadingBlue:1206301904863502337> Saving {url} summary..."
                     )
                     chromac = ChromaTools.get_chroma_client()
-                    await tools.add_summary(url, result, header, client=chromac)
+                    await ra.tools.add_summary(url, result, header, client=chromac)
                     await target_message.edit(content="SUMMARY SAVED!")
 
     @commands.hybrid_command(
@@ -1266,7 +1265,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(INVALID_SERVER_ERROR)
             return "INVALID CONTEXT"
 
-        research_context = ResearchContext(
+        research_context = ra.ResearchContext(
             self,
             ctx,
             k,
@@ -1342,7 +1341,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(INVALID_SERVER_ERROR)
             return "INVALID CONTEXT"
 
-        research_context = ResearchContext(
+        research_context = ra.ResearchContext(
             self,
             ctx,
             k,
@@ -1419,4 +1418,10 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
 
 async def setup(bot):
+    module_name='cogs.ResearchAgent'
+    try:
+        importlib.reload(ra)
+        print(f"{module_name} reloaded successfully.")
+    except ImportError:
+        print(f"Failed to reload {module_name}.")
     await bot.add_cog(ResearchCog(bot))

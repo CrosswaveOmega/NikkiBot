@@ -1,10 +1,10 @@
-from .tools import *
+
 from gptmod.chromatools import ChromaTools
-from .views import *
+
 from .LinkLoader import SourceLinkLoader
 from .research_ctx import ResearchContext
-from .actions import *
 
+print("Extra COOL")
 
 async def setup(bot):
     import gui

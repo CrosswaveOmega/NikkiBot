@@ -942,9 +942,6 @@ class MusicCog(commands.Cog, TC_Cog_Mixin):
         await MessageTemplatesMusic.music_msg(ctx, "Playlist", f"Loaded size {len(playlist)} playlist `{playlistname}` into processing queue.  Please wait.")"""
 
 
-async def setup(bot: commands.Bot) -> None:
-    await bot.add_cog()
-
 
 async def setup(bot):
     gui.dprint(__name__)
@@ -955,7 +952,7 @@ async def setup(bot):
 
 
 async def teardown(bot):
-    from .AudioPlaybackSub import setup
+    from .AudioPlaybackSub import teardown
 
-    await bot.unload_extension(setup.__module__)
+    await bot.unload_extension(teardown.__module__)
     await bot.remove_cog("MusicCog")
