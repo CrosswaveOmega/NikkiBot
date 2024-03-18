@@ -96,7 +96,7 @@ class MusicCog(commands.Cog, TC_Cog_Mixin):
         for i in toremove:
             MusicManager.remove_player(i)
 
-    mp = app_commands.Group(name="mp", description="Music Player Commands")
+    mp = app_commands.Group(name="mp", description="Music Player Commands", guild_only=True)
 
     @app_commands.command(name="music")
     async def music(self, interaction: discord.Interaction) -> None:

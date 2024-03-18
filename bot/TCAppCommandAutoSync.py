@@ -29,7 +29,7 @@ This is to avoid excessive api calls.
 
 
 """
-
+GLOBAL_ID=512
 
 logger = logging.getLogger("TCLogger")
 
@@ -350,6 +350,7 @@ def build_and_format_app_commands(
     }
 
     for command in tree.get_commands(guild=guild):
+        print(command)
         di = command.to_dict()  # I really wish this was in the docs...
         typev, name = di["type"], di["name"]
         typestr = "chat_commands"
@@ -373,55 +374,75 @@ class SpecialAppSync:
         """Build a dictionary representation of all app commands to be synced, check if
         the dictionary is different from a loaded version from before, and then
         sync the commands tree for the given guild, updating the dictionary."""
+        name="GLOBAL"
+        guildid=GLOBAL_ID
+        if guild:
+            name=guild.name
+            guildid=guild.id
         gui.gprint(
-            f"Checking if it's time to sync commands for {guild.name} (ID {guild.id})..."
+            f"Checking if it's time to sync commands for {name} (ID {guildid})..."
         )
         try:
             # SQLAlchemy is used to handle database connections.
             # synced=build_app_command_list(self.tree,guild)
             app_tree = build_and_format_app_commands(self.tree, guild)
-            dbentry: AppGuildTreeSync = AppGuildTreeSync.get(guild.id)
+            print(name, app_tree)
+            dbentry: AppGuildTreeSync = AppGuildTreeSync.get(guildid)
             if not dbentry:
-                dbentry = AppGuildTreeSync.add(guild.id)
+                dbentry = AppGuildTreeSync.add(guildid)
             same, diffscore, score = dbentry.compare_with_command_tree(app_tree)
-            gui.gprint(f"Check Results: {guild.name} (ID {guild.id}):{score}")
+            gui.gprint(f"Check Results: {name} (ID {guildid}):{score}")
             self.logs.info(
-                f"Check Results: {guild.name} (ID {guild.id}):\n differences{diffscore} \n{score}"
+                f"Check Results: {name} (ID {guildid}):\n differences{diffscore} \n{score}"
             )
             # Check if it's time to edit
             if (not same) or forced == True:
                 gui.gprint(
-                    f"Updating serialized command tree for {guild.name} (ID {guild.id})..."
+                    f"Updating serialized command tree for {name} (ID {guildid})..."
                 )
                 dbentry.update(app_tree)
                 same, diffscore, score = dbentry.compare_with_command_tree(app_tree)
-                gui.gprint(f"Starting sync for {guild.name} (ID {guild.id})...")
+                gui.gprint(f"Starting sync for {name} (ID {guildid})...")
                 await self.tree.sync(guild=guild)
-                gui.gprint(f"Sync complete for {guild.name} (ID {guild.id})...")
+                gui.gprint(f"Sync complete for {name} (ID {guildid})...")
         except Exception as e:
             gui.gprint(str(e))
             res = str(traceback.format_exception(None, e, e.__traceback__))
             gui.gprint(res)
 
-    async def add_enabled_cogs_into_guild(self, guild, force=False):
+    async def add_enabled_cogs_into_guild(self, guild=None, force=False):
         """With a passed in guild, sync all activated cogs for that guild.
         Works on a guild per guild basis in case I need to eventually provide
         code to sync different app commands between guilds."""
-        ignorelist = AppGuildTreeSync.load_list(guild.id)
-        onlist = AppGuildTreeSync.load_onlist(guild.id)
+        guildid=GLOBAL_ID
+        if guild:
+            guildid=guild.id
+        if not guild:
+            self.tree.clear_commands(guild=None)
+        ignorelist = AppGuildTreeSync.load_list(guildid)
+        onlist = AppGuildTreeSync.load_onlist(guildid)
         gui.dprint(ignorelist)
 
         def syncprint(*lis):
             pass
-            if False:
-                gui.gprint(f"Sync for {guild.name} (ID {guild.id})", *lis)
+            gui.gprint(f"Sync for  (ID {guildid})", *lis)
 
-        def should_skip_cog(cogname: str, cog) -> bool:
+        def should_skip_cog(cogname: str, cog, guildid) -> bool:
             """Determine whether a cog should be skipped during synchronization."""
             """Not currently needed."""
+            if hasattr(cog, "globalonly"):
+                if cog.globalonly and guildid!=GLOBAL_ID:
+                    print('should not sync.')
+                    return True
+                elif cog.globalonly and guildid==GLOBAL_ID:
+                    print("WILL SYNC GLOBAL.")
+                    return False
+            elif guildid==GLOBAL_ID:
+                return True
             if cogname in onlist:
                 return False
             private_cog = False
+            
             if hasattr(cog, "manual_enable"):
                 gui.dprint(cogname, cog.manual_enable)
                 private_cog = cog.manual_enable
@@ -433,7 +454,7 @@ class SpecialAppSync:
             # Add a command to the command tree for the given guild.
             if command.extras:
                 if command.extras.get("homeonly"):
-                    if guild.id != int(AssetLookup.get_asset("homeguild")):
+                    if guildid != int(AssetLookup.get_asset("homeguild")):
                         return
             if isinstance(command, (commands.HybridCommand, commands.HybridGroup)):
                 try:
@@ -454,7 +475,7 @@ class SpecialAppSync:
         # Note, the reason it goes one by one is because it was originally intended
         # to activate/deactivate cogs on a server per server basis.
         for cogname, cog in self.cogs.items():
-            if should_skip_cog(cogname, cog):
+            if should_skip_cog(cogname, cog,guildid):
                 gui.gprint("skipping cog ", cogname)
                 continue
             if hasattr(cog, "ctx_menus"):
@@ -482,8 +503,16 @@ class SpecialAppSync:
     async def all_guild_startup(self, force=False, sync_only=False, no_sync=False):
         """fetch all available guilds, and sync the command tree."""
         try:
+            gui.gprint(f"syncing for global")
+            if not sync_only:
+                await self.add_enabled_cogs_into_guild(None, force=force)
+            if no_sync == False or sync_only:
+                await self.sync_commands_tree(None, forced=force)
+            
             gui.gprint(self.guilds)
             for guild in self.guilds:
+                if force:
+                    self.tree.clear_commands(guild=guild)
                 entry = AppGuildTreeSync.get(server_id=guild.id)
                 if entry:
                     if entry.donotsync:
@@ -493,6 +522,12 @@ class SpecialAppSync:
                     await self.add_enabled_cogs_into_guild(guild, force=force)
                 if no_sync == False or sync_only:
                     await self.sync_commands_tree(guild, forced=force)
+            
+            if entry:
+                if entry.donotsync:
+                    gui.gprint(f"nosync for global")
+                    return
+            
         except Exception as e:
             res = str(traceback.format_exception(None, e, e.__traceback__))
             gui.gprint("Exception in allgruild", e, res)
