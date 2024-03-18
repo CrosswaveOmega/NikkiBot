@@ -631,7 +631,7 @@ def generate_prompt(concise_summary_range="4-7", detailed_response_range="5-10",
         Direct quotes are allowed if they enhance understanding.
 
     DetailedResponse:
-      String with {detailed_response_range} bullet points.
+      One markdown String with {detailed_response_range} bullet points.
       Expand on the summary by providing detailed information in bullet points.
      Ensure each bullet point captures essential details from the source.
      The goal is not to summarize but to extract and convey relevant information,
@@ -643,7 +643,7 @@ def generate_prompt(concise_summary_range="4-7", detailed_response_range="5-10",
        * The second bullet point with information.
         - 'the snippit which justifies point'
     DirectQuotes
-     list of {direct_quotes_range} strings.
+     List of {direct_quotes_range} strings.
      Relevant, 1-5 sentence snippits from the original source which answer the question,
      If there is code in the source, you must place it here.
     """
