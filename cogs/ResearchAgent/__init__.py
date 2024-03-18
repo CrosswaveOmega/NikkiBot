@@ -4,7 +4,6 @@ from gptmod.chromatools import ChromaTools
 from .LinkLoader import SourceLinkLoader
 from .research_ctx import ResearchContext
 
-print("Extra COOL")
 
 async def setup(bot):
     import gui
