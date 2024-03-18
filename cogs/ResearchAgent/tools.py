@@ -712,7 +712,7 @@ async def get_points(
             model="gpt-3.5-turbo-0125",
             messages=messages,
             timeout=60,
-            response_format='json'
+            response_format={"type": "json_object"}
         )
 
         doctup = (doc, 0.5, completion.choices[0].message.content, tokens)
