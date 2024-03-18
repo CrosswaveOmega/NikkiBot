@@ -403,7 +403,10 @@ class SpecialAppSync:
                 dbentry.update(app_tree)
                 same, diffscore, score = dbentry.compare_with_command_tree(app_tree)
                 gui.gprint(f"Starting sync for {name} (ID {guildid})...")
-                await self.tree.sync(guild=guild)
+                if guild is None:
+                    await self.tree.sync(guild=None)
+                else:
+                    await self.tree.sync(guild=guild)
                 gui.gprint(f"Sync complete for {name} (ID {guildid})...")
         except Exception as e:
             gui.gprint(str(e))
