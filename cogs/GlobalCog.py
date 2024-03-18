@@ -28,19 +28,8 @@ from bot import TC_Cog_Mixin, super_context_menu, TCGuildTask, TCTaskManager
 import cogs.ResearchAgent as ra
 from discord.app_commands import checks, MissingPermissions
 
-async def owner_only(interaction: discord.Interaction):
+async def owneronly(interaction: discord.Interaction):
     return await interaction.client.is_owner(interaction.user)
-
-@owneronly.error
-async def owneronly_error(
-    interaction: discord.Interaction,
-    error: app_commands.AppCommandError
-):
-    if isinstance(error, app_commands.CheckFailure):
-        await interaction.response.send_message(f"{interaction.user} you are not my owner!", ephemeral=True)
-        return
-
-    raise error
 
 class Global(commands.Cog, TC_Cog_Mixin):
     """General commands"""
@@ -82,9 +71,13 @@ class Global(commands.Cog, TC_Cog_Mixin):
 
     @app_commands.command(name="supersearch", description="use db search.")
     @app_commands.describe(query="Query to search DB for")
-    @app_commands.check(owner_only)
+
     async def doc_talk(self, interaction: discord.Interaction, query:str) -> None:
         """get bot info for this server"""
+        owner=await interaction.client.is_owner(interaction.user)
+        if not owner:
+            await interaction.response.send_message("This command is owner only.")
+            return
         ctx: commands.Context = await self.bot.get_context(interaction)
         mess=await ctx.send("<a:LoadingBlue:1206301904863502337> Searching")
         try:
