@@ -47,7 +47,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
         mess=await ctx.send("<a:LoadingBlue:1206301904863502337> Searching")
         results = ra.tools.google_search(ctx.bot, query, 7)
         allstr = ""
-        emb = discord.Embed(title="Search results", description='loading.')
+        emb = discord.Embed(title=f"Search results {query}")
         readable_links = []
 
         def indent_string(inputString, spaces=2):
@@ -67,7 +67,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
                 inline=False,
             )
             outputthis += f"+ **Title: {r['title']}**\n **Link:**{r['link']}\n **Snippit:**\n{indent_string(desc,1)}"
-        await mess.edit(embed=emb)
+        await mess.edit(content=None,embed=emb)
 
     @app_commands.command(name="supersearch", description="use db search.")
     @app_commands.describe(query="Query to search DB for")
