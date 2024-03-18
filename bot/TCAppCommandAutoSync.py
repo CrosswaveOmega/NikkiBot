@@ -386,7 +386,8 @@ class SpecialAppSync:
             # SQLAlchemy is used to handle database connections.
             # synced=build_app_command_list(self.tree,guild)
             app_tree = build_and_format_app_commands(self.tree, guild)
-            print(name, app_tree)
+            if not guild:
+                print(name, app_tree)
             dbentry: AppGuildTreeSync = AppGuildTreeSync.get(guildid)
             if not dbentry:
                 dbentry = AppGuildTreeSync.add(guildid)
@@ -428,7 +429,7 @@ class SpecialAppSync:
 
         def syncprint(*lis):
             pass
-            gui.gprint(f"Sync for  (ID {guildid})", *lis)
+            #gui.gprint(f"Sync for  (ID {guildid})", *lis)
 
         def should_skip_cog(cogname: str, cog, guildid) -> bool:
             """Determine whether a cog should be skipped during synchronization."""

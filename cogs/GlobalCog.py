@@ -28,10 +28,19 @@ from bot import TC_Cog_Mixin, super_context_menu, TCGuildTask, TCTaskManager
 import cogs.ResearchAgent as ra
 from discord.app_commands import checks, MissingPermissions
 
-def owner_only():
-  async def actual_check(interaction: discord.Interaction):
+async def owner_only(interaction: discord.Interaction):
     return await interaction.client.is_owner(interaction.user)
-  return app_commands.check(actual_check)
+
+@owneronly.error
+async def owneronly_error(
+    interaction: discord.Interaction,
+    error: app_commands.AppCommandError
+):
+    if isinstance(error, app_commands.CheckFailure):
+        await interaction.response.send_message(f"{interaction.user} you are not my owner!", ephemeral=True)
+        return
+
+    raise error
 
 class Global(commands.Cog, TC_Cog_Mixin):
     """General commands"""
@@ -73,7 +82,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
 
     @app_commands.command(name="supersearch", description="use db search.")
     @app_commands.describe(query="Query to search DB for")
-    @owner_only
+    @app_commands.check(owner_only)
     async def doc_talk(self, interaction: discord.Interaction, query:str) -> None:
         """get bot info for this server"""
         ctx: commands.Context = await self.bot.get_context(interaction)
