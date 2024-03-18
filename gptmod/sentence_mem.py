@@ -132,40 +132,38 @@ def split_document(doc: Document, present_mem):
 async def group_documents(docs:List[Document],max_tokens=3000):
     sources: Dict[str : Dict[int, Any]] = {}
     context=""
-    with Timer() as dict_timer:
-        for e, tup in enumerate(docs):
-            doc = tup
-            source, split = doc.metadata["source"], doc.metadata["split"]
-            if not source in sources:
-                sources[source] = {}
-            sources[source][split] = doc
-            if doc.page_content not in context:
-                context += doc.page_content + "  "
-            tokens = util.num_tokens_from_messages(
-                [{"role": "system", "content": context}], "gpt-3.5-turbo-0125"
-            )
-            if tokens >= max_tokens:
-                print("token break")
-                break
+    for e, tup in enumerate(docs):
+        doc = tup
+        source, split = doc.metadata["source"], doc.metadata["split"]
+        if not source in sources:
+            sources[source] = {}
+        sources[source][split] = doc
+        if doc.page_content not in context:
+            context += doc.page_content + "  "
+        tokens = util.num_tokens_from_messages(
+            [{"role": "system", "content": context}], "gpt-3.5-turbo-0125"
+        )
+        if tokens >= max_tokens:
+            print("token break")
+            break
     
     out_list=[]
-    with Timer() as loadtimer:
-        for source, d in sources.items():
-            newc = ""
-            sorted_dict = sorted(d.items(), key=lambda x: x[0])
-            lastkey = -6
-           
-            for k, v in sorted_dict:
-                # print(source, k, v)
-                if k != 0 and abs(k - lastkey) > 1:
-                    # print(abs(k - lastkey))
-                    newc += "..."
-                lastkey = k
-                newc += f"[split:{k}]:{v}" + "  "
-            if newc:
-                meta=sorted_dict[0].metadata
-                doc=Document(page_content=newc.strip(),metadata=meta)
-                out_list.append(doc)
+    for source, d in sources.items():
+        newc = ""
+        sorted_dict = sorted(d.items(), key=lambda x: x[0])
+        lastkey = -6
+        
+        for k, v in sorted_dict:
+            # print(source, k, v)
+            if k != 0 and abs(k - lastkey) > 1:
+                # print(abs(k - lastkey))
+                newc += "..."
+            lastkey = k
+            newc += f"[split:{k}]:{v}" + "  "
+        if newc:
+            meta=sorted_dict[0][1].metadata
+            doc=Document(page_content=newc.strip(),metadata=meta)
+            out_list.append(doc)
     return out_list
                 
 
