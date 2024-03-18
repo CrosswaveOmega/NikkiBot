@@ -626,7 +626,7 @@ def generate_prompt(concise_summary_range="4-7", detailed_response_range="5-10",
         **Text:** [Text Content Here]
         END
     If a source appears to be unrelated to the question, note it.
-    You responce must be object, with the following fields:
+    You responce must be a json object, with the following fields:
     ConciseSummary 
         String with {concise_summary_range} sentences.
         Begin with a brief summary of the key points from the source snippet.
