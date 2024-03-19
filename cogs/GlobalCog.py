@@ -53,11 +53,11 @@ class Global(commands.Cog, TC_Cog_Mixin):
 
         )
         
-        if hasattr(message,'author'):
-            embed.add_field(name="Author",value=f"* {str(message.author)}, ")
+        # if hasattr(message,'author'):
+        #     embed.add_field(name="Author",value=f"* {str(message.author)}, ")
 
-        if hasattr(message,'jump_url'):
-            embed.add_field(name="url",value=f"* {str(message.jump_url)}, ")
+        # if hasattr(message,'jump_url'):
+        #     embed.add_field(name="url",value=f"* {str(message.jump_url)}, ")
         await interaction.response.send_message(
             content="This command does nothing, it's to demonstrate context menu commands.",
             embed=embed,
