@@ -1364,7 +1364,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             qatup = ("No search.", current[0], "Let's find out.")
             # WEB SEARCH.
             if search_web:
-                vie = PreCheck(
+                vie = ra.views.PreCheck(
                     user=ctx.author, timeout=75, rctx=research_context, current=current
                 )
                 if automode:
@@ -1390,7 +1390,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
             if depth < research_context.depth and len(research_context.stack) <= 0:
                 cur = (quest, newcontext, depth, parent)
-                vie = FollowupActionView(
+                vie = ra.views.sFollowupActionView(
                     user=ctx.author, timeout=60 * 7, rctx=research_context, current=cur
                 )
                 message = await ctx.send(

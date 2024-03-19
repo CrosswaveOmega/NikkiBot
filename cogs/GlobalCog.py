@@ -38,7 +38,30 @@ class Global(commands.Cog, TC_Cog_Mixin):
         self.helptext = "Some assorted testing commands."
         self.bot = bot
         self.globalonly=True
+        
+        self.init_context_menus()
 
+
+    @super_context_menu(name="Extracool")
+    async def coooler(
+        self, interaction: discord.Interaction, message: discord.Message
+    ) -> None:
+        cont=message.content
+        guild=message.guild
+        embed=discord.Embed(
+            description=f"It says *{message.content}"
+
+        )
+        
+        if hasattr(message,'author'):
+            embed.add_field(name="Author",value=f"* {str(message.author)}, ")
+
+        if hasattr(message,'jump_url'):
+            embed.add_field(name="url",value=f"* {str(message.jump_url)}, ")
+        await interaction.response.send_message(
+            content="This command does nothing, it's to demonstrate context menu commands.",
+            embed=embed,
+        )
     @app_commands.command(name="search", description="search the interwebs.")
     @app_commands.describe(query="Query to search google with.")
     async def websearch(self, interaction: discord.Interaction, query:str) -> None:
@@ -91,9 +114,17 @@ class Global(commands.Cog, TC_Cog_Mixin):
 
 
     @app_commands.command(name="pingtest", description="ping")
-    async def info(self, interaction: discord.Interaction) -> None:
+    async def ping(self, interaction: discord.Interaction) -> None:
         """get bot info for this server"""
         await interaction.response.send_message("Reading you loud and clear!")
+
+    
+
+    @app_commands.command(name="context_test", description="ping")
+    async def ping(self, interaction: discord.Interaction) -> None:
+        """get bot info for this server"""
+        await interaction.response.send_message("Reading you loud and clear!")
+
 
     
 
