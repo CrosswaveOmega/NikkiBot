@@ -51,11 +51,15 @@ class NonContextMenu:
         extras: Dict[Any, Any] = MISSING,
     ):
         self.callname = callback
+        flags=discord.flags.AppIntegrationType.none()
+        flags.guild_install=True
+        flags.user_install=True
         self.initalizer = {
             "name": name,
             "nsfw": nsfw,
             "auto_locale_strings": auto_locale_strings,
             "extras": extras,
+            "integration_types":
         }
 
     def __repr__(self):
