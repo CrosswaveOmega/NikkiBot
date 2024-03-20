@@ -451,6 +451,7 @@ async def main(args):
 
         outcome = bot.set_error_channel(config.get("optional", "error_channel_id"))
         if not outcome:
+            print("NO OUTCOME.")
             bot.error_channel = -726
         bot.config = config
         await bot.add_cog(Main())

@@ -462,7 +462,7 @@ class TCBot(
         for e in er:
             await self.send_error_embed(e)
 
-    @tasks.loop(seconds=10)
+    @tasks.loop(seconds=60)
     async def status_ticker(self):
         await self.status_ticker_next()
 
