@@ -6,8 +6,10 @@ import discord
 from discord.ext import commands
 
 from discord import app_commands
+from assets import AssetLookup
 from bot import TC_Cog_Mixin, super_context_menu
 import cogs.ResearchAgent as ra
+from utility import WebhookMessageWrapper as web
 
 async def owneronly(interaction: discord.Interaction):
     return await interaction.client.is_owner(interaction.user)
@@ -19,9 +21,8 @@ class Global(commands.Cog, TC_Cog_Mixin):
         self.helptext = "Some assorted testing commands."
         self.bot = bot
         self.globalonly=True
-        
+        self.memehook= AssetLookup.get_asset("memehook",'urls')
         self.init_context_menus()
-
 
     @super_context_menu(name="Extracool",flags='user')
     async def coooler(
@@ -49,6 +50,28 @@ class Global(commands.Cog, TC_Cog_Mixin):
             content="Message details below.",
             embed=embed,
         )
+
+    @super_context_menu(name="Repost That Meme",flags='user')
+    async def memethief(
+        self, interaction: discord.Interaction, message: discord.Message
+    ) -> None:
+        username="Nikki Bot"
+        avatar=str(self.bot.user.avatar)
+        content=message.content
+        embeds=message.embeds
+
+        files=[]
+        for a in message.attachments:
+            this_file=await a.to_file()
+            files.append(this_file)
+        await web.postMessageAsWebhookWithURL(self.memehook,
+                                              message_content=content,
+                                              display_username=username,
+                                              avatar_url=avatar,
+                                              embed=embeds,file=files)
+        await interaction.response.send_message(
+            content="This command does nothing, it's to demonstrate context menu commands.",
+            ephemeral=True,)
 
     
     @super_context_menu(name="usercool",flags='user')
