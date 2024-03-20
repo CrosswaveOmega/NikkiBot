@@ -55,8 +55,8 @@ class Global(commands.Cog, TC_Cog_Mixin):
     async def memethief(
         self, interaction: discord.Interaction, message: discord.Message
     ) -> None:
-        username="Nikki Bot"
-        avatar=str(self.bot.user.avatar)
+        username=interaction.user.display_name
+        avatar=str(interaction.user.avatar)
         content=message.content
         embeds=message.embeds
 
@@ -70,7 +70,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
                                               avatar_url=avatar,
                                               embed=embeds,file=files)
         await interaction.response.send_message(
-            content="This command does nothing, it's to demonstrate context menu commands.",
+            content="Reposted yer meme!",
             ephemeral=True,)
 
     
