@@ -40,6 +40,11 @@ class Global(commands.Cog, TC_Cog_Mixin):
 
         if hasattr(message,'jump_url'):
             embed.add_field(name="url",value=f"* {str(message.jump_url)}, ")
+        if hasattr(message,'channel'):
+            embed.add_field(name="channel",value=f"* {str(message.channel)}, ")
+            if hasattr(message.channel, 'parent'):
+                embed.add_field(name="parent",value=f"* {str(message.channel.parent)}, ")
+            
         await interaction.response.send_message(
             content="Message details below.",
             embed=embed,
@@ -52,7 +57,6 @@ class Global(commands.Cog, TC_Cog_Mixin):
     ) -> None:
         embed=discord.Embed(
             description=f"This user is {user}"
-
         )
 
         await interaction.response.send_message(

@@ -46,6 +46,7 @@ class IntegrationCreateFilter(logging.Filter):
                 return True  
             return False
         return True
+    
 intent = discord.Intents.default()
 intent.presences = True
 intent.message_content = True
