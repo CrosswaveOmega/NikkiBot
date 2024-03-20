@@ -64,6 +64,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
         )
     @app_commands.command(name="search", description="search the interwebs.")
     @app_commands.describe(query="Query to search google with.")
+    @app_commands.install_types(guilds=True, users=True)
     async def websearch(self, interaction: discord.Interaction, query:str) -> None:
         """get bot info for this server"""
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -94,7 +95,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
 
     @app_commands.command(name="supersearch", description="use db search.")
     @app_commands.describe(query="Query to search DB for")
-
+    @app_commands.install_types(guilds=True, users=True)
     async def doc_talk(self, interaction: discord.Interaction, query:str) -> None:
         """get bot info for this server"""
         owner=await interaction.client.is_owner(interaction.user)
@@ -114,14 +115,16 @@ class Global(commands.Cog, TC_Cog_Mixin):
 
 
     @app_commands.command(name="pingtest", description="ping")
+    @app_commands.install_types(guilds=True, users=True)
     async def ping(self, interaction: discord.Interaction) -> None:
         """get bot info for this server"""
         await interaction.response.send_message("Reading you loud and clear!")
 
     
-
+    
     @app_commands.command(name="context_test", description="ping")
-    async def ping(self, interaction: discord.Interaction) -> None:
+    @app_commands.install_types(guilds=True, users=True)
+    async def ping2(self, interaction: discord.Interaction) -> None:
         """get bot info for this server"""
         await interaction.response.send_message("Reading you loud and clear!")
 
