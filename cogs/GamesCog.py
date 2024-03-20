@@ -1,29 +1,13 @@
 import gui
-from typing import Any, Coroutine
 import discord
-import operator
-import io
-import json
-import aiohttp
-import asyncio
-import csv
 
 # import datetime
-from datetime import datetime, timedelta
 
-from queue import Queue
 
-from discord.ext import commands, tasks
-from discord.interactions import Interaction
-from discord.utils import find
-from discord import Webhook, ui
+from discord.ext import commands
 
 from discord import app_commands
-from discord.app_commands import Choice
-from pathlib import Path
-from utility import serverAdmin, serverOwner, MessageTemplates
-from utility.embed_paginator import pages_of_embeds
-from bot import TC_Cog_Mixin, super_context_menu
+from bot import TC_Cog_Mixin
 
 
 class MenuButton(discord.ui.Button["MenuButton"]):

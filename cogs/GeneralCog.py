@@ -1,30 +1,16 @@
 from typing import Literal
 import discord
-import operator
-import io
-import json
-import aiohttp
 import asyncio
-import csv
 
 # import datetime
-from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY, MO, TU, WE, TH, FR, SA, SU
 
-from datetime import datetime, timedelta
-import time
-from queue import Queue
 
-from discord.ext import commands, tasks
-from discord.utils import find
-from discord import Webhook, ui
+from discord.ext import commands
 
 from discord import app_commands
-from discord.app_commands import Choice
-from pathlib import Path
 from utility import MessageTemplates, RRuleView, formatutil
 from utility.embed_paginator import pages_of_embeds
-from utility import WebhookMessageWrapper as web
-from bot import TC_Cog_Mixin, super_context_menu, TCGuildTask, TCTaskManager
+from bot import TC_Cog_Mixin, super_context_menu
 
 
 class General(commands.Cog, TC_Cog_Mixin):

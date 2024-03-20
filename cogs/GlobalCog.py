@@ -1,32 +1,13 @@
-from typing import Literal
 import discord
-import operator
-import io
-import json
-import aiohttp
-import asyncio
-import csv
 
 # import datetime
-from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY, MO, TU, WE, TH, FR, SA, SU
 
-from datetime import datetime, timedelta
-import time
-from queue import Queue
 
-from discord.ext import commands, tasks
-from discord.utils import find
-from discord import Webhook, ui
+from discord.ext import commands
 
 from discord import app_commands
-from discord.app_commands import Choice
-from pathlib import Path
-from utility import MessageTemplates, RRuleView, formatutil
-from utility.embed_paginator import pages_of_embeds
-from utility import WebhookMessageWrapper as web
-from bot import TC_Cog_Mixin, super_context_menu, TCGuildTask, TCTaskManager
+from bot import TC_Cog_Mixin, super_context_menu
 import cogs.ResearchAgent as ra
-from discord.app_commands import checks, MissingPermissions
 
 async def owneronly(interaction: discord.Interaction):
     return await interaction.client.is_owner(interaction.user)
@@ -42,7 +23,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
         self.init_context_menus()
 
 
-    @super_context_menu(name="Extracool")
+    @super_context_menu(name="Extracool",flags='user')
     async def coooler(
         self, interaction: discord.Interaction, message: discord.Message
     ) -> None:
@@ -52,14 +33,30 @@ class Global(commands.Cog, TC_Cog_Mixin):
             description=f"It says *{message.content}"
 
         )
+        print(cont,guild,interaction.guild.id)
         
-        # if hasattr(message,'author'):
-        #     embed.add_field(name="Author",value=f"* {str(message.author)}, ")
+        if hasattr(message,'author'):
+            embed.add_field(name="Author",value=f"* {str(message.author)}{type(message.author)}, ")
 
-        # if hasattr(message,'jump_url'):
-        #     embed.add_field(name="url",value=f"* {str(message.jump_url)}, ")
+        if hasattr(message,'jump_url'):
+            embed.add_field(name="url",value=f"* {str(message.jump_url)}, ")
         await interaction.response.send_message(
-            content="This command does nothing, it's to demonstrate context menu commands.",
+            content="Message details below.",
+            embed=embed,
+        )
+
+    
+    @super_context_menu(name="usercool",flags='user')
+    async def coooler2(
+        self, interaction: discord.Interaction, user: discord.User
+    ) -> None:
+        embed=discord.Embed(
+            description=f"This user is {user}"
+
+        )
+
+        await interaction.response.send_message(
+            content="User details below.",
             embed=embed,
         )
     @app_commands.command(name="search", description="search the interwebs.")

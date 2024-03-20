@@ -1,24 +1,17 @@
 import gui
-from typing import List
 import discord
 
 
 # import datetime
-from datetime import datetime, timedelta
 import io
-from queue import Queue
-from discord.ext import commands, tasks
-from discord.utils import find
-from discord import Webhook
+from discord.ext import commands
 
 import random
-import operator
-from random import randint, seed
+from random import seed
 
 import traceback
 from bot import TC_Cog_Mixin
 from discord import app_commands
-from discord.app_commands import Choice
 
 from .StepCalculator import evaluate_expression, OutContainer, dprint, get_linenumber
 

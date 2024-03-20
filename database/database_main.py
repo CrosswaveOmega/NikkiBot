@@ -1,22 +1,17 @@
-import traceback
-from utility import filter_trace_stack
 from sqlalchemy import types
-from typing import Union
 from sqlalchemy import (
     Column,
     Integer,
     Text,
-    String,
     Boolean,
     ForeignKey,
-    DateTime,
     Double,
 )
 from sqlalchemy.orm import relationship
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session
 from sqlalchemy.ext.declarative import declarative_base
 from .database_singleton import DatabaseSingleton
-from sqlalchemy import select, not_, func
+from sqlalchemy import not_, func
 import datetime
 
 """This defines a few universal tables."""

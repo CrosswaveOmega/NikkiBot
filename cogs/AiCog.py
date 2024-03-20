@@ -5,11 +5,8 @@ from gptfunctionutil import (
     GPTFunctionLibrary,
     AILibFunction,
     LibParam,
-    SingleCall,
-    SingleCallAsync,
 )
-import base64
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Union
 import discord
 import gui
 import io
@@ -19,32 +16,20 @@ import asyncio
 import re
 
 # import datetime
-from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY, MO, TU, WE, TH, FR, SA, SU
 
-from datetime import datetime, time, timedelta
-import time
-from queue import Queue
 
-from discord.ext import commands, tasks
-from discord.utils import find
-from discord import EntityType, PrivacyLevel, Webhook, ui
+from discord.ext import commands
 
 from discord import app_commands
-from discord.app_commands import Choice
-from pathlib import Path
-from utility import MessageTemplates, RRuleView, formatutil, urltomessage
+from utility import MessageTemplates, urltomessage
 from utility.embed_paginator import pages_of_embeds
-from bot import TCBot, TC_Cog_Mixin, super_context_menu
+from bot import TCBot, TC_Cog_Mixin
 import gptmod
 import gptmod.error
-from gptmod.sentence_mem import SentenceMemory, MemoryFunctions
+from gptmod.sentence_mem import SentenceMemory
 
-from assets import AssetLookup
-from datetime import datetime, timezone
 from database.database_ai import AuditProfile, ServerAIConfig
-import utility.hash as hash
 from utility import split_string_with_code_blocks
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 import json
 
 from database import Users_DoNotTrack

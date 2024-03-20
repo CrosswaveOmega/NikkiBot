@@ -1,38 +1,27 @@
 import datetime
-import io
-import re
 from typing import Any
 import discord
 import traceback
-from urllib.request import Request, urlopen
 import asyncio
-import configparser
-import os
-from pathlib import Path
 
 import logging
 import logging.handlers
 
-import sys
-import random
 
 
-from queue import Queue
 
 
-from utility import serverOwner, serverAdmin, MessageTemplates, formatutil
+from utility import MessageTemplates
 
-from discord.ext import commands, tasks
+from discord.ext import commands
 
-from discord import Webhook
-from subprocess import Popen
 
 import gui
 
 from collections import defaultdict
-from dateutil.rrule import rrule, rrulestr, WEEKLY, SU
-from .TauCetiBot import TCBot, ConfigParserSub
-from .Tasks.TCTasks import TCTask, TCTaskManager
+from dateutil.rrule import rrule, WEEKLY, SU
+from .TauCetiBot import TCBot
+from .Tasks.TCTasks import TCTaskManager
 from .TcGuildTaskDB import TCGuildTask
 from .TCAppCommandAutoSync import AppGuildTreeSync
 from .errorformat import client_error_message
@@ -46,10 +35,7 @@ Initalizes TCBot, defines some checks, and contains the main setup coroutine.
 
 import database.database_main as dbmain
 from assets import AssetLookup
-import openai
 
-from utility import WebhookMessageWrapper as web
-from utility import urltomessage
 
 bot: TCBot = TCBot()
 

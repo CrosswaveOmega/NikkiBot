@@ -6,7 +6,6 @@ from .PlaywrightAPI import PlaywrightMixin
 from .StatusMessages import StatusMessageManager, StatusMessage, StatusMessageMixin
 from database import DatabaseSingleton, Users_DoNotTrack, ServerData
 import configparser
-from typing import Any, List
 import discord
 import traceback
 import asyncio
@@ -19,16 +18,13 @@ from discord.ext import commands, tasks
 import datetime
 import random
 import string
-from assets import AssetLookup
 from .Tasks.TCTasks import TCTaskManager
 from sqlalchemy.exc import IntegrityError
 import gui
-from utility import Chelp, urltomessage, MessageTemplates, replace_working_directory
-from .TcGuildTaskDB import Guild_Task_Base, Guild_Task_Functions, TCGuildTask
+from utility import Chelp, MessageTemplates, replace_working_directory
+from .TcGuildTaskDB import Guild_Task_Base, TCGuildTask
 from .TCAppCommandAutoSync import (
     Guild_Sync_Base,
-    AppGuildTreeSync,
-    build_and_format_app_commands,
     SpecialAppSync,
 )
 from .TCMixins import CogFieldList, StatusTicker
@@ -42,6 +38,14 @@ This file is for an extended Bot Class for this Discord Bot.
 
 """
 
+class IntegrationCreateFilter(logging.Filter):
+    def filter(self, record):
+        # Check if the log record's level is DEBUG and message contains "INTEGRATION_CREATE"
+        if record.levelno ==logging.DEBUG:
+            if "INTEGRATION_CREATE" in record.getMessage():
+                return True  
+            return False
+        return True
 intent = discord.Intents.default()
 intent.presences = True
 intent.message_content = True
