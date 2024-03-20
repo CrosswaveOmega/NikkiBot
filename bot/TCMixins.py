@@ -59,7 +59,7 @@ class NonContextMenu:
             "nsfw": nsfw,
             "auto_locale_strings": auto_locale_strings,
             "extras": extras,
-            "integration_types":
+            "integration_types":flags
         }
 
     def __repr__(self):
