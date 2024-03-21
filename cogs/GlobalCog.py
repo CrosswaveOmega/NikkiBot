@@ -111,7 +111,7 @@ class UserNotes:
         
     async def note_to_embed(self, doc:Document):
         embed=discord.Embed(
-            description=f"{doc.page_content}"[:4000]
+            description=f"{doc.metadata['value']}"[:4000]
         )
         embed.add_field(name="topic",value=doc.metadata['topic'][:500])
         
