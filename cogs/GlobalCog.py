@@ -1,3 +1,4 @@
+from typing import List, Dict, Any, Tuple
 import discord
 
 # import datetime
@@ -9,10 +10,115 @@ from discord import app_commands
 from assets import AssetLookup
 from bot import TC_Cog_Mixin, super_context_menu
 import cogs.ResearchAgent as ra
-from utility import WebhookMessageWrapper as web
 
+from gptmod.chromatools import DocumentScoreVector, ChromaTools
+import gptmod.sentence_mem as smem
+from utility import WebhookMessageWrapper as web
+import gui
+
+import uuid
+from langchain.docstore.document import Document
+
+from utility.embed_paginator import pages_of_embeds
 async def owneronly(interaction: discord.Interaction):
     return await interaction.client.is_owner(interaction.user)
+
+
+class UserNotes:
+    def __init__(self, bot, user):
+        # dimensions = 384
+        self.userid:int = user.id
+        metadata = {"desc": "Simple user note taker.  384 dimensions."}
+        self.coll = ChromaTools.get_collection(
+            f"usernotes", embed=bot.embedding, path="saveData/usernotes"
+        )
+        self.shortterm = {}
+
+
+    async def add_to_mem(
+        self,
+        ctx: commands.Context,
+        content:str,
+        key:str='gen',
+        topic:str="any"
+    ):
+        meta = {}
+        meta["key"] = key
+        meta["foruser"] = self.userid
+        meta["topic"] = topic
+        meta['value']= content
+        meta["date"] = ctx.message.created_at.timestamp()
+        meta['split'] = 1
+        doc = Document(page_content=content, metadata=meta)
+        docs = [doc]
+        ids = [
+            f"u:{doc.metadata['foruser']},topic:[{doc.metadata['topic']}],key{doc.metadata['key']},sid:[{doc.metadata['split']}]"
+            for e, doc in enumerate(docs)
+        ]
+        if docs:
+            self.coll.add_documents(docs, ids)
+
+
+
+    async def search_sim(self, content:str) -> Tuple[List[Document],str]:
+        persist = "saveData"
+
+        filterwith = {"foruser": self.userid}
+        docs =  await self.coll.asimilarity_search_with_score_and_embedding(
+               content, k=5, filter=filterwith
+            )
+        docs2 = (d[0] for d in docs)
+
+
+        new_output = ""
+        tosend=[]
+        for source in docs2:
+            tosend.append(source)
+            if source.page_content:
+                content = smem.indent_string(source.page_content.strip(), 1)
+                output = f"*{content}\n"
+                new_output += output
+
+        return tosend, new_output
+
+    async def delete_note(self, 
+        key:str='gen',
+        topic:str="any"):
+        filterwith = {
+            "$and": [
+                {"foruser": self.userid},
+                {"key": key},
+                {'topic':topic},
+            ]
+        }
+        try:
+            self.coll._collection.delete(where=filterwith)
+
+            return True
+        except ValueError as e:
+            gui.dprint(e)
+            return False
+
+    async def delete_user_notes(self, userid):
+        try:
+            self.coll._collection.delete(where={"foruser": userid})
+
+            return True
+        except ValueError as e:
+            gui.dprint(e)
+            return False
+        
+    async def note_to_embed(self, doc:Document):
+        embed=discord.Embed(
+            description=f"{doc.page_content}"[:4000]
+        )
+        embed.add_field(name="topic",value=doc.metadata['topic'][:500])
+        
+        embed.add_field(name="key",value=doc.metadata['key'][:500])
+        return embed
+
+
+
 
 class Global(commands.Cog, TC_Cog_Mixin):
     """General commands"""
@@ -22,6 +128,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
         self.bot = bot
         self.globalonly=True
         self.memehook= AssetLookup.get_asset("memehook",'urls')
+        self.usertopics={}
         self.init_context_menus()
 
     @super_context_menu(name="Extracool",flags='user')
@@ -90,7 +197,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
     @app_commands.describe(query="Query to search google with.")
     @app_commands.install_types(guilds=True, users=True)
     async def websearch(self, interaction: discord.Interaction, query:str) -> None:
-        """get bot info for this server"""
+        """Do a web search"""
         ctx: commands.Context = await self.bot.get_context(interaction)
         mess=await ctx.send("<a:LoadingBlue:1206301904863502337> Searching")
         results = ra.tools.google_search(ctx.bot, query, 7)
@@ -136,7 +243,70 @@ class Global(commands.Cog, TC_Cog_Mixin):
         except Exception as e:
             await ctx.send("something went wrong...")
 
+    @app_commands.command(name="note_topic", description="WIP.  Set your note topic")
+    @app_commands.install_types(users=True)
+    @app_commands.describe( topic='The topic to add all notes to unless stated otherwise.')
+    async def set_topic(self, interaction: discord.Interaction, topic:str) -> None:
+        """get bot info for this server"""
+        
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        user=interaction.user
+        if not user.id in self.usertopics:
+            self.usertopics[user.id]='any'
+        self.usertopics[user.id]=topic
+        mess=await ctx.send(f"Set your default topic to {topic}.",ephemeral=True)
 
+
+
+    @app_commands.command(name="note_add", description="WIP.  Add a quick note using key.")
+    @app_commands.install_types(users=True)
+    @app_commands.describe(content="Content of your note.",
+                           key="The key to save your note under.",
+                           topic='The topic for the key to your note under.  Use set topic to change the default one.')
+    async def add_note(self, interaction: discord.Interaction, content:str, key:str,topic:str='any') -> None:
+        """get bot info for this server"""
+        
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        if topic =='any' and interaction.user.id in self.usertopics:
+            topic=self.usertopics[interaction.user.id]
+        mess=await ctx.send("<a:LoadingBlue:1206301904863502337> adding note")
+        notes=UserNotes(self.bot,interaction.user)
+        await notes.add_to_mem(ctx,content,key[:500],topic[:500])
+        await mess.edit(content='added note.')
+
+    @app_commands.command(name="note_get", description="WIP.  search for a note")
+    @app_commands.install_types(users=True)
+    @app_commands.describe(content="Content to search",)
+    async def get_note(self, interaction: discord.Interaction, content:str )-> None:
+        """get 5 notes"""
+        
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        mess=await ctx.send("<a:LoadingBlue:1206301904863502337> getting note")
+        
+        notes=UserNotes(self.bot,interaction.user)
+        docs,pc=await notes.search_sim(content)
+        embs=[]
+        for n in docs:
+            print(n)
+            emb=await notes.note_to_embed(n)
+            embs.append(emb)
+
+        await pages_of_embeds(ctx, embs, ephemeral=True)
+        await mess.edit(content='got notes.')
+
+    @app_commands.command(name="note_remove_all", description="Delete all your notes.")
+    @app_commands.install_types(users=True)
+    @app_commands.describe()
+    async def purge_notes(self, interaction: discord.Interaction) -> None:
+        """get bot info for this server"""
+        
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        if topic =='any' and interaction.user.id in self.usertopics:
+            topic=self.usertopics[interaction.user.id]
+        mess=await ctx.send("<a:LoadingBlue:1206301904863502337> deleting all note")
+        notes=UserNotes(self.bot,interaction.user)
+        await notes.delete_user_notes(interaction.user.id)
+        await mess.edit(content='Deleted all your notes.')
 
     @app_commands.command(name="pingtest", description="ping")
     @app_commands.install_types(guilds=True, users=True)

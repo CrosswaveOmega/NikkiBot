@@ -45,6 +45,7 @@ class ArchiveCompiler:
         self.m_arc=0
         self.s_arc=0
         self.remaining_time_float=0.0
+        self.timeoff=0.0
         self.avgtime=2.0
         self.t_mess=self.t_sep=0
         self.avgsep=3.0
@@ -57,6 +58,8 @@ class ArchiveCompiler:
         total += (
             f"This is going to take another... {seconds_to_time_string(int(self.remaining_time_float))}"
         )
+        if self.timeoff:
+            total+=f"\n entire server has {seconds_to_time_string(int(self.timeoff))} left."
 
         embed = discord.Embed(description=total)
         return embed
@@ -217,7 +220,7 @@ class ArchiveCompiler:
 
         self.remaining_time_float = total_time_for_cluster
 
-        outstring = f"It will take {seconds_to_time_string(int(self.remaining_time_float))} to post in the archive channel."
+        outstring = f"It will take {seconds_to_time_string(int(self.timeoff+self.remaining_time_float))} to post in the archive channel."
         if int(self.remaining_time_float) <= 0.1:
             outstring = "The Archive Channel is already up to date!"
 

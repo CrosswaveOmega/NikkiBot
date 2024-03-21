@@ -74,7 +74,7 @@ def advanced_sentence_splitter(text):
 # ]
 
 
-def _results_to_docs(results: Any) -> List[Document]:
+def results_to_docs(results: Any) -> List[Document]:
     return [
         Document(page_content=result[0], metadata=result[1] or {})
         for result in zip(
@@ -225,7 +225,7 @@ class SentenceMemory:
         doc1 = self.coll.get(ids=list(ids), include=["documents", "metadatas"])
         print(zip(doc1["documents"], doc1["metadatas"]))
         if doc1:
-            dc = _results_to_docs(doc1)
+            dc = results_to_docs(doc1)
             if dc:
                 docs1 = dc
 

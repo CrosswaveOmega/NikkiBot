@@ -123,7 +123,8 @@ class AppGuildTreeSync(Guild_Sync_Base):
         Returns the entire AppGuildTreeSync entry for the specified server_id, or None if it doesn't exist.
         """
         session: Session = DatabaseSingleton.get_session()
-        result = session.query(AppGuildTreeSync).filter_by(server_id=server_id).first()
+        statement = select(AppGuildTreeSync).filter_by(server_id=server_id)
+        result = session.execute(statement).scalars().first()
         if result:
             return result
         else:
@@ -146,7 +147,8 @@ class AppGuildTreeSync(Guild_Sync_Base):
         Add a new AppGuildTreeSync entry for the specified server_id.
         """
         session: Session = DatabaseSingleton.get_session()
-        result = session.query(AppGuildTreeSync).filter_by(server_id=server_id).first()
+        statement = select(AppGuildTreeSync).filter_by(server_id=server_id)
+        result = session.execute(statement).scalars().first()
         if result:
             result.donotsync = True
             return result
@@ -159,14 +161,15 @@ class AppGuildTreeSync(Guild_Sync_Base):
         Loads and returns the list representation of the command tree for the specified server_id.
         """
         session: Session = DatabaseSingleton.get_session()
-        result = session.query(AppGuildTreeSync).filter_by(server_id=server_id).first()
+        
+        statement = select(AppGuildTreeSync).filter_by(server_id=server_id)
+        result = session.execute(statement).scalars().first()
         if result:
             if result.cog_disable == None:
                 return []
             return json.loads(result.cog_disable)
         else:
             return []
-
     def save_list(self, command_list: list):
         """
         Saves the list representation of the command tree for the current `AppGuildTreeSync` instance.
@@ -182,7 +185,8 @@ class AppGuildTreeSync(Guild_Sync_Base):
         Loads and returns the list representation of the command tree for the specified server_id.
         """
         session: Session = DatabaseSingleton.get_session()
-        result = session.query(AppGuildTreeSync).filter_by(server_id=server_id).first()
+        statement = select(AppGuildTreeSync).filter_by(server_id=server_id)
+        result = session.execute(statement).scalars().first()
         if result:
             if result.cog_onlist == None:
                 return []

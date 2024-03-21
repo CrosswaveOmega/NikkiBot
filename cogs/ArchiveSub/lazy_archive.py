@@ -73,6 +73,8 @@ class LazyContext(LazyBase):
     posting = Column(Boolean, default=False)
     message_count = Column(Integer, default=0)
     archived_so_far = Column(Integer, default=0)
+    group_count =  Column(Integer, default=0)
+    grouped_so_far = Column(Integer, default=0)
     state = Column(String, default="collecting")
 
     def __repr__(self):
@@ -153,65 +155,74 @@ async def lazy_archive(self, ctx):
         return False
     if lazycontext.active_id:
         guildid = int(lazycontext.active_id)
-    out=await arc_comp.setup()
+    
     #Select state
-    if lazycontext.state == "setup":
-        lazycontext.next_state()
-    elif lazycontext.state == "collecting":
-        if lazycontext.collected:
-            lazycontext.message_count = ArchivedRPMessage.count_all(server_id=guild.id)
+    while upper_time_limit():
+        out=await arc_comp.setup()
+        if lazycontext.state == "setup":
             lazycontext.next_state()
-            return True
-        statusMessToEdit = await channel.send(f"Commencing Lazy Archive Run")
-        statmess = StatusEditMessage(statusMessToEdit, ctx)
-        while upper_time_limit() > 0:
-            bot.add_act(
-                str(guild.id) + "lazyarch",
-                f"Time={seconds_to_time_string(upper_time_limit())}",
-            )
-
-            st = None
-            still_collecting, st = await collect_server_history_lazy(
-                ctx, statmess, update=True
-            )
-            if not still_collecting:
-                await ctx.send("Gather phase completed.")
+        elif lazycontext.state == "collecting":
+            if lazycontext.collected:
+                lazycontext.message_count = ArchivedRPMessage.count_all(server_id=guild.id)
                 lazycontext.next_state()
-                break
-            bot.remove_act(str(guild.id) + "lazyarch")
-        await statmess.delete()
-        return True
+                return True
+            statusMessToEdit = await channel.send(f"Commencing Lazy Archive Run")
+            statmess = StatusEditMessage(statusMessToEdit, ctx)
+            while upper_time_limit() > 0:
+                bot.add_act(
+                    str(guild.id) + "lazyarch",
+                    f"Time={seconds_to_time_string(upper_time_limit())}",
+                )
 
-    elif lazycontext.state == "grouping":
-        if lazycontext.grouped:
+                st = None
+                still_collecting, st = await collect_server_history_lazy(
+                    ctx, statmess, update=True
+                )
+                if not still_collecting:
+                    await ctx.send("Gather phase completed.")
+                    lazycontext.next_state()
+                    break
+                bot.remove_act(str(guild.id) + "lazyarch")
+            await statmess.delete()
+            
+
+        elif lazycontext.state == "grouping":
+            if lazycontext.grouped:
+                lazycontext.next_state()
+                return True
+            lazycontext.message_count = ArchivedRPMessage.count_all(server_id=guildid)
+            
+            bot.database.get_session().commit()
+            m,profile,archive_channel=arc_comp.supertup
+            fc,gid,ts=await arc_comp.group(m,profile)
+            lazycontext.message_count=fc
+            lazycontext.archived_so_far=0
+            lazycontext.group_count=gid
+            lazycontext.grouped_so_far=0
+            await m.edit(content=f"{fc}, seps, {gid}, {ts}")
             lazycontext.next_state()
-            return True
-        lazycontext.message_count = ArchivedRPMessage.count_all(server_id=guildid)
-        
-        bot.database.get_session().commit()
-        m,profile,archive_channel=arc_comp.supertup
-        fc,gid,ts=await arc_comp.group(m,profile)
-        await m.edit(content=f"{fc}, seps, {gid}, {ts}")
-        lazycontext.next_state()
-    elif lazycontext.state == "posting":
-        if lazycontext.posting:
-            lazycontext.next_state()
-            return True
-        
-        m,profile,archive_channel=arc_comp.supertup
-        archive_channel = bot.get_channel(profile.history_channel_id)
-        
-        m,profile,archive_channel=arc_comp.supertup
-        # archived_this_session<=MESSAGES_PER_POST_CALL
-        #while upper_time_limit() > 0:
-        did=await arc_comp.post(m,profile,archive_channel,MAX_TOTAL_SECONDS)
-        if not did:
-            lazycontext.next_state()
-        
-        
-        await arc_comp.cleanup(profile)
-        await m.delete()
-    elif lazycontext.state == "done":
-        LazyContext.remove(guildid)
-        return False
+        elif lazycontext.state == "posting":
+            if lazycontext.posting:
+                lazycontext.next_state()
+                return True
+            
+            m,profile,archive_channel=arc_comp.supertup
+            archive_channel = bot.get_channel(profile.history_channel_id)
+            
+            m,profile,archive_channel=arc_comp.supertup
+            # archived_this_session<=MESSAGES_PER_POST_CALL
+            #while upper_time_limit() > 0:
+            arc_comp.timeoff=((lazycontext.message_count-lazycontext.archived_so_far) * arc_comp.avgtime) +((lazycontext.group_count-lazycontext.grouped_so_far) * arc_comp.avgsep)
+            did=await arc_comp.post(m,profile,archive_channel,MAX_TOTAL_SECONDS)
+            lazycontext.archived_so_far+=arc_comp.m_arc
+            lazycontext.grouped_so_far+=arc_comp.s_arc
+            if not did:
+                lazycontext.next_state()
+            
+            
+            await arc_comp.cleanup(profile)
+            await m.delete()
+        elif lazycontext.state == "done":
+            LazyContext.remove(guildid)
+            return False
     return True

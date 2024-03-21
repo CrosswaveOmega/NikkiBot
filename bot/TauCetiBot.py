@@ -247,6 +247,7 @@ class TCBot(
             "[LINE] [{asctime}] [{levelname:<8}] {name}: {message}", dt_fmt, style="{"
         )
         handler2.setFormatter(formatter2)
+        handler2.addFilter(IntegrationCreateFilter('logfilter'))
         discord.utils.setup_logging(level=logging.DEBUG, handler=handler2, root=False)
 
 
