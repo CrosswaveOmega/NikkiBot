@@ -49,7 +49,8 @@ class UserNotes:
         meta['value']= content
         meta["date"] = ctx.message.created_at.timestamp()
         meta['split'] = 1
-        doc = Document(page_content=content, metadata=meta)
+        to_add=f"Topic: {topic}\n: Key:{key}\nContent:{content}"
+        doc = Document(page_content=to_add, metadata=meta)
         docs = [doc]
         ids = [
             f"u:{doc.metadata['foruser']},topic:[{doc.metadata['topic']}],key{doc.metadata['key']},sid:[{doc.metadata['split']}]"
