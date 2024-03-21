@@ -20,6 +20,7 @@ import uuid
 from langchain.docstore.document import Document
 
 from utility.embed_paginator import pages_of_embeds
+from utility.debug import Timer
 async def owneronly(interaction: discord.Interaction):
     return await interaction.client.is_owner(interaction.user)
 
@@ -271,9 +272,10 @@ class Global(commands.Cog, TC_Cog_Mixin):
         if topic =='any' and interaction.user.id in self.usertopics:
             topic=self.usertopics[interaction.user.id]
         mess=await ctx.send("<a:LoadingBlue:1206301904863502337> adding note")
-        notes=UserNotes(self.bot,interaction.user)
-        await notes.add_to_mem(ctx,content,key[:500],topic[:500])
-        await mess.edit(content='added note.')
+        with Timer() as op_timer:
+            notes=UserNotes(self.bot,interaction.user)
+            await notes.add_to_mem(ctx,content,key[:500],topic[:500])
+        await mess.edit(content=f'added note in {op_timer.get_time()} seconds')
 
     @app_commands.command(name="note_get", description="WIP.  search for a note")
     @app_commands.install_types(users=True)
@@ -283,17 +285,18 @@ class Global(commands.Cog, TC_Cog_Mixin):
         
         ctx: commands.Context = await self.bot.get_context(interaction)
         mess=await ctx.send("<a:LoadingBlue:1206301904863502337> getting note")
-        
-        notes=UserNotes(self.bot,interaction.user)
-        docs,pc=await notes.search_sim(content)
-        embs=[]
-        for n in docs:
-            print(n)
-            emb=await notes.note_to_embed(n)
-            embs.append(emb)
+        with Timer() as op_timer:
+            notes=UserNotes(self.bot,interaction.user)
+            docs,pc=await notes.search_sim(content)
+            embs=[]
+            for n in docs:
+                print(n)
+                emb=await notes.note_to_embed(n)
+                embs.append(emb)
 
         await pages_of_embeds(ctx, embs, ephemeral=True)
-        await mess.edit(content='got notes.')
+        
+        await mess.edit(content=f'got notes in {op_timer.get_time()} seconds')
 
     @app_commands.command(name="note_remove_all", description="Delete all your notes.")
     @app_commands.install_types(users=True)
