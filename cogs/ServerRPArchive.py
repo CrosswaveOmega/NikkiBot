@@ -256,9 +256,10 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await MessageTemplates.server_archive_message(ctx, statusmessage)
             return
         if profile.history_channel_id:
-            choice = await MessageTemplates.confirm(
+            choice, mes = await MessageTemplates.confirm(
                 ctx, "Are you sure you want to change your archive channel?"
             )
+            await mes.delete()
             if not choice:
                 await MessageTemplates.server_archive_message(
                     ctx, "The Server Archive Channel has been set."
@@ -744,15 +745,14 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 f"I need one final confirmation before I change the setting.  \n You are sure you want to change the archive scope?",
             ]
             for r in steps:
-                confirm = ConfirmView(user=ctx.author)
-                mes = await ctx.send(r, view=confirm)
-                await confirm.wait()
-                if not confirm.value:
+                confirm, mes=await MessageTemplates.confirm(ctx,r,ephemeral=False)
+
+                if not confirm:
                     await MessageTemplates.server_archive_message(
                         ctx, f"Very well, scope changed aborted.", ephemeral=True
                     )
-                confirm.clear_items()
-                await mes.edit(view=confirm)
+                    return
+                await mes.delete()
 
             profile.update(archive_scope=scope)
             self.guild_db_cache[str(ctx.guild.id)] = profile
@@ -780,15 +780,14 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 + "\n Did you check this?"
             ]
             for r in steps:
-                confirm = ConfirmView(user=ctx.author)
-                mes = await ctx.send(r, view=confirm)
-                await confirm.wait()
-                if not confirm.value:
+                confirm, mes = await MessageTemplates.confirm(ctx,r,ephemeral=False)
+
+                if not confirm:
                     await MessageTemplates.server_archive_message(
                         ctx, f"Very well, scope changed aborted.", ephemeral=True
                     )
-                confirm.clear_items()
-                await mes.edit(view=confirm)
+                    return
+                await mes.delete()
 
             profile.update(archive_dynamic=mode)
             self.guild_db_cache[str(ctx.guild.id)] = profile
@@ -862,15 +861,12 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                     TCGuildTask.remove_guild_task(guild.id,task_name)
                 # await MessageTemplates.server_archive_message(ctx,"There already is a running lazy archive.")
                 # return False
-            confirm = ConfirmView(user=ctx.author)
-            mes = await ctx.send(
-                "Lazy archive mode WILL take a long time to finish, please make sure you set all your parameters.",
-                view=confirm,
-            )
-            await confirm.wait()
-            if confirm.value:
+            confirm, mes = await MessageTemplates.confirm(
+                ctx,
+                "Lazy archive mode WILL take a long time to finish, please make sure you set all your parameters.", 
+                ephemeral=False) 
+            if confirm:
                 await mes.delete()
-                
                 message = await autochannel.send(
                     f"**ATTEMPTING SET UP OF AUTO COMMAND {task_name}**"
                 )
@@ -890,9 +886,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 new.to_task(bot)
                 bot.database.commit()
                 await MessageTemplates.server_archive_message(ctx, result)
-            else:
-                await mes.delete()
+
         else:
+            await mes.delete()
             await ctx.send("guild only.")
 
     @commands.guild_only()
@@ -913,26 +909,22 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                     ctx, "You do not have permission to use this command."
                 )
                 return False
-            confirm = ConfirmView(user=ctx.author)
-            mes = await ctx.send("Are you sure about this?", view=confirm)
-            await confirm.wait()
-            if confirm.value:
+            confirm, mes = await MessageTemplates.confirm(ctx,"Are you sure about this?", ephemeral=False)
+
+            if confirm:
                 await mes.delete()
                 ChannelSep.delete_channel_seps_by_server_id(ctx.guild.id)
                 ArchivedRPMessage.reset_channelsep_data(ctx.guild.id)
                 profile.update(last_group_num=0)
-                confirm2 = ConfirmView(user=ctx.author)
-                mes = await ctx.send(
+                confirm2,mes2 = await MessageTemplates.confirm(ctx,
                     "I can delete the current history channel if you want to start fresh, is that ok?",
-                    view=confirm2,
                 )
-                await confirm2.wait()
-                if confirm2.value:
+                if confirm2:
                     archive_channel = ctx.guild.get_channel(profile.history_channel_id)
                     cloned = await archive_channel.clone()
                     profile.update(history_channel_id=cloned.id)
                     await archive_channel.delete()
-                await mes.delete()
+                await mes2.delete()
                 profile.last_archive_time = None
                 self.bot.database.commit()
                 mess2 = ArchivedRPMessage.get_archived_rp_messages_with_null_posted_url(
@@ -971,7 +963,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                     ctx, "You do not have permission to use this command."
                 )
                 return False
-            confirm = ConfirmView(user=ctx.author)
+            
             steps = [
                 "# Warning! \n  THIS WILL COMPLETELY ERASE ALL DATA ARCHIVED FROM THIS SERVER!"
                 + "\nAre you sure about this?",
@@ -980,17 +972,16 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 f"I need one final confirmation before I change the setting.  \n You are sure you want to delete this server's data?",
             ]
             for r in steps:
-                confirm = ConfirmView(user=ctx.author)
-                mes = await ctx.send(r, view=confirm)
-                await confirm.wait()
-                if not confirm.value:
+                confirm,mes = await MessageTemplates.confirm(ctx,r,False)
+
+                if not confirm:
+                    await mes.delete()
                     await MessageTemplates.server_archive_message(
                         ctx, f"Very well, scope changed aborted.", ephemeral=True
                     )
                     return
 
-            await confirm.wait()
-            if confirm.value:
+            if confirm:
                 await mes.delete()
                 ChannelSep.delete_channel_seps_by_server_id(ctx.guild.id)
                 session = DatabaseSingleton.get_session()
@@ -1005,13 +996,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 count=ArchivedRPMessage.count_all(ctx.guild.id)
                 await ctx.send(count)
                 profile.update(last_group_num=0)
-                confirm2 = ConfirmView(user=ctx.author)
-                mes = await ctx.send(
-                    "I can delete the current history channel if you want to start fresh, is that ok?",
-                    view=confirm2,
-                )
-                await confirm2.wait()
-                if confirm2.value:
+                confirm2,mes = await MessageTemplates.confirm(ctx,"I can delete the current history channel if you want to start fresh, is that ok?",False)
+
+                if confirm2:
                     archive_channel = ctx.guild.get_channel(profile.history_channel_id)
                     cloned = await archive_channel.clone()
                     profile.update(history_channel_id=cloned.id)

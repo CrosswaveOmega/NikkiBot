@@ -14,7 +14,7 @@ import logging.handlers
 from utility import MessageTemplates
 
 from discord.ext import commands
-
+from discord import app_commands
 
 import gui
 

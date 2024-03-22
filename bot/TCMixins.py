@@ -58,7 +58,7 @@ class NonContextMenu:
             "nsfw": nsfw,
             "auto_locale_strings": auto_locale_strings,
             "extras": extras,
-            "integration_types":flags
+            "allowed_installs":flags
         }
 
     def __repr__(self):
@@ -165,11 +165,11 @@ def super_context_menu(
             ctx_comms[cls_name] = []
         functionname = func.__name__
         actual_name = functionname.title() if name is MISSING else name
-        uflags=discord.flags.AppIntegrationType.none()
+        uflags=discord.flags.AppInstallationType.none()
         uflags.guild_install=True
         uflags.user_install=False
         if flags=="user":
-            uflags=discord.flags.AppIntegrationType.none()
+            uflags=discord.flags.AppInstallationType.none()
             uflags.user_install=True
             uflags.guild_install=False
         ctx_menu = NonContextMenu(

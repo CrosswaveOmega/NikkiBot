@@ -15,7 +15,7 @@ from gptmod.chromatools import DocumentScoreVector, ChromaTools
 import gptmod.sentence_mem as smem
 from utility import WebhookMessageWrapper as web
 import gui
-
+from .AICalling import AIMessageTemplates
 import uuid
 from langchain.docstore.document import Document
 
@@ -197,7 +197,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
         )
     @app_commands.command(name="search", description="search the interwebs.")
     @app_commands.describe(query="Query to search google with.")
-    @app_commands.install_types(guilds=True, users=True)
+    @app_commands.allow_installs(guilds=True, users=True)
     async def websearch(self, interaction: discord.Interaction, query:str) -> None:
         """Do a web search"""
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -228,25 +228,29 @@ class Global(commands.Cog, TC_Cog_Mixin):
 
     @app_commands.command(name="supersearch", description="use db search.")
     @app_commands.describe(query="Query to search DB for")
-    @app_commands.install_types(guilds=True, users=True)
+    @app_commands.allow_installs(guilds=True, users=True)
     async def doc_talk(self, interaction: discord.Interaction, query:str) -> None:
         """get bot info for this server"""
         owner=await interaction.client.is_owner(interaction.user)
         if not owner:
             await interaction.response.send_message("This command is owner only.")
             return
+        
         ctx: commands.Context = await self.bot.get_context(interaction)
         mess=await ctx.send("<a:LoadingBlue:1206301904863502337> Searching")
         try:
             ans,source,_=await ra.actions.research_op(query, 9)
             emb = discord.Embed(description=ans)
             emb.add_field(name="source", value=str(source)[:1000], inline=False)
+            
+            audit = await AIMessageTemplates.add_emb_audit(ctx, embed=emb)
+
             await mess.edit(content=None,embed=emb)
         except Exception as e:
             await ctx.send("something went wrong...")
 
     @app_commands.command(name="note_topic", description="WIP.  Set your note topic")
-    @app_commands.install_types(users=True)
+    @app_commands.allow_installs(users=True)
     @app_commands.describe( topic='The topic to add all notes to unless stated otherwise.')
     async def set_topic(self, interaction: discord.Interaction, topic:str) -> None:
         """get bot info for this server"""
@@ -261,7 +265,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
 
 
     @app_commands.command(name="note_add", description="WIP.  Add a quick note using key.")
-    @app_commands.install_types(users=True)
+    @app_commands.allow_installs(users=True)
     @app_commands.describe(content="Content of your note.",
                            key="The key to save your note under.",
                            topic='The topic for the key to your note under.  Use set topic to change the default one.')
@@ -278,7 +282,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
         await mess.edit(content=f'added note in {op_timer.get_time()} seconds')
 
     @app_commands.command(name="note_get", description="WIP.  search for a note")
-    @app_commands.install_types(users=True)
+    @app_commands.allow_installs(users=True)
     @app_commands.describe(content="Content to search",)
     async def get_note(self, interaction: discord.Interaction, content:str )-> None:
         """get 5 notes"""
@@ -293,13 +297,11 @@ class Global(commands.Cog, TC_Cog_Mixin):
                 print(n)
                 emb=await notes.note_to_embed(n)
                 embs.append(emb)
-
         await pages_of_embeds(ctx, embs, ephemeral=True)
-        
         await mess.edit(content=f'got notes in {op_timer.get_time()} seconds')
 
     @app_commands.command(name="note_remove_all", description="Delete all your notes.")
-    @app_commands.install_types(users=True)
+    @app_commands.allow_installs(users=True)
     @app_commands.describe()
     async def purge_notes(self, interaction: discord.Interaction) -> None:
         """get bot info for this server"""
@@ -313,7 +315,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
         await mess.edit(content='Deleted all your notes.')
 
     @app_commands.command(name="pingtest", description="ping")
-    @app_commands.install_types(guilds=True, users=True)
+    @app_commands.allow_installs(guilds=True, users=True)
     async def ping(self, interaction: discord.Interaction) -> None:
         """get bot info for this server"""
         await interaction.response.send_message("Reading you loud and clear!")
@@ -321,7 +323,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
     
     
     @app_commands.command(name="context_test", description="ping")
-    @app_commands.install_types(guilds=True, users=True)
+    @app_commands.allow_installs(users=True)
     async def ping2(self, interaction: discord.Interaction) -> None:
         """get bot info for this server"""
         await interaction.response.send_message("Reading you loud and clear!")
