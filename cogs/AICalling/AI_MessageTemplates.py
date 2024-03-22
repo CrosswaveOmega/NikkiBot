@@ -108,14 +108,12 @@ class AIMessageTemplates(MessageTemplates):
             gui.gprint("No monitor channel detected in assets.")
 
     @staticmethod
-    async def add_emb_audit(
-        ctx: commands.Context, embed: Embed, **kwargs
-    ):
+    async def add_emb_audit(ctx: commands.Context, embed: Embed, **kwargs):
         """Create an embed"""
 
         audit_channel = AssetLookup.get_asset("monitor_channel")
         if audit_channel:
-            user =  ctx.author
+            user = ctx.author
             embed.add_field(
                 name="User Data",
                 value=f"{user.name}, \n User ID: {user.id}",

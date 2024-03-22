@@ -332,7 +332,9 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         Returns:
             Tuple[int, str]: A tuple containing the count of successfully processed links and a formatted status string.
         """
-        loader = ra.SourceLinkLoader(chromac=chromac, statusmessage=statmess, embed=embed)
+        loader = ra.SourceLinkLoader(
+            chromac=chromac, statusmessage=statmess, embed=embed
+        )
         return await loader.load_links(ctx, all_links, override)
 
     async def web_search(
@@ -1418,7 +1420,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
 
 async def setup(bot):
-    module_name='cogs.ResearchAgent'
+    module_name = "cogs.ResearchAgent"
     try:
         importlib.reload(ra)
         print(f"{module_name} reloaded successfully.")

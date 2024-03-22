@@ -48,17 +48,17 @@ class NonContextMenu:
         callback: str,
         nsfw: bool = False,
         auto_locale_strings: bool = True,
-        flags= None,
+        flags=None,
         extras: Dict[Any, Any] = MISSING,
     ):
         self.callname = callback
-        self.flags=flags
+        self.flags = flags
         self.initalizer = {
             "name": name,
             "nsfw": nsfw,
             "auto_locale_strings": auto_locale_strings,
             "extras": extras,
-            "allowed_installs":flags
+            "allowed_installs": flags,
         }
 
     def __repr__(self):
@@ -114,7 +114,7 @@ def super_context_menu(
     nsfw: bool = False,
     auto_locale_strings: bool = True,
     extras: Dict[Any, Any] = MISSING,
-    flags= None
+    flags=None,
 ):
     """Because I can't define a ContextMenu inside a class, this decorator makes a psuedo
     Context menu to store the initalization parameters, and stores that into a global dictionary
@@ -165,13 +165,13 @@ def super_context_menu(
             ctx_comms[cls_name] = []
         functionname = func.__name__
         actual_name = functionname.title() if name is MISSING else name
-        uflags=discord.flags.AppInstallationType.none()
-        uflags.guild_install=True
-        uflags.user_install=False
-        if flags=="user":
-            uflags=discord.flags.AppInstallationType.none()
-            uflags.user_install=True
-            uflags.guild_install=False
+        uflags = discord.flags.AppInstallationType.none()
+        uflags.guild_install = True
+        uflags.user_install = False
+        if flags == "user":
+            uflags = discord.flags.AppInstallationType.none()
+            uflags.user_install = True
+            uflags.guild_install = False
         ctx_menu = NonContextMenu(
             name=actual_name,
             nsfw=nsfw,

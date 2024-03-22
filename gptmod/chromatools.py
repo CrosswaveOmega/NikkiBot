@@ -19,6 +19,7 @@ from langchain_core.utils import xor_args
 from langchain_core.runnables.config import run_in_executor
 from langchain.vectorstores.chroma import Chroma
 from chromadb.utils.batch_utils import create_batches
+from chromadb.api.types import ID, OneOrMany, Where, WhereDocument
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 from chromadb.config import Settings
@@ -355,3 +356,32 @@ class ChromaBetter(Chroma):
             where_document=where_document,
         )
         return docs
+
+    async def aget(
+        self,
+        ids: Optional[OneOrMany[ID]] = None,
+        where: Optional[Where] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        where_document: Optional[WhereDocument] = None,
+        include: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """Gets the collection.
+
+        Args:
+            ids: The ids of the embeddings to get. Optional.
+            where: A Where type dict used to filter results by.
+                   E.g. `{"color" : "red", "price": 4.20}`. Optional.
+            limit: The number of documents to return. Optional.
+            offset: The offset to start returning results from.
+                    Useful for paging results with limit. Optional.
+            where_document: A WhereDocument type dict used to filter by the documents.
+                            E.g. `{$contains: "hello"}`. Optional.
+            include: A list of what to include in the results.
+                     Can contain `"embeddings"`, `"metadatas"`, `"documents"`.
+                     Ids are always included.
+                     Defaults to `["metadatas", "documents"]`. Optional.
+        """
+        return await run_in_executor(
+            None, self.get, ids, where, limit, offset, where_document, include
+        )

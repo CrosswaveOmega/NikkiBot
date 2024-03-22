@@ -38,15 +38,17 @@ This file is for an extended Bot Class for this Discord Bot.
 
 """
 
+
 class IntegrationCreateFilter(logging.Filter):
     def filter(self, record):
         # Check if the log record's level is DEBUG and message contains "INTEGRATION_CREATE"
-        if record.levelno ==logging.DEBUG:
+        if record.levelno == logging.DEBUG:
             if "INTEGRATION_CREATE" in record.getMessage():
-                return True  
+                return True
             return False
         return True
-    
+
+
 intent = discord.Intents.default()
 intent.presences = True
 intent.message_content = True
@@ -165,11 +167,10 @@ class TCBot(
 
             self.database_on()
 
-            #Update extensions.
+            # Update extensions.
             self.update_ext_list()
             await self.reload_all()
 
-            
             dbcheck = self.database.database_check()
             gui.gprint(dbcheck)
             # audit old guild data.
@@ -178,16 +179,15 @@ class TCBot(
             # Sync to all needed servers.
             await self.all_guild_startup()
             gui.gprint("BOT SYNCED!")
-            self.delete_queue_message.start() #pylint:ignore
-            self.post_queue_message.start() #pylint:ignore
-            self.status_ticker.start() #pylint:ignore
+            self.delete_queue_message.start()  # pylint:ignore
+            self.post_queue_message.start()  # pylint:ignore
+            self.status_ticker.start()  # pylint:ignore
             for g in self.guilds:
                 mytasks = TCGuildTask.get_tasks_by_server_id(g.id)
                 for t in mytasks:
                     t.to_task(self)
 
             self.bot_ready = True
-            
 
             # start playwright
             pmode = self.config.getboolean("feature", "playwright")
@@ -247,9 +247,8 @@ class TCBot(
             "[LINE] [{asctime}] [{levelname:<8}] {name}: {message}", dt_fmt, style="{"
         )
         handler2.setFormatter(formatter2)
-        handler2.addFilter(IntegrationCreateFilter('logfilter'))
+        handler2.addFilter(IntegrationCreateFilter("logfilter"))
         discord.utils.setup_logging(level=logging.DEBUG, handler=handler2, root=False)
-
 
         self.logs = logging.getLogger("TCLogger")
         self.logs.setLevel(logging.WARNING)

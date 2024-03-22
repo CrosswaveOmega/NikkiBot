@@ -31,7 +31,6 @@ from gptmod.sentence_mem import group_documents
 from gptmod.ReadabilityLoader import ReadableLoader
 
 
-
 tosplitby = [
     # First, try to split along Markdown headings (starting with level 2)
     "\n#{1,6} ",
@@ -611,7 +610,12 @@ async def debug_get(
         )
         return res
 
-def generate_prompt(concise_summary_range="4-7", detailed_response_range="5-10", direct_quotes_range="3-4"):
+
+def generate_prompt(
+    concise_summary_range="4-7",
+    detailed_response_range="5-10",
+    direct_quotes_range="3-4",
+):
     prompt = f"""
     Use the provided sources to extract important bullet points
      to answer the question provided to you by the user.
@@ -647,16 +651,19 @@ def generate_prompt(concise_summary_range="4-7", detailed_response_range="5-10",
      If there is code in the source, you must place it here.
     """
     return prompt
+
+
 def set_ranges_based_on_token_size(tokens):
     ranges_dict = {
         250: ("4-7", "7-10", "3-4"),
         500: ("5-8", "8-12", "4-5"),
-        1000: ("6-9", "9-14", "5-6")
+        1000: ("6-9", "9-14", "5-6"),
     }
     for size, ranges in sorted(ranges_dict.items()):
         if tokens < size:
             return ranges
     return ("7-10", "8-16", "6-7")
+
 
 async def get_points(
     question: str, docs: List[Tuple[Document, float, Vector]]
@@ -675,17 +682,13 @@ async def get_points(
     Yields:
         Tuple[Document, float, str, int]: A tuple containing the Document object, its relevance score, the extracted bullet points, and the number of tokens used.
     """
-    
-    
-    sources=await group_documents([d[0] for d in docs])
+
+    sources = await group_documents([d[0] for d in docs])
     client = openai.AsyncOpenAI()
-    
-    
-    
+
     for e, tup in enumerate(sources):
-        
         doc = tup
-        
+
         tile = "NOTITLE" if "title" not in doc.metadata else doc.metadata["title"]
         output = f"""**ID**:{e}
         **Name:** {tile}
@@ -694,8 +697,8 @@ async def get_points(
         tokens = gptmod.util.num_tokens_from_messages(
             [{"role": "system", "content": output}], "gpt-3.5-turbo-0125"
         )
-        tok=set_ranges_based_on_token_size(tokens)
-        prompt=generate_prompt(*tok)
+        tok = set_ranges_based_on_token_size(tokens)
+        prompt = generate_prompt(*tok)
 
         messages = [
             {"role": "system", "content": prompt},
@@ -709,7 +712,7 @@ async def get_points(
             model="gpt-3.5-turbo-0125",
             messages=messages,
             timeout=60,
-            #response_format={"type": "json_object"}
+            # response_format={"type": "json_object"}
         )
 
         doctup = (doc, 0.5, completion.choices[0].message.content, tokens)
@@ -728,7 +731,7 @@ async def format_answer(question: str, docs: List[Tuple[Document, float, Any]]) 
     Returns:
         str: The formatted answer as a string.
     """
-    
+
     prompt = """
 
 **Task:**

@@ -8,9 +8,6 @@ import logging
 import logging.handlers
 
 
-
-
-
 from utility import MessageTemplates
 
 from discord.ext import commands
@@ -197,7 +194,7 @@ async def on_ready():
         await bot.after_startup()
     except Exception as e:
         print(e)
-        bot.logs.error(str(e),exc_info=e)
+        bot.logs.error(str(e), exc_info=e)
         await bot.close()
         raise e
     gui.gprint("Setup done.")

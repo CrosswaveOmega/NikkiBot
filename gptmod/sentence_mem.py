@@ -129,9 +129,10 @@ def split_document(doc: Document, present_mem):
             print("skipping chunk due to insufficient size.")
     return newdata
 
-async def group_documents(docs:List[Document],max_tokens=3000):
+
+async def group_documents(docs: List[Document], max_tokens=3000):
     sources: Dict[str : Dict[int, Any]] = {}
-    context=""
+    context = ""
     for e, tup in enumerate(docs):
         doc = tup
         source, split = doc.metadata["source"], doc.metadata["split"]
@@ -146,13 +147,13 @@ async def group_documents(docs:List[Document],max_tokens=3000):
         if tokens >= max_tokens:
             print("token break")
             break
-    
-    out_list=[]
+
+    out_list = []
     for source, d in sources.items():
         newc = ""
         sorted_dict = sorted(d.items(), key=lambda x: x[0])
         lastkey = -6
-        
+
         for k, v in sorted_dict:
             # print(source, k, v)
             if k != 0 and abs(k - lastkey) > 1:
@@ -161,12 +162,11 @@ async def group_documents(docs:List[Document],max_tokens=3000):
             lastkey = k
             newc += f"[split:{k}]:{v}" + "  "
         if newc:
-            meta=sorted_dict[0][1].metadata
-            meta['splits']=len(sorted_dict)
-            doc=Document(page_content=newc.strip(),metadata=meta)
+            meta = sorted_dict[0][1].metadata
+            meta["splits"] = len(sorted_dict)
+            doc = Document(page_content=newc.strip(), metadata=meta)
             out_list.append(doc)
     return out_list
-                
 
 
 def indent_string(input_string: str, spaces: int = 2):
@@ -305,14 +305,14 @@ class SentenceMemory:
                 )
             )
             context = ""
-            
+
             docs2 = (d[0] for d in docs)
             all_neighbors = await self.get_neighbors(docs2)
 
         checktime = all_timer.get_time()
-        
+
         with Timer() as dict_timer:
-            sources=await group_documents(all_neighbors)
+            sources = await group_documents(all_neighbors)
 
         new_output = ""
         with Timer() as loadtimer:

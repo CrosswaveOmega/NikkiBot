@@ -53,7 +53,7 @@ class PageClassContainer:
             selectlist.append(
                 discord.SelectOption(
                     label=f"{i.title}, Page: {e}",
-                    description="Go to page {e}",
+                    description=f"Go to page {e}",
                     value=e,
                     default=True if self.page - 1 == e else False,
                 )
@@ -171,7 +171,7 @@ class EmbedPageButtons(discord.ui.View):
     async def exit_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
-        # Call mycallback method of the callbacker object with "exit" argument
+        # Call mycallback method of the callbacker object with "stop" argument
         await self.callbacker.mycallback(interaction, self, "exit")
 
     # First button

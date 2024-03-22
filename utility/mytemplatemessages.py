@@ -200,7 +200,7 @@ class MessageTemplates:
         await confirm.wait()
         confirm.clear_items()
         await mes.edit(view=confirm)
-        return confirm.value
+        return confirm.value, mes
 
     @staticmethod
     async def tag_message(

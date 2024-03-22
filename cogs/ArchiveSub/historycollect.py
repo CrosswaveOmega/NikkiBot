@@ -41,7 +41,7 @@ class ArchiveContext:
         latest_time=None,
         total_ignored=0,
         color=0,
-        lazy=False
+        lazy=False,
     ):
         """Initializes the ArchiveContext instance.
 
@@ -72,9 +72,9 @@ class ArchiveContext:
         self.total_ignored = total_ignored
         self.server_color = color
         self.collect_limit = None
-        self.lazy=lazy
+        self.lazy = lazy
         if self.lazy:
-            self.collect_limit=LAZYGRAB_LIMIT
+            self.collect_limit = LAZYGRAB_LIMIT
 
     def evaluate_add(self, thisMessage):
         """Determines whether a message should be added based on scope.
@@ -126,15 +126,17 @@ class ArchiveContext:
         """
         self.latest_time = max(new, self.latest_time)
 
-    async def get_first_time(self, cobj:discord.TextChannel, carch:ChannelArchiveStatus):
+    async def get_first_time(
+        self, cobj: discord.TextChannel, carch: ChannelArchiveStatus
+    ):
         """Get the after time for the given text channel.
 
         Args:
             cobj (discord.TextChannel): _description_
         """
         if self.lazy:
-            timev=carch.latest_archive_time
-            return {'limit':self.collect_limit,'after':timev,'oldest_first':True}
+            timev = carch.latest_archive_time
+            return {"limit": self.collect_limit, "after": timev, "oldest_first": True}
         lasttime = (
             None
             if cobj.last_message_id is None
@@ -144,7 +146,7 @@ class ArchiveContext:
         if lasttime and timev:
             if lasttime < timev:
                 gui.gprint(f"probably don't need to archive {cobj.name}")
-                return 'skip'
+                return "skip"
 
         await carch.get_first_and_last(cobj)
         if carch.first_message_time is not None:
@@ -153,8 +155,7 @@ class ArchiveContext:
                 timev = carch.first_message_time
         else:
             timev = None
-        return {'after':timev,'oldest_first':True}
-
+        return {"after": timev, "oldest_first": True}
 
     async def edit_mess(self, pre="", cname="", seconds=15):
         """Edits the status message to update the progress of the archival process.
@@ -174,7 +175,9 @@ class ArchiveContext:
         await self.status_mess.editw(min_seconds=seconds, content=text, embed=emb),
 
 
-async def iter_hist_messages(cobj: discord.TextChannel, actx: ArchiveContext)->Tuple[List[discord.Message],bool,int]:
+async def iter_hist_messages(
+    cobj: discord.TextChannel, actx: ArchiveContext
+) -> Tuple[List[discord.Message], bool, int]:
     """
     This method asynchronously iterates over the historical messages in a given discord text channel and archives them based on
     the context of the archive. The archive context determines things like the time of the last stored message, whether or not to
@@ -190,11 +193,16 @@ async def iter_hist_messages(cobj: discord.TextChannel, actx: ArchiveContext)->T
     messages = []
     mlen = 0
     carch = ChannelArchiveStatus.get_by_tc(cobj)
-    timev=await actx.get_first_time(cobj,carch)
-    if timev=='skip': return [], False, 0
+    timev = await actx.get_first_time(cobj, carch)
+    if timev == "skip":
+        return [], False, 0
     count = 0
     lastmess = cobj.last_message_id
-    lasttime=discord.utils.snowflake_time(cobj.last_message_id) if cobj.last_message_id else None
+    lasttime = (
+        discord.utils.snowflake_time(cobj.last_message_id)
+        if cobj.last_message_id
+        else None
+    )
     gui.gprint(cobj.name, " ", lastmess, " ", lasttime, " ", timev)
     reallasttime = None
 
@@ -230,7 +238,7 @@ async def iter_hist_messages(cobj: discord.TextChannel, actx: ArchiveContext)->T
     else:
         gui.gprint(f"Did not need to archive {cobj.name}")
     actx.bot.database.commit()
-    return messages, mlen>0, count
+    return messages, mlen > 0, count
 
 
 async def lazy_grab(cobj: discord.TextChannel, actx: ArchiveContext):
@@ -318,7 +326,7 @@ async def collect_server_history_lazy(ctx, statmess=None, **kwargs):
     gui.gprint(len(channels))
     for c in channels:
         gui.print(c)
-        
+
         arch_ctx.channel_spot += 1
         channel = guild.get_channel_or_thread(c.channel_id)
         if channel:
@@ -363,8 +371,7 @@ async def setup_lazy_grab(ctx, **kwargs):
     current_channel_count, total_channels = 0, 0
     current_channel_every = max(chanlen // 50, 1)
 
-
-    #Get all archivable channels.
+    # Get all archivable channels.
     chantups = []
     chantups.extend(("forum", chan) for chan in guild.forums)
     chantups.extend(("textchan", chan) for chan in guild.text_channels)

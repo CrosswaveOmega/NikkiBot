@@ -745,7 +745,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 f"I need one final confirmation before I change the setting.  \n You are sure you want to change the archive scope?",
             ]
             for r in steps:
-                confirm, mes=await MessageTemplates.confirm(ctx,r,ephemeral=False)
+                confirm, mes = await MessageTemplates.confirm(ctx, r, ephemeral=False)
 
                 if not confirm:
                     await MessageTemplates.server_archive_message(
@@ -780,7 +780,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 + "\n Did you check this?"
             ]
             for r in steps:
-                confirm, mes = await MessageTemplates.confirm(ctx,r,ephemeral=False)
+                confirm, mes = await MessageTemplates.confirm(ctx, r, ephemeral=False)
 
                 if not confirm:
                     await MessageTemplates.server_archive_message(
@@ -857,14 +857,15 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 return False
             if LazyContext.get(guild.id) != None:
                 LazyContext.remove(guild.id)
-                if TCGuildTask.get(guild.id,task_name):
-                    TCGuildTask.remove_guild_task(guild.id,task_name)
+                if TCGuildTask.get(guild.id, task_name):
+                    TCGuildTask.remove_guild_task(guild.id, task_name)
                 # await MessageTemplates.server_archive_message(ctx,"There already is a running lazy archive.")
                 # return False
             confirm, mes = await MessageTemplates.confirm(
                 ctx,
-                "Lazy archive mode WILL take a long time to finish, please make sure you set all your parameters.", 
-                ephemeral=False) 
+                "Lazy archive mode WILL take a long time to finish, please make sure you set all your parameters.",
+                ephemeral=False,
+            )
             if confirm:
                 await mes.delete()
                 message = await autochannel.send(
@@ -909,14 +910,17 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                     ctx, "You do not have permission to use this command."
                 )
                 return False
-            confirm, mes = await MessageTemplates.confirm(ctx,"Are you sure about this?", ephemeral=False)
+            confirm, mes = await MessageTemplates.confirm(
+                ctx, "Are you sure about this?", ephemeral=False
+            )
 
             if confirm:
                 await mes.delete()
                 ChannelSep.delete_channel_seps_by_server_id(ctx.guild.id)
                 ArchivedRPMessage.reset_channelsep_data(ctx.guild.id)
                 profile.update(last_group_num=0)
-                confirm2,mes2 = await MessageTemplates.confirm(ctx,
+                confirm2, mes2 = await MessageTemplates.confirm(
+                    ctx,
                     "I can delete the current history channel if you want to start fresh, is that ok?",
                 )
                 if confirm2:
@@ -963,7 +967,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                     ctx, "You do not have permission to use this command."
                 )
                 return False
-            
+
             steps = [
                 "# Warning! \n  THIS WILL COMPLETELY ERASE ALL DATA ARCHIVED FROM THIS SERVER!"
                 + "\nAre you sure about this?",
@@ -972,7 +976,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 f"I need one final confirmation before I change the setting.  \n You are sure you want to delete this server's data?",
             ]
             for r in steps:
-                confirm,mes = await MessageTemplates.confirm(ctx,r,False)
+                confirm, mes = await MessageTemplates.confirm(ctx, r, False)
 
                 if not confirm:
                     await mes.delete()
@@ -991,12 +995,16 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 session.commit()
                 await ctx.send(ChannelArchiveStatus.count_all(ctx.guild.id))
                 ChannelArchiveStatus.delete_status_by_server_id(ctx.guild.id)
-                
+
                 await ctx.send(ChannelArchiveStatus.count_all(ctx.guild.id))
-                count=ArchivedRPMessage.count_all(ctx.guild.id)
+                count = ArchivedRPMessage.count_all(ctx.guild.id)
                 await ctx.send(count)
                 profile.update(last_group_num=0)
-                confirm2,mes = await MessageTemplates.confirm(ctx,"I can delete the current history channel if you want to start fresh, is that ok?",False)
+                confirm2, mes = await MessageTemplates.confirm(
+                    ctx,
+                    "I can delete the current history channel if you want to start fresh, is that ok?",
+                    False,
+                )
 
                 if confirm2:
                     archive_channel = ctx.guild.get_channel(profile.history_channel_id)
@@ -1249,7 +1257,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
         """
 
-        #SETUP
+        # SETUP
         bot = ctx.bot
         channel = ctx.message.channel
         guild: discord.Guild = channel.guild
@@ -1257,12 +1265,12 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await ctx.send("This command will only work inside a guild.")
             return
         from cogs.ArchiveSub.archive_compiler import ArchiveCompiler
-        actx=ArchiveCompiler(ctx)
-        outcome=await actx.start()
+
+        actx = ArchiveCompiler(ctx)
+        outcome = await actx.start()
         if outcome:
             self.guild_db_cache[str(guild.id)] = outcome
             bot.database.commit()
-        
 
     @commands.command(extras={"guildtask": ["rp_history"]})
     async def makeCalendar(self, ctx):

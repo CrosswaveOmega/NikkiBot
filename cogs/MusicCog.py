@@ -96,7 +96,9 @@ class MusicCog(commands.Cog, TC_Cog_Mixin):
         for i in toremove:
             MusicManager.remove_player(i)
 
-    mp = app_commands.Group(name="mp", description="Music Player Commands", guild_only=True)
+    mp = app_commands.Group(
+        name="mp", description="Music Player Commands", guild_only=True
+    )
 
     @app_commands.command(name="music")
     async def music(self, interaction: discord.Interaction) -> None:
@@ -940,7 +942,6 @@ class MusicCog(commands.Cog, TC_Cog_Mixin):
             MusicManager.get(guild).song_add_queue.put(song)
             MusicManager.get(guild).processsize+=1
         await MessageTemplatesMusic.music_msg(ctx, "Playlist", f"Loaded size {len(playlist)} playlist `{playlistname}` into processing queue.  Please wait.")"""
-
 
 
 async def setup(bot):
