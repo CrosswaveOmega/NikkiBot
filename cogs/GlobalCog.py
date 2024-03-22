@@ -401,8 +401,6 @@ class Global(commands.Cog, TC_Cog_Mixin):
         """get bot info for this server"""
 
         ctx: commands.Context = await self.bot.get_context(interaction)
-        if topic == "any" and interaction.user.id in self.usertopics:
-            topic = self.usertopics[interaction.user.id]
         mess = await ctx.send("<a:LoadingBlue:1206301904863502337> deleting all note")
         notes = UserNotes(self.bot, interaction.user)
         await notes.delete_user_notes(interaction.user.id)
