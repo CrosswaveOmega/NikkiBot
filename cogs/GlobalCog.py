@@ -582,7 +582,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
             docs = await notes.get_topics()
             page = commands.Paginator(prefix=None, suffix=None)
             for k, v in docs.items():
-                page.add_line(f"{k}:{v}")
+                page.add_line(f"`{k}`:{v}")
 
             embs = []
             for p in page.pages:
@@ -619,7 +619,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
                 pages = len(page.pages)
                 for e, p in enumerate(page.pages):
                     spages = f"{e+1}/{pages}" if pages > 1 else ""
-                    em = discord.Embed(title=f"Topic: {k}. {spages}", description=p)
+                    em = discord.Embed(title=f"Topic: `{k}` {spages}", description=p)
                     embs.append(em)
         await pages_of_embeds(ctx, embs, ephemeral=True)
         await mess.edit(
