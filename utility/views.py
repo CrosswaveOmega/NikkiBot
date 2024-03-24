@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Coroutine
 import discord
 from discord.interactions import Interaction
@@ -397,3 +398,51 @@ class RRuleView(discord.ui.View):
         # Handle any errors that occur during the interaction
         gui.gprint(error)
         await interaction.response.send_message(f"An error occurred: {error}")
+
+
+class BaseView(discord.ui.View):
+    """Base class for responding views."""
+
+    def __init__(self, *, user, timeout=30 * 15):
+        super().__init__(timeout=timeout)
+        self.user = user
+        self.value = False
+        self.timeout_at = discord.utils.utcnow()
+        if self.timeout:
+            self.timeout_at = discord.utils.utcnow() + timedelta(seconds=self.timeout)
+
+    def update_timeout(self):
+        if self.timeout:
+            self.timeout_at = discord.utils.utcnow() + timedelta(seconds=self.timeout)
+
+    def get_timeout_dt(self) -> datetime:
+        """get timeout datetime."""
+        return self.timeout_at
+
+    async def interaction_check(self, interaction: Interaction[discord.Client]):
+        return interaction.user == self.user
+
+    async def on_error(
+        self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item
+    ):
+        gui.gprint(str(error))
+        log = logging.getLogger("discord")
+
+        log.error(
+            "Ignoring exception in interaction %s for item %s",
+            interaction,
+            item,
+            exc_info=error,
+        )
+        if not interaction.response.is_done():
+            await interaction.response.send_message(
+                f"Oops! Something went wrong: {str(error)}.", ephemeral=True
+            )
+        else:
+            await interaction.followup.send(
+                f"Oops! Something went wrong: {str(error)}.", ephemeral=True
+            )
+
+    async def on_timeout(self) -> None:
+        self.value = False
+        self.stop()

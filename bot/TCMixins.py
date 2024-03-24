@@ -53,7 +53,7 @@ class NonContextMenu:
     ):
         self.callname = callback
         self.flags = flags
-        print('non',self.flags)
+        print("non", self.flags)
         self.initalizer = {
             "name": name,
             "nsfw": nsfw,
@@ -173,7 +173,7 @@ def super_context_menu(
             uflags = discord.flags.AppInstallationType.none()
             uflags.user = True
             uflags.guild = False
-        
+
         ctx_menu = NonContextMenu(
             name=actual_name,
             nsfw=nsfw,
