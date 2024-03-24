@@ -564,10 +564,10 @@ class Global(commands.Cog, TC_Cog_Mixin):
         await mess.edit(content=f"got notes in {op_timer.get_time()} seconds")
 
     @gnote.command(
-        name="get_topics",
-        description="WIP.  Get all of your note topics.",
+        name="list_topics",
+        description="WIP.  List all of your note topics.",
     )
-    async def get_topics(
+    async def list_topics(
         self,
         interaction: discord.Interaction,
     ) -> None:
