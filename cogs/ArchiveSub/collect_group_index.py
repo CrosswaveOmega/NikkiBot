@@ -389,6 +389,4 @@ async def do_group(
     if status_mess:
         await status_mess.delete()
 
-    to_send += ts
-
     return length, group_id
