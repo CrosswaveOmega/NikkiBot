@@ -1,3 +1,4 @@
+import copy
 import io
 import logging
 import discord
@@ -197,7 +198,7 @@ class PageClassContainerWithAttachments(PageClassContainer):
         emb,fil = Embed(title="No Pages"),None
         if len(self.display) > 0:
             emb,fl = self.display[self.page - 1]
-            fil=discord.File(io.BytesIO(fl[0]),filename=fl[1])
+            fil=copy.deepcopy(fl)
         emb.set_author(
             name=" Page {}/{}, {} total".format(self.page, self.maxpages, self.length)
         )
