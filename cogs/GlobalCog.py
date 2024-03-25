@@ -193,7 +193,7 @@ class UserNotes:
         self.shortterm = {}
 
     async def add_to_mem(
-        self, ctx: commands.Context, content: str, key: str = "gen", topic: str = "any", file:Optional[discord.File]=None
+        self, ctx: commands.Context, content: str, key: str = "gen", topic: str = "any", file:Optional[discord.File]=None,conttype:Optional[str]=None
     ):
         meta = {}
         meta["key"] = key
@@ -203,9 +203,11 @@ class UserNotes:
         meta["date"] = ctx.message.created_at.timestamp()
         meta['fileuri']=""
         meta['fname']=""
+        meta['cont_type']=""
         if file:
             meta['fileuri']=await file_to_data_uri(file)
             meta['fname']=file.filename
+            meta['cont_type']=conttype
         meta["split"] = 1
         to_add = f"Topic: {topic}\n: Key:{key}\nContent:{content}"
         doc = Document(page_content=to_add, metadata=meta)
@@ -347,6 +349,10 @@ class UserNotes:
         if 'fname' in doc.metadata:
             if doc.metadata['fname']:
                 fil=await data_uri_to_file(doc.metadata['fileuri'],doc.metadata['fname'])
+                ct=doc.metadata.get('cont_type',None):
+                if ct:
+                    if 'image' in ct:
+                        embed.set_image(url=f'attachment//{doc.metadata['fname']}')
         if 'distance' in doc.metadata:
             embed.set_footer(text=f"Embedding similarity is {doc.metadata['distance']}.  ")
         return embed, fil
@@ -554,13 +560,13 @@ class Global(commands.Cog, TC_Cog_Mixin):
                 fil=await image.to_file()
                 typev=f" with {image.content_type}"
             await tmes.edit(
-                content="<a:LoadingBlue:1206301904863502337> adding note{typev} ...",
+                content=f"<a:LoadingBlue:1206301904863502337> adding note{typev} ...",
                 view=None,
                 embed=view.make_embed(),
             )
             with Timer() as op_timer:
                 notes = UserNotes(self.bot, interaction.user)
-                note = await notes.add_to_mem(ctx, c, k, t, file=fil)
+                note = await notes.add_to_mem(ctx, c, k, t, file=fil,conttype=typev)
                 emb, fil = await notes.note_to_embed(note)
                 await ctx.send(embed=emb, file=fil, ephemeral=True)
             await tmes.edit(
