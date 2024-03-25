@@ -349,7 +349,7 @@ class UserNotes:
         if 'fname' in doc.metadata:
             if doc.metadata['fname']:
                 fil=await data_uri_to_file(doc.metadata['fileuri'],doc.metadata['fname'])
-                ct=doc.metadata.get('cont_type',None):
+                ct=doc.metadata.get('cont_type',None)
                 if ct:
                     if 'image' in ct:
                         embed.set_image(url=f'attachment//{doc.metadata['fname']}')
