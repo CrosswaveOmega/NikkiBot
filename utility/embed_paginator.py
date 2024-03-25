@@ -219,7 +219,11 @@ class PageClassContainerWithAttachments(PageClassContainer):
         doedit=await self.do_change_callback(interaction,view,result,goto)
         if doedit:
             emb,fil = self.make_embed()
-            await interaction.response.edit_message(embed=emb, attachments=[fil],view=view)
+            if fil:
+                await interaction.response.edit_message(embed=emb, attachments=[fil],view=view)
+            elif not fil:
+                await interaction.response.edit_message(embed=emb, attachments=[],view=view)
+
 
 
 class EmbedPageButtons(discord.ui.View):
