@@ -35,10 +35,13 @@ topictype = app_commands.Range[str, 2, 128]
 keytype = app_commands.Range[str, 2, 128]
 contenttype = app_commands.Range[str, 5, 4096]
 
+from io import BytesIO
+
+    
 
 async def file_to_data_uri(file: discord.File) -> str:
     # Read the bytes from the file
-    with open(file.fp, 'rb') as f:
+    with BytesIO(file.fp.read()) as f:
         # Read the bytes from the file-like object
         file_bytes = f.read()
     # Base64 encode the bytes
