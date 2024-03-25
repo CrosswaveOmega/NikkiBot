@@ -348,11 +348,12 @@ class UserNotes:
         embed.add_field(name="key", value=doc.metadata["key"][:500])
         if 'fname' in doc.metadata:
             if doc.metadata['fname']:
-                fil=await data_uri_to_file(doc.metadata['fileuri'],doc.metadata['fname'])
+                filename=doc.metadata['fname']
+                fil=await data_uri_to_file(doc.metadata['fileuri'],filename)
                 ct=doc.metadata.get('cont_type',None)
                 if ct:
                     if 'image' in ct:
-                        embed.set_image(url=f'attachment//{doc.metadata['fname']}')
+                        embed.set_image(url=f'attachment//{filename}')
         if 'distance' in doc.metadata:
             embed.set_footer(text=f"Embedding similarity is {doc.metadata['distance']}.  ")
         return embed, fil
