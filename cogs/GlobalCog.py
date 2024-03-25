@@ -353,7 +353,7 @@ class UserNotes:
                 ct=doc.metadata.get('cont_type',None)
                 if ct:
                     if 'image' in ct:
-                        embed.set_image(url=f'attachment//{filename}')
+                        embed.set_image(url=f'attachment://{filename}')
         if 'distance' in doc.metadata:
             embed.set_footer(text=f"Embedding similarity is {doc.metadata['distance']}.  ")
         return embed, fil
