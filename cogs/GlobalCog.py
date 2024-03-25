@@ -343,8 +343,9 @@ class UserNotes:
         )
         embed.add_field(name="topic", value=doc.metadata["topic"][:500])
         embed.add_field(name="key", value=doc.metadata["key"][:500])
-        if doc.metadata['fname']:
-            fil=await data_uri_to_file(doc.metadata['fileuri'],doc.metadata['fname'])
+        if 'fname' in doc.metadata:
+            if doc.metadata['fname']:
+                fil=await data_uri_to_file(doc.metadata['fileuri'],doc.metadata['fname'])
         return embed, fil
 
     # async def update_aux(self):
