@@ -252,7 +252,7 @@ class UserNotes:
         tosend = []
         for varia in docs2:
             source, dist=varia
-            source.metadata['distance']=varia
+            source.metadata['distance']=dist
             tosend.append(source)
             if source.page_content:
                 content = smem.indent_string(source.page_content.strip(), 1)
