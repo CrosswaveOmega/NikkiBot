@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from typing import List, Tuple
-from discord import Embed
+from discord import Embed, File
 import gui
 
 """This is for returning pages of embeds."""
@@ -103,6 +103,45 @@ class PageClassContainer:
         """
         self.custom_callbacks[name] = call
 
+    async def do_change_callback(
+        self,
+        interaction: discord.Interaction,
+        view: discord.ui.View,
+        result: str,
+        goto: int = 0,
+    ):
+        """
+        Handles changes triggered from UI elements and updates pagination accordingly.
+
+        Args:
+            self: The current instance of the context object.
+            interaction: The interaction object from Discord.
+            view: The view object that includes the UI elements.
+            result: A string recieved from the interaction indicating how to change the pagination
+            goto: An optional integer for direct page navigation, only used for the goto action
+
+        Returns:
+            A boolean value, False if the result was 'timeout' or 'exit', True otherwise.
+        """
+        if result in ("timeout", "exit"):
+            ve = view.clear_items()
+            await interaction.response.edit_message(view=ve)
+            return False
+        else:
+            if result in self.custom_callbacks:
+                await self.custom_callbacks[result](self, interaction, view, result)
+            if result == "next":
+                self.spot = (self.spot + self.perpage) % self.length
+            elif result == "back":
+                self.spot = (self.spot - self.perpage + self.length) % self.length
+            elif result == "first":
+                self.spot = 0
+            elif result == "last":
+                self.spot = self.largest_spot
+            elif result == "goto":
+                self.spot = goto % self.length
+            return True
+        
     async def mycallback(
         self,
         interaction: discord.Interaction,
@@ -118,25 +157,68 @@ class PageClassContainer:
             view (discord.ui.View): The view object that contains the UI buttons.
             result (str): The custom_id of the button that was clicked.
         """
-        if result in ("timeout", "exit"):
-            ve = view.clear_items()
-            await interaction.response.edit_message(view=ve)
-        else:
-            if result in self.custom_callbacks:
-                await self.custom_callbacks[result](self, interaction, view, result)
-            if result == "next":
-                self.spot = (self.spot + self.perpage) % self.length
-            elif result == "back":
-                self.spot = (self.spot - self.perpage + self.length) % self.length
-            elif result == "first":
-                self.spot = 0
-            elif result == "last":
-                self.spot = self.largest_spot
-            elif result == "goto":
-                self.spot = goto % self.length
-
+        doedit=await self.do_change_callback(interaction,view,result,goto)
+        if doedit:
             emb = self.make_embed()
             await interaction.response.edit_message(embed=emb, view=view)
+
+            
+
+
+class PageClassContainerWithAttachments:
+    def __init__(self, display: List[Tuple[Embed,File]] = []):
+        """
+        A class representing a container for displaying a list of embeds with pagination.
+
+        Args:
+        - display: a list of Embed objects to be displayed
+        """
+        self.display = display
+        self.spot = 0
+        self.perpage = 1
+        self.length = len(self.display)
+        self.largest_spot = ((self.length - 1) // self.perpage) * self.perpage
+        self.maxpages = ((self.length - 1) // self.perpage) + 1
+        self.custom_callbacks = {}
+        self.page = (self.spot // self.perpage) + 1
+
+    def make_embed(self) -> Tuple[Embed,File]:
+        """
+        Create an Embed object with the current page's content.
+
+        Returns:
+        - An Embed object
+        """
+        self.page = (self.spot // self.perpage) + 1
+        key = ""
+        gui.gprint(len(self.display), self.page)
+        emb,fil = Embed(title="No Pages"),None
+        if len(self.display) > 0:
+            emb,fil = self.display[self.page - 1]
+        emb.set_author(
+            name=" Page {}/{}, {} total".format(self.page, self.maxpages, self.length)
+        )
+        return emb
+
+    async def mycallback(
+        self,
+        interaction: discord.Interaction,
+        view: discord.ui.View,
+        result: str,
+        goto: int = 0,
+    ) -> None:
+        """
+        Callback function for the UI button interaction.
+
+        Args:
+            interaction (discord.Interaction): The interaction object that triggered the callback.
+            view (discord.ui.View): The view object that contains the UI buttons.
+            result (str): The custom_id of the button that was clicked.
+        """
+        doedit=await self.do_change_callback(interaction,view,result,goto)
+        if doedit:
+            emb,fil = self.make_embed()
+            await interaction.response.edit_message(embed=emb, attachments=[fil],view=view)
 
 
 class EmbedPageButtons(discord.ui.View):
@@ -260,6 +342,36 @@ async def pages_of_embeds(
     pagecall = PageClassContainer(display)
     message = await ctx.send(
         embed=pagecall.make_embed(),
+        view=EmbedPageButtons(callbacker=pagecall),
+        **kwargs,
+    )
+    return message
+
+async def pages_of_embed_attachments(
+    ctx: commands.Context, display: List[Tuple[Embed,File]], **kwargs
+) -> discord.Message:
+    """
+    Creates a new PageClassContainer filled with embeds, and sends it as
+     a message with buttons.
+
+    Parameters:
+    -----------
+    ctx: commands.Context
+        The context object of the message that triggered the command.
+    display: List[discord.Embed]
+        A list of Embeds.
+    kwargs: Keyword arguments for discord.message.
+
+    Returns:
+    --------
+    A Message object sent to the channel where the command was triggered.
+    """
+
+    pagecall = PageClassContainerWithAttachments(display)
+    embed,fil=pagecall.make_embed()
+    message = await ctx.send(
+        embed=embed,
+        file=fil,
         view=EmbedPageButtons(callbacker=pagecall),
         **kwargs,
     )

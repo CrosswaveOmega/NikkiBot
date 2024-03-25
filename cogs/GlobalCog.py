@@ -1,4 +1,5 @@
 from collections import defaultdict
+from io import BytesIO
 from typing import List, Optional, Tuple
 import discord
 
@@ -20,11 +21,11 @@ from utility.mytemplatemessages import MessageTemplates
 from .AICalling import AIMessageTemplates
 from langchain.docstore.document import Document
 import datetime
-from utility.embed_paginator import pages_of_embeds
+from utility.embed_paginator import pages_of_embeds, pages_of_embed_attachments
 from utility.debug import Timer
 from utility.views import BaseView
 from database.database_note import NotebookAux
-
+import base64
 
 async def owneronly(interaction: discord.Interaction):
     return await interaction.client.is_owner(interaction.user)
@@ -34,6 +35,26 @@ topictype = app_commands.Range[str, 2, 128]
 keytype = app_commands.Range[str, 2, 128]
 contenttype = app_commands.Range[str, 5, 4096]
 
+
+async def file_to_data_uri(file: discord.File) -> str:
+    # Read the bytes from the file
+    file_bytes = await file.read()
+    # Base64 encode the bytes
+    base64_encoded = base64.b64encode(file_bytes).decode('ascii')
+    # Construct the data URI
+    data_uri = f'data:{file.content_type};base64,{base64_encoded}'
+    return data_uri
+
+async def data_uri_to_file(data_uri: str, filename: str) -> discord.File:
+    # Split the data URI into its components
+    metadata, base64_data = data_uri.split(',')
+    # Get the content type from the metadata
+    content_type = metadata.split(';')[0].split(':')[1]
+    # Decode the base64 data
+    file_bytes = base64.b64decode(base64_data)
+    # Create a discord.File object
+    file = discord.File(BytesIO(file_bytes), filename=filename, spoiler=False, content_type=content_type)
+    return file
 
 class NoteContentModal(discord.ui.Modal, title="Enter Note Contents"):
     """Modal for adding a followup."""
@@ -167,7 +188,7 @@ class UserNotes:
         self.shortterm = {}
 
     async def add_to_mem(
-        self, ctx: commands.Context, content: str, key: str = "gen", topic: str = "any"
+        self, ctx: commands.Context, content: str, key: str = "gen", topic: str = "any", file:Optional[discord.File]=None
     ):
         meta = {}
         meta["key"] = key
@@ -175,6 +196,11 @@ class UserNotes:
         meta["topic"] = topic
         meta["value"] = content
         meta["date"] = ctx.message.created_at.timestamp()
+        meta['fileuri']=""
+        meta['fname']=""
+        if file:
+            meta['fileuri']=await file_to_data_uri(file)
+            meta['fname']=file.filename
         meta["split"] = 1
         to_add = f"Topic: {topic}\n: Key:{key}\nContent:{content}"
         doc = Document(page_content=to_add, metadata=meta)
@@ -303,6 +329,7 @@ class UserNotes:
             return False
 
     async def note_to_embed(self, doc: Document):
+        fil=None
         embed = discord.Embed(
             description=f"{doc.metadata['value']}"[:4000],
             timestamp=datetime.datetime.fromtimestamp(
@@ -310,10 +337,10 @@ class UserNotes:
             ),
         )
         embed.add_field(name="topic", value=doc.metadata["topic"][:500])
-
         embed.add_field(name="key", value=doc.metadata["key"][:500])
-
-        return embed
+        if doc.metadata['fname']:
+            fil=await data_uri_to_file(doc.metadata['fileuri'],doc.metadata['fname'])
+        return embed, fil
 
     # async def update_aux(self):
 
@@ -487,6 +514,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
         content: contenttype,
         key: keytype,
         topic: Optional[topictype] = None,
+        image: Optional[discord.Attachment]=None
     ) -> None:
         """Add a note."""
 
@@ -511,16 +539,19 @@ class Global(commands.Cog, TC_Cog_Mixin):
 
         if view.done:
             c, k, t = view.done
+            fil=None
+            if image:
+                fil=await image.to_file()
             await tmes.edit(
-                "<a:LoadingBlue:1206301904863502337> adding note...",
+                content="<a:LoadingBlue:1206301904863502337> adding note...",
                 view=None,
                 embed=view.make_embed(),
             )
             with Timer() as op_timer:
                 notes = UserNotes(self.bot, interaction.user)
-                note = await notes.add_to_mem(ctx, c, k, t)
-                emb = await notes.note_to_embed(note)
-                await ctx.send(embed=emb, ephemeral=True)
+                note = await notes.add_to_mem(ctx, c, k, t, file=fil)
+                emb, fil = await notes.note_to_embed(note)
+                await ctx.send(embed=emb, file=fil, ephemeral=True)
             await tmes.edit(
                 content=f"added note in {op_timer.get_time()} seconds", embed=None
             )
@@ -560,7 +591,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
             for n in docs:
                 emb = await notes.note_to_embed(n)
                 embs.append(emb)
-        await pages_of_embeds(ctx, embs, ephemeral=True)
+        await pages_of_embed_attachments(ctx, embs, ephemeral=True)
         await mess.edit(content=f"got notes in {op_timer.get_time()} seconds")
 
     @gnote.command(
@@ -652,7 +683,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
             for n in docs:
                 emb = await notes.note_to_embed(n)
                 embs.append(emb)
-        await pages_of_embeds(ctx, embs, ephemeral=True)
+        await pages_of_embed_attachments(ctx, embs, ephemeral=True)
         await mess.edit(content=f"got notes in {op_timer.get_time()} seconds")
 
     @gnote.command(name="purge_all_notes", description="Delete all your notes.")
