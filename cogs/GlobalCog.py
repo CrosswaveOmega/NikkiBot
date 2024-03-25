@@ -38,11 +38,13 @@ contenttype = app_commands.Range[str, 5, 4096]
 
 async def file_to_data_uri(file: discord.File) -> str:
     # Read the bytes from the file
-    file_bytes = await file.read()
+    with open(file.fp, 'rb') as f:
+        # Read the bytes from the file-like object
+        file_bytes = f.read()
     # Base64 encode the bytes
     base64_encoded = base64.b64encode(file_bytes).decode('ascii')
     # Construct the data URI
-    data_uri = f'data:{file.content_type};base64,{base64_encoded}'
+    data_uri = f'data:{"image"};base64,{base64_encoded}'
     return data_uri
 
 async def data_uri_to_file(data_uri: str, filename: str) -> discord.File:
@@ -53,7 +55,7 @@ async def data_uri_to_file(data_uri: str, filename: str) -> discord.File:
     # Decode the base64 data
     file_bytes = base64.b64decode(base64_data)
     # Create a discord.File object
-    file = discord.File(BytesIO(file_bytes), filename=filename, spoiler=False, content_type=content_type)
+    file = discord.File(BytesIO(file_bytes), filename=filename, spoiler=False)
     return file
 
 class NoteContentModal(discord.ui.Modal, title="Enter Note Contents"):
