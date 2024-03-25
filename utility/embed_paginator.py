@@ -198,7 +198,7 @@ class PageClassContainerWithAttachments(PageClassContainer):
         emb.set_author(
             name=" Page {}/{}, {} total".format(self.page, self.maxpages, self.length)
         )
-        return emb
+        return emb, fil
 
     async def mycallback(
         self,
