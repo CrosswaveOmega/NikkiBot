@@ -165,7 +165,7 @@ class PageClassContainer:
             
 
 
-class PageClassContainerWithAttachments:
+class PageClassContainerWithAttachments(PageClassContainer):
     def __init__(self, display: List[Tuple[Embed,File]] = []):
         """
         A class representing a container for displaying a list of embeds with pagination.
