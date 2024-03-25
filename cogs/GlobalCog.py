@@ -296,7 +296,6 @@ class UserNotes:
             return se
         except ValueError as e:
             raise e
-            return None
 
     async def get_keys(self):
         filterwith = {"foruser": self.userid}
@@ -348,6 +347,8 @@ class UserNotes:
         if 'fname' in doc.metadata:
             if doc.metadata['fname']:
                 fil=await data_uri_to_file(doc.metadata['fileuri'],doc.metadata['fname'])
+        if 'distance' in doc.metadata:
+            embed.set_footer(text=f"Embedding similarity is {doc.metadata['distance']}.  ")
         return embed, fil
 
     # async def update_aux(self):
@@ -548,10 +549,12 @@ class Global(commands.Cog, TC_Cog_Mixin):
         if view.done:
             c, k, t = view.done
             fil=None
+            typev=""
             if image:
                 fil=await image.to_file()
+                typev=f" with {image.content_type}"
             await tmes.edit(
-                content="<a:LoadingBlue:1206301904863502337> adding note...",
+                content="<a:LoadingBlue:1206301904863502337> adding note{typev} ...",
                 view=None,
                 embed=view.make_embed(),
             )
@@ -561,7 +564,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
                 emb, fil = await notes.note_to_embed(note)
                 await ctx.send(embed=emb, file=fil, ephemeral=True)
             await tmes.edit(
-                content=f"added note in {op_timer.get_time()} seconds", embed=None
+                content=f"added note{typev} in {op_timer.get_time()} seconds", embed=None
             )
         else:
             message = "Cancelled"
