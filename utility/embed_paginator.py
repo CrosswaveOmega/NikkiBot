@@ -1,3 +1,4 @@
+import logging
 import discord
 from discord.ext import commands
 from typing import List, Tuple
@@ -231,7 +232,26 @@ class EmbedPageButtons(discord.ui.View):
         await self.callbacker.mycallback(
             interaction, self, "goto", int(select.values[0])
         )
+    async def on_error(
+        self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item
+    ):
+        gui.gprint(str(error))
+        log = logging.getLogger("discord")
 
+        log.error(
+            "Ignoring exception in interaction %s for item %s",
+            interaction,
+            item,
+            exc_info=error,
+        )
+        if not interaction.response.is_done():
+            await interaction.response.send_message(
+                f"Oops! Something went wrong: {str(error)}.", ephemeral=True
+            )
+        else:
+            await interaction.followup.send(
+                f"Oops! Something went wrong: {str(error)}.", ephemeral=True
+            )
     # All button
     @discord.ui.button(emoji="🔢", label="pages", style=discord.ButtonStyle.blurple)
     async def pagebutton_button(
