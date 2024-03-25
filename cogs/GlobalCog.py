@@ -58,7 +58,8 @@ async def data_uri_to_file(data_uri: str, filename: str) -> discord.File:
     # Decode the base64 data
     file_bytes = base64.b64decode(base64_data)
     # Create a discord.File object
-    file = discord.File(BytesIO(file_bytes), filename=filename, spoiler=False)
+    file=(file_bytes,filename)
+    #file = discord.File(BytesIO(), filename=filename, spoiler=False)
     return file
 
 class NoteContentModal(discord.ui.Modal, title="Enter Note Contents"):
@@ -557,7 +558,8 @@ class Global(commands.Cog, TC_Cog_Mixin):
                 notes = UserNotes(self.bot, interaction.user)
                 note = await notes.add_to_mem(ctx, c, k, t, file=fil)
                 emb, fil = await notes.note_to_embed(note)
-                await ctx.send(embed=emb, file=fil, ephemeral=True)
+
+                await ctx.send(embed=emb, file=f, ephemeral=True)
             await tmes.edit(
                 content=f"added note in {op_timer.get_time()} seconds", embed=None
             )

@@ -1,3 +1,4 @@
+import io
 import logging
 import discord
 from discord.ext import commands
@@ -195,10 +196,12 @@ class PageClassContainerWithAttachments(PageClassContainer):
         gui.gprint(len(self.display), self.page)
         emb,fil = Embed(title="No Pages"),None
         if len(self.display) > 0:
-            emb,fil = self.display[self.page - 1]
+            emb,fl = self.display[self.page - 1]
+            fil=discord.File(io.BytesIO(fl[0]),filename=fl[1])
         emb.set_author(
             name=" Page {}/{}, {} total".format(self.page, self.maxpages, self.length)
         )
+        
         return emb, fil
 
     async def mycallback(
