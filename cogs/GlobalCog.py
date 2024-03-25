@@ -355,7 +355,7 @@ class UserNotes:
                     if 'image' in ct:
                         embed.set_image(url=f'attachment://{filename}')
         if 'distance' in doc.metadata:
-            embed.set_footer(text=f"Embedding similarity is {doc.metadata['distance']}.  ")
+            embed.set_footer(text=f"Embedding similarity is {round(doc.metadata['distance'], 8)}.  ")
         return embed, fil
 
     # async def update_aux(self):
