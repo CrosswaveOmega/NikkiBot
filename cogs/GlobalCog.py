@@ -62,7 +62,7 @@ async def data_uri_to_file(data_uri: str, filename: str) -> discord.File:
     return file
 
 class NoteContentModal(discord.ui.Modal, title="Enter Note Contents"):
-    """Modal for adding a followup."""
+    """Modal for editing note data"""
 
     def __init__(self, *args, content=None, key=None, topic=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -103,13 +103,12 @@ class NoteContentModal(discord.ui.Modal, title="Enter Note Contents"):
 
 class NoteEditView(BaseView):
     """
-    View that allows one to edit their
+    View that allows one to edit the work in progress notes.
     """
 
     def __init__(self, *, user, timeout=30 * 15, content=None, key=None, topic=None):
         super().__init__(user=user, timeout=timeout)
         self.value = False
-        self.mydrop = None
         self.done = None
         self.content = content
         self.key = key
@@ -190,11 +189,11 @@ class UserNotes:
             path="saveData/usernotes",
             metadata=metadata,
         )
-        self.shortterm = {}
 
     async def add_to_mem(
         self, ctx: commands.Context, content: str, key: str = "gen", topic: str = "any", file:Optional[discord.File]=None,conttype:Optional[str]=None
     ):
+        '''Add or overwrite the given note.'''
         meta = {}
         meta["key"] = key
         meta["foruser"] = self.userid
@@ -233,7 +232,6 @@ class UserNotes:
         """
         Search though chroma collection, and get the k most relevant results.
         """
-        persist = "saveData"
         filterwith = {"foruser": self.userid}
         conditions = [{"foruser": self.userid}]
         if key:
@@ -289,7 +287,6 @@ class UserNotes:
 
         try:
             # results = await self.coll.aget(where=filterwith, include=["metadatas"])
-
             st = await NotebookAux.list_topic(self.userid)
             se = defaultdict(int)
             for m in st:
@@ -301,7 +298,6 @@ class UserNotes:
 
     async def get_keys(self):
         filterwith = {"foruser": self.userid}
-
         try:
             st = await NotebookAux.list_keys(self.userid)
 
@@ -495,11 +491,11 @@ class Global(commands.Cog, TC_Cog_Mixin):
             ans, source, _ = await ra.actions.research_op(query, 9)
             emb = discord.Embed(description=ans)
             emb.add_field(name="source", value=str(source)[:1000], inline=False)
-
             audit = await AIMessageTemplates.add_emb_audit(ctx, embed=emb)
 
             await mess.edit(content=None, embed=emb)
         except Exception as e:
+            await self.bot.send_error(e,"AIerr",True)
             await ctx.send("something went wrong...")
 
     @gnote.command(name="set_topic", description="WIP.  Set your note topic")

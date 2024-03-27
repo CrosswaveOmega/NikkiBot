@@ -931,14 +931,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 await mes2.delete()
                 profile.last_archive_time = None
                 self.bot.database.commit()
-                mess2 = ArchivedRPMessage.get_archived_rp_messages_with_null_posted_url(
-                    ctx.guild.id
-                )
-                mess = (
-                    ArchivedRPMessage.get_archived_rp_messages_without_null_posted_url(
-                        ctx.guild.id
-                    )
-                )
+                
                 await MessageTemplates.server_archive_message(
                     ctx,
                     f"I've reset the grouping data for this server.  When you run another compile_archive, **everything in the archive_channel will be reposted.**",
