@@ -1,3 +1,4 @@
+import time
 from .archive_compiler import ArchiveCompiler
 from .historycollect import collect_server_history_lazy
 from .archive_database import ChannelSep, ArchivedRPMessage, ChannelArchiveStatus
@@ -135,11 +136,11 @@ async def lazy_archive(self, ctx):
     MAX_TOTAL_SECONDS = max(int(MAX_TOTAL_MINUTES) * 60, 60)
 
     # roughly five minutes worth of messages
-    started_at = discord.utils.utcnow()
+    started_at = time.monotonic()
 
     def upper_time_limit(ext=0):
-        delta = discord.utils.utcnow() - started_at
-        remaining = MAX_TOTAL_SECONDS - delta.total_seconds()
+        delta = time.monotonic() - started_at
+        remaining = MAX_TOTAL_SECONDS - delta
         if ext > remaining:
             return max(remaining + ext, 0)
         return max(remaining, 0)

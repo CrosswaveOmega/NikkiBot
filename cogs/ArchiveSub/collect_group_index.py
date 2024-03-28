@@ -5,10 +5,12 @@ from datetime import datetime, timedelta, timezone
 from .archive_database import ArchivedRPMessage, ChannelSep, HistoryMakers
 from database import DatabaseSingleton
 from queue import Queue
+import time
 from bot import StatusEditMessage
 from utility import (
     seconds_to_time_string,
     urltomessage,
+    Timer,
 )
 
 """
@@ -22,60 +24,45 @@ DEBUG_MODE = False
 
 async def iterate_backlog(backlog: List[ArchivedRPMessage], group_id: int, count=0):
     # Goes through queue once.
-    tosend = []
-    now = datetime.now()
+    now = time.monotonic()
     initial = len(backlog)
     archived = 0
 
     buckets = {}  # Dictionary to hold buckets of messages
     finished_buckets = []  # Dictionary to hold finished buckets
-    optotal = 0
-    opcount = 0
     chars = {}
     for hm in backlog:
-        time = datetime.now()
-        if DEBUG_MODE:
-            gui.dprint(f"Backlog Pass {group_id}:")
-
-        if (datetime.now() - now).total_seconds() > 1:
-            gui.dprint(
-                f"Backlog Pass {group_id}: {archived} out of {initial} messages, with {count} remaining."
-            )
-            # await asyncio.sleep(0.02)
-            now = datetime.now()
-
-        # hm: ArchivedRPMessage = backlog.get()
         channelind = hm.get_chan_sep()
-
+        if (time.monotonic()-now)>0.4:
+            gui.gprint('pausing for a spell')
+            await asyncio.sleep(0.1)
+            now=time.monotonic()
         # Find the bucket for the current channel separator
         bucket = buckets.get(channelind)
 
-        if bucket:
-            # Check if the author is in any bucket
-            if chars.get(hm.author, None):
-                # This author is in a bucket.  Make sure it's not this one.
-                if chars[hm.author]["ci"] != channelind:
-                    # It's not this bucket.  Check if this bucket is newer, if it isn't
-                    # Then time to split.
-                    if chars[hm.author]["gid"] > bucket["group_id"]:
-                        # The bucket the author is inside is NEWER than
-                        # the current bucket.  Time to fix that.
-                        finished_buckets.append(buckets[channelind])
-                        group_id += 1
-                        bucket = {"messages": 0, "authors": 0, "group_id": group_id}
-                        buckets[channelind] = bucket
+        if bucket and chars.get(hm.author,None):
+            # The bucket is valid and the author is not in this bucket.
+            # Make sure it's not this one.
+            if chars[hm.author]["ci"] != channelind:
+                # It's not this bucket.  Check if this bucket is newer, 
+                # if it isn't Then time to split.
+                if chars[hm.author]["gid"] > bucket["group_id"]:
+                    # The bucket the author is inside is NEWER than
+                    # the current bucket.  Time to fix that.
+                    finished_buckets.append(buckets[channelind])
+                    group_id += 1
+                    bucket = {"messages": 0, "authors": 0, "group_id": group_id}
+                    buckets[channelind] = bucket
 
-                        hm.update(channel_sep_id=buckets[channelind]["group_id"])
-                        HistoryMakers.add_channel_sep_if_needed(
-                            hm, buckets[channelind]["group_id"]
-                        )
-                        gui.dprint(
-                            f"Backlog Pass {group_id}: {archived} out of {initial} messages, making a new bucket for {channelind}"
-                        )
-                    else:
-                        gui.dprint(
-                            f"Backlog Pass {group_id}: Author is in older bucket, it's ok to overwrite."
-                        )
+                    hm.update(channel_sep_id=buckets[channelind]["group_id"])
+                    ChannelSep.add_channel_sep_if_needed(hm, buckets[channelind]["group_id"])
+                    gui.dprint(
+                        f"Backlog Pass {group_id}: {archived} out of {initial} messages, making a new bucket for {channelind}"
+                    )
+                else:
+                    gui.dprint(
+                        f"Backlog Pass {group_id}: Author is in older bucket, it's ok to overwrite."
+                    )
 
         # If the bucket doesn't exist, create a new one
         if not bucket:
@@ -87,7 +74,7 @@ async def iterate_backlog(backlog: List[ArchivedRPMessage], group_id: int, count
             buckets[channelind] = bucket
 
             hm.update(channel_sep_id=buckets[channelind]["group_id"])
-            HistoryMakers.add_channel_sep_if_needed(hm, buckets[channelind]["group_id"])
+            ChannelSep.add_channel_sep_if_needed(hm, buckets[channelind]["group_id"])
 
         # Update the channel separator ID of the message
         hm.update(channel_sep_id=buckets[channelind]["group_id"])
@@ -96,22 +83,12 @@ async def iterate_backlog(backlog: List[ArchivedRPMessage], group_id: int, count
         # Add the message to the bucket
         bucket["messages"] += 1
         # bucket['authors'].add(hm.author)
-        res = datetime.now() - time
-        optotal += res.total_seconds()
-        await asyncio.sleep(float(0.002))
-    gui.dprint(
-        "PASS TOOK ",
-        seconds_to_time_string(optotal),
-        "with ",
-        archived,
-        "messages.  avg",
-        optotal / max(1, archived),
-    )
-    if DEBUG_MODE:
-        gui.dprint("Pass complete.")
+
+        #await asyncio.sleep(float(0.0001))
+
 
     DatabaseSingleton("voc").commit()
-    return tosend, group_id
+    return [], group_id
 
 
 async def iterate_backlog_old(backlog: Queue, group_id: int, count=0):
@@ -326,7 +303,6 @@ async def do_group(
     Returns:
         tuple: Number of messages grouped and last used group ID.
     """
-    gui.dprint("Starting run.")
 
     count = ArchivedRPMessage().count_messages_without_group(server_id)
     new_list, new_count = [], 0
@@ -346,7 +322,6 @@ async def do_group(
         datetime.now(),
     )
     length, old_group_id = count, group_id
-    to_send, current_chana = [], None
     stopcount = 0
     countlim = 2**64
     while new_count < count:
@@ -370,18 +345,16 @@ async def do_group(
             )
 
         # for m in thesemessages: backlog.put(m)
-        ts, group_id = await iterate_backlog(thesemessages, group_id, thiscount)
+        with Timer() as timer:
+            _, group_id = await iterate_backlog(thesemessages, group_id, thiscount)
+        gui.gprint(f"Group took {timer.get_time()} for {thiscount} messages")
 
         DatabaseSingleton("voc").commit()
-        await asyncio.sleep(0.1)
-        to_send += ts
-
+        await asyncio.sleep(0.05)
         new_count += thiscount
         gui.dprint(f"Now at: {new_count}/{count}.")
-        await asyncio.sleep(0.1)
 
     length, old_group_id = count, group_id
-    to_send, current_chana, backlog, chars_in_backlog = [], None, Queue(), set()
 
     DatabaseSingleton("voc").commit()
 

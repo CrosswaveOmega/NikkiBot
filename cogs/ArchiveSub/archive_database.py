@@ -162,13 +162,6 @@ class ChannelArchiveStatus(ArchiveBase):
     def increment(self, date):
         """Set the latest archived time to date."""
         self.stored += 1
-        gui.dprint(
-            "inc",
-            date,
-            self.latest_archive_time,
-            self.last_message_time.tzinfo,
-            date.tzinfo,
-        )
         if self.last_message_time <= date:
             self.last_message_time = date
         self.latest_archive_time = date
@@ -284,7 +277,7 @@ class ChannelSep(ArchiveBase):
             print(chansepid, "Is not present.")
             channel_sep = ChannelSep.derive_from_archived_rp_message(message)
             session.add(channel_sep)
-            session.commit()
+            #session.commit()
         else:
             print("Is present.")
             channel_sep.update_message_count()
@@ -637,7 +630,12 @@ class ArchivedRPMessage(ArchiveBase):
     files = relationship("ArchivedRPFile", backref="archived_rp_message")
     embed = relationship("ArchivedRPEmbed", backref="archived_rp_message_set")
 
-    def get_chan_sep(self):
+    def get_chan_sep(self)->str:
+        """Return the category-channel-thread string.
+
+        Returns:
+            string: Finished string
+        """
         return f"{self.category}-{self.channel}-{self.thread}"
 
     @staticmethod
@@ -930,11 +928,7 @@ class ArchivedRPMessage(ArchiveBase):
     def get_messages_within_minute_interval(
         server_id: int, now: datetime, interval: int = 15
     ) -> List["ArchivedRPMessage"]:
-        current_minute = now.hour * 60 + now.minute
 
-        minutes_until_next_interval = (
-            interval - (current_minute % interval)
-        ) % interval
         start_time = now - (
             now - datetime.min.replace(tzinfo=timezone.utc)
         ) % timedelta(minutes=15)
@@ -1280,22 +1274,7 @@ class HistoryMakers:
     @staticmethod
     def add_channel_sep_if_needed(targetmessage, value):
         ChannelSep.add_channel_sep_if_needed(targetmessage, value)
-        """
-        session=DatabaseSingleton.get_session()
-        query = select(ChannelSep).where(ChannelSep.channel_sep_id == value and ChannelSep.server_id==target.server_id)
-        if not session.query(query.exists()).scalar():
 
-            channel_sep = ChannelSep(
-                channel_sep_id=value,
-                server_id=target.server_id,
-                channel=target.channel,
-                category=target.category,
-                thread=target.thread,
-                created_at=target.created_at
-            )
-
-            session.add(channel_sep)
-            session.commit()"""
 
 
 DatabaseSingleton("setup").load_base(ArchiveBase)
