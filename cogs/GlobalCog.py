@@ -357,7 +357,7 @@ class UserNotes:
     # async def update_aux(self):
 
 
-@app_commands.allow_installs(guilds=False, users=True)
+@app_commands.allowed_installs(guilds=False, users=True)
 class Notes(app_commands.Group, name="notes", description="User Note Commands"):
     pass
 
@@ -444,7 +444,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
 
     @app_commands.command(name="search", description="search the interwebs.")
     @app_commands.describe(query="Query to search google with.")
-    @app_commands.allow_installs(guilds=True, users=True)
+    @app_commands.allowed_installs(guilds=True, users=True)
     async def websearch(self, interaction: discord.Interaction, query: str) -> None:
         """Do a web search"""
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -477,7 +477,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
 
     @app_commands.command(name="supersearch", description="use db search.")
     @app_commands.describe(query="Query to search DB for")
-    @app_commands.allow_installs(guilds=True, users=True)
+    @app_commands.allowed_installs(guilds=True, users=True)
     async def doc_talk(self, interaction: discord.Interaction, query: str) -> None:
         """get bot info for this server"""
         owner = await interaction.client.is_owner(interaction.user)
@@ -719,13 +719,13 @@ class Global(commands.Cog, TC_Cog_Mixin):
         await mess.edit(content="Deleted all your notes.")
 
     @app_commands.command(name="pingtest", description="ping")
-    @app_commands.allow_installs(guilds=True, users=True)
+    @app_commands.allowed_installs(guilds=True, users=True)
     async def ping(self, interaction: discord.Interaction) -> None:
         """get bot info for this server"""
         await interaction.response.send_message("Reading you loud and clear!")
 
     @app_commands.command(name="context_test", description="ping")
-    @app_commands.allow_installs(users=True)
+    @app_commands.allowed_installs(users=True)
     async def ping2(self, interaction: discord.Interaction) -> None:
         """get bot info for this server"""
         await interaction.response.send_message("Reading you loud and clear!")

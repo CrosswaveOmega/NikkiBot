@@ -356,7 +356,7 @@ def build_and_format_app_commands(
 
     for command in tree.get_commands(guild=guild):
         # print(command)
-        di = command.to_dict()  # I really wish this method was in the docs...
+        di = command.to_dict(tree)  # I really wish this method was in the docs...
         typev, name = di["type"], di["name"]
         typestr = "chat_commands"
         if typev == 2:
