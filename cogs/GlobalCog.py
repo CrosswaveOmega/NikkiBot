@@ -395,6 +395,8 @@ class Global(commands.Cog, TC_Cog_Mixin):
                 embed.add_field(
                     name="parent", value=f"* {str(message.channel.parent)}, "
                 )
+        if interaction.guild_id:
+            embed.add_field(name="guildid",value=interaction.guild_id)
 
         await interaction.response.send_message(
             content="Message details below.",
