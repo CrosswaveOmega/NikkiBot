@@ -41,9 +41,9 @@ This file is for an extended Bot Class for this Discord Bot.
 
 class IntegrationCreateFilter(logging.Filter):
     def filter(self, record):
-        # Check if the log record's level is DEBUG and message contains "INTEGRATION_CREATE"
+        # Check if the log record's level is DEBUG and message contains "INTERACTION_CREATE"
         if record.levelno == logging.DEBUG:
-            if "INTEGRATION_CREATE" in record.getMessage():
+            if "INTERACTION_CREATE" in record.getMessage():
                 return True
             return False
         return True
