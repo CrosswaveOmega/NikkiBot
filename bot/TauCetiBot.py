@@ -43,6 +43,7 @@ class IntegrationCreateFilter(logging.Filter):
     def filter(self, record):
         # Check if the log record's level is DEBUG and message contains "INTEGRATION_CREATE"
         if record.levelno == logging.DEBUG:
+            return True
             if "INTEGRATION_CREATE" in record.getMessage():
                 return True
             return False
