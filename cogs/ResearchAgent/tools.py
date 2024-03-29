@@ -138,7 +138,7 @@ async def read_and_split_pdf(bot, url: str, extract_meta: bool = False):
     try:
         loader = PDFMinerLoader(url)
 
-        data = await asyncio.wait_for(asyncio.to_thread(loader.load), timeout=25)
+        data = await asyncio.wait_for(asyncio.to_thread(loader.load), timeout=120)
 
         metadata = {}
         new_docs = []
