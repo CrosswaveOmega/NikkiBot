@@ -623,7 +623,7 @@ class ArchivedRPMessage(ArchiveBase):
     channel_sep_id = Column(
         Integer, ForeignKey("ChannelSeps.channel_sep_id"), nullable=True
     )
-    server_id = Column(Integer)
+    server_id = Column(Integer, primary_key=True)
     is_active = Column(Boolean, default=False)
     forum = Column(Boolean, default=False)
     # channel_sep = relationship('ChannelSeps', back_populates='messages')

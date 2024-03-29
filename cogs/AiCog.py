@@ -26,7 +26,7 @@ from utility.embed_paginator import pages_of_embeds
 from bot import TCBot, TC_Cog_Mixin
 import gptmod
 import gptmod.error
-from gptmod.sentence_mem import SentenceMemory
+from gptmod.sentence_mem import SentenceMemory, MemoryFunctions
 
 from database.database_ai import AuditProfile, ServerAIConfig
 from utility import split_string_with_code_blocks
@@ -35,7 +35,7 @@ import json
 from database import Users_DoNotTrack
 
 lock = asyncio.Lock()
-
+JSONMODE=False
 nikkiprompt = """You are Nikki, a energetic, cheerful, and determined female AI ready to help users with whatever they need.
 All your responses must convey a strong personal voice.  
 Be as objective as possible.
@@ -43,13 +43,13 @@ Carefully heed the user's instructions.
 If you do not know how to do something, please note that with your response.
 The next system message will contain a memory bank, filled with sentences related to the incoming query.
 Only your responses will be added to the memory bank, never the users.
-Respond with one JSON object with two fields, 'content' and 'new_memory'.
+[JSONMODE]
+Never use emoji.
+Respond using Markdown."""
+json_prompt='''Respond with one JSON object with two fields, 'content' and 'new_memory'.
 'content' will be what you will say to the user.
 'new_memory' should be a list of strings, each 1-3 sentences long.  The strings in new_memory will be added to long term memory, and will be used to remember the chat context.
-Ensure that responses are brief, do not say more than is needed.  
-Never use emoji.
-Respond using Markdown in content."""
-
+Ensure that responses are brief, do not say more than is needed.  '''
 reasons = {
     "server": {
         "messagelimit": "This server has reached the daily message limit, please try again tomorrow.",
@@ -124,7 +124,10 @@ async def process_result(
 
     role, content = i.message.role, i.message.content
     if content is not None:
-        jsonout = await gptmod.errorous_json_decode(content, ctx.bot)
+        if JSONMODE:
+            jsonout = await gptmod.errorous_json_decode(content, ctx.bot)
+        else:
+            jsonout={'content':content, 'new_memory':[]}
 
     messageresp = None
     function = None
@@ -152,6 +155,7 @@ async def process_result(
                 messageresp = contents
                 contents = messageresp.content
                 await mem.add_to_mem(ctx, messageresp, present_mem=present_mem)
+                
                 return role, contents, messageresp, function
 
             toolcont = str(contents)
@@ -171,7 +175,10 @@ async def process_result(
 
             i2 = result2.choices[0]
             role, content = i2.message.role, i2.message.content
-            jsonout = await gptmod.errorous_json_decode(content, ctx.bot)
+            if JSONMODE:
+                jsonout = await gptmod.errorous_json_decode(content, ctx.bot)
+            else:
+                jsonout={'content':content, 'new_memory':[]}
             break
 
         # content = resp
@@ -190,22 +197,22 @@ async def process_result(
 
         thiscont = f"{toolcont}\n{mycontent}"
 
-        await mem.add_list_to_mem(
-            ctx, messageresp, jsonout["new_memory"], present_mem=present_mem
-        )
-        # chat.messages.append(
-        #         {"role": "assistant", "content": mycontent}
-        #     )
-        # memlib=MemoryFunctions()
-        # chat.tools = memlib.get_tool_schema()
-        # chat.tool_choice = {"type": "function", "function": {"name": "add_to_memory"}}
-        # res = await ctx.bot.gptapi.callapi(chat)
+        # await mem.add_list_to_mem(
+        #     ctx, messageresp, jsonout["new_memory"], present_mem=present_mem
+        # )
+        chat.messages.append(
+                {"role": "assistant", "content": mycontent}
+            )
+        memlib=MemoryFunctions()
+        chat.tools = memlib.get_tool_schema()
+        chat.tool_choice = {"type": "function", "function": {"name": "add_to_memory"}}
+        res = await ctx.bot.gptapi.callapi(chat)
 
-        # for tool_call in res.choices[0].message.tool_calls:
-        #     outcome = await memlib.call_by_tool_async(tool_call)
-        #     contents,need = outcome["content"]
-        #     print(contents,need)
-        #     if need:   await mem.add_list_to_mem(ctx, messageresp, cont=contents, present_mem=present_mem)
+        for tool_call in res.choices[0].message.tool_calls:
+            outcome = await memlib.call_by_tool_async(tool_call)
+            contents,need = outcome["content"]
+            print(contents,need)
+            if need:   await mem.add_list_to_mem(ctx, messageresp, cont=contents, present_mem=present_mem)
     elif isinstance(content, discord.Message):
         messageresp = content
         jsonout = {"content": messageresp.content, "new_memory": []}
@@ -251,13 +258,19 @@ async def ai_message_invoke(
     mes = [c.to_dict() for c in chain]
     # create new ChatCreation
     chat = gptmod.ChatCreation(
-        presence_penalty=0.3, messages=[], response_format={"type": "json_object"}
+        presence_penalty=0.3, messages=[]
     )
     # ,model="gpt-3.5-turbo-0125"
+    np=nikkiprompt
+    if JSONMODE:
+        np=np.replace("[JSONMODE]",json_prompt)
+    else:
+        np=np.replace("[JSONMODE]","")
+
     chat.add_message("system", nikkiprompt)
     mem = SentenceMemory(ctx.bot, guild, user)
     docs, mems, alltime = await mem.search_sim(message)
-    chat.add_message("system", f"### MEMORY:\n{mems}")
+    chat.add_message("system",name='memory', content=f"### MEMORY:\n{mems}")
     audit = await AIMessageTemplates.add_resp_audit(
         ctx,
         DummyMessage(mems),

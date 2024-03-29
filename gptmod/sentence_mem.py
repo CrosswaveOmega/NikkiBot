@@ -111,7 +111,7 @@ async def try_until_ok(async_func, *args, **kwargs):
                 raise err
 
 
-def split_document(doc: Document, present_mem):
+def split_document(doc: Document, present_mem=""):
     newdata = []
     metadata = doc.metadata
     add = 0
@@ -140,6 +140,7 @@ async def group_documents(docs: List[Document], max_tokens=3000):
             sources[source] = {}
         sources[source][split] = doc
         if doc.page_content not in context:
+            print(doc.page_content)
             context += doc.page_content + "  "
         tokens = util.num_tokens_from_messages(
             [{"role": "system", "content": context}], "gpt-3.5-turbo-0125"
@@ -160,7 +161,7 @@ async def group_documents(docs: List[Document], max_tokens=3000):
                 # print(abs(k - lastkey))
                 newc += "..."
             lastkey = k
-            newc += f"[split:{k}]:{v}" + "  "
+            newc += f"[split:{k}]:{v.page_content}" + "  "
         if newc:
             meta = sorted_dict[0][1].metadata
             meta["splits"] = len(sorted_dict)

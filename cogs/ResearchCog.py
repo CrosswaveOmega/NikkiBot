@@ -957,7 +957,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         # This is an example of a decorated discord.py command.
         bot = ctx.bot
         emb = discord.Embed(title=comment, description=f"```py\n{code}\n```")
-        returnme = await ctx.send(content=comment + "{code[:1024]}", embed=emb)
+        returnme = await ctx.send(content=comment + f"{code[:1024]}", embed=emb)
         return returnme
 
     @AILibFunction(
