@@ -111,6 +111,21 @@ class NotebookAux(NoteBase):
             return topics.scalars().all()
 
     @staticmethod
+    async def count_notes(user_id, key: str = None, topic: str = None, offset: int = 0):
+        async with await DatabaseSingleton.get_async_session() as session:
+            note_count = await session.execute(
+                select(func.count(NotebookAux.entry_id))
+                .where(
+                    and_(
+                        NotebookAux.user_id == user_id,
+                        NotebookAux.key == key if key is not None else true(),
+                        NotebookAux.topic == topic if topic is not None else true(),
+                    )
+                )
+            )
+            return note_count.scalar()
+
+    @staticmethod
     async def remove(user_id: int, key: str = None, topic: str = None):
         async with await DatabaseSingleton.get_async_session() as session:
             await session.execute(

@@ -16,10 +16,10 @@ from discord import app_commands
 import gui
 
 from collections import defaultdict
-from dateutil.rrule import rrule, WEEKLY, SU
+from dateutil.rrule import rrule, WEEKLY, SU, SECONDLY,MINUTELY
 from .TauCetiBot import TCBot
 from .Tasks.TCTasks import TCTaskManager
-from .TcGuildTaskDB import TCGuildTask
+from .TcGuildTaskDB import Guild_Task_Functions, TCGuildTask
 from .TCAppCommandAutoSync import AppGuildTreeSync
 from .errorformat import client_error_message
 from .config_gen import setup, config_update
@@ -198,15 +198,32 @@ async def on_ready():
         await bot.close()
         raise e
     gui.gprint("Setup done.")
+import random
 
 
 class Main(commands.Cog):
     """debug class, only my owner can use these."""
+    def __init__(self, bot):
+        self.bot=bot
+        Guild_Task_Functions.add_task_function("TESTET", self.tester)
 
     async def cog_check(self, ctx):
         if ctx.author.id == ctx.bot.application.owner.id:
             return True
         return False
+
+    async def tester(self, source_message=None):
+        '''example TC Guild task.'''
+        if not source_message:
+            return None
+        context = await self.bot.get_context(source_message)
+        rand=random.randint(1, 5)
+        md=await context.channel.send(f"Greetings from GTASK tester. ctx is {rand}")
+        
+        if 1 == rand:
+            await context.channel.send("Removing...")
+            await md.delete(delay=20)
+            return "REMOVE"
 
     @commands.command(hidden=True)
     async def shutdown(self, ctx):
@@ -319,9 +336,9 @@ class Main(commands.Cog):
         message = await ctx.send("Target Message.")
         myurl = message.jump_url
         robj = rrule(
-            freq=WEEKLY, byweekday=SU, dtstart=datetime.datetime(2023, 1, 1, 15, 0)
+            freq=SECONDLY, interval=10, dtstart=datetime.datetime(2023, 1, 1, 15, 0)
         )
-        new = TCGuildTask.add_guild_task(guild.id, "COMPILE", message, robj)
+        new = TCGuildTask.add_guild_task(guild.id, "TESTET", message, robj)
         new.to_task(bot)
 
     @commands.command()
@@ -437,7 +454,7 @@ async def main(args):
             print("NO OUTCOME.")
             bot.error_channel = -726
         bot.config = config
-        await bot.add_cog(Main())
+        await bot.add_cog(Main(bot))
         bot.set_ext_directory("./cogs")
         gui.DataStore.initialize("./saveData/ds.sqlite")
         gui.DataStore.initialize_default_values()

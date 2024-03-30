@@ -1,36 +1,35 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime as dt
 from typing import Dict, Optional, Type
 import gui
-from dateutil.parser import parse
-from dateutil.rrule import *
-from dateutil import tz
 
-import discord
-from dateutil.rrule import rrule, rrulestr, WEEKLY, SU
+from dateutil.rrule import rrule
 import heapq
 from queue import PriorityQueue
-
+import logging
 
 class AutoRebalancePriorityQueue(PriorityQueue):
+    """This is a special PriorityQueque that rebalances itself on new items."""
     def rebalance(self):
         with self.mutex:
             heapq.heapify(self.queue)
 
 
 class TCTaskRef:
+    '''A separate identifier class that stores a reference to each task name.'''
     __slots__ = ["name"]
 
     def __init__(self, name):
         self.name = name
 
-    def get_task(self):
+    def get_task(self)->'TCTask':
         return TCTaskManager.get_task(self.name)
 
     def __lt__(self, other):
         me = self.get_task()
         return self.get_task().to_run_next < other.get_task().to_run_next
 
+logs=logging.getLogger("TCLogger")
 
 class TCTask:
     """
@@ -41,17 +40,17 @@ class TCTask:
     Args:
         name (str): The unique name of the task. Used to identify the task.
         time_interval (rrule): A dateutil.rrule for determining the next time to run the task.
-        id (int): The unique ID of the task.  deprecated.
+        idv (int): The unique ID of the task.  deprecated.
         next_run (Datetime): Next date and time to run the task.
         parent_db (Type[object]): Reference to a parent Database that the name is stored within.
         run_number (int or None): The maximum number of times the task should run, or None if unlimited.
 
     Attributes:
         name (str): The name of the task.
-        id (int): The unique ID of the task.
+        id (int): The unique ID of the task.  
         time_interval (rrule): A relative time interval for running the task.
-        last_run (datetime): The datetime of the last time the task was run.
-        to_run_next (datetime): The datetime of the next time the task is scheduled to run.
+        last_run (dt): The dt of the last time the task was run.
+        to_run_next (dt): The dt of the next time the task is scheduled to run.
         is_running (bool): A flag indicating whether the task is currently running.
         parent_db (Type[object]): Optional reference to a parent Database that the name is stored within.
         running_task (Task): The asyncio.Task object representing the running task, if any.
@@ -63,14 +62,14 @@ class TCTask:
         self,
         name: str,
         time_interval: rrule,
-        id: int = 0,
-        next_run: Optional[datetime] = None,
+        idv: int = 0,
+        next_run: Optional[dt] = None,
         parent_db: Optional[Type[object]] = None,
         run_number: Optional[int] = None,
     ):
         self.name = name
         self.parent_db = parent_db
-        self.id = id
+        self.id = idv
         self.time_interval = time_interval
         self.last_run = None
         self.status = "created"
@@ -79,45 +78,41 @@ class TCTask:
         self.funct = None
         self.wrapper = None
         self.limited = False
-        if run_number != None:
+        if run_number is not None:
             self.limited = True
         self.run_number = run_number
 
         self.to_run_next = next_run
-        if self.to_run_next == None:
-            self.to_run_next = datetime.now()
+        if self.to_run_next is None:
+            self.to_run_next = dt.now()
             self.to_run_next = self.next_run()
         # Add self to the TCTaskManager upon initialization
         TCTaskManager.add_task(self)
 
-    def get_ref(self):
+    def get_ref(self)->TCTaskRef:
+        '''Return the TCTaskRef for this object.'''
         return TCTaskRef(self.name)
 
     def can_i_run(self):
         """Check if the TCTask can be launched."""
         if self.is_running:
             return False
-        if datetime.now() >= self.to_run_next:
-            # time_until = self.to_run_next - datetime.now()
-            # gui.gprint(f"{self.name} not ready. Next run in {time_until}")
-            # Update last_run time and run the function as a coroutine
+        if dt.now() >= self.to_run_next:
             return True
         else:
-            # time_until = self.to_run_next - datetime.now()
-            # gui.gprint(f"{self.name} not ready. Next run in {time_until}")
-            # Print the time until next run
             return False
 
     def get_total_seconds_until(self):
+        '''return the total number of seconds until the next run.'''
         if self.is_running:
             return 0
-        return int((self.to_run_next - datetime.now()).total_seconds())
+        return int((self.to_run_next - dt.now()).total_seconds())
 
     def time_left(self):
         """Check if the TCTask can be launched."""
         if self.is_running:
             return f"{self.name} is running."
-        time_until = self.to_run_next - datetime.now()
+        time_until = self.to_run_next - dt.now()
         ctr = self.next_run()
         formatted_datetime = self.to_run_next.strftime("%b-%d-%Y %H:%M")
         next_formatted_datetime = ctr.strftime("%b-%d-%Y %H:%M")
@@ -127,32 +122,32 @@ class TCTask:
         """Check if the TCTask can be launched."""
         if self.is_running:
             return f"{self.name}: RUNNING\n"
-        next = self.to_run_next - datetime.now()
-        ctr = self.next_run()
+        nextt = self.to_run_next - dt.now()
+        #ctr = self.next_run()
         days = hours = mins = ""
-        if next.days > 0:
-            days = str(next.days) + "d,"
-        if (next.seconds // 3600) > 0:
-            hours = str(int(next.seconds // 3600)) + "h,"
-        if ((next.seconds // 60) % 60) > 0:
-            mins = str(int((next.seconds // 60) % 60)) + "m"
-        formatted_delta = f"{days}{hours}{mins},{next.seconds%60}s"
+        if nextt.days > 0:
+            days = str(nextt.days) + "d,"
+        if (nextt.seconds // 3600) > 0:
+            hours = str(int(nextt.seconds // 3600)) + "h,"
+        if ((nextt.seconds // 60) % 60) > 0:
+            mins = str(int((nextt.seconds // 60) % 60)) + "m"
+        formatted_delta = f"{days}{hours}{mins},{nextt.seconds%60}s"
         return f"{self.name}: {formatted_delta}\n"
 
     def time_left_shorter(self):
         """Check if the TCTask can be launched."""
         if self.is_running:
-            return f"RUNNING\n"
-        next = self.to_run_next - datetime.now()
-        ctr = self.next_run()
+            return "RUNNING\n"
+        nextt = self.to_run_next - dt.now()
+        #ctr = self.next_run()
         days = hours = mins = ""
-        if next.days > 0:
-            days = str(next.days) + "d,"
-        if (next.seconds // 3600) > 0:
-            hours = str(int(next.seconds // 3600)) + "h,"
-        if ((next.seconds // 60) % 60) > 0:
-            mins = str(int((next.seconds // 60) % 60)) + "m"
-        formatted_delta = f"{days}{hours}{mins},{next.seconds%60}s"
+        if nextt.days > 0:
+            days = str(nextt.days) + "d,"
+        if (nextt.seconds // 3600) > 0:
+            hours = str(int(nextt.seconds // 3600)) + "h,"
+        if ((nextt.seconds // 60) % 60) > 0:
+            mins = str(int((nextt.seconds // 60) % 60)) + "m"
+        formatted_delta = f"{days}{hours}{mins},{nextt.seconds%60}s"
         return f"{formatted_delta}\n"
 
     def assign_wrapper(self, func):
@@ -173,10 +168,10 @@ class TCTask:
                 **kwargs: Keyword arguments to pass to the coroutine function.
             """
             # Check if it's time to run the function
-            if datetime.now() >= self.to_run_next:
+            if dt.now() >= self.to_run_next:
                 # Update last_run time and run the function as a coroutine
                 TCTaskManager.set_running(self.name)
-                self.last_run = datetime.now()
+                self.last_run = dt.now()
                 self.is_running = True
                 self.running_task = asyncio.create_task(func(*args, **kwargs))
 
@@ -191,7 +186,7 @@ class TCTask:
                     try:
                         self.parent_db.parent_callback(self.name, self.to_run_next)
                     except Exception as e:
-                        gui.gprint(e)
+                        logs.error("Something went wrong with the parent callback for task %s",self,exc_info=e)
                         remove_check = True
                 if remove_check:
                     TCTaskManager.add_tombstone(self.name)
@@ -201,7 +196,7 @@ class TCTask:
             else:
                 pass
                 # Print the time until next run
-                # time_until = self.to_run_next - datetime.now()
+                # time_until = self.to_run_next - dt.now()
                 # gui.gprint(f"{self.name} not ready. Next run in {time_until}")
 
         self.wrapper = wrapper
@@ -222,16 +217,24 @@ class TCTask:
 
     def next_run(self):
         """
-        Calculates the datetime of the next time the task should be run based on the current time, last_run, and time_interval.
+        Calculates the dt of the next time the task should be run based on the current time, last_run, and time_interval.
 
         Returns:
-            The datetime of the next time the task should be run.
+            The dt of the next time the task should be run.
         """
         # Calculate the next future occurrence
         next_occurrence = self.time_interval.after(
-            datetime.now().replace(second=0, microsecond=0)
+            dt.now().replace(second=0, microsecond=0)
         )
         return next_occurrence
+    
+    def __str__(self):
+        st=f"{self.name},{self.status},{self.time_left_shorter()}"
+        return st
+    
+    def __repr__(self):
+        st=f"{self.name},{self.status},{self.time_left_shorter()}"
+        return st
 
 
 class TCTaskManager:
@@ -243,11 +246,12 @@ class TCTaskManager:
         to_delete(list): a list of TCTask object to delete, since.
     """
 
-    # TODO: SPEED IT UP.
+    # This is about as fast as I can make it.
     _instance = None
 
     @classmethod
     def get_instance(cls):
+        '''Get or create the TC Task Manager.'''
         if cls._instance is None:
             cls._instance = TCTaskManager()
         return cls._instance
@@ -255,7 +259,7 @@ class TCTaskManager:
     def __init__(self):
         self.tasks: Dict[str, TCTask] = {}
         self.to_delete = []
-        self.myqueue = AutoRebalancePriorityQueue()
+        self.myqueue:AutoRebalancePriorityQueue[TCTaskRef] = AutoRebalancePriorityQueue()
 
     @classmethod
     def get_task(cls, name):
@@ -288,7 +292,7 @@ class TCTaskManager:
         return False
 
     @classmethod
-    def change_task_time(cls, name, datetime):
+    def change_task_time(cls, name, dat):
         """
         Check if a TCTask object with the specified name is in the list of tasks.
         Args:
@@ -299,7 +303,7 @@ class TCTaskManager:
         """
         manager = cls.get_instance()
         if name in manager.tasks:
-            manager.tasks[name].to_run_next = datetime
+            manager.tasks[name].to_run_next = dat
             manager.myqueue.rebalance()
             return True
         return False
@@ -398,7 +402,7 @@ class TCTaskManager:
         # Check each task to see if it's time to run
         manager = TCTaskManager.get_instance()
         task_string_list = []
-        for key, task in manager.tasks.items():
+        for _, task in manager.tasks.items():
             task_string_list.append(task.time_left() + "\n")
         return task_string_list
 
@@ -412,42 +416,43 @@ class TCTaskManager:
         sorted_dict = sorted(
             manager.tasks.items(), key=lambda x: x[1].get_total_seconds_until()
         )
-        for key, task in sorted_dict:
+        for _, task in sorted_dict:
             output2 += task.time_left_short()
             if task.is_running:
                 running += 1
             else:
                 scheduled += 1
-                deltas.append(task.to_run_next - datetime.now())
+                deltas.append(task.to_run_next - dt.now())
 
         if running > 0:
             output += f"Running:{running}, "
         if scheduled > 0:
             output += f"Scheduled:{scheduled}, "
         if deltas:
-            next = min(deltas, key=lambda x: x.total_seconds())
+            nextt = min(deltas, key=lambda x: x.total_seconds())
             days = hours = mins = ""
-            if next.days > 0:
-                days = str(next.days) + "d,"
-            if (next.seconds // 3600) > 0:
-                hours = str(int(next.seconds // 3600)) + "h,"
-            if ((next.seconds // 60) % 60) > 0:
-                mins = str(int((next.seconds // 60) % 60)) + "m"
+            if nextt.days > 0:
+                days = str(nextt.days) + "d,"
+            if (nextt.seconds // 3600) > 0:
+                hours = str(int(nextt.seconds // 3600)) + "h,"
+            if ((nextt.seconds // 60) % 60) > 0:
+                mins = str(int((nextt.seconds // 60) % 60)) + "m"
             formatted_delta = f"next auto task in {days}{hours}{mins}"
             output += formatted_delta
         return output, output2
 
+    @staticmethod
     async def run_tasks():
         """
-        Runs all of the TCTask objects that can be run at a specific time.
+        Check for the tasks that can be run at this specific time, and runs them.
         """
         # Check each task to see if it's time to run
         manager = TCTaskManager.get_instance()
         for name in manager.to_delete:
             task = manager.tasks.get(name, None)
-            if task == None:
+            if task is None:
                 continue
-            if task.is_running == False:
+            if task.is_running is False:
                 TCTaskManager.remove_task(task.name)
         manager.to_delete = []
 
@@ -460,10 +465,6 @@ class TCTaskManager:
                 asyncio.create_task(task())
             else:
                 break
-        # queue[0]
-        # for key, task in manager.tasks.items():
-        # if task.can_i_run():
-        # asyncio.create_task(task())
 
         # Wait for 1 second before checking again
         await asyncio.sleep(1)

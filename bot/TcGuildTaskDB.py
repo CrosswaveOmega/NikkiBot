@@ -92,10 +92,12 @@ class Guild_Task_Functions:
         gui.gprint(name)
         if name in instance.guildfunctions:
             gui.gprint(f"Executing task function with name '{name}', kwargs{kwargs}.")
-            await instance.guildfunctions[name](**kwargs)
+            out=await instance.guildfunctions[name](**kwargs)
             gui.gprint(f"Successful execution task function with name '{name}'.")
+            return out
         else:
             gui.gprint(f"Task function with name '{name}' does not exist.")
+            return 'DNE'
 
 
 class TCGuildTask(Guild_Task_Base):
@@ -167,14 +169,14 @@ class TCGuildTask(Guild_Task_Base):
         """
         session = DatabaseSingleton.get_session()
         if task_name:
-            TCTaskManager.remove_task(f"{server_id}_{task_name}")
+            TCTaskManager.add_tombstone(f"{server_id}_{task_name}")
             session.query(TCGuildTask).filter_by(
                 server_id=server_id, task_name=task_name
             ).delete()
         else:
             tasks = session.query(cls.task_name).filter_by(server_id=server_id).all()
             for task in tasks:
-                TCTaskManager.remove_task(f"{server_id}_{task.task_name}")
+                TCTaskManager.add_tombstone(f"{server_id}_{task.task_name}")
             session.query(TCGuildTask).filter_by(server_id=server_id).delete()
         session.commit()
 
@@ -239,7 +241,7 @@ class TCGuildTask(Guild_Task_Base):
             source_message = await channel.send(
                 f"Auto Guild Task {self.task_name} launching."
             )
-            await Guild_Task_Functions.execute_task_function(
+            this_out=await Guild_Task_Functions.execute_task_function(
                 self.task_name, source_message=source_message
             )
         except Exception as e:
@@ -251,7 +253,7 @@ class TCGuildTask(Guild_Task_Base):
                 gui.dprint("Another error occurred.")
         await asyncio.sleep(2)
         gui.gprint(f"{self.name} Task done at", datetime.now(), "excution ok.")
-        if self.remove_after:
+        if self.remove_after or this_out=="REMOVE":
             TCGuildTask.remove_guild_task(self.server_id, self.task_name)
 
     def to_task(self, bot):

@@ -190,13 +190,13 @@ class MessageTemplates:
 
     @staticmethod
     async def confirm(
-        ctx: commands.Context, description: str, ephemeral=True, **kwargs
+        ctx: commands.Context, description: str, ephemeral=False, **kwargs
     ):
         """
         Send a quick yes/no message
         """
         confirm = ConfirmView(user=ctx.author)
-        mes = await ctx.send(description, view=confirm)
+        mes = await ctx.send(description, view=confirm,ephemeral=ephemeral)
         await confirm.wait()
         confirm.clear_items()
         await mes.edit(view=confirm)

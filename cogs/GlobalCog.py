@@ -106,12 +106,13 @@ class NoteEditView(BaseView):
     View that allows one to edit the work in progress notes.
     """
 
-    def __init__(self, *, user, timeout=30 * 15, content=None, key=None, topic=None):
+    def __init__(self, *, user, timeout=30 * 15, content=None, key=None, topic=None,has_image=False):
         super().__init__(user=user, timeout=timeout)
         self.value = False
         self.done = None
         self.content = content
         self.key = key
+        self.has_image =has_image
         self.topic = topic
 
     def make_embed(self):
@@ -128,6 +129,9 @@ class NoteEditView(BaseView):
                 value=f"timeout in: {discord.utils.format_dt(self.get_timeout_dt(),'R')}",
                 inline=False,
             )
+        if self.has_image:
+            embed.add_field(name="Image Display",value="Your real note will have your uploaded image added, but for efficiency sake a placeholder is used for this preview.",inline=False)
+            embed.set_image(url='https://picsum.photos/400/200.jpg')
         return embed
 
     async def on_timeout(self) -> None:
@@ -179,10 +183,11 @@ class NoteEditView(BaseView):
 
 
 class UserNotes:
+    '''Wrapper for a ChromaDB Collection called "Notes".  '''
     def __init__(self, bot, user):
         # dimensions = 384
         self.userid: int = user.id
-        metadata = {"desc": "Simple user note taker.  384 dimensions."}
+        metadata = {"desc": "Simple user note taker.  384 dimensions.",'user_id':user.id}
         self.coll = ChromaTools.get_collection(
             f"usernotes_{self.userid}",
             embed=bot.embedding,
@@ -273,7 +278,7 @@ class UserNotes:
             filterwith = {"$and": conditions}
         try:
             docs = await self.coll.aget(
-                ids=got, where=filterwith, limit=128, include=["documents", "metadatas"]
+                ids=got, where=filterwith, offset=0,limit=128, include=["documents", "metadatas"]
             )
             docs2 = smem.results_to_docs(docs)
             docs2.sort(key=lambda x: x.metadata["date"], reverse=True)
@@ -282,6 +287,12 @@ class UserNotes:
             raise e
             return None
 
+    async def count_notes(self, key: Optional[str] = None, topic: Optional[str] = None):
+        counts = self.coll._collection.count()
+        print("COUNTED UP", counts)
+        got = await NotebookAux.count_notes(self.userid, key, topic, offset=0)
+        return got
+    
     async def get_topics(self):
         filterwith = {"foruser": self.userid}
 
@@ -314,6 +325,8 @@ class UserNotes:
         if topic:
             conditions.append({"topic": topic})
 
+        if len(conditions) > 1:
+            filterwith = {"$and": conditions}
         try:
             self.coll._collection.delete(where=filterwith)
             await NotebookAux.remove(self.userid, key, topic)
@@ -332,7 +345,7 @@ class UserNotes:
             gui.dprint(e)
             return False
 
-    async def note_to_embed(self, doc: Document):
+    async def note_to_embed(self, doc: Document)->Tuple[discord.Embed,discord.File]:
         fil=None
         embed = discord.Embed(
             description=f"{doc.metadata['value']}"[:4000],
@@ -359,7 +372,284 @@ class UserNotes:
 
 @app_commands.allowed_installs(guilds=False, users=True)
 class Notes(app_commands.Group, name="notes", description="User Note Commands"):
-    pass
+    '''Stub class for note group.'''
+
+class NotesCog(commands.Cog, TC_Cog_Mixin):
+    """The notes system"""
+
+    def __init__(self, bot: commands.Bot):
+        self.helptext = "The Notes system."
+        self.bot = bot
+        self.globalonly = True
+        self.usertopics = {}
+        self.init_context_menus()
+    
+    gnote = Notes()
+
+    
+    @gnote.command(name="set_topic", description="WIP.  Set your note topic")
+    @app_commands.describe(
+        topic="The topic to add all notes to unless stated otherwise."
+    )
+    async def set_topic(
+        self, interaction: discord.Interaction, topic: topictype
+    ) -> None:
+        """get bot info for this server"""
+
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        user = interaction.user
+        if not user.id in self.usertopics:
+            self.usertopics[user.id] = "any"
+        self.usertopics[user.id] = topic
+        mess = await ctx.send(f"Set your default topic to {topic}.", ephemeral=True)
+
+    @gnote.command(name="add_note", description="WIP.  Add a quick note using key.")
+    @app_commands.describe(
+        content="Content of your note.",
+        key="The key to save your note under.",
+        topic="The topic for the key to your note under.  Use set topic to change the default one.",
+    )
+    async def add_note(
+        self,
+        interaction: discord.Interaction,
+        content: contenttype,
+        key: keytype,
+        topic: Optional[topictype] = None,
+        image: Optional[discord.Attachment]=None
+    ) -> None:
+        """Add a note."""
+
+        if not topic:
+            topic = self.usertopics.get(interaction.user.id, "any")
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        view = NoteEditView(
+            user=interaction.user,
+            content=content,
+            key=key,
+            topic=topic,
+            has_image=True if image is not None else False,
+            timeout=10 * 60,
+        )
+        emb = view.make_embed()
+        tmes = await ctx.send(
+            "Please apply any edits using the Edit Note button, and press complete when you're satisfied!",
+            embed=emb,
+            view=view,
+            ephemeral=True,
+        )
+        await view.wait()
+
+        if view.done:
+            c, k, t = view.done
+            fil=None
+            typev=""
+            if image:
+                fil=await image.to_file()
+                typev=f" with {image.content_type}"
+            await tmes.edit(
+                content=f"<a:LoadingBlue:1206301904863502337> adding note{typev} ...",
+                view=None,
+                embed=view.make_embed(),
+            )
+            with Timer() as op_timer:
+                notes = UserNotes(self.bot, interaction.user)
+                note = await notes.add_to_mem(ctx, c, k, t, file=fil,conttype=typev)
+                emb, fil = await notes.note_to_embed(note)
+                await ctx.send(embed=emb, file=fil, ephemeral=True)
+            await tmes.edit(
+                content=f"added note{typev} in {op_timer.get_time()} seconds", embed=None
+            )
+        else:
+            message = "Cancelled"
+            if view.value:
+                if view.value == "timeout":
+                    message = "You timed out."
+            await tmes.edit(content=message, view=None, embed=view.make_embed())
+
+    @gnote.command(
+        name="get_note",
+        description="WIP.  Get a note under a key/topic pair, or get all notes for any key or topic.",
+    )
+    @app_commands.describe(
+        key="The key the target note was saved under.",
+        topic="The topic for the note.  Use set topic to change the default one.",
+    )
+    async def get_note(
+        self,
+        interaction: discord.Interaction,
+        key: Optional[keytype] = None,
+        topic: Optional[topictype] = None,
+    ) -> None:
+        """get 5 notes"""
+
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        mess = await ctx.send(
+            "<a:LoadingBlue:1206301904863502337> getting note", ephemeral=True
+        )
+        if topic == "any" and interaction.user.id in self.usertopics:
+            topic = self.usertopics[interaction.user.id]
+        with Timer() as op_timer:
+            notes = UserNotes(self.bot, interaction.user)
+            docs = await notes.get_note(key, topic)
+            embs = []
+            for n in docs:
+                emb = await notes.note_to_embed(n)
+                embs.append(emb)
+        await pages_of_embed_attachments(ctx, embs, ephemeral=True)
+        await mess.edit(content=f"got notes in {op_timer.get_time()} seconds")
+    @gnote.command(
+        name="delete_note",
+        description="WIP.  Delete all notes with a given key/value",
+    )
+    @app_commands.describe(
+        key="The key the target note was saved under.",
+        topic="The topic for the note.  Use set topic to change the default one.",
+    )
+    async def delete_note(
+        self,
+        interaction: discord.Interaction,
+        key: Optional[keytype] = None,
+        topic: Optional[topictype] = None,
+    ) -> None:
+        """Find Notes under a specific Key/Topic pair"""
+        if not (key or topic):
+            await interaction.response.send_message("please specify either key or topic.",ephemeral=True)
+            return
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        mess = await ctx.send(
+            "<a:LoadingBlue:1206301904863502337> getting note", ephemeral=True
+        )
+        with Timer() as op_timer:
+            notes = UserNotes(self.bot, interaction.user)
+            docs = await notes.count_notes(key, topic)
+            
+        if docs<1:
+            await mess.edit(content=f"Could not find any notes with key `{key}` or topic `{topic}`. Op took {op_timer.get_time()} seconds.")
+            return
+        
+        await mess.edit(content=f"Found {docs} {'notes' if docs>1 else 'note'} in {op_timer.get_time()} seconds")
+        cont, mess2 = await MessageTemplates.confirm(
+            ctx, 
+            f"Are you sure you want to delete {'these' if docs>1 else 'this'} {docs} {'notes' if docs>1 else 'note'}?"+
+            "Deleted notes can not be restored."
+            , True
+        )
+        if not cont:
+            await mess2.delete()
+            return
+        with Timer() as op_timer:
+            await notes.delete_note(key,topic)
+        await mess2.delete()
+        await mess.edit(content=f"Deleted {docs} notes in {op_timer.get_time()} seconds")
+
+    @gnote.command(
+        name="list_topics",
+        description="WIP.  List all of your note topics.",
+    )
+    async def list_topics(
+        self,
+        interaction: discord.Interaction,
+    ) -> None:
+        """get 5 notes"""
+
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        mess = await ctx.send(
+            "<a:LoadingBlue:1206301904863502337> getting topics", ephemeral=True
+        )
+        with Timer() as op_timer:
+            notes = UserNotes(self.bot, interaction.user)
+            docs = await notes.get_topics()
+            page = commands.Paginator(prefix=None, suffix=None)
+            for k, v in docs.items():
+                page.add_line(f"`{k}`:{v}")
+
+            embs = []
+            for p in page.pages:
+                em = discord.Embed(description=p)
+                embs.append(em)
+        await pages_of_embeds(ctx, embs, ephemeral=True)
+        await mess.edit(content=f"got topics in {op_timer.get_time()} seconds")
+
+    @gnote.command(
+        name="list_keys",
+        description="WIP.  List all your keys",
+    )
+    async def list_keys(
+        self,
+        interaction: discord.Interaction,
+    ) -> None:
+        """get 5 notes"""
+
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        mess = await ctx.send(
+            "<a:LoadingBlue:1206301904863502337> getting topics", ephemeral=True
+        )
+        with Timer() as op_timer:
+            notes = UserNotes(self.bot, interaction.user)
+            docs = await notes.get_keys()
+
+            print(docs)
+
+            embs = []
+            for k, v in docs.items():
+                page = commands.Paginator(prefix=None, suffix=None)
+                for s in v:
+                    page.add_line(f"* {s}")
+                pages = len(page.pages)
+                for e, p in enumerate(page.pages):
+                    spages = f"{e+1}/{pages}" if pages > 1 else ""
+                    em = discord.Embed(title=f"Topic: `{k}` {spages}", description=p)
+                    embs.append(em)
+        await pages_of_embeds(ctx, embs, ephemeral=True)
+        await mess.edit(
+            content=f"Retrieved all topics in {op_timer.get_time()} seconds"
+        )
+
+    @gnote.command(name="search_notes", description="WIP.  search for a note")
+    @app_commands.describe(
+        content="Content to search",
+        key="Restrict search to notes with this key.",
+        topic="Restrict search to notes with this topic.",
+    )
+    async def search_note(
+        self,
+        interaction: discord.Interaction,
+        content: contenttype,
+        key: Optional[keytype] = None,
+        topic: Optional[topictype] = None,
+    ) -> None:
+        """get 5 notes"""
+
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        mess = await ctx.send(
+            "<a:LoadingBlue:1206301904863502337> getting note", ephemeral=True
+        )
+        with Timer() as op_timer:
+            notes = UserNotes(self.bot, interaction.user)
+            docs, _ = await notes.search_sim(content, key, topic)
+            embs = []
+            for n in docs:
+                emb = await notes.note_to_embed(n)
+                embs.append(emb)
+        await pages_of_embed_attachments(ctx, embs, ephemeral=True)
+        await mess.edit(content=f"got notes in {op_timer.get_time()} seconds")
+
+    @gnote.command(name="purge_all_notes", description="Delete all your notes.")
+    @app_commands.describe()
+    async def purge_notes(self, interaction: discord.Interaction) -> None:
+        """Delete all notes that belong to you."""
+
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        cont, mess = await MessageTemplates.confirm(
+            ctx, "Are you sure you want to delete all your notes?  **Deleted notes can never be recovered.**", True
+        )
+        if not cont:
+            await mess.delete()
+            return
+        mess = await ctx.send("<a:LoadingBlue:1206301904863502337> deleting all notes",ephemeral=True)
+        notes = UserNotes(self.bot, interaction.user)
+        await notes.delete_user_notes(interaction.user.id)
+        await mess.edit(content="Deleted all your notes.  Remember, this can not be undone.")
 
 
 class Global(commands.Cog, TC_Cog_Mixin):
@@ -372,8 +662,6 @@ class Global(commands.Cog, TC_Cog_Mixin):
         self.memehook = AssetLookup.get_asset("memehook", "urls")
         self.usertopics = {}
         self.init_context_menus()
-
-    gnote = Notes()
 
     @super_context_menu(name="Extracool", flags="user")
     async def coooler(
@@ -500,223 +788,8 @@ class Global(commands.Cog, TC_Cog_Mixin):
             await self.bot.send_error(e,"AIerr",True)
             await ctx.send("something went wrong...")
 
-    @gnote.command(name="set_topic", description="WIP.  Set your note topic")
-    @app_commands.describe(
-        topic="The topic to add all notes to unless stated otherwise."
-    )
-    async def set_topic(
-        self, interaction: discord.Interaction, topic: topictype
-    ) -> None:
-        """get bot info for this server"""
+    
 
-        ctx: commands.Context = await self.bot.get_context(interaction)
-        user = interaction.user
-        if not user.id in self.usertopics:
-            self.usertopics[user.id] = "any"
-        self.usertopics[user.id] = topic
-        mess = await ctx.send(f"Set your default topic to {topic}.", ephemeral=True)
-
-    @gnote.command(name="add_note", description="WIP.  Add a quick note using key.")
-    @app_commands.describe(
-        content="Content of your note.",
-        key="The key to save your note under.",
-        topic="The topic for the key to your note under.  Use set topic to change the default one.",
-    )
-    async def add_note(
-        self,
-        interaction: discord.Interaction,
-        content: contenttype,
-        key: keytype,
-        topic: Optional[topictype] = None,
-        image: Optional[discord.Attachment]=None
-    ) -> None:
-        """Add a note."""
-
-        if not topic:
-            topic = self.usertopics.get(interaction.user.id, "any")
-        ctx: commands.Context = await self.bot.get_context(interaction)
-        view = NoteEditView(
-            user=interaction.user,
-            content=content,
-            key=key,
-            topic=topic,
-            timeout=10 * 60,
-        )
-        emb = view.make_embed()
-        tmes = await ctx.send(
-            "Please apply any edits using the Edit Note button, and press complete when you're satisfied!",
-            embed=emb,
-            view=view,
-            ephemeral=True,
-        )
-        await view.wait()
-
-        if view.done:
-            c, k, t = view.done
-            fil=None
-            typev=""
-            if image:
-                fil=await image.to_file()
-                typev=f" with {image.content_type}"
-            await tmes.edit(
-                content=f"<a:LoadingBlue:1206301904863502337> adding note{typev} ...",
-                view=None,
-                embed=view.make_embed(),
-            )
-            with Timer() as op_timer:
-                notes = UserNotes(self.bot, interaction.user)
-                note = await notes.add_to_mem(ctx, c, k, t, file=fil,conttype=typev)
-                emb, fil = await notes.note_to_embed(note)
-                await ctx.send(embed=emb, file=fil, ephemeral=True)
-            await tmes.edit(
-                content=f"added note{typev} in {op_timer.get_time()} seconds", embed=None
-            )
-        else:
-            message = "Cancelled"
-            if view.value:
-                if view.value == "timeout":
-                    message = "You timed out."
-            await tmes.edit(content=message, view=None, embed=view.make_embed())
-
-    @gnote.command(
-        name="get_note",
-        description="WIP.  Get a note under a key/topic pair, or get all notes for any key or topic.",
-    )
-    @app_commands.describe(
-        key="The key the target note was saved under.",
-        topic="The topic for the note.  Use set topic to change the default one.",
-    )
-    async def get_note(
-        self,
-        interaction: discord.Interaction,
-        key: Optional[keytype] = None,
-        topic: Optional[topictype] = None,
-    ) -> None:
-        """get 5 notes"""
-
-        ctx: commands.Context = await self.bot.get_context(interaction)
-        mess = await ctx.send(
-            "<a:LoadingBlue:1206301904863502337> getting note", ephemeral=True
-        )
-        if topic == "any" and interaction.user.id in self.usertopics:
-            topic = self.usertopics[interaction.user.id]
-        with Timer() as op_timer:
-            notes = UserNotes(self.bot, interaction.user)
-            docs = await notes.get_note(key, topic)
-            embs = []
-            for n in docs:
-                emb = await notes.note_to_embed(n)
-                embs.append(emb)
-        await pages_of_embed_attachments(ctx, embs, ephemeral=True)
-        await mess.edit(content=f"got notes in {op_timer.get_time()} seconds")
-
-    @gnote.command(
-        name="list_topics",
-        description="WIP.  List all of your note topics.",
-    )
-    async def list_topics(
-        self,
-        interaction: discord.Interaction,
-    ) -> None:
-        """get 5 notes"""
-
-        ctx: commands.Context = await self.bot.get_context(interaction)
-        mess = await ctx.send(
-            "<a:LoadingBlue:1206301904863502337> getting topics", ephemeral=True
-        )
-        with Timer() as op_timer:
-            notes = UserNotes(self.bot, interaction.user)
-            docs = await notes.get_topics()
-            page = commands.Paginator(prefix=None, suffix=None)
-            for k, v in docs.items():
-                page.add_line(f"`{k}`:{v}")
-
-            embs = []
-            for p in page.pages:
-                em = discord.Embed(description=p)
-                embs.append(em)
-        await pages_of_embeds(ctx, embs, ephemeral=True)
-        await mess.edit(content=f"got topics in {op_timer.get_time()} seconds")
-
-    @gnote.command(
-        name="list_keys",
-        description="WIP.  List all your keys",
-    )
-    async def list_keys(
-        self,
-        interaction: discord.Interaction,
-    ) -> None:
-        """get 5 notes"""
-
-        ctx: commands.Context = await self.bot.get_context(interaction)
-        mess = await ctx.send(
-            "<a:LoadingBlue:1206301904863502337> getting topics", ephemeral=True
-        )
-        with Timer() as op_timer:
-            notes = UserNotes(self.bot, interaction.user)
-            docs = await notes.get_keys()
-
-            print(docs)
-
-            embs = []
-            for k, v in docs.items():
-                page = commands.Paginator(prefix=None, suffix=None)
-                for s in v:
-                    page.add_line(f"* {s}")
-                pages = len(page.pages)
-                for e, p in enumerate(page.pages):
-                    spages = f"{e+1}/{pages}" if pages > 1 else ""
-                    em = discord.Embed(title=f"Topic: `{k}` {spages}", description=p)
-                    embs.append(em)
-        await pages_of_embeds(ctx, embs, ephemeral=True)
-        await mess.edit(
-            content=f"Retrieved all topics in {op_timer.get_time()} seconds"
-        )
-
-    @gnote.command(name="search_notes", description="WIP.  search for a note")
-    @app_commands.describe(
-        content="Content to search",
-        key="Restrict search to notes with this key.",
-        topic="Restrict search to notes with this topic.",
-    )
-    async def search_note(
-        self,
-        interaction: discord.Interaction,
-        content: contenttype,
-        key: Optional[keytype] = None,
-        topic: Optional[topictype] = None,
-    ) -> None:
-        """get 5 notes"""
-
-        ctx: commands.Context = await self.bot.get_context(interaction)
-        mess = await ctx.send(
-            "<a:LoadingBlue:1206301904863502337> getting note", ephemeral=True
-        )
-        with Timer() as op_timer:
-            notes = UserNotes(self.bot, interaction.user)
-            docs, pc = await notes.search_sim(content, key, topic)
-            embs = []
-            for n in docs:
-                emb = await notes.note_to_embed(n)
-                embs.append(emb)
-        await pages_of_embed_attachments(ctx, embs, ephemeral=True)
-        await mess.edit(content=f"got notes in {op_timer.get_time()} seconds")
-
-    @gnote.command(name="purge_all_notes", description="Delete all your notes.")
-    @app_commands.describe()
-    async def purge_notes(self, interaction: discord.Interaction) -> None:
-        """get bot info for this server"""
-
-        ctx: commands.Context = await self.bot.get_context(interaction)
-        cont, mess = await MessageTemplates.confirm(
-            ctx, "Are you sure you want to delete your notes?", True
-        )
-        if not cont:
-            await mess.delete()
-        mess = await ctx.send("<a:LoadingBlue:1206301904863502337> deleting all note")
-        notes = UserNotes(self.bot, interaction.user)
-        await notes.delete_user_notes(interaction.user.id)
-        await mess.edit(content="Deleted all your notes.")
 
     @app_commands.command(name="pingtest", description="ping")
     @app_commands.allowed_installs(guilds=True, users=True)
@@ -732,4 +805,10 @@ class Global(commands.Cog, TC_Cog_Mixin):
 
 
 async def setup(bot):
+    await bot.add_cog(NotesCog(bot))
     await bot.add_cog(Global(bot))
+
+
+async def teardown(bot):
+    await bot.remove_cog('NotesCog')
+    await bot.remove_cog('Global')
