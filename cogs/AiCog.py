@@ -174,11 +174,12 @@ async def process_result(
             result2 = await ctx.bot.gptapi.callapi(chat)
 
             i2 = result2.choices[0]
-            role, content = i2.message.role, i2.message.content
+            role, this_content = i2.message.role, i2.message.content
             if JSONMODE:
-                jsonout = await gptmod.errorous_json_decode(content, ctx.bot)
+                jsonout = await gptmod.errorous_json_decode(this_content, ctx.bot)
             else:
-                jsonout={'content':content, 'new_memory':[]}
+                jsonout={'content':this_content, 'new_memory':[]}
+            content=this_content
             break
 
         # content = resp
@@ -190,6 +191,7 @@ async def process_result(
             page.add_line(p)
         split_by = split_string_with_code_blocks(mycontent, 2000)
         messageresp = None
+        print(mycontent)
         for pa in split_by:
             ms = await ctx.channel.send(pa)
             if messageresp == None:

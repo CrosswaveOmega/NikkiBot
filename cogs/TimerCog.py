@@ -55,7 +55,7 @@ class TimerTable(Base):
 
     @staticmethod
     async def add_timer(user_id, name, trigger_on, url):
-        async with await DatabaseSingleton.get_async_session() as session:
+        async with DatabaseSingleton.get_async_session() as session:
             new_timer = TimerTable(
                 user_id=user_id, name=name, invoke_on=trigger_on, message_url=url
             )
@@ -65,7 +65,7 @@ class TimerTable(Base):
 
     @staticmethod
     async def get_timer(user_id, name):
-        async with await DatabaseSingleton.get_async_session() as session:
+        async with DatabaseSingleton.get_async_session() as session:
             timer = await session.execute(
                 select(TimerTable).filter_by(user_id=user_id, name=name)
             )
@@ -78,7 +78,7 @@ class TimerTable(Base):
 
     @staticmethod
     async def get_expired_timers():
-        async with await DatabaseSingleton.get_async_session() as session:
+        async with DatabaseSingleton.get_async_session() as session:
             expired_timers = await session.execute(
                 select(TimerTable).filter(TimerTable.invoke_on < datetime.now())
             )
@@ -86,7 +86,7 @@ class TimerTable(Base):
 
     @staticmethod
     async def remove_expired_timers():
-        async with await DatabaseSingleton.get_async_session() as session:
+        async with DatabaseSingleton.get_async_session() as session:
             expired_timers_query = await session.execute(
                 select(TimerTable).filter(TimerTable.invoke_on < datetime.now())
             )
@@ -98,7 +98,7 @@ class TimerTable(Base):
 
     @staticmethod
     async def list_timers(user_id):
-        async with await DatabaseSingleton.get_async_session() as session:
+        async with DatabaseSingleton.get_async_session() as session:
             timers = await session.execute(
                 select(TimerTable).where(TimerTable.user_id == user_id)
             )
@@ -127,7 +127,7 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
             self.countdown -= 1
             return
         try:
-            async with await DatabaseSingleton.get_async_session() as session:
+            async with DatabaseSingleton.get_async_session() as session:
                 expired = await TimerTable.get_expired_timers()
                 if expired:
                     for t in expired:
@@ -193,7 +193,7 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
         )
 
         timer.message_url = target_message.jump_url
-        async with await DatabaseSingleton.get_async_session() as session:
+        async with DatabaseSingleton.get_async_session() as session:
             await session.commit()
         return target_message
 
@@ -232,7 +232,7 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
         )
 
         timer.message_url = target_message.jump_url
-        async with await DatabaseSingleton.get_async_session() as session:
+        async with DatabaseSingleton.get_async_session() as session:
             await session.commit()
         return target_message
 

@@ -130,12 +130,12 @@ class TCBot(
         self.default_error = self.on_command_error
         self.bot_ready = False
 
-    def database_on(self):
+    async def database_on(self):
         """turn the database on."""
         self.database = DatabaseSingleton("Startup")
         self.database.load_base(Base=Guild_Task_Base)
         self.database.load_base(Base=Guild_Sync_Base)
-        self.database.startup()
+        await self.database.startup_all()
 
     def set_error_channel(self, newid):
         """set the error channel id."""
@@ -164,14 +164,14 @@ class TCBot(
                 pass
                 # self.gthread=gui.Gui.run(self.gui)
             self.gptapi = gptmod.GptmodAPI()
-
-            self.database_on()
+            print("Turning on db")
+            await self.database_on()
 
             # Update extensions.
             self.update_ext_list()
             await self.reload_all()
 
-            dbcheck = self.database.database_check()
+            dbcheck = await self.database.database_check()
             gui.gprint(dbcheck)
             # audit old guild data.
             await self.audit_guilds()

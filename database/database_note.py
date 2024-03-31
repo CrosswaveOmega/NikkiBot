@@ -44,7 +44,7 @@ class NotebookAux(NoteBase):
 
     @staticmethod
     async def add(user_id: int, entry_id: str, key: str, topic: str, date: datetime):
-        async with await DatabaseSingleton.get_async_session() as session:
+        async with DatabaseSingleton.get_async_session() as session:
             # Check if the entry already exists
             existing_entry = await session.execute(
                 select(NotebookAux).where(
@@ -67,7 +67,7 @@ class NotebookAux(NoteBase):
 
     @staticmethod
     async def list_topic(user_id):
-        async with await DatabaseSingleton.get_async_session() as session:
+        async with DatabaseSingleton.get_async_session() as session:
             topics = await session.execute(
                 select(NotebookAux.topic, func.count(NotebookAux.topic))
                 .where(NotebookAux.user_id == user_id)
@@ -77,7 +77,7 @@ class NotebookAux(NoteBase):
 
     @staticmethod
     async def list_keys(user_id):
-        async with await DatabaseSingleton.get_async_session() as session:
+        async with DatabaseSingleton.get_async_session() as session:
             topic_key_pairs = await session.execute(
                 select(NotebookAux.topic, NotebookAux.key).where(
                     NotebookAux.user_id == user_id
@@ -94,7 +94,7 @@ class NotebookAux(NoteBase):
 
     @staticmethod
     async def get_ids(user_id, key: str = None, topic: str = None, offset: int = 0):
-        async with await DatabaseSingleton.get_async_session() as session:
+        async with DatabaseSingleton.get_async_session() as session:
             topics = await session.execute(
                 select(NotebookAux.entry_id)
                 .where(
@@ -112,7 +112,7 @@ class NotebookAux(NoteBase):
 
     @staticmethod
     async def count_notes(user_id, key: str = None, topic: str = None, offset: int = 0):
-        async with await DatabaseSingleton.get_async_session() as session:
+        async with DatabaseSingleton.get_async_session() as session:
             note_count = await session.execute(
                 select(func.count(NotebookAux.entry_id))
                 .where(
@@ -127,7 +127,7 @@ class NotebookAux(NoteBase):
 
     @staticmethod
     async def remove(user_id: int, key: str = None, topic: str = None):
-        async with await DatabaseSingleton.get_async_session() as session:
+        async with DatabaseSingleton.get_async_session() as session:
             await session.execute(
                 delete(NotebookAux).where(
                     and_(

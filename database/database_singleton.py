@@ -1,3 +1,4 @@
+from typing import Dict
 import gui
 from sqlalchemy import create_engine, text, MetaData, Table, inspect, Column
 from sqlalchemy.orm import sessionmaker, Session
@@ -8,7 +9,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import registry
 
 import logging
-
+from .db_compare_utils import compare_db, async_compare_db
 """
 The database engine is stored within a DatabaseSingleton, that ensures only one engine is connected to
 at any given time.  
@@ -35,11 +36,20 @@ def generate_column_definition(column, engine):
 ENGINEPREFIX = "sqlite:///"
 ASYNCENGINE = "sqlite+aiosqlite:///"
 
+def merge_metadata(*original_metadata) -> MetaData:
+    merged = MetaData()
 
+    for original_metadatum in original_metadata:
+        for table in original_metadatum.tables.values():
+            table.to_metadata(merged)
+
+    return merged
 class EngineContainer:
-    def __init__(self, db_name):
+    def __init__(self, db_name, asyncmode=False):
         self.database_name = db_name
         self.connected = False
+        self.connected_a = False
+        self.async_mode=asyncmode
         self.engine = None
         self.bases = []
         self.SessionLocal: sessionmaker = None
@@ -76,6 +86,12 @@ class EngineContainer:
                 async with self.aengine.begin() as conn:
                     await conn.run_sync(base.metadata.create_all)
             self.connected_a = True
+    
+    async def sync_bases(self):
+        if self.connected_a:
+            for base in self.bases:
+                async with self.aengine.begin() as conn:
+                    await conn.run_sync(base.metadata.create_all)
 
     def load_in_base(self, Base):
         gui.dprint("loading in: ", Base.__name__, Base)
@@ -92,10 +108,33 @@ class EngineContainer:
         self.engine.dispose()
         self.connected = False
 
+    async def close_async(self):
+        if self.connected_a:
+            await self.aengine.dispose()
+            gui.dprint("disposed")
+            self.connected_a = False
+
     def get_session(self) -> Session:
         if not self.session:
             self.session = self.SessionLocal()
         return self.session
+    
+    def get_sub_session(self) -> Session:
+        return self.SessionLocal()
+    
+    def get_async_session(self) -> AsyncSession:
+        mysession = self.SessionAsyncLocal()
+        return mysession
+    
+    
+    def compare_db(self):
+        """compare current metadata with sqlalchemy metadata"""
+
+        return compare_db(self)
+    
+    async def compare_db_async(self):
+        """compare current metadata with sqlalchemy metadata"""
+        return await async_compare_db(self)
 
 
 class DatabaseSingleton:
@@ -114,7 +153,7 @@ class DatabaseSingleton:
             # create a logger and set its level to INFO
 
             self.bases = []
-            self.engines = {}
+            self.engines:Dict[str,EngineContainer] = {}
             self.val = arg
             self.database_name = db_name
             self.adatabase_name = adbname
@@ -125,11 +164,11 @@ class DatabaseSingleton:
             self.SessionAsyncLocal: async_sessionmaker = None
             self.session: Session = None
             self.add_engine("main", db_name)
-            self.add_engine("async", adbname)
+            self.add_engine("async", adbname,True)
 
-        def add_engine(self, ename, db_name):
+        def add_engine(self, ename, db_name,mode=False):
             if not ename in self.engines:
-                engine = EngineContainer(db_name)
+                engine = EngineContainer(db_name,mode)
                 self.engines[ename] = engine
 
         def connect_to_engine(self):
@@ -163,128 +202,66 @@ class DatabaseSingleton:
                         await conn.run_sync(base.metadata.create_all)
                 self.connected_a = True
 
-        def load_in_base(self, Base, ename="main"):
+        def load_in_base(self, Base, ename=None):
             gui.dprint("loading in: ", Base.__name__, Base)
-            if ename in self.engines:
-                self.engines[ename].load_in_base(Base)
+            if ename:
+                if ename in self.engines:
+                    self.engines[ename].load_in_base(Base)
+            else:
+                for en in self.engines.keys():
+                    self.engines[en].load_in_base(Base)
             if not Base in self.bases:
                 self.bases.append(Base)
-            gui.dprint("done")
-            if self.connected:
-                Base.metadata.create_all(self.engine)
-                self.session: Session = self.SessionLocal()
-                self.session.commit()
 
-        def start_up(self):
-            SessionLocal = sessionmaker(
-                bind=self.engine, autocommit=False, autoflush=True
-            )
 
-            self.SessionLocal: sessionmaker = SessionLocal
-            self.session: Session = None
+
+
+        async def startup_all(self):
+            for en,val in self.engines.items():
+                if val.async_mode:
+                    await val.connect_to_engine_a()
+                else:
+                    val.connect_to_engine()
 
         def print_arg(self):
             gui.dprint(self.val)
 
-        def compare_db(self):
+        async def compare_db(self):
             """compare current metadata with sqlalchemy metadata"""
+            for en,val in self.engines.items():
+                if val.async_mode:
+                    await val.compare_db_async()
+                else:
+                    val.compare_db()
+            return
 
-            def merge_metadata(*original_metadata) -> MetaData:
-                merged = MetaData()
-
-                for original_metadatum in original_metadata:
-                    for table in original_metadatum.tables.values():
-                        table.to_metadata(merged)
-
-                return merged
-
-            insp = inspect(self.engine)
-
-            db_meta = MetaData()
-            db_meta.reflect(bind=self.engine)
-
-            mt = [base.metadata for base in self.bases]
-            merged = merge_metadata(*mt)
-
-            # Get the tables from the metadata objects
-            tables1 = db_meta.tables
-            tables2 = merged.tables
-
-            # Compare tables
-            result = ""
-            session = self.get_session()
-            for table_name in set(tables1) | set(tables2):
-                table1 = tables1.get(table_name)
-                table2 = tables2.get(table_name)
-                if table1 is None:
-                    result += f"Table '{table_name}' is missing from remote.\n"
-                    continue
-                if table2 is None:
-                    result += f"Table '{table_name}' is missing from local.\n"
-                    continue
-
-                columns1 = insp.get_columns(table_name, schema=table1.schema)
-
-                columns2 = [
-                    {
-                        "name": column.name,
-                        "type": column.type,
-                        "nullable": column.nullable,
-                        "origcol": column,
-                    }
-                    for column in table2.columns
-                ]
-
-                column_names1 = set(column["name"] for column in columns1)
-                column_names2 = set(column["name"] for column in columns2)
-
-                missing_columns_table2 = column_names1 - column_names2
-                missing_columns_table1 = column_names2 - column_names1
-
-                # Print missing columns
-                if missing_columns_table2:
-                    result += f"Missing columns in local '{table_name}': {', '.join(missing_columns_table2)}\n"
-                if missing_columns_table1:
-                    result += f"Missing columns in remote '{table_name}': {', '.join(missing_columns_table1)}\n"
-                    for miss in missing_columns_table1:
-                        # Add missing columns to remote.
-                        # This is primarly intended for SQLite3.
-                        col: Column = table2.columns[miss]
-                        alter_table_stmt = text(
-                            f"ALTER TABLE {table_name} ADD COLUMN {generate_column_definition(col,self.engine)};"
-                        )
-                        session.execute(alter_table_stmt)
-                        session.commit()
-            return result
 
         def execute_sql_string(self, string):
             with self.get_session() as session:
                 session.execute(text(string))
 
-        def close(self):
-            if self.session is not None:
-                self.session.close()
-            self.engine.dispose()
-            self.connected = False
-
         async def close_async(self):
-            if self.connected_a:
-                await self.aengine.dispose()
-                gui.dprint("disposed")
-                self.connected_a = False
+            for en,val in self.engines.items():
+                if val.async_mode:
+                    await val.close_async()
+                else:
+                    val.close()
 
         def get_session(self) -> Session:
-            if not self.session:
-                self.session = self.SessionLocal()
-            return self.session
+            for en,val in self.engines.items():
+                if not val.async_mode:
+                    return val.get_session()
 
         def get_sub_session(self) -> Session:
-            return self.SessionLocal()
+            for en,val in self.engines.items():
+                if not val.async_mode:
+                    return val.get_sub_session()
 
-        async def get_async_session(self) -> AsyncSession:
-            await self.connect_to_engine_a()
-            mysession = self.SessionAsyncLocal()
-            return mysession
+        def get_async_session(self) -> AsyncSession:
+            for en,val in self.engines.items():
+                if val.async_mode:
+                    return val.get_async_session()
+
 
     _instance = None
 
@@ -294,11 +271,14 @@ class DatabaseSingleton:
             instance = self.__DatabaseSingleton(arg, **kwargs)
             DatabaseSingleton._instance = instance
 
-    def database_check(self):
-        return self._instance.compare_db()
+    async def database_check(self):
+        await self._instance.compare_db()
 
-    def startup(self):
-        self._instance.connect_to_engine()
+
+
+    async def startup_all(self):
+        await self._instance.startup_all()
+
 
     def execute_sql_string(self, sqlstring):
         """Execute a SQL String."""
@@ -306,9 +286,11 @@ class DatabaseSingleton:
 
     def get_metadata(self):
         # get metadata of database
-        metadata = MetaData()
-        metadata.reflect(bind=self._instance.engine)
-        return metadata
+        for en,val in self._instance.engines.items():
+            if not val.async_mode:
+                metadata = MetaData()
+                metadata.reflect(bind=val.engine)
+                return metadata
 
     def load_base(self, Base):
         self._instance.load_in_base(Base)
@@ -333,7 +315,7 @@ class DatabaseSingleton:
 
     async def close_out(self):
         inst = self.get_instance()
-        inst.close()
+
         await inst.close_async()
 
     @staticmethod
@@ -347,7 +329,7 @@ class DatabaseSingleton:
         return inst.get_sub_session()
 
     @staticmethod
-    async def get_async_session() -> AsyncSession:
+    def get_async_session() -> AsyncSession:
         inst = DatabaseSingleton.get_instance()
-        session = await inst.get_async_session()
+        session = inst.get_async_session()
         return session
