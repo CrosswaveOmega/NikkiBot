@@ -57,13 +57,13 @@ class NotebookAux(NoteBase):
             if existing_entry:
                 existing_entry.date = date
             else:
-                new_timer = NotebookAux(
+                new_note = NotebookAux(
                     user_id=user_id, entry_id=entry_id, key=key, topic=topic, date=date
                 )
-                session.add(new_timer)
+                session.add(new_note)
 
             await session.commit()
-            return existing_entry if existing_entry else new_timer
+            return existing_entry if existing_entry else new_note
 
     @staticmethod
     async def list_topic(user_id):
