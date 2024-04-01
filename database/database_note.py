@@ -78,19 +78,18 @@ class NotebookAux(NoteBase):
     @staticmethod
     async def list_keys(user_id):
         async with DatabaseSingleton.get_async_session() as session:
-            topic_key_pairs = await session.execute(
-                select(NotebookAux.topic, NotebookAux.key).where(
-                    NotebookAux.user_id == user_id
-                )
+            result_proxy = await session.execute(
+                select(NotebookAux.topic, NotebookAux.key)
+                .where(NotebookAux.user_id == user_id)
+                .order_by(NotebookAux.topic)  # Ensure results are ordered by topic
             )
-            topic_key_pairs = topic_key_pairs.fetchall()
-            print(topic_key_pairs)
-            grouped_by_topic = {}
-            for topic, key in topic_key_pairs:
-                if topic not in grouped_by_topic:
-                    grouped_by_topic[topic] = []
-                grouped_by_topic[topic].append(key)
-            return grouped_by_topic
+            topic_key_pairs = await result_proxy.fetchall()
+    
+        grouped_by_topic = {}
+        for topic, key in topic_key_pairs:
+            grouped_by_topic.setdefault(topic, []).append(key)
+    
+        return grouped_by_topic
 
     @staticmethod
     async def get_ids(user_id, key: str = None, topic: str = None, offset: int = 0):
