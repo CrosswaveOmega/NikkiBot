@@ -324,5 +324,6 @@ class TimerCog(commands.Cog, TC_Cog_Mixin):
 async def setup(bot):
     await bot.add_cog(TimerCog(bot))
 
+
 async def teardown(bot):
-    await bot.remove_cog('TimerCog')
+    await bot.remove_cog("TimerCog")

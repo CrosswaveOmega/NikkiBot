@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.engine import Engine
 from typing import List
 
+
 def generate_column_definition(column, engine):
     column_name = column.name
     column_type = column.type.compile(engine.dialect)
@@ -13,6 +14,7 @@ def generate_column_definition(column, engine):
         column_definition += " " + " ".join(column_attributes)
     return column_definition
 
+
 def merge_metadata(*original_metadata) -> MetaData:
     merged = MetaData()
     for original_metadatum in original_metadata:
@@ -20,13 +22,15 @@ def merge_metadata(*original_metadata) -> MetaData:
             table.to_metadata(merged)
     return merged
 
+
 def get_columns(insp, table_name, schema):
     return insp.get_columns(table_name, schema=schema)
 
+
 def _handle_missing_columns(
-        table_name, missing_columns_table1, missing_columns_table2, session, table2, engine
-        ):
-    result=""
+    table_name, missing_columns_table1, missing_columns_table2, session, table2, engine
+):
+    result = ""
     if missing_columns_table2:
         result += f"Missing columns in local '{table_name}': {', '.join(missing_columns_table2)}\n"
     if missing_columns_table1:
@@ -42,14 +46,15 @@ def _handle_missing_columns(
             session.commit()
     return result
 
+
 def _get_tables_meta(db_meta: MetaData, merged: MetaData):
     return db_meta.tables, merged.tables
 
 
 async def _async_handle_missing_columns(
-        table_name, missing_columns_table1, missing_columns_table2, session, table2, engine
-        ):
-    result=""
+    table_name, missing_columns_table1, missing_columns_table2, session, table2, engine
+):
+    result = ""
     if missing_columns_table2:
         result += f"Missing columns in local '{table_name}': {', '.join(missing_columns_table2)}\n"
     if missing_columns_table1:
@@ -65,8 +70,9 @@ async def _async_handle_missing_columns(
             await session.commit()
     return result
 
+
 def _compare_tables(table_name, tables1, tables2, insp, session, engine):
-    result=""
+    result = ""
     table1 = tables1.get(table_name)
     table2 = tables2.get(table_name)
     if table1 is None:
@@ -92,13 +98,21 @@ def _compare_tables(table_name, tables1, tables2, insp, session, engine):
         missing_columns_table1 = column_names2 - column_names1
 
         if missing_columns_table2 or missing_columns_table1:
-            out=_handle_missing_columns(table_name, missing_columns_table1, missing_columns_table2, session, table2, engine)
-            print("THO",out)
-            result+= out
+            out = _handle_missing_columns(
+                table_name,
+                missing_columns_table1,
+                missing_columns_table2,
+                session,
+                table2,
+                engine,
+            )
+            print("THO", out)
+            result += out
     return result
 
-async def _async_compare_tables(table_name, tables1, tables2,  session, engine):
-    result=""
+
+async def _async_compare_tables(table_name, tables1, tables2, session, engine):
+    result = ""
     table1 = tables1.get(table_name)
     table2 = tables2.get(table_name)
     if table1 is None:
@@ -107,13 +121,16 @@ async def _async_compare_tables(table_name, tables1, tables2,  session, engine):
         result += f"Table '{table_name}' is missing from local.\n"
     else:
         async with engine.begin() as async_conn:
-            
+
             def get_columns(conn, table_name, schema):
-                insp=inspect(conn)
-                print(table_name,schema,insp)
+                insp = inspect(conn)
+                print(table_name, schema, insp)
                 return insp.get_columns(table_name, schema=schema)
-            columns1=await async_conn.run_sync(get_columns, table_name, schema=table1.schema)
-            
+
+            columns1 = await async_conn.run_sync(
+                get_columns, table_name, schema=table1.schema
+            )
+
         columns2 = [
             {
                 "name": column.name,
@@ -131,8 +148,16 @@ async def _async_compare_tables(table_name, tables1, tables2,  session, engine):
         missing_columns_table1 = column_names2 - column_names1
 
         if missing_columns_table2 or missing_columns_table1:
-            result+=await _async_handle_missing_columns(table_name, missing_columns_table1, missing_columns_table2, session, table2, engine)
+            result += await _async_handle_missing_columns(
+                table_name,
+                missing_columns_table1,
+                missing_columns_table2,
+                session,
+                table2,
+                engine,
+            )
     return result
+
 
 def compare_db(self):
     """compare current metadata with sqlalchemy metadata"""
@@ -148,9 +173,12 @@ def compare_db(self):
     session = self.get_session()
 
     for table_name in set(tables1) | set(tables2):
-        result+=_compare_tables(table_name, tables1, tables2, insp, session, self.engine)
+        result += _compare_tables(
+            table_name, tables1, tables2, insp, session, self.engine
+        )
 
     return result
+
 
 async def async_compare_db(self):
     """compare current metadata with sqlalchemy metadata"""
@@ -166,6 +194,8 @@ async def async_compare_db(self):
     result = ""
     async with self.get_async_session() as session:
         for table_name in set(tables1) | set(tables2):
-            result+=await _async_compare_tables(table_name, tables1, tables2, session, self.aengine)
+            result += await _async_compare_tables(
+                table_name, tables1, tables2, session, self.aengine
+            )
 
     return result

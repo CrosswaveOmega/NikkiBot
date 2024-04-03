@@ -196,7 +196,7 @@ class MessageTemplates:
         Send a quick yes/no message
         """
         confirm = ConfirmView(user=ctx.author)
-        mes = await ctx.send(description, view=confirm,ephemeral=ephemeral)
+        mes = await ctx.send(description, view=confirm, ephemeral=ephemeral)
         await confirm.wait()
         confirm.clear_items()
         await mes.edit(view=confirm)

@@ -33,18 +33,18 @@ async def iterate_backlog(backlog: List[ArchivedRPMessage], group_id: int, count
     chars = {}
     for hm in backlog:
         channelind = hm.get_chan_sep()
-        if (time.monotonic()-now)>0.4:
-            gui.gprint('pausing for a spell')
+        if (time.monotonic() - now) > 0.4:
+            gui.gprint("pausing for a spell")
             await asyncio.sleep(0.1)
-            now=time.monotonic()
+            now = time.monotonic()
         # Find the bucket for the current channel separator
         bucket = buckets.get(channelind)
 
-        if bucket and chars.get(hm.author,None):
+        if bucket and chars.get(hm.author, None):
             # The bucket is valid and the author is not in this bucket.
             # Make sure it's not this one.
             if chars[hm.author]["ci"] != channelind:
-                # It's not this bucket.  Check if this bucket is newer, 
+                # It's not this bucket.  Check if this bucket is newer,
                 # if it isn't Then time to split.
                 if chars[hm.author]["gid"] > bucket["group_id"]:
                     # The bucket the author is inside is NEWER than
@@ -55,7 +55,9 @@ async def iterate_backlog(backlog: List[ArchivedRPMessage], group_id: int, count
                     buckets[channelind] = bucket
 
                     hm.update(channel_sep_id=buckets[channelind]["group_id"])
-                    ChannelSep.add_channel_sep_if_needed(hm, buckets[channelind]["group_id"])
+                    ChannelSep.add_channel_sep_if_needed(
+                        hm, buckets[channelind]["group_id"]
+                    )
                     gui.dprint(
                         f"Backlog Pass {group_id}: {archived} out of {initial} messages, making a new bucket for {channelind}"
                     )
@@ -84,12 +86,10 @@ async def iterate_backlog(backlog: List[ArchivedRPMessage], group_id: int, count
         bucket["messages"] += 1
         # bucket['authors'].add(hm.author)
 
-        #await asyncio.sleep(float(0.0001))
-
+        # await asyncio.sleep(float(0.0001))
 
     DatabaseSingleton("voc").commit()
     return [], group_id
-
 
 
 async def do_group(

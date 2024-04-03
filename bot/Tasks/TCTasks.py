@@ -8,28 +8,33 @@ import heapq
 from queue import PriorityQueue
 import logging
 
+
 class AutoRebalancePriorityQueue(PriorityQueue):
     """This is a special PriorityQueque that rebalances itself on new items."""
+
     def rebalance(self):
         with self.mutex:
             heapq.heapify(self.queue)
 
 
 class TCTaskRef:
-    '''A separate identifier class that stores a reference to each task name.'''
+    """A separate identifier class that stores a reference to each task name."""
+
     __slots__ = ["name"]
 
     def __init__(self, name):
         self.name = name
 
-    def get_task(self)->'TCTask':
+    def get_task(self) -> "TCTask":
         return TCTaskManager.get_task(self.name)
 
     def __lt__(self, other):
         me = self.get_task()
         return self.get_task().to_run_next < other.get_task().to_run_next
 
-logs=logging.getLogger("TCLogger")
+
+logs = logging.getLogger("TCLogger")
+
 
 class TCTask:
     """
@@ -47,7 +52,7 @@ class TCTask:
 
     Attributes:
         name (str): The name of the task.
-        id (int): The unique ID of the task.  
+        id (int): The unique ID of the task.
         time_interval (rrule): A relative time interval for running the task.
         last_run (dt): The dt of the last time the task was run.
         to_run_next (dt): The dt of the next time the task is scheduled to run.
@@ -89,8 +94,8 @@ class TCTask:
         # Add self to the TCTaskManager upon initialization
         TCTaskManager.add_task(self)
 
-    def get_ref(self)->TCTaskRef:
-        '''Return the TCTaskRef for this object.'''
+    def get_ref(self) -> TCTaskRef:
+        """Return the TCTaskRef for this object."""
         return TCTaskRef(self.name)
 
     def can_i_run(self):
@@ -103,7 +108,7 @@ class TCTask:
             return False
 
     def get_total_seconds_until(self):
-        '''return the total number of seconds until the next run.'''
+        """return the total number of seconds until the next run."""
         if self.is_running:
             return 0
         return int((self.to_run_next - dt.now()).total_seconds())
@@ -123,7 +128,7 @@ class TCTask:
         if self.is_running:
             return f"{self.name}: RUNNING\n"
         nextt = self.to_run_next - dt.now()
-        #ctr = self.next_run()
+        # ctr = self.next_run()
         days = hours = mins = ""
         if nextt.days > 0:
             days = str(nextt.days) + "d,"
@@ -139,7 +144,7 @@ class TCTask:
         if self.is_running:
             return "RUNNING\n"
         nextt = self.to_run_next - dt.now()
-        #ctr = self.next_run()
+        # ctr = self.next_run()
         days = hours = mins = ""
         if nextt.days > 0:
             days = str(nextt.days) + "d,"
@@ -186,7 +191,11 @@ class TCTask:
                     try:
                         self.parent_db.parent_callback(self.name, self.to_run_next)
                     except Exception as e:
-                        logs.error("Something went wrong with the parent callback for task %s",self,exc_info=e)
+                        logs.error(
+                            "Something went wrong with the parent callback for task %s",
+                            self,
+                            exc_info=e,
+                        )
                         remove_check = True
                 if remove_check:
                     TCTaskManager.add_tombstone(self.name)
@@ -227,13 +236,13 @@ class TCTask:
             dt.now().replace(second=0, microsecond=0)
         )
         return next_occurrence
-    
+
     def __str__(self):
-        st=f"{self.name},{self.status},{self.time_left_shorter()}"
+        st = f"{self.name},{self.status},{self.time_left_shorter()}"
         return st
-    
+
     def __repr__(self):
-        st=f"{self.name},{self.status},{self.time_left_shorter()}"
+        st = f"{self.name},{self.status},{self.time_left_shorter()}"
         return st
 
 
@@ -251,7 +260,7 @@ class TCTaskManager:
 
     @classmethod
     def get_instance(cls):
-        '''Get or create the TC Task Manager.'''
+        """Get or create the TC Task Manager."""
         if cls._instance is None:
             cls._instance = TCTaskManager()
         return cls._instance
@@ -259,7 +268,9 @@ class TCTaskManager:
     def __init__(self):
         self.tasks: Dict[str, TCTask] = {}
         self.to_delete = []
-        self.myqueue:AutoRebalancePriorityQueue[TCTaskRef] = AutoRebalancePriorityQueue()
+        self.myqueue: AutoRebalancePriorityQueue[
+            TCTaskRef
+        ] = AutoRebalancePriorityQueue()
 
     @classmethod
     def get_task(cls, name):

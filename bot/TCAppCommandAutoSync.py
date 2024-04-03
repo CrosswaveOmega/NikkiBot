@@ -142,7 +142,7 @@ class AppGuildTreeSync(Guild_Sync_Base):
         return toAdd
 
     @classmethod
-    def setdonotsync(cls, server_id, do_not_sync:bool=True):
+    def setdonotsync(cls, server_id, do_not_sync: bool = True):
         """
         Add a new AppGuildTreeSync entry for the specified server_id.
         """

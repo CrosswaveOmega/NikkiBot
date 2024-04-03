@@ -92,12 +92,12 @@ class Guild_Task_Functions:
         gui.gprint(name)
         if name in instance.guildfunctions:
             gui.gprint(f"Executing task function with name '{name}', kwargs{kwargs}.")
-            out=await instance.guildfunctions[name](**kwargs)
+            out = await instance.guildfunctions[name](**kwargs)
             gui.gprint(f"Successful execution task function with name '{name}'.")
             return out
         else:
             gui.gprint(f"Task function with name '{name}' does not exist.")
-            return 'DNE'
+            return "DNE"
 
 
 class TCGuildTask(Guild_Task_Base):
@@ -160,6 +160,7 @@ class TCGuildTask(Guild_Task_Base):
             session.commit()
         gui.gprint(new)
         return new
+
     @classmethod
     def remove_guild_task(cls, server_id: int, task_name: Optional[str] = None):
         """
@@ -171,13 +172,20 @@ class TCGuildTask(Guild_Task_Base):
             TCTaskManager.add_tombstone(f"{server_id}_{task_name}")
             session.execute(
                 delete(TCGuildTask).where(
-                    TCGuildTask.server_id == server_id, TCGuildTask.task_name == task_name
+                    TCGuildTask.server_id == server_id,
+                    TCGuildTask.task_name == task_name,
                 )
             )
         else:
-            tasks = session.execute(
-                select(TCGuildTask.task_name).where(TCGuildTask.server_id == server_id)
-            ).scalars().all()
+            tasks = (
+                session.execute(
+                    select(TCGuildTask.task_name).where(
+                        TCGuildTask.server_id == server_id
+                    )
+                )
+                .scalars()
+                .all()
+            )
             for task in tasks:
                 TCTaskManager.add_tombstone(f"{server_id}_{task}")
             session.execute(
@@ -191,9 +199,13 @@ class TCGuildTask(Guild_Task_Base):
         Returns a list of TCGuildTask objects for the specified server_id.
         """
         session = DatabaseSingleton.get_session()
-        results = session.execute(
-            select(TCGuildTask).where(TCGuildTask.server_id == server_id)
-        ).scalars().all()
+        results = (
+            session.execute(
+                select(TCGuildTask).where(TCGuildTask.server_id == server_id)
+            )
+            .scalars()
+            .all()
+        )
         return results
 
     @classmethod
@@ -202,12 +214,15 @@ class TCGuildTask(Guild_Task_Base):
         Returns the TCGuildTask entry for the specified server_id and task_name, or None if it doesn't exist.
         """
         session: Session = DatabaseSingleton.get_session()
-        statement = select(TCGuildTask).where(TCGuildTask.server_id == server_id, TCGuildTask.task_name == task_name)
+        statement = select(TCGuildTask).where(
+            TCGuildTask.server_id == server_id, TCGuildTask.task_name == task_name
+        )
         result = session.execute(statement).scalar()
         if result:
             return result
         else:
             return None
+
     @classmethod
     def parent_callback(cls, guildtaskname: str, next_run: datetime):
         """
@@ -215,13 +230,16 @@ class TCGuildTask(Guild_Task_Base):
         """
         s, t = guildtaskname.split("_")
         cls.update(int(s), t, next_run)
+
     @classmethod
     def update(cls, server_id, task_name, next_run):
         """
         Updates the next_run attribute of the TCGuildTask entry with the specified server_id and task_name to the passed in datetime object.
         """
         session: Session = DatabaseSingleton.get_session()
-        statement = select(TCGuildTask).where(TCGuildTask.server_id == server_id, TCGuildTask.task_name == task_name)
+        statement = select(TCGuildTask).where(
+            TCGuildTask.server_id == server_id, TCGuildTask.task_name == task_name
+        )
         task = session.execute(statement).scalar_one_or_none()
         if task:
             task.next_run = next_run
@@ -240,7 +258,7 @@ class TCGuildTask(Guild_Task_Base):
             source_message = await channel.send(
                 f"Auto Guild Task {self.task_name} launching."
             )
-            this_out=await Guild_Task_Functions.execute_task_function(
+            this_out = await Guild_Task_Functions.execute_task_function(
                 self.task_name, source_message=source_message
             )
         except Exception as e:
@@ -252,7 +270,7 @@ class TCGuildTask(Guild_Task_Base):
                 gui.dprint("Another error occurred.")
         await asyncio.sleep(2)
         gui.gprint(f"{self.name} Task done at", datetime.now(), "excution ok.")
-        if self.remove_after or this_out=="REMOVE":
+        if self.remove_after or this_out == "REMOVE":
             TCGuildTask.remove_guild_task(self.server_id, self.task_name)
 
     def to_task(self, bot):

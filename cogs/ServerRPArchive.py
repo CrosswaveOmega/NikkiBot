@@ -882,7 +882,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 if "nocollect" in args:
                     lz.collected = True
                     lz.message_count = ArchivedRPMessage.count_all(guild.id)
-                result = f"I've set up the lazy archive system for <#{autochannel.id}>!  You've got a combined {totaltime}(this is not how long this will take.) worth of messages to be compiled."
+                if "nopost" in args:
+                    lz.posting = True
+                result = f"I've set up the lazy archive system for <#{autochannel.id}>!  The cumulative duration between the earliest and latest messages across all channels is {totaltime.days} days."
                 new = TCGuildTask.add_guild_task(guild.id, task_name, message, robj)
                 new.to_task(bot)
                 bot.database.commit()
@@ -931,7 +933,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 await mes2.delete()
                 profile.last_archive_time = None
                 self.bot.database.commit()
-                
+
                 await MessageTemplates.server_archive_message(
                     ctx,
                     f"I've reset the grouping data for this server.  When you run another compile_archive, **everything in the archive_channel will be reposted.**",

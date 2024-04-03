@@ -13,6 +13,7 @@ from sqlalchemy import (
     DateTime,
     Boolean,
     Text,
+    delete,
     distinct,
     or_,
     update,
@@ -73,9 +74,20 @@ class ChannelArchiveStatus(ArchiveBase):
     def delete_status_by_server_id(server_id: int):
         """delete all channel seps that belong to the passed in server id"""
         session: Session = DatabaseSingleton.get_session()
-        session.query(ChannelArchiveStatus).filter(
+        query = delete(ChannelArchiveStatus).filter(
             ChannelArchiveStatus.server_id == server_id
-        ).delete()
+        )
+        session.execute(query)
+        session.commit()
+
+    @staticmethod
+    def delete_channel_by_id(channel_id: int):
+        """delete all channel seps that belong to the passed in server id"""
+        session: Session = DatabaseSingleton.get_session()
+        query = delete(ChannelArchiveStatus).filter(
+            ChannelArchiveStatus.channel_id == channel_id
+        )
+        session.execute(query)
         session.commit()
 
     @staticmethod
@@ -123,22 +135,11 @@ class ChannelArchiveStatus(ArchiveBase):
         query = session.query(ChannelArchiveStatus).filter_by(server_id=server_id).all()
         return query
 
-    @staticmethod
-    def get_total_unarchived_time(server_id):
-        session = DatabaseSingleton.get_session()
-        query = session.query(ChannelArchiveStatus).filter_by(server_id=server_id).all()
-        if not query:
-            return datetime.now() - datetime.now()
-        outcome = [s.get_time_between() for s in query]
-        res = datetime.now() - datetime.now()
-        for o in outcome:
-            res += o
-        return res
-
     async def get_first_and_last(self, channel: discord.TextChannel, force=False):
         """Get the first message sent in the channel, and the last message sent in the channel."""
         if self.first_message_time == None or force:
             async for thisMessage in channel.history(oldest_first=True, limit=1):
+                gui.dprint("First retrieval required.")
                 # The first Message ever.
                 gui.dprint(thisMessage.created_at, thisMessage.created_at.tzinfo)
                 self.first_message_time = thisMessage.created_at
@@ -147,6 +148,7 @@ class ChannelArchiveStatus(ArchiveBase):
 
         if self.last_message_time == None or force:
             async for thisMessage in channel.history(oldest_first=False, limit=1):
+                gui.dprint("Last retrieval required.")
                 # The last message ever.
                 gui.dprint(thisMessage.created_at, thisMessage.created_at.tzinfo)
                 self.last_message_time = thisMessage.created_at
@@ -159,6 +161,18 @@ class ChannelArchiveStatus(ArchiveBase):
             return self.last_message_time - self.first_message_time
         return self.last_message_time - self.latest_archive_time
 
+    @staticmethod
+    def get_total_unarchived_time(server_id):
+        session = DatabaseSingleton.get_session()
+        query = session.query(ChannelArchiveStatus).filter_by(server_id=server_id).all()
+        if not query:
+            return datetime.now() - datetime.now()
+        outcome = [s.get_time_between() for s in query]
+        res = datetime.now() - datetime.now()
+        for o in outcome:
+            res += o
+        return res
+
     def increment(self, date):
         """Set the latest archived time to date."""
         self.stored += 1
@@ -170,7 +184,7 @@ class ChannelArchiveStatus(ArchiveBase):
         self.active_count += incr
 
     def __str__(self):
-        return f"{self.stored},{self.first_message_time},{self.latest_archive_time},{self.last_message_time}"
+        return f"{self.channel_id},{'thread' if self.thread_parent_id is not None else ''},{self.stored},{self.first_message_time},{self.latest_archive_time},{self.last_message_time}"
 
     def update_latest_date(self, date):
         session = DatabaseSingleton.get_session()
@@ -274,10 +288,10 @@ class ChannelSep(ArchiveBase):
                 .first()
             )
         if no_check or not channel_sep:
-            print(chansepid, "Is not present.")
+            # print(chansepid, "Is not present.")
             channel_sep = ChannelSep.derive_from_archived_rp_message(message)
             session.add(channel_sep)
-            #session.commit()
+            # session.commit()
         else:
             print("Is present.")
             channel_sep.update_message_count()
@@ -630,7 +644,7 @@ class ArchivedRPMessage(ArchiveBase):
     files = relationship("ArchivedRPFile", backref="archived_rp_message")
     embed = relationship("ArchivedRPEmbed", backref="archived_rp_message_set")
 
-    def get_chan_sep(self)->str:
+    def get_chan_sep(self) -> str:
         """Return the category-channel-thread string.
 
         Returns:
@@ -872,10 +886,14 @@ class ArchivedRPMessage(ArchiveBase):
             A list of messages in the group.
         """
         session: Session = DatabaseSingleton.get_session()
-        stmt = select(ArchivedRPMessage).filter(
+        stmt = (
+            select(ArchivedRPMessage)
+            .filter(
                 (ArchivedRPMessage.server_id == server_id)
                 & ((ArchivedRPMessage.channel_sep_id == channel_sep_id))
-            ).order_by(ArchivedRPMessage.created_at)
+            )
+            .order_by(ArchivedRPMessage.created_at)
+        )
         return session.execute(stmt).scalars().all()
 
     @staticmethod
@@ -890,7 +908,9 @@ class ArchivedRPMessage(ArchiveBase):
             The total number of messages.
         """
         session: Session = DatabaseSingleton.get_session()
-        stmt = select(func.count(ArchivedRPMessage.message_id)).filter(ArchivedRPMessage.server_id == server_id)
+        stmt = select(func.count(ArchivedRPMessage.message_id)).filter(
+            ArchivedRPMessage.server_id == server_id
+        )
         count = session.execute(stmt).scalar()
         return count
 
@@ -917,7 +937,6 @@ class ArchivedRPMessage(ArchiveBase):
     def get_messages_within_minute_interval(
         server_id: int, now: datetime, interval: int = 15
     ) -> List["ArchivedRPMessage"]:
-
         start_time = now - (
             now - datetime.min.replace(tzinfo=timezone.utc)
         ) % timedelta(minutes=15)
@@ -925,12 +944,16 @@ class ArchivedRPMessage(ArchiveBase):
         end_time = start_time + timedelta(minutes=interval)
         gui.dprint(start_time, end_time)
         session: Session = DatabaseSingleton.get_session()
-        stmt = select(ArchivedRPMessage).filter(
+        stmt = (
+            select(ArchivedRPMessage)
+            .filter(
                 (ArchivedRPMessage.server_id == server_id)
                 & (ArchivedRPMessage.created_at >= start_time)
                 & (ArchivedRPMessage.created_at < end_time)
                 & (ArchivedRPMessage.channel_sep_id == None)
-            ).order_by(ArchivedRPMessage.created_at)
+            )
+            .order_by(ArchivedRPMessage.created_at)
+        )
         return session.execute(stmt).scalars().all()
 
     def add_file(self, archived_rp_file):
@@ -956,9 +979,7 @@ class ArchivedRPMessage(ArchiveBase):
 
     def get_embed(self):
         session = DatabaseSingleton.get_session()
-        stmt = (
-            select(ArchivedRPEmbed).filter_by(message_id=self.message_id).limit(1)
-        )
+        stmt = select(ArchivedRPEmbed).filter_by(message_id=self.message_id).limit(1)
         embed_attr = session.execute(stmt).scalar_one_or_none()
         embeds = []
         if embed_attr:
@@ -1262,6 +1283,4 @@ class HistoryMakers:
         ChannelSep.add_channel_sep_if_needed(targetmessage, value)
 
 
-
 DatabaseSingleton("setup").load_base(ArchiveBase)
-

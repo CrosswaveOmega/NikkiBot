@@ -11,6 +11,7 @@ from queue import Queue
 from bot import StatusEditMessage
 import utility.formatutil as futil
 from discord import ChannelType as ct
+from discord.ext import commands
 
 """
 Collects all messages in non-blacklisted channels, and adds them to the database in batches of 10.
@@ -168,10 +169,23 @@ class ArchiveContext:
         current_index = f"{self.channel_spot}/{self.channel_count}"
         text = f"{place} \n On channel {current_index},\n {cname},\n Please wait. <a:SquareLoading:1143238358303264798>"
         emb = discord.Embed(description=text, color=self.server_color)
-        emb.add_field(name="Server Channels", value=self.channel_count, inline=True)
+        emb.add_field(
+            name=f"Server Channels {'remaining' if self.lazy else ''}",
+            value=self.channel_count,
+            inline=True,
+        )
         emb.add_field(name="Currently Indexed", value=current_index, inline=True)
-        emb.add_field(name="Total Messages archived.", value=self.total_archived)
-
+        emb.add_field(
+            name=f"Total Messages archived{' this session' if self.lazy else ''}.",
+            value=self.total_archived,
+        )
+        if self.lazy:
+            emb.add_field(
+                name="Current Unarchived Message Time Span",
+                value=ChannelArchiveStatus.get_total_unarchived_time(
+                    self.profile.server_id
+                ),
+            )
         await self.status_mess.editw(min_seconds=seconds, content=text, embed=emb),
 
 
@@ -203,7 +217,7 @@ async def iter_hist_messages(
         if cobj.last_message_id
         else None
     )
-    gui.gprint(cobj.name, " ", lastmess, " ", lasttime, " ", timev)
+    # gui.gprint(cobj.name, " ", lastmess, " ", lasttime, " ", timev)
     reallasttime = None
 
     # return [];
@@ -234,54 +248,14 @@ async def iter_hist_messages(
         hmes = await HistoryMakers.get_history_message_list(messages)
         messages = []
     if reallasttime:
-        gui.gprint(reallasttime, "vs ", lastmess, " ", lasttime, " ", timev)
+        gui.dprint(reallasttime, "vs ", lastmess, " ", lasttime, " ", timev)
     else:
         gui.gprint(f"Did not need to archive {cobj.name}")
     actx.bot.database.commit()
     return messages, mlen > 0, count
 
 
-async def lazy_grab(cobj: discord.TextChannel, actx: ArchiveContext):
-    messages = []
-    mlen = 0
-    carch = ChannelArchiveStatus.get_by_tc(cobj)
-    haveany, count = False, 0
-    gui.dprint(carch.latest_archive_time)
-    async for thisMessage in cobj.history(
-        limit=LAZYGRAB_LIMIT, oldest_first=True, after=carch.latest_archive_time
-    ):
-        # if(thisMessage.created_at<=actx.last_stored_time and actx.update): break
-
-        add_check = actx.evaluate_add(thisMessage)
-        count = count + 1
-        if add_check:
-            haveany = True
-            thisMessage.content = thisMessage.clean_content
-            actx.alter_latest_time(thisMessage.created_at.timestamp())
-            actx.character_len += len(thisMessage.content)
-            messages.append(thisMessage)
-            carch.increment(thisMessage.created_at)
-            actx.total_archived += 1
-            mlen += 1
-        else:
-            actx.total_ignored += 1
-        if len(messages) % BATCH_SIZE == 0 and len(messages) > 0:
-            hmes = await HistoryMakers.get_history_message_list(messages)
-            gui.gprint("now:", actx.total_archived)
-            messages = []
-        if mlen % 200 == 0 and mlen > 0:
-            await asyncio.sleep(1)
-            await actx.edit_mess(cobj.name)
-
-    if messages:
-        hmes = await HistoryMakers.get_history_message_list(messages)
-        gui.gprint("now:", actx.total_archived)
-        messages = []
-
-    return messages, haveany, count
-
-
-async def collect_server_history_lazy(ctx, statmess=None, **kwargs):
+async def collect_server_history_lazy(ctx: commands.Context, statmess=None, **kwargs):
     # Get at most LAZYGRAB_LIMIT messages from all channels in guild
     bot = ctx.bot
     channel = ctx.message.channel
@@ -311,37 +285,43 @@ async def collect_server_history_lazy(ctx, statmess=None, **kwargs):
 
     chanlen = len(guild.text_channels)
 
+    channels = ChannelArchiveStatus.get_all(guildid, outdated=True)
+
     arch_ctx = ArchiveContext(
         bot=bot,
         profile=profile,
         status_mess=statmess,
         last_stored_time=last_time,
         latest_time=new_last_time,
-        channel_count=chanlen,
+        channel_count=len(channels),
         lazy=True,
         **kwargs,
     )
-    channels = ChannelArchiveStatus.get_all(guildid, outdated=True)
+
     grabstat = False
     gui.gprint(len(channels))
     for c in channels:
         gui.print(c)
 
         arch_ctx.channel_spot += 1
+
         channel = guild.get_channel_or_thread(c.channel_id)
+        if (not channel) and (c.thread_parent_id is not None):
+            try:
+                channel = await guild.fetch_channel(c.channel_id)
+            except (
+                discord.errors.InvalidData,
+                discord.errors.Forbidden,
+                discord.errors.NotFound,
+            ) as e:
+                await bot.send_error(e, "ex", True)
+                ChannelArchiveStatus.delete_channel_by_id(c.channel_id)
         if channel:
+            await arch_ctx.edit_mess(cname=channel.name, seconds=0)
             gui.gprint("Channel", channel)
             mes, have, count = await iter_hist_messages(channel, arch_ctx)
-            gui.dprint(count)
-            await statmess.editw(
-                min_seconds=0,
-                content=f"channels:{len(channels)},{count},{ChannelArchiveStatus.get_total_unarchived_time(guildid)}",
-            )
             grabstat = grabstat or have
-    await statmess.editw(
-        min_seconds=0,
-        content=f"channels:{len(channels)},{ChannelArchiveStatus.get_total_unarchived_time(guildid)}",
-    )
+
     bot.database.commit()
     # await statmess.delete()
     return grabstat, statmess

@@ -84,11 +84,11 @@ class NotebookAux(NoteBase):
                 .order_by(NotebookAux.topic)  # Ensure results are ordered by topic
             )
             topic_key_pairs = await result_proxy.fetchall()
-    
+
         grouped_by_topic = {}
         for topic, key in topic_key_pairs:
             grouped_by_topic.setdefault(topic, []).append(key)
-    
+
         return grouped_by_topic
 
     @staticmethod
@@ -113,8 +113,7 @@ class NotebookAux(NoteBase):
     async def count_notes(user_id, key: str = None, topic: str = None, offset: int = 0):
         async with DatabaseSingleton.get_async_session() as session:
             note_count = await session.execute(
-                select(func.count(NotebookAux.entry_id))
-                .where(
+                select(func.count(NotebookAux.entry_id)).where(
                     and_(
                         NotebookAux.user_id == user_id,
                         NotebookAux.key == key if key is not None else true(),

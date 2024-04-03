@@ -16,7 +16,7 @@ from discord import app_commands
 import gui
 
 from collections import defaultdict
-from dateutil.rrule import rrule, WEEKLY, SU, SECONDLY,MINUTELY
+from dateutil.rrule import rrule, WEEKLY, SU, SECONDLY, MINUTELY
 from .TauCetiBot import TCBot
 from .Tasks.TCTasks import TCTaskManager
 from .TcGuildTaskDB import Guild_Task_Functions, TCGuildTask
@@ -198,13 +198,16 @@ async def on_ready():
         await bot.close()
         raise e
     gui.gprint("Setup done.")
+
+
 import random
 
 
 class Main(commands.Cog):
     """debug class, only my owner can use these."""
+
     def __init__(self, bot):
-        self.bot=bot
+        self.bot = bot
         Guild_Task_Functions.add_task_function("TESTET", self.tester)
 
     async def cog_check(self, ctx):
@@ -213,13 +216,13 @@ class Main(commands.Cog):
         return False
 
     async def tester(self, source_message=None):
-        '''example TC Guild task.'''
+        """example TC Guild task."""
         if not source_message:
             return None
         context = await self.bot.get_context(source_message)
-        rand=random.randint(1, 5)
-        md=await context.channel.send(f"Greetings from GTASK tester. ctx is {rand}")
-        
+        rand = random.randint(1, 5)
+        md = await context.channel.send(f"Greetings from GTASK tester. ctx is {rand}")
+
         if 1 == rand:
             await context.channel.send("Removing...")
             await md.delete(delay=20)

@@ -144,7 +144,7 @@ class PageClassContainer:
             elif result == "goto":
                 self.spot = goto % self.length
             return True
-        
+
     async def mycallback(
         self,
         interaction: discord.Interaction,
@@ -160,16 +160,14 @@ class PageClassContainer:
             view (discord.ui.View): The view object that contains the UI buttons.
             result (str): The custom_id of the button that was clicked.
         """
-        doedit=await self.do_change_callback(interaction,view,result,goto)
+        doedit = await self.do_change_callback(interaction, view, result, goto)
         if doedit:
             emb = self.make_embed()
             await interaction.response.edit_message(embed=emb, view=view)
 
-            
-
 
 class PageClassContainerWithAttachments(PageClassContainer):
-    def __init__(self, display: List[Tuple[Embed,File]] = []):
+    def __init__(self, display: List[Tuple[Embed, File]] = []):
         """
         A class representing a container for displaying a list of embeds with pagination.
 
@@ -185,7 +183,7 @@ class PageClassContainerWithAttachments(PageClassContainer):
         self.custom_callbacks = {}
         self.page = (self.spot // self.perpage) + 1
 
-    def make_embed(self) -> Tuple[Embed,File]:
+    def make_embed(self) -> Tuple[Embed, File]:
         """
         Create an Embed object with the current page's content.
 
@@ -195,14 +193,14 @@ class PageClassContainerWithAttachments(PageClassContainer):
         self.page = (self.spot // self.perpage) + 1
         key = ""
         gui.gprint(len(self.display), self.page)
-        emb,fil = Embed(title="No Pages"),None
+        emb, fil = Embed(title="No Pages"), None
         if len(self.display) > 0:
-            emb,fl = self.display[self.page - 1]
-            fil=copy.deepcopy(fl)
+            emb, fl = self.display[self.page - 1]
+            fil = copy.deepcopy(fl)
         emb.set_author(
             name=" Page {}/{}, {} total".format(self.page, self.maxpages, self.length)
         )
-        
+
         return emb, fil
 
     async def mycallback(
@@ -220,14 +218,17 @@ class PageClassContainerWithAttachments(PageClassContainer):
             view (discord.ui.View): The view object that contains the UI buttons.
             result (str): The custom_id of the button that was clicked.
         """
-        doedit=await self.do_change_callback(interaction,view,result,goto)
+        doedit = await self.do_change_callback(interaction, view, result, goto)
         if doedit:
-            emb,fil = self.make_embed()
+            emb, fil = self.make_embed()
             if fil:
-                await interaction.response.edit_message(embed=emb, attachments=[fil],view=view)
+                await interaction.response.edit_message(
+                    embed=emb, attachments=[fil], view=view
+                )
             elif not fil:
-                await interaction.response.edit_message(embed=emb, attachments=[],view=view)
-
+                await interaction.response.edit_message(
+                    embed=emb, attachments=[], view=view
+                )
 
 
 class EmbedPageButtons(discord.ui.View):
@@ -240,6 +241,7 @@ class EmbedPageButtons(discord.ui.View):
         await self.callbacker.mycallback(
             interaction, self, "goto", int(select.values[0])
         )
+
     async def on_error(
         self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item
     ):
@@ -260,6 +262,7 @@ class EmbedPageButtons(discord.ui.View):
             await interaction.followup.send(
                 f"Oops! Something went wrong: {str(error)}.", ephemeral=True
             )
+
     # All button
     @discord.ui.button(emoji="🔢", label="pages", style=discord.ButtonStyle.blurple)
     async def pagebutton_button(
@@ -375,8 +378,9 @@ async def pages_of_embeds(
     )
     return message
 
+
 async def pages_of_embed_attachments(
-    ctx: commands.Context, display: List[Tuple[Embed,File]], **kwargs
+    ctx: commands.Context, display: List[Tuple[Embed, File]], **kwargs
 ) -> discord.Message:
     """
     Creates a new PageClassContainer filled with embeds, and sends it as
@@ -396,7 +400,7 @@ async def pages_of_embed_attachments(
     """
 
     pagecall = PageClassContainerWithAttachments(display)
-    embed,fil=pagecall.make_embed()
+    embed, fil = pagecall.make_embed()
     message = await ctx.send(
         embed=embed,
         file=fil,

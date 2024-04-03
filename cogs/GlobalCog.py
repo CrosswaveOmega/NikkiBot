@@ -27,6 +27,7 @@ from utility.views import BaseView
 from database.database_note import NotebookAux
 import base64
 
+
 async def owneronly(interaction: discord.Interaction):
     return await interaction.client.is_owner(interaction.user)
 
@@ -37,7 +38,6 @@ contenttype = app_commands.Range[str, 5, 4096]
 
 from io import BytesIO
 
-    
 
 async def file_to_data_uri(file: discord.File) -> str:
     # Read the bytes from the file
@@ -45,21 +45,23 @@ async def file_to_data_uri(file: discord.File) -> str:
         # Read the bytes from the file-like object
         file_bytes = f.read()
     # Base64 encode the bytes
-    base64_encoded = base64.b64encode(file_bytes).decode('ascii')
+    base64_encoded = base64.b64encode(file_bytes).decode("ascii")
     # Construct the data URI
     data_uri = f'data:{"image"};base64,{base64_encoded}'
     return data_uri
 
+
 async def data_uri_to_file(data_uri: str, filename: str) -> discord.File:
     # Split the data URI into its components
-    metadata, base64_data = data_uri.split(',')
+    metadata, base64_data = data_uri.split(",")
     # Get the content type from the metadata
-    content_type = metadata.split(';')[0].split(':')[1]
+    content_type = metadata.split(";")[0].split(":")[1]
     # Decode the base64 data
     file_bytes = base64.b64decode(base64_data)
     # Create a discord.File object
     file = discord.File(BytesIO(file_bytes), filename=filename, spoiler=False)
     return file
+
 
 class NoteContentModal(discord.ui.Modal, title="Enter Note Contents"):
     """Modal for editing note data"""
@@ -106,13 +108,22 @@ class NoteEditView(BaseView):
     View that allows one to edit the work in progress notes.
     """
 
-    def __init__(self, *, user, timeout=30 * 15, content=None, key=None, topic=None,has_image=False):
+    def __init__(
+        self,
+        *,
+        user,
+        timeout=30 * 15,
+        content=None,
+        key=None,
+        topic=None,
+        has_image=False,
+    ):
         super().__init__(user=user, timeout=timeout)
         self.value = False
         self.done = None
         self.content = content
         self.key = key
-        self.has_image =has_image
+        self.has_image = has_image
         self.topic = topic
 
     def make_embed(self):
@@ -130,8 +141,12 @@ class NoteEditView(BaseView):
                 inline=False,
             )
         if self.has_image:
-            embed.add_field(name="Image Display",value="Your real note will have your uploaded image added, but for efficiency sake a placeholder is used for this preview.",inline=False)
-            embed.set_image(url='https://picsum.photos/400/200.jpg')
+            embed.add_field(
+                name="Image Display",
+                value="Your real note will have your uploaded image added, but for efficiency sake a placeholder is used for this preview.",
+                inline=False,
+            )
+            embed.set_image(url="https://picsum.photos/400/200.jpg")
         return embed
 
     async def on_timeout(self) -> None:
@@ -183,11 +198,15 @@ class NoteEditView(BaseView):
 
 
 class UserNotes:
-    '''Wrapper for a ChromaDB Collection called "Notes".  '''
+    """Wrapper for a ChromaDB Collection called "Notes"."""
+
     def __init__(self, bot, user):
         # dimensions = 384
         self.userid: int = user.id
-        metadata = {"desc": "Simple user note taker.  384 dimensions.",'user_id':user.id}
+        metadata = {
+            "desc": "Simple user note taker.  384 dimensions.",
+            "user_id": user.id,
+        }
         self.coll = ChromaTools.get_collection(
             f"usernotes_{self.userid}",
             embed=bot.embedding,
@@ -196,22 +215,28 @@ class UserNotes:
         )
 
     async def add_to_mem(
-        self, ctx: commands.Context, content: str, key: str = "gen", topic: str = "any", file:Optional[discord.File]=None,conttype:Optional[str]=None
+        self,
+        ctx: commands.Context,
+        content: str,
+        key: str = "gen",
+        topic: str = "any",
+        file: Optional[discord.File] = None,
+        conttype: Optional[str] = None,
     ):
-        '''Add or overwrite the given note.'''
+        """Add or overwrite the given note."""
         meta = {}
         meta["key"] = key
         meta["foruser"] = self.userid
         meta["topic"] = topic
         meta["value"] = content
         meta["date"] = ctx.message.created_at.timestamp()
-        meta['fileuri']=""
-        meta['fname']=""
-        meta['cont_type']=""
+        meta["fileuri"] = ""
+        meta["fname"] = ""
+        meta["cont_type"] = ""
         if file:
-            meta['fileuri']=await file_to_data_uri(file)
-            meta['fname']=file.filename
-            meta['cont_type']=conttype
+            meta["fileuri"] = await file_to_data_uri(file)
+            meta["fname"] = file.filename
+            meta["cont_type"] = conttype
         meta["split"] = 1
         to_add = f"Topic: {topic}\n: Key:{key}\nContent:{content}"
         doc = Document(page_content=to_add, metadata=meta)
@@ -254,8 +279,8 @@ class UserNotes:
         new_output = ""
         tosend = []
         for varia in docs2:
-            source, dist=varia
-            source.metadata['distance']=dist
+            source, dist = varia
+            source.metadata["distance"] = dist
             tosend.append(source)
             if source.page_content:
                 content = smem.indent_string(source.page_content.strip(), 1)
@@ -278,7 +303,11 @@ class UserNotes:
             filterwith = {"$and": conditions}
         try:
             docs = await self.coll.aget(
-                ids=got, where=filterwith, offset=0,limit=128, include=["documents", "metadatas"]
+                ids=got,
+                where=filterwith,
+                offset=0,
+                limit=128,
+                include=["documents", "metadatas"],
             )
             docs2 = smem.results_to_docs(docs)
             docs2.sort(key=lambda x: x.metadata["date"], reverse=True)
@@ -292,7 +321,7 @@ class UserNotes:
         print("COUNTED UP", counts)
         got = await NotebookAux.count_notes(self.userid, key, topic, offset=0)
         return got
-    
+
     async def get_topics(self):
         filterwith = {"foruser": self.userid}
 
@@ -345,8 +374,8 @@ class UserNotes:
             gui.dprint(e)
             return False
 
-    async def note_to_embed(self, doc: Document)->Tuple[discord.Embed,discord.File]:
-        fil=None
+    async def note_to_embed(self, doc: Document) -> Tuple[discord.Embed, discord.File]:
+        fil = None
         embed = discord.Embed(
             description=f"{doc.metadata['value']}"[:4000],
             timestamp=datetime.datetime.fromtimestamp(
@@ -355,16 +384,18 @@ class UserNotes:
         )
         embed.add_field(name="topic", value=doc.metadata["topic"][:500])
         embed.add_field(name="key", value=doc.metadata["key"][:500])
-        if 'fname' in doc.metadata:
-            if doc.metadata['fname']:
-                filename=doc.metadata['fname']
-                fil=await data_uri_to_file(doc.metadata['fileuri'],filename)
-                ct=doc.metadata.get('cont_type',None)
+        if "fname" in doc.metadata:
+            if doc.metadata["fname"]:
+                filename = doc.metadata["fname"]
+                fil = await data_uri_to_file(doc.metadata["fileuri"], filename)
+                ct = doc.metadata.get("cont_type", None)
                 if ct:
-                    if 'image' in ct:
-                        embed.set_image(url=f'attachment://{filename}')
-        if 'distance' in doc.metadata:
-            embed.set_footer(text=f"Embedding similarity is {round(doc.metadata['distance'], 8)}.  ")
+                    if "image" in ct:
+                        embed.set_image(url=f"attachment://{filename}")
+        if "distance" in doc.metadata:
+            embed.set_footer(
+                text=f"Embedding similarity is {round(doc.metadata['distance'], 8)}.  "
+            )
         return embed, fil
 
     # async def update_aux(self):
@@ -372,7 +403,8 @@ class UserNotes:
 
 @app_commands.allowed_installs(guilds=False, users=True)
 class Notes(app_commands.Group, name="notes", description="User Note Commands"):
-    '''Stub class for note group.'''
+    """Stub class for note group."""
+
 
 class NotesCog(commands.Cog, TC_Cog_Mixin):
     """The notes system"""
@@ -383,10 +415,9 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
         self.globalonly = True
         self.usertopics = {}
         self.init_context_menus()
-    
+
     gnote = Notes()
 
-    
     @gnote.command(name="set_topic", description="WIP.  Set your note topic")
     @app_commands.describe(
         topic="The topic to add all notes to unless stated otherwise."
@@ -415,7 +446,7 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
         content: contenttype,
         key: keytype,
         topic: Optional[topictype] = None,
-        image: Optional[discord.Attachment]=None
+        image: Optional[discord.Attachment] = None,
     ) -> None:
         """Add a note."""
 
@@ -441,11 +472,11 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
 
         if view.done:
             c, k, t = view.done
-            fil=None
-            typev=""
+            fil = None
+            typev = ""
             if image:
-                fil=await image.to_file()
-                typev=f" with {image.content_type}"
+                fil = await image.to_file()
+                typev = f" with {image.content_type}"
             await tmes.edit(
                 content=f"<a:LoadingBlue:1206301904863502337> adding note{typev} ...",
                 view=None,
@@ -453,11 +484,12 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
             )
             with Timer() as op_timer:
                 notes = UserNotes(self.bot, interaction.user)
-                note = await notes.add_to_mem(ctx, c, k, t, file=fil,conttype=typev)
+                note = await notes.add_to_mem(ctx, c, k, t, file=fil, conttype=typev)
                 emb, fil = await notes.note_to_embed(note)
                 await ctx.send(embed=emb, file=fil, ephemeral=True)
             await tmes.edit(
-                content=f"added note{typev} in {op_timer.get_time()} seconds", embed=None
+                content=f"added note{typev} in {op_timer.get_time()} seconds",
+                embed=None,
             )
         else:
             message = "Cancelled"
@@ -497,6 +529,7 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
                 embs.append(emb)
         await pages_of_embed_attachments(ctx, embs, ephemeral=True)
         await mess.edit(content=f"got notes in {op_timer.get_time()} seconds")
+
     @gnote.command(
         name="delete_note",
         description="WIP.  Delete all notes with a given key/value",
@@ -513,7 +546,9 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
     ) -> None:
         """Find Notes under a specific Key/Topic pair"""
         if not (key or topic):
-            await interaction.response.send_message("please specify either key or topic.",ephemeral=True)
+            await interaction.response.send_message(
+                "please specify either key or topic.", ephemeral=True
+            )
             return
         ctx: commands.Context = await self.bot.get_context(interaction)
         mess = await ctx.send(
@@ -522,25 +557,31 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
         with Timer() as op_timer:
             notes = UserNotes(self.bot, interaction.user)
             docs = await notes.count_notes(key, topic)
-            
-        if docs<1:
-            await mess.edit(content=f"Could not find any notes with key `{key}` or topic `{topic}`. Op took {op_timer.get_time()} seconds.")
+
+        if docs < 1:
+            await mess.edit(
+                content=f"Could not find any notes with key `{key}` or topic `{topic}`. Op took {op_timer.get_time()} seconds."
+            )
             return
-        
-        await mess.edit(content=f"Found {docs} {'notes' if docs>1 else 'note'} in {op_timer.get_time()} seconds")
+
+        await mess.edit(
+            content=f"Found {docs} {'notes' if docs>1 else 'note'} in {op_timer.get_time()} seconds"
+        )
         cont, mess2 = await MessageTemplates.confirm(
-            ctx, 
-            f"Are you sure you want to delete {'these' if docs>1 else 'this'} {docs} {'notes' if docs>1 else 'note'}?"+
-            "Deleted notes can not be restored."
-            , True
+            ctx,
+            f"Are you sure you want to delete {'these' if docs>1 else 'this'} {docs} {'notes' if docs>1 else 'note'}?"
+            + "Deleted notes can not be restored.",
+            True,
         )
         if not cont:
             await mess2.delete()
             return
         with Timer() as op_timer:
-            await notes.delete_note(key,topic)
+            await notes.delete_note(key, topic)
         await mess2.delete()
-        await mess.edit(content=f"Deleted {docs} notes in {op_timer.get_time()} seconds")
+        await mess.edit(
+            content=f"Deleted {docs} notes in {op_timer.get_time()} seconds"
+        )
 
     @gnote.command(
         name="list_topics",
@@ -641,15 +682,21 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
 
         ctx: commands.Context = await self.bot.get_context(interaction)
         cont, mess = await MessageTemplates.confirm(
-            ctx, "Are you sure you want to delete all your notes?  **Deleted notes can never be recovered.**", True
+            ctx,
+            "Are you sure you want to delete all your notes?  **Deleted notes can never be recovered.**",
+            True,
         )
         if not cont:
             await mess.delete()
             return
-        mess = await ctx.send("<a:LoadingBlue:1206301904863502337> deleting all notes",ephemeral=True)
+        mess = await ctx.send(
+            "<a:LoadingBlue:1206301904863502337> deleting all notes", ephemeral=True
+        )
         notes = UserNotes(self.bot, interaction.user)
         await notes.delete_user_notes(interaction.user.id)
-        await mess.edit(content="Deleted all your notes.  Remember, this can not be undone.")
+        await mess.edit(
+            content="Deleted all your notes.  Remember, this can not be undone."
+        )
 
 
 class Global(commands.Cog, TC_Cog_Mixin):
@@ -684,7 +731,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
                     name="parent", value=f"* {str(message.channel.parent)}, "
                 )
         if interaction.guild_id:
-            embed.add_field(name="guildid",value=interaction.guild_id)
+            embed.add_field(name="guildid", value=interaction.guild_id)
 
         await interaction.response.send_message(
             content="Message details below.",
@@ -785,11 +832,8 @@ class Global(commands.Cog, TC_Cog_Mixin):
 
             await mess.edit(content=None, embed=emb)
         except Exception as e:
-            await self.bot.send_error(e,"AIerr",True)
+            await self.bot.send_error(e, "AIerr", True)
             await ctx.send("something went wrong...")
-
-    
-
 
     @app_commands.command(name="pingtest", description="ping")
     @app_commands.allowed_installs(guilds=True, users=True)
@@ -810,5 +854,5 @@ async def setup(bot):
 
 
 async def teardown(bot):
-    await bot.remove_cog('NotesCog')
-    await bot.remove_cog('Global')
+    await bot.remove_cog("NotesCog")
+    await bot.remove_cog("Global")
