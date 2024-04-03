@@ -1,9 +1,9 @@
 from typing import Dict
 import gui
-from sqlalchemy import create_engine, text, MetaData, Table, inspect, Column
+from sqlalchemy import Engine, create_engine, text, MetaData, Table, inspect, Column
 from sqlalchemy.orm import sessionmaker, Session
 
-from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncEngine
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import registry
@@ -36,24 +36,20 @@ def generate_column_definition(column, engine):
 ENGINEPREFIX = "sqlite:///"
 ASYNCENGINE = "sqlite+aiosqlite:///"
 
-def merge_metadata(*original_metadata) -> MetaData:
-    merged = MetaData()
-
-    for original_metadatum in original_metadata:
-        for table in original_metadatum.tables.values():
-            table.to_metadata(merged)
-
-    return merged
 class EngineContainer:
+    '''This class contains the database urls and the active engines.'''
     def __init__(self, db_name, asyncmode=False):
         self.database_name = db_name
         self.connected = False
         self.connected_a = False
         self.async_mode=asyncmode
-        self.engine = None
+        self.engine:Engine = None
+        self.aengine:AsyncEngine = None
         self.bases = []
         self.SessionLocal: sessionmaker = None
         self.session = None
+        self.sync_sessions: Dict[str,Session] = {}
+        self.session_a=None
         self.SessionAsyncLocal: async_sessionmaker = None
 
     def connect_to_engine(self):
@@ -68,8 +64,7 @@ class EngineContainer:
             )
 
             self.SessionLocal: sessionmaker = SessionLocal
-            self.session: Session = self.SessionLocal()
-            self.session.commit()
+
             result = self.compare_db()
             gui.gprint(result)
 
@@ -92,6 +87,9 @@ class EngineContainer:
             for base in self.bases:
                 async with self.aengine.begin() as conn:
                     await conn.run_sync(base.metadata.create_all)
+        elif self.connected:
+             for base in self.bases:
+                base.metadata.create_all(self.engine)
 
     def load_in_base(self, Base):
         gui.dprint("loading in: ", Base.__name__, Base)
@@ -99,12 +97,11 @@ class EngineContainer:
             self.bases.append(Base)
         if self.connected:
             Base.metadata.create_all(self.engine)
-            self.session: Session = self.SessionLocal()
-            self.session.commit()
+            
 
     def close(self):
-        if self.session is not None:
-            self.session.close()
+        for i, v in self.sync_sessions.items():
+            v.close()
         self.engine.dispose()
         self.connected = False
 
@@ -114,10 +111,12 @@ class EngineContainer:
             gui.dprint("disposed")
             self.connected_a = False
 
-    def get_session(self) -> Session:
-        if not self.session:
-            self.session = self.SessionLocal()
-        return self.session
+    def get_session(self, session_name:str='any') -> Session:
+        if session_name not in self.sync_sessions:
+            self.sync_sessions[session_name]=self.SessionLocal()
+        #if not self.session:     self.session = self.SessionLocal()
+            
+        return self.sync_sessions[session_name]
     
     def get_sub_session(self) -> Session:
         return self.SessionLocal()
@@ -171,37 +170,6 @@ class DatabaseSingleton:
                 engine = EngineContainer(db_name,mode)
                 self.engines[ename] = engine
 
-        def connect_to_engine(self):
-            if not self.connected:
-                db_name = self.database_name
-                self.engine = create_engine(f"{ENGINEPREFIX}{db_name}", echo=False)
-                for base in self.bases:
-                    base.metadata.create_all(self.engine)
-                self.connected = True
-                SessionLocal = sessionmaker(
-                    bind=self.engine, autocommit=False, autoflush=True
-                )
-
-                self.SessionLocal: sessionmaker = SessionLocal
-                self.session: Session = self.SessionLocal()
-                self.session.commit()
-
-        async def connect_to_engine_a(self):
-            """async variant of connect_to_engine."""
-            if not self.connected_a:
-                gui.print("Connecting to ASYNCIO compatible engine variant.")
-                db_name = self.database_name
-                self.aengine = create_async_engine(
-                    f"{ASYNCENGINE}{self.adatabase_name}", echo=False
-                )
-                self.SessionAsyncLocal = async_sessionmaker(
-                    bind=self.aengine, autocommit=False, autoflush=True
-                )
-                for base in self.bases:
-                    async with self.aengine.begin() as conn:
-                        await conn.run_sync(base.metadata.create_all)
-                self.connected_a = True
-
         def load_in_base(self, Base, ename=None):
             gui.dprint("loading in: ", Base.__name__, Base)
             if ename:
@@ -212,9 +180,6 @@ class DatabaseSingleton:
                     self.engines[en].load_in_base(Base)
             if not Base in self.bases:
                 self.bases.append(Base)
-
-
-
 
         async def startup_all(self):
             for en,val in self.engines.items():
@@ -236,9 +201,6 @@ class DatabaseSingleton:
             return
 
 
-        def execute_sql_string(self, string):
-            with self.get_session() as session:
-                session.execute(text(string))
 
         async def close_async(self):
             for en,val in self.engines.items():
@@ -247,10 +209,10 @@ class DatabaseSingleton:
                 else:
                     val.close()
 
-        def get_session(self) -> Session:
+        def get_session(self,mode:str='any') -> Session:
             for en,val in self.engines.items():
                 if not val.async_mode:
-                    return val.get_session()
+                    return val.get_session(mode)
 
         def get_sub_session(self) -> Session:
             for en,val in self.engines.items():
@@ -280,10 +242,6 @@ class DatabaseSingleton:
         await self._instance.startup_all()
 
 
-    def execute_sql_string(self, sqlstring):
-        """Execute a SQL String."""
-        self._instance.execute_sql_string(sqlstring)
-
     def get_metadata(self):
         # get metadata of database
         for en,val in self._instance.engines.items():
@@ -293,9 +251,11 @@ class DatabaseSingleton:
                 return metadata
 
     def load_base(self, Base):
+        '''Load in a Declarative base.'''
         self._instance.load_in_base(Base)
 
     def load_base_to(self, Base, ename: str):
+        '''load a declarative base to a specific engine.'''
         self._instance.load_in_base(Base, ename)
 
     # Use a static method to get the singleton instance.
@@ -319,9 +279,9 @@ class DatabaseSingleton:
         await inst.close_async()
 
     @staticmethod
-    def get_session() -> Session:
+    def get_session(mode:str='any') -> Session:
         inst = DatabaseSingleton.get_instance()
-        return inst.get_session()
+        return inst.get_session(mode)
 
     @staticmethod
     def get_new_session() -> Session:

@@ -1,6 +1,6 @@
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, select
 from sqlalchemy.orm import Session
-
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
 def get_primary_key(instance):
     primary_key_cols = instance.__mapper__.primary_key
@@ -22,6 +22,20 @@ def add_or_update_all(session: Session, model_class, data_list):
     if insert_data:
         session.add_all(insert_data)
 
+async def add_or_update_all_a(session: AsyncSession, model_class, data_list):
+    insert_data = []
+    for data in data_list:
+        primary_key_name, primary_key_value = get_primary_key(data)
+        filter_kwargs = {primary_key_name: primary_key_value}
+
+        db_stm = await session.execute(select(model_class).filter_by(**filter_kwargs))
+        db_obj=db_stm.scalar_one_or_none()
+        if db_obj is None:
+            insert_data.append(data)
+        else:
+            pass
+    if insert_data:
+        session.add_all(insert_data)
 
 def merge_metadata(*original_metadata) -> MetaData:
     merged = MetaData()

@@ -894,11 +894,8 @@ class ArchivedRPMessage(ArchiveBase):
             The total number of messages.
         """
         session: Session = DatabaseSingleton.get_session()
-        count = (
-            session.query(func.count(ArchivedRPMessage.message_id))
-            .filter((ArchivedRPMessage.server_id == server_id))
-            .scalar()
-        )
+        stmt = select(func.count(ArchivedRPMessage.message_id)).filter(ArchivedRPMessage.server_id == server_id)
+        count = session.execute(stmt).scalar()
         return count
 
     @staticmethod
@@ -913,15 +910,11 @@ class ArchivedRPMessage(ArchiveBase):
             The total number of messages without a group.
         """
         session = DatabaseSingleton.get_session()
-        session: Session = DatabaseSingleton.get_session()
-        count = (
-            session.query(func.count(ArchivedRPMessage.message_id))
-            .filter(
-                (ArchivedRPMessage.server_id == server_id)
-                & (ArchivedRPMessage.channel_sep_id == None)
-            )
-            .scalar()
+        stmt = select(func.count(ArchivedRPMessage.message_id)).filter(
+            (ArchivedRPMessage.server_id == server_id)
+            & (ArchivedRPMessage.channel_sep_id == None)
         )
+        count = session.execute(stmt).scalar()
         return count
 
     @staticmethod
@@ -1279,22 +1272,3 @@ class HistoryMakers:
 
 DatabaseSingleton("setup").load_base(ArchiveBase)
 
-"""
-below should be equivalent to:
-CREATE TRIGGER IF NOT EXISTS update_channel_sep_id
-AFTER UPDATE OF channel_sep_id ON ArchivedRPMessages
-BEGIN
-    INSERT INTO ChannelSeps (channel_sep_id, server_id, channel, category, thread, created_at, posted_url)
-    SELECT NEW.channel_sep_id, NEW.server_id, NEW.channel, NEW.category, NEW.thread, NEW.created_at, NEW.posted_url
-    WHERE NOT EXISTS (
-        SELECT 1 FROM ChannelSeps WHERE channel_sep_id = NEW.channel_sep_id
-    );
-END;
-"""
-"""
-
-@event.listens_for(ArchivedRPMessage.channel_sep_id, 'set')
-def update_channel_sep_id_listener(target, value, oldvalue, initiator):
-    if value != oldvalue and value!=None and target.server_id:
-        HistoryMakers.add_channel_sep_if_needed(target,value)
-"""

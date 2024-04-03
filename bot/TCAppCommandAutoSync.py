@@ -142,7 +142,7 @@ class AppGuildTreeSync(Guild_Sync_Base):
         return toAdd
 
     @classmethod
-    def setdonotsync(cls, server_id):
+    def setdonotsync(cls, server_id, do_not_sync:bool=True):
         """
         Add a new AppGuildTreeSync entry for the specified server_id.
         """
@@ -150,7 +150,8 @@ class AppGuildTreeSync(Guild_Sync_Base):
         statement = select(AppGuildTreeSync).filter_by(server_id=server_id)
         result = session.execute(statement).scalars().first()
         if result:
-            result.donotsync = True
+            result.donotsync = do_not_sync
+            session.commit()
             return result
         else:
             return None
