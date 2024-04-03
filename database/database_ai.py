@@ -11,7 +11,7 @@ from sqlalchemy import (
     Double,
 )
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from .database_singleton import DatabaseSingleton
 from sqlalchemy import select, not_, func
 

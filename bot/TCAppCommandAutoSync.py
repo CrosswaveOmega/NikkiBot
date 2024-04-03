@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Tuple, Union
 from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey, DateTime, Double
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy import select, not_, func
 import datetime
 from assets import *

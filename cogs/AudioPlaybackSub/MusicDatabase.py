@@ -13,7 +13,7 @@ from sqlalchemy import (
     cast,
     Float,
 )
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import relationship, Session
 from database import DatabaseSingleton
 from sqlalchemy import case, func

@@ -41,15 +41,12 @@ class EngineContainer:
     def __init__(self, db_name, asyncmode=False):
         self.database_name = db_name
         self.connected = False
-        self.connected_a = False
         self.async_mode=asyncmode
         self.engine:Engine = None
         self.aengine:AsyncEngine = None
         self.bases = []
         self.SessionLocal: sessionmaker = None
-        self.session = None
         self.sync_sessions: Dict[str,Session] = {}
-        self.session_a=None
         self.SessionAsyncLocal: async_sessionmaker = None
 
     def connect_to_engine(self):
@@ -70,7 +67,7 @@ class EngineContainer:
 
     async def connect_to_engine_a(self):
         """async variant of connect_to_engine."""
-        if not self.connected_a:
+        if not self.connected and self.async_mode:
             gui.print("Connecting to ASYNCIO compatible engine variant.")
             db_name = self.database_name
             self.aengine = create_async_engine(f"{ASYNCENGINE}{db_name}", echo=False)
@@ -80,10 +77,10 @@ class EngineContainer:
             for base in self.bases:
                 async with self.aengine.begin() as conn:
                     await conn.run_sync(base.metadata.create_all)
-            self.connected_a = True
+            self.connected = True
     
     async def sync_bases(self):
-        if self.connected_a:
+        if self.connected and self.async_mode:
             for base in self.bases:
                 async with self.aengine.begin() as conn:
                     await conn.run_sync(base.metadata.create_all)
@@ -95,8 +92,7 @@ class EngineContainer:
         gui.dprint("loading in: ", Base.__name__, Base)
         if not Base in self.bases:
             self.bases.append(Base)
-        if self.connected:
-            Base.metadata.create_all(self.engine)
+        #if self.connected:    Base.metadata.create_all(self.engine)
             
 
     def close(self):
@@ -106,10 +102,10 @@ class EngineContainer:
         self.connected = False
 
     async def close_async(self):
-        if self.connected_a:
+        if self.connected and self.async_mode:
             await self.aengine.dispose()
             gui.dprint("disposed")
-            self.connected_a = False
+            self.connected = False
 
     def get_session(self, session_name:str='any') -> Session:
         if session_name not in self.sync_sessions:

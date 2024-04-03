@@ -25,7 +25,7 @@ from sqlalchemy.orm import aliased
 from database import DatabaseSingleton, AwareDateTime, add_or_update_all
 from sqlalchemy import select, event, exc
 
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy import desc, asc, and_
 
 """
@@ -871,16 +871,12 @@ class ArchivedRPMessage(ArchiveBase):
         Returns:
             A list of messages in the group.
         """
-        session = DatabaseSingleton.get_session()
-        return (
-            session.query(ArchivedRPMessage)
-            .filter(
+        session: Session = DatabaseSingleton.get_session()
+        stmt = select(ArchivedRPMessage).filter(
                 (ArchivedRPMessage.server_id == server_id)
                 & ((ArchivedRPMessage.channel_sep_id == channel_sep_id))
-            )
-            .order_by(ArchivedRPMessage.created_at)
-            .all()
-        )
+            ).order_by(ArchivedRPMessage.created_at)
+        return session.execute(stmt).scalars().all()
 
     @staticmethod
     def count_all(server_id: int):
@@ -929,17 +925,13 @@ class ArchivedRPMessage(ArchiveBase):
         end_time = start_time + timedelta(minutes=interval)
         gui.dprint(start_time, end_time)
         session: Session = DatabaseSingleton.get_session()
-        return (
-            session.query(ArchivedRPMessage)
-            .filter(
+        stmt = select(ArchivedRPMessage).filter(
                 (ArchivedRPMessage.server_id == server_id)
                 & (ArchivedRPMessage.created_at >= start_time)
                 & (ArchivedRPMessage.created_at < end_time)
                 & (ArchivedRPMessage.channel_sep_id == None)
-            )
-            .order_by(ArchivedRPMessage.created_at)
-            .all()
-        )
+            ).order_by(ArchivedRPMessage.created_at)
+        return session.execute(stmt).scalars().all()
 
     def add_file(self, archived_rp_file):
         session = DatabaseSingleton.get_session()
@@ -964,9 +956,10 @@ class ArchivedRPMessage(ArchiveBase):
 
     def get_embed(self):
         session = DatabaseSingleton.get_session()
-        embed_attr = (
-            session.query(ArchivedRPEmbed).filter_by(message_id=self.message_id).first()
+        stmt = (
+            select(ArchivedRPEmbed).filter_by(message_id=self.message_id).limit(1)
         )
+        embed_attr = session.execute(stmt).scalar_one_or_none()
         embeds = []
         if embed_attr:
             embeds = [embed_attr.to_embed()]

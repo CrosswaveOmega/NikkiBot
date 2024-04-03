@@ -2,9 +2,9 @@ from .Tasks.TCTasks import TCTask, TCTaskManager
 from database import DatabaseSingleton, AwareDateTime
 import sqlalchemy
 import gui
-from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, delete, select
 from sqlalchemy import PrimaryKeyConstraint
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from datetime import datetime
 from typing import Optional, Tuple
@@ -160,7 +160,6 @@ class TCGuildTask(Guild_Task_Base):
             session.commit()
         gui.gprint(new)
         return new
-
     @classmethod
     def remove_guild_task(cls, server_id: int, task_name: Optional[str] = None):
         """
@@ -170,14 +169,20 @@ class TCGuildTask(Guild_Task_Base):
         session = DatabaseSingleton.get_session()
         if task_name:
             TCTaskManager.add_tombstone(f"{server_id}_{task_name}")
-            session.query(TCGuildTask).filter_by(
-                server_id=server_id, task_name=task_name
-            ).delete()
+            session.execute(
+                delete(TCGuildTask).where(
+                    TCGuildTask.server_id == server_id, TCGuildTask.task_name == task_name
+                )
+            )
         else:
-            tasks = session.query(cls.task_name).filter_by(server_id=server_id).all()
+            tasks = session.execute(
+                select(TCGuildTask.task_name).where(TCGuildTask.server_id == server_id)
+            ).scalars().all()
             for task in tasks:
-                TCTaskManager.add_tombstone(f"{server_id}_{task.task_name}")
-            session.query(TCGuildTask).filter_by(server_id=server_id).delete()
+                TCTaskManager.add_tombstone(f"{server_id}_{task}")
+            session.execute(
+                delete(TCGuildTask).where(TCGuildTask.server_id == server_id)
+            )
         session.commit()
 
     @classmethod
@@ -186,7 +191,9 @@ class TCGuildTask(Guild_Task_Base):
         Returns a list of TCGuildTask objects for the specified server_id.
         """
         session = DatabaseSingleton.get_session()
-        results = session.query(TCGuildTask).filter_by(server_id=server_id).all()
+        results = session.execute(
+            select(TCGuildTask).where(TCGuildTask.server_id == server_id)
+        ).scalars().all()
         return results
 
     @classmethod
@@ -195,16 +202,12 @@ class TCGuildTask(Guild_Task_Base):
         Returns the TCGuildTask entry for the specified server_id and task_name, or None if it doesn't exist.
         """
         session: Session = DatabaseSingleton.get_session()
-        result = (
-            session.query(TCGuildTask)
-            .filter_by(server_id=server_id, task_name=task_name)
-            .first()
-        )
+        statement = select(TCGuildTask).where(TCGuildTask.server_id == server_id, TCGuildTask.task_name == task_name)
+        result = session.execute(statement).scalar()
         if result:
             return result
         else:
             return None
-
     @classmethod
     def parent_callback(cls, guildtaskname: str, next_run: datetime):
         """
@@ -212,18 +215,14 @@ class TCGuildTask(Guild_Task_Base):
         """
         s, t = guildtaskname.split("_")
         cls.update(int(s), t, next_run)
-
     @classmethod
     def update(cls, server_id, task_name, next_run):
         """
         Updates the next_run attribute of the TCGuildTask entry with the specified server_id and task_name to the passed in datetime object.
         """
         session: Session = DatabaseSingleton.get_session()
-        task = (
-            session.query(TCGuildTask)
-            .filter_by(server_id=server_id, task_name=task_name)
-            .first()
-        )
+        statement = select(TCGuildTask).where(TCGuildTask.server_id == server_id, TCGuildTask.task_name == task_name)
+        task = session.execute(statement).scalar_one_or_none()
         if task:
             task.next_run = next_run
             gui.gprint(f"{task},UPDATED {task.next_run}")

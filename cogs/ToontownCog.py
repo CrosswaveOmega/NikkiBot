@@ -36,7 +36,7 @@ from database import DatabaseSingleton
 from gptfunctionutil import *
 import gptmod.error
 from sqlalchemy import Column, Integer, String, DateTime
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.future import select
 import gui
 from .ToontownStuff import (

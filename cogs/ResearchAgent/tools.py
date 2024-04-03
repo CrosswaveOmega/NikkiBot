@@ -89,8 +89,10 @@ class MyLib(GPTFunctionLibrary):
         authors: str = "None",
         date: str = "None",
         abstract: str = "NA",
+        **kwargs
     ):
         # Wait for a set period of time.
+        print('extra kwargs', kwargs)
         return title, authors, date, abstract
 
 

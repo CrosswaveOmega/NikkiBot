@@ -43,7 +43,7 @@ from sqlalchemy import (
 from database import DatabaseSingleton, AwareDateTime, add_or_update_all
 from sqlalchemy import select, event, exc
 
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy import desc, asc, and_
 
 """
