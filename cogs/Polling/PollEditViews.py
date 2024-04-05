@@ -229,7 +229,7 @@ class PollEdit(discord.ui.View):
         """
         Send a modal to let users customize the name and description of the poll.
         """
-        name_modal = Poll_Name_Make()
+        name_modal = Poll_Name_Make(timeout=5*60)
         await interaction.response.send_modal(name_modal)
         await name_modal.wait()
         if name_modal.done != None:
@@ -254,7 +254,7 @@ class PollEdit(discord.ui.View):
         Send a modal to let users customize the poll choices.
         """
         choice_modal = Poll_Choice_Make(
-            scope="NA", choices=int(self.my_poll["choices"])
+            scope="NA", choices=int(self.my_poll["choices"]), timeout=5*60
         )
         await interaction.response.send_modal(choice_modal)
         await choice_modal.wait()

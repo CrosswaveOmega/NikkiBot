@@ -46,6 +46,7 @@ async def opening():
 
 @bot.check
 async def is_cog_enabled(ctx: commands.Context):
+    
     return True
 
 

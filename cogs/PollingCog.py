@@ -424,7 +424,16 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
     )
     async def feedback_send(self, interaction: discord.Interaction):
         """test for a feedback system"""
-        await interaction.response.send_modal(Feedback(self.bot))
+        modal=Feedback(self.bot,timeout=60)
+        await interaction.response.send_modal(modal)
+        res=await modal.wait()
+        ctx=self.bot.get_context(interaction)
+        if res:
+            await ctx.send(f"{modal.name.value}",epheremal=True)
+            await ctx.send(f"{modal.feedback.value}",epheremal=True)
+        else:
+            await ctx.send(f"Timeout...",epheremal=True)
+            
 
 
 async def setup(bot):

@@ -224,7 +224,7 @@ class PlayerButtons(discord.ui.View):
     async def addsong(
         self, interaction: discord.Interaction, button: discord.ui.Button, row=1
     ):
-        name_modal = AddSong()
+        name_modal = AddSong(timeout=5*60)
         await interaction.response.send_modal(name_modal)
         await name_modal.wait()
         if name_modal.done != None:

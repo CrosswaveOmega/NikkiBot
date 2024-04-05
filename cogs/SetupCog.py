@@ -15,7 +15,7 @@ from queue import Queue
 from discord.ext import commands, tasks
 from discord.utils import find
 from discord import Webhook, ui
-from bot import TC_Cog_Mixin, TCBot, AppGuildTreeSync
+from bot import TC_Cog_Mixin, TCBot, AppGuildTreeSync,GuildCogToggle
 from discord import app_commands
 from discord.app_commands import Choice
 from pathlib import Path
@@ -117,23 +117,28 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         """Open a view where you can configure Nikki's features."""
         ctx: commands.Context = await self.bot.get_context(interaction)
         profile = AppGuildTreeSync.get(server_id=ctx.guild.id)
-        list = AppGuildTreeSync.load_list(server_id=ctx.guild.id)
-        onlist = AppGuildTreeSync.load_onlist(server_id=ctx.guild.id)
+        #list = AppGuildTreeSync.load_list(server_id=ctx.guild.id)
+        #onlist = AppGuildTreeSync.load_onlist(server_id=ctx.guild.id)
         if cogname.lower() == "setup":
             await ctx.send("you can't disable setup, sorry", ephemeral=True)
             return
         if ctx.bot.get_cog(cogname) is not None:
+            
             cog = ctx.bot.get_cog(cogname)
+            entry=GuildCogToggle.get_or_add(ctx.guild.id,cog)
             manual = private = False
-
+            if hasattr(cog, "globalonly"):
+                if cog.globalonly:
+                    await ctx.send("This is a global cog, you will need to disable these commands in my integration menu!", ephemeral=True)
+                    return
             if hasattr(cog, "manual_enable"):
                 manual = cog.manual_enable
             if manual:
                 if hasattr(cog, "private"):
                     private = cog.private
 
-                if cogname in onlist:
-                    onlist.remove(cogname)
+                if entry.enabled:
+                    entry.enabled=False
                     await ctx.send(
                         f"I will not sync cog {cogname} here.", ephemeral=True
                     )
@@ -142,23 +147,24 @@ class Setup(commands.Cog, TC_Cog_Mixin):
                         if ctx.author.id != ctx.bot.application.owner.id:
                             await ctx.send(f"{cogname} is owner only.", ephemeral=True)
                             return
-                    onlist.append(cogname)
+                    entry.enabled=True
                     await ctx.send(f"I will sync cog {cogname} here.", ephemeral=True)
-                profile.save_onlist(onlist)
+                #profile.save_onlist(onlist)
+                self.bot.database.commit()
                 ctx.bot.tree.clear_commands(guild=ctx.guild)
                 await ctx.bot.all_guild_startup()
             else:
-                if cogname in list:
-                    list.remove(cogname)
+                if not entry.enabled:
+                    entry.enabled=True
                     await ctx.send(
                         f"I will once again sync cog {cogname} here.", ephemeral=True
                     )
                 else:
-                    list.append(cogname)
+                    entry.enabled=False
                     await ctx.send(
                         f"I will no longer sync cog {cogname} here.", ephemeral=True
                     )
-                profile.save_list(list)
+                self.bot.database.commit()
                 ctx.bot.tree.clear_commands(guild=ctx.guild)
                 await ctx.bot.all_guild_startup()
         else:
@@ -254,7 +260,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
     @commands.command()
     @commands.is_owner()
     async def syncall(self, ctx):
-        """Sync the app commands."""
+        """Sync my app commands.  Owner only."""
         await ctx.send("Syncing...")
         await ctx.bot.all_guild_startup(True)
         await ctx.send("DONE.")

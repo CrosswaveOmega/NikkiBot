@@ -366,7 +366,7 @@ class PreCheck(TimedResponseView):
     async def gsearch(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        modal = ChangeQueryModal()
+        modal = ChangeQueryModal(timeout=self.timeout)
         await interaction.response.send_modal(modal)
         await modal.wait()
         if modal.done is not None:
@@ -463,7 +463,7 @@ class FollowupActionView(TimedResponseView):
                 "Too many followups have been added.", ephemeral=True
             )
             return
-        modal = FollowupAddModal()
+        modal = FollowupAddModal(timeout=self.timeout)
         await interaction.response.send_modal(modal)
         await modal.wait()
         if modal.done is not None:
@@ -497,7 +497,7 @@ class FollowupActionView(TimedResponseView):
     ):
         # await interaction.response.send_message("This feature isn't ready yet!",ephemeral=True)
         # return
-        modal = FollowupSuggestModal()
+        modal = FollowupSuggestModal(timeout=self.timeout)
         await interaction.response.send_modal(modal)
         await modal.wait()
         if modal.done is not None:

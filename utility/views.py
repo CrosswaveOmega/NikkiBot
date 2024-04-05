@@ -305,7 +305,7 @@ class RRuleView(discord.ui.View):
         """
         dt = datetime.combine(datetime.min, self.dtvals["time"])
         default = dt.strftime("%H:%M")
-        name_modal = TimeSetModal(deftime=default)
+        name_modal = TimeSetModal(deftime=default,timeout=5*60)
         await interaction.response.send_modal(name_modal)
         await name_modal.wait()
         gui.gprint("DONE.", name_modal.done)
@@ -336,9 +336,9 @@ class RRuleView(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         """
-        Send a modal to let users customize the name and description of the poll.
+        Send a modal to let users customize the time interval.
         """
-        name_modal = IntervalModal(deftime=self.dtvals["interval"])
+        name_modal = IntervalModal(deftime=self.dtvals["interval"],timeout=5*60)
         await interaction.response.send_modal(name_modal)
         await name_modal.wait()
         if name_modal.done != None:
