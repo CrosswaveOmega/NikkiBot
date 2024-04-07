@@ -20,7 +20,7 @@ from dateutil.rrule import rrule, WEEKLY, SU, SECONDLY, MINUTELY
 from .TauCetiBot import TCBot
 from .Tasks.TCTasks import TCTaskManager
 from .TcGuildTaskDB import Guild_Task_Functions, TCGuildTask
-from .TCAppCommandAutoSync import AppGuildTreeSync
+from .TCAppCommandAutoSync import AppGuildTreeSync, GuildCogToggle
 from .errorformat import client_error_message
 from .config_gen import setup, config_update
 from .key_vault import get_token
@@ -46,7 +46,7 @@ async def opening():
 
 @bot.check
 async def is_cog_enabled(ctx: commands.Context):
-    
+
     return True
 
 
@@ -466,8 +466,10 @@ async def main(args):
         if config != None:
             g = keys.get("optional", "google", fallback=None)
             c = keys.get("optional", "cse_id", fallback=None)
+            pal = keys.get('optional',"palapi", fallback=None)
             bot.keys["google"] = g
             bot.keys["cse"] = c
+            bot.keys["palapi"] = pal
 
             await bot.start(get_token(keys))
         return bot.exit_status

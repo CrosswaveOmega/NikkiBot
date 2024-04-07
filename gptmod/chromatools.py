@@ -86,7 +86,7 @@ class ChromaBetter(Chroma):
             raise Exception("Documents does not match ids!")
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
-        max_batch = 200
+        max_batch = 25
         if hasattr(self._client, "max_batch_size"):
             max_batch = self._client.max_batch_size
         if max_batch < len(documents):
