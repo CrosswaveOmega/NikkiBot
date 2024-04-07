@@ -117,7 +117,7 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         # Convert the timestamp string to a datetime object
 
-        file_path = "./assets/palmap2.png"
+        file_path = "./assets/palmap.png"
         file = discord.File(file_path, filename="palmap.png")
         await ctx.send(file=file, ephemeral=True)
 
