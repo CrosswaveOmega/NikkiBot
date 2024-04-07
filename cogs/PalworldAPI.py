@@ -3,6 +3,7 @@ import gui
 import discord
 import asyncio
 
+from discord import app_commands
 # import datetime
 
 from bot import (
@@ -30,7 +31,7 @@ def capitalize_first_letter(string: str) -> str:
 
 
 class PalworldAPI(commands.Cog, TC_Cog_Mixin):
-    """A palworld command"""
+    """A palworld cog.  work in progress."""
 
     def __init__(self, bot):
         self.bot: TCBot = bot
@@ -42,9 +43,11 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
         
         
 
-    @commands.command()
-    async def palget(self, ctx, pal_name: str):
+    @app_commands.command(name="get_pal", description="get a single pal.")
+    @app_commands.describe(pal_name="name of pal to retrieve info for.")
+    async def palget(self, interaction: discord.Interaction,pal_name: str):
         """Experimental palworld API wrapper."""
+        ctx: commands.Context = await self.bot.get_context(interaction)
         # Convert the timestamp string to a datetime object
         async with aiohttp.ClientSession() as session:
             _data_call = await session.get(f"https://api.palshome.org/v1/data/{pal_name}", headers={"api-key": self.bot.keys.get('palapi',None)}) # Let's gather our data about the provided Pal from the endpoint.
@@ -107,7 +110,16 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
         embed.set_footer(text=f"{catchable}{boss}  Price:{stats['price_market']}")
         # Finally we send it to the channel where the command has been used!
         return await ctx.send(embed=embed)
+    
+    @app_commands.command(name="palmap", description="get the palworld map.")
+    async def palmap(self, interaction: discord.Interaction):
+        """Experimental palworld API wrapper."""
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        # Convert the timestamp string to a datetime object
 
+        file_path = "./assets/palmap2.png"
+        file = discord.File(file_path, filename="palmap.png")
+        await ctx.send(file=file, ephemeral=True)
 
 async def setup(bot):
     gui.dprint(__name__)
