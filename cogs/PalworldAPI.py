@@ -132,7 +132,8 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
         def highlight_and_crop(filepath, coordinate, sizev=100):
             with Image.open(filepath) as img:
                 draw = ImageDraw.Draw(img)
-                draw.rectangle([coordinate[0]-1, coordinate[1]-1, coordinate[0]+1, coordinate[1]+1], fill=None, outline='red', width=1)
+                draw.rectangle([coordinate[0]-5, coordinate[1], coordinate[0]+5, coordinate[1]], fill='red', )
+                draw.rectangle([coordinate[0], coordinate[1]-5, coordinate[0], coordinate[1]+5], fill='red', )
 
                 left = max(coordinate[0] - sizev, 0)
                 top = max(coordinate[1] - sizev, 0)
