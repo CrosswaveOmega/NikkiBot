@@ -124,7 +124,7 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         # Convert the timestamp string to a datetime object
         mes=await ctx.send("please wait",ephemeral=True)
-        file_path = "./assets/palmap.png"
+        file_path = "./assets/palmap2.png"
         x2=x+1000
         y2=1000-y
 
@@ -148,8 +148,7 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
 
             return cropped_img
 
-        cropped_img = highlight_and_crop(file_path, (x2, y2),size*50)
-        cropped_img = cropped_img.resize((cropped_img.width * 2, cropped_img.height * 2),Image.Resampling.NEAREST)
+        cropped_img = highlight_and_crop(file_path, (x2*2, y2*2),size*50)
                 
         with io.BytesIO() as image_binary:
             cropped_img.save(image_binary, 'PNG')
