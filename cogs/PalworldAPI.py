@@ -31,7 +31,7 @@ def capitalize_first_letter(string: str) -> str:
     return string.capitalize() if string else ''
 
 coor = app_commands.Range[int, -1000, 1000]
-msize = app_commands.Range[int, 100, 500]
+msize = app_commands.Range[int, 1, 10]
 
 class PalworldAPI(commands.Cog, TC_Cog_Mixin):
     """A palworld cog.  work in progress."""
@@ -118,8 +118,8 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
     @app_commands.describe(x="X coordinate to retrieve")
     @app_commands.describe(y="Y coordinate to retrieve")
     
-    @app_commands.describe(size="Size of the map")
-    async def palmap(self, interaction: discord.Interaction,x:coor=0,y:coor=0,size:msize=100):
+    @app_commands.describe(size="Sectors of map to view.")
+    async def palmap(self, interaction: discord.Interaction,x:coor=0,y:coor=0,size:msize=1):
         """Experimental palworld API wrapper."""
         ctx: commands.Context = await self.bot.get_context(interaction)
         # Convert the timestamp string to a datetime object
@@ -132,7 +132,7 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
         def highlight_and_crop(filepath, coordinate, sizev=100):
             with Image.open(filepath) as img:
                 draw = ImageDraw.Draw(img)
-                draw.rectangle([coordinate[0]-5, coordinate[1]-5, coordinate[0]+5, coordinate[1]+5], fill=None, outline='red', width=3)
+                draw.rectangle([coordinate[0]-5, coordinate[1]-5, coordinate[0]+5, coordinate[1]+5], fill=None, outline='red', width=1)
 
                 left = max(coordinate[0] - sizev, 0)
                 top = max(coordinate[1] - sizev, 0)
@@ -143,7 +143,7 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
 
             return cropped_img
 
-        cropped_img = highlight_and_crop(file_path, (x2, y2),size//2)
+        cropped_img = highlight_and_crop(file_path, (x2, y2),size*50)
         with io.BytesIO() as image_binary:
             cropped_img.save(image_binary, 'PNG')
             image_binary.seek(0)
