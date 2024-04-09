@@ -155,7 +155,7 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
             cropped_img.save(image_binary, 'PNG')
             image_binary.seek(0)
             file = discord.File(fp=image_binary, filename="highlighted_palmap.png")
-        await mes.edit(content="done",file=file, ephemeral=True)
+        await mes.edit(content="done",attachments=[file], ephemeral=True)
 
 async def setup(bot):
     gui.dprint(__name__)
