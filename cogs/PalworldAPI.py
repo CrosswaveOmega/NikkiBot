@@ -1,8 +1,9 @@
+import io
 import aiohttp
 import gui
 import discord
 import asyncio
-
+from PIL import Image, ImageDraw
 from discord import app_commands
 # import datetime
 
@@ -29,7 +30,7 @@ class ToChoice(commands.Converter):
 def capitalize_first_letter(string: str) -> str:
     return string.capitalize() if string else ''
 
-
+coor = app_commands.Range[int, -1000, 1000]
 class PalworldAPI(commands.Cog, TC_Cog_Mixin):
     """A palworld cog.  work in progress."""
 
@@ -112,14 +113,36 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
         return await ctx.send(embed=embed)
     
     @app_commands.command(name="palmap", description="get the palworld map.")
-    async def palmap(self, interaction: discord.Interaction):
+    async def palmap(self, interaction: discord.Interaction,x:coor=0,y:coor=0):
         """Experimental palworld API wrapper."""
         ctx: commands.Context = await self.bot.get_context(interaction)
         # Convert the timestamp string to a datetime object
 
         file_path = "./assets/palmap.png"
-        file = discord.File(file_path, filename="palmap.png")
-        await ctx.send(file=file, ephemeral=True)
+        x2=x+1000
+        y2=1000-y
+
+
+        def highlight_and_crop(filepath, coordinate):
+            with Image.open(filepath) as img:
+                draw = ImageDraw.Draw(img)
+                draw.rectangle([coordinate[0]-5, coordinate[1]-5, coordinate[0]+5, coordinate[1]+5], fill=None, outline='red', width=3)
+
+                left = max(coordinate[0] - 50, 0)
+                top = max(coordinate[1] - 50, 0)
+                right = min(coordinate[0] + 50, img.width)
+                bottom = min(coordinate[1] + 50, img.height)
+
+                cropped_img = img.crop((left, top, right, bottom))
+
+            return cropped_img
+
+        cropped_img = highlight_and_crop(file_path, (x2, y2))
+        with io.BytesIO() as image_binary:
+            cropped_img.save(image_binary, 'PNG')
+            image_binary.seek(0)
+            file = discord.File(fp=image_binary, filename="highlighted_palmap.png")
+        await ctx.send(file=file)
 
 async def setup(bot):
     gui.dprint(__name__)
