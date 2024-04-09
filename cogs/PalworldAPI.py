@@ -31,6 +31,8 @@ def capitalize_first_letter(string: str) -> str:
     return string.capitalize() if string else ''
 
 coor = app_commands.Range[int, -1000, 1000]
+msize = app_commands.Range[int, 100, 500]
+
 class PalworldAPI(commands.Cog, TC_Cog_Mixin):
     """A palworld cog.  work in progress."""
 
@@ -113,7 +115,11 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
         return await ctx.send(embed=embed)
     
     @app_commands.command(name="palmap", description="get the palworld map.")
-    async def palmap(self, interaction: discord.Interaction,x:coor=0,y:coor=0):
+    @app_commands.describe(x="X coordinate to retrieve")
+    @app_commands.describe(y="Y coordinate to retrieve")
+    
+    @app_commands.describe(size="Size of the map")
+    async def palmap(self, interaction: discord.Interaction,x:coor=0,y:coor=0,size:msize=100):
         """Experimental palworld API wrapper."""
         ctx: commands.Context = await self.bot.get_context(interaction)
         # Convert the timestamp string to a datetime object
@@ -123,21 +129,21 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
         y2=1000-y
 
 
-        def highlight_and_crop(filepath, coordinate, size=100):
+        def highlight_and_crop(filepath, coordinate, sizev=100):
             with Image.open(filepath) as img:
                 draw = ImageDraw.Draw(img)
                 draw.rectangle([coordinate[0]-5, coordinate[1]-5, coordinate[0]+5, coordinate[1]+5], fill=None, outline='red', width=3)
 
-                left = max(coordinate[0] - size, 0)
-                top = max(coordinate[1] - size, 0)
-                right = min(coordinate[0] + size, img.width)
-                bottom = min(coordinate[1] + size, img.height)
+                left = max(coordinate[0] - sizev, 0)
+                top = max(coordinate[1] - sizev, 0)
+                right = min(coordinate[0] + sizev, img.width)
+                bottom = min(coordinate[1] + sizev, img.height)
 
                 cropped_img = img.crop((left, top, right, bottom))
 
             return cropped_img
 
-        cropped_img = highlight_and_crop(file_path, (x2, y2))
+        cropped_img = highlight_and_crop(file_path, (x2, y2),size//2)
         with io.BytesIO() as image_binary:
             cropped_img.save(image_binary, 'PNG')
             image_binary.seek(0)
