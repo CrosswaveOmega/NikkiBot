@@ -149,7 +149,7 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
             return cropped_img
 
         cropped_img = highlight_and_crop(file_path, (x2, y2),size*50)
-        cropped_img = cropped_img.resize((cropped_img.width * 2, cropped_img.height * 2,Image.Resampling.NEAREST))
+        cropped_img = cropped_img.resize((cropped_img.width * 2, cropped_img.height * 2),Image.Resampling.NEAREST)
                 
         with io.BytesIO() as image_binary:
             cropped_img.save(image_binary, 'PNG')
