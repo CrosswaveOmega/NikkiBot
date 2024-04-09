@@ -133,12 +133,11 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
             with Image.open(filepath).convert("RGBA") as img:
                 overlay = Image.new('RGBA', img.size, (0,0,0,0))
                 draw = ImageDraw.Draw(overlay)  # Create a context for drawing things on it.
-                draw.rectangle([coordinate[0]-5, coordinate[1], coordinate[0]+5, coordinate[1]], fill=(255, 0, 0, 127), )
-                draw.rectangle([coordinate[0], coordinate[1]-5, coordinate[0], coordinate[1]+5], fill=(255, 0, 0, 127), )
-                draw.rectangle([coordinate[0]-3, coordinate[1]-3, coordinate[0]+3, coordinate[1]+3], fill=None, outline=(255, 0, 0, 127), width=1)
+                draw.rectangle([coordinate[0]-5, coordinate[1], coordinate[0]+5, coordinate[1]], fill=(255, 0, 0, 64), )
+                draw.rectangle([coordinate[0], coordinate[1]-5, coordinate[0], coordinate[1]+5], fill=(255, 0, 0, 64), )
+                draw.rectangle([coordinate[0]-3, coordinate[1]-3, coordinate[0]+3, coordinate[1]+3], fill=None, outline=(255, 0, 0, 64), width=1)
                 # Alpha composite these two images together to obtain the desired result.
                 img = Image.alpha_composite(img, overlay)
-                draw = ImageDraw.Draw(img)
 
                 left = max(coordinate[0] - sizev, 0)
                 top = max(coordinate[1] - sizev, 0)
