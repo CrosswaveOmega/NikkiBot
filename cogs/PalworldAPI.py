@@ -123,7 +123,7 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
         """Experimental palworld API wrapper."""
         ctx: commands.Context = await self.bot.get_context(interaction)
         # Convert the timestamp string to a datetime object
-
+        mes=await ctx.send("please wait",ephemeral=True)
         file_path = "./assets/palmap.png"
         x2=x+1000
         y2=1000-y
@@ -155,7 +155,7 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
             cropped_img.save(image_binary, 'PNG')
             image_binary.seek(0)
             file = discord.File(fp=image_binary, filename="highlighted_palmap.png")
-        await ctx.send(file=file, ephemeral=True)
+        await mes.edit(content="done",file=file, ephemeral=True)
 
 async def setup(bot):
     gui.dprint(__name__)
