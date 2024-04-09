@@ -130,7 +130,7 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
 
 
         def highlight_and_crop(filepath, coordinate, sizev=100):
-            with Image.open(filepath) as img:
+            with Image.open(filepath).convert("RGBA") as img:
                 draw = ImageDraw.Draw(img)
                 draw.rectangle([coordinate[0]-5, coordinate[1], coordinate[0]+5, coordinate[1]], fill=(255, 0, 0, 127), )
                 draw.rectangle([coordinate[0], coordinate[1]-5, coordinate[0], coordinate[1]+5], fill=(255, 0, 0, 127), )
