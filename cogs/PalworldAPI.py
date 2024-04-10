@@ -233,7 +233,7 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
                 bc=ccr+off_by+np.array((1,1))
                 uc=(ccr-off_by)
                 left = max(uc[0]*cell_size, 0)
-                top = max(uc[0]*cell_size, 0)
+                top = max(uc[1]*cell_size, 0)
                 right = min(bc[0]*cell_size, img.width)
                 bottom = min(bc[1]*cell_size, img.height)
                 cropped_img = img.crop((left, top, right, bottom))
