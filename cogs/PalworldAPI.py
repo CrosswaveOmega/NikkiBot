@@ -133,7 +133,7 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
             with Image.open(filepath).convert("RGBA") as img:
                 overlay2 = Image.new('RGBA', img.size, (0,0,0,0))
                 draw2 = ImageDraw.Draw(overlay2)
-        
+                cell_size=200
                 width, height = img.size
                 for x in range(0, width, cell_size):
                     draw2.line([(x, 0), (x, height)], fill=(255, 255, 255, 128), width=1)
