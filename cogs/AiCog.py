@@ -333,7 +333,7 @@ async def ai_message_invoke(
         messageresp.created_at,
         thread_id=thread_id,
         role=role,
-        content=json.dumps(content['content']),
+        content=json.dumps(content["content"]),
     )
 
     audit = await AIMessageTemplates.add_resp_audit(ctx, messageresp, result)

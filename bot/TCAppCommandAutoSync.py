@@ -97,43 +97,48 @@ def dict_diff(dict1: Dict, dict2: Dict) -> Tuple[Dict, int, int, float]:
         return (dict1, dict2), 0, 1, 0.0
     return None, 1, 1, 100.0
 
+
 class GuildCogToggle(Guild_Sync_Base):
     __tablename__ = "guild_cog_config"
 
-    server_id = Column(Integer, ForeignKey("apptree_guild_sync.server_id"),primary_key=True)
-    cog_name = Column(Text,nullable=False,primary_key=True)
-    enabled = Column(Boolean,default=False)
-    apptree_entry: Mapped["AppGuildTreeSync"]  = relationship(
+    server_id = Column(
+        Integer, ForeignKey("apptree_guild_sync.server_id"), primary_key=True
+    )
+    cog_name = Column(Text, nullable=False, primary_key=True)
+    enabled = Column(Boolean, default=False)
+    apptree_entry: Mapped["AppGuildTreeSync"] = relationship(
         back_populates="togglelist"
     )
 
     @classmethod
-    def get_or_add(cls,server_id:int,cog:commands.Cog):
+    def get_or_add(cls, server_id: int, cog: commands.Cog):
         session: Session = DatabaseSingleton.get_session()
-        statement = select(cls).filter_by(server_id=server_id,cog_name=cog.qualified_name)
+        statement = select(cls).filter_by(
+            server_id=server_id, cog_name=cog.qualified_name
+        )
         result = session.execute(statement).scalars().first()
         if result is None:
-            default=True
-            manual=False
+            default = True
+            manual = False
             if hasattr(cog, "manual_enable"):
                 manual = cog.manual_enable
             if manual:
-                default=False
+                default = False
             if hasattr(cog, "globalonly"):
                 if cog.globalonly and server_id != GLOBAL_ID:
                     print("should not sync.")
-                    default=False
+                    default = False
                 elif cog.globalonly and server_id == GLOBAL_ID:
                     print("WILL SYNC GLOBAL.")
-                    default=True
+                    default = True
             elif server_id == GLOBAL_ID:
-                default=False
-            result=cls(server_id=server_id,cog_name=cog.qualified_name,enabled=default)
+                default = False
+            result = cls(
+                server_id=server_id, cog_name=cog.qualified_name, enabled=default
+            )
             session.add(result)
             session.commit()
         return result
-        
-
 
 
 class AppGuildTreeSync(Guild_Sync_Base):
@@ -146,9 +151,9 @@ class AppGuildTreeSync(Guild_Sync_Base):
     donotsync = Column(Boolean, default=False)
     cog_disable = Column(Text, nullable=True)  # New column
     cog_onlist = Column(Text, nullable=True)  # New column 2
-    migrated = Column(Boolean,nullable=True,default=False)
+    migrated = Column(Boolean, nullable=True, default=False)
     togglelist: Mapped[List["GuildCogToggle"]] = relationship(
-       back_populates="apptree_entry"
+        back_populates="apptree_entry"
     )
 
     def __init__(
@@ -345,7 +350,8 @@ def denest_dict(d: dict) -> Dict[str, Any]:
 
     return out
 
-def should_skip_cog(cogname: str, cog, guildid, onlist,ignorelist) -> bool:
+
+def should_skip_cog(cogname: str, cog, guildid, onlist, ignorelist) -> bool:
     """Determine whether a cog should be skipped during synchronization."""
     if hasattr(cog, "globalonly"):
         if cog.globalonly and guildid != GLOBAL_ID:
@@ -366,6 +372,8 @@ def should_skip_cog(cogname: str, cog, guildid, onlist,ignorelist) -> bool:
     if cogname in ignorelist or private_cog:
         return True
     return False
+
+
 def build_app_command_list(
     tree: discord.app_commands.CommandTree, guild=None
 ) -> List[discord.app_commands.Command]:
@@ -435,7 +443,7 @@ def build_and_format_app_commands(
     return den
 
 
-class SpecialAppSync():
+class SpecialAppSync:
     """Mixin that defines custom command tree syncing logic."""
 
     async def sync_commands_tree(self, guild: discord.Guild, forced=False):
@@ -499,20 +507,18 @@ class SpecialAppSync():
                 ignorelist = AppGuildTreeSync.load_list(guildid)
                 onlist = AppGuildTreeSync.load_onlist(guildid)
                 for cogname, cog in self.cogs.items():
-                    entry=GuildCogToggle.get_or_add(guildid,cog)
-                    sho=should_skip_cog(cogname, cog, guildid,onlist,ignorelist)
-                    entry.enabled=(not sho)
+                    entry = GuildCogToggle.get_or_add(guildid, cog)
+                    sho = should_skip_cog(cogname, cog, guildid, onlist, ignorelist)
+                    entry.enabled = not sho
                     DatabaseSingleton.get_session().commit()
-                entry.migrated=True
+                entry.migrated = True
                 DatabaseSingleton.get_session().commit()
-                            
+
         gui.dprint(ignorelist)
 
         def syncprint(*lis):
             pass
             # gui.gprint(f"Sync for  (ID {guildid})", *lis)
-
-
 
         def add_command_to_tree(command, guild):
             # Add a command to the command tree for the given guild.
@@ -539,7 +545,7 @@ class SpecialAppSync():
         # Note, the reason it goes one by one is because it was originally intended
         # to activate/deactivate cogs on a server per server basis.
         for cogname, cog in self.cogs.items():
-            ent=GuildCogToggle.get_or_add(guildid,cog)
+            ent = GuildCogToggle.get_or_add(guildid, cog)
             if not ent.enabled:
                 gui.gprint("skipping cog ", cogname)
                 continue
@@ -582,11 +588,6 @@ class SpecialAppSync():
                 if entry:
                     if entry.donotsync:
                         continue
-
-
-
-
-                            
 
                 gui.gprint(f"syncing for {guild.name}")
                 if not sync_only:

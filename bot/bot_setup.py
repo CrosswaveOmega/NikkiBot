@@ -46,7 +46,6 @@ async def opening():
 
 @bot.check
 async def is_cog_enabled(ctx: commands.Context):
-
     return True
 
 
@@ -466,7 +465,7 @@ async def main(args):
         if config != None:
             g = keys.get("optional", "google", fallback=None)
             c = keys.get("optional", "cse_id", fallback=None)
-            pal = keys.get('optional',"palapi", fallback=None)
+            pal = keys.get("optional", "palapi", fallback=None)
             bot.keys["google"] = g
             bot.keys["cse"] = c
             bot.keys["palapi"] = pal

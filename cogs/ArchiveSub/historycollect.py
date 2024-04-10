@@ -152,7 +152,7 @@ class ArchiveContext:
         await carch.get_first_and_last(cobj)
         if carch.first_message_time is not None:
             if carch.first_message_time > self.last_stored_time:
-                #print("TOO BIG.")
+                # print("TOO BIG.")
                 timev = carch.first_message_time
         else:
             timev = None

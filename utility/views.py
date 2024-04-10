@@ -305,7 +305,7 @@ class RRuleView(discord.ui.View):
         """
         dt = datetime.combine(datetime.min, self.dtvals["time"])
         default = dt.strftime("%H:%M")
-        name_modal = TimeSetModal(deftime=default,timeout=5*60)
+        name_modal = TimeSetModal(deftime=default, timeout=5 * 60)
         await interaction.response.send_modal(name_modal)
         await name_modal.wait()
         gui.gprint("DONE.", name_modal.done)
@@ -338,7 +338,7 @@ class RRuleView(discord.ui.View):
         """
         Send a modal to let users customize the time interval.
         """
-        name_modal = IntervalModal(deftime=self.dtvals["interval"],timeout=5*60)
+        name_modal = IntervalModal(deftime=self.dtvals["interval"], timeout=5 * 60)
         await interaction.response.send_modal(name_modal)
         await name_modal.wait()
         if name_modal.done != None:
