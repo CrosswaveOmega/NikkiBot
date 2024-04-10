@@ -131,6 +131,16 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
 
         def highlight_and_crop(filepath, coordinate, sizev=100):
             with Image.open(filepath).convert("RGBA") as img:
+                overlay2 = Image.new('RGBA', img.size, (0,0,0,0))
+                draw2 = ImageDraw.Draw(overlay2)
+        
+                width, height = img.size
+                for x in range(0, width, cell_size):
+                    draw2.line([(x, 0), (x, height)], fill=(255, 255, 255, 128), width=1)
+                for y in range(0, height, cell_size):
+                    draw2.line([(0, y), (width, y)], fill=(255, 255, 255, 128), width=1)
+        
+                img = Image.alpha_composite(img, overlay2)
                 overlay = Image.new('RGBA', img.size, (0,0,0,0))
                 draw = ImageDraw.Draw(overlay)  # Create a context for drawing things on it.
                 draw.rectangle([coordinate[0]-5, coordinate[1], coordinate[0]+5, coordinate[1]], fill=(255, 0, 0, 64), )
