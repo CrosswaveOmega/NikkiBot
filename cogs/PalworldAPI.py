@@ -146,8 +146,8 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
                 #draw.rectangle([coordinate[0]-5, coordinate[1], coordinate[0]+5, coordinate[1]], fill=(255, 0, 0, 64), )
                 #draw.rectangle([coordinate[0], coordinate[1]-5, coordinate[0], coordinate[1]+5], fill=(255, 0, 0, 64), )
                 #draw.rectangle([coordinate[0]-3, coordinate[1]-3, coordinate[0]+3, coordinate[1]+3], fill=None, outline=(255, 0, 0, 64), width=1)
-                draw.rectangle([coordinate[0], coordinate[1], coordinate[0]+1, coordinate[1]+1], fill=None, outline=(255, 0, 0, 64), width=1)
-                # Alpha composite these two images together to obtain the desired result.
+
+                draw.ellipse([coordinate[0], coordinate[1], coordinate[0]+2, coordinate[1]+2], outline=(255, 0, 0, 64), width=1)
                 img = Image.alpha_composite(img, overlay)
 
                 left = max(coordinate[0] - sizev, 0)
