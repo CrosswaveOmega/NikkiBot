@@ -142,7 +142,7 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
                 img = Image.alpha_composite(img, overlay2)
                 overlay = Image.new('RGBA', img.size, (0,0,0,0))
                 draw = ImageDraw.Draw(overlay)  # Create a context for drawing things on it.
-                draw.line([(coordinate[0]+0.5, coordinate[1]), (coordinate[0]+0.5, coordinate[1]-5)], fill=(255, 0, 0, 200), width=1)  # North
+                draw.line([(coordinate[0]+0.5, coordinate[1]-1), (coordinate[0]+0.5, coordinate[1]-6)], fill=(255, 0, 0, 200), width=1)  # North
                 draw.line([(coordinate[0]+0.5, coordinate[1]+3), (coordinate[0]+0.5, coordinate[1]+8)], fill=(255, 0, 0, 200), width=1)  # South
                 draw.line([(coordinate[0]-1, coordinate[1]+0.5), (coordinate[0]-6, coordinate[1]+0.5)], fill=(255, 0, 0, 200), width=1)  # West
                 draw.line([(coordinate[0]+3, coordinate[1]+0.5), (coordinate[0]+8, coordinate[1]+0.5)], fill=(255, 0, 0, 200), width=1)  # East
