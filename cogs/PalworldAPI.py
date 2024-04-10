@@ -31,7 +31,7 @@ def capitalize_first_letter(string: str) -> str:
     return string.capitalize() if string else ''
 
 coor = app_commands.Range[int, -1000, 1000]
-msize = app_commands.Range[int, 1, 10]
+msize = app_commands.Range[int, 1, 20]
 
 class PalworldAPI(commands.Cog, TC_Cog_Mixin):
     """A palworld cog.  work in progress."""
