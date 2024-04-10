@@ -136,9 +136,9 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
                 cell_size=200
                 width, height = img.size
                 for x in range(0, width, cell_size):
-                    draw2.line([(x, 0), (x, height)], fill=(255, 255, 255, 128), width=1)
+                    draw2.line([(x, 0), (x, height)], fill=(255, 255, 255, 60), width=1)
                 for y in range(0, height, cell_size):
-                    draw2.line([(0, y), (width, y)], fill=(255, 255, 255, 128), width=1)
+                    draw2.line([(0, y), (width, y)], fill=(255, 255, 255, 60), width=1)
         
                 img = Image.alpha_composite(img, overlay2)
                 overlay = Image.new('RGBA', img.size, (0,0,0,0))
