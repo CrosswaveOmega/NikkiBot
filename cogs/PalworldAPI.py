@@ -209,7 +209,7 @@ class MapViewer(BaseView):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         self.focus_cell+=np.array((0,-1))
-        await interaction.response.edit_message(content="One moment...")
+        await interaction.response.defer()
         embed, file=self.make_embed()
         await interaction.edit_original_response(content='',embed=embed, attachments=[file])
 
@@ -219,7 +219,7 @@ class MapViewer(BaseView):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         self.focus_cell+=np.array((0,1))
-        await interaction.response.edit_message(content="One moment...")
+        await interaction.response.defer()
         embed, file=self.make_embed()
         await interaction.edit_original_response(content='',embed=embed, attachments=[file])
 
@@ -228,7 +228,7 @@ class MapViewer(BaseView):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         self.focus_cell+=np.array((-1,0))
-        await interaction.response.edit_message(content="One moment...")
+        await interaction.response.defer()
         embed, file=self.make_embed()
 
         await interaction.edit_original_response(content='',embed=embed, attachments=[file])
@@ -238,7 +238,7 @@ class MapViewer(BaseView):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         self.focus_cell+=np.array((1,0))
-        await interaction.response.edit_message(content="One moment...")
+        await interaction.response.defer()
         embed, file=self.make_embed()
 
         await interaction.edit_original_response(content='',embed=embed, attachments=[file])
