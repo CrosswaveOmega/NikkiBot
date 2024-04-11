@@ -198,8 +198,8 @@ class MapViewer(BaseView):
             file = discord.File(fp=image_binary, filename="highlighted_palmap.png")
 
         im2=self.icon
-        with im2.BytesIO() as ib2:
-            cropped_img.save(ib2, "PNG")
+        with io.BytesIO() as ib2:
+            im2.save(ib2, "PNG")
             image_binary.seek(0)
             file = discord.File(fp=ib2, filename="attachment://thumbnail.png")
         
