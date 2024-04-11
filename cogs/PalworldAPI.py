@@ -209,9 +209,9 @@ class MapViewer(BaseView):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         self.focus_cell+=np.array((0,-1))
-        await interaction.response.defer()
+        #await interaction.response.defer()
         embed, file=self.make_embed()
-        await interaction.edit_original_response(content='',embed=embed, attachments=[file])
+        await interaction.response.edit_message(content='',embed=embed, attachments=[file])
 
 
     @discord.ui.button(label="Down", style=discord.ButtonStyle.green, row=4)
@@ -219,29 +219,29 @@ class MapViewer(BaseView):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         self.focus_cell+=np.array((0,1))
-        await interaction.response.defer()
+        #await interaction.response.defer()
         embed, file=self.make_embed()
-        await interaction.edit_original_response(content='',embed=embed, attachments=[file])
+        await interaction.response.edit_message(content='',embed=embed, attachments=[file])
 
     @discord.ui.button(label="Left", style=discord.ButtonStyle.green, row=3)
     async def move_left(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         self.focus_cell+=np.array((-1,0))
-        await interaction.response.defer()
+        #await interaction.response.defer()
         embed, file=self.make_embed()
 
-        await interaction.edit_original_response(content='',embed=embed, attachments=[file])
+        await interaction.response.edit_message(content='',embed=embed, attachments=[file])
 
     @discord.ui.button(label="Right", style=discord.ButtonStyle.green, row=3)
     async def move_right(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         self.focus_cell+=np.array((1,0))
-        await interaction.response.defer()
+        #await interaction.response.defer()
         embed, file=self.make_embed()
 
-        await interaction.edit_original_response(content='',embed=embed, attachments=[file])
+        await interaction.response.edit_message(content='',embed=embed, attachments=[file])
 
     @discord.ui.button(label="GoTo", style=discord.ButtonStyle.green, row=4)
     async def gotocoor(
