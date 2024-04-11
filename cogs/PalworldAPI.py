@@ -195,7 +195,8 @@ class MapViewer(BaseView):
             cropped_img.save(image_binary, "PNG")
             image_binary.seek(0)
             
-            embed.set_image(url=f"attachment://highlighted_palmap.png")
+            embed.set_image(url="attachment://highlighted_palmap.png")
+            embed.set_thumbnail(url="attachment://highlighted_palmap.png")
             file = discord.File(fp=image_binary, filename="highlighted_palmap.png")
 
         return embed, file
