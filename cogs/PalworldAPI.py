@@ -198,7 +198,7 @@ class MapViewer(BaseView):
 
         
         embed.set_image(url="attachment://highlighted_palmap.png")
-        embed.set_thumbnail(url="https://imgur.com/33AfdFE")
+        embed.set_thumbnail(url="https://i.imgur.com/33AfdFE.png")
 
         return embed, file
 
