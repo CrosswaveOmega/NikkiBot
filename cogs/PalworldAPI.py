@@ -18,7 +18,7 @@ from discord.ext import commands
 CELL_SIZE=200
 from discord.app_commands import Choice
 
-def draw_grid(filepath):
+def draw_grid(filepath, cell_size=200):
     with Image.open(filepath).convert("RGBA") as img:
         overlay2 = Image.new("RGBA", img.size, (0, 0, 0, 0))
         draw2 = ImageDraw.Draw(overlay2)
@@ -28,9 +28,9 @@ def draw_grid(filepath):
             draw2.line([(x, 0), (x, height)], fill=(255, 255, 255, 60), width=1)
         for y in range(0, height, cell_size):
             draw2.line([(0, y), (width, y)], fill=(255, 255, 255, 60), width=1)
-
         img = Image.alpha_composite(img, overlay2)
     return img
+
 def highlight(img, coordinate):
 
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
@@ -169,6 +169,7 @@ class MapViewer(BaseView):
         self.value = False
         self.done = None
         self.img=img
+        self.icon=draw_grid("./assets/palmapsmall.png",10)
         self.focus_cell = np.array(initial_coor)//CELL_SIZE
 
     async def highlight_points(self,interaction:discord.Integration,coor):
@@ -194,10 +195,16 @@ class MapViewer(BaseView):
         with io.BytesIO() as image_binary:
             cropped_img.save(image_binary, "PNG")
             image_binary.seek(0)
-            
-            embed.set_image(url="attachment://highlighted_palmap.png")
-            embed.set_thumbnail(url="attachment://highlighted_palmap.png")
             file = discord.File(fp=image_binary, filename="highlighted_palmap.png")
+
+        im2=self.icon
+        with im2.BytesIO() as ib2:
+            cropped_img.save(ib2, "PNG")
+            image_binary.seek(0)
+            file = discord.File(fp=ib2, filename="attachment://thumbnail.png")
+        
+        embed.set_image(url="attachment://highlighted_palmap.png")
+        embed.set_thumbnail(url="attachment://thumbnail.png")
 
         return embed, file
 
