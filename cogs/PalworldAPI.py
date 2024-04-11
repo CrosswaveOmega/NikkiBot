@@ -1,4 +1,5 @@
 import io
+import re
 import aiohttp
 import gui
 import discord
@@ -107,7 +108,49 @@ def capitalize_first_letter(string: str) -> str:
 coor = app_commands.Range[int, -1000, 1000]
 msize = app_commands.Range[int, 1, 20]
 
+class GotoModal(discord.ui.Modal, title="goto"):
+    def __init__(self, *args, pview=None,**kwargs):
+        super().__init__(*args,**kwargs)
+        self.parent_view=pview
+        
 
+    name = discord.ui.TextInput(
+        label="Enter x/y coordinates split by space or comma",
+        placeholder="Enter coordinates to focus on. ",
+        required=True,
+        max_length=256,
+    )
+
+
+
+    async def on_submit(self, interaction: discord.Interaction):
+        coor=self.name.value
+
+        split_coor = re.split(r'[ ,]+', coor)
+        if len(split_coor)!=2:
+            await interaction.response.send_message("You must separate by a space or comma.")
+            self.stop()
+            return
+
+        pat=re.compile(r'^-?\d+$')
+
+        if not all(pat.match(c) for c in split_coor):
+            await interaction.response.send_message("Coordinates must be integers.")
+            self.stop()
+            return
+        split_coor = list(map(int, split_coor))
+        split_coor = [max(min(int(c), 1000), -1000) for c in split_coor]
+        await interaction.response.defer()
+        await self.parent_view.highlight_points(interaction,split_coor)        
+
+
+    async def on_timeout(self) -> None:
+        self.stop()
+
+    async def on_error(
+        self, interaction: discord.Interaction, error: Exception
+    ) -> None:
+        return await super().on_error(interaction, error)
 
 class MapViewer(BaseView):
     """
@@ -127,6 +170,17 @@ class MapViewer(BaseView):
         self.done = None
         self.img=img
         self.focus_cell = np.array(initial_coor)//CELL_SIZE
+
+    async def highlight_points(self,interaction:discord.Integration,coor):
+        x2 = coor[0] + 1000
+        y2 = 1000 - coor[1]
+        coordinate=(x2 * 2, y2 * 2)
+        self.img=highlight(self.img,coordinate)
+        self.focus_cell = np.array(coordinate)//CELL_SIZE
+        embed,file=self.make_embed()
+        
+        await interaction.edit_original_response(content='',embed=embed, attachments=[file])
+
 
     def make_embed(self):
         coors=f"Viewing cell {self.focus_cell[0]}, {self.focus_cell[1]}"
@@ -149,6 +203,7 @@ class MapViewer(BaseView):
     async def on_timeout(self) -> None:
         self.value = "timeout"
         self.stop()
+        
     @discord.ui.button(label="Left", style=discord.ButtonStyle.green, row=4)
     async def move_left(
         self, interaction: discord.Interaction, button: discord.ui.Button
@@ -168,6 +223,14 @@ class MapViewer(BaseView):
         embed, file=self.make_embed()
 
         await interaction.edit_original_response(content='',embed=embed, attachments=[file])
+
+    @discord.ui.button(label="GoTo", style=discord.ButtonStyle.green, row=4)
+    async def gotocoor(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
+        await interaction.response.send_modal(GotoModal(pview=self,timeout=60*10))
+
+        #await interaction.edit_original_response(content='',embed=embed, attachments=[file])
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.grey, row=4)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
