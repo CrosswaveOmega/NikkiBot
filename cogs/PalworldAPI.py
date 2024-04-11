@@ -169,7 +169,6 @@ class MapViewer(BaseView):
         self.value = False
         self.done = None
         self.img=img
-        self.icon=draw_grid("./assets/palmapsmall.png",10)
         self.focus_cell = np.array(initial_coor)//CELL_SIZE
 
     async def highlight_points(self,interaction:discord.Integration,coor):
@@ -197,14 +196,9 @@ class MapViewer(BaseView):
             image_binary.seek(0)
             file = discord.File(fp=image_binary, filename="highlighted_palmap.png")
 
-        im2=self.icon
-        with io.BytesIO() as ib2:
-            im2.save(ib2, "PNG")
-            image_binary.seek(0)
-            file = discord.File(fp=ib2, filename="attachment://thumbnail.png")
         
         embed.set_image(url="attachment://highlighted_palmap.png")
-        embed.set_thumbnail(url="attachment://thumbnail.png")
+        embed.set_thumbnail(url="https://imgur.com/33AfdFE")
 
         return embed, file
 
