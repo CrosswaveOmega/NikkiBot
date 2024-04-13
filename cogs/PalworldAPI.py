@@ -1,5 +1,6 @@
 import io
 import re
+from typing import Literal
 import aiohttp
 import gui
 import discord
@@ -7,6 +8,7 @@ import asyncio
 from PIL import Image, ImageDraw
 from discord import app_commands
 import numpy as np
+from assets import GeoJSONGeometry, GeoJSONFeature
 # import datetime
 from utility.views import BaseView
 from bot import (
@@ -14,7 +16,7 @@ from bot import (
     TC_Cog_Mixin,
 )
 from discord.ext import commands
-
+from .PalSub import read_data, write_data
 CELL_SIZE=200
 from discord.app_commands import Choice
 
@@ -31,7 +33,7 @@ def draw_grid(filepath, cell_size=200):
         img = Image.alpha_composite(img, overlay2)
     return img
 
-def highlight(img, coordinate):
+def highlight(img, coordinate, color=(255,0,0,200)):
 
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
@@ -40,7 +42,7 @@ def highlight(img, coordinate):
             (coordinate[0] + 1.5, coordinate[1] - 1),
             (coordinate[0] + 1.5, coordinate[1] - 6),
         ],
-        fill=(255, 0, 0, 200),
+        fill=color,
         width=2,
     )  # North
     draw.line(
@@ -48,7 +50,7 @@ def highlight(img, coordinate):
             (coordinate[0] + 0.5, coordinate[1] + 2),
             (coordinate[0] + 0.5, coordinate[1] + 7),
         ],
-        fill=(255, 0, 0, 200),
+        fill=color,
         width=2,
     )  # South
     draw.line(
@@ -56,7 +58,7 @@ def highlight(img, coordinate):
             (coordinate[0] - 1, coordinate[1] + 1.5),
             (coordinate[0] - 6, coordinate[1] + 1.5),
         ],
-        fill=(255, 0, 0, 200),
+        fill=color,
         width=2,
     )  # West
     draw.line(
@@ -64,7 +66,7 @@ def highlight(img, coordinate):
             (coordinate[0] + 2, coordinate[1] + 0.5),
             (coordinate[0] + 7, coordinate[1] + 0.5),
         ],
-        fill=(255, 0, 0, 200),
+        fill=color,
         width=2,
     )  # East
     draw.ellipse(
@@ -74,7 +76,7 @@ def highlight(img, coordinate):
             coordinate[0] + 2,
             coordinate[1] + 2,
         ],
-        outline=(255, 0, 0, 200),
+        outline=color,
         width=1,
     )
     draw.ellipse(
@@ -84,7 +86,7 @@ def highlight(img, coordinate):
             coordinate[0] + 5,
             coordinate[1] + 5,
         ],
-        outline=(255, 0, 0, 200),
+        outline=color,
         width=1,
     )
     img = Image.alpha_composite(img, overlay)
@@ -265,6 +267,7 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
 
     def __init__(self, bot):
         self.bot: TCBot = bot
+        self.locations=read_data()
         # self.session=aiohttp.ClientSession()
 
     def cog_unload(self):
@@ -389,6 +392,12 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
         coordinate=(x2 * 2, y2 * 2)
         img=draw_grid(file_path)
         img=highlight(img, coordinate)
+        for f in self.locations:
+            xa,ya=f.get_coordinates()
+            x2a = xa + 1000
+            y2a = 1000 - ya
+            coordinatea=(x2a * 2, y2a * 2)
+            img=highlight(img,coor,(0,0,255,200))
         #cropped_img = crop_image(img,np.array(coordinate)//CELL_SIZE, np.array((3, 2)))
         view=MapViewer(user=ctx.author,img=img,initial_coor=coordinate)
 
@@ -396,15 +405,47 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
         await mes.edit(content="done", attachments=[file],embed=emb,view=view)
 
 
+    @app_commands.command(name="palmap_add", description="Owner only, add a labeled point to map")
+    @app_commands.describe(x="X coordinate to set")
+    @app_commands.describe(y="Y coordinate to set")
+    @app_commands.describe(name="name of point to add")
+    @app_commands.guild_only()
+    @app_commands.guilds([1071087693481652224,1077964401849667655])
+    @app_commands.describe(pointtype="add a point to map")
+    async def palmapadd(
+        self,
+        interaction: discord.Interaction,
+        x: coor,
+        y: coor,
+        name: str,
+        pointtype: Literal['eagle','tower']
+
+    ):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        if interaction.user != self.bot.application.owner:
+            await ctx.send("This command is owner only, buddy.")
+            return
+        point_geometry = GeoJSONGeometry.init_sub("Point", [x, y])
+        point_properties = {"name": name, 'pointtype':pointtype}
+        point_feature = GeoJSONFeature(geometry=point_geometry, properties=point_properties)
+        for pf in self.locations:
+            if pf==point_feature:
+                await ctx.send("Point is already present.")
+                return
+        self.locations.append(point_feature)
+        write_data(self.locations)
+        # Convert the timestamp string to a datetime object
+        mes = await ctx.send("please wait", ephemeral=True)
+
+        await mes.edit(content="done")
+
+
+
 async def setup(bot):
-    gui.dprint(__name__)
-    # from .ArchiveSub import setup
-    # await bot.load_extension(setup.__module__)
+
     await bot.add_cog(PalworldAPI(bot))
 
 
 async def teardown(bot):
-    # from .ArchiveSub import setup
-    # await bot.unload_extension(setup.__module__)
-    print("closing.")
+
     await bot.remove_cog("PalworldAPI")
