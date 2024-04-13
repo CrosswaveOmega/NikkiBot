@@ -1,6 +1,6 @@
 import io
 import re
-from typing import Literal
+from typing import Literal, List
 import aiohttp
 import gui
 import discord
@@ -267,7 +267,7 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
 
     def __init__(self, bot):
         self.bot: TCBot = bot
-        self.locations=read_data()
+        self.locations:List[GeoJSONFeature]=read_data()
         # self.session=aiohttp.ClientSession()
 
     def cog_unload(self):
@@ -393,11 +393,11 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
         img=draw_grid(file_path)
         img=highlight(img, coordinate)
         for f in self.locations:
-            xa,ya=f.get_coordinates()
+            xa,ya=f.geometry.get_coordinates()
             x2a = xa + 1000
             y2a = 1000 - ya
             coordinatea=(x2a * 2, y2a * 2)
-            img=highlight(img,coor,(0,0,255,200))
+            img=highlight(img,coordinatea,(0,0,255,200))
         #cropped_img = crop_image(img,np.array(coordinate)//CELL_SIZE, np.array((3, 2)))
         view=MapViewer(user=ctx.author,img=img,initial_coor=coordinate)
 
