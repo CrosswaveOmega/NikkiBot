@@ -1,5 +1,6 @@
 from collections import defaultdict
 from io import BytesIO
+import io
 from typing import List, Optional, Tuple
 import discord
 
@@ -770,7 +771,6 @@ class Global(commands.Cog, TC_Cog_Mixin):
         self, interaction: discord.Interaction, user: discord.User
     ) -> None:
         embed = discord.Embed(description=f"This user is {user}.\n avatar {user.avatar.url}")
-        
 
         await interaction.response.send_message(
             content="User details below.",
