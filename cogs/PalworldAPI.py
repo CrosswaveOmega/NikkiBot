@@ -410,7 +410,7 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
     @app_commands.describe(y="Y coordinate to set")
     @app_commands.describe(name="name of point to add")
     @app_commands.guild_only()
-    @app_commands.guilds([1071087693481652224,1077964401849667655])
+    @app_commands.guilds(discord.Object(1071087693481652224),discord.Object(1077964401849667655))
     @app_commands.describe(pointtype="add a point to map")
     async def palmapadd(
         self,

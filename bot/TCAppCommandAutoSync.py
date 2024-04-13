@@ -517,6 +517,7 @@ class SpecialAppSync:
         gui.dprint(ignorelist)
 
         def syncprint(*lis):
+            print(*lis)
             pass
             # gui.gprint(f"Sync for  (ID {guildid})", *lis)
 
@@ -536,10 +537,15 @@ class SpecialAppSync:
                     syncprint(f"Cannot add {command.name}, case error.")
             else:
                 try:
-                    self.tree.add_command(command, guild=guild, override=True)
-                    syncprint(f"Added {command.name}")
-                except:
-                    syncprint(f"Cannot add {command.name}, this is not a app command")
+                    if isinstance(command, (discord.app_commands.Group, discord.app_commands.Command,discord.app_commands.ContextMenu)):
+                        if command._guild_ids is not None:
+                            if guild.id in command._guild_ids:
+                                self.tree.add_command(command, guild=guild, override=True)
+                        else:
+                            self.tree.add_command(command, guild=guild, override=True)
+                        syncprint(f"Added {command.name}")
+                except Exception as e:
+                    syncprint(f"{e}, Cannot add {command.name}, this is not a app command")
 
         # Gather all activated cogs for a given guild.
         # Note, the reason it goes one by one is because it was originally intended
