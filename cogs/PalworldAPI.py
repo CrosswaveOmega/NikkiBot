@@ -418,7 +418,7 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
         x: coor,
         y: coor,
         name: str,
-        pointtype: Literal['eagle','tower']
+        pointtype: Literal['eagle','tower','item_merchant','pal_merchant','black_market', 'effigy', 'dungeon']
 
     ):
         ctx: commands.Context = await self.bot.get_context(interaction)
