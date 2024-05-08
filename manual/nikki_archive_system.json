@@ -1,0 +1,45 @@
+{
+  "embeds": [
+    {
+      "title": "About the RP Archive System",
+      "description": "The Server RP Archive System is a complex module designed for Role-play servers that make use of a proxy bot, such as Tupperbox.  It periodically records all roleplay messages sent across a server, groups them using a specialized algorithm, and then reposts each group into a specified archive channel, so servers can keep track of past events that happened in server.",
+      "color": null,
+      "fields": [
+        {
+          "name": "Why though?",
+          "value": "Keeping track of past events in a Roleplay Server is a daunting task, especially when the RP servers have to make use of multiple channels and threads that may periodically get deleted.  \n\nMoreover, in the event that a compromised user moderator account or bot deletes all channels in a server with a script, all content from RP channel is lost.  Nikki keeps all archived messages inside a database, complete with recovery commands to restore past content."
+        },
+        {
+          "name": "Privacy Statement",
+          "value": "* By default, only **bot and webhook messages are archived by Nikki.  User messages will not be recorded by the bot unless specified by the archive scope, which requires approval by the server owner and the development team.**\n* All archived messages are considered confidential between the server owner and Nikki's development team.  Archived Messages will not be given to third party services under any circumstance, nor will be used by the development team unless explicit permission is granted by the server owner.\n* Data pertaining to a server's archived messages will be deleted from Nikki's database *two weeks after* Nikki is removed from said server.  This data can not and will not be restored upon deletion, even if Nikki should be re-added to a server."
+        }
+      ]
+    },
+    {
+      "title": "Setting up the Archive System.",
+      "description": "The archive system is set up using the `/archive_setup` super-command.  Only users with the `manage_messages` and `manage_channels` permissions may use this command by default.  \n\nNikki must have, at minimum, `manage_messages`, `manage_channels`(subject to change), and `manage_webhooks` in order to work properly.",
+      "color": null,
+      "fields": [
+        {
+          "name": "Step 1: Create the Archive Channel.",
+          "value": "Before Nikki can start archiving a server, you must set up an Archive Channel.\nIdeally, it should be viewable by everyone, with permissions restricted such that only server admins and Nikki have permissions to send messages, manage messages within the channel, and manage the channel itself.\nYou can either use the `/archive_setup set_archive_channel` command with a channel you've made, but it's recommended that owners use the `/archive_setup setup_new_archive_channel_with_roles` command instead.  This command will create a new archive channel with the recommended permissions and a special \"Historian\" role for Nikki and moderators that need to preform actions in the channel, such as deleting archived messages with profane content."
+        },
+        {
+          "name": "Step 2: Set up channels and categories to be ignored.",
+          "value": "Nikki must maintain a list of server channels that should be ignored.\n\nUse `/archive_setup ignore_channel` to add or remove any single channel to Nikki's ignore list, the list of all channels that should not be archived during an archive.  \n**Due to a Discord api limitation, forum channel cannot be ignored with this command.  Use the `/archive_setup ignore_category` command instead.**\n\nUse `/archive_setup ignore_category` to add or remove an **entire category** to/from Nikki's ignore list.  All channels within this category will not be archived.  **It is highly recommended to use this command if you wish to ignore multiple channels.**\n\nIf an ignored channel is deleted in your server, should be removed from Nikki's list with the `/archive_setup remove_deleted_channels` command."
+        },
+        {
+          "name": "Step 3: run /compile_archive or lazymode",
+          "value": "Once you set your archive channels, and added desired channels/categories to the ignore list, just run `/compile_archive` and Nikki will start archiving your server.  \n\nDuring the first archive, Nikki will ask if there are less than 10000 messages in your server.   \n\nIf there are more than 10000 messages, you must create a separate channel from the archive channel, and add it to the ignore list.  Then, use the `>lazymode #new-channel-name-here` command.  This will start **lazy archive mode**, an incremental archive mode required for large, unarchived servers."
+        },
+        {
+          "name": "Step 4: Schedule your next archive",
+          "value": "after your first archive, create a separate channel from the archive channel, and add it to the ignore list.  Then, use `/archive_setup enable_auto` within that channel to start archiving automatically.\nuse `/archive_setup change_auto_interval` to adjust how often Nikki archives your server.  It's recommended to set this to weekly, at any day of the week."
+        }
+      ],
+      "image": {
+        "url": "https://cdn.discordapp.com/attachments/1068179078357721138/1110608222320087111/example.png"
+      }
+    }
+  ]
+}

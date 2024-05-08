@@ -145,7 +145,7 @@ async def lazy_archive(self, ctx):
             return max(remaining + ext, 0)
         return max(remaining, 0)
 
-    arc_comp = ArchiveCompiler(ctx)
+    arc_comp = ArchiveCompiler(ctx,lazy=True)
     bot = ctx.bot
     channel = ctx.message.channel
     guild: discord.Guild = channel.guild

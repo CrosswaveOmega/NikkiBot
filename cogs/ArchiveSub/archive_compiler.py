@@ -28,8 +28,9 @@ from .archive_message_templates import ArchiveMessageTemplate as MessageTemplate
 
 
 class ArchiveCompiler:
-    def __init__(self, ctx):
+    def __init__(self, ctx,lazymode=False):
         self.ctx = ctx
+        self.lazy=lazymode
         self.bot = ctx.bot
         self.auth = ctx.message.author
         self.channel = ctx.message.channel
@@ -89,13 +90,25 @@ class ArchiveCompiler:
 
         m = await ctx.channel.send("Initial check OK!")
         if profile.last_archive_time == None:
-            if ctx.author.id == ctx.bot.user.id:
-                await ctx.send("This is my first time archiving this server!")
+            if ctx.author.id == ctx.bot.user.id and self.lazy==False:
+                await ctx.send("This is my first time archiving this server, please start the first archive manually.")
+                return False
             else:
                 await ctx.send(
                     "## Hold up!  This is my first time archiving this server!\n"
-                    + "I highly recommend using a lazy archive depending on the number of messages in this server!"
+                    + "If your server has over 10,000 messages, you should use a lazy compile first!"
                 )
+                confirm, mes = await MessageTemplates.confirm(
+                    ctx,
+                    "Do you have less than 10,000 messages?",
+                    ephemeral=False,
+                )
+
+                if not confirm:
+                    await ctx.send(
+                        "**Please call the `>lazymode` command for your first archive.**"
+                    )
+                    return False
         self.bot.add_act(str(ctx.guild.id) + "arch", "archiving server...")
         self.supertup = (m, profile, archive_channel)
         return True
@@ -246,7 +259,7 @@ class ArchiveCompiler:
         return mt, grouped
 
     async def post_sep(self, sep: ChannelSep, archive_channel):
-        """Post or edit a Channel Separator Message"""
+        """Post or edit a Channel Separator Message."""
         if not sep.posted_url:
             emb, _ = sep.create_embed()
             chansep = await archive_channel.send(embed=emb)
