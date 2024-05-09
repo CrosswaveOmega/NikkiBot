@@ -185,7 +185,7 @@ async def process_result(
         # content = resp
     if isinstance(content, str):
         # Split up content by line if it's too long.
-        mycontent = jsonout["content"]
+        mycontent = content
         page = commands.Paginator(prefix="", suffix=None)
         for p in content.split("\n"):
             page.add_line(p)
@@ -218,12 +218,13 @@ async def process_result(
                 )
     elif isinstance(content, discord.Message):
         messageresp = content
+        content=messageresp.clean_content
         jsonout = {"content": messageresp.content, "new_memory": []}
     else:
         gui.dprint(result, content)
         messageresp = await ctx.channel.send("No output from this command.")
         content = "No output from this command."
-    return role, jsonout, messageresp, function
+    return role, content, messageresp, function
 
 
 async def ai_message_invoke(
@@ -333,7 +334,7 @@ async def ai_message_invoke(
         messageresp.created_at,
         thread_id=thread_id,
         role=role,
-        content=json.dumps(content["content"]),
+        content=content,
     )
 
     audit = await AIMessageTemplates.add_resp_audit(ctx, messageresp, result)
