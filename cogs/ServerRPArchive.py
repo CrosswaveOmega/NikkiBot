@@ -249,7 +249,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         guild = channel.guild
         guildid = guild.id
         pages = await MessageTemplates.get_manual_list(
-            ctx, "nikki_ac_perm_overrides.json"
+            ctx, "nikki_archive_system.json"
         )
         await pages_of_embeds(ctx, pages, ephemeral=True)
 
@@ -921,7 +921,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await ctx.send("guild only.")
 
     @commands.guild_only()
-    @commands.has_guild_permissions(manage_channels=True, manage_messages=True)
+    @commands.has_guild_permissions(administrator=True)
     @commands.command(
         name="reset_archive", description="ADMIN ONLY: WILL RESET THE ARCHIVE GROUPING."
     )
@@ -1286,7 +1286,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await ctx.send("This command will only work inside a guild.")
             return
         from cogs.ArchiveSub.archive_compiler import ArchiveCompiler
-
+        if LazyContext.get(guild.id) != None:
+            await ctx.send("There is an active lazy archive in progress, please wait.")
+            return
         actx = ArchiveCompiler(ctx)
         outcome = await actx.start()
         if outcome:

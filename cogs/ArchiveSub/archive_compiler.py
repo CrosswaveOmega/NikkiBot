@@ -26,6 +26,58 @@ from .collect_group_index import do_group
 
 from .archive_message_templates import ArchiveMessageTemplate as MessageTemplates
 
+class ArchiveProgress:
+    __slots__ = ('message_total', 'group_total', 'm_arc', 'g_arc', 'avgtime', 'avgsep','t_mess','t_sep')
+    def __init__(self,message_total,group_total,m_arc=0,g_arc=0,profile=None):
+        self.message_total=message_total
+        self.group_total=group_total
+        self.m_arc=m_arc
+        self.g_arc=g_arc
+        self.avgtime=2.5
+        self.avgsep=3
+        self.t_mess=0
+        self.t_sep=0
+        if profile:
+            avgtime = profile.average_message_archive_time
+            if not avgtime:
+                avgtime = 2.5
+            avgsep = profile.average_sep_archive_time
+            if not avgsep:
+                avgsep = 3
+            self.avgtime = avgtime
+            self.avgsep = avgsep
+
+    def get_avgs(self):
+        savg=self.t_sep / self.g_arc
+        mavg=self.t_mess / self.m_arc
+        return savg,mavg
+
+    def remain_time(self):
+        return (
+                (self.message_total - self.m_arc) * self.avgtime
+            ) + ((self.group_total - self.g_arc) * self.avgsep)
+
+    def get_string(self,index=0,ml=0):
+        total = f"Currently on group {self.g_arc}/{self.group_total}.\n"
+        if index!=0 and ml!=0:
+            total += f"Current group has {int(ml-index)} messages left\n"
+        total += f"Currently archived {self.m_arc} messages out of {self.message_total} total.\n"
+        total += f"This is going to take another... {seconds_to_time_string(int(self.remain_time()))}"
+        return total
+    
+    def get_remaining(self):
+        se= f"{self.group_total-self.g_arc} groups,"
+        se+=f" {self.message_total-self.m_arc} messages left."
+        se+=f"\n estimated {seconds_to_time_string(int(self.remain_time()))} remaining."
+        return se
+    
+    def merge(self,other):
+        '''return a new archiveprogress object, '''
+        s=ArchiveProgress(self.message_total,self.group_total,self.m_arc+other.m_arc,self.g_arc+other.g_arc)
+        s.avgtime=self.avgtime
+        s.avgsep=self.avgsep
+        return s
+        
 
 class ArchiveCompiler:
     def __init__(self, ctx,lazymode=False):
@@ -41,24 +93,22 @@ class ArchiveCompiler:
         self.dynamicwait = False
         self.timebetweenmess = 2.0
         self.characterdelay = 0.05
+
+        self.ap=ArchiveProgress(0,0)
         self.sep_total = 0
-        self.message_total = 0
-        self.m_arc = 0
-        self.s_arc = 0
-        self.remaining_time_float = 0.0
-        self.timeoff = 0.0
+
+        self.timeoff = None
+
         self.avgtime = 2.0
         self.t_mess = self.t_sep = 0
         self.avgsep = 3.0
         self.supertup = (None, None, None)
 
     def format_embed(self, index=1, ml=1):
-        total = f"<a:LetWalk:1118184074239021209> Currently on group {self.s_arc}/{self.sep_total}.\n"
-        total += f"Current group is {int((index/ml)*100)}% archived\n"
-        total += f"Currently archived {self.m_arc} messages out of {self.message_total} total.\n"
-        total += f"This is going to take another... {seconds_to_time_string(int(self.remaining_time_float))}"
+        total="<a:LetWalkR:1118191001731874856>"+self.ap.get_string(index,ml)
         if self.timeoff:
-            total += f"\n entire server has {seconds_to_time_string(int(self.timeoff))} left."
+            res=self.timeoff.merge(self.ap)
+            total += "\n"+res.get_remaining()
 
         embed = discord.Embed(description=total)
         return embed
@@ -145,10 +195,8 @@ class ArchiveCompiler:
             avgsep = 3
         self.avgtime = avgtime
         self.avgsep = avgsep
-
-        total_time_for_cluster = ((fullcount - self.m_arc) * avgtime) + (
-            (group_id) * avgsep
-        )
+        ap=ArchiveProgress(fullcount,group_id,0,0)
+        total_time_for_cluster = ap.remain_time()
         timestring = seconds_to_time_string(int(total_time_for_cluster))
         return fullcount, group_id, timestring
 
@@ -193,38 +241,29 @@ class ArchiveCompiler:
         """
 
         avgtime = profile.average_message_archive_time
-        if not avgtime:
-            avgtime = 2.5
-        avgsep = profile.average_sep_archive_time
-        if not avgsep:
-            avgsep = 3
-        self.avgtime = avgtime
-        self.avgsep = avgsep
-        self.m_arc = 0
-        self.s_arc = 0
+        gt=mt=0
         needed = ChannelSep.get_posted_but_incomplete(self.guild.id)
         if upper_lim:
             grouped = []
-            self.message_total = sum(len(sep.get_messages()) for sep in grouped)
-            self.sep_total = len(grouped)
+            mt = sum(len(sep.get_messages()) for sep in grouped)
+            gt = len(grouped)
+            ap=ArchiveProgress(mt,gt,profile=profile)
             off = 0
-            self.remaining_time_float = (
-                (self.message_total - self.m_arc) * self.avgtime
-            ) + ((self.sep_total - self.s_arc) * self.avgsep)
-            while self.remaining_time_float < upper_lim:
+
+            while ap.remain_time() < upper_lim:
+                #print(ap.remain_time())
                 this_grouped = ChannelSep.get_unposted_separators(self.guild.id, 1, off)
                 if not this_grouped:
                     break
-                self.message_total += sum(
+                mt += sum(
                     len(sep.get_messages()) for sep in this_grouped
                 )
-                self.sep_total += len(this_grouped)
+                gt += len(this_grouped)
+                ap.message_total=mt
+                ap.group_total=gt
                 off += 1
                 grouped.extend(this_grouped)
-                self.remaining_time_float = (
-                    (self.message_total - self.m_arc) * self.avgtime
-                ) + ((self.sep_total - self.s_arc) * self.avgsep)
-                print(self.remaining_time_float, upper_lim)
+                
 
         else:
             grouped = ChannelSep.get_unposted_separators(self.guild.id)
@@ -235,19 +274,13 @@ class ArchiveCompiler:
             grouped = newgroup
 
         gui.gprint(grouped, needed)
-        total_time_for_cluster = 0.0
 
-        self.message_total = sum(len(sep.get_messages()) for sep in grouped)
-        self.sep_total = len(grouped)
+        message_total = sum(len(sep.get_messages()) for sep in grouped)
+        sep_total = len(grouped)
+        self.ap=ArchiveProgress(message_total,sep_total,profile=profile)
 
-        total_time_for_cluster = ((self.message_total - self.m_arc) * self.avgtime) + (
-            (self.sep_total - self.s_arc) * self.avgsep
-        )
-
-        self.remaining_time_float = total_time_for_cluster
-
-        outstring = f"It will take {seconds_to_time_string(int(self.timeoff+self.remaining_time_float))} to post in the archive channel."
-        if int(self.remaining_time_float) <= 0.1:
+        outstring = f"It will take {seconds_to_time_string(int(self.ap.remain_time()))} to post in the archive channel."
+        if int(self.ap.remain_time()) <= 0.1:
             outstring = "The Archive Channel is already up to date!"
 
         # Start posting
@@ -278,7 +311,7 @@ class ArchiveCompiler:
 
     async def post_mess(self, index, amess, archive_channel):
         c, au, av = amess.content, amess.author, amess.avatar
-        self.m_arc += 1
+        self.ap.m_arc += 1
         files = []
         for attach in amess.list_files():
             this_file = attach.to_file()
@@ -311,9 +344,6 @@ class ArchiveCompiler:
             if webhookmessagesent:
                 amess.update(posted_url=webhookmessagesent.jump_url)
         await asyncio.sleep(self.timebetweenmess)
-        self.remaining_time_float = (
-            (self.message_total - self.m_arc) * self.avgtime
-        ) + ((self.sep_total - self.s_arc) * self.avgsep)
 
     async def post_groups(
         self,
@@ -330,15 +360,14 @@ class ArchiveCompiler:
             profile (ServerArchiveProfile): Profile of Server being archived
             archive_channel (discord.TextChannel): Archive Channel of server.
         """
-        self.t_mess = self.t_sep = 0
 
         gui.gprint(archive_channel.name)
 
         for e, sep in enumerate(grouped):
             # Start posting
-            self.s_arc += 1
+            self.ap.g_arc += 1
             gui.gprint(e, sep)
-            gui.dprint(self.remaining_time_float)
+            gui.dprint(self.ap.remain_time())
             # POST SEPARATORS
             with Timer() as sep_timer:
                 await self.post_sep(sep, archive_channel)
@@ -353,7 +382,7 @@ class ArchiveCompiler:
 
                 embed = self.format_embed(index, m_len)
                 await mt.editw(min_seconds=45, embed=embed)
-                self.t_mess += posttimer.get_time()
+                self.ap.t_mess += posttimer.get_time()
             # MARK SEP AS CONCLUDED.
             sep.update(all_ok=True)
             self.bot.database.commit()
@@ -366,10 +395,10 @@ class ArchiveCompiler:
                 )
                 self.bot.add_act(
                     str(self.guild.id) + "arch",
-                    f"Currently on {e+1}/{self.sep_total}.\n  This is going to take about...{seconds_to_time_string(int(self.remaining_time_float))}",
+                    f"Currently on {e+1}/{self.sep_total}.\n  This is going to take about...{seconds_to_time_string(int(self.ap.remain_time()))}",
                 )
             posttime = finishtime.get_time()
-            self.t_sep += pre_time + posttime
+            self.ap.t_sep += pre_time + posttime
 
     # done
     async def post(
@@ -399,10 +428,12 @@ class ArchiveCompiler:
         latest = ArchivedRPMessage.get_latest_archived_rp_message(self.guild.id)
 
         profile.update(last_archive_time=latest.created_at)
-        if self.s_arc > 0 and self.m_arc > 0:
+        self.ap.get_avgs()
+        if self.ap.g_arc > 0 and self.ap.m_arc > 0:
+            septime,mestime=self.ap.get_avgs()
             profile.update(
-                average_sep_archive_time=self.t_sep / self.s_arc,
-                average_message_archive_time=self.t_mess / self.m_arc,
+                average_sep_archive_time=septime,
+                average_message_archive_time=mestime
             )
         self.bot.database.commit()
 
