@@ -36,13 +36,13 @@ from database import Users_DoNotTrack
 
 lock = asyncio.Lock()
 JSONMODE = False
+MEMORYMODE = True
 nikkiprompt = """You are Nikki, a energetic, cheerful, and determined female AI ready to help users with whatever they need.
 All your responses must convey a strong personal voice.  
 Be as objective as possible.
 Carefully heed the user's instructions.
 If you do not know how to do something, please note that with your response.
-The next system message will contain a memory bank, filled with sentences related to the incoming query.
-Only your responses will be added to the memory bank, never the users.
+[MEMORYMODE]
 [JSONMODE]
 Never use emoji.
 Respond using Markdown."""
@@ -50,6 +50,9 @@ json_prompt = """Respond with one JSON object with two fields, 'content' and 'ne
 'content' will be what you will say to the user.
 'new_memory' should be a list of strings, each 1-3 sentences long.  The strings in new_memory will be added to long term memory, and will be used to remember the chat context.
 Ensure that responses are brief, do not say more than is needed.  """
+memory_prompt='''The next system message will contain a memory bank, filled with sentences that are probably related to the user's messages.
+Only your responses will be added to the memory bank, never the users.  
+'''
 reasons = {
     "server": {
         "messagelimit": "This server has reached the daily message limit, please try again tomorrow.",
@@ -202,20 +205,21 @@ async def process_result(
         # await mem.add_list_to_mem(
         #     ctx, messageresp, jsonout["new_memory"], present_mem=present_mem
         # )
-        chat.messages.append({"role": "assistant", "content": mycontent})
-        memlib = MemoryFunctions()
-        chat.tools = memlib.get_tool_schema()
-        chat.tool_choice = {"type": "function", "function": {"name": "add_to_memory"}}
-        res = await ctx.bot.gptapi.callapi(chat)
+        if MEMORYMODE:
+            chat.messages.append({"role": "assistant", "content": mycontent})
+            memlib = MemoryFunctions()
+            chat.tools = memlib.get_tool_schema()
+            chat.tool_choice = {"type": "function", "function": {"name": "add_to_memory"}}
+            res = await ctx.bot.gptapi.callapi(chat)
 
-        for tool_call in res.choices[0].message.tool_calls:
-            outcome = await memlib.call_by_tool_async(tool_call)
-            contents, need = outcome["content"]
-            print(contents, need)
-            if need:
-                await mem.add_list_to_mem(
-                    ctx, messageresp, cont=contents, present_mem=present_mem
-                )
+            for tool_call in res.choices[0].message.tool_calls:
+                outcome = await memlib.call_by_tool_async(tool_call)
+                contents, need = outcome["content"]
+                print(contents, need)
+                if need:
+                    await mem.add_list_to_mem(
+                        ctx, messageresp, cont=contents, present_mem=present_mem
+                    )
     elif isinstance(content, discord.Message):
         messageresp = content
         content=messageresp.clean_content
@@ -268,11 +272,16 @@ async def ai_message_invoke(
         np = np.replace("[JSONMODE]", json_prompt)
     else:
         np = np.replace("[JSONMODE]", "")
-
+    if MEMORYMODE:
+        np = np.replace("[MEMORYMODE]", memory_prompt)
+    else:
+        np = np.replace("[MEMORYMODE]", "")
+    
     chat.add_message("system", nikkiprompt)
     mem = SentenceMemory(ctx.bot, guild, user)
     docs, mems, alltime = await mem.search_sim(message)
-    chat.add_message("system", name="memory", content=f"### MEMORY:\n{mems}")
+    if MEMORYMODE:
+        chat.add_message("system", name="memory", content=f"### MEMORY:\n{mems}")
     audit = await AIMessageTemplates.add_resp_audit(
         ctx,
         DummyMessage(mems),
