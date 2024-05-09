@@ -36,10 +36,7 @@
           "name": "Step 4: Schedule your next archive",
           "value": "after your first archive, create a separate channel from the archive channel, and add it to the ignore list.  Then, use `/archive_setup enable_auto` within that channel to start archiving automatically.\nuse `/archive_setup change_auto_interval` to adjust how often Nikki archives your server.  It's recommended to set this to weekly, at any day of the week."
         }
-      ],
-      "image": {
-        "url": "https://cdn.discordapp.com/attachments/1068179078357721138/1110608222320087111/example.png"
-      }
+      ]
     }
   ]
 }
