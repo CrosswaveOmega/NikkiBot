@@ -214,7 +214,7 @@ def create_planet_embed(data, cstr: str):
 
     if event_info:
         event_details = (
-            f"ID: {human_format(event_info['id'])}, Type: {human_format(event_info['eventType'])}, Faction: {event_info['faction']}\n"
+            f"ID: {(event_info['id'])}, Type: {human_format(event_info['eventType'])}, Faction: {event_info['faction']}\n"
             f"Max Health: {human_format(event_info['maxHealth'])}, Health: {human_format(event_info['health'])}\n"
             f"Start Time: {event_info['startTime']}, End Time: {event_info['endTime']}\n"
             f"Campaign ID: {human_format(event_info['campaignId'])}, Joint Operation IDs: {', '.join(map(str, event_info['jointOperationIds']))}"
@@ -268,7 +268,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     def cog_unload(self):
         self.update_api.cancel()
 
-    @tasks.loop(minutes=5)
+    @tasks.loop(minutes=15)
     async def update_api(self):
         try:
             war = await call_api("war")
