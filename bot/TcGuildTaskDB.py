@@ -252,7 +252,7 @@ class TCGuildTask(Guild_Task_Base):
 
     async def guild_task(self, bot, server_id, task_name):
         """This function is passed into TCTask as the wrapped function."""
-        this_out='NA'
+        this_out = "NA"
         try:
             gui.dprint(server_id, task_name)
             channel = bot.get_channel(self.target_channel_id)

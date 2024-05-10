@@ -84,10 +84,10 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         pass
 
     def server_profile_field_ext(self, guild: discord.Guild):
-        '''
+        """
         Create a dictionary representing the automatic archive status for
         this server.
-        '''
+        """
         profile = ServerArchiveProfile.get(guild.id)
         if not profile:
             return None
@@ -137,9 +137,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             raise e
 
     async def gtask_compile(self, source_message=None):
-        '''
-        Guild task for the scheduled 
-        '''
+        """
+        Guild task for the scheduled
+        """
         if not source_message:
             return None
         context = await self.bot.get_context(source_message)
@@ -248,9 +248,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         channel = ctx.message.channel
         guild = channel.guild
         guildid = guild.id
-        pages = await MessageTemplates.get_manual_list(
-            ctx, "nikki_archive_system.json"
-        )
+        pages = await MessageTemplates.get_manual_list(ctx, "nikki_archive_system.json")
         await pages_of_embeds(ctx, pages, ephemeral=True)
 
     @archive_setup.command(
@@ -339,7 +337,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             myurl = message.jump_url
             start_date = datetime(2023, 1, 1, 15, 0)
             nowd = datetime.now() + timedelta((6 - datetime.now().weekday()) % 7)
-            st=datetime(nowd.year,nowd.month,nowd.day,15,0)
+            st = datetime(nowd.year, nowd.month, nowd.day, 15, 0)
             robj = rrule(freq=WEEKLY, byweekday=SU, dtstart=start_date)
 
             new = TCGuildTask.add_guild_task(guild.id, task_name, message, robj)
@@ -444,12 +442,13 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         await MessageTemplates.server_archive_message(ctx, result)
 
     @archive_setup.command(
-        name="setup_new_archive_channel", brief="the bot will create a new archive channel with set permissions."
+        name="setup_new_archive_channel",
+        brief="the bot will create a new archive channel with set permissions.",
     )
     @app_commands.checks.bot_has_permissions(manage_channels=True, manage_roles=True)
     @commands.bot_has_guild_permissions(manage_channels=True, manage_roles=True)
     async def setup_new_archive_channel_with_roles(self, ctx):  # Add ignore.
-        """Want to set up a new archive channel automatically?  
+        """Want to set up a new archive channel automatically?
         Use this command and a new archive channel will be created in this server with a historian role that only allows the bot user from posting inside the channel.
 
         The bot must have **Manage Channels** and **Manage Roles** to use this command.
@@ -520,10 +519,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             ctx, "Created and set a new Archive channel for this server."
         )
 
-
     @archive_setup.command(
-        name="ignore_category", 
-        brief="add or remove a category to/from this server's ignore list."
+        name="ignore_category",
+        brief="add or remove a category to/from this server's ignore list.",
     )
     @app_commands.choices(
         mode=[  # param name
@@ -531,10 +529,13 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             Choice(name="Remove category from ignore list", value="remove"),
         ]
     )
-    @app_commands.describe(mode='if specified category should be ignored or listened to.', cat="Name of category to ignore")
+    @app_commands.describe(
+        mode="if specified category should be ignored or listened to.",
+        cat="Name of category to ignore",
+    )
     async def ignore_category(
-        self, ctx:commands.Context, mode:ToChoice, cat: discord.CategoryChannel
-    ):  
+        self, ctx: commands.Context, mode: ToChoice, cat: discord.CategoryChannel
+    ):
         """
         Add or remove mentioned categories to/from this server's ignore list. Ignored channels will not be archived.
         """
@@ -551,10 +552,10 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 ctx, "You do not have permission to use this command."
             )
             return False
-        
+
         profile = ServerArchiveProfile.get_or_new(guildid)
-        
-        if mode == 'add':
+
+        if mode == "add":
             if profile.has_channel(cat.id):
                 await MessageTemplates.server_archive_message(
                     ctx, f"You are already ignoring category `{cat.name}`."
@@ -562,7 +563,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 return
             profile.add_channel(cat.id)
             message = f"Added category `{cat.name}` to my ignore list.  All messages in its {len(cat.channels)} channels will be ignored while archiving."
-        elif mode == 'remove':
+        elif mode == "remove":
             if not profile.has_channel(cat.id):
                 await MessageTemplates.server_archive_message(
                     ctx, f"I'm not ignoring category `{cat.name}`."
@@ -575,9 +576,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         self.guild_db_cache[str(ctx.guild.id)] = profile
         await MessageTemplates.server_archive_message(ctx, message)
 
-
     @archive_setup.command(
-        name="ignore_channel", brief="add or remove a single channel to/from this server's ignore list."
+        name="ignore_channel",
+        brief="add or remove a single channel to/from this server's ignore list.",
     )
     @app_commands.choices(
         mode=[  # param name
@@ -585,9 +586,12 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             Choice(name="Remove channel from ignore list", value="remove"),
         ]
     )
-    @app_commands.describe(mode='if specified channel should be ignored or listened to.', channel="Name of channel to ignore")
+    @app_commands.describe(
+        mode="if specified channel should be ignored or listened to.",
+        channel="Name of channel to ignore",
+    )
     async def ignore_channel(
-        self, ctx:commands.Context, mode:ToChoice, channel: discord.TextChannel
+        self, ctx: commands.Context, mode: ToChoice, channel: discord.TextChannel
     ):  # Add ignore.
         """
         Add or remove mentioned channels to/from this server's ignore list. Ignored channels will not be archived.
@@ -605,7 +609,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             )
             return False
         profile = ServerArchiveProfile.get_or_new(guildid)
-        if mode=='add':
+        if mode == "add":
             if profile.has_channel(channel.id):
                 await MessageTemplates.server_archive_message(
                     ctx, f"You are already ignoring channel `{channel.name}`."
@@ -619,7 +623,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 ctx,
                 f"Added channel `{channel.name}` to my ignore list.",
             )
-        if mode=='remove':
+        if mode == "remove":
             if profile.has_channel(channel.id):
                 profile.remove_channel(channel.id)
 
@@ -632,8 +636,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 return
 
             await MessageTemplates.server_archive_message(
-                ctx, f"I'm not ignoring channel `{channel.name}`.")
-        
+                ctx, f"I'm not ignoring channel `{channel.name}`."
+            )
+
     @archive_setup.command(
         name="ignore_many_channels",
         brief="Add or remove mentioned channels to/from this server's ignore list.",
@@ -644,7 +649,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             Choice(name="Remove channels from ignore list", value="remove"),
         ]
     )
-    @app_commands.describe(mode='if specified channels should be ignored or listened to.')
+    @app_commands.describe(
+        mode="if specified channels should be ignored or listened to."
+    )
     async def ignore_many_channels(self, ctx, mode: ToChoice):
         """
         Add or remove mentioned channels to/from this server's ignore list.
@@ -681,9 +688,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         chanment = thismessage.channel_mentions
         if len(chanment) >= 1:
             for chan in chanment:
-                if mode == 'add':
+                if mode == "add":
                     profile.add_channel(chan.id)
-                elif mode == 'remove':
+                elif mode == "remove":
                     profile.remove_channel(chan.id)
         else:
             await MessageTemplates.server_archive_message(
@@ -697,7 +704,6 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             ctx,
             f"{'Added' if mode == 'add' else 'Removed'} channels {'to' if mode == 'add' else 'from'} my ignore list. Any messages in these channels will {'be ignored' if mode == 'add' else 'no longer be ignored'} while archiving.",
         )
-
 
     @archive_setup.command(
         name="remove_deleted_channels",
@@ -743,7 +749,6 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
     )
     async def set_scope(self, ctx, scope: ToChoice):
         if ctx.guild:
-            
             scopes = {
                 "ws": "Bots and Webhook Messages Only",
                 "user": "User Messages Only",
@@ -847,7 +852,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await ctx.send("guild only.")
 
     @commands.guild_only()
-    @commands.has_guild_permissions(manage_messages=True,manage_channels=True)
+    @commands.has_guild_permissions(manage_messages=True, manage_channels=True)
     @commands.command(name="lazymode", description="For big, unarchived servers.")
     async def setup_lazy_archive(self, ctx, autochannel: discord.TextChannel, *args):
         if ctx.guild:
@@ -881,7 +886,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 )
                 return False
             if LazyContext.get(guild.id) != None:
-                await MessageTemplates.server_archive_message(ctx,"There already is a running lazy archive.")
+                await MessageTemplates.server_archive_message(
+                    ctx, "There already is a running lazy archive."
+                )
                 return False
                 LazyContext.remove(guild.id)
                 if TCGuildTask.get(guild.id, task_name):
@@ -1286,6 +1293,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await ctx.send("This command will only work inside a guild.")
             return
         from cogs.ArchiveSub.archive_compiler import ArchiveCompiler
+
         if LazyContext.get(guild.id) != None:
             await ctx.send("There is an active lazy archive in progress, please wait.")
             return

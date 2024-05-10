@@ -26,17 +26,28 @@ from .collect_group_index import do_group
 
 from .archive_message_templates import ArchiveMessageTemplate as MessageTemplates
 
+
 class ArchiveProgress:
-    __slots__ = ('message_total', 'group_total', 'm_arc', 'g_arc', 'avgtime', 'avgsep','t_mess','t_sep')
-    def __init__(self,message_total,group_total,m_arc=0,g_arc=0,profile=None):
-        self.message_total=message_total
-        self.group_total=group_total
-        self.m_arc=m_arc
-        self.g_arc=g_arc
-        self.avgtime=2.5
-        self.avgsep=3
-        self.t_mess=0
-        self.t_sep=0
+    __slots__ = (
+        "message_total",
+        "group_total",
+        "m_arc",
+        "g_arc",
+        "avgtime",
+        "avgsep",
+        "t_mess",
+        "t_sep",
+    )
+
+    def __init__(self, message_total, group_total, m_arc=0, g_arc=0, profile=None):
+        self.message_total = message_total
+        self.group_total = group_total
+        self.m_arc = m_arc
+        self.g_arc = g_arc
+        self.avgtime = 2.5
+        self.avgsep = 3
+        self.t_mess = 0
+        self.t_sep = 0
         if profile:
             avgtime = profile.average_message_archive_time
             if not avgtime:
@@ -48,41 +59,48 @@ class ArchiveProgress:
             self.avgsep = avgsep
 
     def get_avgs(self):
-        savg=self.t_sep / self.g_arc
-        mavg=self.t_mess / self.m_arc
-        return savg,mavg
+        savg = self.t_sep / self.g_arc
+        mavg = self.t_mess / self.m_arc
+        return savg, mavg
 
     def remain_time(self):
-        return (
-                (self.message_total - self.m_arc) * self.avgtime
-            ) + ((self.group_total - self.g_arc) * self.avgsep)
+        return ((self.message_total - self.m_arc) * self.avgtime) + (
+            (self.group_total - self.g_arc) * self.avgsep
+        )
 
-    def get_string(self,index=0,ml=0):
+    def get_string(self, index=0, ml=0):
         total = f"Currently on group {self.g_arc}/{self.group_total}.\n"
-        if index!=0 and ml!=0:
+        if index != 0 and ml != 0:
             total += f"Current group has {int(ml-index)} messages left\n"
         total += f"Currently archived {self.m_arc} messages out of {self.message_total} total.\n"
         total += f"This is going to take another... {seconds_to_time_string(int(self.remain_time()))}"
         return total
-    
+
     def get_remaining(self):
-        se= f"{self.group_total-self.g_arc} groups,"
-        se+=f" {self.message_total-self.m_arc} messages left."
-        se+=f"\n estimated {seconds_to_time_string(int(self.remain_time()))} remaining."
+        se = f"{self.group_total-self.g_arc} groups,"
+        se += f" {self.message_total-self.m_arc} messages left."
+        se += (
+            f"\n estimated {seconds_to_time_string(int(self.remain_time()))} remaining."
+        )
         return se
-    
-    def merge(self,other):
-        '''return a new archiveprogress object, '''
-        s=ArchiveProgress(self.message_total,self.group_total,self.m_arc+other.m_arc,self.g_arc+other.g_arc)
-        s.avgtime=self.avgtime
-        s.avgsep=self.avgsep
+
+    def merge(self, other):
+        """return a new archiveprogress object,"""
+        s = ArchiveProgress(
+            self.message_total,
+            self.group_total,
+            self.m_arc + other.m_arc,
+            self.g_arc + other.g_arc,
+        )
+        s.avgtime = self.avgtime
+        s.avgsep = self.avgsep
         return s
-        
+
 
 class ArchiveCompiler:
-    def __init__(self, ctx,lazymode=False):
+    def __init__(self, ctx, lazymode=False):
         self.ctx = ctx
-        self.lazy=lazymode
+        self.lazy = lazymode
         self.bot = ctx.bot
         self.auth = ctx.message.author
         self.channel = ctx.message.channel
@@ -94,7 +112,7 @@ class ArchiveCompiler:
         self.timebetweenmess = 2.0
         self.characterdelay = 0.05
 
-        self.ap=ArchiveProgress(0,0)
+        self.ap = ArchiveProgress(0, 0)
         self.sep_total = 0
 
         self.timeoff = None
@@ -105,10 +123,10 @@ class ArchiveCompiler:
         self.supertup = (None, None, None)
 
     def format_embed(self, index=1, ml=1):
-        total="<a:LetWalkR:1118191001731874856>"+self.ap.get_string(index,ml)
+        total = "<a:LetWalkR:1118191001731874856>" + self.ap.get_string(index, ml)
         if self.timeoff:
-            res=self.timeoff.merge(self.ap)
-            total += "\n"+res.get_remaining()
+            res = self.timeoff.merge(self.ap)
+            total += "\n" + res.get_remaining()
 
         embed = discord.Embed(description=total)
         return embed
@@ -140,8 +158,10 @@ class ArchiveCompiler:
 
         m = await ctx.channel.send("Initial check OK!")
         if profile.last_archive_time == None:
-            if ctx.author.id == ctx.bot.user.id and self.lazy==False:
-                await ctx.send("This is my first time archiving this server, please start the first archive manually.")
+            if ctx.author.id == ctx.bot.user.id and self.lazy == False:
+                await ctx.send(
+                    "This is my first time archiving this server, please start the first archive manually."
+                )
                 return False
             else:
                 await ctx.send(
@@ -195,7 +215,7 @@ class ArchiveCompiler:
             avgsep = 3
         self.avgtime = avgtime
         self.avgsep = avgsep
-        ap=ArchiveProgress(fullcount,group_id,0,0)
+        ap = ArchiveProgress(fullcount, group_id, 0, 0)
         total_time_for_cluster = ap.remain_time()
         timestring = seconds_to_time_string(int(total_time_for_cluster))
         return fullcount, group_id, timestring
@@ -241,29 +261,26 @@ class ArchiveCompiler:
         """
 
         avgtime = profile.average_message_archive_time
-        gt=mt=0
+        gt = mt = 0
         needed = ChannelSep.get_posted_but_incomplete(self.guild.id)
         if upper_lim:
             grouped = []
             mt = sum(len(sep.get_messages()) for sep in grouped)
             gt = len(grouped)
-            ap=ArchiveProgress(mt,gt,profile=profile)
+            ap = ArchiveProgress(mt, gt, profile=profile)
             off = 0
 
             while ap.remain_time() < upper_lim:
-                #print(ap.remain_time())
+                # print(ap.remain_time())
                 this_grouped = ChannelSep.get_unposted_separators(self.guild.id, 1, off)
                 if not this_grouped:
                     break
-                mt += sum(
-                    len(sep.get_messages()) for sep in this_grouped
-                )
+                mt += sum(len(sep.get_messages()) for sep in this_grouped)
                 gt += len(this_grouped)
-                ap.message_total=mt
-                ap.group_total=gt
+                ap.message_total = mt
+                ap.group_total = gt
                 off += 1
                 grouped.extend(this_grouped)
-                
 
         else:
             grouped = ChannelSep.get_unposted_separators(self.guild.id)
@@ -277,7 +294,7 @@ class ArchiveCompiler:
 
         message_total = sum(len(sep.get_messages()) for sep in grouped)
         sep_total = len(grouped)
-        self.ap=ArchiveProgress(message_total,sep_total,profile=profile)
+        self.ap = ArchiveProgress(message_total, sep_total, profile=profile)
 
         outstring = f"It will take {seconds_to_time_string(int(self.ap.remain_time()))} to post in the archive channel."
         if int(self.ap.remain_time()) <= 0.1:
@@ -430,10 +447,9 @@ class ArchiveCompiler:
         profile.update(last_archive_time=latest.created_at)
         self.ap.get_avgs()
         if self.ap.g_arc > 0 and self.ap.m_arc > 0:
-            septime,mestime=self.ap.get_avgs()
+            septime, mestime = self.ap.get_avgs()
             profile.update(
-                average_sep_archive_time=septime,
-                average_message_archive_time=mestime
+                average_sep_archive_time=septime, average_message_archive_time=mestime
             )
         self.bot.database.commit()
 

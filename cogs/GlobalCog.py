@@ -770,7 +770,9 @@ class Global(commands.Cog, TC_Cog_Mixin):
     async def coooler2(
         self, interaction: discord.Interaction, user: discord.User
     ) -> None:
-        embed = discord.Embed(description=f"This user is {user}.\n avatar {user.avatar.url}")
+        embed = discord.Embed(
+            description=f"This user is {user}.\n avatar {user.avatar.url}"
+        )
 
         await interaction.response.send_message(
             content="User details below.",

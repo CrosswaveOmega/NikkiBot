@@ -9,6 +9,7 @@ from PIL import Image, ImageDraw
 from discord import app_commands
 import numpy as np
 from assets import GeoJSONGeometry, GeoJSONFeature
+
 # import datetime
 from utility.views import BaseView
 from bot import (
@@ -17,8 +18,10 @@ from bot import (
 )
 from discord.ext import commands
 from .PalSub import read_data, write_data
-CELL_SIZE=200
+
+CELL_SIZE = 200
 from discord.app_commands import Choice
+
 
 def draw_grid(filepath, cell_size=200):
     with Image.open(filepath).convert("RGBA") as img:
@@ -33,8 +36,8 @@ def draw_grid(filepath, cell_size=200):
         img = Image.alpha_composite(img, overlay2)
     return img
 
-def highlight(img, coordinate, color=(255,0,0,200)):
 
+def highlight(img, coordinate, color=(255, 0, 0, 200)):
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
     draw.line(
@@ -92,6 +95,7 @@ def highlight(img, coordinate, color=(255,0,0,200)):
     img = Image.alpha_composite(img, overlay)
     return img
 
+
 def crop_image(image, coordinate, off_by, cell_size=200):
     ccr = coordinate
     bc = ccr + off_by + np.array((1, 1))
@@ -103,6 +107,7 @@ def crop_image(image, coordinate, off_by, cell_size=200):
     cropped_img = image.crop((left, top, right, bottom))
     return cropped_img
 
+
 def capitalize_first_letter(string: str) -> str:
     return string.capitalize() if string else ""
 
@@ -110,11 +115,11 @@ def capitalize_first_letter(string: str) -> str:
 coor = app_commands.Range[int, -1000, 1000]
 msize = app_commands.Range[int, 1, 20]
 
+
 class GotoModal(discord.ui.Modal, title="goto"):
-    def __init__(self, *args, pview=None,**kwargs):
-        super().__init__(*args,**kwargs)
-        self.parent_view=pview
-        
+    def __init__(self, *args, pview=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.parent_view = pview
 
     name = discord.ui.TextInput(
         label="Enter x/y coordinates split by space or comma",
@@ -123,18 +128,18 @@ class GotoModal(discord.ui.Modal, title="goto"):
         max_length=256,
     )
 
-
-
     async def on_submit(self, interaction: discord.Interaction):
-        coor=self.name.value
+        coor = self.name.value
 
-        split_coor = re.split(r'[ ,]+', coor)
-        if len(split_coor)!=2:
-            await interaction.response.send_message("You must separate by a space or comma.")
+        split_coor = re.split(r"[ ,]+", coor)
+        if len(split_coor) != 2:
+            await interaction.response.send_message(
+                "You must separate by a space or comma."
+            )
             self.stop()
             return
 
-        pat=re.compile(r'^-?\d+$')
+        pat = re.compile(r"^-?\d+$")
 
         if not all(pat.match(c) for c in split_coor):
             await interaction.response.send_message("Coordinates must be integers.")
@@ -143,8 +148,7 @@ class GotoModal(discord.ui.Modal, title="goto"):
         split_coor = list(map(int, split_coor))
         split_coor = [max(min(int(c), 1000), -1000) for c in split_coor]
         await interaction.response.defer()
-        await self.parent_view.highlight_points(interaction,split_coor)        
-
+        await self.parent_view.highlight_points(interaction, split_coor)
 
     async def on_timeout(self) -> None:
         self.stop()
@@ -153,6 +157,7 @@ class GotoModal(discord.ui.Modal, title="goto"):
         self, interaction: discord.Interaction, error: Exception
     ) -> None:
         return await super().on_error(interaction, error)
+
 
 class MapViewer(BaseView):
     """
@@ -170,35 +175,34 @@ class MapViewer(BaseView):
         super().__init__(user=user, timeout=timeout)
         self.value = False
         self.done = None
-        self.img=img
-        self.focus_cell = np.array(initial_coor)//CELL_SIZE
+        self.img = img
+        self.focus_cell = np.array(initial_coor) // CELL_SIZE
 
-    async def highlight_points(self,interaction:discord.Integration,coor):
+    async def highlight_points(self, interaction: discord.Integration, coor):
         x2 = coor[0] + 1000
         y2 = 1000 - coor[1]
-        coordinate=(x2 * 2, y2 * 2)
-        self.img=highlight(self.img,coordinate)
-        self.focus_cell = np.array(coordinate)//CELL_SIZE
-        embed,file=self.make_embed()
-        
-        await interaction.edit_original_response(content='',embed=embed, attachments=[file])
+        coordinate = (x2 * 2, y2 * 2)
+        self.img = highlight(self.img, coordinate)
+        self.focus_cell = np.array(coordinate) // CELL_SIZE
+        embed, file = self.make_embed()
 
+        await interaction.edit_original_response(
+            content="", embed=embed, attachments=[file]
+        )
 
     def make_embed(self):
-        coors=f"Viewing cell {self.focus_cell[0]}, {self.focus_cell[1]}"
+        coors = f"Viewing cell {self.focus_cell[0]}, {self.focus_cell[1]}"
         embed = discord.Embed(
             description=f"Current pal map view.  \n{coors}"[:4000],
             timestamp=discord.utils.utcnow(),
         )
-        
 
-        cropped_img=crop_image(self.img,self.focus_cell,off_by=np.array((2,1)))
+        cropped_img = crop_image(self.img, self.focus_cell, off_by=np.array((2, 1)))
         with io.BytesIO() as image_binary:
             cropped_img.save(image_binary, "PNG")
             image_binary.seek(0)
             file = discord.File(fp=image_binary, filename="highlighted_palmap.png")
 
-        
         embed.set_image(url="attachment://highlighted_palmap.png")
         embed.set_thumbnail(url="https://i.imgur.com/33AfdFE.png")
 
@@ -212,48 +216,55 @@ class MapViewer(BaseView):
     async def move_up(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        self.focus_cell+=np.array((0,-1))
-        #await interaction.response.defer()
-        embed, file=self.make_embed()
-        await interaction.response.edit_message(content='',embed=embed, attachments=[file])
-
+        self.focus_cell += np.array((0, -1))
+        # await interaction.response.defer()
+        embed, file = self.make_embed()
+        await interaction.response.edit_message(
+            content="", embed=embed, attachments=[file]
+        )
 
     @discord.ui.button(label="Down", style=discord.ButtonStyle.green, row=4)
     async def move_down(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        self.focus_cell+=np.array((0,1))
-        #await interaction.response.defer()
-        embed, file=self.make_embed()
-        await interaction.response.edit_message(content='',embed=embed, attachments=[file])
+        self.focus_cell += np.array((0, 1))
+        # await interaction.response.defer()
+        embed, file = self.make_embed()
+        await interaction.response.edit_message(
+            content="", embed=embed, attachments=[file]
+        )
 
     @discord.ui.button(label="Left", style=discord.ButtonStyle.green, row=3)
     async def move_left(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        self.focus_cell+=np.array((-1,0))
-        #await interaction.response.defer()
-        embed, file=self.make_embed()
+        self.focus_cell += np.array((-1, 0))
+        # await interaction.response.defer()
+        embed, file = self.make_embed()
 
-        await interaction.response.edit_message(content='',embed=embed, attachments=[file])
+        await interaction.response.edit_message(
+            content="", embed=embed, attachments=[file]
+        )
 
     @discord.ui.button(label="Right", style=discord.ButtonStyle.green, row=3)
     async def move_right(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        self.focus_cell+=np.array((1,0))
-        #await interaction.response.defer()
-        embed, file=self.make_embed()
+        self.focus_cell += np.array((1, 0))
+        # await interaction.response.defer()
+        embed, file = self.make_embed()
 
-        await interaction.response.edit_message(content='',embed=embed, attachments=[file])
+        await interaction.response.edit_message(
+            content="", embed=embed, attachments=[file]
+        )
 
     @discord.ui.button(label="GoTo", style=discord.ButtonStyle.green, row=4)
     async def gotocoor(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        await interaction.response.send_modal(GotoModal(pview=self,timeout=60*10))
+        await interaction.response.send_modal(GotoModal(pview=self, timeout=60 * 10))
 
-        #await interaction.edit_original_response(content='',embed=embed, attachments=[file])
+        # await interaction.edit_original_response(content='',embed=embed, attachments=[file])
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.grey, row=4)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -267,7 +278,7 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
 
     def __init__(self, bot):
         self.bot: TCBot = bot
-        self.locations:List[GeoJSONFeature]=read_data()
+        self.locations: List[GeoJSONFeature] = read_data()
         # self.session=aiohttp.ClientSession()
 
     def cog_unload(self):
@@ -387,30 +398,31 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
         x2 = x + 1000
         y2 = 1000 - y
 
-
-        
-        coordinate=(x2 * 2, y2 * 2)
-        img=draw_grid(file_path)
-        img=highlight(img, coordinate)
+        coordinate = (x2 * 2, y2 * 2)
+        img = draw_grid(file_path)
+        img = highlight(img, coordinate)
         for f in self.locations:
-            xa,ya=f.geometry.get_coordinates()
+            xa, ya = f.geometry.get_coordinates()
             x2a = xa + 1000
             y2a = 1000 - ya
-            coordinatea=(x2a * 2, y2a * 2)
-            img=highlight(img,coordinatea,(0,0,255,200))
-        #cropped_img = crop_image(img,np.array(coordinate)//CELL_SIZE, np.array((3, 2)))
-        view=MapViewer(user=ctx.author,img=img,initial_coor=coordinate)
+            coordinatea = (x2a * 2, y2a * 2)
+            img = highlight(img, coordinatea, (0, 0, 255, 200))
+        # cropped_img = crop_image(img,np.array(coordinate)//CELL_SIZE, np.array((3, 2)))
+        view = MapViewer(user=ctx.author, img=img, initial_coor=coordinate)
 
-        emb,file=view.make_embed()
-        await mes.edit(content="done", attachments=[file],embed=emb,view=view)
+        emb, file = view.make_embed()
+        await mes.edit(content="done", attachments=[file], embed=emb, view=view)
 
-
-    @app_commands.command(name="palmap_add", description="Owner only, add a labeled point to map")
+    @app_commands.command(
+        name="palmap_add", description="Owner only, add a labeled point to map"
+    )
     @app_commands.describe(x="X coordinate to set")
     @app_commands.describe(y="Y coordinate to set")
     @app_commands.describe(name="name of point to add")
     @app_commands.guild_only()
-    @app_commands.guilds(discord.Object(1071087693481652224),discord.Object(1077964401849667655))
+    @app_commands.guilds(
+        discord.Object(1071087693481652224), discord.Object(1077964401849667655)
+    )
     @app_commands.describe(pointtype="add a point to map")
     async def palmapadd(
         self,
@@ -418,18 +430,27 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
         x: coor,
         y: coor,
         name: str,
-        pointtype: Literal['eagle','tower','item_merchant','pal_merchant','black_market', 'effigy', 'dungeon']
-
+        pointtype: Literal[
+            "eagle",
+            "tower",
+            "item_merchant",
+            "pal_merchant",
+            "black_market",
+            "effigy",
+            "dungeon",
+        ],
     ):
         ctx: commands.Context = await self.bot.get_context(interaction)
         if interaction.user != self.bot.application.owner:
             await ctx.send("This command is owner only, buddy.")
             return
         point_geometry = GeoJSONGeometry.init_sub("Point", [x, y])
-        point_properties = {"name": name, 'pointtype':pointtype}
-        point_feature = GeoJSONFeature(geometry=point_geometry, properties=point_properties)
+        point_properties = {"name": name, "pointtype": pointtype}
+        point_feature = GeoJSONFeature(
+            geometry=point_geometry, properties=point_properties
+        )
         for pf in self.locations:
-            if pf==point_feature:
+            if pf == point_feature:
                 await ctx.send("Point is already present.")
                 return
         self.locations.append(point_feature)
@@ -440,12 +461,9 @@ class PalworldAPI(commands.Cog, TC_Cog_Mixin):
         await mes.edit(content="done")
 
 
-
 async def setup(bot):
-
     await bot.add_cog(PalworldAPI(bot))
 
 
 async def teardown(bot):
-
     await bot.remove_cog("PalworldAPI")

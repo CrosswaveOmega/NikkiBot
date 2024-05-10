@@ -1,7 +1,9 @@
 import json
 
+
 class GeoJSONFeature:
-    '''GeoJSON class wrapper'''
+    """GeoJSON class wrapper"""
+
     def __init__(self, geometry, properties=None, idv=None):
         """
         Initialize a GeoJSON Feature object.
@@ -21,7 +23,11 @@ class GeoJSONFeature:
 
         :return: Dictionary representation of the GeoJSON Feature.
         """
-        feature_dict = {"type": self.type, "geometry": self.geometry.to_dict(), "properties": self.properties}
+        feature_dict = {
+            "type": self.type,
+            "geometry": self.geometry.to_dict(),
+            "properties": self.properties,
+        }
         if self.id:
             feature_dict["id"] = self.id
         return feature_dict
@@ -77,6 +83,7 @@ class GeoJSONFeature:
     def __eq__(self, other):
         return self.geometry.to_dict() == other.geometry.to_dict()
 
+
 class GeoJSONGeometry:
     """
     Represents a GeoJSON Geometry object.
@@ -96,7 +103,7 @@ class GeoJSONGeometry:
         :return: Dictionary representation of the GeoJSON Geometry.
         """
         return {"type": self.type, "coordinates": self.coordinates}
-    
+
     def get_coordinates(self):
         """
         Get the coordinates of the point.
@@ -104,7 +111,7 @@ class GeoJSONGeometry:
         :return: Coordinates of the point.
         """
         return self.coordinates
-    
+
     @classmethod
     def from_dict(cls, geometry_dict):
         """
@@ -118,7 +125,7 @@ class GeoJSONGeometry:
         return geometry_class(geometry_dict["coordinates"])
 
     @classmethod
-    def init_sub(cls, geometry_type,coordinates):
+    def init_sub(cls, geometry_type, coordinates):
         """
         Initialize the corresponding subclass based on the geometry type.
 
@@ -127,9 +134,10 @@ class GeoJSONGeometry:
         """
         geometry_class = geometry_mapping.get(geometry_type, GeoJSONGeometry)
         return geometry_class(coordinates)
-    
+
     def __repr__(self):
         return f"{self.get_coordinates()}, {self.type}"
+
 
 class GeoJSONPoint(GeoJSONGeometry):
     """
@@ -149,6 +157,7 @@ class GeoJSONPoint(GeoJSONGeometry):
         """
         return tuple(self.coordinates)
 
+
 class GeoJSONMultiPoint(GeoJSONGeometry):
     """
     Represents a GeoJSON MultiPoint geometry.
@@ -166,6 +175,7 @@ class GeoJSONMultiPoint(GeoJSONGeometry):
         :return: Coordinates of the multipoint.
         """
         return [tuple(coord) for coord in self.coordinates]
+
 
 class GeoJSONLineString(GeoJSONGeometry):
     """
@@ -185,6 +195,7 @@ class GeoJSONLineString(GeoJSONGeometry):
         """
         return [tuple(coord) for coord in self.coordinates]
 
+
 class GeoJSONMultiLineString(GeoJSONGeometry):
     """
     Represents a GeoJSON MultiLineString geometry.
@@ -202,6 +213,7 @@ class GeoJSONMultiLineString(GeoJSONGeometry):
         :return: Coordinates of the multilinestring.
         """
         return [[tuple(coord) for coord in line] for line in self.coordinates]
+
 
 class GeoJSONPolygon(GeoJSONGeometry):
     """
@@ -221,6 +233,7 @@ class GeoJSONPolygon(GeoJSONGeometry):
         """
         return [[tuple(coord) for coord in ring] for ring in self.coordinates]
 
+
 class GeoJSONMultiPolygon(GeoJSONGeometry):
     """
     Represents a GeoJSON MultiPolygon geometry.
@@ -237,8 +250,11 @@ class GeoJSONMultiPolygon(GeoJSONGeometry):
 
         :return: Coordinates of the multipolygon.
         """
-        return [[[tuple(coord) for coord in ring] for ring in polygon] for polygon in self.coordinates]
-    
+        return [
+            [[tuple(coord) for coord in ring] for ring in polygon]
+            for polygon in self.coordinates
+        ]
+
 
 geometry_mapping = {
     "Point": GeoJSONPoint,
@@ -246,7 +262,7 @@ geometry_mapping = {
     "LineString": GeoJSONLineString,
     "MultiLineString": GeoJSONMultiLineString,
     "Polygon": GeoJSONPolygon,
-    "MultiPolygon": GeoJSONMultiPolygon
+    "MultiPolygon": GeoJSONMultiPolygon,
 }
 
 
@@ -258,7 +274,7 @@ if __name__ == "__main__":
 
     print(point_feature.geometry)
 
-    with open("output.geojson", "r",encoding='utf8') as f:
+    with open("output.geojson", "r", encoding="utf8") as f:
         geojson_string = f.read()
         geojson_dict = json.loads(geojson_string)
         feature_from_dict = GeoJSONFeature.from_dict(geojson_dict)

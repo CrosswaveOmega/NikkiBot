@@ -50,9 +50,9 @@ json_prompt = """Respond with one JSON object with two fields, 'content' and 'ne
 'content' will be what you will say to the user.
 'new_memory' should be a list of strings, each 1-3 sentences long.  The strings in new_memory will be added to long term memory, and will be used to remember the chat context.
 Ensure that responses are brief, do not say more than is needed.  """
-memory_prompt='''The next system message will contain a memory bank, filled with sentences that are probably related to the user's messages.
+memory_prompt = """The next system message will contain a memory bank, filled with sentences that are probably related to the user's messages.
 Only your responses will be added to the memory bank, never the users.  
-'''
+"""
 reasons = {
     "server": {
         "messagelimit": "This server has reached the daily message limit, please try again tomorrow.",
@@ -209,7 +209,10 @@ async def process_result(
             chat.messages.append({"role": "assistant", "content": mycontent})
             memlib = MemoryFunctions()
             chat.tools = memlib.get_tool_schema()
-            chat.tool_choice = {"type": "function", "function": {"name": "add_to_memory"}}
+            chat.tool_choice = {
+                "type": "function",
+                "function": {"name": "add_to_memory"},
+            }
             res = await ctx.bot.gptapi.callapi(chat)
 
             for tool_call in res.choices[0].message.tool_calls:
@@ -222,7 +225,7 @@ async def process_result(
                     )
     elif isinstance(content, discord.Message):
         messageresp = content
-        content=messageresp.clean_content
+        content = messageresp.clean_content
         jsonout = {"content": messageresp.content, "new_memory": []}
     else:
         gui.dprint(result, content)
@@ -276,7 +279,7 @@ async def ai_message_invoke(
         np = np.replace("[MEMORYMODE]", memory_prompt)
     else:
         np = np.replace("[MEMORYMODE]", "")
-    
+
     chat.add_message("system", nikkiprompt)
     mem = SentenceMemory(ctx.bot, guild, user)
     docs, mems, alltime = await mem.search_sim(message)

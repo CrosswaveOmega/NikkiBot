@@ -1,4 +1,6 @@
 from .palmapdata import read_data, write_data
+
+
 async def setup(bot):
     import gui
 

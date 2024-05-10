@@ -145,7 +145,7 @@ async def lazy_archive(self, ctx):
             return max(remaining + ext, 0)
         return max(remaining, 0)
 
-    arc_comp = ArchiveCompiler(ctx,lazymode=True)
+    arc_comp = ArchiveCompiler(ctx, lazymode=True)
     bot = ctx.bot
     channel = ctx.message.channel
     guild: discord.Guild = channel.guild
@@ -214,7 +214,13 @@ async def lazy_archive(self, ctx):
             m, profile, archive_channel = arc_comp.supertup
             # archived_this_session<=MESSAGES_PER_POST_CALL
             # while upper_time_limit() > 0:
-            allp=ArchiveProgress(lazycontext.message_count,lazycontext.group_count,lazycontext.archived_so_far,lazycontext.grouped_so_far,profile=profile)
+            allp = ArchiveProgress(
+                lazycontext.message_count,
+                lazycontext.group_count,
+                lazycontext.archived_so_far,
+                lazycontext.grouped_so_far,
+                profile=profile,
+            )
             arc_comp.timeoff = allp
             did = await arc_comp.post(m, profile, archive_channel, MAX_TOTAL_SECONDS)
             lazycontext.archived_so_far += arc_comp.ap.m_arc
