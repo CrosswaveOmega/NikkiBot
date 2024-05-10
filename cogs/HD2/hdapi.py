@@ -28,6 +28,7 @@ async def call_api(endpoint):
                 js = await r.json()
                 await session.close()
                 return js
+            return {}
 
 
 def human_format(num):

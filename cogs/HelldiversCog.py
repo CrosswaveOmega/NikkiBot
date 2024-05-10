@@ -291,7 +291,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if not data:
             return await ctx.send("No result")
         print(data)
-        stat = data["statistics"]
         await ctx.send(embed=create_war_embed(data))
 
     @pc.command(name="assign", description="get assignment state.")
@@ -301,7 +300,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         data = self.apidata.get("assignments", None)
         if not data:
             return await ctx.send("No result")
-        print(data[0])
         await ctx.send(embed=create_assignment_embed(data[0]))
 
     @pc.command(name="campaigns", description="get campaign state.")
@@ -311,9 +309,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         data = self.apidata.get("campaigns", None)
         if not data:
             return await ctx.send("No result")
-        print(data[0])
         for camp in data:
-            print(camp)
             if "planet" in camp:
                 cstr = create_campaign_str(camp)
                 await ctx.send(embed=create_planet_embed(camp["planet"], cstr=cstr))
