@@ -209,10 +209,6 @@ def create_planet_embed(data, cstr: str):
     health = data.get("health", 0)
     embed.add_field(name="Health", value=f"{health}/{max_health}.  ", inline=True)
 
-    position = data.get("position", None)
-    if position:
-        x, y = position.get("x", 0), position.get("y", 0)
-        embed.add_field(name="Galactic Position", value=f"x:{x},y:{y}", inline=False)
 
     event_info = data.get("event", None)
 
@@ -224,6 +220,10 @@ def create_planet_embed(data, cstr: str):
             f"Campaign ID: {human_format(event_info['campaignId'])}, Joint Operation IDs: {', '.join(map(str, event_info['jointOperationIds']))}"
         )
         embed.add_field(name="Event Details", value=event_details, inline=False)
+    position = data.get("position", None)
+    if position:
+        x, y = position.get("x", 0), position.get("y", 0)
+        embed.add_field(name="Galactic Position", value=f"x:{x},y:{y}", inline=True)
 
     if "attacking" in data:
         attacking_planets = data["attacking"]
@@ -231,11 +231,11 @@ def create_planet_embed(data, cstr: str):
             embed.add_field(
                 name="Attacking Planets",
                 value=", ".join(map(str, attacking_planets)),
-                inline=False,
+                inline=True,
             )
         else:
             embed.add_field(
-                name="Attacking Planets", value="Not attacking planets.", inline=False
+                name="Attacking Planets", value="Not attacking planets.", inline=True
             )
 
     if "waypoints" in data:
@@ -244,13 +244,13 @@ def create_planet_embed(data, cstr: str):
             embed.add_field(
                 name="Waypoints",
                 value=", ".join(map(str, planet_waypoints)),
-                inline=False,
+                inline=True,
             )
         else:
             embed.add_field(
                 name="Waypoints",
                 value="Planet appears to be unconnected.",
-                inline=False,
+                inline=True,
             )
 
     return embed
