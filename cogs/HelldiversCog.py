@@ -215,35 +215,16 @@ def create_planet_embed(data, cstr: str):
         embed.add_field(name="Galactic Position", value=f"x:{x},y:{y}", inline=False)
 
     event_info = data.get("event", None)
+
     if event_info:
-        if event_info:
-            embed.add_field(name="Event ID", value=event_info["id"], inline=True)
-            embed.add_field(
-                name="Event Type", value=event_info["eventType"], inline=True
-            )
-            embed.add_field(
-                name="Event Faction", value=event_info["faction"], inline=True
-            )
-            embed.add_field(
-                name="Event Health", value=event_info["health"], inline=True
-            )
-            embed.add_field(
-                name="Event Max Health", value=event_info["maxHealth"], inline=True
-            )
-            embed.add_field(
-                name="Event Start Time", value=event_info["startTime"], inline=True
-            )
-            embed.add_field(
-                name="Event End Time", value=event_info["endTime"], inline=True
-            )
-            embed.add_field(
-                name="Event Campaign ID", value=event_info["campaignId"], inline=True
-            )
-            embed.add_field(
-                name="Event Joint Operation IDs",
-                value=", ".join(map(str, event_info["jointOperationIds"])),
-                inline=True,
-            )
+        event_details = (
+            f"ID: {human_format(event_info['id'])}, Type: {human_format(event_info['eventType'])}, Faction: {event_info['faction']}\n"
+            f"Max Health: {human_format(event_info['maxHealth'])}, Health: {human_format(event_info['health'])}\n"
+            f"Start Time: {event_info['startTime']}, End Time: {event_info['endTime']}\n"
+            f"Campaign ID: {human_format(event_info['campaignId'])}, Joint Operation IDs: {', '.join(map(str, event_info['jointOperationIds']))}"
+        )
+        embed.add_field(name="Event Details", value=event_details, inline=False)
+
     if "attacking" in data:
         attacking_planets = data["attacking"]
         if attacking_planets:
