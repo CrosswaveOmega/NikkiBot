@@ -21,6 +21,6 @@ class Dispatch(BaseApiModel):
 
 
     def to_embed(self):
-        return discord.Embed(title=f"Dispatch {self.id}, type {self.type}"
+        return discord.Embed(title=f"Dispatch {self.id}, type {self.type}",
                              description=f"{self.message}\n{self.published}")
 
