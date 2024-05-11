@@ -7,6 +7,7 @@ from discord import app_commands
 import importlib
 from discord.ext import commands, tasks
 
+from discord.app_commands import Choice
 # import datetime
 from bot import (
     TCBot,
@@ -24,6 +25,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         # self.session=aiohttp.ClientSession()
         self.apidata = {}
         self.changes = {}
+        self.dispatches = None
         self.first_get=True
 
         self.update_api.start()
@@ -44,6 +46,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if 'campaigns' in self.apidata:
             self.changes['campaigns'] = [(self.apidata["campaigns"][j], c) for j, c in enumerate(campaigns) if c.id == self.apidata["campaigns"][j].id]
         self.apidata["campaigns"] = campaigns
+        self.dispatches =await hd2.GetApiV1DispatchesAll()
+
 
     @tasks.loop(minutes=15)
     async def update_api(self):
@@ -100,6 +104,15 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
 
     @pc.command(name="campaigns", description="get campaign state.")
+    @app_commands.choices(
+        filter=[  # param name
+            Choice(name="View campaigns for all planets", value=0),
+            Choice(name="View campaigns for bug planets only", value=2),
+            
+            Choice(name="View campaigns for bot planets", value=3),
+        ]
+    )
+    @app_commands.describe(byplanet="view campaign for this specific planet index.")
     async def cstate(self, interaction: discord.Interaction,filter:Literal[0,2,3]=0,byplanet:int=0):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
@@ -135,6 +148,19 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                         cstr = hd2.create_campaign_str(camp)
                         embeds.append(hd2.create_planet_embed(camp.planet, cstr=cstr,last=diff))
         await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
+
+    @pc.command(name="dispatches", description="get all dispatches.")
+    async def dispatches(self, interaction: discord.Interaction):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+
+        data = self.dispatches
+        if not data:
+            return await ctx.send("No result")
+        embeds=[]
+        for s in data:
+            embeds.append(s.to_embed())
+        await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
+
 
 
 async def setup(bot):
