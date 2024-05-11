@@ -1,4 +1,5 @@
 import json
+from typing import Literal
 import gui
 import discord
 from discord import app_commands
@@ -303,7 +304,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         await ctx.send(embed=create_assignment_embed(data[0]))
 
     @pc.command(name="campaigns", description="get campaign state.")
-    async def cstate(self, interaction: discord.Interaction):
+    async def cstate(self, interaction: discord.Interaction,filter:Literal[0,2,3]=0):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
         data = self.apidata.get("campaigns", None)
@@ -311,8 +312,23 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             return await ctx.send("No result")
         for camp in data:
             if "planet" in camp:
-                cstr = create_campaign_str(camp)
-                await ctx.send(embed=create_planet_embed(camp["planet"], cstr=cstr))
+                if filter==0:
+                    cstr = create_campaign_str(camp)
+                    await ctx.send(embed=create_planet_embed(camp["planet"], cstr=cstr))
+                elif filter==2:
+                    evtcheck=camp['planet']['event']
+                    if evtcheck:
+                        evtcheck=evtcheck['faction']=='Terminids'
+                    if camp['planet']['currentOwner']=='Terminids' or evtcheck:
+                        cstr = create_campaign_str(camp)
+                        await ctx.send(embed=create_planet_embed(camp["planet"], cstr=cstr))
+                elif filter==3:
+                    evtcheck=camp['planet']['event']
+                    if evtcheck:
+                        evtcheck=evtcheck['faction']=='Automaton'
+                    if camp['planet']['currentOwner']=='Automaton' or evtcheck:
+                        cstr = create_campaign_str(camp)
+                        await ctx.send(embed=create_planet_embed(camp["planet"], cstr=cstr))
 
 
 async def setup(bot):
