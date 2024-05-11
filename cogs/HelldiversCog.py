@@ -59,6 +59,14 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         except Exception as e:
             await self.bot.send_error(e, f"Message update cleanup error.")
             gui.gprint(str(e))
+
+
+    @commands.is_owner()
+    @commands.command(name="load_now")
+    async def load_now(self, ctx: commands.Context):
+        await self.update_data()
+        await ctx.send("force loaded api data now.")
+
     pc = app_commands.Group(name="hd2", description="Commands for Helldivers 2.")
 
     @pc.command(name="war", description="get war state.")
