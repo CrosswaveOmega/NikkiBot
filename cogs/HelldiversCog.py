@@ -41,10 +41,22 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             self.changes['war']=(self.apidata['war'],war)
         self.apidata["war"] = war
         if 'assignments' in self.apidata:
-            self.changes['assignments'] = [(self.apidata["assignments"][i], a) for i, a in enumerate(assignments) if a.id == self.apidata["assignments"][i].id]
+            updated_assignments = []
+            for assignment in assignments:
+                for apidata_assignment in self.apidata["assignments"]:
+                    if assignment.id == apidata_assignment.id:
+                        updated_assignments.append((apidata_assignment, assignment))
+                        break  # Exit the inner loop once a match is found
+            self.changes['assignments'] = updated_assignments
         self.apidata["assignments"] = assignments
         if 'campaigns' in self.apidata:
-            self.changes['campaigns'] = [(self.apidata["campaigns"][j], c) for j, c in enumerate(campaigns) if c.id == self.apidata["campaigns"][j].id]
+            updated_campaigns = []
+            for campaign in campaigns:
+                for apidata_campaign in self.apidata["campaigns"]:
+                    if campaign.id == apidata_campaign.id:
+                        updated_campaigns.append((apidata_campaign, campaign))
+                        break  # Exit the inner loop once a match is found
+            self.changes['campaigns'] = updated_campaigns
         self.apidata["campaigns"] = campaigns
         self.dispatches =await hd2.GetApiV1DispatchesAll()
 
