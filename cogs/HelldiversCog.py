@@ -314,6 +314,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             if "planet" in camp:
                 if byplanet!=0:
                     if camp['planet']['index']==byplanet:
+                        
+                        cstr = create_campaign_str(camp)
                         await ctx.send(embed=create_planet_embed(camp["planet"], cstr=cstr))
                 else:
                     if filter==0:
