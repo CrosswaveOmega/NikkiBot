@@ -154,8 +154,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
         profile=ServerHDProfile.get_or_new(ctx.guild.id)
-
-
         guild=ctx.guild
         task_name="UPDATEOVERVIEW"
         autochannel=ctx.channel
@@ -169,7 +167,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             start_date = datetime(2023, 1, 1, now.hour, now.minute-15)
             robj = rrule(freq=MINUTELY, interval=15, dtstart=start_date)
 
-            new = TCGuildTask.add_guild_task(guild.id, task_name, target_message, robj)
+            new = TCGuildTask.add_guild_task(guild.id, task_name, target_message, robj,True)
             new.to_task(ctx.bot)
 
             result = f"Overview message set.  every 15 minutes, this message will update with the latest galactic status.  Please don't delete it unless you want to stop."
