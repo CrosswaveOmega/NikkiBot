@@ -1,8 +1,9 @@
+from utility import urltomessage
 from .Tasks.TCTasks import TCTask, TCTaskManager
 from database import DatabaseSingleton, AwareDateTime
 import sqlalchemy
 import gui
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, delete, select
+from sqlalchemy import Boolean, create_engine, Column, Integer, String, DateTime, delete, select
 from sqlalchemy import PrimaryKeyConstraint
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
@@ -110,6 +111,7 @@ class TCGuildTask(Guild_Task_Base):
     target_channel_id = Column(Integer)
     task_id = Column(String)
     relativedelta_serialized = Column(String)
+    use_target_url = Column(Boolean,default=False)
     next_run = Column(DateTime, default=datetime.now())
     remove_after = False
 
@@ -121,12 +123,14 @@ class TCGuildTask(Guild_Task_Base):
         task_name: str,
         target_message: discord.Message,
         relativedelta_obj: rrule,
+        use_target_url:bool=False
     ):
         self.server_id = server_id
         self.task_name = task_name
         self.target_message_url = target_message.jump_url
         self.target_channel_id = target_message.channel.id
         self.task_id = f"{self.server_id}_{self.task_name}"
+        self.use_target_url = use_target_url
         self.relativedelta_serialized = self.serialize_relativedelta(relativedelta_obj)
 
     @property
@@ -142,7 +146,7 @@ class TCGuildTask(Guild_Task_Base):
 
     @staticmethod
     def add_guild_task(
-        server_id: int, task_name: str, target_message: discord.Message, rdelta: rrule
+        server_id: int, task_name: str, target_message: discord.Message, rdelta: rrule, use_message=False
     ):
         """add a new TCGuildTask entry, using the server_id and task_name."""
         """server_id is the guild id, task_name is the name of the task."""
@@ -155,6 +159,7 @@ class TCGuildTask(Guild_Task_Base):
                 task_name=task_name,
                 target_message=target_message,
                 relativedelta_obj=rdelta,
+                use_target_url=use_message
             )
             session.add(new)
             session.commit()
@@ -256,12 +261,20 @@ class TCGuildTask(Guild_Task_Base):
         try:
             gui.dprint(server_id, task_name)
             channel = bot.get_channel(self.target_channel_id)
-            source_message = await channel.send(
-                f"Auto Guild Task {self.task_name} launching."
-            )
-            this_out = await Guild_Task_Functions.execute_task_function(
-                self.task_name, source_message=source_message
-            )
+            source_message=None
+            if self.use_target_url:
+                try:
+                    source_message=await urltomessage(self.target_message_url,bot)
+                except Exception as e:
+                    this_out="REMOVE"
+            else:
+                source_message = await channel.send(
+                    f"Auto Guild Task {self.task_name} launching."
+                )
+            if source_message:
+                this_out = await Guild_Task_Functions.execute_task_function(
+                    self.task_name, source_message=source_message
+                )
         except Exception as e:
             if isinstance(e, sqlalchemy.orm.exc.DetachedInstanceError):
                 gui.dprint("DetachedInstanceError occurred.")
@@ -272,6 +285,7 @@ class TCGuildTask(Guild_Task_Base):
         await asyncio.sleep(2)
         gui.gprint(f"{self.name} Task done at", datetime.now(), "excution ok.")
         if self.remove_after or this_out == "REMOVE":
+            print("removing task.")
             TCGuildTask.remove_guild_task(self.server_id, self.task_name)
 
     def to_task(self, bot):

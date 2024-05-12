@@ -9,6 +9,7 @@ from .Hazard import Hazard
 from .Position import Position
 from .Statistics import Statistics
 
+from utility import human_format as hf, select_emoji as emj, changeformatif as cfi
 
 class Planet(BaseApiModel):
     """
@@ -55,7 +56,7 @@ class Planet(BaseApiModel):
         # Calculate the values for health, statistics, and event based on subtraction
         new_health = self.health - other.health if self.health is not None and other.health is not None else None
         new_statistics = self.statistics - other.statistics if self.statistics is not None and other.statistics is not None else None
-        new_event = self.event - other.event if self.event is not None and other.event is not None else None
+        new_event = self.event - other.event if self.event is not None and other.event is not None else self.event
 
         # Create a new instance of the Planet class with calculated values
         return Planet(
@@ -77,4 +78,21 @@ class Planet(BaseApiModel):
             regenPerSecond=self.regenPerSecond,
             attacking=self.attacking,
         )
+    
+    def simple_planet_view(self,prev:Optional['Planet']=None)->Tuple[str,str]:
+        diff=self-self
+        if prev is not None: 
+            diff=prev
+        
+        faction=emj(self.currentOwner.lower())
+        
+        name=f"{faction}P#{self.index}: {self.name}"
+        players=f"Helldiver count: `{self.statistics.playerCount} {cfi(diff.statistics.playerCount)}`"
+        out=f"{players}\nHealth {(self.health/self.maxHealth)*100.0}% {cfi((diff.health/self.maxHealth)*100.0)}"
+        if self.event:
+            evt=self.event
+            event_fact=emj(self.event.faction.lower())
+            out+=f"\nDefend from {event_fact}, {(evt.health)}{cfi(diff.event.health)}/{(evt.maxHealth)}. \n Lib {(evt.health/evt.maxHealth)*100.0}% {cfi((diff.evt.health/evt.maxHealth)*100.0)}"
+        return name,out
+
 

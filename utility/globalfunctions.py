@@ -266,7 +266,7 @@ def seconds_to_time_stamp(seconds_init):
 
 
 async def get_server_icon_color(guild: discord.Guild) -> str:
-    # Get the server's icon
+    'Get the guild icon, and color.'
     if not guild.icon:
         return 0xFFFFFF
     icon_bytes = await guild.icon.read()
@@ -281,6 +281,17 @@ async def get_server_icon_color(guild: discord.Guild) -> str:
     hex = int(hex_color, 16)
     return hex
 
+def human_format(num):
+    '''Format a large number'''
+    num = float("{:.3g}".format(num))
+    magnitude = 0
+    while abs(num) >= 1000:
+        magnitude += 1
+        num /= 1000.0
+    suffixes = ["", "K", "M", "B", "T", "Q", "Qi"]
+    return "{}{}".format(
+        "{:f}".format(num).rstrip("0").rstrip("."), suffixes[magnitude]
+    )
 
 if __name__ == "__main__":  # testing
     gui.gprint(seconds_to_time_string(130))

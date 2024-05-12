@@ -18,6 +18,7 @@ from .globalfunctions import (
     split_string_with_code_blocks,
     prioritized_string_split,
     find_urls,
+    human_format,
 )
 
 from .mytemplatemessages import MessageTemplates
@@ -29,6 +30,7 @@ from .formatutil import (
     progress_bar,
     select_emoji,
     chunk_list,
+    changeformatif,
 )
 from .views import ConfirmView, RRuleView
 from .manual_load import load_manual

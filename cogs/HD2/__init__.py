@@ -1,4 +1,4 @@
-from .embeds import create_assignment_embed, create_campaign_str,create_planet_embed, create_war_embed
+from .embeds import campaign_view,create_assignment_embed, create_campaign_str,create_planet_embed, create_war_embed
 
 from .hdapi import call_api
 

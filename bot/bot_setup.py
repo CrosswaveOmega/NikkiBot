@@ -255,6 +255,7 @@ class Main(commands.Cog):
         formatted_strings = [chunk for chunk in chunks]
         for i in formatted_strings:
             await ctx.send(i)
+        print("done")
 
     @commands.command()
     async def flag_view(self, ctx):

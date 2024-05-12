@@ -1,20 +1,34 @@
 import asyncio
 import json
 from typing import Literal
+from assets import AssetLookup
 import gui
 import discord
+
+from datetime import datetime, timedelta
 from discord import app_commands
 import importlib
+
+from dateutil.rrule import MINUTELY, SU, WEEKLY, rrule
 from discord.ext import commands, tasks
 
 from discord.app_commands import Choice
+
+from utility import MessageTemplates, urltomessage
+from bot import (
+    Guild_Task_Functions,
+    StatusEditMessage,
+    TC_Cog_Mixin,
+    TCBot,
+    TCGuildTask,
+)
 # import datetime
 from bot import (
     TCBot,
     TC_Cog_Mixin,
 )
 from discord.ext import commands
-from .HD2.hdapi import call_api, human_format
+from .HD2.db import ServerHDProfile
 import cogs.HD2 as hd2
 from utility.embed_paginator import pages_of_embeds
 class HelldiversCog(commands.Cog, TC_Cog_Mixin):
@@ -23,15 +37,32 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     def __init__(self, bot):
         self.bot: TCBot = bot
         # self.session=aiohttp.ClientSession()
+        
         self.apidata = {}
         self.changes = {}
         self.dispatches = None
         self.first_get=True
-
+        #self.profiles=ServerHDProfile.get_entries_with_overview_message_id()
+        
+        Guild_Task_Functions.add_task_function("UPDATEOVERVIEW", self.gtask_update)
         self.update_api.start()
+
+    def server_profile_field_ext(self, guild: discord.Guild):
+        """
+        Create a dictionary representing the helldiver overview panel.
+        """
+        profile = ServerHDProfile.get(guild.id)
+        if not profile:
+            return None
+        if profile.overview_message_url:
+            field = {"name": "Helldiver Overview", "value": f'[Overview]({profile.overview_message_url})'}
+            return field
+        return None
 
     def cog_unload(self):
         self.update_api.cancel()
+        
+        Guild_Task_Functions.remove_task_function("UPDATEOVERVIEW")
 
     async def update_data(self):
         war = await hd2.GetApiV1War()
@@ -40,32 +71,33 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if 'war' in self.apidata:
             self.changes['war']=(self.apidata['war'],war)
         self.apidata["war"] = war
-        if 'assignments' in self.apidata:
-            updated_assignments = []
-            for assignment in assignments:
-                found = False
-                for apidata_assignment in self.apidata["assignments"]:
-                    if assignment.id == apidata_assignment.id:
-                        updated_assignments.append((apidata_assignment, assignment))
-                        found = True
-                        break  # Exit the inner loop once a match is found
-                if not found:
-                    updated_assignments.append((assignment, assignment))  # Add to updated_assignments if not found in apidata
-            self.changes['assignments'] = updated_assignments
+        last_assign=self.apidata.get('assignments',[])
+        last_camp=self.apidata.get('campaigns',[])
+        updated_assignments = []
+        for assignment in assignments:
+            found = False
+            for apidata_assignment in last_assign:
+                if assignment.id == apidata_assignment.id:
+                    updated_assignments.append((apidata_assignment, assignment))
+                    found = True
+                    break  # Exit the inner loop once a match is found
+            if not found:
+                updated_assignments.append((assignment, assignment))  # Add to updated_assignments if not found in apidata
+        self.changes['assignments'] = updated_assignments
         self.apidata["assignments"] = assignments
         
-        if 'campaigns' in self.apidata:
-            updated_campaigns = []
-            for campaign in campaigns:
-                found = False
-                for apidata_campaign in self.apidata["campaigns"]:
-                    if campaign.id == apidata_campaign.id:
-                        updated_campaigns.append((apidata_campaign, campaign))
-                        found = True
-                        break  # Exit the inner loop once a match is found
-                if not found:
-                    updated_campaigns.append((campaign, campaign))  # Add to updated_campaigns if not found in apidata
-            self.changes['campaigns'] = updated_campaigns
+        updated_campaigns = []
+        for campaign in campaigns:
+            found = False
+            for apidata_campaign in last_camp:
+                if campaign.id == apidata_campaign.id:
+                    updated_campaigns.append((apidata_campaign, campaign))
+                    found = True
+                    break  # Exit the inner loop once a match is found
+            if not found:
+                print(f"not found camp id {campaign.id}")
+                updated_campaigns.append((campaign, campaign))  # Add to updated_campaigns if not found in apidata
+        self.changes['campaigns'] = updated_campaigns
         self.apidata["campaigns"] = campaigns
         self.dispatches =await hd2.GetApiV1DispatchesAll()
 
@@ -75,22 +107,84 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         try:
             print("updating war")
             await self.update_data()
-            if self.first_get:
-                print("getting update data.")
-                await asyncio.sleep(11)
-                await self.update_data()
-                print("all data retrieved..")
-                self.first_get=False
+            webhook_url = AssetLookup.get_asset("stathook")
         except Exception as e:
             await self.bot.send_error(e, f"Message update cleanup error.")
             gui.gprint(str(e))
 
+    async def gtask_update(self, source_message:discord.Message=None):
+        """
+        Guild task that updates the overview message.
+        """
+        if not source_message:
+            return None
+        context = await self.bot.get_context(source_message)
 
+        #await context.channel.send("Greetings from GTASK.")
+        try:
+            data = self.changes.get("campaigns", None)
+            if not data:
+                return await context.send("No result")
+            
+            
+            profile=ServerHDProfile.get(context.guild.id)
+            if profile:
+                emb=hd2.campaign_view(data)
+                emb.timestamp=discord.utils.utcnow()
+                target=await urltomessage(profile.overview_message_url,context.bot)
+            
+                await target.edit(embed=emb)
+                return "OK"
+        except Exception as e:
+            er = MessageTemplates.get_error_embed(
+                title=f"Error with AUTO", description=f"{str(e)}"
+            )
+            await source_message.channel.send(embed=er)
+            raise e
+        
     @commands.is_owner()
     @commands.command(name="load_now")
     async def load_now(self, ctx: commands.Context):
         await self.update_data()
         await ctx.send("force loaded api data now.")
+
+    pcs = app_commands.Group(name="hd2setup", description="Commands for Helldivers 2 setup.", guild_only=True, default_permissions=discord.Permissions(manage_messages=True, manage_channels=True))
+    @pcs.command(name="make_overview",description="Setup a constantly updating message ")
+    async def overview_make(self, interaction: discord.Interaction):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+
+        profile=ServerHDProfile.get_or_new(ctx.guild.id)
+
+
+        guild=ctx.guild
+        task_name="UPDATEOVERVIEW"
+        autochannel=ctx.channel
+        
+        target_message=await autochannel.send("Overview_message")
+        old = TCGuildTask.get(guild.id, task_name)
+        url=target_message.jump_url
+        profile.update(overview_message_url=url)
+        if not old:
+            now=datetime.now()
+            start_date = datetime(2023, 1, 1, now.hour, now.minute-15)
+            robj = rrule(freq=MINUTELY, interval=15, dtstart=start_date)
+
+            new = TCGuildTask.add_guild_task(guild.id, task_name, target_message, robj)
+            new.to_task(ctx.bot)
+
+            result = f"Overview message set.  every 15 minutes, this message will update with the latest galactic status.  Please don't delete it unless you want to stop."
+            await ctx.send(result)
+        else:
+            old.target_channel_id = autochannel.id
+
+            target_message = await autochannel.send("**ALTERING AUTO CHANNEL...**")
+            old.target_message_url = target_message.jump_url
+            self.bot.database.commit()
+            result = f"Changed the dashboard channel to <#{autochannel.id}>"
+            await ctx.send(result)
+
+
+
 
     pc = app_commands.Group(name="hd2", description="Commands for Helldivers 2.")
 
@@ -171,7 +265,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
 
     @pc.command(name="dispatches", description="get all dispatches.")
-    async def dispatches(self, interaction: discord.Interaction):
+    async def dispatch(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
         data = self.dispatches
@@ -182,6 +276,17 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             embeds.append(s.to_embed())
         await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
 
+    @pc.command(name="overview", description="get campaign overview.")
+    async def campoverview(self, interaction: discord.Interaction):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+
+        data = self.changes.get("campaigns", None)
+
+        
+        if not data:
+            return await ctx.send("No result")
+        emb=hd2.campaign_view(data)
+        await ctx.send(embed=emb)
 
 
 async def setup(bot):

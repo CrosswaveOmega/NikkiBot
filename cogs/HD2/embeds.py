@@ -1,6 +1,8 @@
+from typing import List, Tuple
 import discord
 from .hdapi import human_format
 import json
+from .helldive import Planet,War,Assignment2, Campaign2
 '''
 Collection of embeds for formatting.
 '''
@@ -111,7 +113,8 @@ def create_campaign_str(data):
     return output
 
 
-def create_planet_embed(data, cstr: str,last=None):
+def create_planet_embed(data:Planet, cstr: str,last:Planet=None):
+    '''Create a detailed embed for a single planet.'''
     planet_index = data.get("index", "index error")
     planet_name = data.get("name", "Name error")
     stats = data.get("statistics", None)
@@ -215,3 +218,12 @@ def create_planet_embed(data, cstr: str,last=None):
             )
 
     return embed
+
+def campaign_view(campaigns:List[Tuple[Campaign2,Campaign2]]):
+    emb=discord.Embed(title="Super Earth's Campaign",
+                      description="As of right now, this is the current status of all planets in need of liberation or defence.")
+    for last,camp in campaigns:
+        diff=camp-last
+        name,desc=camp.planet.simple_planet_view(diff.planet)
+        emb.add_field(name=name,value=desc,inline=True)
+    return emb
