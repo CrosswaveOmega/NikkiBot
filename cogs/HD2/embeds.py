@@ -91,7 +91,7 @@ def create_assignment_embed(data,last=None):
             taskstr += f"{task['values'][0]} planets"
         elif task["type"] == 3:
             faction_name = faction_names.get(taskdata["race"], "Unknown Faction")
-            taskstr += f"{taskdata['goal']} ({(progress[e]/taskdata.goal)*100.0}){faction_name}"
+            taskstr += f"{taskdata['goal']} ({(progress[e]/taskdata['goal'])*100.0}){faction_name}"
         else:
             taskstr += f"DATA CORRUPTED.{json.dumps(task)[:50]}."
         tasks += taskstr + "\n"
