@@ -92,7 +92,7 @@ class Planet(BaseApiModel):
         if self.event:
             evt=self.event
             event_fact=emj(self.event.faction.lower())
-            out+=f"\nDefend from {event_fact}, {(evt.health)}{cfi(diff.event.health)}/{(evt.maxHealth)}. \n Lib {(evt.health/evt.maxHealth)*100.0}% {cfi((diff.evt.health/evt.maxHealth)*100.0)}"
+            out+=f"\nDefend from {event_fact}, {(evt.health)}{cfi(diff.event.health)}/{(evt.maxHealth)}. \n Lib {(evt.health/evt.maxHealth)*100.0}% {cfi((diff.event.health/evt.maxHealth)*100.0)}"
         return name,out
 
 
