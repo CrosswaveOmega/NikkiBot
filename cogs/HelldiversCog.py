@@ -129,7 +129,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             
             profile=ServerHDProfile.get(context.guild.id)
             if profile:
-                a,b= 
                 emb=hd2.campaign_view(data)
                 emb.timestamp=discord.utils.utcnow()
                 target=await urltomessage(profile.overview_message_url,context.bot)
