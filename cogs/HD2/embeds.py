@@ -72,7 +72,7 @@ def create_assignment_embed(data,last=None):
 
     progress = data["progress"]
     if last!=None:
-        progress=[f"{t}({l})" for t, l in zip(data.progress, last.progress)]
+        progress=[t for t, l in zip(data.progress, last.progress)]
     embed.add_field(name="Description", value=data["description"], inline=False)
     tasks = ""
     for e, task in enumerate(data["tasks"]):
