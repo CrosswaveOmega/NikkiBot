@@ -129,11 +129,16 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             
             profile=ServerHDProfile.get(context.guild.id)
             if profile:
+                a,b= 
                 emb=hd2.campaign_view(data)
                 emb.timestamp=discord.utils.utcnow()
                 target=await urltomessage(profile.overview_message_url,context.bot)
-            
-                await target.edit(embed=emb)
+                embs=[emb]
+                if self.changes['assignments']:
+                    a, b=self.changes['assignments'][0]
+                    embs.append(hd2.create_assignment_embed(b,b-a))
+                    
+                await target.edit(embeds=embs)
                 return "OK"
         except Exception as e:
             er = MessageTemplates.get_error_embed(
