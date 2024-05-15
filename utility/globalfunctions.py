@@ -291,8 +291,7 @@ def extract_timestamp(timestamp):
     timestamp_adjusted = timestamp_parts[0] + '.' + timestamp_parts[1][:6] + 'Z'
     
     # Convert the adjusted timestamp string to a datetime object
-    datetime_obj = datetime.strptime(timestamp_adjusted, format_string)
-
+    datetime_obj = datetime.strptime(timestamp_adjusted, format_string).astimezone(datetime.timezone.utc)
     return datetime_obj
 
 
