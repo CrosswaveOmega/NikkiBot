@@ -5,7 +5,7 @@ from io import BytesIO
 from PIL import Image, ImageDraw
 
 
-from datetime import datetime, timedelta, timezone, 
+from datetime import datetime, timedelta, timezone
 
 from discord.ext import commands, tasks
 
