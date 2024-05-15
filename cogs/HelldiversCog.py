@@ -106,7 +106,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             planet_data={}
             for planet in planets:
                 planet_data[planet.index]=planet
-            self.apidata['planets']=planets
+            self.apidata['planets']=planet_data
             self.planets_data = datetime.now()
 
 
