@@ -17,6 +17,7 @@ from .globalfunctions import (
     filter_trace_stack,
     split_string_with_code_blocks,
     prioritized_string_split,
+    extract_timestamp,
     find_urls,
     human_format,
 )

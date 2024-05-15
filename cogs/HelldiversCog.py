@@ -39,6 +39,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         # self.session=aiohttp.ClientSession()
         
         self.apidata = {}
+        self.planets_data=datetime(2024,1,1,0,0,0)
         self.changes = {}
         self.dispatches = None
         self.first_get=True
@@ -100,6 +101,13 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         self.changes['campaigns'] = updated_campaigns
         self.apidata["campaigns"] = campaigns
         self.dispatches =await hd2.GetApiV1DispatchesAll()
+        if self.planets_data and datetime.now() >= self.planets_data + timedelta(hours=2):
+            planets=await hd2.GetApiV1PlanetsAll()
+            planet_data={}
+            for planet in planets:
+                planet_data[planet.index]=planet
+            self.apidata['planets']=planets
+            self.planets_data = datetime.now()
 
 
     @tasks.loop(minutes=15)
@@ -135,7 +143,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 embs=[emb]
                 if self.changes['assignments']:
                     a, b=self.changes['assignments'][0]
-                    embs.append(hd2.create_assignment_embed(b,b-a))
+                    embs.append(hd2.create_assignment_embed(b,b-a,planets=self.apidata['planets']))
                     
                 await target.edit(embeds=embs)
                 return "OK"
@@ -264,6 +272,22 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                     if camp['planet']['currentOwner']=='Automaton' or evtcheck:
                         cstr = hd2.create_campaign_str(camp)
                         embeds.append(hd2.create_planet_embed(camp.planet, cstr=cstr,last=diff))
+        await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
+    
+    @pc.command(name="planet", description="get data for specific planet(s)")
+    @app_commands.describe(byplanet="view specific planet index.")
+    async def pstate(self, interaction: discord.Interaction,byplanet:int):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+
+        data = self.changes.get("planets", None)
+        if not data:
+            return await ctx.send("No result")
+        embeds=[]
+        if byplanet:
+            if byplanet in self.apidata['planets']:
+                planet= self.apidata['planets'][byplanet]
+                embeds.append(hd2.create_planet_embed(planet, cstr='',last=None))
+
         await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
 
     @pc.command(name="dispatches", description="get all dispatches.")

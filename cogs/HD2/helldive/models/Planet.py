@@ -9,7 +9,8 @@ from .Hazard import Hazard
 from .Position import Position
 from .Statistics import Statistics
 
-from utility import human_format as hf, select_emoji as emj, changeformatif as cfi
+from utility import human_format as hf, select_emoji as emj, changeformatif as cfi, extract_timestamp as et
+from discord.utils import format_dt as fdt
 
 class Planet(BaseApiModel):
     """
@@ -91,8 +92,9 @@ class Planet(BaseApiModel):
         out=f"{players}\nHealth {(self.health/self.maxHealth)*100.0}% {cfi((diff.health/self.maxHealth)*100.0)}"
         if self.event:
             evt=self.event
+            timev=fdt(et(evt.endTime),'R')
             event_fact=emj(self.event.faction.lower())
-            out+=f"\nDefend from {event_fact}, {(evt.health)}{cfi(diff.event.health)}/{(evt.maxHealth)}. \n Lib {(evt.health/evt.maxHealth)*100.0}% {cfi((diff.event.health/evt.maxHealth)*100.0)}"
+            out+=f"\n{timev} Defend from {event_fact}, {(evt.health)}{cfi(diff.event.health)}/{(evt.maxHealth)}. \n Lib {(evt.health/evt.maxHealth)*100.0}% {cfi((diff.event.health/evt.maxHealth)*100.0)}"
         return name,out
 
 

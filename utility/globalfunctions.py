@@ -281,6 +281,16 @@ async def get_server_icon_color(guild: discord.Guild) -> str:
     hex = int(hex_color, 16)
     return hex
 
+
+def extract_timestamp(timestamp):
+    format_string = "%Y-%m-%dT%H:%M:%S.%fZ"
+    
+    # Convert the timestamp string to a datetime object
+    datetime_obj = datetime.strptime(timestamp, format_string)
+
+    return datetime_obj
+
+
 def human_format(num):
     '''Format a large number'''
     num = float("{:.3g}".format(num))

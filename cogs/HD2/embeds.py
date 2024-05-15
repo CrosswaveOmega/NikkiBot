@@ -1,6 +1,5 @@
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 import discord
-from .hdapi import human_format
 import json
 from .helldive import Planet,War,Assignment2, Campaign2
 '''
@@ -8,18 +7,20 @@ Collection of embeds for formatting.
 '''
 
 
+from utility import human_format as hf, select_emoji as emj, changeformatif as cfi, extract_timestamp as et
+from discord.utils import format_dt as fdt
 
 def create_war_embed(data, last=None):
     stats = data["statistics"]
     stat_str = data.statistics.format_statistics()
-    if stats and last!=None:
+    if stats and (last is not None):
         stat_str = stats.diff_format(stats-last.statistics)
 
     embed = discord.Embed(title="War", description=f"{stat_str}", color=0xFF0000)
 
-    embed.add_field(name="Started", value=data["started"], inline=False)
-    embed.add_field(name="Ended", value=data["ended"], inline=False)
-    embed.add_field(name="Now", value=data["now"], inline=False)
+    embed.add_field(name="Started", value=fdt(et(data["started"]),'F'), inline=False)
+    embed.add_field(name="Ended", value=fdt(et(data["ended"]),'F'), inline=False)
+    embed.add_field(name="Now", value=fdt(et(data["now"]),'F'), inline=False)
     embed.add_field(name="Client Version", value=data["clientVersion"], inline=False)
 
     factions = ", ".join(data["factions"])
@@ -61,7 +62,7 @@ faction_names = {
 campaign_types = {0: "Liberation / Defense", 1: "Recon", 2: "Story"}
 
 
-def create_assignment_embed(data,last=None):
+def create_assignment_embed(data,last=None,planets:Dict[int,Planet]={}):
     did, title = data["id"], data["title"]
     briefing = data["briefing"]
     embed = discord.Embed(
@@ -71,27 +72,30 @@ def create_assignment_embed(data,last=None):
     )
 
     progress = data["progress"]
-    if last!=None:
-        progress=[t for t, l in zip(data.progress, last.progress)]
+    if (last is not None):
+        progress=[(t,l) for t, l in zip(data.progress, last.progress)]
     embed.add_field(name="Description", value=data["description"], inline=False)
     tasks = ""
     for e, task in enumerate(data["tasks"]):
         task_type = task_types.get(task["type"], "Unknown Task Type")
         taskdata = {"planet_index": "ERR", "race": 15}
-        taskstr = f"[{e}]{task_type}: p {progress[e]},"
+        curr,last=progress[e]
+        taskstr = f"[{e}]{task_type}: p {curr},"
         for v, vt in zip(task["values"], task["valueTypes"]):
             #print(v, value_types.get(vt, "Unmapped vt"))
             taskdata[value_types[vt]] = v
 
         if task["type"] in (11, 13):
             planet_name = taskdata["planet_index"]
+            if int(planet_name) in planets:
+                planet_name=planets[int(planet_name)].name
             taskstr += f"{planet_name}"
         elif task["type"] == 12:
             planet_name = taskdata["planet_index"]
             taskstr += f"{task['values'][0]} planets"
         elif task["type"] == 3:
             faction_name = faction_names.get(taskdata["race"], "Unknown Faction")
-            taskstr += f"{taskdata['goal']} ({(int(progress[e])/int(taskdata['goal']))*100.0}){faction_name}"
+            taskstr += f"{taskdata['goal']} ({(int(curr)/int(taskdata['goal']))*100.0}){faction_name}"
         else:
             taskstr += f"DATA CORRUPTED.{json.dumps(task)[:50]}."
         tasks += taskstr + "\n"
@@ -119,7 +123,7 @@ def create_planet_embed(data:Planet, cstr: str,last:Planet=None):
     planet_name = data.get("name", "Name error")
     stats = data.get("statistics", None)
     stat_str = stats.format_statistics()
-    if stats and last!=None:
+    if stats and (last is not None):
         stat_str = stats.diff_format(last.statistics)
     planet_sector = data.get("sector", "sector error")
     embed = discord.Embed(
@@ -171,17 +175,17 @@ def create_planet_embed(data:Planet, cstr: str,last:Planet=None):
 
     if event_info:
         event_details = (
-            f"ID: {(event_info['id'])}, Type: {human_format(event_info['eventType'])}, Faction: {event_info['faction']}\n"
-            f"Max Health: {human_format(event_info['maxHealth'])}, Health: {human_format(event_info['health'])}\n"
-            f"Start Time: {event_info['startTime']}, End Time: {event_info['endTime']}\n"
-            f"Campaign ID: {human_format(event_info['campaignId'])}, Joint Operation IDs: {', '.join(map(str, event_info['jointOperationIds']))}"
+            f"ID: {(event_info['id'])}, Type: {hf(event_info['eventType'])}, Faction: {event_info['faction']}\n"
+            f"Max Health: {hf(event_info['maxHealth'])}, Health: {hf(event_info['health'])}\n"
+            f"Start Time: {fdt(et(event_info['startTime']),'R')}, End Time: {fdt(et(event_info['endTime']),'R')}\n"
+            f"Campaign ID: {hf(event_info['campaignId'])}, Joint Operation IDs: {', '.join(map(str, event_info['jointOperationIds']))}"
         )
         if last.event:
             event_details = (
-                f"ID: {(event_info['id'])}, Type: {human_format(event_info['eventType'])}, Faction: {event_info['faction']}\n"
-                f"Max Health: {human_format(event_info['maxHealth'])}, Health: {human_format(event_info['health'])}({human_format(last.event.health)})\n"
-                f"Start Time: {event_info['startTime']}, End Time: {event_info['endTime']}\n"
-                f"Campaign ID: {human_format(event_info['campaignId'])}, Joint Operation IDs: {', '.join(map(str, event_info['jointOperationIds']))}"
+                f"ID: {(event_info['id'])}, Type: {hf(event_info['eventType'])}, Faction: {event_info['faction']}\n"
+                f"Max Health: {hf(event_info['maxHealth'])}, Health: {hf(event_info['health'])}({hf(last.event.health)})\n"
+                f"Start Time: {fdt(et(event_info['startTime']),'R')}, End Time: {fdt(et(event_info['endTime']),'R')}\n"
+                f"Campaign ID: {hf(event_info['campaignId'])}, Joint Operation IDs: {', '.join(map(str, event_info['jointOperationIds']))}"
             )
         embed.add_field(name="Event Details", value=event_details, inline=False)
     position = data.get("position", None)
