@@ -279,7 +279,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     async def pstate(self, interaction: discord.Interaction,byplanet:int):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
-        data = self.changes.get("planets", None)
+        data = self.apidata.get("planets", None)
         if not data:
             return await ctx.send("No result")
         embeds=[]
