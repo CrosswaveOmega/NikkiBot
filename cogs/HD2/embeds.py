@@ -86,10 +86,11 @@ def create_assignment_embed(data,last=None,planets:Dict[int,Planet]={}):
             taskdata[value_types[vt]] = v
 
         if task["type"] in (11, 13):
-            planet_name = taskdata["planet_index"]
-            if int(planet_name) in planets:
-                planet_name=planets[int(planet_name)].name
-            taskstr += f"{planet_name}"
+            planet_id = taskdata["planet_index"]
+            planet_name="ERR"
+            if int(planet_id) in planets:
+                planet_name=planets[int(planet_id)].name
+            taskstr += f"{planet_name}({planet_id})"
         elif task["type"] == 12:
             planet_name = taskdata["planet_index"]
             taskstr += f"{task['values'][0]} planets"
