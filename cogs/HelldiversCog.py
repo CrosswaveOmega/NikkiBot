@@ -222,10 +222,10 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         if 'assignments' in self.changes:
             for last,this in self.changes['assignments']:
-                await ctx.send(embed=hd2.create_assignment_embed(this,this-last))
+                await ctx.send(embed=hd2.create_assignment_embed(this,this-last,planets=self.apidata['planets']))
         else:
             for s in data:
-                await ctx.send(embed=hd2.create_assignment_embed(s))
+                await ctx.send(embed=hd2.create_assignment_embed(s,planets=self.apidata['planets']))
 
 
     @pc.command(name="campaigns", description="get campaign state.")
