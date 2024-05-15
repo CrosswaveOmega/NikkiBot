@@ -283,10 +283,15 @@ async def get_server_icon_color(guild: discord.Guild) -> str:
 
 
 def extract_timestamp(timestamp):
+    # Define the format of the timestamp string (with 7-digit fractional seconds)
     format_string = "%Y-%m-%dT%H:%M:%S.%fZ"
+
+    # Extract the fractional seconds (up to 6 digits) and Z separately
+    timestamp_parts = timestamp.split('.')
+    timestamp_adjusted = timestamp_parts[0] + '.' + timestamp_parts[1][:6] + 'Z'
     
-    # Convert the timestamp string to a datetime object
-    datetime_obj = datetime.strptime(timestamp, format_string)
+    # Convert the adjusted timestamp string to a datetime object
+    datetime_obj = datetime.strptime(timestamp_adjusted, format_string)
 
     return datetime_obj
 
