@@ -167,8 +167,11 @@ def create_planet_embed(data:Planet, cstr: str,last:Planet=None):
 
     max_health = data.get("maxHealth", 0)
     health = data.get("health", 0)
+    if last:
+        embed.add_field(name="Health", value=f"{health}/{max_health}.  ({last.health} change)", inline=True)
+    else:
+        embed.add_field(name="Health", value=f"{health}/{max_health}.  ", inline=True)
 
-    embed.add_field(name="Health", value=f"{health}/{max_health}.  ({last.health} change)", inline=True)
 
 
     event_info = data.get("event", None)
@@ -180,13 +183,14 @@ def create_planet_embed(data:Planet, cstr: str,last:Planet=None):
             f"Start Time: {fdt(et(event_info['startTime']),'R')}, End Time: {fdt(et(event_info['endTime']),'R')}\n"
             f"Campaign ID: {hf(event_info['campaignId'])}, Joint Operation IDs: {', '.join(map(str, event_info['jointOperationIds']))}"
         )
-        if last.event:
-            event_details = (
-                f"ID: {(event_info['id'])}, Type: {hf(event_info['eventType'])}, Faction: {event_info['faction']}\n"
-                f"Max Health: {hf(event_info['maxHealth'])}, Health: {hf(event_info['health'])}({hf(last.event.health)})\n"
-                f"Start Time: {fdt(et(event_info['startTime']),'R')}, End Time: {fdt(et(event_info['endTime']),'R')}\n"
-                f"Campaign ID: {hf(event_info['campaignId'])}, Joint Operation IDs: {', '.join(map(str, event_info['jointOperationIds']))}"
-            )
+        if last:
+            if last.event:
+                event_details = (
+                    f"ID: {(event_info['id'])}, Type: {hf(event_info['eventType'])}, Faction: {event_info['faction']}\n"
+                    f"Max Health: {hf(event_info['maxHealth'])}, Health: {hf(event_info['health'])}({hf(last.event.health)})\n"
+                    f"Start Time: {fdt(et(event_info['startTime']),'R')}, End Time: {fdt(et(event_info['endTime']),'R')}\n"
+                    f"Campaign ID: {hf(event_info['campaignId'])}, Joint Operation IDs: {', '.join(map(str, event_info['jointOperationIds']))}"
+                )
         embed.add_field(name="Event Details", value=event_details, inline=False)
     position = data.get("position", None)
     if position:
