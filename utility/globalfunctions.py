@@ -5,7 +5,7 @@ from io import BytesIO
 from PIL import Image, ImageDraw
 
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone, 
 
 from discord.ext import commands, tasks
 
@@ -289,11 +289,10 @@ def extract_timestamp(timestamp):
     # Extract the fractional seconds (up to 6 digits) and Z separately
     timestamp_parts = timestamp.split('.')
     timestamp_adjusted = timestamp_parts[0] + '.' + timestamp_parts[1][:6] + 'Z'
-    
-    # Convert the adjusted timestamp string to a datetime object
-    datetime_obj = datetime.strptime(timestamp_adjusted, format_string).astimezone(datetime.timezone.utc)
-    return datetime_obj
 
+    # Convert the adjusted timestamp string to a datetime object
+    datetime_obj = datetime.strptime(timestamp_adjusted, format_string).replace(tzinfo=timezone.utc)
+    return datetime_obj
 
 def human_format(num):
     '''Format a large number'''
