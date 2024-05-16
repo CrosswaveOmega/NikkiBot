@@ -61,7 +61,7 @@ class Planet(BaseApiModel):
         new_event = self.event - other.event if self.event is not None and other.event is not None else self.event
 
         # Create a new instance of the Planet class with calculated values
-        return Planet(
+        planet= Planet(
             health=new_health,
             statistics=new_statistics,
             event=new_event,
@@ -80,6 +80,9 @@ class Planet(BaseApiModel):
             regenPerSecond=self.regenPerSecond,
             attacking=self.attacking,
         )
+        planet.retrieved_at=other.retrieved_at
+        return planet
+
     
     def estimate_remaining_lib_time(self, diff:'Planet'):
         time_elapsed=self.retrieved_at-diff.retrieved_at
