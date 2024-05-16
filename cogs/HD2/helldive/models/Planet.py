@@ -83,9 +83,12 @@ class Planet(BaseApiModel):
     
     def estimate_remaining_lib_time(self, diff:'Planet'):
         time_elapsed=self.retrieved_at-diff.retrieved_at
+        if time_elapsed.total_seconds()==0:
+            return f"{self.retrieved_at}, {diff.retrieved_at}"
         change=diff.health/time_elapsed.total_seconds()
         estimated_seconds=self.health/change
-        return self.retrieved_at+datetime.timedelta(seconds=estimated_seconds)
+        timeval= self.retrieved_at+datetime.timedelta(seconds=estimated_seconds)
+        return fdt(timeval,'R')
         pass
 
     
@@ -100,7 +103,7 @@ class Planet(BaseApiModel):
         players=f"Helldiver count: `{self.statistics.playerCount} {cfi(diff.statistics.playerCount)}`"
         out=f"{players}\nHealth {(self.health/self.maxHealth)*100.0}% {cfi((diff.health/self.maxHealth)*100.0)}"
         remaining_time=self.estimate_remaining_lib_time(diff)
-        out+="\n"+fdt(remaining_time,'R')
+        out+="\n"+
         if self.event:
             evt=self.event
             timev=fdt(et(evt.endTime),'R')
