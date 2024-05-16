@@ -1,8 +1,11 @@
 from typing import *
-
+import datetime
 from pydantic import Field
 from .ABC.model import BaseApiModel
 
+
+from utility import human_format as hf, select_emoji as emj, changeformatif as cfi, extract_timestamp as et
+from discord.utils import format_dt as fdt
 
 class Event(BaseApiModel):
     """
@@ -31,7 +34,7 @@ class Event(BaseApiModel):
 
     def __sub__(self, other: "Event") -> "Event":
         new_health = self.health - other.health if self.health is not None and other.health is not None else None
-        return Event(
+        event= Event(
             id=self.id,
             eventType=self.eventType,
             faction=self.faction,
@@ -42,3 +45,18 @@ class Event(BaseApiModel):
             campaignId=self.campaignId,
             jointOperationIds=self.jointOperationIds,
         )
+        event.retrieved_at=other.retrieved_at
+        return event
+    
+    def estimate_remaining_lib_time(self, diff:'Event'):
+        time_elapsed=self.retrieved_at-diff.retrieved_at
+        if time_elapsed.total_seconds()==0:
+            return f""
+        change=diff.health/time_elapsed.total_seconds()
+        if change==0:
+            return f"Stalemate."
+        estimated_seconds=abs(self.health/change)
+        timeval= self.retrieved_at+datetime.timedelta(seconds=estimated_seconds)
+        return f"{change},{fdt(timeval,'R')}"
+        pass
+

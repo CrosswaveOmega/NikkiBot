@@ -87,10 +87,10 @@ class Planet(BaseApiModel):
     def estimate_remaining_lib_time(self, diff:'Planet'):
         time_elapsed=self.retrieved_at-diff.retrieved_at
         if time_elapsed.total_seconds()==0:
-            return f"{self.retrieved_at}, {diff.retrieved_at}"
+            return f""
         change=diff.health/time_elapsed.total_seconds()
         if change==0:
-            return f"{self.health},{diff.health} {time_elapsed.total_seconds()}"
+            return f"Stalemate."
         estimated_seconds=abs(self.health/change)
         timeval= self.retrieved_at+datetime.timedelta(seconds=estimated_seconds)
         return f"{change},{fdt(timeval,'R')}"
@@ -105,7 +105,7 @@ class Planet(BaseApiModel):
         faction=emj(self.currentOwner.lower())
         
         name=f"{faction}P#{self.index}: {self.name}"
-        players=f"Helldiver count: `{self.statistics.playerCount} {cfi(diff.statistics.playerCount)}`"
+        players=f"{emj('hdi')}: `{self.statistics.playerCount} {cfi(diff.statistics.playerCount)}`"
         out=f"{players}\nHealth {(self.health/self.maxHealth)*100.0}% {cfi((diff.health/self.maxHealth)*100.0)}"
         remaining_time=self.estimate_remaining_lib_time(diff)
         out+="\n"+remaining_time
@@ -113,7 +113,9 @@ class Planet(BaseApiModel):
             evt=self.event
             timev=fdt(et(evt.endTime),'R')
             event_fact=emj(self.event.faction.lower())
-            out+=f"\n{timev} Defend from {event_fact}, {(evt.health)}{cfi(diff.event.health)}/{(evt.maxHealth)}. \n Lib {(evt.health/evt.maxHealth)*100.0}% {cfi((diff.event.health/evt.maxHealth)*100.0)}"
+            out+=f"\n{timev} Defend from {event_fact}, {evt.health}{cfi(diff.event.health)}/{evt.maxHealth}. \n Lib {round((evt.health/evt.maxHealth)*100.0, 5)}% {cfi(round((diff.event.health/evt.maxHealth)*100.0, 5))}"
+            out+=f"\n {self.event.estimate_remaining_lib_time(diff.event)}"
+
         return name,out
 
 
