@@ -6,6 +6,7 @@ from datetime import datetime
 class BaseApiModel(BaseModel):
     '''Base extended model class'''
     
+    retrieved_at: Optional[datetime] = None
     def __init__(self, **data):
         super().__init__(**data)
         self.retrieved_at = datetime.now()
