@@ -103,7 +103,7 @@ class Planet(BaseApiModel):
         players=f"Helldiver count: `{self.statistics.playerCount} {cfi(diff.statistics.playerCount)}`"
         out=f"{players}\nHealth {(self.health/self.maxHealth)*100.0}% {cfi((diff.health/self.maxHealth)*100.0)}"
         remaining_time=self.estimate_remaining_lib_time(diff)
-        out+="\n"+
+        out+="\n"+remaining_time
         if self.event:
             evt=self.event
             timev=fdt(et(evt.endTime),'R')
