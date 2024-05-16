@@ -1,7 +1,7 @@
 from typing import *
 # pylint: disable=no-name-in-module
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timezone
 
 class BaseApiModel(BaseModel):
     '''Base extended model class'''
@@ -9,7 +9,7 @@ class BaseApiModel(BaseModel):
     retrieved_at: Optional[datetime] = None
     def __init__(self, **data):
         super().__init__(**data)
-        self.retrieved_at = datetime.now()
+        self.retrieved_at = datetime.now(tz=timezone.utc)
 
     def __getitem__(self, attr):
         """
