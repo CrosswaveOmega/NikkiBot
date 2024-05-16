@@ -115,7 +115,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         try:
             print("updating war")
             await self.update_data()
-            webhook_url = AssetLookup.get_asset("stathook")
         except Exception as e:
             await self.bot.send_error(e, f"Message update cleanup error.")
             gui.gprint(str(e))
