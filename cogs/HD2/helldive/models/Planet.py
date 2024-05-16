@@ -90,8 +90,10 @@ class Planet(BaseApiModel):
             return f""
         change=diff.health/time_elapsed.total_seconds()
         if change==0:
-            return f"Stalemate."
-        if change<0:
+            if self.currentOwner.lower()!='humans':
+                return f"Stalemate."
+            return ""
+        if change>0:
             return "Losing."
         estimated_seconds=abs(self.health/change)
         timeval= self.retrieved_at+datetime.timedelta(seconds=estimated_seconds)
@@ -115,7 +117,8 @@ class Planet(BaseApiModel):
             evt=self.event
             timev=fdt(et(evt.endTime),'R')
             event_fact=emj(self.event.faction.lower())
-            out+=f"\n{timev} Defend from {event_fact}, {evt.health}{cfi(diff.event.health)}/{evt.maxHealth}. \n Lib {round((evt.health/evt.maxHealth)*100.0, 5)}% {cfi(round((diff.event.health/evt.maxHealth)*100.0, 5))}"
+            #, {evt.health}{cfi(diff.event.health)}/{evt.maxHealth}.
+            out+=f"\n Time limit:{timev} Defend from {event_fact} \n Lib {round((evt.health/evt.maxHealth)*100.0, 5)}% {cfi(round((diff.event.health/evt.maxHealth)*100.0, 5))}"
             out+=f"\n {self.event.estimate_remaining_lib_time(diff.event)}"
 
         return name,out
