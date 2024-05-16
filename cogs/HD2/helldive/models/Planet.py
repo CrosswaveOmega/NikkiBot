@@ -90,7 +90,7 @@ class Planet(BaseApiModel):
             return f"{self.retrieved_at}, {diff.retrieved_at}"
         change=diff.health/time_elapsed.total_seconds()
         if change==0:
-            return f"{self.health}, {time_elapsed.total_seconds()}"
+            return f"{self.health},{diff.health} {time_elapsed.total_seconds()}"
         estimated_seconds=self.health/change
         timeval= self.retrieved_at+datetime.timedelta(seconds=estimated_seconds)
         return fdt(timeval,'R')
