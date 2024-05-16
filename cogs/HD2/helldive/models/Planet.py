@@ -1,3 +1,4 @@
+import datetime
 from typing import *
 
 from pydantic import Field
@@ -80,6 +81,14 @@ class Planet(BaseApiModel):
             attacking=self.attacking,
         )
     
+    def estimate_remaining_lib_time(self, diff:'Planet'):
+        time_elapsed=self.retrieved_at-diff.retrieved_at
+        change=diff.health/time_elapsed.total_seconds()
+        estimated_seconds=self.health/change
+        return self.retrieved_at+datetime.timedelta(seconds=estimated_seconds)
+        pass
+
+    
     def simple_planet_view(self,prev:Optional['Planet']=None)->Tuple[str,str]:
         diff=self-self
         if prev is not None: 
@@ -90,6 +99,8 @@ class Planet(BaseApiModel):
         name=f"{faction}P#{self.index}: {self.name}"
         players=f"Helldiver count: `{self.statistics.playerCount} {cfi(diff.statistics.playerCount)}`"
         out=f"{players}\nHealth {(self.health/self.maxHealth)*100.0}% {cfi((diff.health/self.maxHealth)*100.0)}"
+        remaining_time=self.estimate_remaining_lib_time(diff)
+        out+="\n"+fdt(remaining_time,'R')
         if self.event:
             evt=self.event
             timev=fdt(et(evt.endTime),'R')
