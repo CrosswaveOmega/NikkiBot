@@ -97,7 +97,7 @@ class Planet(BaseApiModel):
             return "Losing."
         estimated_seconds=abs(self.health/change)
         timeval= self.retrieved_at+datetime.timedelta(seconds=estimated_seconds)
-        return f"{change},{fdt(timeval,'R')}"
+        return f"{round(change,5)},{fdt(timeval,'R')}"
         pass
 
     
@@ -110,7 +110,7 @@ class Planet(BaseApiModel):
         
         name=f"{faction}P#{self.index}: {self.name}"
         players=f"{emj('hdi')}: `{self.statistics.playerCount} {cfi(diff.statistics.playerCount)}`"
-        out=f"{players}\nHealth {(self.health/self.maxHealth)*100.0}% {cfi((diff.health/self.maxHealth)*100.0)}"
+        out=f"{players}\nHealth {round((self.health/self.maxHealth)*100.0,5)}% {cfi(round((diff.health/self.maxHealth)*100.0,5))}"
         remaining_time=self.estimate_remaining_lib_time(diff)
         out+="\n"+remaining_time
         if self.event:
