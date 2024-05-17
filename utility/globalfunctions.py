@@ -289,9 +289,9 @@ def extract_timestamp(timestamp):
     # Extract the fractional seconds (up to 6 digits) and Z separately
     timestamp_parts = timestamp.split('.')
     timestamp_adjusted = timestamp_parts[0] 
-    if len(timestamp_adjusted)>=2:
+    if len(timestamp_parts)>=2:
         timestamp_adjusted+= '.' + timestamp_parts[1][:6] + 'Z'
-    else
+    else:
         timestamp_adjusted+= '.' + 0 + 'Z'
     # Convert the adjusted timestamp string to a datetime object
     datetime_obj = datetime.strptime(timestamp_adjusted, format_string).replace(tzinfo=timezone.utc)
