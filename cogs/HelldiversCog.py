@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Literal
+from typing import Literal, Dict, List
 from assets import AssetLookup
 import gui
 import discord
@@ -31,6 +31,7 @@ from discord.ext import commands
 from .HD2.db import ServerHDProfile
 import cogs.HD2 as hd2
 from utility.embed_paginator import pages_of_embeds
+
 class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     """cog for helldivers 2.  Consider it my embedded automaton spy."""
 
@@ -41,6 +42,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         self.apidata = {}
         self.planets_data=datetime(2024,1,1,0,0,0)
         self.changes = {}
+        self.past_campaign_lists:Dict[int,List[hd2.Campaign2]]={}
         self.dispatches = None
         self.first_get=True
         #self.profiles=ServerHDProfile.get_entries_with_overview_message_id()
@@ -88,17 +90,28 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         self.apidata["assignments"] = assignments
         
         updated_campaigns = []
+        found_ids=[]
         for campaign in campaigns:
             found = False
+            found_ids.append(campaign.id)
             for apidata_campaign in last_camp:
                 if campaign.id == apidata_campaign.id:
                     updated_campaigns.append((apidata_campaign, campaign))
+                    self.past_campaign_lists[campaign.id].append(campaign-apidata_campaign)
+                    if len(self.past_campaign_lists[campaign.id])>5:
+                        self.past_campaign_lists[campaign.id].pop(0)
                     found = True
                     break  # Exit the inner loop once a match is found
             if not found:
                 print(f"not found camp id {campaign.id}")
+                self.past_campaign_lists[campaign.id]=[]
                 updated_campaigns.append((campaign, campaign))  # Add to updated_campaigns if not found in apidata
+        past_keys=list(self.past_campaign_lists.keys())
+        for k in past_keys:
+            if k not in found_ids:
+                self.past_campaign_lists.pop(k) 
         self.changes['campaigns'] = updated_campaigns
+
         self.apidata["campaigns"] = campaigns
         self.dispatches =await hd2.GetApiV1DispatchesAll()
         if self.planets_data and datetime.now() >= self.planets_data + timedelta(hours=2):
@@ -136,7 +149,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             
             profile=ServerHDProfile.get(context.guild.id)
             if profile:
-                emb=hd2.campaign_view(data)
+                emb=hd2.campaign_view(data,self.past_campaign_lists)
                 emb.timestamp=discord.utils.utcnow()
                 target=await urltomessage(profile.overview_message_url,context.bot)
                 embs=[emb]
@@ -310,7 +323,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         
         if not data:
             return await ctx.send("No result")
-        emb=hd2.campaign_view(data)
+        emb=hd2.campaign_view(data,self.past_campaign_lists)
         await ctx.send(embed=emb)
 
 

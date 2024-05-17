@@ -1,7 +1,7 @@
 from .embeds import campaign_view,create_assignment_embed, create_campaign_str,create_planet_embed, create_war_embed
 
 from .hdapi import call_api
-
+from .db import ServerHDProfile
 from .helldive import *
 
 async def setup(bot):

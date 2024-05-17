@@ -80,12 +80,12 @@ class Planet(BaseApiModel):
             regenPerSecond=self.regenPerSecond,
             attacking=self.attacking,
         )
-        planet.retrieved_at=other.retrieved_at
+        planet.retrieved_at=self.retrieved_at-other.retrieved_at
         return planet
 
     
     def estimate_remaining_lib_time(self, diff:'Planet'):
-        time_elapsed=self.retrieved_at-diff.retrieved_at
+        time_elapsed=diff.retrieved_at
         if time_elapsed.total_seconds()==0:
             return f""
         change=diff.health/time_elapsed.total_seconds()
@@ -100,8 +100,37 @@ class Planet(BaseApiModel):
         return f"{round(change,5)},{fdt(timeval,'R')}"
         pass
 
+    @staticmethod
+    def average(planets_list: List['Planet']) -> 'Planet':
+        count = len(planets_list)
+        if count == 0:
+            return Planet()
+        
+        avg_health = sum(planet.health for planet in planets_list if planet.health is not None) // count
+        avg_statistics = Statistics.average([planet.statistics for planet in planets_list if planet.statistics is not None])
+        avg_event = Event.average([planet.event for planet in planets_list if planet.event is not None])
+
+        avg_time=  sum(planet.retrieved_at.total_seconds() for planet in planets_list if planet.retrieved_at is not None) // count
+        avg_planet = Planet(
+            health=avg_health,
+            statistics=avg_statistics,
+            event=avg_event,
+            index=planets_list[0].index,
+            name=planets_list[0].name,
+            sector=planets_list[0].sector,
+            hash=planets_list[0].hash,
+            waypoints=planets_list[0].waypoints,
+            maxHealth=planets_list[0].maxHealth,
+            disabled=planets_list[0].disabled,
+            initialOwner=planets_list[0].initialOwner,
+            currentOwner=planets_list[0].currentOwner,
+            regenPerSecond=planets_list[0].regenPerSecond,
+            attacking=planets_list[0].attacking,
+        )
+        avg_planet.retrieved_at=datetime.timedelta(seconds=avg_time)
+        return avg_planet
     
-    def simple_planet_view(self,prev:Optional['Planet']=None)->Tuple[str,str]:
+    def simple_planet_view(self,prev:Optional['Planet']=None,avg:Optional['Planet']=None)->Tuple[str,str]:
         diff=self-self
         if prev is not None: 
             diff=prev
@@ -111,15 +140,18 @@ class Planet(BaseApiModel):
         name=f"{faction}P#{self.index}: {self.name}"
         players=f"{emj('hdi')}: `{self.statistics.playerCount} {cfi(diff.statistics.playerCount)}`"
         out=f"{players}\nHealth {round((self.health/self.maxHealth)*100.0,5)}% {cfi(round((diff.health/self.maxHealth)*100.0,5))}"
-        remaining_time=self.estimate_remaining_lib_time(diff)
-        out+="\n"+remaining_time
+        if avg:
+            remaining_time=self.estimate_remaining_lib_time(avg)
+            out+="\n"+remaining_time
         if self.event:
             evt=self.event
             timev=fdt(et(evt.endTime),'R')
             event_fact=emj(self.event.faction.lower())
             #, {evt.health}{cfi(diff.event.health)}/{evt.maxHealth}.
             out+=f"\n Time limit:{timev} Defend from {event_fact} \n Lib {round((evt.health/evt.maxHealth)*100.0, 5)}% {cfi(round((diff.event.health/evt.maxHealth)*100.0, 5))}"
-            out+=f"\n {self.event.estimate_remaining_lib_time(diff.event)}"
+            if avg:
+                if avg.event:
+                    out+=f"\n {self.event.estimate_remaining_lib_time(avg.event)}"
 
         return name,out
 

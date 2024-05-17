@@ -45,11 +45,33 @@ class Event(BaseApiModel):
             campaignId=self.campaignId,
             jointOperationIds=self.jointOperationIds,
         )
-        event.retrieved_at=other.retrieved_at
+        event.retrieved_at=self.retrieved_at-other.retrieved_at
         return event
     
+    @staticmethod
+    def average(events_list: List['Event']) -> 'Event':
+        count = len(events_list)
+        if count == 0:
+            return Event()
+        
+        avg_health = sum(event.health for event in events_list if event.health is not None) // count
+        avg_time=  sum(event.retrieved_at.total_seconds() for event in events_list if event.retrieved_at is not None) // count
+        avg_event = Event(
+            health=avg_health,
+            maxHealth=events_list[0].maxHealth,
+            faction=events_list[0].faction,
+            startTime=events_list[0].startTime,
+            endTime=events_list[0].endTime,
+            eventType=events_list[0].eventType,
+            id=events_list[0].id,
+            campaignId=events_list[0].campaignId,
+            jointOperationIds=events_list[0].jointOperationIds,
+        )
+        avg_event.retrieved_at=datetime.timedelta(seconds=avg_time)
+        return avg_event
+    
     def estimate_remaining_lib_time(self, diff:'Event'):
-        time_elapsed=self.retrieved_at-diff.retrieved_at
+        time_elapsed=diff.retrieved_at
         if time_elapsed.total_seconds()==0:
             return f""
         change=diff.health/time_elapsed.total_seconds()

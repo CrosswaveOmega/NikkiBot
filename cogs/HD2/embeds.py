@@ -228,11 +228,16 @@ def create_planet_embed(data:Planet, cstr: str,last:Planet=None):
 
     return embed
 
-def campaign_view(campaigns:List[Tuple[Campaign2,Campaign2]]):
-    emb=discord.Embed(title="Super Earth's Campaign",
-                      description="As of right now, this is the current status of all planets in need of liberation or defence.")
+def campaign_view(campaigns:List[Tuple[Campaign2,Campaign2]],past:Dict[int,List[Campaign2]]):
+    emb=discord.Embed(title="Galactic War Overview",
+                      description="Deploying statistical strategy.")
     for last,camp in campaigns:
         diff=camp-last
-        name,desc=camp.planet.simple_planet_view(diff.planet)
+        avg=None
+        if past[camp.id]:
+            print([(c.planet.health) for c in past[camp.id]])
+            avg=Planet.average([c.planet for c in past[camp.id]])
+        print(avg)
+        name,desc=camp.planet.simple_planet_view(diff.planet,avg)
         emb.add_field(name=name,value=desc,inline=True)
     return emb

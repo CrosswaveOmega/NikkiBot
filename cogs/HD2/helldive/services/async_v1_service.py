@@ -33,18 +33,35 @@ async def make_api_request(
 
     if response.status_code != 200:
         raise HTTPException(response.status_code, f"Failed with status code: {response.status_code}")
-
+    now=datetime.datetime.now(tz=datetime.timezone.utc)
     data = response.json()
     if index is not None:
         if isinstance(data, dict):
-            return model(**data) if data else model()
+            if data:
+              mod=model(**data)
+              mod.retrieved_at=now
+              return mod 
+            return model()
         elif isinstance(data, list):
-            return model(**data[0]) if data else model()
+            if data:
+                mod= model(**data[0])
+                mod.retrieved_at=now
+                return mod
+            return model()
     else:
         if isinstance(data, list):
-            return [model(**item) for item in data]
+            models=[]
+            for item in data:
+                mod=model(**item)
+                mod.retrieved_at=now
+                models.append(mod)
+            return models
         elif isinstance(data, dict):
-            return model(**data) if data else {}
+            if data:
+                mod=model(**data)
+                mod.retrieved_at=now
+                return mod
+            return {}
 
 
 async def GetApiV1War(api_config_override: Optional[APIConfig] = None) -> War:

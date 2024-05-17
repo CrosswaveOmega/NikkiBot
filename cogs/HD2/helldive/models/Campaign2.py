@@ -28,4 +28,5 @@ class Campaign2(BaseApiModel):
             type=self.type,
             count=self.count
         )
+        camp.retrieved_at=self.retrieved_at-other.retrieved_at
         return camp

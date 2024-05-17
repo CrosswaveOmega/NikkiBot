@@ -62,7 +62,32 @@ class Statistics(BaseApiModel):
         )
         
 
-
+    @staticmethod
+    def average(stats_list: List['Statistics']) -> 'Statistics':
+        count = len(stats_list)
+        if count == 0:
+            return Statistics()
+        
+        avg_stats = Statistics(
+            missionsWon=sum(stat.missionsWon for stat in stats_list if stat.missionsWon is not None) // count,
+            missionsLost=sum(stat.missionsLost for stat in stats_list if stat.missionsLost is not None) // count,
+            missionTime=sum(stat.missionTime for stat in stats_list if stat.missionTime is not None) // count,
+            terminidKills=sum(stat.terminidKills for stat in stats_list if stat.terminidKills is not None) // count,
+            automatonKills=sum(stat.automatonKills for stat in stats_list if stat.automatonKills is not None) // count,
+            illuminateKills=sum(stat.illuminateKills for stat in stats_list if stat.illuminateKills is not None) // count,
+            bulletsFired=sum(stat.bulletsFired for stat in stats_list if stat.bulletsFired is not None) // count,
+            bulletsHit=sum(stat.bulletsHit for stat in stats_list if stat.bulletsHit is not None) // count,
+            timePlayed=sum(stat.timePlayed for stat in stats_list if stat.timePlayed is not None) // count,
+            deaths=sum(stat.deaths for stat in stats_list if stat.deaths is not None) // count,
+            revives=sum(stat.revives for stat in stats_list if stat.revives is not None) // count,
+            friendlies=sum(stat.friendlies for stat in stats_list if stat.friendlies is not None) // count,
+            missionSuccessRate=sum(stat.missionSuccessRate for stat in stats_list if stat.missionSuccessRate is not None) // count,
+            accuracy=sum(stat.accuracy for stat in stats_list if stat.accuracy is not None) // count,
+            playerCount=sum(stat.playerCount for stat in stats_list if stat.playerCount is not None) // count,
+        )
+        
+        
+        return avg_stats
 
     def format_statistics(self)->str:
         '''
