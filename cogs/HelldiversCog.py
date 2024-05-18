@@ -39,10 +39,12 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     def __init__(self, bot):
         self.bot: TCBot = bot
         # self.session=aiohttp.ClientSession()
-        self.apistatus=hd2.ApiStatus()
+        hdoverride=hd2.APIConfig()
+        hdoverride.client_name=bot.keys.get("hd2cli")
+        self.apistatus=hd2.ApiStatus(client=hdoverride)
         
         self.hd2=load_json_with_substitutions('./assets/json','flavor.json',{}).get('hd2',{})
-        self.first_get=True
+        self.api_up=True
         #self.profiles=ServerHDProfile.get_entries_with_overview_message_id()
         
         Guild_Task_Functions.add_task_function("UPDATEOVERVIEW", self.gtask_update)
@@ -66,7 +68,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         Guild_Task_Functions.remove_task_function("UPDATEOVERVIEW")
 
     async def update_data(self):
-        await self.apistatus.update_data()
+        if self.api_up:
+            await self.apistatus.update_data()
         return
 
 
@@ -91,16 +94,18 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         #await context.channel.send("Greetings from GTASK.")
         try:
-            data = self.apistatus.campaigns
-            if not data:
-                return await context.send("No result")
+
             
             
             profile=ServerHDProfile.get(context.guild.id)
             if profile:
+                
+                target=await urltomessage(profile.overview_message_url,context.bot)
+                if self.api_up:
+                    await target.edit(content="WARNING, COMMS ARE DOWN!")
+                    return
                 emb=hd2.campaign_view(self.apistatus,self.hd2)
                 emb.timestamp=discord.utils.utcnow()
-                target=await urltomessage(profile.overview_message_url,context.bot)
                 embs=[emb]
                 if self.apistatus.assignments:
                     for i, assignment in self.apistatus.assignments.items():
@@ -121,6 +126,12 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     async def load_now(self, ctx: commands.Context):
         await self.update_data()
         await ctx.send("force loaded api data now.")
+
+    @commands.is_owner()
+    @commands.command(name="api_down")
+    async def api_off(self, ctx: commands.Context):
+        self.api_up=not self.api_up
+        await ctx.send(f"Api set is {self.api_up}")
 
     pcs = app_commands.Group(name="hd2setup", description="Commands for Helldivers 2 setup.", guild_only=True, default_permissions=discord.Permissions(manage_messages=True, manage_channels=True))
     @pcs.command(name="make_overview",description="Setup a constantly updating message ")

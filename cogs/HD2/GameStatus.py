@@ -37,8 +37,9 @@ class ApiStatus:
     """
     A container class for information retrieved from Helldivers 2's api.
     """
-    __slots__=['max_list_size','war','campaigns','assignments','planets','dispatches','last_planet_get']
-    def __init__(self,max_list_size=8):
+    __slots__=['client','max_list_size','war','campaigns','assignments','planets','dispatches','last_planet_get']
+    def __init__(self,client:APIConfig=APIConfig(),max_list_size=8):
+        self.client=client
         self.max_list_size=max_list_size
         self.war:LimitedSizeList[War]=LimitedSizeList(self.max_list_size)
         self.assignments:Dict[int,LimitedSizeList[Assignment2]]={}
@@ -51,34 +52,57 @@ class ApiStatus:
         '''
         Query the community api, and load the data into the classes.
         '''
-        war=await GetApiV1War()
-        assignments=await GetApiV1AssignmentsAll()
-        campaigns=await GetApiV1CampaignsAll()
-        dispatches=await GetApiV1DispatchesAll()
-        self.dispatches=dispatches
-        self.war.add(war)
-        assign_ids=set()
-        for a in assignments:
-            assign_ids.add(a.id)
-            if a.id not in self.assignments:
-                self.assignments[a.id]=LimitedSizeList(self.max_list_size)
-            self.assignments[a.id].add(a)
-        key_list=list(self.assignments.keys())
-        for k in key_list:
-            if k not in assign_ids:
-                print(f"removing assignment {k}")
-                self.assignments.pop(k)
-        camp_ids=set()
-        for c in campaigns:
-            camp_ids.add(c.id)
-            if c.id not in self.campaigns:
-                self.campaigns[c.id]=LimitedSizeList(self.max_list_size)
-            self.campaigns[c.id].add(c)
-        key_list=list(self.campaigns.keys())
-        for k in key_list:
-            if k not in camp_ids:
-                print(f"removing campaign {k}")
-                self.campaigns.pop(k)
+        print(self.client)
+        war=campaigns=assignments=dispatches=None
+        try:
+            war=await GetApiV1War(api_config_override=self.client)
+        except Exception as e:
+            print(f"Failed to fetch war data: {e}")
+
+        try:
+            assignments=await GetApiV1AssignmentsAll(api_config_override=self.client)
+        except Exception as e:
+            print(f"Failed to fetch assignments: {e}")
+
+        try:
+            campaigns=await GetApiV1CampaignsAll(api_config_override=self.client)
+        except Exception as e:
+            print(f"Failed to fetch campaigns: {e}")
+
+        try:
+            dispatches=await GetApiV1DispatchesAll(api_config_override=self.client)
+        except Exception as e:
+            print(f"Failed to fetch dispatches: {e}")
+
+        if dispatches is not None:
+            self.dispatches=dispatches
+
+        if war is not None:
+            self.war.add(war)
+        if assignments is not None:
+            assign_ids=set()
+            for a in assignments:
+                assign_ids.add(a.id)
+                if a.id not in self.assignments:
+                    self.assignments[a.id]=LimitedSizeList(self.max_list_size)
+                self.assignments[a.id].add(a)
+            key_list=list(self.assignments.keys())
+            for k in key_list:
+                if k not in assign_ids:
+                    print(f"removing assignment {k}")
+                    self.assignments.pop(k)
+        if campaigns is not None:
+            camp_ids=set()
+            for c in campaigns:
+                camp_ids.add(c.id)
+                if c.id not in self.campaigns:
+                    self.campaigns[c.id]=LimitedSizeList(self.max_list_size)
+                self.campaigns[c.id].add(c)
+            key_list=list(self.campaigns.keys())
+            for k in key_list:
+                if k not in camp_ids:
+                    print(f"removing campaign {k}")
+                    self.campaigns.pop(k)
         if datetime.datetime.now() >= self.last_planet_get + datetime.timedelta(hours=2):
             planets=await GetApiV1PlanetsAll()
             planet_data={}
