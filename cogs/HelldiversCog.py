@@ -112,7 +112,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                         b,a=assignment.get_first_change()
                         embs.append(hd2.create_assignment_embed(b,b-a,planets=self.apistatus.planets))
                         
-                await target.edit(embeds=embs)
+                await target.edit(content="Current game status.", embeds=embs)
                 return "OK"
         except Exception as e:
             er = MessageTemplates.get_error_embed(
