@@ -56,23 +56,11 @@ class ApiStatus:
         war=campaigns=assignments=dispatches=None
         try:
             war=await GetApiV1War(api_config_override=self.client)
-        except Exception as e:
-            print(f"Failed to fetch war data: {e}")
-
-        try:
             assignments=await GetApiV1AssignmentsAll(api_config_override=self.client)
-        except Exception as e:
-            print(f"Failed to fetch assignments: {e}")
-
-        try:
             campaigns=await GetApiV1CampaignsAll(api_config_override=self.client)
-        except Exception as e:
-            print(f"Failed to fetch campaigns: {e}")
-
-        try:
             dispatches=await GetApiV1DispatchesAll(api_config_override=self.client)
         except Exception as e:
-            print(f"Failed to fetch dispatches: {e}")
+            raise e
 
         if dispatches is not None:
             self.dispatches=dispatches
