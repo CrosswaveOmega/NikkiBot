@@ -101,7 +101,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             if profile:
                 
                 target=await urltomessage(profile.overview_message_url,context.bot)
-                if self.api_up:
+                if self.api_up is False:
                     await target.edit(content="WARNING, COMMS ARE DOWN!")
                     return
                 emb=hd2.campaign_view(self.apistatus,self.hd2)
