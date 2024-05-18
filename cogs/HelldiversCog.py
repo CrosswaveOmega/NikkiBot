@@ -31,6 +31,7 @@ from discord.ext import commands
 from .HD2.db import ServerHDProfile
 import cogs.HD2 as hd2
 from utility.embed_paginator import pages_of_embeds
+from utility import load_json_with_substitutions 
 
 class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     """cog for helldivers 2.  Consider it my embedded automaton spy."""
@@ -38,12 +39,9 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     def __init__(self, bot):
         self.bot: TCBot = bot
         # self.session=aiohttp.ClientSession()
+        self.apistatus=hd2.ApiStatus()
         
-        self.apidata = {}
-        self.planets_data=datetime(2024,1,1,0,0,0)
-        self.changes = {}
-        self.past_campaign_lists:Dict[int,List[hd2.Campaign2]]={}
-        self.dispatches = None
+        self.hd2=load_json_with_substitutions('./assets/json','flavor.json',{}).get('hd2',{})
         self.first_get=True
         #self.profiles=ServerHDProfile.get_entries_with_overview_message_id()
         
@@ -68,63 +66,14 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         Guild_Task_Functions.remove_task_function("UPDATEOVERVIEW")
 
     async def update_data(self):
-        war = await hd2.GetApiV1War()
-        assignments = await hd2.GetApiV1AssignmentsAll()
-        campaigns = await hd2.GetApiV1CampaignsAll()
-        if 'war' in self.apidata:
-            self.changes['war']=(self.apidata['war'],war)
-        self.apidata["war"] = war
-        last_assign=self.apidata.get('assignments',[])
-        last_camp=self.apidata.get('campaigns',[])
-        updated_assignments = []
-        for assignment in assignments:
-            found = False
-            for apidata_assignment in last_assign:
-                if assignment.id == apidata_assignment.id:
-                    updated_assignments.append((apidata_assignment, assignment))
-                    found = True
-                    break  # Exit the inner loop once a match is found
-            if not found:
-                updated_assignments.append((assignment, assignment))  # Add to updated_assignments if not found in apidata
-        self.changes['assignments'] = updated_assignments
-        self.apidata["assignments"] = assignments
-        
-        updated_campaigns = []
-        found_ids=[]
-        for campaign in campaigns:
-            found = False
-            found_ids.append(campaign.id)
-            for apidata_campaign in last_camp:
-                if campaign.id == apidata_campaign.id:
-                    updated_campaigns.append((apidata_campaign, campaign))
-                    self.past_campaign_lists[campaign.id].append(campaign-apidata_campaign)
-                    if len(self.past_campaign_lists[campaign.id])>5:
-                        self.past_campaign_lists[campaign.id].pop(0)
-                    found = True
-                    break  # Exit the inner loop once a match is found
-            if not found:
-                print(f"not found camp id {campaign.id}")
-                self.past_campaign_lists[campaign.id]=[]
-                updated_campaigns.append((campaign, campaign))  # Add to updated_campaigns if not found in apidata
-        past_keys=list(self.past_campaign_lists.keys())
-        for k in past_keys:
-            if k not in found_ids:
-                self.past_campaign_lists.pop(k) 
-        self.changes['campaigns'] = updated_campaigns
-
-        self.apidata["campaigns"] = campaigns
-        self.dispatches =await hd2.GetApiV1DispatchesAll()
-        if self.planets_data and datetime.now() >= self.planets_data + timedelta(hours=2):
-            planets=await hd2.GetApiV1PlanetsAll()
-            planet_data={}
-            for planet in planets:
-                planet_data[planet.index]=planet
-            self.apidata['planets']=planet_data
-            self.planets_data = datetime.now()
+        await self.apistatus.update_data()
+        return
 
 
     @tasks.loop(minutes=15)
     async def update_api(self):
+        
+        self.hd2=load_json_with_substitutions('./assets/json','flavor.json',{}).get('hd2',{})
         try:
             print("updating war")
             await self.update_data()
@@ -142,21 +91,22 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         #await context.channel.send("Greetings from GTASK.")
         try:
-            data = self.changes.get("campaigns", None)
+            data = self.apistatus.campaigns
             if not data:
                 return await context.send("No result")
             
             
             profile=ServerHDProfile.get(context.guild.id)
             if profile:
-                emb=hd2.campaign_view(data,self.past_campaign_lists)
+                emb=hd2.campaign_view(self.apistatus,self.hd2)
                 emb.timestamp=discord.utils.utcnow()
                 target=await urltomessage(profile.overview_message_url,context.bot)
                 embs=[emb]
-                if self.changes['assignments']:
-                    a, b=self.changes['assignments'][0]
-                    embs.append(hd2.create_assignment_embed(b,b-a,planets=self.apidata['planets']))
-                    
+                if self.apistatus.assignments:
+                    for i, assignment in self.apistatus.assignments.items():
+                        b,a=assignment.get_first_change()
+                        embs.append(hd2.create_assignment_embed(b,b-a,planets=self.apistatus.planets))
+                        
                 await target.edit(embeds=embs)
                 return "OK"
         except Exception as e:
@@ -214,30 +164,24 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     async def warstat(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
-        data = self.apidata.get("war", None)
-        if not data:
+        if not self.apistatus.war:
             return await ctx.send("No result")
+        this,last=self.apistatus.war.get_first_change()
+        await ctx.send(embed=hd2.create_war_embed(this,last))
+        return
 
-        if 'war' in self.changes:
-            last, this =self.changes['war']
-            await ctx.send(embed=hd2.create_war_embed(this,last))
-        else:
-            await ctx.send(embed=hd2.create_war_embed(data))
 
     @pc.command(name="assign", description="get assignment state.")
     async def assignstate(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
-        data = self.apidata.get("assignments", None)
-        if not data:
+        if not self.apistatus.assignments:
             return await ctx.send("No result")
+        
+        for ind, key in self.apistatus.assignments.items():
+            this,last=key.get_first_change()
+            await ctx.send(embed=hd2.create_assignment_embed(this,this-last,planets=self.apistatus.planets))
 
-        if 'assignments' in self.changes:
-            for last,this in self.changes['assignments']:
-                await ctx.send(embed=hd2.create_assignment_embed(this,this-last,planets=self.apidata['planets']))
-        else:
-            for s in data:
-                await ctx.send(embed=hd2.create_assignment_embed(s,planets=self.apidata['planets']))
 
 
     @pc.command(name="campaigns", description="get campaign state.")
@@ -253,14 +197,13 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     async def cstate(self, interaction: discord.Interaction,filter:Literal[0,2,3]=0,byplanet:int=0):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
-        data = self.changes.get("campaigns", None)
-        if not data:
+        if not self.apistatus.campaigns:
             return await ctx.send("No result")
         embeds=[]
-        for last,camp in self.changes['campaigns']:
-            diff=camp.planet-camp.planet
-            if last!=None:
-                diff=camp.planet-last.planet
+        
+        for ind, key in self.apistatus.campaigns.items():
+            camp,last=key.get_first_change()
+            diff=camp.planet-last.planet
             if byplanet!=0:
                 if camp.planet.index==byplanet:
                     
@@ -291,13 +234,13 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     async def pstate(self, interaction: discord.Interaction,byplanet:int):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
-        data = self.apidata.get("planets", None)
+        data = self.apistatus.planets
         if not data:
             return await ctx.send("No result")
         embeds=[]
         if byplanet:
-            if byplanet in self.apidata['planets']:
-                planet= self.apidata['planets'][byplanet]
+            if byplanet in self.apistatus.planets:
+                planet= self.apistatus.planets[byplanet]
                 embeds.append(hd2.create_planet_embed(planet, cstr='',last=None))
 
         await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
@@ -306,7 +249,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     async def dispatch(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
-        data = self.dispatches
+        data = self.apistatus.dispatches
         if not data:
             return await ctx.send("No result")
         embeds=[]
@@ -318,12 +261,12 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     async def campoverview(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
-        data = self.changes.get("campaigns", None)
+        data = self.apistatus.campaigns
 
         
         if not data:
             return await ctx.send("No result")
-        emb=hd2.campaign_view(data,self.past_campaign_lists)
+        emb=hd2.campaign_view(self.apistatus,self.hd2)
         await ctx.send(embed=emb)
 
 

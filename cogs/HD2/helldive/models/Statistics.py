@@ -3,8 +3,8 @@ from typing import *
 from pydantic import Field
 from .ABC.model import BaseApiModel
 
-from utility import human_format
-
+from utility import human_format as hf, select_emoji as emj, changeformatif as cfi, extract_timestamp as et
+from discord.utils import format_dt as fdt
 class Statistics(BaseApiModel):
     """
     None model
@@ -93,29 +93,29 @@ class Statistics(BaseApiModel):
         '''
             Return statistics formatted in a nice string.
         '''
-        mission_stats = f"W:{human_format(self.missionsWon)},"
-        mission_stats += f"L:{human_format(self.missionsLost)}"
-        # mission_stats += f"Time: {human_format(self.missionTime)} seconds"
+        mission_stats = f"W:{hf(self.missionsWon)},"
+        mission_stats += f"L:{hf(self.missionsLost)}"
+        # mission_stats += f"Time: {hf(self.missionTime)} seconds"
 
         # Format kill statistics
         kill_stats = (
-            f"T:{human_format(self.terminidKills)}, "
-            f"A:{human_format(self.automatonKills)}, "
+            f"T:{hf(self.terminidKills)}, "
+            f"A:{hf(self.automatonKills)}, "
             f"DATA EXPUNGED"
         )
-        #             f"I: {human_format(self.illuminateKills)}"
+        #             f"I: {hf(self.illuminateKills)}"
 
         # Format bullets statistics
         bullets_fired = self.bulletsFired
         bullets_hit = self.bulletsHit
         bullets_stats = (
-            f"Bullets Hit/Fired: {human_format(bullets_hit)}/{human_format(bullets_fired)}"
+            f"Bullets Hit/Fired: {hf(bullets_hit)}/{hf(bullets_fired)}"
         )
 
         # Format deaths and friendlies statistics
         deaths_and_friendlies = (
-            f"Deaths/Friendlies: {human_format(self.deaths)}/"
-            f"{human_format(self.friendlies)}"
+            f"Deaths/Friendlies: {hf(self.deaths)}/"
+            f"{hf(self.friendlies)}"
         )
 
         # Format mission success rate
@@ -125,10 +125,10 @@ class Statistics(BaseApiModel):
         accuracy = f"ACC: {self.accuracy}%"
 
         # Format player count
-        player_count = f"Player Count: {human_format(self.playerCount)}"
+        player_count = f"Player Count: {hf(self.playerCount)}"
 
         # Concatenate all formatted statistics
-        statsa = f"`[Missions: {mission_stats}] [Kills: {kill_stats}] [{bullets_stats}]`"
+        statsa = f"`[Missions: {mission_stats}]`\n`[Kills: {kill_stats}] [{bullets_stats}]`"
         statsb = f"`[{deaths_and_friendlies}] [{mission_success_rate}] [{accuracy}]`"
 
         return f"{player_count}\n{statsa}\n{statsb}"
@@ -146,16 +146,16 @@ class Statistics(BaseApiModel):
         # Calculate differences for each statistic
 
         # Format each statistic with its difference
-        mission_stats = f"W:{human_format(self.missionsWon)} ({other.missionsWon}),"
-        mission_stats+=f"L:{human_format(self.missionsLost)} ({other.missionsLost})"
-        kill_stats = f"T:{human_format(self.terminidKills)} ({other.missionsLost}),"
-        kill_stats+=f"A:{human_format(self.automatonKills)} ({other.automatonKills}),"
+        mission_stats = f"W:{hf(self.missionsWon)} ({other.missionsWon}),"
+        mission_stats+=f"L:{hf(self.missionsLost)} ({other.missionsLost})"
+        kill_stats = f"T:{hf(self.terminidKills)} ({other.missionsLost}),"
+        kill_stats+=f"A:{hf(self.automatonKills)} ({other.automatonKills}),"
         kill_stats+="DATA EXPUNGED"
-        bullets_stats = f"Bullets Hit/Fired: {human_format(self.bulletsHit)}/{human_format(self.bulletsFired)} ({other.bulletsHit}/{other.bulletsFired})"
-        deaths_and_friendlies = f"Deaths/Friendlies: {human_format(self.deaths)}/{human_format(self.friendlies)} ({other.deaths}/{other.friendlies})"
+        bullets_stats = f"Bullets Hit/Fired: {hf(self.bulletsHit)}/{hf(self.bulletsFired)} ({other.bulletsHit}/{other.bulletsFired})"
+        deaths_and_friendlies = f"Deaths/Friendlies: {hf(self.deaths)}/{hf(self.friendlies)} ({other.deaths}/{other.friendlies})"
         mission_success_rate = f"MCR: {self.missionSuccessRate}% ({other.missionSuccessRate}%)"
         accuracy = f"ACC: {self.accuracy}% ({other.accuracy}%)"
-        player_count = f"Player Count: {human_format(self.playerCount)} ({other.playerCount})"
+        player_count = f"{emj('hdi')}: {hf(self.playerCount)} ({other.playerCount})"
 
         # Concatenate all formatted statistics
         statsa = f"`[Missions: {mission_stats}] [Kills: {kill_stats}] [{bullets_stats}]`"

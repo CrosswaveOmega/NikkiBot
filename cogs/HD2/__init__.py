@@ -3,6 +3,7 @@ from .embeds import campaign_view,create_assignment_embed, create_campaign_str,c
 from .hdapi import call_api
 from .db import ServerHDProfile
 from .helldive import *
+from .GameStatus import ApiStatus
 
 async def setup(bot):
     print(f"loading in child module {__name__}")

@@ -5,7 +5,7 @@ from .helldive import Planet,War,Assignment2, Campaign2
 '''
 Collection of embeds for formatting.
 '''
-
+from .GameStatus import ApiStatus
 
 from utility import human_format as hf, select_emoji as emj, changeformatif as cfi, extract_timestamp as et
 from discord.utils import format_dt as fdt
@@ -137,11 +137,11 @@ def create_planet_embed(data:Planet, cstr: str,last:Planet=None):
 
     if data.biome:
         planet_biome = data["biome"]
-        biome_name = planet_biome.get("name", "Unknown Biome")
+        biome_name = planet_biome.get("name", "[GWW SEARCH ERROR]")
         biome_description = planet_biome.get("description", "No description available")
         embed.add_field(
-            name="Biome",
-            value=f"Name: {biome_name}\nDescription: {biome_description}",
+            name=f"Biome:{biome_name}",
+            value=f"{biome_description}",
             inline=False,
         )
 
@@ -228,16 +228,17 @@ def create_planet_embed(data:Planet, cstr: str,last:Planet=None):
 
     return embed
 
-def campaign_view(campaigns:List[Tuple[Campaign2,Campaign2]],past:Dict[int,List[Campaign2]]):
+def campaign_view(stat:ApiStatus,hdtext={}):
     emb=discord.Embed(title="Galactic War Overview",
                       description="Deploying statistical strategy.")
-    for last,camp in campaigns:
-        diff=camp-last
+    for k, list in stat.campaigns.items():
+        camp,last=list.get_first_change()
+        changes=list.get_changes()
         avg=None
-        if past[camp.id]:
-            print([(c.planet.health) for c in past[camp.id]])
-            avg=Planet.average([c.planet for c in past[camp.id]])
-        print(avg)
-        name,desc=camp.planet.simple_planet_view(diff.planet,avg)
+        if changes:
+            avg=Planet.average([c.planet for c in changes])
+        name,desc=camp.planet.simple_planet_view((camp-last).planet,avg)
         emb.add_field(name=name,value=desc,inline=True)
+
+        
     return emb

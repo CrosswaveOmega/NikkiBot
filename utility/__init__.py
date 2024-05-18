@@ -34,5 +34,5 @@ from .formatutil import (
     changeformatif,
 )
 from .views import ConfirmView, RRuleView
-from .manual_load import load_manual
+from .manual_load import load_manual, load_json_with_substitutions
 from .debug import Timer
