@@ -1,5 +1,7 @@
 from .helldive import *
 import datetime
+import numpy as np
+import csv
 class LimitedSizeList(list):
     def __init__(self, max_size):
         self.max_size = max_size
@@ -98,3 +100,84 @@ class ApiStatus:
                 planet_data[planet.index]=planet
             self.planets=planet_data
             self.last_planet_get = datetime.datetime.now()
+
+
+def add_to_csv(stat:ApiStatus,hdtext={}):
+    # Get the first change in the war statistics
+    war, lastwar = stat.war.get_first_change()
+    mp_mult = war.impactMultiplier
+    
+    # Prepare a list to hold the rows to be written to the CSV
+    rows = []
+    timestamp=int(datetime.datetime.now(tz=datetime.timezone.utc).timestamp())
+    # Iterate through the campaigns to gather statistics
+    for k, campaign_list in stat.campaigns.items():
+        if len(campaign_list) <= 1:
+            print(f"{timestamp} {k} not enough campaigns.")
+            continue
+        
+        camp, last = campaign_list.get_first_change()
+        players = camp.planet.statistics.playerCount
+        
+        change = camp - last
+        decay = camp.planet.regenPerSecond
+        total_sec = change.planet.retrieved_at.total_seconds()
+        damage = (change.planet.health / total_sec)*-1
+        evt_damage=None
+        mode=1
+        if change.planet.event:
+            evt_damage=(change.planet.event.health / total_sec)*-1
+        if damage<=0:
+            if not evt_damage:
+                print("Damage too low!")
+                continue
+            if evt_damage<=0:
+                print("Event Damage too low!")
+                continue
+            else:
+                mode=2
+                eps = (evt_damage) / mp_mult
+                decay=0
+        else:
+            eps = (damage + decay) / mp_mult
+        
+        stats = change.planet.statistics
+        wins = stats.missionsWon / total_sec
+        loss = stats.missionsLost / total_sec
+        kills = (stats.automatonKills + stats.terminidKills + stats.illuminateKills) / total_sec
+        deaths = stats.deaths / total_sec
+        
+        # Prepare the row for the CSV
+        row = {
+            'timestamp': timestamp,
+            'player_count': players,
+            'mode':mode,
+            'mp_mult': mp_mult,
+            'wins_per_sec': wins,
+            'loss_per_sec': loss,
+            'decay_rate': decay,
+            'kills_per_sec': kills,
+            'deaths_per_sec': deaths,
+            'eps': eps
+        }
+        
+        # Append the row to the list of rows
+        rows.append(row)
+    
+    # Define the CSV file path
+    csv_file_path = 'statistics.csv'
+    
+    # Write the rows to the CSV file
+    print(rows)
+    if not rows:
+        return
+    with open(csv_file_path, mode='a', newline='',encoding='utf8') as file:
+        writer = csv.DictWriter(file, fieldnames=rows[0].keys())
+        
+        # If the file is empty, write the header
+        if file.tell() == 0:
+            writer.writeheader()
+        
+        # Write the rows
+        for row in rows:
+            writer.writerow(row)

@@ -70,6 +70,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     async def update_data(self):
         if self.api_up:
             await self.apistatus.update_data()
+            hd2.add_to_csv(self.apistatus)
         return
 
 
@@ -80,6 +81,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         try:
             print("updating war")
             await self.update_data()
+            
         except Exception as e:
             await self.bot.send_error(e, f"Message update cleanup error.")
             gui.gprint(str(e))

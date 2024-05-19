@@ -25,9 +25,9 @@ async def make_api_request(
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
+        "X-Super-Client": f"{api_config.get_client_name()}",
         #"Authorization": f"Bearer {api_config.get_access_token()}",
     }
-
     async with httpx.AsyncClient(base_url=base_path, verify=api_config.verify) as client:
         response = await client.get(path, headers=headers)
 

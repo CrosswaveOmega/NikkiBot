@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 import discord
 import json
 from .helldive import Planet,War,Assignment2, Campaign2
@@ -50,6 +50,7 @@ value_types = {
     12: "planet_index",
 }
 faction_names = {
+    0: "Anything",
     1: "Humans",
     2: "Terminids",
     3: "Automaton",
@@ -62,7 +63,7 @@ faction_names = {
 campaign_types = {0: "Liberation / Defense", 1: "Recon", 2: "Story"}
 
 
-def create_assignment_embed(data,last=None,planets:Dict[int,Planet]={}):
+def create_assignment_embed(data:Assignment2,last:Optional[Assignment2]=None,planets:Dict[int,Planet]={}):
     did, title = data["id"], data["title"]
     briefing = data["briefing"]
     embed = discord.Embed(
@@ -80,7 +81,7 @@ def create_assignment_embed(data,last=None,planets:Dict[int,Planet]={}):
         task_type = task_types.get(task["type"], "Unknown Task Type")
         taskdata = {"planet_index": "ERR", "race": 15}
         curr,last=progress[e]
-        taskstr = f"[{e}]{task_type}: p {curr},"
+        taskstr = f"[{e}]{task_type}: {hf(curr)}"
         for v, vt in zip(task["values"], task["valueTypes"]):
             #print(v, value_types.get(vt, "Unmapped vt"))
             taskdata[value_types[vt]] = v
@@ -90,21 +91,23 @@ def create_assignment_embed(data,last=None,planets:Dict[int,Planet]={}):
             planet_name="ERR"
             if int(planet_id) in planets:
                 planet_name=planets[int(planet_id)].name
-            taskstr += f"{planet_name}({planet_id})"
+            taskstr = f"[{e}]{task_type}:{planet_name}({planet_id}) Status:{'ok' if curr==1 else curr}"
+
         elif task["type"] == 12:
             planet_name = taskdata["planet_index"]
             taskstr += f"{task['values'][0]} planets"
         elif task["type"] == 3:
-            faction_name = faction_names.get(taskdata["race"], "Unknown Faction")
-            taskstr += f"{taskdata['goal']} ({(int(curr)/int(taskdata['goal']))*100.0}){faction_name}"
+            faction_name = faction_names.get(taskdata["race"], f"Unknown Faction {taskdata['race']}")
+            taskstr += f"/{hf(taskdata['goal'])} ({(int(curr)/int(taskdata['goal']))*100.0}){faction_name}"
         else:
             taskstr += f"DATA CORRUPTED.{json.dumps(task)[:50]}."
         tasks += taskstr + "\n"
 
     embed.add_field(name="Tasks", value=tasks, inline=False)
 
-    embed.add_field(name="Reward", value=data["reward"], inline=False)
-    embed.add_field(name="Expiration", value=data["expiration"], inline=False)
+    embed.add_field(name="Reward", value=data.reward.format(), inline=False)
+    exptime=et(data["expiration"])
+    embed.add_field(name="Expiration", value=fdt(exptime,'f'), inline=False)
 
     return embed
 

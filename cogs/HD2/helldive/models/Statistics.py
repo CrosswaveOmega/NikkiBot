@@ -158,7 +158,7 @@ class Statistics(BaseApiModel):
         player_count = f"{emj('hdi')}: {hf(self.playerCount)} ({other.playerCount})"
 
         # Concatenate all formatted statistics
-        statsa = f"`[Missions: {mission_stats}] [Kills: {kill_stats}] [{bullets_stats}]`"
+        statsa = f"`[Missions: {mission_stats}]`\n `[Kills: {kill_stats}]`\n`[{bullets_stats}]`"
         statsb = f"`[{deaths_and_friendlies}] [{mission_success_rate}] [{accuracy}]`"
 
         return f"{player_count}\n{statsa}\n{statsb}"
