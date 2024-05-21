@@ -96,9 +96,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         #await context.channel.send("Greetings from GTASK.")
         try:
-
-            
-            
             profile=ServerHDProfile.get(context.guild.id)
             if profile:
                 
@@ -129,6 +126,11 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         await self.update_data()
         await ctx.send("force loaded api data now.")
 
+    @commands.is_owner()
+    @commands.command(name="get_csv")
+    async def get_csv(self, ctx: commands.Context):
+        await ctx.send(file=discord.File("statistics.csv"))
+        
     @commands.is_owner()
     @commands.command(name="api_down")
     async def api_off(self, ctx: commands.Context):
