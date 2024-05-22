@@ -130,7 +130,24 @@ class Planet(BaseApiModel):
         avg_planet.retrieved_at=datetime.timedelta(seconds=avg_time)
         return avg_planet
     
+    def campaign_against(self)->str:
+        '''Get the emoji of the faction that is occupying or defending this planet.'''
+        faction=emj(self.currentOwner.lower())
+        if self.event:
+            evt=self.event
+            return emj(self.event.faction.lower())
+        return faction
+    
     def simple_planet_view(self,prev:Optional['Planet']=None,avg:Optional['Planet']=None)->Tuple[str,str]:
+        """Return a string containing the formated state of the planet.
+
+        Args:
+            prev (Optional[&#39;Planet&#39;], optional): 
+            avg (Optional[&#39;Planet&#39;], optional):Average stats for the past X planets
+
+        Returns:
+            Tuple[str,str]: _description_
+        """
         diff=self-self
         if prev is not None: 
             diff=prev

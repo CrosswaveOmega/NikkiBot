@@ -5,12 +5,13 @@ from .helldive import Planet,War,Assignment2, Campaign2
 '''
 Collection of embeds for formatting.
 '''
-from .GameStatus import ApiStatus
-
+from .GameStatus import ApiStatus, get_feature_dictionary
+from .predict import make_prediction
+from collections import defaultdict
 from utility import human_format as hf, select_emoji as emj, changeformatif as cfi, extract_timestamp as et
 from discord.utils import format_dt as fdt
 
-def create_war_embed(data, last=None):
+def create_war_embed(data:War, last=None):
     stats = data["statistics"]
     stat_str = data.statistics.format_statistics()
     if stats and (last is not None):
@@ -234,14 +235,27 @@ def create_planet_embed(data:Planet, cstr: str,last:Planet=None):
 def campaign_view(stat:ApiStatus,hdtext={}):
     emb=discord.Embed(title="Galactic War Overview",
                       description="Deploying statistical strategy.")
+    all_players,last=stat.war.get_first_change()
+    change_war=all_players-last
+
+    prop = defaultdict(int)
     for k, list in stat.campaigns.items():
         camp,last=list.get_first_change()
         changes=list.get_changes()
+        this_faction=camp.planet.campaign_against()
+        prop[this_faction]+=camp.planet.statistics.playerCount
         avg=None
         if changes:
             avg=Planet.average([c.planet for c in changes])
         name,desc=camp.planet.simple_planet_view((camp-last).planet,avg)
+        features=get_feature_dictionary(stat,k)
+        pred=make_prediction(features)
+        print(features['eps'],pred)
+        eps_estimated=round(pred,3)
+        eps_real=round(features['eps'],3)
+        desc+=f"Exp/s:`{eps_estimated},curr{eps_real}"
         emb.add_field(name=name,value=desc,inline=True)
+    emb.description+=",".join([f'{k}:{v}' for k, v in prop.items()])
 
         
     return emb

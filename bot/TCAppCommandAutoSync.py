@@ -3,7 +3,7 @@ import discord
 import json
 import logging
 import traceback
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union, TYPE_CHECKING
 from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey, DateTime, Double
 from sqlalchemy.orm import relationship, Mapped
 from sqlalchemy.orm import sessionmaker, Session
@@ -426,7 +426,7 @@ def build_and_format_app_commands(
     }
 
     for command in tree.get_commands(guild=guild):
-        # print(command)
+        print(command)
         di = command.to_dict(tree)  # I really wish this method was in the docs...
         typev, name = di["type"], di["name"]
         typestr = "chat_commands"
@@ -445,6 +445,11 @@ def build_and_format_app_commands(
 
 class SpecialAppSync:
     """Mixin that defines custom command tree syncing logic."""
+    tree: discord.app_commands.CommandTree
+    logs: logging.Logger
+    cogs: Dict[str,commands.Cog]
+    guilds: List[discord.Guild]
+
 
     async def sync_commands_tree(self, guild: discord.Guild, forced=False):
         """Build a dictionary representation of all app commands to be synced, check if
@@ -517,7 +522,7 @@ class SpecialAppSync:
         gui.dprint(ignorelist)
 
         def syncprint(*lis):
-            print(*lis)
+            #print(*lis)
             pass
             # gui.gprint(f"Sync for  (ID {guildid})", *lis)
 
@@ -533,7 +538,8 @@ class SpecialAppSync:
                         command.app_command, guild=guild, override=True
                     )
                     syncprint(f"Added hybrid {command.name}")
-                except:
+                except Exception as e:
+                    self.logs.exception(e)
                     syncprint(f"Cannot add {command.name}, case error.")
             else:
                 try:
@@ -620,7 +626,7 @@ class SpecialAppSync:
         except Exception as e:
             res = str(traceback.format_exception(None, e, e.__traceback__))
             gui.gprint("Exception in allgruild", e, res)
-            raise Exception()
+            raise entry
 
     async def get_tree_dict(self, guild):
         app_tree = build_and_format_app_commands(

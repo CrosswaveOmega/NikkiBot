@@ -3,6 +3,8 @@ import inspect
 import discord
 from discord.app_commands import ContextMenu, locale_str
 import random
+
+from discord.ext import commands
 from typing import (
     Any,
     Dict,
@@ -166,13 +168,9 @@ def super_context_menu(
             ctx_comms[cls_name] = []
         functionname = func.__name__
         actual_name = functionname.title() if name is MISSING else name
-        uflags = discord.flags.AppInstallationType.none()
-        uflags.guild = True
-        uflags.user = False
+        uflags = discord.app_commands.installs.AppInstallationType(guild=True,user=False)
         if flags == "user":
-            uflags = discord.flags.AppInstallationType.none()
-            uflags.user = True
-            uflags.guild = False
+            uflags = discord.app_commands.installs.AppInstallationType(guild=False,user=True)
 
         ctx_menu = NonContextMenu(
             name=actual_name,
@@ -191,7 +189,8 @@ def super_context_menu(
 
 class CogFieldList:
     """This is mixed into the TCBot object so that it may get a list of fields."""
-
+    
+    cogs: Dict[str,commands.Cog]
     def get_field_list(self, guild: discord.Guild) -> List[Dict[str, Any]]:
         """returns a list of dictionaries that represents a single discord embed field
         with 3 key/value pairs:  name:str.  value:str.  inline:boolean"""

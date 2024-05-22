@@ -48,6 +48,12 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         #self.profiles=ServerHDProfile.get_entries_with_overview_message_id()
         
         Guild_Task_Functions.add_task_function("UPDATEOVERVIEW", self.gtask_update)
+
+        # snap=hd2.load_from_json("./saveData/hd2_snapshot.json")
+        # #print(snap)
+        # if snap:
+        #     new_cls=hd2.ApiStatus.from_dict(snap,client=hdoverride)
+        #     self.apistatus=new_cls
         self.update_api.start()
 
     def server_profile_field_ext(self, guild: discord.Guild):
@@ -63,6 +69,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         return None
 
     def cog_unload(self):
+        #hd2.save_to_json(self.apistatus,"./saveData/hd2_snapshot.json")
         self.update_api.cancel()
         
         Guild_Task_Functions.remove_task_function("UPDATEOVERVIEW")
@@ -70,6 +77,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     async def update_data(self):
         if self.api_up:
             await self.apistatus.update_data()
+            
+            print(self.apistatus.war)
             hd2.add_to_csv(self.apistatus)
         return
 

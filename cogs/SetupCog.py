@@ -406,7 +406,8 @@ class Setup(commands.Cog, TC_Cog_Mixin):
     )
     @app_commands.describe(user="The user to evaluate permissions for.")
     async def permissionsleuth(self, ctx, user: discord.User):
-        """Sometimes, people go overboard with discord permissions and turn their servers into something crazy.
+        """Sometimes, people go overboard with discord permissions and
+          turn their servers into something crazy.
           This command figures out if there's a problem.
         Args:
             user (discord.User): user to investigate permissions for.
