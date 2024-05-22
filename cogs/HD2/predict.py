@@ -24,7 +24,7 @@ X = data[['player_count', 'mp_mult', 'wins_per_sec', 'loss_per_sec', 'decay_rate
 Y = data['eps']
 
 
-model=GradientBoostingRegressor(random_state=42,n_estimators=1000)
+model=LinearRegression(random_state=42,n_estimators=1000)
 model.fit(X, Y)
 def experiment_models():
     models = [
