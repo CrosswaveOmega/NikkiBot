@@ -253,7 +253,7 @@ def campaign_view(stat:ApiStatus,hdtext={}):
         print(features['eps'],pred)
         eps_estimated=round(pred,3)
         eps_real=round(features['eps'],3)
-        desc+=f"Exp/s:`{eps_estimated},curr{eps_real}"
+        desc+=f"\nExp/s:`{eps_estimated},c{eps_real}`"
         emb.add_field(name=name,value=desc,inline=True)
     emb.description+=",".join([f'{k}:{v}' for k, v in prop.items()])
 

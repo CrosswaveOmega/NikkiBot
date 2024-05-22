@@ -53,6 +53,7 @@ class ApiStatus:
         self.planets:Dict[int,Planet]={}
         self.dispatches:List[Dispatch]=[]
         self.last_planet_get:datetime.datetime=datetime.datetime(2024,1,1,0,0,0)
+        
     def to_dict(self):
         return {
             'max_list_size': self.max_list_size,
