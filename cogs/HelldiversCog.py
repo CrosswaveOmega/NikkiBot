@@ -263,7 +263,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         else:
             old.target_channel_id = autochannel.id
 
-            target_message = await autochannel.send("**ALTERING AUTO CHANNEL...**",view=HD2OverviewView(self))
+            #target_message = await autochannel.send("**ALTERING AUTO CHANNEL...**",view=HD2OverviewView(self))
             old.target_message_url = target_message.jump_url
             self.bot.database.commit()
             result = f"Changed the dashboard channel to <#{autochannel.id}>"
