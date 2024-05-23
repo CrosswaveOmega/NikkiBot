@@ -13,6 +13,11 @@ class LimitedSizeList(list):
             self.items.pop()
         self.items.insert(0,item)
 
+    def push(self, item):
+        if len(self.items) >= self.max_size:
+            self.items.pop(0)
+        self.items.append(item)
+
     def get_changes(self)->List[Union[War,Assignment2,Campaign2]] :
         '''return a list of all differences between items in this limited sized list.'''
         curr,this=None,[]
@@ -57,11 +62,11 @@ class ApiStatus:
     def to_dict(self):
         return {
             'max_list_size': self.max_list_size,
-            'war': [dict(w) for w in self.war.items],
-            'assignments': {k: [dict(item) for item in v.items] for k, v in self.assignments.items()},
-            'campaigns': {k: [dict(item) for item in v.items] for k, v in self.campaigns.items()},
-            'planets': {k: dict(p) for k, p in self.planets.items()},
-            'dispatches': [dict(d) for d in self.dispatches]
+            'war': [w.model_dump() for w in self.war.items],
+            'assignments': {k: [item.model_dump() for item in v.items] for k, v in self.assignments.items()},
+            'campaigns': {k: [item.model_dump() for item in v.items] for k, v in self.campaigns.items()},
+            'planets': {k: p.model_dump() for k, p in self.planets.items()},
+            'dispatches': [d.model_dump() for d in self.dispatches]
         }
     @classmethod
     def from_dict(cls, data,client:APIConfig=APIConfig()):
@@ -70,19 +75,20 @@ class ApiStatus:
         newcks.max_list_size = data['max_list_size']
         newcks.war = LimitedSizeList(newcks.max_list_size)
         for val in data['war']:
-            newcks.war.add(War(**val))
+            newcks.war.push(War(**val))
         newcks.assignments = {}
         for k, v in data['assignments'].items():
             assignment_list = LimitedSizeList(newcks.max_list_size)
             for item in v:
-                assignment_list.add(Assignment2(**item))
-            newcks.assignments[k] = assignment_list
+                assignment_list.push(Assignment2(**item))
+            newcks.assignments[int(k)] = assignment_list
         newcks.campaigns = {}
         for k, v in data['campaigns'].items():
             campaign_list = LimitedSizeList(newcks.max_list_size)
             for item in v:
-                campaign_list.add(Campaign2(**item))
-            newcks.campaigns[k] = campaign_list
+                campaign_list.push(Campaign2(**item))
+            newcks.campaigns[int(k)] = campaign_list
+            print(newcks.campaigns)
         newcks.planets = {int(k): Planet(**v) for k, v in data['planets'].items()}
         newcks.dispatches = [Dispatch(**d) for d in data['dispatches']]
         return newcks
@@ -158,7 +164,7 @@ class ApiStatus:
 
 def save_to_json(api_status, filepath):
     with open(filepath, 'w',encoding='utf8') as file:
-        json.dump(api_status.to_dict(), file, default=str)
+        json.dump(api_status.to_dict(), file, default=str,indent=4)
 
 def load_from_json(filepath):
     if not os.path.exists(filepath):
@@ -171,6 +177,7 @@ def load_from_json(filepath):
     return data
     
 def add_to_csv(stat:ApiStatus,hdtext={}):
+    """Add the data from the last period of time to the csv file."""
     # Get the first change in the war statistics
     print(type(stat),stat.war)
     war= stat.war.get_first()
@@ -196,19 +203,21 @@ def add_to_csv(stat:ApiStatus,hdtext={}):
         mode=1
         if change.planet.event:
             evt_damage=(change.planet.event.health / total_sec)*-1
-        if damage<=0:
-            if not evt_damage:
-                print("Damage too low!")
-                continue
-            if evt_damage<=0:
-                print("Event Damage too low!")
-                continue
+        if damage==0:
+            eps=0
+            if evt_damage:
+                if evt_damage<=0:
+                    print("Event Damage too low!")
+                    continue
+                else:
+                    mode=2
+                    eps = (evt_damage) / mp_mult
+                    decay=0
             else:
-                mode=2
-                eps = (evt_damage) / mp_mult
-                decay=0
+                continue
         else:
             eps = (damage + decay) / mp_mult
+    
         
         stats = change.planet.statistics
         wins = stats.missionsWon / total_sec

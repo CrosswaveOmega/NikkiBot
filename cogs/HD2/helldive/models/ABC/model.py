@@ -9,7 +9,10 @@ class BaseApiModel(BaseModel):
     retrieved_at: Optional[datetime] = None
     def __init__(self, **data):
         super().__init__(**data)
-        self.retrieved_at = datetime.now(tz=timezone.utc)
+        if 'retrieved_at' not in data:
+            self.retrieved_at = datetime.now(tz=timezone.utc)
+        else:
+            self.retrieved_at=datetime.fromisoformat(data['retrieved_at']).replace(tzinfo=timezone.utc)
 
     def __getitem__(self, attr):
         """

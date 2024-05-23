@@ -1,6 +1,10 @@
 import asyncio
 from datetime import datetime as dt
-from typing import Dict, Optional, Type
+from typing import (
+    Any,
+    Callable,
+    Coroutine,Dict, Optional, Type,Literal,
+    TypeVar)
 import gui
 
 from dateutil.rrule import rrule
@@ -8,7 +12,9 @@ import heapq
 from queue import PriorityQueue
 import logging
 
-
+_coro = Callable[..., Coroutine[Any, Any, Any]]
+CoroutineWrap = TypeVar('CoroutineWrap', bound=_coro)
+Statuses= Literal['created','standby','running']
 class AutoRebalancePriorityQueue(PriorityQueue):
     """This is a special PriorityQueque that rebalances itself on new items."""
 
@@ -35,59 +41,74 @@ class TCTaskRef:
 
 logs = logging.getLogger("TCLogger")
 
-
 class TCTask:
     """
     A special task object for running coroutines at specific timedelta intervals,
-     managed within the TCTaskManager singleton.  This was made because I felt
-     discord.tasks did not provide the needed logic.
+        managed within the TCTaskManager singleton. This was made because I felt
+     discord.tasks did not provide sufficient scheduling logic.
 
     Args:
         name (str): The unique name of the task. Used to identify the task.
         time_interval (rrule): A dateutil.rrule for determining the next time to run the task.
-        idv (int): The unique ID of the task.  deprecated.
-        next_run (Datetime): Next date and time to run the task.
-        parent_db (Type[object]): Reference to a parent Database that the name is stored within.
-        run_number (int or None): The maximum number of times the task should run, or None if unlimited.
+        next_run (Optional[dt]): Next date and time to run the task. Defaults to None.
+        parent_db (Optional[Type[object]]): Reference to any Class with a parent_callback method, 
+        invoked after this class is done running.
+          Defaults to None.
+        run_number (Optional[int]): The maximum number of times the task should run, or None if unlimited. Defaults to None.
 
     Attributes:
-        name (str): The name of the task.
-        id (int): The unique ID of the task.
+        name (str): The unique name of the task.
         time_interval (rrule): A relative time interval for running the task.
-        last_run (dt): The dt of the last time the task was run.
+        last_run (Optional[dt]): The dt of the last time the task was run.
         to_run_next (dt): The dt of the next time the task is scheduled to run.
         is_running (bool): A flag indicating whether the task is currently running.
-        parent_db (Type[object]): Optional reference to a parent Database that the name is stored within.
-        running_task (Task): The asyncio.Task object representing the running task, if any.
-        funct (coroutine): A passed in coroutine to be passed into the wrapper function in assign_wrapper
-        wrapper (coroutine): coroutine containing func that runs the class, and then determines the next time to run the task.
+        parent_db (Optional[Type[object]]): Reference to a parent Database that the name is stored within.
+        running_task (Optional[asyncio.Task]): The asyncio.Task object representing the running task, if any.
+        funct (Optional[coroutine]): A passed in coroutine to be passed into the wrapper function in assign_wrapper.
+        wrapper (Optional[coroutine]): coroutine containing func that runs the class, and then determines the next time to run the task.
+        limited (bool): A flag indicating whether the task runs are limited.
+        run_number (Optional[int]): The maximum number of times the task should run, or None if unlimited.
     """
+
+    __slots__ = [
+        "name",
+        "parent_db",
+        "time_interval",
+        "last_run",
+        "status",
+        "running_task",
+        "is_running",
+        "funct",
+        "wrapper",
+        "limited",
+        "run_number",
+        "to_run_next"
+    ]
 
     def __init__(
         self,
         name: str,
         time_interval: rrule,
-        idv: int = 0,
         next_run: Optional[dt] = None,
         parent_db: Optional[Type[object]] = None,
         run_number: Optional[int] = None,
     ):
-        self.name = name
-        self.parent_db = parent_db
-        self.id = idv
-        self.time_interval = time_interval
-        self.last_run = None
-        self.status = "created"
-        self.running_task = None
-        self.is_running = False
-        self.funct = None
-        self.wrapper = None
-        self.limited = False
+        self.name: str = name
+        self.parent_db: Optional[Type[object]] = parent_db
+        self.time_interval: rrule = time_interval
+        self.last_run: Optional[dt] = None
+        self.status: Statuses = "created"
+        self.running_task: Optional[asyncio.Task] = None
+        self.is_running: bool = False
+        self.funct: Optional[Coroutine] = None
+        self.wrapper: Optional[Coroutine] = None
+        self.limited: bool = False
+        self.run_number: Optional[int] = run_number
+
         if run_number is not None:
             self.limited = True
-        self.run_number = run_number
 
-        self.to_run_next = next_run
+        self.to_run_next: Optional[dt] = next_run
         if self.to_run_next is None:
             self.to_run_next = dt.now()
             self.to_run_next = self.next_run()
@@ -98,7 +119,7 @@ class TCTask:
         """Return the TCTaskRef for this object."""
         return TCTaskRef(self.name)
 
-    def can_i_run(self):
+    def can_i_run(self)->bool:
         """Check if the TCTask can be launched."""
         if self.is_running:
             return False
@@ -107,14 +128,14 @@ class TCTask:
         else:
             return False
 
-    def get_total_seconds_until(self):
+    def get_total_seconds_until(self)->int:
         """return the total number of seconds until the next run."""
         if self.is_running:
             return 0
         return int((self.to_run_next - dt.now()).total_seconds())
 
-    def time_left(self):
-        """Check if the TCTask can be launched."""
+    def time_left(self)->str:
+        """Return a string indicating the next run time of this task."""
         if self.is_running:
             return f"{self.name} is running."
         time_until = self.to_run_next - dt.now()
@@ -123,8 +144,8 @@ class TCTask:
         next_formatted_datetime = ctr.strftime("%b-%d-%Y %H:%M")
         return f"{self.name} will run next on {formatted_datetime}, in {time_until}.  If right now, then {next_formatted_datetime}"
 
-    def time_left_short(self):
-        """Check if the TCTask can be launched."""
+    def time_left_short(self)->str:
+        """Return a string indicating the next run time of this task."""
         if self.is_running:
             return f"{self.name}: RUNNING\n"
         nextt = self.to_run_next - dt.now()
@@ -139,8 +160,8 @@ class TCTask:
         formatted_delta = f"{days}{hours}{mins},{nextt.seconds%60}s"
         return f"{self.name}: {formatted_delta}\n"
 
-    def time_left_shorter(self):
-        """Check if the TCTask can be launched."""
+    def time_left_shorter(self)->str:
+        """Return a string indicating the next run time of this task."""
         if self.is_running:
             return "RUNNING\n"
         nextt = self.to_run_next - dt.now()
@@ -154,12 +175,12 @@ class TCTask:
             mins = str(int((nextt.seconds // 60) % 60)) + "m"
         formatted_delta = f"{days}{hours}{mins},{nextt.seconds%60}s"
         return f"{formatted_delta}\n"
-
-    def assign_wrapper(self, func):
+    
+    def assign_wrapper(self, func: CoroutineWrap) -> CoroutineWrap:
         """create the asyncronous wrapper with the passed in func."""
         self.funct = func  # Add the coroutine function to the TCTask object
 
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args: Any, **kwargs: Dict[str, Any]) -> None:
             """
             The wrapped coroutine function.
 
@@ -184,6 +205,7 @@ class TCTask:
                 self.to_run_next = self.next_run()
                 remove_check = False
                 if self.limited:
+                    #Subtract run number if limited.
                     self.run_number -= 1
                     if self.run_number <= 0:
                         remove_check = True
@@ -211,7 +233,7 @@ class TCTask:
         self.wrapper = wrapper
         return wrapper
 
-    def __call__(self):
+    def __call__(self) -> CoroutineWrap:
         """
         Decorator for wrapping a coroutine function with the TCTask scheduling logic.
 
@@ -224,9 +246,10 @@ class TCTask:
 
         return self.wrapper()
 
-    def next_run(self):
+    def next_run(self) -> dt:
         """
-        Calculates the dt of the next time the task should be run based on the current time, last_run, and time_interval.
+        Calculates the dt of the next time the task should run 
+        based on the current time, last_run, and time_interval.
 
         Returns:
             The dt of the next time the task should be run.
@@ -237,18 +260,19 @@ class TCTask:
         )
         return next_occurrence
 
-    def __str__(self):
+    def __str__(self) -> str:
         st = f"{self.name},{self.status},{self.time_left_shorter()}"
         return st
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         st = f"{self.name},{self.status},{self.time_left_shorter()}"
         return st
-
 
 class TCTaskManager:
     """
-    Manager class for every TCTask object.
+    Manager class for every TCTask object.  
+    Handles running all tasks and organizing a priority queue of all 
+    the tasks in order.
 
     Attributes:
         tasks (dict): A dictionary of all TCTask objects managed by the manager.

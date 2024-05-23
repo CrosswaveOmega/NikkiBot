@@ -96,7 +96,8 @@ class TCBot(
     SpecialAppSync,
     PlaywrightMixin,
 ):
-    """A new central bot class.  An extension of discord.py's Bot class with additional functionality."""
+    """A new central bot class.  
+    An extension of discord.py's Bot class with additional functionality."""
 
     def __init__(self, guimode=False):
         super().__init__(
@@ -476,13 +477,13 @@ class TCBot(
         for e in er:
             await self.send_error_embed(e)
 
-    @tasks.loop(seconds=60)
+    @tasks.loop(seconds=120)
     async def status_ticker(self):
         await self.status_ticker_next()
 
     @tasks.loop(seconds=20.0)
     async def check_tc_tasks(self):
-        """run all TcTaskManager Tasks, fires every 20 seconds.."""
+        """run all TcTaskManager Tasks, fires every 20 seconds."""
         await TCTaskManager.run_tasks()
         stat, panel = TCTaskManager.get_task_status()
         gui.DataStore.set("schedule", panel)

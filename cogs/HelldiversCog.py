@@ -31,7 +31,10 @@ from discord.ext import commands
 from .HD2.db import ServerHDProfile
 import cogs.HD2 as hd2
 from utility.embed_paginator import pages_of_embeds
-from utility import load_json_with_substitutions 
+from utility import load_json_with_substitutions
+from bot.Tasks import (
+    TCTask, TCTaskManager
+)
 
 class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     """cog for helldivers 2.  Consider it my embedded automaton spy."""
@@ -45,16 +48,27 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         
         self.hd2=load_json_with_substitutions('./assets/json','flavor.json',{}).get('hd2',{})
         self.api_up=True
+        
         #self.profiles=ServerHDProfile.get_entries_with_overview_message_id()
         
         Guild_Task_Functions.add_task_function("UPDATEOVERVIEW", self.gtask_update)
 
-        # snap=hd2.load_from_json("./saveData/hd2_snapshot.json")
-        # #print(snap)
-        # if snap:
-        #     new_cls=hd2.ApiStatus.from_dict(snap,client=hdoverride)
-        #     self.apistatus=new_cls
-        self.update_api.start()
+        snap=hd2.load_from_json("./saveData/hd2_snapshot.json")
+        print(snap)
+        if snap:
+            try:
+                new_cls=hd2.ApiStatus.from_dict(snap,client=hdoverride)
+                self.apistatus=new_cls
+            except Exception as e:
+                print(e)
+                self.bot.logs.exception(e)
+        nowd = datetime.now()
+        st = datetime(nowd.year, nowd.month, nowd.day, nowd.hour, int(nowd.minute/15)*15)
+        robj = rrule(freq=MINUTELY,interval=15, dtstart=st)
+        if not TCTaskManager.does_task_exist("SuperEarthStatus"):
+            self.tc_task=TCTask("SuperEarthStatus",robj,robj.after(st))
+            self.tc_task.assign_wrapper(self.update_api)
+        #self.update_api.start()
 
     def server_profile_field_ext(self, guild: discord.Guild):
         """
@@ -69,8 +83,9 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         return None
 
     def cog_unload(self):
-        #hd2.save_to_json(self.apistatus,"./saveData/hd2_snapshot.json")
-        self.update_api.cancel()
+        hd2.save_to_json(self.apistatus,"./saveData/hd2_snapshot.json")
+        TCTaskManager.remove_task("SuperEarthStatus")
+        #self.update_api.cancel()
         
         Guild_Task_Functions.remove_task_function("UPDATEOVERVIEW")
 
@@ -82,8 +97,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             hd2.add_to_csv(self.apistatus)
         return
 
-
-    @tasks.loop(minutes=15)
     async def update_api(self):
         
         self.hd2=load_json_with_substitutions('./assets/json','flavor.json',{}).get('hd2',{})

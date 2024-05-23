@@ -102,7 +102,9 @@ class Guild_Task_Functions:
 
 
 class TCGuildTask(Guild_Task_Base):
-    """SQLAlchemy Table that stores data for Guild Tasks."""
+    """SQLAlchemy Table that stores data for Guild Tasks.  
+    Guild Tasks are tasks set up on a guild per guild basis, running after a fixed period 
+    of time."""
 
     __tablename__ = "tcguild_task"
     server_id = Column(Integer, nullable=False)
@@ -231,15 +233,16 @@ class TCGuildTask(Guild_Task_Base):
     @classmethod
     def parent_callback(cls, guildtaskname: str, next_run: datetime):
         """
-        callback for whenever a task is done.
+        Callback for whenever a task is done.
         """
         s, t = guildtaskname.split("_")
         cls.update(int(s), t, next_run)
 
     @classmethod
-    def update(cls, server_id, task_name, next_run):
+    def update(cls, server_id: int, task_name: str, next_run: datetime) -> None:
         """
-        Updates the next_run attribute of the TCGuildTask entry with the specified server_id and task_name to the passed in datetime object.
+        Updates the next_run attribute of the TCGuildTask entry with the
+        specified server_id and task_name to the passed in datetime object.
         """
         session: Session = DatabaseSingleton.get_session()
         statement = select(TCGuildTask).where(

@@ -24,7 +24,7 @@ X = data[['player_count', 'mp_mult', 'wins_per_sec', 'loss_per_sec', 'decay_rate
 Y = data['eps']
 
 
-model=LinearRegression(random_state=42,n_estimators=1000)
+model=LinearRegression()
 model.fit(X, Y)
 def experiment_models():
     models = [
@@ -38,9 +38,9 @@ def experiment_models():
     for i in range(1):
         # Split the data into training and testing sets
         
-        for name, model in models:
-            model.fit(X, Y)
-            y_pred = model.predict(X)
+        for name, lmodel in models:
+            lmodel.fit(X, Y)
+            y_pred = lmodel.predict(X)
             
             mse = mean_squared_error(Y, y_pred)
             r2 = r2_score(Y, y_pred)

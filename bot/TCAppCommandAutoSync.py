@@ -426,7 +426,6 @@ def build_and_format_app_commands(
     }
 
     for command in tree.get_commands(guild=guild):
-        print(command)
         di = command.to_dict(tree)  # I really wish this method was in the docs...
         typev, name = di["type"], di["name"]
         typestr = "chat_commands"
@@ -603,7 +602,7 @@ class SpecialAppSync:
             if no_sync == False or sync_only:
                 await self.sync_commands_tree(None, forced=force)
 
-            gui.gprint(self.guilds)
+            #gui.gprint(self.guilds)
             for guild in self.guilds:
                 if force:
                     self.tree.clear_commands(guild=guild)
