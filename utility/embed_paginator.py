@@ -325,7 +325,7 @@ class EmbedPageButtons(discord.ui.View):
 
 
 async def pages_of_embeds_2(
-    ctx: commands.Context, display: List[discord.Embed]
+    ctx: commands.Context, display: List[discord.Embed],show_page_nums=True, **kwargs
 ) -> Tuple[PageClassContainer, EmbedPageButtons]:
     """
     Creates a PageClassContainer and a EmbedPageButtons object and returns them as a tuple.
@@ -348,7 +348,7 @@ async def pages_of_embeds_2(
     buttons: EmbedPageButtons
         An instance of the EmbedPageButtons class with a reference to the `pagecall` instance.
     """
-    pagecall = PageClassContainer(display)
+    pagecall = PageClassContainer(display,show_embeds=show_page_nums)
 
     buttons = EmbedPageButtons(callbacker=pagecall)
     return pagecall, buttons

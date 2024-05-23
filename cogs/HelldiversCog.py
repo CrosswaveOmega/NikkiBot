@@ -30,11 +30,87 @@ from bot import (
 from discord.ext import commands
 from .HD2.db import ServerHDProfile
 import cogs.HD2 as hd2
-from utility.embed_paginator import pages_of_embeds
+from utility.embed_paginator import pages_of_embeds, pages_of_embeds_2
 from utility import load_json_with_substitutions
 from bot.Tasks import (
     TCTask, TCTaskManager
 )
+
+class HD2OverviewView(discord.ui.View):
+    def __init__(self,cog):
+        super().__init__(timeout=None)
+        self.my_count = {}
+        self.cog=cog
+
+    async def callback(self, interaction, button):
+        user = interaction.user
+        label = button.label
+        if not str(user.id) in self.my_count:
+            self.my_count[str(user.id)] = 0
+        self.my_count[str(user.id)] += 1
+        await interaction.response.send_message(
+            f"You are {user.name}, this is {label}, and you have pressed this button {self.my_count[str(user.id)]} times.",
+            ephemeral=True,
+        )
+
+    async def on_error(
+        self, interaction: discord.Interaction, error: Exception
+    ) -> None:
+        await interaction.response.send_message(
+            f"Oops! Something went wrong, {str(error)}", ephemeral=True
+        )
+
+    @discord.ui.button(
+        label="War Stats",
+        style=discord.ButtonStyle.red,
+        custom_id="hd_persistent_view:war",
+    )
+    async def red(self, interaction: discord.Interaction, button: discord.ui.Button):
+        this,last=self.cog.apistatus.war.get_first_change()
+        await interaction.response.send_message(
+            f"Embed",
+            embed=(hd2.create_war_embed(this,last)),
+            ephemeral=True,
+        )
+
+    @discord.ui.button(
+        label="Active Planets", style=discord.ButtonStyle.green, custom_id="hd_persistent_view:campaigns"
+    )
+    async def green(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embeds=[]
+        
+        for ind, key in self.cog.apistatus.campaigns.items():
+            camp,last=key.get_first_change()
+            diff=camp-last
+            cstr = hd2.create_campaign_str(camp)
+            embeds.append(hd2.create_planet_embed(camp.planet, cstr=cstr,last=diff.planet))
+        pcc,but=await pages_of_embeds_2(True,embeds,show_page_nums=False)
+        await interaction.response.send_message(
+        embed=pcc.make_embed(),
+        view=but,ephemeral=True)
+        #await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
+
+
+    @discord.ui.button(
+        label="Estimate",
+        style=discord.ButtonStyle.blurple,
+        custom_id="hd_persistent_view:blue",
+    )
+    async def blue(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message(
+            f"Coming Soon",
+            ephemeral=True,
+        )
+
+    @discord.ui.button(
+        label="View Map", style=discord.ButtonStyle.grey, custom_id="hd_persistent_view:grey"
+    )
+    async def grey(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message(
+            f"https://helldiverscompanion.com/",
+            ephemeral=True,
+        )
+        #await self.callback(interaction, button)
 
 class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     """cog for helldivers 2.  Consider it my embedded automaton spy."""
@@ -55,6 +131,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         snap=hd2.load_from_json("./saveData/hd2_snapshot.json")
         print(snap)
+        self.bot.add_view(HD2OverviewView(self))
         if snap:
             try:
                 new_cls=hd2.ApiStatus.from_dict(snap,client=hdoverride)
@@ -169,13 +246,13 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         task_name="UPDATEOVERVIEW"
         autochannel=ctx.channel
         
-        target_message=await autochannel.send("Overview_message")
+        target_message=await autochannel.send("Overview_message",view=HD2OverviewView(self))
         old = TCGuildTask.get(guild.id, task_name)
         url=target_message.jump_url
         profile.update(overview_message_url=url)
         if not old:
             now=datetime.now()
-            start_date = datetime(2023, 1, 1, now.hour, now.minute-15)
+            start_date = datetime(2023, 1, 1, now.hour, max(0,now.minute-15))
             robj = rrule(freq=MINUTELY, interval=15, dtstart=start_date)
 
             new = TCGuildTask.add_guild_task(guild.id, task_name, target_message, robj,True)
@@ -186,7 +263,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         else:
             old.target_channel_id = autochannel.id
 
-            target_message = await autochannel.send("**ALTERING AUTO CHANNEL...**")
+            target_message = await autochannel.send("**ALTERING AUTO CHANNEL...**",view=HD2OverviewView(self))
             old.target_message_url = target_message.jump_url
             self.bot.database.commit()
             result = f"Changed the dashboard channel to <#{autochannel.id}>"
