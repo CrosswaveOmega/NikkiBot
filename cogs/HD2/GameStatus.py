@@ -114,9 +114,7 @@ class ApiStatus:
         dispatches=None
         try:
             war=await GetApiV1War(api_config_override=self.client)
-            print(war)
             assignments=await GetApiV1AssignmentsAll(api_config_override=self.client)
-
             campaigns=await GetApiV1CampaignsAll(api_config_override=self.client)
             dispatches=await GetApiV1DispatchesAll(api_config_override=self.client)
         except Exception as e:
@@ -126,10 +124,8 @@ class ApiStatus:
             self.dispatches=dispatches
 
         if war is not None:
-            print("adding war")
-            print(war)
             self.war.add(war)
-            print('now',self.war)
+            
         if assignments is not None:
             assign_ids=set()
             for a in assignments:

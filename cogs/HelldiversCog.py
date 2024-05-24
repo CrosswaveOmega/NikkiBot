@@ -82,8 +82,7 @@ class HD2OverviewView(discord.ui.View):
         for ind, key in self.cog.apistatus.campaigns.items():
             camp,last=key.get_first_change()
             diff=camp-last
-            cstr = hd2.create_campaign_str(camp)
-            embeds.append(hd2.create_planet_embed(camp.planet, cstr=cstr,last=diff.planet))
+            embeds.append(hd2.create_planet_embed(camp.planet, cstr=camp,last=diff.planet,stat=self.cog.apistatus))
         pcc,but=await pages_of_embeds_2(True,embeds,show_page_nums=False)
         await interaction.response.send_message(
         embed=pcc.make_embed(),
@@ -321,26 +320,22 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             if byplanet!=0:
                 if camp.planet.index==byplanet:
                     
-                    cstr = hd2.create_campaign_str(camp)
-                    embeds.append(hd2.create_planet_embed(camp.planet, cstr=cstr,last=diff))
+                    embeds.append(hd2.create_planet_embed(camp.planet, cstr=camp,last=diff,stat=self.apistatus))
             else:
                 if filter==0:
-                    cstr = hd2.create_campaign_str(camp)
-                    embeds.append(hd2.create_planet_embed(camp.planet, cstr=cstr,last=diff))
+                    embeds.append(hd2.create_planet_embed(camp.planet, cstr=camp,last=diff,stat=self.apistatus))
                 elif filter==2:
                     evtcheck=camp['planet']['event']
                     if evtcheck:
                         evtcheck=evtcheck['faction']=='Terminids'
                     if camp['planet']['currentOwner']=='Terminids' or evtcheck:
-                        cstr = hd2.create_campaign_str(camp)
-                        embeds.append(hd2.create_planet_embed(camp.planet, cstr=cstr,last=diff))
+                        embeds.append(hd2.create_planet_embed(camp.planet, cstr=camp,last=diff,stat=self.apistatus))
                 elif filter==3:
                     evtcheck=camp['planet']['event']
                     if evtcheck:
                         evtcheck=evtcheck['faction']=='Automaton'
                     if camp['planet']['currentOwner']=='Automaton' or evtcheck:
-                        cstr = hd2.create_campaign_str(camp)
-                        embeds.append(hd2.create_planet_embed(camp.planet, cstr=cstr,last=diff))
+                        embeds.append(hd2.create_planet_embed(camp.planet, cstr=camp,last=diff,stat=self.apistatus))
         await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
     
     @pc.command(name="planet", description="get data for specific planet(s)")
@@ -355,9 +350,11 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if byplanet:
             if byplanet in self.apistatus.planets:
                 planet= self.apistatus.planets[byplanet]
-                embeds.append(hd2.create_planet_embed(planet, cstr='',last=None))
+                embeds.append(hd2.create_planet_embed(planet, cstr=None,last=None,stat=self.apistatus))
 
         await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
+    
+
 
     @pc.command(name="dispatches", description="get all dispatches.")
     async def dispatch(self, interaction: discord.Interaction):

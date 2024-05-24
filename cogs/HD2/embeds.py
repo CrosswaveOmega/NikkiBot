@@ -6,7 +6,7 @@ from .helldive import Planet,War,Assignment2, Campaign2
 Collection of embeds for formatting.
 '''
 from .GameStatus import ApiStatus, get_feature_dictionary
-from .predict import make_prediction
+from .predict import make_prediction_for_eps
 from collections import defaultdict
 from utility import human_format as hf, select_emoji as emj, changeformatif as cfi, extract_timestamp as et
 from discord.utils import format_dt as fdt
@@ -116,27 +116,36 @@ def create_assignment_embed(data:Assignment2,last:Optional[Assignment2]=None,pla
 def create_campaign_str(data):
     cid = data["id"]
     campaign_type = campaign_types.get(data["type"], "Unknown type")
-    count = campaign_types.get(data["count"], 0)
+    count = data["count"]
     output = f"C{cid}: {campaign_type}.  Op number:{count}"
 
     return output
 
 
-def create_planet_embed(data:Planet, cstr: str,last:Planet=None):
+def create_planet_embed(data:Planet, cstr: Campaign2,last:Planet=None,stat:ApiStatus=None):
     '''Create a detailed embed for a single planet.'''
+    cstri=""
+    if cstr:
+        cstri = create_campaign_str(cstr)
     planet_index = data.get("index", "index error")
     planet_name = data.get("name", "Name error")
-    stats = data.get("statistics", None)
+    stats = data.statistics
     stat_str = stats.format_statistics()
     if stats and (last is not None):
         stat_str = stats.diff_format(last.statistics)
     planet_sector = data.get("sector", "sector error")
+    
+    orig_owner = data.get("initialOwner", "?")
+    curr_owner = data.get("currentOwner", "?")
+    owner = f"{curr_owner} Control"
+    if curr_owner != orig_owner:
+        owner = f"{curr_owner} Occupation"
     embed = discord.Embed(
-        title=f"Planet: {planet_name}",
-        description=f"{planet_sector}, {stat_str}",
+        title=f"{data.get_name()}",
+        description=f"{planet_sector} Sector\n{owner}: {stat_str}",
         color=0xFFA500,
     )
-    embed.set_footer(text=cstr)
+    embed.set_footer(text=cstri)
     embed.set_author(name=f"Planet Index {planet_index}")
 
     if data.biome:
@@ -158,17 +167,7 @@ def create_planet_embed(data:Planet, cstr: str,last:Planet=None):
             hazards_str += f"**{hazard_name}:** {hazard_description}\n"
         embed.add_field(name="Hazards", value=hazards_str, inline=False)
 
-    orig_owner = data.get("initialOwner", "?")
-    curr_owner = data.get("currentOwner", "?")
-    string = f"{orig_owner}, {curr_owner}"
-    if orig_owner == curr_owner:
-        string = orig_owner
-    if curr_owner != orig_owner:
-        string = f"{orig_owner}  occupied by {curr_owner}"
-    embed.add_field(name="Ownership", value=string, inline=True)
 
-    regen_per_second = data.get("regenPerSecond", 0)
-    embed.add_field(name="Regeneration Per Second", value=regen_per_second, inline=True)
 
     max_health = data.get("maxHealth", 0)
     health = data.get("health", 0)
@@ -177,7 +176,20 @@ def create_planet_embed(data:Planet, cstr: str,last:Planet=None):
     else:
         embed.add_field(name="Health", value=f"{health}/{max_health}.  ", inline=True)
 
+    regen_per_second = data.get("regenPerSecond", 0)
+    needed_eps = regen_per_second/stat.war.get_first().impactMultiplier
+    embed.add_field(name="Regeneration Per Second", value=f"{regen_per_second}.  \n Need `{round(needed_eps,2)}` eps", inline=True)
 
+    if cstr:
+        lis=stat.campaigns.get(cstr.id)
+        changes=lis.get_changes()
+        avg=None
+        if changes:
+            avg=Planet.average([c.planet for c in changes])
+        if avg:
+            remaining_time=data.estimate_remaining_lib_time(avg)
+            embed.add_field(name="Est. Lib Time",value=f"{remaining_time}")
+        
 
     event_info = data.get("event", None)
 
@@ -197,17 +209,22 @@ def create_planet_embed(data:Planet, cstr: str,last:Planet=None):
                     f"Campaign ID: {hf(event_info['campaignId'])}, Joint Operation IDs: {', '.join(map(str, event_info['jointOperationIds']))}"
                 )
         embed.add_field(name="Event Details", value=event_details, inline=False)
-    position = data.get("position", None)
+
+    
+    position = data.position
     if position:
         x, y = position.get("x", 0), position.get("y", 0)
         embed.add_field(name="Galactic Position", value=f"x:{x},y:{y}", inline=True)
 
     if data.attacking:
-        attacking_planets = data["attacking"]
-        if attacking_planets:
+        att=[]
+        for d in data.attacking:
+            if int(d) in stat.planets:
+                att.append(stat.planets[d].get_name())
+        if att:
             embed.add_field(
                 name="Attacking Planets",
-                value=", ".join(map(str, attacking_planets)),
+                value=", ".join(map(str, att)),
                 inline=True,
             )
         else:
@@ -216,7 +233,10 @@ def create_planet_embed(data:Planet, cstr: str,last:Planet=None):
             )
 
     if data.waypoints:
-        planet_waypoints = data["waypoints"]
+        planet_waypoints=[]
+        for d in data.waypoints:
+            if int(d) in stat.planets:
+                planet_waypoints.append(stat.planets[d].get_name())
         if planet_waypoints:
             embed.add_field(
                 name="Waypoints",
@@ -249,7 +269,7 @@ def campaign_view(stat:ApiStatus,hdtext={}):
             avg=Planet.average([c.planet for c in changes])
         name,desc=camp.planet.simple_planet_view((camp-last).planet,avg)
         features=get_feature_dictionary(stat,k)
-        pred=make_prediction(features)
+        pred=make_prediction_for_eps(features)
         print(features['eps'],pred)
         eps_estimated=round(pred,3)
         eps_real=round(features['eps'],3)

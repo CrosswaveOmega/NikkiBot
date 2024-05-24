@@ -94,14 +94,21 @@ class Planet(BaseApiModel):
                 return f"Stalemate."
             return ""
         if change>0:
-            return "Losing."
+            estimated_seconds=abs((self.maxHealth-self.health)/change)
+            timeval= self.retrieved_at+datetime.timedelta(seconds=estimated_seconds)
+            return f"{round(change,5)}, Est.Loss {fdt(timeval,'R')}"
         estimated_seconds=abs(self.health/change)
         timeval= self.retrieved_at+datetime.timedelta(seconds=estimated_seconds)
         return f"{round(change,5)},{fdt(timeval,'R')}"
         pass
 
+    def get_name(self)->str:
+        faction=emj(self.currentOwner.lower())
+        return f"{faction}P#{self.index}: {self.name}"
+
     @staticmethod
     def average(planets_list: List['Planet']) -> 'Planet':
+        '''Average together a list of planet differences over time.'''
         count = len(planets_list)
         if count == 0:
             return Planet()
@@ -165,7 +172,7 @@ class Planet(BaseApiModel):
             timev=fdt(et(evt.endTime),'R')
             event_fact=emj(self.event.faction.lower())
             #, {evt.health}{cfi(diff.event.health)}/{evt.maxHealth}.
-            out+=f"\n Time limit:{timev} Defend from {event_fact} \n Lib {round((evt.health/evt.maxHealth)*100.0, 5)}% {cfi(round((diff.event.health/evt.maxHealth)*100.0, 5))}"
+            out+=f"\n Time limit:{timev}\n Defend from {event_fact} \n Lib {round((evt.health/evt.maxHealth)*100.0, 5)}% {cfi(round((diff.event.health/evt.maxHealth)*100.0, 5))}"
             if avg:
                 if avg.event:
                     out+=f"\n {self.event.estimate_remaining_lib_time(avg.event)}"

@@ -78,7 +78,9 @@ class Event(BaseApiModel):
         if change==0:
             return f"Stalemate."
         if change>0:
-            return f"Losing"
+            estimated_seconds=abs(self.health/change)
+            timeval= self.retrieved_at+datetime.timedelta(seconds=estimated_seconds)
+            return f"{round(change,5)},Loss in {fdt(timeval,'R')}"
         estimated_seconds=abs(self.health/change)
         timeval= self.retrieved_at+datetime.timedelta(seconds=estimated_seconds)
         return f"{round(change,5)},{fdt(timeval,'R')}"
