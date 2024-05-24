@@ -74,7 +74,7 @@ class HD2OverviewView(discord.ui.View):
         )
 
     @discord.ui.button(
-        label="Active Planets", style=discord.ButtonStyle.green, custom_id="hd_persistent_view:campaigns"
+        label="Planets", style=discord.ButtonStyle.green, custom_id="hd_persistent_view:campaigns"
     )
     async def green(self, interaction: discord.Interaction, button: discord.ui.Button):
         embeds=[]
