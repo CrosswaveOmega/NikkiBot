@@ -444,11 +444,11 @@ def build_and_format_app_commands(
 
 class SpecialAppSync:
     """Mixin that defines custom command tree syncing logic."""
+
     tree: discord.app_commands.CommandTree
     logs: logging.Logger
-    cogs: Dict[str,commands.Cog]
+    cogs: Dict[str, commands.Cog]
     guilds: List[discord.Guild]
-
 
     async def sync_commands_tree(self, guild: discord.Guild, forced=False):
         """Build a dictionary representation of all app commands to be synced, check if
@@ -521,7 +521,7 @@ class SpecialAppSync:
         gui.dprint(ignorelist)
 
         def syncprint(*lis):
-            #print(*lis)
+            # print(*lis)
             pass
             # gui.gprint(f"Sync for  (ID {guildid})", *lis)
 
@@ -602,7 +602,7 @@ class SpecialAppSync:
             if no_sync == False or sync_only:
                 await self.sync_commands_tree(None, forced=force)
 
-            #gui.gprint(self.guilds)
+            # gui.gprint(self.guilds)
             for guild in self.guilds:
                 if force:
                     self.tree.clear_commands(guild=guild)

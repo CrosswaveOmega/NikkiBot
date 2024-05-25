@@ -422,12 +422,14 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
             song.start()
             voice.play(
                 aud,
-                after=lambda e: self.bot.schedule_for_post(
-                    ctx.channel, "Error in playback: " + str(e)
-                )
-                if e
-                else asyncio.run_coroutine_threadsafe(
-                    self.player_actions("auto_next"), self.bot.loop
+                after=lambda e: (
+                    self.bot.schedule_for_post(
+                        ctx.channel, "Error in playback: " + str(e)
+                    )
+                    if e
+                    else asyncio.run_coroutine_threadsafe(
+                        self.player_actions("auto_next"), self.bot.loop
+                    )
                 ),
             )
             voice.is_playing()
@@ -457,12 +459,12 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
         aud = discord.FFmpegPCMAudio(override, **self.FFMPEG_OPTIONS)
         voice.play(
             aud,
-            after=lambda e: self.bot.schedule_for_post(
-                ctx.channel, "Error in playback: " + str(e)
-            )
-            if e
-            else asyncio.run_coroutine_threadsafe(
-                self.player_actions("auto_over"), self.bot.loop
+            after=lambda e: (
+                self.bot.schedule_for_post(ctx.channel, "Error in playback: " + str(e))
+                if e
+                else asyncio.run_coroutine_threadsafe(
+                    self.player_actions("auto_over"), self.bot.loop
+                )
             ),
         )
 

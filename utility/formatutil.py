@@ -142,11 +142,11 @@ status_emoji = {
     "emptyc": "<:checkboxempty:1199756989887172639>",
     "edit": "<:edit:1199769314929164319>",
     "add": "<:add:1199770854112890890>",
-    'automaton':"<:bots:1241748819620659332>",
-    'terminids':"<:bugs:1241748834632208395>",
-    'humans':"<:superearth:1239276283482083432>",
-    'hdi':"<:hdi:1240695940965339136>",
-    'medal':"<:Medal:1241748215087235143>"
+    "automaton": "<:bots:1241748819620659332>",
+    "terminids": "<:bugs:1241748834632208395>",
+    "humans": "<:superearth:1239276283482083432>",
+    "hdi": "<:hdi:1240695940965339136>",
+    "medal": "<:Medal:1241748215087235143>",
 }
 
 
@@ -154,6 +154,7 @@ def select_emoji(key):
     if key in status_emoji:
         return status_emoji.get(key)
     return status_emoji["emptyc"]
+
 
 def changeformatif(value):
     if value:

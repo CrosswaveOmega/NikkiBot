@@ -1,4 +1,5 @@
 """Web base loader class."""
+
 import langchain_community.document_loaders as dl
 from langchain.docstore.document import Document
 import asyncio

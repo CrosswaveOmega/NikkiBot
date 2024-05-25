@@ -22,6 +22,7 @@ from bot import (
     TCBot,
     TCGuildTask,
 )
+
 # import datetime
 from bot import (
     TCBot,
@@ -32,15 +33,14 @@ from .HD2.db import ServerHDProfile
 import cogs.HD2 as hd2
 from utility.embed_paginator import pages_of_embeds, pages_of_embeds_2
 from utility import load_json_with_substitutions
-from bot.Tasks import (
-    TCTask, TCTaskManager
-)
+from bot.Tasks import TCTask, TCTaskManager
+
 
 class HD2OverviewView(discord.ui.View):
-    def __init__(self,cog):
+    def __init__(self, cog):
         super().__init__(timeout=None)
         self.my_count = {}
-        self.cog=cog
+        self.cog: "HelldiversCog" = cog
 
     async def callback(self, interaction, button):
         user = interaction.user
@@ -66,29 +66,34 @@ class HD2OverviewView(discord.ui.View):
         custom_id="hd_persistent_view:war",
     )
     async def red(self, interaction: discord.Interaction, button: discord.ui.Button):
-        this,last=self.cog.apistatus.war.get_first_change()
+        this, last = self.cog.apistatus.war.get_first_change()
         await interaction.response.send_message(
             f"Embed",
-            embed=(hd2.create_war_embed(this,last)),
+            embed=(hd2.create_war_embed(this, last)),
             ephemeral=True,
         )
 
     @discord.ui.button(
-        label="Planets", style=discord.ButtonStyle.green, custom_id="hd_persistent_view:campaigns"
+        label="Planets",
+        style=discord.ButtonStyle.green,
+        custom_id="hd_persistent_view:campaigns",
     )
     async def green(self, interaction: discord.Interaction, button: discord.ui.Button):
-        embeds=[]
-        
-        for ind, key in self.cog.apistatus.campaigns.items():
-            camp,last=key.get_first_change()
-            diff=camp-last
-            embeds.append(hd2.create_planet_embed(camp.planet, cstr=camp,last=diff.planet,stat=self.cog.apistatus))
-        pcc,but=await pages_of_embeds_2(True,embeds,show_page_nums=False)
-        await interaction.response.send_message(
-        embed=pcc.make_embed(),
-        view=but,ephemeral=True)
-        #await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
+        embeds = []
 
+        for ind, key in self.cog.apistatus.campaigns.items():
+            camp, last = key.get_first_change()
+            diff = camp - last
+            embeds.append(
+                hd2.create_planet_embed(
+                    camp.planet, cstr=camp, last=diff.planet, stat=self.cog.apistatus
+                )
+            )
+        pcc, but = await pages_of_embeds_2(True, embeds, show_page_nums=False)
+        await interaction.response.send_message(
+            embed=pcc.make_embed(), view=but, ephemeral=True
+        )
+        # await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
 
     @discord.ui.button(
         label="Estimate",
@@ -96,20 +101,40 @@ class HD2OverviewView(discord.ui.View):
         custom_id="hd_persistent_view:blue",
     )
     async def blue(self, interaction: discord.Interaction, button: discord.ui.Button):
+        est = self.cog.apistatus.estimates()
+        print(est)
+        title = "Health estimates over time"
+        embed = discord.Embed(title=f"{title}")
+        embeds = [embed]
+        total_size = len(title)
+
+        for name, val in est:
+            total_size += len(name)
+            for v in val:
+                if total_size + len(v) >= 5800:
+                    embed = discord.Embed(title=f"{title}")
+                    embeds.append(embed)
+                    total_size = len(title) + len(name) + len(v)
+                else:
+                    total_size += len(v)
+                embed.add_field(name=name, value=v[:1024], inline=False)
+        pcc, but = await pages_of_embeds_2(True, embeds, show_page_nums=True)
         await interaction.response.send_message(
-            f"Coming Soon",
-            ephemeral=True,
+            embed=pcc.make_embed(), view=but, ephemeral=True
         )
 
     @discord.ui.button(
-        label="View Map", style=discord.ButtonStyle.grey, custom_id="hd_persistent_view:grey"
+        label="View Map",
+        style=discord.ButtonStyle.grey,
+        custom_id="hd_persistent_view:grey",
     )
     async def grey(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_message(
             f"https://helldiverscompanion.com/",
             ephemeral=True,
         )
-        #await self.callback(interaction, button)
+        # await self.callback(interaction, button)
+
 
 class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     """cog for helldivers 2.  Consider it my embedded automaton spy."""
@@ -117,34 +142,38 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     def __init__(self, bot):
         self.bot: TCBot = bot
         # self.session=aiohttp.ClientSession()
-        hdoverride=hd2.APIConfig()
-        hdoverride.client_name=bot.keys.get("hd2cli")
-        self.apistatus=hd2.ApiStatus(client=hdoverride)
-        
-        self.hd2=load_json_with_substitutions('./assets/json','flavor.json',{}).get('hd2',{})
-        self.api_up=True
-        
-        #self.profiles=ServerHDProfile.get_entries_with_overview_message_id()
-        
+        hdoverride = hd2.APIConfig()
+        hdoverride.client_name = bot.keys.get("hd2cli")
+        self.apistatus = hd2.ApiStatus(client=hdoverride)
+
+        self.hd2 = load_json_with_substitutions("./assets/json", "flavor.json", {}).get(
+            "hd2", {}
+        )
+        self.api_up = True
+
+        # self.profiles=ServerHDProfile.get_entries_with_overview_message_id()
+
         Guild_Task_Functions.add_task_function("UPDATEOVERVIEW", self.gtask_update)
 
-        snap=hd2.load_from_json("./saveData/hd2_snapshot.json")
+        snap = hd2.load_from_json("./saveData/hd2_snapshot.json")
         print(snap)
         self.bot.add_view(HD2OverviewView(self))
         if snap:
             try:
-                new_cls=hd2.ApiStatus.from_dict(snap,client=hdoverride)
-                self.apistatus=new_cls
+                new_cls = hd2.ApiStatus.from_dict(snap, client=hdoverride)
+                self.apistatus = new_cls
             except Exception as e:
                 print(e)
                 self.bot.logs.exception(e)
         nowd = datetime.now()
-        st = datetime(nowd.year, nowd.month, nowd.day, nowd.hour, int(nowd.minute/15)*15)
-        robj = rrule(freq=MINUTELY,interval=15, dtstart=st)
+        st = datetime(
+            nowd.year, nowd.month, nowd.day, nowd.hour, int(nowd.minute / 15) * 15
+        )
+        robj = rrule(freq=MINUTELY, interval=15, dtstart=st)
         if not TCTaskManager.does_task_exist("SuperEarthStatus"):
-            self.tc_task=TCTask("SuperEarthStatus",robj,robj.after(st))
+            self.tc_task = TCTask("SuperEarthStatus", robj, robj.after(st))
             self.tc_task.assign_wrapper(self.update_api)
-        #self.update_api.start()
+        # self.update_api.start()
 
     def server_profile_field_ext(self, guild: discord.Guild):
         """
@@ -154,37 +183,42 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if not profile:
             return None
         if profile.overview_message_url:
-            field = {"name": "Helldiver Overview", "value": f'[Overview]({profile.overview_message_url})'}
+            field = {
+                "name": "Helldiver Overview",
+                "value": f"[Overview]({profile.overview_message_url})",
+            }
             return field
         return None
 
     def cog_unload(self):
-        hd2.save_to_json(self.apistatus,"./saveData/hd2_snapshot.json")
+        hd2.save_to_json(self.apistatus, "./saveData/hd2_snapshot.json")
         TCTaskManager.remove_task("SuperEarthStatus")
-        #self.update_api.cancel()
-        
+        # self.update_api.cancel()
+
         Guild_Task_Functions.remove_task_function("UPDATEOVERVIEW")
 
     async def update_data(self):
         if self.api_up:
             await self.apistatus.update_data()
-            
+
             print(self.apistatus.war)
             hd2.add_to_csv(self.apistatus)
         return
 
     async def update_api(self):
-        
-        self.hd2=load_json_with_substitutions('./assets/json','flavor.json',{}).get('hd2',{})
+
+        self.hd2 = load_json_with_substitutions("./assets/json", "flavor.json", {}).get(
+            "hd2", {}
+        )
         try:
             print("updating war")
             await self.update_data()
-            
+
         except Exception as e:
             await self.bot.send_error(e, f"Message update cleanup error.")
             gui.gprint(str(e))
 
-    async def gtask_update(self, source_message:discord.Message=None):
+    async def gtask_update(self, source_message: discord.Message = None):
         """
         Guild task that updates the overview message.
         """
@@ -192,23 +226,27 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             return None
         context = await self.bot.get_context(source_message)
 
-        #await context.channel.send("Greetings from GTASK.")
+        # await context.channel.send("Greetings from GTASK.")
         try:
-            profile=ServerHDProfile.get(context.guild.id)
+            profile = ServerHDProfile.get(context.guild.id)
             if profile:
-                
-                target=await urltomessage(profile.overview_message_url,context.bot)
+
+                target = await urltomessage(profile.overview_message_url, context.bot)
                 if self.api_up is False:
                     await target.edit(content="WARNING, COMMS ARE DOWN!")
                     return
-                emb=hd2.campaign_view(self.apistatus,self.hd2)
-                emb.timestamp=discord.utils.utcnow()
-                embs=[emb]
+                emb = hd2.campaign_view(self.apistatus, self.hd2)
+                emb.timestamp = discord.utils.utcnow()
+                embs = [emb]
                 if self.apistatus.assignments:
                     for i, assignment in self.apistatus.assignments.items():
-                        b,a=assignment.get_first_change()
-                        embs.append(hd2.create_assignment_embed(b,b-a,planets=self.apistatus.planets))
-                        
+                        b, a = assignment.get_first_change()
+                        embs.append(
+                            hd2.create_assignment_embed(
+                                b, b - a, planets=self.apistatus.planets
+                            )
+                        )
+
                 await target.edit(content="Current game status.", embeds=embs)
                 return "OK"
         except Exception as e:
@@ -217,7 +255,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             )
             await source_message.channel.send(embed=er)
             raise e
-        
+
     @commands.is_owner()
     @commands.command(name="load_now")
     async def load_now(self, ctx: commands.Context):
@@ -228,33 +266,47 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     @commands.command(name="get_csv")
     async def get_csv(self, ctx: commands.Context):
         await ctx.send(file=discord.File("statistics.csv"))
-        
+
     @commands.is_owner()
     @commands.command(name="api_down")
     async def api_off(self, ctx: commands.Context):
-        self.api_up=not self.api_up
+        self.api_up = not self.api_up
         await ctx.send(f"Api set is {self.api_up}")
 
-    pcs = app_commands.Group(name="hd2setup", description="Commands for Helldivers 2 setup.", guild_only=True, default_permissions=discord.Permissions(manage_messages=True, manage_channels=True))
-    @pcs.command(name="make_overview",description="Setup a constantly updating message ")
+    pcs = app_commands.Group(
+        name="hd2setup",
+        description="Commands for Helldivers 2 setup.",
+        guild_only=True,
+        default_permissions=discord.Permissions(
+            manage_messages=True, manage_channels=True
+        ),
+    )
+
+    @pcs.command(
+        name="make_overview", description="Setup a constantly updating message "
+    )
     async def overview_make(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
-        profile=ServerHDProfile.get_or_new(ctx.guild.id)
-        guild=ctx.guild
-        task_name="UPDATEOVERVIEW"
-        autochannel=ctx.channel
-        
-        target_message=await autochannel.send("Overview_message",view=HD2OverviewView(self))
+        profile = ServerHDProfile.get_or_new(ctx.guild.id)
+        guild = ctx.guild
+        task_name = "UPDATEOVERVIEW"
+        autochannel = ctx.channel
+
+        target_message = await autochannel.send(
+            "Overview_message", view=HD2OverviewView(self)
+        )
         old = TCGuildTask.get(guild.id, task_name)
-        url=target_message.jump_url
+        url = target_message.jump_url
         profile.update(overview_message_url=url)
         if not old:
-            now=datetime.now()
-            start_date = datetime(2023, 1, 1, now.hour, max(0,now.minute-15))
+            now = datetime.now()
+            start_date = datetime(2023, 1, 1, now.hour, max(0, now.minute - 15))
             robj = rrule(freq=MINUTELY, interval=15, dtstart=start_date)
 
-            new = TCGuildTask.add_guild_task(guild.id, task_name, target_message, robj,True)
+            new = TCGuildTask.add_guild_task(
+                guild.id, task_name, target_message, robj, True
+            )
             new.to_task(ctx.bot)
 
             result = f"Overview message set.  every 15 minutes, this message will update with the latest galactic status.  Please don't delete it unless you want to stop."
@@ -262,14 +314,11 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         else:
             old.target_channel_id = autochannel.id
 
-            #target_message = await autochannel.send("**ALTERING AUTO CHANNEL...**",view=HD2OverviewView(self))
+            # target_message = await autochannel.send("**ALTERING AUTO CHANNEL...**",view=HD2OverviewView(self))
             old.target_message_url = target_message.jump_url
             self.bot.database.commit()
             result = f"Changed the dashboard channel to <#{autochannel.id}>"
             await ctx.send(result)
-
-
-
 
     pc = app_commands.Group(name="hd2", description="Commands for Helldivers 2.")
 
@@ -279,10 +328,9 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         if not self.apistatus.war:
             return await ctx.send("No result")
-        this,last=self.apistatus.war.get_first_change()
-        await ctx.send(embed=hd2.create_war_embed(this,last))
+        this, last = self.apistatus.war.get_first_change()
+        await ctx.send(embed=hd2.create_war_embed(this, last))
         return
-
 
     @pc.command(name="assign", description="get assignment state.")
     async def assignstate(self, interaction: discord.Interaction):
@@ -290,71 +338,95 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         if not self.apistatus.assignments:
             return await ctx.send("No result")
-        
+
         for ind, key in self.apistatus.assignments.items():
-            this,last=key.get_first_change()
-            await ctx.send(embed=hd2.create_assignment_embed(this,this-last,planets=self.apistatus.planets))
-
-
+            this, last = key.get_first_change()
+            await ctx.send(
+                embed=hd2.create_assignment_embed(
+                    this, this - last, planets=self.apistatus.planets
+                )
+            )
 
     @pc.command(name="campaigns", description="get campaign state.")
     @app_commands.choices(
         filter=[  # param name
             Choice(name="View campaigns for all planets", value=0),
             Choice(name="View campaigns for bug planets only", value=2),
-            
             Choice(name="View campaigns for bot planets", value=3),
         ]
     )
     @app_commands.describe(byplanet="view campaign for this specific planet index.")
-    async def cstate(self, interaction: discord.Interaction,filter:Literal[0,2,3]=0,byplanet:int=0):
+    async def cstate(
+        self,
+        interaction: discord.Interaction,
+        filter: Literal[0, 2, 3] = 0,
+        byplanet: int = 0,
+    ):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
         if not self.apistatus.campaigns:
             return await ctx.send("No result")
-        embeds=[]
-        
+        embeds = []
+
         for ind, key in self.apistatus.campaigns.items():
-            camp,last=key.get_first_change()
-            diff=camp.planet-last.planet
-            if byplanet!=0:
-                if camp.planet.index==byplanet:
-                    
-                    embeds.append(hd2.create_planet_embed(camp.planet, cstr=camp,last=diff,stat=self.apistatus))
+            camp, last = key.get_first_change()
+            diff = camp.planet - last.planet
+            if byplanet != 0:
+                if camp.planet.index == byplanet:
+
+                    embeds.append(
+                        hd2.create_planet_embed(
+                            camp.planet, cstr=camp, last=diff, stat=self.apistatus
+                        )
+                    )
             else:
-                if filter==0:
-                    embeds.append(hd2.create_planet_embed(camp.planet, cstr=camp,last=diff,stat=self.apistatus))
-                elif filter==2:
-                    evtcheck=camp['planet']['event']
+                if filter == 0:
+                    embeds.append(
+                        hd2.create_planet_embed(
+                            camp.planet, cstr=camp, last=diff, stat=self.apistatus
+                        )
+                    )
+                elif filter == 2:
+                    evtcheck = camp["planet"]["event"]
                     if evtcheck:
-                        evtcheck=evtcheck['faction']=='Terminids'
-                    if camp['planet']['currentOwner']=='Terminids' or evtcheck:
-                        embeds.append(hd2.create_planet_embed(camp.planet, cstr=camp,last=diff,stat=self.apistatus))
-                elif filter==3:
-                    evtcheck=camp['planet']['event']
+                        evtcheck = evtcheck["faction"] == "Terminids"
+                    if camp["planet"]["currentOwner"] == "Terminids" or evtcheck:
+                        embeds.append(
+                            hd2.create_planet_embed(
+                                camp.planet, cstr=camp, last=diff, stat=self.apistatus
+                            )
+                        )
+                elif filter == 3:
+                    evtcheck = camp["planet"]["event"]
                     if evtcheck:
-                        evtcheck=evtcheck['faction']=='Automaton'
-                    if camp['planet']['currentOwner']=='Automaton' or evtcheck:
-                        embeds.append(hd2.create_planet_embed(camp.planet, cstr=camp,last=diff,stat=self.apistatus))
+                        evtcheck = evtcheck["faction"] == "Automaton"
+                    if camp["planet"]["currentOwner"] == "Automaton" or evtcheck:
+                        embeds.append(
+                            hd2.create_planet_embed(
+                                camp.planet, cstr=camp, last=diff, stat=self.apistatus
+                            )
+                        )
         await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
-    
+
     @pc.command(name="planet", description="get data for specific planet(s)")
     @app_commands.describe(byplanet="view specific planet index.")
-    async def pstate(self, interaction: discord.Interaction,byplanet:int):
+    async def pstate(self, interaction: discord.Interaction, byplanet: int):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
         data = self.apistatus.planets
         if not data:
             return await ctx.send("No result")
-        embeds=[]
+        embeds = []
         if byplanet:
             if byplanet in self.apistatus.planets:
-                planet= self.apistatus.planets[byplanet]
-                embeds.append(hd2.create_planet_embed(planet, cstr=None,last=None,stat=self.apistatus))
+                planet = self.apistatus.planets[byplanet]
+                embeds.append(
+                    hd2.create_planet_embed(
+                        planet, cstr=None, last=None, stat=self.apistatus
+                    )
+                )
 
         await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
-    
-
 
     @pc.command(name="dispatches", description="get all dispatches.")
     async def dispatch(self, interaction: discord.Interaction):
@@ -363,7 +435,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         data = self.apistatus.dispatches
         if not data:
             return await ctx.send("No result")
-        embeds=[]
+        embeds = []
         for s in data:
             embeds.append(s.to_embed())
         await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
@@ -374,10 +446,9 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         data = self.apistatus.campaigns
 
-        
         if not data:
             return await ctx.send("No result")
-        emb=hd2.campaign_view(self.apistatus,self.hd2)
+        emb = hd2.campaign_view(self.apistatus, self.hd2)
         await ctx.send(embed=emb)
 
 
@@ -393,4 +464,3 @@ async def setup(bot):
 
 async def teardown(bot):
     await bot.remove_cog("HelldiversCog")
-

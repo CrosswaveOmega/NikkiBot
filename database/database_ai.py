@@ -335,9 +335,9 @@ class MessageChain(AIBase):
             "role": self.role,
             "content": self.content,
             "name": self.name,
-            "tool_calls": json.loads(self.function)
-            if self.function is not None
-            else None,
+            "tool_calls": (
+                json.loads(self.function) if self.function is not None else None
+            ),
         }
 
 

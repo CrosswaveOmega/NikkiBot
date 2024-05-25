@@ -34,7 +34,7 @@ class PageSelect(discord.ui.Select):
 
 
 class PageClassContainer:
-    def __init__(self, display: List[Embed] = [],show_embeds=True):
+    def __init__(self, display: List[Embed] = [], show_embeds=True):
         """
         A class representing a container for displaying a list of embeds with pagination.
 
@@ -49,7 +49,7 @@ class PageClassContainer:
         self.maxpages = ((self.length - 1) // self.perpage) + 1
         self.custom_callbacks = {}
         self.page = (self.spot // self.perpage) + 1
-        self.show_embeds=show_embeds
+        self.show_embeds = show_embeds
 
     async def generate_select(self):
         selectlist = []
@@ -80,7 +80,9 @@ class PageClassContainer:
             emb = self.display[self.page - 1]
         if self.show_embeds:
             emb.set_author(
-                name=" Page {}/{}, {} total".format(self.page, self.maxpages, self.length)
+                name=" Page {}/{}, {} total".format(
+                    self.page, self.maxpages, self.length
+                )
             )
         return emb
 
@@ -169,7 +171,7 @@ class PageClassContainer:
 
 
 class PageClassContainerWithAttachments(PageClassContainer):
-    def __init__(self, display: List[Tuple[Embed, File]] = [],show_embeds=True):
+    def __init__(self, display: List[Tuple[Embed, File]] = [], show_embeds=True):
         """
         A class representing a container for displaying a list of embeds with pagination.
 
@@ -184,7 +186,7 @@ class PageClassContainerWithAttachments(PageClassContainer):
         self.maxpages = ((self.length - 1) // self.perpage) + 1
         self.custom_callbacks = {}
         self.page = (self.spot // self.perpage) + 1
-        self.show_embeds=show_embeds
+        self.show_embeds = show_embeds
 
     def make_embed(self) -> Tuple[Embed, File]:
         """
@@ -202,7 +204,9 @@ class PageClassContainerWithAttachments(PageClassContainer):
             fil = copy.deepcopy(fl)
         if self.show_embeds:
             emb.set_author(
-                name=" Page {}/{}, {} total".format(self.page, self.maxpages, self.length)
+                name=" Page {}/{}, {} total".format(
+                    self.page, self.maxpages, self.length
+                )
             )
 
         return emb, fil
@@ -325,7 +329,7 @@ class EmbedPageButtons(discord.ui.View):
 
 
 async def pages_of_embeds_2(
-    ctx: commands.Context, display: List[discord.Embed],show_page_nums=True, **kwargs
+    ctx: commands.Context, display: List[discord.Embed], show_page_nums=True, **kwargs
 ) -> Tuple[PageClassContainer, EmbedPageButtons]:
     """
     Creates a PageClassContainer and a EmbedPageButtons object and returns them as a tuple.
@@ -348,14 +352,14 @@ async def pages_of_embeds_2(
     buttons: EmbedPageButtons
         An instance of the EmbedPageButtons class with a reference to the `pagecall` instance.
     """
-    pagecall = PageClassContainer(display,show_embeds=show_page_nums)
+    pagecall = PageClassContainer(display, show_embeds=show_page_nums)
 
     buttons = EmbedPageButtons(callbacker=pagecall)
     return pagecall, buttons
 
 
 async def pages_of_embeds(
-    ctx: commands.Context, display: List[discord.Embed],show_page_nums=True, **kwargs
+    ctx: commands.Context, display: List[discord.Embed], show_page_nums=True, **kwargs
 ) -> discord.Message:
     """
     Creates a new PageClassContainer filled with embeds, and sends it as
@@ -374,7 +378,7 @@ async def pages_of_embeds(
     A Message object sent to the channel where the command was triggered.
     """
 
-    pagecall = PageClassContainer(display,show_embeds=show_page_nums)
+    pagecall = PageClassContainer(display, show_embeds=show_page_nums)
     message = await ctx.send(
         embed=pagecall.make_embed(),
         view=EmbedPageButtons(callbacker=pagecall),
@@ -384,7 +388,10 @@ async def pages_of_embeds(
 
 
 async def pages_of_embed_attachments(
-    ctx: commands.Context, display: List[Tuple[Embed, File]],show_page_nums=True, **kwargs
+    ctx: commands.Context,
+    display: List[Tuple[Embed, File]],
+    show_page_nums=True,
+    **kwargs,
 ) -> discord.Message:
     """
     Creates a new PageClassContainer filled with embeds, and sends it as
@@ -403,7 +410,7 @@ async def pages_of_embed_attachments(
     A Message object sent to the channel where the command was triggered.
     """
 
-    pagecall = PageClassContainerWithAttachments(display,show_embeds=show_page_nums)
+    pagecall = PageClassContainerWithAttachments(display, show_embeds=show_page_nums)
     embed, fil = pagecall.make_embed()
     message = await ctx.send(
         embed=embed,

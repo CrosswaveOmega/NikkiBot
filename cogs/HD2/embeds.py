@@ -1,27 +1,37 @@
-from typing import Dict, List, Optional, Tuple
-import discord
 import json
-from .helldive import Planet,War,Assignment2, Campaign2
-'''
+from typing import Dict, List, Optional, Tuple
+
+import discord
+
+from .helldive import Assignment2, Campaign2, Planet, War
+
+"""
 Collection of embeds for formatting.
-'''
-from .GameStatus import ApiStatus, get_feature_dictionary
-from .predict import make_prediction_for_eps
+"""
 from collections import defaultdict
-from utility import human_format as hf, select_emoji as emj, changeformatif as cfi, extract_timestamp as et
+
 from discord.utils import format_dt as fdt
 
-def create_war_embed(data:War, last=None):
+from utility import changeformatif as cfi
+from utility import extract_timestamp as et
+from utility import human_format as hf
+from utility import select_emoji as emj
+
+from .GameStatus import ApiStatus, get_feature_dictionary
+from .predict import make_prediction_for_eps
+
+
+def create_war_embed(data: War, last=None):
     stats = data["statistics"]
     stat_str = data.statistics.format_statistics()
     if stats and (last is not None):
-        stat_str = stats.diff_format(stats-last.statistics)
+        stat_str = stats.diff_format(stats - last.statistics)
 
     embed = discord.Embed(title="War", description=f"{stat_str}", color=0xFF0000)
 
-    embed.add_field(name="Started", value=fdt(et(data["started"]),'F'), inline=False)
-    embed.add_field(name="Ended", value=fdt(et(data["ended"]),'F'), inline=False)
-    embed.add_field(name="Now", value=fdt(et(data["now"]),'F'), inline=False)
+    embed.add_field(name="Started", value=fdt(et(data["started"]), "F"), inline=False)
+    embed.add_field(name="Ended", value=fdt(et(data["ended"]), "F"), inline=False)
+    embed.add_field(name="Now", value=fdt(et(data["now"]), "F"), inline=False)
     embed.add_field(name="Client Version", value=data["clientVersion"], inline=False)
 
     factions = ", ".join(data["factions"])
@@ -64,7 +74,11 @@ faction_names = {
 campaign_types = {0: "Liberation / Defense", 1: "Recon", 2: "Story"}
 
 
-def create_assignment_embed(data:Assignment2,last:Optional[Assignment2]=None,planets:Dict[int,Planet]={}):
+def create_assignment_embed(
+    data: Assignment2,
+    last: Optional[Assignment2] = None,
+    planets: Dict[int, Planet] = {},
+):
     did, title = data["id"], data["title"]
     briefing = data["briefing"]
     embed = discord.Embed(
@@ -74,31 +88,33 @@ def create_assignment_embed(data:Assignment2,last:Optional[Assignment2]=None,pla
     )
 
     progress = data["progress"]
-    if (last is not None):
-        progress=[(t,l) for t, l in zip(data.progress, last.progress)]
+    if last is not None:
+        progress = [(t, l) for t, l in zip(data.progress, last.progress)]
     embed.add_field(name="Description", value=data["description"], inline=False)
     tasks = ""
     for e, task in enumerate(data["tasks"]):
         task_type = task_types.get(task["type"], "Unknown Task Type")
         taskdata = {"planet_index": "ERR", "race": 15}
-        curr,last=progress[e]
+        curr, last = progress[e]
         taskstr = f"[{e}]{task_type}: {hf(curr)}"
         for v, vt in zip(task["values"], task["valueTypes"]):
-            #print(v, value_types.get(vt, "Unmapped vt"))
+            # print(v, value_types.get(vt, "Unmapped vt"))
             taskdata[value_types[vt]] = v
 
         if task["type"] in (11, 13):
             planet_id = taskdata["planet_index"]
-            planet_name="ERR"
+            planet_name = "ERR"
             if int(planet_id) in planets:
-                planet_name=planets[int(planet_id)].name
+                planet_name = planets[int(planet_id)].name
             taskstr = f"[{e}]{task_type}:{planet_name}({planet_id}) Status:{'ok' if curr==1 else curr}"
 
         elif task["type"] == 12:
             planet_name = taskdata["planet_index"]
             taskstr += f"{task['values'][0]} planets"
         elif task["type"] == 3:
-            faction_name = faction_names.get(taskdata["race"], f"Unknown Faction {taskdata['race']}")
+            faction_name = faction_names.get(
+                taskdata["race"], f"Unknown Faction {taskdata['race']}"
+            )
             taskstr += f"/{hf(taskdata['goal'])} ({(int(curr)/int(taskdata['goal']))*100.0}){faction_name}"
         else:
             taskstr += f"DATA CORRUPTED.{json.dumps(task)[:50]}."
@@ -107,8 +123,8 @@ def create_assignment_embed(data:Assignment2,last:Optional[Assignment2]=None,pla
     embed.add_field(name="Tasks", value=tasks, inline=False)
 
     embed.add_field(name="Reward", value=data.reward.format(), inline=False)
-    exptime=et(data["expiration"])
-    embed.add_field(name="Expiration", value=fdt(exptime,'f'), inline=False)
+    exptime = et(data["expiration"])
+    embed.add_field(name="Expiration", value=fdt(exptime, "f"), inline=False)
 
     return embed
 
@@ -122,9 +138,11 @@ def create_campaign_str(data):
     return output
 
 
-def create_planet_embed(data:Planet, cstr: Campaign2,last:Planet=None,stat:ApiStatus=None):
-    '''Create a detailed embed for a single planet.'''
-    cstri=""
+def create_planet_embed(
+    data: Planet, cstr: Campaign2, last: Planet = None, stat: ApiStatus = None
+):
+    """Create a detailed embed for a single planet."""
+    cstri = ""
     if cstr:
         cstri = create_campaign_str(cstr)
     planet_index = data.get("index", "index error")
@@ -134,7 +152,7 @@ def create_planet_embed(data:Planet, cstr: Campaign2,last:Planet=None,stat:ApiSt
     if stats and (last is not None):
         stat_str = stats.diff_format(last.statistics)
     planet_sector = data.get("sector", "sector error")
-    
+
     orig_owner = data.get("initialOwner", "?")
     curr_owner = data.get("currentOwner", "?")
     owner = f"{curr_owner} Control"
@@ -167,29 +185,34 @@ def create_planet_embed(data:Planet, cstr: Campaign2,last:Planet=None,stat:ApiSt
             hazards_str += f"**{hazard_name}:** {hazard_description}\n"
         embed.add_field(name="Hazards", value=hazards_str, inline=False)
 
-
-
     max_health = data.get("maxHealth", 0)
     health = data.get("health", 0)
     if last:
-        embed.add_field(name="Health", value=f"{health}/{max_health}.  ({last.health} change)", inline=True)
+        embed.add_field(
+            name="Health",
+            value=f"{health}/{max_health}.  ({last.health} change)",
+            inline=True,
+        )
     else:
         embed.add_field(name="Health", value=f"{health}/{max_health}.  ", inline=True)
 
     regen_per_second = data.get("regenPerSecond", 0)
-    needed_eps = regen_per_second/stat.war.get_first().impactMultiplier
-    embed.add_field(name="Regeneration Per Second", value=f"{regen_per_second}.  \n Need `{round(needed_eps,2)}` eps", inline=True)
+    needed_eps = regen_per_second / stat.war.get_first().impactMultiplier
+    embed.add_field(
+        name="Regeneration Per Second",
+        value=f"{regen_per_second}.  \n Need `{round(needed_eps,2)}` eps",
+        inline=True,
+    )
 
     if cstr:
-        lis=stat.campaigns.get(cstr.id)
-        changes=lis.get_changes()
-        avg=None
+        lis = stat.campaigns.get(cstr.id)
+        changes = lis.get_changes()
+        avg = None
         if changes:
-            avg=Planet.average([c.planet for c in changes])
+            avg = Planet.average([c.planet for c in changes])
         if avg:
-            remaining_time=data.estimate_remaining_lib_time(avg)
-            embed.add_field(name="Est. Lib Time",value=f"{remaining_time}")
-        
+            remaining_time = data.estimate_remaining_lib_time(avg)
+            embed.add_field(name="Est. Lib Time", value=f"{remaining_time}")
 
     event_info = data.get("event", None)
 
@@ -210,14 +233,13 @@ def create_planet_embed(data:Planet, cstr: Campaign2,last:Planet=None,stat:ApiSt
                 )
         embed.add_field(name="Event Details", value=event_details, inline=False)
 
-    
     position = data.position
     if position:
         x, y = position.get("x", 0), position.get("y", 0)
         embed.add_field(name="Galactic Position", value=f"x:{x},y:{y}", inline=True)
 
     if data.attacking:
-        att=[]
+        att = []
         for d in data.attacking:
             if int(d) in stat.planets:
                 att.append(stat.planets[d].get_name())
@@ -233,7 +255,7 @@ def create_planet_embed(data:Planet, cstr: Campaign2,last:Planet=None,stat:ApiSt
             )
 
     if data.waypoints:
-        planet_waypoints=[]
+        planet_waypoints = []
         for d in data.waypoints:
             if int(d) in stat.planets:
                 planet_waypoints.append(stat.planets[d].get_name())
@@ -252,30 +274,36 @@ def create_planet_embed(data:Planet, cstr: Campaign2,last:Planet=None,stat:ApiSt
 
     return embed
 
-def campaign_view(stat:ApiStatus,hdtext={}):
-    emb=discord.Embed(title="Galactic War Overview",
-                      description="Deploying statistical strategy.")
-    all_players,last=stat.war.get_first_change()
-    change_war=all_players-last
+
+def campaign_view(stat: ApiStatus, hdtext={}):
+    emb = discord.Embed(
+        title="Galactic War Overview", description="Deploying statistical strategy."
+    )
+    all_players, last = stat.war.get_first_change()
+    change_war = all_players - last
+    total = 0
 
     prop = defaultdict(int)
     for k, list in stat.campaigns.items():
-        camp,last=list.get_first_change()
-        changes=list.get_changes()
-        this_faction=camp.planet.campaign_against()
-        prop[this_faction]+=camp.planet.statistics.playerCount
-        avg=None
+        camp, last = list.get_first_change()
+        changes = list.get_changes()
+        this_faction = camp.planet.campaign_against()
+        pc = camp.planet.statistics.playerCount
+        prop[this_faction] += pc
+        total += pc
+        avg = None
         if changes:
-            avg=Planet.average([c.planet for c in changes])
-        name,desc=camp.planet.simple_planet_view((camp-last).planet,avg)
-        features=get_feature_dictionary(stat,k)
-        pred=make_prediction_for_eps(features)
-        print(features['eps'],pred)
-        eps_estimated=round(pred,3)
-        eps_real=round(features['eps'],3)
-        desc+=f"\nExp/s:`{eps_estimated},c{eps_real}`"
-        emb.add_field(name=name,value=desc,inline=True)
-    emb.description+=",".join([f'{k}:{v}' for k, v in prop.items()])
+            avg = Planet.average([c.planet for c in changes])
+        name, desc = camp.planet.simple_planet_view((camp - last).planet, avg)
+        features = get_feature_dictionary(stat, k)
+        pred = make_prediction_for_eps(features)
+        print(features["eps"], pred)
+        eps_estimated = round(pred, 3)
+        eps_real = round(features["eps"], 3)
+        desc += f"\nExp/s:`{eps_estimated},c{eps_real}`"
+        emb.add_field(name=name, value=desc, inline=True)
+    emb.description += f"???:{all_players.statistics.playerCount-total}," + ",".join(
+        [f"{k}:{v}" for k, v in prop.items()]
+    )
 
-        
     return emb

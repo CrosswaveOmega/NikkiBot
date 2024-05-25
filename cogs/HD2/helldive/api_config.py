@@ -1,5 +1,6 @@
 import os
 from typing import Optional, Union
+
 # pylint: disable=no-name-in-module
 from pydantic import BaseModel, Field
 
@@ -7,20 +8,19 @@ from pydantic import BaseModel, Field
 class APIConfig(BaseModel):
     base_path: str = "https://api.helldivers2.dev"
     verify: Union[bool, str] = True
-    client_name:str="DefaultClientName"
+    client_name: str = "DefaultClientName"
 
     def get_access_token(self) -> Optional[str]:
         try:
             return os.environ["access_token"]
         except KeyError:
             return None
-        
+
     def get_client_name(self):
         try:
             return self.client_name
         except KeyError:
             return None
-        
 
     def set_access_token(self, value: str):
         raise Exception(

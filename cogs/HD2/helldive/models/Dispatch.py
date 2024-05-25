@@ -4,6 +4,7 @@ from pydantic import Field
 from .ABC.model import BaseApiModel
 import discord
 
+
 class Dispatch(BaseApiModel):
     """
     None model
@@ -19,8 +20,8 @@ class Dispatch(BaseApiModel):
 
     message: Optional[Union[str, Dict[str, Any]]] = Field(alias="message", default=None)
 
-
     def to_embed(self):
-        return discord.Embed(title=f"Dispatch {self.id}, type {self.type}",
-                             description=f"{self.message}\n{self.published}")
-
+        return discord.Embed(
+            title=f"Dispatch {self.id}, type {self.type}",
+            description=f"{self.message}\n{self.published}",
+        )

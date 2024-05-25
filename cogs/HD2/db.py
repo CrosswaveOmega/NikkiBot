@@ -23,11 +23,12 @@ SuperEarthBase = declarative_base(name="HD API Base")
 
 # Also for testing DatabaseSingleton's asyncronous mode.
 
+
 class ServerHDProfile(SuperEarthBase):
     __tablename__ = "server_superearth_profile"
     server_id = Column(Integer, primary_key=True, nullable=False, unique=True)
-    overview_message_url = Column(String, nullable=True,default=None)
-    update_channel = Column(Integer, nullable=True,default=None)
+    overview_message_url = Column(String, nullable=True, default=None)
+    update_channel = Column(Integer, nullable=True, default=None)
 
     @classmethod
     def get(cls, server_id):
@@ -57,14 +58,16 @@ class ServerHDProfile(SuperEarthBase):
         Returns all entries in ServerHDProfile with a non-null overview_message_id.
         """
         session = DatabaseSingleton.get_session()
-        return session.query(ServerHDProfile).filter(ServerHDProfile.overview_message_url.isnot(None)).all()
-
+        return (
+            session.query(ServerHDProfile)
+            .filter(ServerHDProfile.overview_message_url.isnot(None))
+            .all()
+        )
 
     def update(self, **kwargs):
         session = DatabaseSingleton.get_session()
         for key, value in kwargs.items():
             setattr(self, key, value)
-
 
 
 DatabaseSingleton("mainsetup").load_base(SuperEarthBase)

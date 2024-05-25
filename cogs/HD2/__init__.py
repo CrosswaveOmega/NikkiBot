@@ -1,9 +1,16 @@
-from .embeds import campaign_view,create_assignment_embed, create_campaign_str,create_planet_embed, create_war_embed
+from .embeds import (
+    campaign_view,
+    create_assignment_embed,
+    create_campaign_str,
+    create_planet_embed,
+    create_war_embed,
+)
 
 from .hdapi import call_api
 from .db import ServerHDProfile
 from .helldive import *
-from .GameStatus import ApiStatus, add_to_csv, load_from_json,save_to_json
+from .GameStatus import ApiStatus, add_to_csv, load_from_json, save_to_json
+
 
 async def setup(bot):
     print(f"loading in child module {__name__}")

@@ -96,7 +96,7 @@ class TCBot(
     SpecialAppSync,
     PlaywrightMixin,
 ):
-    """A new central bot class.  
+    """A new central bot class.
     An extension of discord.py's Bot class with additional functionality."""
 
     def __init__(self, guimode=False):
@@ -386,9 +386,9 @@ class TCBot(
             try:
                 await self.unload_extension(i)
             except commands.errors.ExtensionNotFound as e:
-                await self.send_error(e,"Could not find extension!",True)
+                await self.send_error(e, "Could not find extension!", True)
             except commands.errors.ExtensionNotLoaded as e:
-                await self.send_error(e,"ERROR",True)
+                await self.send_error(e, "ERROR", True)
 
             self.loaded_extensions[i] = None
 
@@ -400,7 +400,6 @@ class TCBot(
         gui.gprint(self.extension_list)
         if resync:
             await self.all_guild_startup()
-
 
     def pswitchload(self, pmode=False):
         # Once could load in a list of 'plugins' seperately, decided against.
@@ -418,7 +417,7 @@ class TCBot(
             return "LOADOK"
         except Exception as ex:
             en = str(ex)
-            await self.send_error(ex,"ERROR",True)
+            await self.send_error(ex, "ERROR", True)
             back = traceback.format_exception(None, ex, ex.__traceback__)
             gui.gprint("ENOK", back)
             tracebackstr = "".join(
@@ -440,7 +439,7 @@ class TCBot(
             except commands.ExtensionNotLoaded as ex:
                 return await self.extension_loader(extname)
             except Exception as ex:
-                await self.send_error(ex,"ERROR",True)
+                await self.send_error(ex, "ERROR", True)
                 en = str(ex)
                 tracebackstr = "".join(
                     traceback.format_exception(None, ex, ex.__traceback__)

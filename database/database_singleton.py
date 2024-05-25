@@ -184,10 +184,11 @@ class DatabaseSingleton:
                     await val.connect_to_engine_a()
                 else:
                     val.connect_to_engine()
+
         async def sync_all(self):
             for en, val in self.engines.items():
                 await val.sync_bases()
-                
+
         def print_arg(self):
             gui.dprint(self.val)
 
@@ -246,7 +247,7 @@ class DatabaseSingleton:
 
     def load_base(self, Base):
         """Load in a Declarative base."""
-        print("Loading base ",Base)
+        print("Loading base ", Base)
         self._instance.load_in_base(Base)
 
     def load_base_to(self, Base, ename: str):

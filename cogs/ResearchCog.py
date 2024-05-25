@@ -654,7 +654,11 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         site_title_restriction: str = "None",
         use_mmr: bool = False,
         send_message: bool = True,
-    ) -> Tuple[str, Optional[str], Optional[discord.Message],]:
+    ) -> Tuple[
+        str,
+        Optional[str],
+        Optional[discord.Message],
+    ]:
         """Search the chroma db for relevant documents pertaining to the
         question, and return a formatted result.
 

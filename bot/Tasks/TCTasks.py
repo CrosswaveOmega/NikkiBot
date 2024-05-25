@@ -1,10 +1,6 @@
 import asyncio
 from datetime import datetime as dt
-from typing import (
-    Any,
-    Callable,
-    Coroutine,Dict, Optional, Type,Literal,
-    TypeVar)
+from typing import Any, Callable, Coroutine, Dict, Optional, Type, Literal, TypeVar
 import gui
 
 from dateutil.rrule import rrule
@@ -13,8 +9,10 @@ from queue import PriorityQueue
 import logging
 
 _coro = Callable[..., Coroutine[Any, Any, Any]]
-CoroutineWrap = TypeVar('CoroutineWrap', bound=_coro)
-Statuses= Literal['created','standby','running']
+CoroutineWrap = TypeVar("CoroutineWrap", bound=_coro)
+Statuses = Literal["created", "standby", "running"]
+
+
 class AutoRebalancePriorityQueue(PriorityQueue):
     """This is a special PriorityQueque that rebalances itself on new items."""
 
@@ -41,6 +39,7 @@ class TCTaskRef:
 
 logs = logging.getLogger("TCLogger")
 
+
 class TCTask:
     """
     A special task object for running coroutines at specific timedelta intervals,
@@ -51,7 +50,7 @@ class TCTask:
         name (str): The unique name of the task. Used to identify the task.
         time_interval (rrule): A dateutil.rrule for determining the next time to run the task.
         next_run (Optional[dt]): Next date and time to run the task. Defaults to None.
-        parent_db (Optional[Type[object]]): Reference to any Class with a parent_callback method, 
+        parent_db (Optional[Type[object]]): Reference to any Class with a parent_callback method,
         invoked after this class is done running.
           Defaults to None.
         run_number (Optional[int]): The maximum number of times the task should run, or None if unlimited. Defaults to None.
@@ -82,7 +81,7 @@ class TCTask:
         "wrapper",
         "limited",
         "run_number",
-        "to_run_next"
+        "to_run_next",
     ]
 
     def __init__(
@@ -119,7 +118,7 @@ class TCTask:
         """Return the TCTaskRef for this object."""
         return TCTaskRef(self.name)
 
-    def can_i_run(self)->bool:
+    def can_i_run(self) -> bool:
         """Check if the TCTask can be launched."""
         if self.is_running:
             return False
@@ -128,13 +127,13 @@ class TCTask:
         else:
             return False
 
-    def get_total_seconds_until(self)->int:
+    def get_total_seconds_until(self) -> int:
         """return the total number of seconds until the next run."""
         if self.is_running:
             return 0
         return int((self.to_run_next - dt.now()).total_seconds())
 
-    def time_left(self)->str:
+    def time_left(self) -> str:
         """Return a string indicating the next run time of this task."""
         if self.is_running:
             return f"{self.name} is running."
@@ -144,7 +143,7 @@ class TCTask:
         next_formatted_datetime = ctr.strftime("%b-%d-%Y %H:%M")
         return f"{self.name} will run next on {formatted_datetime}, in {time_until}.  If right now, then {next_formatted_datetime}"
 
-    def time_left_short(self)->str:
+    def time_left_short(self) -> str:
         """Return a string indicating the next run time of this task."""
         if self.is_running:
             return f"{self.name}: RUNNING\n"
@@ -160,7 +159,7 @@ class TCTask:
         formatted_delta = f"{days}{hours}{mins},{nextt.seconds%60}s"
         return f"{self.name}: {formatted_delta}\n"
 
-    def time_left_shorter(self)->str:
+    def time_left_shorter(self) -> str:
         """Return a string indicating the next run time of this task."""
         if self.is_running:
             return "RUNNING\n"
@@ -175,7 +174,7 @@ class TCTask:
             mins = str(int((nextt.seconds // 60) % 60)) + "m"
         formatted_delta = f"{days}{hours}{mins},{nextt.seconds%60}s"
         return f"{formatted_delta}\n"
-    
+
     def assign_wrapper(self, func: CoroutineWrap) -> CoroutineWrap:
         """create the asyncronous wrapper with the passed in func."""
         self.funct = func  # Add the coroutine function to the TCTask object
@@ -205,7 +204,7 @@ class TCTask:
                 self.to_run_next = self.next_run()
                 remove_check = False
                 if self.limited:
-                    #Subtract run number if limited.
+                    # Subtract run number if limited.
                     self.run_number -= 1
                     if self.run_number <= 0:
                         remove_check = True
@@ -248,7 +247,7 @@ class TCTask:
 
     def next_run(self) -> dt:
         """
-        Calculates the dt of the next time the task should run 
+        Calculates the dt of the next time the task should run
         based on the current time, last_run, and time_interval.
 
         Returns:
@@ -268,10 +267,11 @@ class TCTask:
         st = f"{self.name},{self.status},{self.time_left_shorter()}"
         return st
 
+
 class TCTaskManager:
     """
-    Manager class for every TCTask object.  
-    Handles running all tasks and organizing a priority queue of all 
+    Manager class for every TCTask object.
+    Handles running all tasks and organizing a priority queue of all
     the tasks in order.
 
     Attributes:
@@ -292,9 +292,9 @@ class TCTaskManager:
     def __init__(self):
         self.tasks: Dict[str, TCTask] = {}
         self.to_delete = []
-        self.myqueue: AutoRebalancePriorityQueue[
-            TCTaskRef
-        ] = AutoRebalancePriorityQueue()
+        self.myqueue: AutoRebalancePriorityQueue[TCTaskRef] = (
+            AutoRebalancePriorityQueue()
+        )
 
     @classmethod
     def get_task(cls, name):

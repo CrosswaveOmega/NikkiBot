@@ -26,7 +26,7 @@ class War(BaseApiModel):
     impactMultiplier: Optional[float] = Field(alias="impactMultiplier", default=None)
 
     statistics: Optional[Statistics] = Field(alias="statistics", default=None)
-    
+
     def __sub__(self, other):
         war = War(
             started=self.started,
@@ -34,7 +34,7 @@ class War(BaseApiModel):
             now=self.now,
             clientVersion=self.clientVersion,
             factions=self.factions,
-            impactMultiplier=self.impactMultiplier-other.impactMultiplier,
-            statistics=self.statistics - other.statistics
+            impactMultiplier=self.impactMultiplier - other.impactMultiplier,
+            statistics=self.statistics - other.statistics,
         )
         return war

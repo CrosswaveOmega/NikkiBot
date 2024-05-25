@@ -21,9 +21,13 @@ class Assignment2(BaseApiModel):
 
     title: Optional[Union[str, Dict[str, Any]]] = Field(alias="title", default=None)
 
-    briefing: Optional[Union[str, Dict[str, Any]]] = Field(alias="briefing", default=None)
+    briefing: Optional[Union[str, Dict[str, Any]]] = Field(
+        alias="briefing", default=None
+    )
 
-    description: Optional[Union[str, Dict[str, Any]]] = Field(alias="description", default=None)
+    description: Optional[Union[str, Dict[str, Any]]] = Field(
+        alias="description", default=None
+    )
 
     tasks: Optional[List[Optional[Task2]]] = Field(alias="tasks", default=None)
 
@@ -31,7 +35,6 @@ class Assignment2(BaseApiModel):
 
     expiration: Optional[str] = Field(alias="expiration", default=None)
 
-    
     def __sub__(self, other):
         new_progress = [s - o for s, o in zip(self.progress, other.progress)]
         return Assignment2(
@@ -42,5 +45,5 @@ class Assignment2(BaseApiModel):
             description=self.description,
             tasks=self.tasks,
             reward=self.reward,
-            expiration=self.expiration
+            expiration=self.expiration,
         )

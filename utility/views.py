@@ -225,7 +225,7 @@ class RRuleView(discord.ui.View):
                 label="Weekly",
                 description="This task will run on a weekly basis.",
                 value="weekly",
-            )
+            ),
             # ,discord.SelectOption(label="Monthly",description="This task will run on a monthly basis.", value="monthly")
         ],
     )

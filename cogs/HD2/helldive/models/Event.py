@@ -1,13 +1,19 @@
 from typing import *
 import datetime
 from pydantic import Field
-from .ABC.model import BaseApiModel
+from .ABC.model import BaseApiModel, HealthMixin
 
 
-from utility import human_format as hf, select_emoji as emj, changeformatif as cfi, extract_timestamp as et
+from utility import (
+    human_format as hf,
+    select_emoji as emj,
+    changeformatif as cfi,
+    extract_timestamp as et,
+)
 from discord.utils import format_dt as fdt
 
-class Event(BaseApiModel):
+
+class Event(BaseApiModel, HealthMixin):
     """
     None model
         An ongoing event on a Planet.
@@ -30,11 +36,17 @@ class Event(BaseApiModel):
 
     campaignId: Optional[int] = Field(alias="campaignId", default=None)
 
-    jointOperationIds: Optional[List[int]] = Field(alias="jointOperationIds", default=None)
+    jointOperationIds: Optional[List[int]] = Field(
+        alias="jointOperationIds", default=None
+    )
 
     def __sub__(self, other: "Event") -> "Event":
-        new_health = self.health - other.health if self.health is not None and other.health is not None else None
-        event= Event(
+        new_health = (
+            self.health - other.health
+            if self.health is not None and other.health is not None
+            else None
+        )
+        event = Event(
             id=self.id,
             eventType=self.eventType,
             faction=self.faction,
@@ -45,17 +57,27 @@ class Event(BaseApiModel):
             campaignId=self.campaignId,
             jointOperationIds=self.jointOperationIds,
         )
-        event.retrieved_at=self.retrieved_at-other.retrieved_at
+        event.retrieved_at = self.retrieved_at - other.retrieved_at
         return event
-    
+
     @staticmethod
-    def average(events_list: List['Event']) -> 'Event':
+    def average(events_list: List["Event"]) -> "Event":
         count = len(events_list)
         if count == 0:
             return Event()
-        
-        avg_health = sum(event.health for event in events_list if event.health is not None) // count
-        avg_time=  sum(event.retrieved_at.total_seconds() for event in events_list if event.retrieved_at is not None) // count
+
+        avg_health = (
+            sum(event.health for event in events_list if event.health is not None)
+            // count
+        )
+        avg_time = (
+            sum(
+                event.retrieved_at.total_seconds()
+                for event in events_list
+                if event.retrieved_at is not None
+            )
+            // count
+        )
         avg_event = Event(
             health=avg_health,
             maxHealth=events_list[0].maxHealth,
@@ -67,22 +89,85 @@ class Event(BaseApiModel):
             campaignId=events_list[0].campaignId,
             jointOperationIds=events_list[0].jointOperationIds,
         )
-        avg_event.retrieved_at=datetime.timedelta(seconds=avg_time)
+        avg_event.retrieved_at = datetime.timedelta(seconds=avg_time)
         return avg_event
-    
-    def estimate_remaining_lib_time(self, diff:'Event'):
-        time_elapsed=diff.retrieved_at
-        if time_elapsed.total_seconds()==0:
-            return f""
-        change=diff.health/time_elapsed.total_seconds()
-        if change==0:
-            return f"Stalemate."
-        if change>0:
-            estimated_seconds=abs(self.health/change)
-            timeval= self.retrieved_at+datetime.timedelta(seconds=estimated_seconds)
-            return f"{round(change,5)},Loss in {fdt(timeval,'R')}"
-        estimated_seconds=abs(self.health/change)
-        timeval= self.retrieved_at+datetime.timedelta(seconds=estimated_seconds)
-        return f"{round(change,5)},{fdt(timeval,'R')}"
-        pass
 
+    def calculate_change(self, diff: "Event") -> float:
+        """
+        Calculate the rate of change in health over time.
+
+        Args:
+            diff (Event): A Event object with the average health change and seconds
+
+        Returns:
+            float: The rate of change in health per second.
+        """
+        time_elapsed = diff.retrieved_at
+        if time_elapsed.total_seconds() == 0:
+            return 0.0
+        return diff.health / time_elapsed.total_seconds()
+
+    def calculate_timeval(self, change: float, is_positive: bool) -> datetime:
+        """
+        Calculate the future datetime when the events's health will reach the maxHealth or zero.
+
+        Args:
+            change (float): The rate of change in health per second.
+            is_positive (bool): A boolean indicating if the change is positive or negative.
+
+        Returns:
+            datetime: The estimated future datetime.
+        """
+        if is_positive:
+            estimated_seconds = abs((self.maxHealth - self.health) / change)
+        else:
+            estimated_seconds = abs(self.health / change)
+        return self.retrieved_at + datetime.timedelta(seconds=estimated_seconds)
+
+    def format_estimated_time_string(self, change: float, esttime: datetime.datetime):
+        """
+        Format the string representing the estimated time and rate of health change.
+
+        Args:
+            change (float): The rate of change in health per second.
+            esttime (datetime): The estimated datetime when the event's health will reach the threshold.
+
+        Returns:
+            str: A formatted string with the change rate and estimated time.
+        """
+        change_str = f"{round(change, 5)}"
+        timeval_str = (
+            f"Est.Loss {fdt(esttime,'R')}" if change > 0 else f"{fdt(esttime,'R')}"
+        )
+
+        return f"`[{change_str} dps]`, {timeval_str}"
+
+    def estimate_remaining_lib_time(self, diff: "Event") -> str:
+        """
+        Estimate the remaining life time of the event based on the current rate of health change.
+
+        Args:
+            diff (Event):  A Event object with the average health change and timedelta.
+
+        Returns:
+            str: A string representation of the rate of change and the estimated time of loss or gain.
+        """
+        time_elapsed = diff.retrieved_at - self.retrieved_at
+        if time_elapsed.total_seconds() == 0:
+            return ""
+
+        change = self.calculate_change(diff)
+        if change == 0:
+            if self.currentOwner.lower() != "humans":
+                return "Stalemate."
+            return ""
+
+        timeval = self.calculate_timeval(change, change > 0)
+
+        return self.format_estimated_time_string(change, timeval)
+
+    def get_name(self) -> str:
+        """Get the id of the event, along with occupying faction and type."""
+
+        event_fact = emj(self.faction.lower())
+        return f"{event_fact} Event#{self.id}T{self.eventType}:"

@@ -266,7 +266,7 @@ def seconds_to_time_stamp(seconds_init):
 
 
 async def get_server_icon_color(guild: discord.Guild) -> str:
-    'Get the guild icon, and color.'
+    "Get the guild icon, and color."
     if not guild.icon:
         return 0xFFFFFF
     icon_bytes = await guild.icon.read()
@@ -287,23 +287,26 @@ def extract_timestamp(timestamp):
     format_string = "%Y-%m-%dT%H:%M:%S.%fZ"
 
     # Extract the fractional seconds (up to 6 digits) and Z separately
-    timestamp_parts = timestamp.split('.')
-    timestamp_adjusted =timestamp
-    if len(timestamp_parts)>=2:
-        timestamp_adjusted= timestamp_parts[0] +'.' + timestamp_parts[1][:6]
-        if not timestamp_adjusted.endswith('Z'):
-            timestamp_adjusted+="Z"
+    timestamp_parts = timestamp.split(".")
+    timestamp_adjusted = timestamp
+    if len(timestamp_parts) >= 2:
+        timestamp_adjusted = timestamp_parts[0] + "." + timestamp_parts[1][:6]
+        if not timestamp_adjusted.endswith("Z"):
+            timestamp_adjusted += "Z"
     else:
         format_string = "%Y-%m-%dT%H:%M:%SZ"
-        if not timestamp_adjusted.endswith('Z'):
-            timestamp_adjusted+="Z"
-        #timestamp_adjusted=timestamp_adjusted
+        if not timestamp_adjusted.endswith("Z"):
+            timestamp_adjusted += "Z"
+        # timestamp_adjusted=timestamp_adjusted
     # Convert the adjusted timestamp string to a datetime object
-    datetime_obj = datetime.strptime(timestamp_adjusted, format_string).replace(tzinfo=timezone.utc)
+    datetime_obj = datetime.strptime(timestamp_adjusted, format_string).replace(
+        tzinfo=timezone.utc
+    )
     return datetime_obj
 
+
 def human_format(num):
-    '''Format a large number'''
+    """Format a large number"""
     num = float("{:.3g}".format(num))
     magnitude = 0
     while abs(num) >= 1000:
@@ -313,6 +316,7 @@ def human_format(num):
     return "{}{}".format(
         "{:f}".format(num).rstrip("0").rstrip("."), suffixes[magnitude]
     )
+
 
 if __name__ == "__main__":  # testing
     gui.gprint(seconds_to_time_string(130))
