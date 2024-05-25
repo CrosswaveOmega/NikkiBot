@@ -427,7 +427,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
 
-    @pc.command(name="dispatches", description="get all dispatches.")
+    @pc.command(name="dispatches", description="get a list of all dispatches.")
     async def dispatch(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
@@ -439,7 +439,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             embeds.append(s.to_embed())
         await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
 
-    @pc.command(name="overview", description="get campaign overview.")
+    @pc.command(name="overview", description="Return the current state of the HD2 Galactic War.")
     async def campoverview(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
