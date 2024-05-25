@@ -219,7 +219,7 @@ class ApiStatus:
                 acts.append((camp.planet.event, eps))
                 dates.append(
                     (
-                        f"{camp.planet.get_name()}:{camp.planet.event.format_estimated_time_string(dps,proj_date)}",
+                        f"{camp.planet.get_name()}:{camp.planet.event.format_estimated_time_string(eps,proj_date)}",
                         proj_date,
                     )
                 )
