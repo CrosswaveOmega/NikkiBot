@@ -218,7 +218,7 @@ class ApiStatus:
                 )
             if eps != 0:
                 proj_date = camp.planet.event.calculate_timeval(eps, eps > 0)
-                acts.append((camp.planet.event, dps))
+                acts.append((camp.planet.event, eps))
                 dates.append(
                     (
                         f"{camp.planet.get_name()}:{camp.planet.event.format_estimated_time_string(dps,proj_date)}",
