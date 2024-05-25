@@ -202,9 +202,7 @@ class ApiStatus:
             dps = camp.planet.calculate_change(planet)
             eps = 0
             if camp.planet.event and planet.event:  # pylint: disable=no-member
-                eps = camp.planet.event.calculate_change(
-                    planet.event
-                )  # pylint: disable=no-member
+                eps = camp.planet.event.calculate_change(planet.event)# pylint: disable=no-member
             if dps == 0 and eps == 0:
                 continue
             if dps != 0:

@@ -78,7 +78,7 @@ class HD2OverviewView(discord.ui.View):
         style=discord.ButtonStyle.green,
         custom_id="hd_persistent_view:campaigns",
     )
-    async def green(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def view_planets(self, interaction: discord.Interaction, button: discord.ui.Button):
         embeds = []
 
         for ind, key in self.cog.apistatus.campaigns.items():
@@ -93,14 +93,13 @@ class HD2OverviewView(discord.ui.View):
         await interaction.response.send_message(
             embed=pcc.make_embed(), view=but, ephemeral=True
         )
-        # await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
 
     @discord.ui.button(
         label="Estimate",
         style=discord.ButtonStyle.blurple,
         custom_id="hd_persistent_view:blue",
     )
-    async def blue(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def show_estimate(self, interaction: discord.Interaction, button: discord.ui.Button):
         est = self.cog.apistatus.estimates()
         print(est)
         title = "Health estimates over time"
@@ -128,7 +127,7 @@ class HD2OverviewView(discord.ui.View):
         style=discord.ButtonStyle.grey,
         custom_id="hd_persistent_view:grey",
     )
-    async def grey(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def map(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_message(
             f"https://helldiverscompanion.com/",
             ephemeral=True,
