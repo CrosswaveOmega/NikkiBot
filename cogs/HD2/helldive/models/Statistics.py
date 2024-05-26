@@ -206,7 +206,7 @@ class Statistics(BaseApiModel):
         # Format each statistic with its difference
         mission_stats = f"W:{hf(self.missionsWon)} ({other.missionsWon}),"
         mission_stats += f"L:{hf(self.missionsLost)} ({other.missionsLost})"
-        mission_stats += f"{round(100.0*(other.missionsWon/(other.missionsWon+other.missionsLost)),1)}"
+        mission_stats += f"{round(100.0*(other.missionsWon/(max(other.missionsWon+other.missionsLost,1))),1)}"
         kill_stats = f"T:{hf(self.terminidKills)} ({other.terminidKills}),"
         kill_stats += f"A:{hf(self.automatonKills)} ({other.automatonKills}),"
         kill_stats += "DATA EXPUNGED"
