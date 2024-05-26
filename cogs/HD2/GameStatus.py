@@ -149,32 +149,10 @@ class ApiStatus:
 
         if war is not None:
             self.war.add(war)
-        # Get Assignments
-        if assignments is not None:
-            assign_ids = set()
-            for a in assignments:
-                assign_ids.add(a.id)
-                if a.id not in self.assignments:
-                    self.assignments[a.id] = LimitedSizeList(self.max_list_size)
-                self.assignments[a.id].add(a)
-            key_list = list(self.assignments.keys())
-            for k in key_list:
-                if k not in assign_ids:
-                    print(f"removing assignment {k}")
-                    self.assignments.pop(k)
-        # get Campaigns.
-        if campaigns is not None:
-            camp_ids = set()
-            for c in campaigns:
-                camp_ids.add(c.id)
-                if c.id not in self.campaigns:
-                    self.campaigns[c.id] = LimitedSizeList(self.max_list_size)
-                self.campaigns[c.id].add(c)
-            key_list = list(self.campaigns.keys())
-            for k in key_list:
-                if k not in camp_ids:
-                    print(f"removing campaign {k}")
-                    self.campaigns.pop(k)
+
+        self.handle_data(assignments, self.assignments, "assignment")
+        self.handle_data(campaigns, self.campaigns, "campaign")
+
         if datetime.datetime.now() >= self.last_planet_get + datetime.timedelta(
             hours=2
         ):
@@ -184,6 +162,34 @@ class ApiStatus:
                 planet_data[planet.index] = planet
             self.planets = planet_data
             self.last_planet_get = datetime.datetime.now()
+
+    def handle_data(
+        self,
+        data: List[Union[Campaign2, Assignment2]],
+        storage: Dict[int, LimitedSizeList],
+        data_type: str,
+    ) -> None:
+        """
+        Handle and update data storage, removing stale data entries.
+
+        Args:
+            data (List[Union[Campaign2,Assignment2]]): The data to be processed and stored.
+            storage (Dict[int, LimitedSizeList]): The storage dictionary where data is kept.
+            data_type (str): The type of the data being handled.
+        """
+        if data is not None:
+            data_ids = set()
+            data_ids: Set[int] = set()
+            for item in data:
+                data_ids.add(item.id)
+                if item.id not in storage:
+                    storage[item.id] = LimitedSizeList(self.max_list_size)
+                storage[item.id].add(item)
+            key_list = list(storage.keys())
+            for k in key_list:
+                if k not in data_ids:
+                    print(f"removing {data_type} {k}")
+                    storage.pop(k)
 
     def estimates(self):
         acts: List[Tuple[Union[Planet, Event], float]] = []
@@ -202,7 +208,9 @@ class ApiStatus:
             dps = camp.planet.calculate_change(planet)
             eps = 0
             if camp.planet.event and planet.event:  # pylint: disable=no-member
-                eps = camp.planet.event.calculate_change(planet.event)# pylint: disable=no-member
+                eps = camp.planet.event.calculate_change(
+                    planet.event
+                )  # pylint: disable=no-member
             if dps == 0 and eps == 0:
                 continue
             if dps != 0:
@@ -229,6 +237,7 @@ class ApiStatus:
                         et(camp.planet.event.endTime),
                     )
                 )
+        # Sort estimated key dates.
         output_list: List[Tuple[str, List[str]]] = []
         dates.sort(key=lambda x: x[1])
         acts.sort(key=lambda x: x[0].get_name())

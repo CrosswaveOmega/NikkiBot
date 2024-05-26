@@ -206,19 +206,17 @@ class Statistics(BaseApiModel):
         # Format each statistic with its difference
         mission_stats = f"W:{hf(self.missionsWon)} ({other.missionsWon}),"
         mission_stats += f"L:{hf(self.missionsLost)} ({other.missionsLost})"
+        mission_stats += f"{round(100.0*(other.missionsWon/(other.missionsWon+other.missionsLost)),1)}"
         kill_stats = f"T:{hf(self.terminidKills)} ({other.terminidKills}),"
         kill_stats += f"A:{hf(self.automatonKills)} ({other.automatonKills}),"
         kill_stats += "DATA EXPUNGED"
         bullets_stats = f"Bullets Hit/Fired: {hf(self.bulletsHit)}/{hf(self.bulletsFired)} ({other.bulletsHit}/{other.bulletsFired})"
         deaths_and_friendlies = f"Deaths/Friendlies: {hf(self.deaths)}/{hf(self.friendlies)} ({other.deaths}/{other.friendlies})"
-        mission_success_rate = (
-            f"MCR: {self.missionSuccessRate}% ({other.missionSuccessRate}%)"
-        )
-        accuracy = f"ACC: {self.accuracy}% ({other.accuracy}%)"
+
         player_count = f"{emj('hdi')}: {hf(self.playerCount)} ({other.playerCount})"
 
         # Concatenate all formatted statistics
         statsa = f"`[Missions: {mission_stats}]`\n `[Kills: {kill_stats}]`\n`[{bullets_stats}]`"
-        statsb = f"`[{deaths_and_friendlies}] [{mission_success_rate}] [{accuracy}]`"
+        statsb = f"`[{deaths_and_friendlies}]`"
 
         return f"{player_count}\n{statsa}\n{statsb}"

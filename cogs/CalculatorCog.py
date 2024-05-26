@@ -13,6 +13,8 @@ import traceback
 from bot import TC_Cog_Mixin
 from discord import app_commands
 
+from utility.globalfunctions import prioritized_string_split
+
 from .StepCalculator import evaluate_expression, OutContainer, dprint, get_linenumber
 
 
@@ -206,27 +208,19 @@ example: (2d20reroll>10) will reroll any dice that has a value greater than 10."
             await self.bot.send_error(ex, "Calculation Error")
             value = ex
 
-        cho = out.formatStrField(out.out).split("\n")
+        cho = out.formatStrField(out.out)
+        splits = prioritized_string_split(cho, "\n", 4000)
         string = ""
-        for c in cho:
-            if len(string + "`" + c + "` \n") >= (4096 - 20):
-                embedv = discord.Embed(
-                    title="Result of {}".format(out.formatStr(rollv)),
-                    description=string,
-                )
-                embedv.add_field(name="To be continued...", value="tbc")
-                await ctx.send(embed=embedv)
-                string = "`" + c + "` \n"
-            elif c != "":
-                string = string + "" + c + " \n"
-        if string != " \n":
+        for i, c in enumerate(splits):
             embedv = discord.Embed(
-                title="`{}`".format(out.formatStr(rollv)), description=string
+                title="Result of {}".format(out.formatStr(rollv)),
+                description=f"`{c}`",
             )
-            # embedv.set_author(name="Requested by "+auth.name)
-            embedv.add_field(name="Result", value=out.formatStrField(str(value)))
-            # embedv.set_footer(text="Verbocity Level: {}".format(verb))
-            await ctx.send(embed=embedv)
+            if i == len(splits) - 1:  # check if it's on the last split
+                embedv.add_field(name="Result", value=out.formatStrField(str(value)))
+            else:
+                embedv.add_field(name="To be continued...", value="tbc")
+            await ctx.send(embed=embedv, ephemeral=True)
 
 
 def operateTest(expr, verb=6):

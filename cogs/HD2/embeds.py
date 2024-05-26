@@ -16,7 +16,7 @@ from utility import changeformatif as cfi
 from utility import extract_timestamp as et
 from utility import human_format as hf
 from utility import select_emoji as emj
-
+import random
 from .GameStatus import ApiStatus, get_feature_dictionary
 from .predict import make_prediction_for_eps
 
@@ -104,9 +104,12 @@ def create_assignment_embed(
         if task["type"] in (11, 13):
             planet_id = taskdata["planet_index"]
             planet_name = "ERR"
+            health = "?"
             if int(planet_id) in planets:
-                planet_name = planets[int(planet_id)].name
-            taskstr = f"[{e}]{task_type}:{planet_name}({planet_id}) Status:{'ok' if curr==1 else curr}"
+                planet = planets[int(planet_id)]
+                planet_name = planet.name
+                health = planet.health_percent()
+            taskstr = f"[{e}]{task_type}:{planet_name}({planet_id}) Status:{'ok' if curr==1 else f'{health},{curr}'}"
 
         elif task["type"] == 12:
             planet_name = taskdata["planet_index"]
@@ -160,7 +163,7 @@ def create_planet_embed(
         owner = f"{curr_owner} Occupation"
     embed = discord.Embed(
         title=f"{data.get_name()}",
-        description=f"{planet_sector} Sector\n{owner}: {stat_str}",
+        description=f"{planet_sector} Sector\n{owner}\n {stat_str}",
         color=0xFFA500,
     )
     embed.set_footer(text=cstri)
@@ -187,20 +190,20 @@ def create_planet_embed(
 
     max_health = data.get("maxHealth", 0)
     health = data.get("health", 0)
-    if last:
+    if last and last.health != 0:
         embed.add_field(
             name="Health",
-            value=f"{health}/{max_health}.  ({last.health} change)",
+            value=f"`{health}/{max_health}`.  ({last.health} change)",
             inline=True,
         )
     else:
-        embed.add_field(name="Health", value=f"{health}/{max_health}.  ", inline=True)
+        embed.add_field(name="Health", value=f"`{health}/{max_health}`.  ", inline=True)
 
     regen_per_second = data.get("regenPerSecond", 0)
     needed_eps = regen_per_second / stat.war.get_first().impactMultiplier
     embed.add_field(
         name="Regeneration Per Second",
-        value=f"{regen_per_second}.  \n Need `{round(needed_eps,2)}` eps",
+        value=f"`{regen_per_second}` .  \n Need `{round(needed_eps,2)}` eps",
         inline=True,
     )
 
@@ -212,31 +215,22 @@ def create_planet_embed(
             avg = Planet.average([c.planet for c in changes])
         if avg:
             remaining_time = data.estimate_remaining_lib_time(avg)
-            embed.add_field(name="Est. Lib Time", value=f"{remaining_time}")
+            if remaining_time:
+                embed.add_field(name="Est. Lib Time", value=f"{remaining_time}")
 
     event_info = data.get("event", None)
 
     if event_info:
-        event_details = (
-            f"ID: {(event_info['id'])}, Type: {hf(event_info['eventType'])}, Faction: {event_info['faction']}\n"
-            f"Max Health: {hf(event_info['maxHealth'])}, Health: {hf(event_info['health'])}\n"
-            f"Start Time: {fdt(et(event_info['startTime']),'R')}, End Time: {fdt(et(event_info['endTime']),'R')}\n"
-            f"Campaign ID: {hf(event_info['campaignId'])}, Joint Operation IDs: {', '.join(map(str, event_info['jointOperationIds']))}"
-        )
-        if last:
-            if last.event:
-                event_details = (
-                    f"ID: {(event_info['id'])}, Type: {hf(event_info['eventType'])}, Faction: {event_info['faction']}\n"
-                    f"Max Health: {hf(event_info['maxHealth'])}, Health: {hf(event_info['health'])}({hf(last.event.health)})\n"
-                    f"Start Time: {fdt(et(event_info['startTime']),'R')}, End Time: {fdt(et(event_info['endTime']),'R')}\n"
-                    f"Campaign ID: {hf(event_info['campaignId'])}, Joint Operation IDs: {', '.join(map(str, event_info['jointOperationIds']))}"
-                )
+        last_evt = None
+        if last is not None and last.event is not None:
+            last_evt = last.event
+        event_details = event_info.long_event_details(last_evt)
         embed.add_field(name="Event Details", value=event_details, inline=False)
 
-    position = data.position
-    if position:
-        x, y = position.get("x", 0), position.get("y", 0)
-        embed.add_field(name="Galactic Position", value=f"x:{x},y:{y}", inline=True)
+    # position = data.position
+    # if position:
+    #     x, y = position.get("x", 0), position.get("y", 0)
+    #     embed.add_field(name="Galactic Position", value=f"x:{x},y:{y}", inline=True)
 
     if data.attacking:
         att = []
@@ -246,7 +240,7 @@ def create_planet_embed(
         if att:
             embed.add_field(
                 name="Attacking Planets",
-                value=", ".join(map(str, att)),
+                value=",  ".join(map(str, att)),
                 inline=True,
             )
         else:
@@ -276,9 +270,11 @@ def create_planet_embed(
 
 
 def campaign_view(stat: ApiStatus, hdtext={}):
-    emb = discord.Embed(
-        title="Galactic War Overview", description="Deploying statistical strategy."
-    )
+    flav = "Galactic Status."
+    if "galactic_overview" in hdtext:
+
+        flav = random.choice(hdtext["galactic_overview"]["value"])
+    emb = discord.Embed(title="Galactic War Overview", description=f"{flav}\n")
     all_players, last = stat.war.get_first_change()
     change_war = all_players - last
     total = 0

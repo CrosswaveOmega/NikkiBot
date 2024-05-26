@@ -78,7 +78,9 @@ class HD2OverviewView(discord.ui.View):
         style=discord.ButtonStyle.green,
         custom_id="hd_persistent_view:campaigns",
     )
-    async def view_planets(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def view_planets(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         embeds = []
 
         for ind, key in self.cog.apistatus.campaigns.items():
@@ -99,7 +101,9 @@ class HD2OverviewView(discord.ui.View):
         style=discord.ButtonStyle.blurple,
         custom_id="hd_persistent_view:blue",
     )
-    async def show_estimate(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def show_estimate(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         est = self.cog.apistatus.estimates()
         print(est)
         title = "Health estimates over time"
@@ -439,7 +443,9 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             embeds.append(s.to_embed())
         await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
 
-    @pc.command(name="overview", description="Return the current state of the HD2 Galactic War.")
+    @pc.command(
+        name="overview", description="Return the current state of the HD2 Galactic War."
+    )
     async def campoverview(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
@@ -449,6 +455,25 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             return await ctx.send("No result")
         emb = hd2.campaign_view(self.apistatus, self.hd2)
         await ctx.send(embed=emb)
+
+    @pc.command(name="map", description="get a primitive galactic map.")
+    async def map(self, interaction: discord.Interaction):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        # Convert the timestamp string to a datetime object
+        mes = await ctx.send("please wait...", ephemeral=True)
+        file_path = "./assets/GalacticMap.png"
+
+        img = hd2.draw_grid(file_path)
+        for _, planet in self.apistatus.planets.items():
+            gpos = planet.position
+            x, y = gpos.x, gpos.y
+            coordinate = x * 1000.0 + 1000, 1000 - y * 1000.0
+            img = hd2.highlight(img, coordinate, (0, 0, 255, 200))
+
+        view = hd2.MapViewer(user=ctx.author, img=img, initial_coor=coordinate)
+
+        emb, file = view.make_embed()
+        await mes.edit(content="done", attachments=[file], embed=emb, view=view)
 
 
 async def setup(bot):

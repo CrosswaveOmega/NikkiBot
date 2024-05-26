@@ -10,6 +10,7 @@ from .hdapi import call_api
 from .db import ServerHDProfile
 from .helldive import *
 from .GameStatus import ApiStatus, add_to_csv, load_from_json, save_to_json
+from .image_draw import *
 
 
 async def setup(bot):

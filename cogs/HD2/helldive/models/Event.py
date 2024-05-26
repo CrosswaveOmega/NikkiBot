@@ -170,4 +170,13 @@ class Event(BaseApiModel, HealthMixin):
         """Get the id of the event, along with occupying faction and type."""
 
         event_fact = emj(self.faction.lower())
-        return f"{event_fact} Event#{self.id}T{self.eventType}:"
+        return f"{event_fact} Event#{self.id},Type#{self.eventType}:"
+
+    def long_event_details(self, diff: Optional["Event"] = None):
+        event_details = (
+            f"ID: {self.id}, Type: {hf(self.eventType)}, Faction: {self.faction}\n"
+            f"Event Health: `{(self.health)}/{(self.maxHealth)}` (`{diff.health if diff is not None else 0}` change)\n"
+            f"Start Time: {fdt(et(self.startTime),'R')}, End Time: {fdt(et(self.endTime),'R')}\n"
+            f"Campaign ID: {hf(self.campaignId)}, Joint Operation IDs: {', '.join(map(str, self.jointOperationIds))}"
+        )
+        return event_details
