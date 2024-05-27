@@ -101,7 +101,7 @@ def highlight(img, planet, color=(255, 0, 0, 200)):
         fill=(0,0,255,255),
         width=1,)
     name=str(planet.name).replace(" ",'\n')
-    font = ImageFont.truetype("arial.ttf", 8)  # Ensure the font path and size is correct
+    font = ImageFont.truetype("arial.ttf", 12)  # Ensure the font path and size is correct
     bbox = draw.textbbox((0, 0), name, font=font, align='center')
 
     background_box = [
