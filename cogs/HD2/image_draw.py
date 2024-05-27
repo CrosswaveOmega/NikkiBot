@@ -3,6 +3,7 @@ import discord
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 from .GameStatus import ApiStatus
+from .helldive import Planet
 CELL_SIZE = 200
 from utility.views import BaseView
 
@@ -41,7 +42,7 @@ def draw_supply_lines(img, color=(0, 255, 0, 200),apistat:ApiStatus=None):
     img = Image.alpha_composite(img, overlay)
     return img
 
-def highlight(img, planet, color=(255, 0, 0, 200)):
+def highlight(img, planet:Planet, color=(255, 0, 0, 200)):
     gpos = planet.position
     x, y = gpos.x, gpos.y
     coordinate = x * 1000.0 + 1000, 1000 - y * 1000.0
@@ -110,7 +111,13 @@ def highlight(img, planet, color=(255, 0, 0, 200)):
         coordinate[0] + bbox[2] / 2, 
         coordinate[1] + bbox[3] / 2
     ]
-    draw.rectangle(background_box, fill=(0, 150, 150, 200))
+    owner=planet.currentOwner.lower()
+    colors = {
+        "automaton": (254-50, 109-50, 114-50, 200),  # Red
+        "terminids": (255-50, 193-50, 0, 200),  # Yellow
+        "humans": (0, 150, 150, 200),  # Cyan-like color
+    }
+    draw.rectangle(background_box, fill=colors[owner])
     draw.text(
         (coordinate[0] - bbox[2] / 2, coordinate[1] - bbox[3]/2), 
         name, 
