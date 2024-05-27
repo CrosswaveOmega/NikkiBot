@@ -464,13 +464,12 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         file_path = "./assets/GalacticMap.png"
 
         img = hd2.draw_grid(file_path)
+        img= hd2.draw_supply_lines(img,apistat=self.apistatus)
         for _, planet in self.apistatus.planets.items():
-            gpos = planet.position
-            x, y = gpos.x, gpos.y
-            coordinate = x * 1000.0 + 1000, 1000 - y * 1000.0
-            img = hd2.highlight(img, coordinate, (0, 0, 255, 200))
 
-        view = hd2.MapViewer(user=ctx.author, img=img, initial_coor=coordinate)
+            img = hd2.highlight(img, planet, (0, 0, 255, 200))
+
+        view = hd2.MapViewer(user=ctx.author, img=img, initial_coor=hd2.get_im_coordinates(0,0))
 
         emb, file = view.make_embed()
         await mes.edit(content="done", attachments=[file], embed=emb, view=view)

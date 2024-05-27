@@ -13,12 +13,10 @@ from googleapiclient.discovery import build  # Import the library
 from gptfunctionutil import AILibFunction, GPTFunctionLibrary, LibParam
 from htmldate import find_date
 from langchain.docstore.document import Document
-from langchain.indexes import VectorstoreIndexCreator
-from langchain_community.document_loaders import PDFMinerLoader, PyPDFLoader
+from langchain_community.document_loaders import PDFMinerLoader
 from langchain_openai import OpenAIEmbeddings
 from tqdm.asyncio import tqdm_asyncio
 
-import assets
 import gptmod
 import gui
 from utility import chunk_list, prioritized_string_split

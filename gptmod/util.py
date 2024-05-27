@@ -1,5 +1,5 @@
+print("importing util")
 import tiktoken
-import assets
 import json
 
 

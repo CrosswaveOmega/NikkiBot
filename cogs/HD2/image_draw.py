@@ -1,15 +1,8 @@
 import io
-import re
-from typing import Literal, List
-import aiohttp
-import gui
 import discord
-import asyncio
-from PIL import Image, ImageDraw
-from discord import app_commands
+from PIL import Image, ImageDraw, ImageFont
 import numpy as np
-from assets import GeoJSONGeometry, GeoJSONFeature
-
+from .GameStatus import ApiStatus
 CELL_SIZE = 200
 from utility.views import BaseView
 
@@ -27,10 +20,34 @@ def draw_grid(filepath, cell_size=200):
         img = Image.alpha_composite(img, overlay2)
     return img
 
+def get_im_coordinates(x,y):
+    coordinate = x * 1000.0 + 1000, 1000 - y * 1000.0
+    return coordinate
 
-def highlight(img, coordinate, color=(255, 0, 0, 200)):
+def draw_supply_lines(img, color=(0, 255, 0, 200),apistat:ApiStatus=None):
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
+
+    for index, planet in apistat.planets.items():
+        gpos = planet.position
+        x,y=get_im_coordinates(gpos.x, gpos.y)
+        waypoints=planet.waypoints
+        for ind in waypoints:
+            target=apistat.planets[ind]
+            tgpos = target.position
+            tx,ty=get_im_coordinates(tgpos.x, tgpos.y)
+            draw.line([(x,y),(tx,ty)],fill=color,
+            width=1,)
+    img = Image.alpha_composite(img, overlay)
+    return img
+
+def highlight(img, planet, color=(255, 0, 0, 200)):
+    gpos = planet.position
+    x, y = gpos.x, gpos.y
+    coordinate = x * 1000.0 + 1000, 1000 - y * 1000.0
+    overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay)
+
     draw.line(
         [
             (coordinate[0] + 1.5, coordinate[1] - 1),
@@ -81,7 +98,25 @@ def highlight(img, coordinate, color=(255, 0, 0, 200)):
             coordinate[1] + 5,
         ],
         outline=color,
-        width=1,
+        fill=(0,0,255,255),
+        width=1,)
+    name=str(planet.name).replace(" ",'\n')
+    font = ImageFont.truetype("arial.ttf", 8)  # Ensure the font path and size is correct
+    bbox = draw.textbbox((0, 0), name, font=font, align='center')
+
+    background_box = [
+        coordinate[0] - bbox[2] / 2, 
+        coordinate[1] - bbox[3] / 2, 
+        coordinate[0] + bbox[2] / 2, 
+        coordinate[1] + bbox[3] / 2
+    ]
+    draw.rectangle(background_box, fill=(0, 150, 150, 200))
+    draw.text(
+        (coordinate[0] - bbox[2] / 2, coordinate[1] - bbox[3]/2), 
+        name, 
+        fill=(255, 255, 255), 
+        font=font, 
+        align='center'
     )
     img = Image.alpha_composite(img, overlay)
     return img
@@ -137,7 +172,7 @@ class MapViewer(BaseView):
             timestamp=discord.utils.utcnow(),
         )
 
-        cropped_img = crop_image(self.img, self.focus_cell, off_by=np.array((2, 1)))
+        cropped_img = crop_image(self.img, self.focus_cell, off_by=np.array((1, 1)))
         with io.BytesIO() as image_binary:
             cropped_img.save(image_binary, "PNG")
             image_binary.seek(0)

@@ -1,3 +1,4 @@
+print('importing api')
 import asyncio
 from typing import Any, Dict, List, Optional, Union
 import aiohttp

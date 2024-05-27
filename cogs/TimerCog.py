@@ -30,10 +30,8 @@ from utility import (
 )
 from utility.embed_paginator import pages_of_embeds
 from bot import TCBot, TC_Cog_Mixin, super_context_menu
-import gptmod
 from database import DatabaseSingleton
 from gptfunctionutil import *
-import gptmod.error
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.future import select

@@ -1,8 +1,4 @@
-import asyncio
-import json
-from typing import Any, Dict, List, Optional, Union
-import aiohttp
-from datetime import datetime, timezone
+print("importing object core")
 
 
 class ApiCore(dict):

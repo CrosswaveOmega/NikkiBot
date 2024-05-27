@@ -1,26 +1,18 @@
+print("importing sentence_mem")
 import copy
-import re
 import uuid
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
-from discord.ext import commands
 import chromadb
 import discord
+from discord.ext import commands
+from gptfunctionutil import AILibFunction, GPTFunctionLibrary, LibParamSpec
 from langchain.docstore.document import Document
 
 import gptmod.util as util
 import gui
-
-from gptmod.chromatools import DocumentScoreVector, ChromaTools
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from nltk.tokenize import sent_tokenize
-
+from gptmod.chromatools import ChromaTools, DocumentScoreVector
 from utility.debug import Timer
-from gptfunctionutil import (
-    GPTFunctionLibrary,
-    AILibFunction,
-    LibParamSpec,
-)
 
 
 class MemoryFunctions(GPTFunctionLibrary):
@@ -45,6 +37,7 @@ class MemoryFunctions(GPTFunctionLibrary):
 
 def warmup():
     with Timer() as timer:
+        from langchain_community.embeddings import HuggingFaceEmbeddings
         hug_embed = HuggingFaceEmbeddings(model_name="thenlper/gte-small")
         hug_embed.embed_query("The quick brown fox jumped over the lazy frog.")
     print(timer.get_time())
@@ -52,6 +45,8 @@ def warmup():
 
 
 def advanced_sentence_splitter(text):
+    from nltk.tokenize import sent_tokenize
+
     sentences = sent_tokenize(text)
     return sentences
 

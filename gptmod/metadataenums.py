@@ -1,3 +1,4 @@
+print('importing metadataenums')
 from enum import Enum
 
 

@@ -1,22 +1,16 @@
+print('importing readability loader')
 """Web base loader class."""
 
 import langchain_community.document_loaders as dl
 from langchain.docstore.document import Document
 import asyncio
 import datetime
-from io import StringIO
-import logging
 import re
-import warnings
-from typing import Any, AsyncGenerator, Dict, Iterator, List, Optional, Tuple, Union
-import inspect
-import aiohttp
+from typing import Any, AsyncGenerator, Dict, Iterator, List, Tuple, Union
 import discord
-import requests
 import gui
 from htmldate import find_date
 import assets
-from javascriptasync import require, eval_js, eval_js_a
 from .metadataenums import MetadataDocType
 from bs4 import BeautifulSoup
 

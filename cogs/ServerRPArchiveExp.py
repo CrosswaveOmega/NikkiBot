@@ -49,7 +49,6 @@ from .ArchiveSub import (
     ChannelArchiveStatus,
 )
 from collections import defaultdict
-import gptmod
 
 
 class ToChoice(commands.Converter):
