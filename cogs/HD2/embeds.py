@@ -18,7 +18,7 @@ from utility import human_format as hf
 from utility import select_emoji as emj
 import random
 from .GameStatus import ApiStatus, get_feature_dictionary
-from .predict import make_prediction_for_eps
+from .predict import make_prediction_for_eps, predict_needed_players
 
 
 def create_war_embed(data: War, last=None):
@@ -200,10 +200,13 @@ def create_planet_embed(
         embed.add_field(name="Health", value=f"`{health}/{max_health}`.  ", inline=True)
 
     regen_per_second = data.get("regenPerSecond", 0)
-    needed_eps = regen_per_second / stat.war.get_first().impactMultiplier
+    mp_mult=stat.war.get_first().impactMultiplier
+    needed_eps = regen_per_second / mp_mult
+
+    needed_players = predict_needed_players(needed_eps,mp_mult)
     embed.add_field(
         name="Regeneration Per Second",
-        value=f"`{regen_per_second}` .  \n Need `{round(needed_eps,2)}` eps",
+        value=f"`{regen_per_second}` .  \n Need `{round(needed_eps,2)}` eps and `{round(needed_players,2)}` divers ",
         inline=True,
     )
 

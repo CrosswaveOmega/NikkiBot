@@ -39,6 +39,13 @@ def draw_supply_lines(img, color=(0, 255, 0, 200),apistat:ApiStatus=None):
             tx,ty=get_im_coordinates(tgpos.x, tgpos.y)
             draw.line([(x,y),(tx,ty)],fill=color,
             width=1,)
+        waypoints=planet.attacking
+        for ind in waypoints:
+            target=apistat.planets[ind]
+            tgpos = target.position
+            tx,ty=get_im_coordinates(tgpos.x, tgpos.y)
+            draw.line([(x,y),(tx,ty)],fill=(255,0,0,200),
+            width=3,)
     img = Image.alpha_composite(img, overlay)
     return img
 
@@ -49,58 +56,7 @@ def highlight(img, planet:Planet, color=(255, 0, 0, 200)):
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
 
-    draw.line(
-        [
-            (coordinate[0] + 1.5, coordinate[1] - 1),
-            (coordinate[0] + 1.5, coordinate[1] - 6),
-        ],
-        fill=color,
-        width=2,
-    )  # North
-    draw.line(
-        [
-            (coordinate[0] + 0.5, coordinate[1] + 2),
-            (coordinate[0] + 0.5, coordinate[1] + 7),
-        ],
-        fill=color,
-        width=2,
-    )  # South
-    draw.line(
-        [
-            (coordinate[0] - 1, coordinate[1] + 1.5),
-            (coordinate[0] - 6, coordinate[1] + 1.5),
-        ],
-        fill=color,
-        width=2,
-    )  # West
-    draw.line(
-        [
-            (coordinate[0] + 2, coordinate[1] + 0.5),
-            (coordinate[0] + 7, coordinate[1] + 0.5),
-        ],
-        fill=color,
-        width=2,
-    )  # East
-    draw.ellipse(
-        [
-            coordinate[0] - 1,
-            coordinate[1] - 1,
-            coordinate[0] + 2,
-            coordinate[1] + 2,
-        ],
-        outline=color,
-        width=1,
-    )
-    draw.ellipse(
-        [
-            coordinate[0] - 4,
-            coordinate[1] - 4,
-            coordinate[0] + 5,
-            coordinate[1] + 5,
-        ],
-        outline=color,
-        fill=(0,0,255,255),
-        width=1,)
+
     name=str(planet.name).replace(" ",'\n')
     font = ImageFont.truetype("arial.ttf", 12)  # Ensure the font path and size is correct
     bbox = draw.textbbox((0, 0), name, font=font, align='center')

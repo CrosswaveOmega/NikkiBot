@@ -15,7 +15,7 @@ feedback.txt
 *$py.class
 TestNotebook.ipynb
 statistics.csv
-
+statistics_new.csv
 # Dependency directories
 node_modules/
 
