@@ -140,7 +140,7 @@ class HD2OverviewView(discord.ui.View):
 
 
 class HelldiversCog(commands.Cog, TC_Cog_Mixin):
-    """cog for helldivers 2.  Consider it my embedded automaton spy."""
+    """Cog for helldivers 2.  Consider it my embedded automaton spy."""
 
     def __init__(self, bot):
         self.bot: TCBot = bot
@@ -196,8 +196,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     def cog_unload(self):
         hd2.save_to_json(self.apistatus, "./saveData/hd2_snapshot.json")
         TCTaskManager.remove_task("SuperEarthStatus")
-        # self.update_api.cancel()
-
         Guild_Task_Functions.remove_task_function("UPDATEOVERVIEW")
 
     async def update_data(self):
@@ -228,15 +226,13 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if not source_message:
             return None
         context = await self.bot.get_context(source_message)
-
-        # await context.channel.send("Greetings from GTASK.")
         try:
             profile = ServerHDProfile.get(context.guild.id)
             if profile:
 
                 target = await urltomessage(profile.overview_message_url, context.bot)
                 if self.api_up is False:
-                    await target.edit(content="WARNING, COMMS ARE DOWN!")
+                    await target.edit(content="**WARNING, COMMS ARE DOWN!**")
                     return
                 emb = hd2.campaign_view(self.apistatus, self.hd2)
                 emb.timestamp = discord.utils.utcnow()
@@ -350,6 +346,35 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 )
             )
 
+    async def planet_autocomplete(self, interaction:discord.Interaction, current:str):
+        '''
+        Autocomplete for planet lookup.  Search by either the name or index.
+        '''
+        planets = self._shared_autocomplete_logic(self.apistatus.planets.values(), current)
+        print(planets)
+        return planets
+
+    async def campaign_autocomplete(self, interaction:discord.Interaction, current:str):
+        '''
+        Autocomplete for planet lookup.  Search by either the name or index.
+        '''
+        campaigns = (l.get_first().planet for l in self.apistatus.campaigns.values())
+        planets = self._shared_autocomplete_logic(campaigns, current)
+        print(planets)
+        return planets
+
+    def _shared_autocomplete_logic(self, items, current: str):
+        '''Shared autocomplete logic.'''
+        search_val = current.lower()
+        results = []
+        for v in items:
+            if len(results) >= 25: break
+            if search_val in v.get_name(False).lower():
+                results.append(app_commands.Choice(
+                    name=v.get_name(False), value=int(v.index)
+                ))
+        return results
+
     @pc.command(name="campaigns", description="get campaign state.")
     @app_commands.choices(
         filter=[  # param name
@@ -358,6 +383,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             Choice(name="View campaigns for bot planets", value=3),
         ]
     )
+    @app_commands.autocomplete(byplanet=campaign_autocomplete)
     @app_commands.describe(byplanet="view campaign for this specific planet index.")
     async def cstate(
         self,
@@ -411,7 +437,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                         )
         await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
 
-    @pc.command(name="planet", description="get data for specific planet(s)")
+    @pc.command(name="planet", description="get data for a single specific planet")
+    @app_commands.autocomplete(byplanet=planet_autocomplete)
     @app_commands.describe(byplanet="view specific planet index.")
     async def pstate(self, interaction: discord.Interaction, byplanet: int):
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -420,16 +447,18 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if not data:
             return await ctx.send("No result")
         embeds = []
-        if byplanet:
-            if byplanet in self.apistatus.planets:
-                planet = self.apistatus.planets[byplanet]
-                embeds.append(
-                    hd2.create_planet_embed(
-                        planet, cstr=None, last=None, stat=self.apistatus
-                    )
+        print(byplanet)
+        if byplanet in self.apistatus.planets:
+            planet = self.apistatus.planets[byplanet]
+            embeds.append(
+                hd2.create_planet_embed(
+                    planet, cstr=None, last=None, stat=self.apistatus
                 )
-
-        await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
+            )
+            await ctx.send(embeds=embeds, ephemeral=True)
+            #await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
+        else:
+            await ctx.send("Planet not found.", ephemeral=True)
 
     @pc.command(name="dispatches", description="get a list of all dispatches.")
     async def dispatch(self, interaction: discord.Interaction):
@@ -457,19 +486,23 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         await ctx.send(embed=emb)
 
     @pc.command(name="map", description="get a primitive galactic map.")
-    async def map(self, interaction: discord.Interaction):
+    @app_commands.describe(planet="Focus map on this planet.")
+    @app_commands.autocomplete(planet=planet_autocomplete)
+    async def map(self, interaction: discord.Interaction,planet:int=0):
+
         ctx: commands.Context = await self.bot.get_context(interaction)
-        # Convert the timestamp string to a datetime object
         mes = await ctx.send("please wait...", ephemeral=True)
         file_path = "./assets/GalacticMap.png"
 
         img = hd2.draw_grid(file_path)
         img= hd2.draw_supply_lines(img,apistat=self.apistatus)
-        for _, planet in self.apistatus.planets.items():
-
-            img = hd2.highlight(img, planet, (0, 0, 255, 200))
-
-        view = hd2.MapViewer(user=ctx.author, img=img, initial_coor=hd2.get_im_coordinates(0,0))
+        for _, planet_obj in self.apistatus.planets.items():
+            img = hd2.highlight(img, planet_obj, (0, 0, 255, 200))
+        cx,cy=0,0
+        if planet in self.apistatus.planets:
+            pos=self.apistatus.planets[planet].position
+            cx,cy=pos.x,pos.y
+        view = hd2.MapViewer(user=ctx.author, img=img, initial_coor=hd2.get_im_coordinates(cx,cy))
 
         emb, file = view.make_embed()
         await mes.edit(content="done", attachments=[file], embed=emb, view=view)

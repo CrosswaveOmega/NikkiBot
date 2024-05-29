@@ -58,9 +58,10 @@ def highlight(img, planet:Planet, color=(255, 0, 0, 200)):
 
 
     name=str(planet.name).replace(" ",'\n')
-    font = ImageFont.truetype("arial.ttf", 12)  # Ensure the font path and size is correct
+    font = ImageFont.truetype("arial.ttf", 12)  
+    font2 = ImageFont.truetype("arial.ttf", 10)  
     bbox = draw.textbbox((0, 0), name, font=font, align='center')
-
+    bbox2 = draw.textbbox((0, 0), str(planet.health_percent()), font=font2, align='center')
     background_box = [
         coordinate[0] - bbox[2] / 2, 
         coordinate[1] - bbox[3] / 2, 
@@ -72,8 +73,15 @@ def highlight(img, planet:Planet, color=(255, 0, 0, 200)):
         "automaton": (254-50, 109-50, 114-50, 200),  # Red
         "terminids": (255-50, 193-50, 0, 200),  # Yellow
         "humans": (0, 150, 150, 200),  # Cyan-like color
+        'illuminate': (150, 0, 150, 200)
     }
-    draw.rectangle(background_box, fill=colors[owner])
+    draw.rectangle(background_box, fill=colors[owner],outline=colors[owner])
+    draw.rectangle(
+        ([background_box[0],
+          background_box[3],
+          background_box[0]+bbox2[2],
+          background_box[3]+bbox2[3]])
+        ,fill=colors[owner],outline=colors[owner])
     draw.text(
         (coordinate[0] - bbox[2] / 2, coordinate[1] - bbox[3]/2), 
         name, 
@@ -81,6 +89,11 @@ def highlight(img, planet:Planet, color=(255, 0, 0, 200)):
         font=font, 
         align='center'
     )
+    draw.text((background_box[0],background_box[3]),
+                      str(planet.health_percent()), 
+        fill=(255, 255, 255), 
+        font=font2, 
+        align='center')
     img = Image.alpha_composite(img, overlay)
     return img
 

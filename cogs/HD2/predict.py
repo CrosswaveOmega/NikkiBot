@@ -11,6 +11,7 @@ from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.svm import SVR
 from sklearn.neural_network import MLPRegressor
+from scipy import stats
 
 # Load your dataset (Assume your dataset is in a CSV file)
 # Replace 'your_dataset.csv' with your actual dataset file
@@ -43,6 +44,9 @@ model.fit(X, Y)
 
 players_needed_model=LinearRegression()
 players_needed_model.fit(data[['eps','mp_mult']],YE)
+
+
+mse = mean_squared_error(YE, players_needed_model.predict(data[['eps','mp_mult']]))
 
 def experiment_models():
     models = [
@@ -127,9 +131,28 @@ def predict_needed_players(target_eps,mp_mult):
         "eps": target_eps,
         "mp_mult": mp_mult,
     }
-
     # Extract features for prediction
     features_for_prediction = pd.DataFrame([prediction_features])
+    X_new = features_for_prediction[['eps', 'mp_mult']]
+    y_pred = players_needed_model.predict(X_new)
+    needed=y_pred[0]
 
-    needed=players_needed_model.predict(features_for_prediction[['eps','mp_mult']])
-    return needed[0]
+    y = YE
+    n = len(y)
+    p = XE.shape[1]
+    # Calculate the standard error of the prediction
+    X_with_intercept = np.hstack((np.ones((XE.shape[0], 1)), XE))
+    X_new_with_intercept = np.hstack((np.ones((X_new.shape[0], 1)), X_new))
+    se_of_prediction = np.sqrt(mse * (1 + np.dot(np.dot(X_new_with_intercept, np.linalg.inv(np.dot(X_with_intercept.T, X_with_intercept))), X_new_with_intercept.T)))
+
+    # Calculate the t-value for the confidence interval
+    t_value = stats.t.ppf((1 + 0.95) / 2., n - p - 1)
+
+    # Calculate the margin of error
+    margin_of_error = t_value * se_of_prediction
+
+
+    return needed, margin_of_error
+
+
+    

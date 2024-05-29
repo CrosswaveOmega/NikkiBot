@@ -168,9 +168,11 @@ class Planet(BaseApiModel, HealthMixin):
 
         return self.format_estimated_time_string(change, timeval)
 
-    def get_name(self) -> str:
+    def get_name(self, faction=True) -> str:
         """Get the name of the planet, along with occupying faction
         and planet index."""
+        if not faction:
+            return f"P#{self.index}: {self.name}"
         faction = emj(self.currentOwner.lower())
         return f"{faction}P#{self.index}: {self.name}"
 

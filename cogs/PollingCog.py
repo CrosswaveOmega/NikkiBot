@@ -410,7 +410,7 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
 
     @app_commands.command(name="ping")
     async def pings(self, interaction: discord.Interaction):
-        """just check if my app commands work..."""
+        """just check if my app commands work."""
         await interaction.response.send_message("pong")
 
     @commands.hybrid_command(name="persistent_view")

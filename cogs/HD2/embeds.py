@@ -203,7 +203,7 @@ def create_planet_embed(
     mp_mult=stat.war.get_first().impactMultiplier
     needed_eps = regen_per_second / mp_mult
 
-    needed_players = predict_needed_players(needed_eps,mp_mult)
+    needed_players,_ = predict_needed_players(needed_eps,mp_mult)
     embed.add_field(
         name="Regeneration Per Second",
         value=f"`{regen_per_second}` .  \n Need `{round(needed_eps,2)}` eps and `{round(needed_players,2)}` divers ",
