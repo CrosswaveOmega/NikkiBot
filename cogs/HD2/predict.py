@@ -146,13 +146,13 @@ def predict_needed_players(target_eps,mp_mult):
     se_of_prediction = np.sqrt(mse * (1 + np.dot(np.dot(X_new_with_intercept, np.linalg.inv(np.dot(X_with_intercept.T, X_with_intercept))), X_new_with_intercept.T)))
 
     # Calculate the t-value for the confidence interval
-    t_value = stats.t.ppf((1 + 0.95) / 2., n - p - 1)
+    #t_value = stats.t.ppf((1 + 0.95) / 2., n - p - 1)
 
     # Calculate the margin of error
-    margin_of_error = t_value * se_of_prediction
+    #margin_of_error = t_value * se_of_prediction
 
 
-    return needed, margin_of_error
+    return needed, se_of_prediction
 
 
     

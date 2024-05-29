@@ -83,7 +83,7 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
                 )
             )
             await ctx.send(f"Need `{play}` players to achieve dps of `{dps}` on {planet.get_name()}."+
-                           f"\n This estimate may be off by `{conf}`.", ephemeral=True)
+                           f"\n standard error `{conf}`.", ephemeral=True)
             #await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
         else:
             await ctx.send("Planet not found.", ephemeral=True)
