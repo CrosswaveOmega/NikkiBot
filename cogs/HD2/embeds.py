@@ -82,21 +82,22 @@ def create_assignment_embed(
     did, title = data["id"], data["title"]
     briefing = data["briefing"]
     embed = discord.Embed(
-        title=f"Assignment A{did}:{title}",
+        title=f"{title}",
         description=f"{briefing} ",
         color=0x0000FF,
     )
+    embed.set_author(name=f"Assignment A#{did}")
 
     progress = data["progress"]
     if last is not None:
         progress = [(t, l) for t, l in zip(data.progress, last.progress)]
-    embed.add_field(name="Description", value=data["description"], inline=False)
+    embed.add_field(name="Objective", value=data["description"], inline=False)
     tasks = ""
     for e, task in enumerate(data["tasks"]):
         task_type = task_types.get(task["type"], "Unknown Task Type")
         taskdata = {"planet_index": "ERR", "race": 15}
         curr, last = progress[e]
-        taskstr = f"[{e}]{task_type}: {hf(curr)}"
+        taskstr = f"{e}. {task_type}: {hf(curr)}"
         for v, vt in zip(task["values"], task["valueTypes"]):
             # print(v, value_types.get(vt, "Unmapped vt"))
             taskdata[value_types[vt]] = v
@@ -107,9 +108,13 @@ def create_assignment_embed(
             health = "?"
             if int(planet_id) in planets:
                 planet = planets[int(planet_id)]
-                planet_name = planet.name
+                planet_name = planet.get_name()
                 health = planet.health_percent()
-            taskstr = f"[{e}]{task_type}:{planet_name}({planet_id}) Status:{'ok' if curr==1 else f'{health},{curr}'}"
+            if task['type']==11:
+                taskstr = f"{e}. Liberate {planet_name}. Status: `{'ok' if curr==1 else f'{health},{curr}'}`"
+            if task['type']==13:
+                taskstr = f"{e}. Controk {planet_name}. Status:`{'ok' if curr==1 else f'{health},{curr}'}`"
+
 
         elif task["type"] == 12:
             planet_name = taskdata["planet_index"]

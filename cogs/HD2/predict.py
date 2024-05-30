@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error, r2_score
 
+import matplotlib.pyplot as plt
 # Regression models
 from sklearn.linear_model import LinearRegression, ElasticNet
 from sklearn.model_selection import train_test_split
@@ -41,31 +42,33 @@ XE= data[['eps','mp_mult']]
 YE = data["player_count"]
 model = LinearRegression()
 model.fit(X, Y)
+# Fit the linear regression model
+players_needed_model = LinearRegression()
+players_needed_model.fit(XE[['eps','mp_mult']], YE)
 
-players_needed_model=LinearRegression()
-players_needed_model.fit(data[['eps','mp_mult']],YE)
+# Predict values
+predicted_eps = players_needed_model.predict(XE[['eps','mp_mult']])
+
+# Calculate the mean squared error
+mse = mean_squared_error(YE, predicted_eps)
+print(f'Mean Squared Error: {mse}')
 
 
-mse = mean_squared_error(YE, players_needed_model.predict(data[['eps','mp_mult']]))
 
 def experiment_models():
     models = [
         ("Linear Regression", LinearRegression()),
         ("ElasticNet", ElasticNet()),
         ("Decision Tree", DecisionTreeRegressor(random_state=42)),
-        ("Random Forest", RandomForestRegressor(n_estimators=1000)),
-        (
-            "Gradient Boosting",
-            GradientBoostingRegressor(n_estimators=1000),
-        ),
+        #("Random Forest", RandomForestRegressor(n_estimators=1000)),
+        #(            "Gradient Boosting",    GradientBoostingRegressor(n_estimators=1000),        ),
         ("KNeighbors", KNeighborsRegressor()),
-        ("SVR", SVR(kernel='poly'))
     ]
     # Train and evaluate each model
     mse_results = {name: [] for name, _ in models}
     r2_results = {name: [] for name, _ in models}
 
-    for i in range(10):
+    for i in range(2):
         # Split the data into training and testing sets
         XE_train, XE_test, YE_train, YE_test = train_test_split(XE, YE, test_size=0.1)
 
@@ -133,26 +136,45 @@ def predict_needed_players(target_eps,mp_mult):
     }
     # Extract features for prediction
     features_for_prediction = pd.DataFrame([prediction_features])
-    X_new = features_for_prediction[['eps', 'mp_mult']]
+    X_new = features_for_prediction[['eps','mp_mult']]
     y_pred = players_needed_model.predict(X_new)
     needed=y_pred[0]
 
     y = YE
-    n = len(y)
-    p = XE.shape[1]
     # Calculate the standard error of the prediction
     X_with_intercept = np.hstack((np.ones((XE.shape[0], 1)), XE))
     X_new_with_intercept = np.hstack((np.ones((X_new.shape[0], 1)), X_new))
     se_of_prediction = np.sqrt(mse * (1 + np.dot(np.dot(X_new_with_intercept, np.linalg.inv(np.dot(X_with_intercept.T, X_with_intercept))), X_new_with_intercept.T)))
 
-    # Calculate the t-value for the confidence interval
-    #t_value = stats.t.ppf((1 + 0.95) / 2., n - p - 1)
-
-    # Calculate the margin of error
-    #margin_of_error = t_value * se_of_prediction
-
-
     return needed, se_of_prediction
 
 
     
+# # Calculate the standard error of the predictions
+# se = np.sqrt(mse)
+
+# # Calculate the confidence intervals
+# confidence_level = 0.95
+# degrees_of_freedom = len(XE) - 2
+# t_value = stats.t.ppf((1 + confidence_level) / 2, degrees_of_freedom)
+
+# # Prediction intervals
+# predicted_std = np.std(predicted_eps)
+# interval = t_value * predicted_std
+
+# lower_bound = predicted_eps - interval
+# upper_bound = predicted_eps + interval
+
+# Plot the results
+# plt.figure(figsize=(10, 6))
+# plt.scatter(YE, XE['eps'], color='blue', label='Data points')
+# plt.plot(predicted_eps, XE['eps'], color='green', label='Regression Line')
+# plt.plot(lower_bound, XE['eps'], color='gray', alpha=0.2, label='95% Confidence Interval')
+# plt.plot(upper_bound, XE['eps'], color='gray', alpha=0.2, label='95% Confidence Interval')
+
+# # Plot confidenc
+# plt.xlabel('Players')
+# plt.ylabel('eps')
+# plt.title('Scatter plot of eps vs mp_mult with Confidence Intervals')
+# plt.legend()
+# plt.show()
