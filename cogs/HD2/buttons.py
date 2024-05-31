@@ -1,7 +1,11 @@
 import discord
 from utility.embed_paginator import *
 
-class ListButtons(EmbedPageButtons):
+class ListButtons(discord.ui.View):
+    def __init__(self, *, timeout: int = 180, callbacker: PageClassContainer) -> None:
+        super().__init__(timeout=timeout)
+        self.callbacker = callbacker
+        self.pageselect = None
 
     async def selectcall(self, interaction, select: PageSelect):
         await self.callbacker.mycallback(

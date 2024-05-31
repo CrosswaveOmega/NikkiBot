@@ -91,7 +91,7 @@ class HD2OverviewView(discord.ui.View):
                     camp.planet, cstr=camp, last=diff.planet, stat=self.cog.apistatus
                 )
             )
-        pcc, but = await pages_of_embeds_2(True, embeds, show_page_nums=False)
+        pcc, _ = await pages_of_embeds_2(True, embeds, show_page_nums=False)
         but = hd2.ListButtons(callbacker=pcc)
         await interaction.response.send_message(
             embed=pcc.make_embed(), view=but, ephemeral=True
@@ -122,7 +122,7 @@ class HD2OverviewView(discord.ui.View):
                 else:
                     total_size += len(v)
                 embed.add_field(name=name, value=v[:1024], inline=False)
-        pcc, but = await pages_of_embeds_2(True, embeds, show_page_nums=True)
+        pcc, _ = await pages_of_embeds_2(True, embeds, show_page_nums=True)
         but = hd2.ListButtons(callbacker=pcc)
         await interaction.response.send_message(
             embed=pcc.make_embed(), view=but, ephemeral=True
