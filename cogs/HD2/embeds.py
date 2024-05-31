@@ -29,16 +29,17 @@ def create_war_embed(data: War, last=None):
 
     embed = discord.Embed(title="War", description=f"{stat_str}", color=0xFF0000)
 
-    embed.add_field(name="Started", value=fdt(et(data["started"]), "F"), inline=False)
-    embed.add_field(name="Ended", value=fdt(et(data["ended"]), "F"), inline=False)
-    embed.add_field(name="Now", value=fdt(et(data["now"]), "F"), inline=False)
-    embed.add_field(name="Client Version", value=data["clientVersion"], inline=False)
-
+    embed.add_field(name="Started", value=fdt(et(data["started"]), "F"), inline=True)
+    embed.add_field(name="Ended", value=fdt(et(data["ended"]), "F"), inline=True)
+    embed.add_field(name="Now", value=fdt(et(data["now"]), "F"), inline=True)
+    
     factions = ", ".join(data["factions"])
     embed.add_field(name="Factions", value=factions, inline=False)
+    embed.add_field(name="Client Version", value=data["clientVersion"], inline=True)
+
 
     embed.add_field(
-        name="Impact Multiplier", value=data["impactMultiplier"], inline=False
+        name="Impact Multiplier", value=data["impactMultiplier"], inline=True
     )
 
     return embed
@@ -130,9 +131,9 @@ def create_assignment_embed(
 
     embed.add_field(name="Tasks", value=tasks, inline=False)
 
-    embed.add_field(name="Reward", value=data.reward.format(), inline=False)
+    embed.add_field(name="Reward", value=data.reward.format(), inline=True)
     exptime = et(data["expiration"])
-    embed.add_field(name="Expiration", value=fdt(exptime, "f"), inline=False)
+    embed.add_field(name="Expiration", value=fdt(exptime, "f"), inline=True)
 
     return embed
 

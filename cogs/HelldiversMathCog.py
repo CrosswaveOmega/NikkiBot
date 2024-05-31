@@ -1,40 +1,27 @@
 import asyncio
-import json
-from typing import Literal, Dict, List
-from assets import AssetLookup
-import gui
-import discord
-
-from datetime import datetime, timedelta
-from discord import app_commands
 import importlib
+import json
+from datetime import datetime, timedelta
+from typing import Dict, List, Literal
 
+import discord
 from dateutil.rrule import MINUTELY, SU, WEEKLY, rrule
+from discord import app_commands
+from discord.app_commands import Choice
 from discord.ext import commands, tasks
 
-from discord.app_commands import Choice
-
-from utility import MessageTemplates, urltomessage
-from bot import (
-    Guild_Task_Functions,
-    StatusEditMessage,
-    TC_Cog_Mixin,
-    TCBot,
-    TCGuildTask,
-)
-
-# import datetime
-from bot import (
-    TCBot,
-    TC_Cog_Mixin,
-)
-from discord.ext import commands
-from .HD2.db import ServerHDProfile
 import cogs.HD2 as hd2
-from utility.embed_paginator import pages_of_embeds, pages_of_embeds_2
-from utility import load_json_with_substitutions
+import gui
+from assets import AssetLookup
+# import datetime
+from bot import (Guild_Task_Functions, StatusEditMessage, TC_Cog_Mixin, TCBot,
+                 TCGuildTask)
 from bot.Tasks import TCTask, TCTaskManager
+from utility import (MessageTemplates, load_json_with_substitutions,
+                     urltomessage)
+from utility.embed_paginator import pages_of_embeds, pages_of_embeds_2
 
+from .HD2.db import ServerHDProfile
 
 
 class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
@@ -96,6 +83,15 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         lps=hd2.maths.dps_to_lph(dps,max_health)
         await ctx.send(f"`{dps}` dps is about `{lps}` liberation per hour.", ephemeral=True)
+
+    @calc.command(name="eps_to_dps", description="Convert experience per second to damage per second.")
+    @app_commands.describe(eps="experience per second")
+    async def eps_to_dps(self, interaction: discord.Interaction,eps:float):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        war=self.apistatus.war.get_first()
+        dps=war.impactMultiplier*eps
+        lps=hd2.maths.dps_to_lph(dps,1000000)
+        await ctx.send(f"`{eps}` dps is about `{dps}` dps per second, and `{lps}` liberation per hour.", ephemeral=True)
 
 
 

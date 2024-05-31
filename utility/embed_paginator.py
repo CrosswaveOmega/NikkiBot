@@ -1,6 +1,7 @@
 import copy
 import io
 import logging
+import re
 import discord
 from discord.ext import commands
 from typing import List, Tuple
@@ -54,9 +55,10 @@ class PageClassContainer:
     async def generate_select(self):
         selectlist = []
         for e, i in enumerate(self.display):
+            subtitle=re.sub(r'\<[^>]*\>', '', i.title)
             selectlist.append(
                 discord.SelectOption(
-                    label=f"{i.title}, Page: {e}",
+                    label=f"{subtitle}, Page: {e}",
                     description=f"Go to page {e}",
                     value=e,
                     default=True if self.page - 1 == e else False,
