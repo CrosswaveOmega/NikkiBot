@@ -36,5 +36,5 @@ class Dispatch(BaseApiModel):
         converted_text = re.sub(pattern3, r'***\1***', converted_text)
         return discord.Embed(
             title=f"Dispatch {self.id}, type {self.type}",
-            description=f"{converted_text}\n{self.published}",
+            description=f"{self.message}\n{converted_text}\n{self.published}",
         )
