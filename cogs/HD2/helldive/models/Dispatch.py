@@ -5,6 +5,16 @@ from .ABC.model import BaseApiModel
 import discord
 
 
+import re
+
+
+
+# Define the regex pattern to match <i=1>...</i> tags
+pattern = r'<i=1>(.*?)<\/i>'
+
+
+
+
 class Dispatch(BaseApiModel):
     """
     None model
@@ -21,7 +31,9 @@ class Dispatch(BaseApiModel):
     message: Optional[Union[str, Dict[str, Any]]] = Field(alias="message", default=None)
 
     def to_embed(self):
+        #message=self.# Replace the matched patterns with markdown bold syntax
+        converted_text = re.sub(pattern, r'**\1**', self.message)
         return discord.Embed(
             title=f"Dispatch {self.id}, type {self.type}",
-            description=f"{self.message}\n{self.published}",
+            description=f"{converted_text}\n{self.published}",
         )
