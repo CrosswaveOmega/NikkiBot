@@ -198,6 +198,15 @@ class ApiStatus:
         dates: List[datetime.datetime] = []
         outv: str = ""
         # Get all planets and Events out of the current list of campaigns.
+        for _, list in self.assignments.items():
+            camp=list.get_first()
+            print(camp.title,camp.briefing)
+            dates.append(
+                    (
+                        f"{camp.title}:End at{fdt(et(camp.expiration),'R')}",
+                        et(camp.expiration),
+                    )
+                )
 
         for _, list in self.campaigns.items():
             camp, _ = list.get_first_change()
