@@ -148,6 +148,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         self.bot: TCBot = bot
         # self.session=aiohttp.ClientSession()
         hdoverride = hd2.APIConfig()
+        self.img=None
         hdoverride.client_name = bot.keys.get("hd2cli")
         self.apistatus = hd2.ApiStatus(client=hdoverride)
 
@@ -196,6 +197,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         return None
 
     def cog_unload(self):
+        if self.img:
+            self.img.close()
         hd2.save_to_json(self.apistatus, "./saveData/hd2_snapshot.json")
         TCTaskManager.remove_task("SuperEarthStatus")
         Guild_Task_Functions.remove_task_function("UPDATEOVERVIEW")
@@ -207,6 +210,14 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             print(self.apistatus.war)
             hd2.add_to_csv(self.apistatus)
         return
+    
+    def draw_img(self):
+        file_path = "./assets/GalacticMap.png"
+        img = hd2.draw_grid(file_path)
+        img= hd2.draw_supply_lines(img,apistat=self.apistatus)
+        for _, planet_obj in self.apistatus.planets.items():
+            img = hd2.highlight(img, planet_obj, (0, 0, 255, 200))
+        self.img=img
 
     async def update_api(self):
 
@@ -216,6 +227,10 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         try:
             print("updating war")
             await self.update_data()
+            await asyncio.gather(
+                asyncio.to_thread(self.draw_img),
+                asyncio.sleep(1))
+
 
         except Exception as e:
             await self.bot.send_error(e, f"Message update cleanup error.")
@@ -494,12 +509,15 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         ctx: commands.Context = await self.bot.get_context(interaction)
         mes = await ctx.send("please wait...", ephemeral=True)
-        file_path = "./assets/GalacticMap.png"
 
-        img = hd2.draw_grid(file_path)
-        img= hd2.draw_supply_lines(img,apistat=self.apistatus)
-        for _, planet_obj in self.apistatus.planets.items():
-            img = hd2.highlight(img, planet_obj, (0, 0, 255, 200))
+        img=self.img
+        if not img:
+            await asyncio.gather(
+                asyncio.to_thread(self.draw_img),
+                asyncio.sleep(1))
+            img=self.img
+            #await mes.edit(content="Image not available.")
+            #return
         cx,cy=0,0
         if planet in self.apistatus.planets:
             pos=self.apistatus.planets[planet].position

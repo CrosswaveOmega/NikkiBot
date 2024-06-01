@@ -75,7 +75,7 @@ def highlight(img, planet:Planet, color=(255, 0, 0, 200)):
         "humans": (0, 150, 150, 200),  # Cyan-like color
         'illuminate': (150, 0, 150, 200)
     }
-    draw.rectangle(background_box, fill=colors[owner],outline=colors[owner])
+    draw.rectangle(background_box, fill=colors[owner],outline=colors[owner],width=2)
     draw.rectangle(
         ([background_box[0],
           background_box[3],

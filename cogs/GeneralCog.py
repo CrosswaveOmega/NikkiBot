@@ -13,12 +13,64 @@ from utility.embed_paginator import pages_of_embeds
 from bot import TC_Cog_Mixin, super_context_menu
 
 
+class PersistentView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.my_count = {}
+
+    async def callback(self, interaction, button):
+        user = interaction.user
+        label = button.label
+        if not str(user.id) in self.my_count:
+            self.my_count[str(user.id)] = 0
+        self.my_count[str(user.id)] += 1
+        await interaction.response.send_message(
+            f"You are {user.name}, this is {label}, and you have pressed this button {self.my_count[str(user.id)]} times.",
+            ephemeral=True,
+        )
+
+    async def on_error(
+        self, interaction: discord.Interaction, error: Exception
+    ) -> None:
+        await interaction.response.send_message(
+            f"Oops! Something went wrong, {str(error)}", ephemeral=True
+        )
+
+    @discord.ui.button(
+        label="Green",
+        style=discord.ButtonStyle.green,
+        custom_id="persistent_view:green",
+    )
+    async def green(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.callback(interaction, button)
+
+    @discord.ui.button(
+        label="Red", style=discord.ButtonStyle.red, custom_id="persistent_view:red"
+    )
+    async def red(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.callback(interaction, button)
+
+    @discord.ui.button(
+        label="Blue",
+        style=discord.ButtonStyle.blurple,
+        custom_id="persistent_view:blue",
+    )
+    async def blue(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.callback(interaction, button)
+
+    @discord.ui.button(
+        label="Grey", style=discord.ButtonStyle.grey, custom_id="persistent_view:grey"
+    )
+    async def grey(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.callback(interaction, button)
+
 class General(commands.Cog, TC_Cog_Mixin):
     """General commands"""
 
     def __init__(self, bot):
         self.helptext = "Some assorted testing commands."
         self.bot = bot
+        bot.add_view(PersistentView())
         self.init_context_menus()
 
     @commands.command()
@@ -178,6 +230,32 @@ class General(commands.Cog, TC_Cog_Mixin):
                 await ctx.send(p)
         else:
             await ctx.send("Guild not found.", ephemeral=True)
+
+    @app_commands.command(name="ping")
+    async def pings(self, interaction: discord.Interaction):
+        """just check if my app commands work."""
+        await interaction.response.send_message("pong")
+
+    @commands.hybrid_command(name="persistent_view")
+    async def constant_view(self, ctx):
+        """This command returns a persistent view, as a test."""
+        await ctx.send("What's your favourite colour?", view=PersistentView())
+
+    @app_commands.command(
+        name="nikkifeedback",
+        description="Have a suggestion or complaint?  Use this and let me know!",
+    )
+    async def feedback_send(self, interaction: discord.Interaction):
+        """test for a feedback system"""
+        modal = Feedback(self.bot, timeout=60)
+        await interaction.response.send_modal(modal)
+        res = await modal.wait()
+        ctx = self.bot.get_context(interaction)
+        if res:
+            await ctx.send(f"{modal.name.value}", epheremal=True)
+            await ctx.send(f"{modal.feedback.value}", epheremal=True)
+        else:
+            await ctx.send(f"Timeout...", epheremal=True)
 
 
 async def setup(bot):

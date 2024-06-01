@@ -408,41 +408,18 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
                 ctx, "This poll id is invalid.", ephemeral=True
             )
 
-    @app_commands.command(name="ping")
-    async def pings(self, interaction: discord.Interaction):
-        """just check if my app commands work."""
-        await interaction.response.send_message("pong")
-
-    @commands.hybrid_command(name="persistent_view")
-    async def constant_view(self, ctx):
-        """This command returns a persistent view, as a test."""
-        await ctx.send("What's your favourite colour?", view=PersistentView())
-
-    @app_commands.command(
-        name="nikkifeedback",
-        description="Have a suggestion or complaint?  Use this and let me know!",
-    )
-    async def feedback_send(self, interaction: discord.Interaction):
-        """test for a feedback system"""
-        modal = Feedback(self.bot, timeout=60)
-        await interaction.response.send_modal(modal)
-        res = await modal.wait()
-        ctx = self.bot.get_context(interaction)
-        if res:
-            await ctx.send(f"{modal.name.value}", epheremal=True)
-            await ctx.send(f"{modal.feedback.value}", epheremal=True)
-        else:
-            await ctx.send(f"Timeout...", epheremal=True)
 
 
 async def setup(bot):
+    pass
     gui.dprint(__name__)
     # from .Polling import setup
     # await bot.load_extension(setup.__module__)
-    await bot.add_cog(PollingCog(bot))
+    #await bot.add_cog(PollingCog(bot))
 
 
 async def teardown(bot):
+    pass
     # from .Polling import setup
     # await bot.unload_extension(setup.__module__)
-    await bot.remove_cog("PollingCog")
+    #await bot.remove_cog("PollingCog")
