@@ -477,3 +477,47 @@ def get_feature_dictionary(
         "eps": eps,
     }
     return row
+
+
+
+def write_statistics_to_csv(stats: ApiStatus):
+    '''dump planet statistics at current time to csv file.'''
+    headers = [
+        "planet_name", "biome", "initial_owner", "current_owner",
+        "missionsWon", "missionsLost", "missionTime", "terminidKills", "automatonKills",
+        "illuminateKills", "bulletsFired", "bulletsHit", "timePlayed", "deaths",
+        "revives", "friendlies", "missionSuccessRate", "accuracy", "playerCount"
+    ]
+    csv_file_path = "statistics_sub.csv"
+    # Open the CSV file for writing
+    with open(csv_file_path, mode='w', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=headers)
+
+        # Write the header
+        writer.writeheader()
+
+        # Write each statistics entry
+        for _, planet in  stats.planets.items():
+            stat=planet.statistics
+            row = {
+                "planet_name": planet.name,
+                "biome": planet.biome.name,
+                "initial_owner": planet.initialOwner,
+                "current_owner": planet.currentOwner,
+                "missionsWon": stat.missionsWon,
+                "missionsLost": stat.missionsLost,
+                "missionTime": stat.missionTime,
+                "terminidKills": stat.terminidKills,
+                "automatonKills": stat.automatonKills,
+                "illuminateKills": stat.illuminateKills,
+                "bulletsFired": stat.bulletsFired,
+                "bulletsHit": stat.bulletsHit,
+                "timePlayed": stat.timePlayed,
+                "deaths": stat.deaths,
+                "revives": stat.revives,
+                "friendlies": stat.friendlies,
+                "missionSuccessRate": stat.missionSuccessRate,
+                "accuracy": stat.accuracy,
+                "playerCount": stat.playerCount
+            }
+            writer.writerow(row)

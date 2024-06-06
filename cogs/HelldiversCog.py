@@ -281,7 +281,10 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     @commands.is_owner()
     @commands.command(name="get_csv")
     async def get_csv(self, ctx: commands.Context):
+        hd2.write_statistics_to_csv(self.apistatus)
         await ctx.send(file=discord.File("statistics.csv"))
+        
+        await ctx.send(file=discord.File("statistics_sub.csv"))
 
     @commands.is_owner()
     @commands.command(name="api_down")
