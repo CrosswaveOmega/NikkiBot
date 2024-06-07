@@ -257,7 +257,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 if self.apistatus.assignments:
                     for i, assignment in self.apistatus.assignments.items():
                         b, a = assignment.get_first_change()
-                        embs.append(
+                        embs.insert(0,
                             hd2.create_assignment_embed(
                                 b, b - a, planets=self.apistatus.planets
                             )
