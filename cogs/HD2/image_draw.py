@@ -100,7 +100,7 @@ def highlight(img, planet:Planet, color=(255, 0, 0, 200)):
 
 def crop_image(image, coordinate, off_by, cell_size=200):
     ccr = coordinate
-    bc = ccr + off_by + np.array((1, 1))
+    bc = ccr + off_by + np.array((2, 1))
     uc = ccr - off_by
     left = max(uc[0] * cell_size, 0)
     top = max(uc[1] * cell_size, 0)
