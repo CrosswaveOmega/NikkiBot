@@ -153,8 +153,8 @@ class ApiStatus:
         self.handle_data(assignments, self.assignments, "assignment")
         self.handle_data(campaigns, self.campaigns, "campaign")
         for l in self.campaigns.values():
-            camp=l.get_first()
-            self.planets[camp.planet.index]=camp.planet
+            camp = l.get_first()
+            self.planets[camp.planet.index] = camp.planet
         if datetime.datetime.now() >= self.last_planet_get + datetime.timedelta(
             hours=2
         ):
@@ -199,14 +199,14 @@ class ApiStatus:
         outv: str = ""
         # Get all planets and Events out of the current list of campaigns.
         for _, list in self.assignments.items():
-            camp=list.get_first()
-            print(camp.title,camp.briefing)
+            camp = list.get_first()
+            print(camp.title, camp.briefing)
             dates.append(
-                    (
-                        f"{camp.title}:End at{fdt(et(camp.expiration),'R')}",
-                        et(camp.expiration),
-                    )
+                (
+                    f"{camp.title}:End at{fdt(et(camp.expiration),'R')}",
+                    et(camp.expiration),
                 )
+            )
 
         for _, list in self.campaigns.items():
             camp, _ = list.get_first_change()
@@ -220,7 +220,7 @@ class ApiStatus:
             eps = 0
             if camp.planet.event and planet.event:  # pylint: disable=no-member
                 eps = camp.planet.event.calculate_change(
-                    planet.event # pylint: disable=no-member
+                    planet.event  # pylint: disable=no-member
                 )  # pylint: disable=no-member
             if dps == 0 and eps == 0:
                 continue
@@ -282,26 +282,27 @@ def load_from_json(filepath):
         return None
     return data
 
-faction_map={
-    'humans':1,
-    'terminids':2,
-    'automaton':3,
-    'illuminate':4,
+
+faction_map = {
+    "humans": 1,
+    "terminids": 2,
+    "automaton": 3,
+    "illuminate": 4,
 }
+
 
 def add_to_csv(stat: ApiStatus):
     """Add the data from the last period of time to the csv file."""
     # Get the first change in the war statistics
     print(type(stat), stat.war)
     war, lastwar = stat.war.get_first_change()
-    mp_mult = (war.impactMultiplier+lastwar.impactMultiplier)/2
-    
+    mp_mult = (war.impactMultiplier + lastwar.impactMultiplier) / 2
 
     # Prepare a list to hold the rows to be written to the CSV
     rows = []
     rows_for_new = []
-    now=datetime.datetime.now(tz=datetime.timezone.utc)
-    
+    now = datetime.datetime.now(tz=datetime.timezone.utc)
+
     timestamp = int(now.timestamp())
     # Iterate through the campaigns to gather statistics
     for k, campaign_list in stat.campaigns.items():
@@ -312,7 +313,7 @@ def add_to_csv(stat: ApiStatus):
         camp, last = campaign_list.get_first_change()
         players = camp.planet.statistics.playerCount
         lastplayers = last.planet.statistics.playerCount
-        avg_players=(players+lastplayers)/2
+        avg_players = (players + lastplayers) / 2
 
         change = camp - last
         decay = camp.planet.regenPerSecond
@@ -320,11 +321,11 @@ def add_to_csv(stat: ApiStatus):
         damage = (change.planet.health / total_sec) * -1
         evt_damage = None
         mode = 1
-        owner=camp.planet.currentOwner.lower()
-        attacker='humans'
+        owner = camp.planet.currentOwner.lower()
+        attacker = "humans"
         if change.planet.event:
             evt_damage = (change.planet.event.health / total_sec) * -1
-            attacker=change.planet.event.faction.lower()
+            attacker = change.planet.event.faction.lower()
         if damage == 0:
             eps = 0
             if evt_damage:
@@ -361,10 +362,7 @@ def add_to_csv(stat: ApiStatus):
             "kills_per_sec": kills,
             "deaths_per_sec": deaths,
             "eps": eps,
-
-
         }
-        
 
         row2 = {
             "timestamp": timestamp,
@@ -379,11 +377,10 @@ def add_to_csv(stat: ApiStatus):
             "eps": eps,
             "cid": change.id,
             "pid": change.planet.index,
-            "dow": now.weekday()+1,
-            "hour": now.hour+1,
-            'owner': faction_map.get(owner,4),
-            'attacker': faction_map.get(attacker,4)
-
+            "dow": now.weekday() + 1,
+            "hour": now.hour + 1,
+            "owner": faction_map.get(owner, 4),
+            "attacker": faction_map.get(attacker, 4),
         }
 
         # Append the row to the list of rows
@@ -408,7 +405,6 @@ def add_to_csv(stat: ApiStatus):
         for row in rows:
             writer.writerow(row)
 
-
     with open(csv_newfile_path, mode="a", newline="", encoding="utf8") as file:
         writer = csv.DictWriter(file, fieldnames=rows_for_new[0].keys())
 
@@ -419,8 +415,6 @@ def add_to_csv(stat: ApiStatus):
         # Write the rows
         for row in rows_for_new:
             writer.writerow(row)
-
-
 
 
 def get_feature_dictionary(
@@ -479,26 +473,40 @@ def get_feature_dictionary(
     return row
 
 
-
 def write_statistics_to_csv(stats: ApiStatus):
-    '''dump planet statistics at current time to csv file.'''
+    """dump planet statistics at current time to csv file."""
     headers = [
-        "planet_name", "biome", "initial_owner", "current_owner",
-        "missionsWon", "missionsLost", "missionTime", "terminidKills", "automatonKills",
-        "illuminateKills", "bulletsFired", "bulletsHit", "timePlayed", "deaths",
-        "revives", "friendlies", "missionSuccessRate", "accuracy", "playerCount"
+        "planet_name",
+        "biome",
+        "initial_owner",
+        "current_owner",
+        "missionsWon",
+        "missionsLost",
+        "missionTime",
+        "terminidKills",
+        "automatonKills",
+        "illuminateKills",
+        "bulletsFired",
+        "bulletsHit",
+        "timePlayed",
+        "deaths",
+        "revives",
+        "friendlies",
+        "missionSuccessRate",
+        "accuracy",
+        "playerCount",
     ]
     csv_file_path = "statistics_sub.csv"
     # Open the CSV file for writing
-    with open(csv_file_path, mode='w', newline='') as file:
+    with open(csv_file_path, mode="w", newline="") as file:
         writer = csv.DictWriter(file, fieldnames=headers)
 
         # Write the header
         writer.writeheader()
 
         # Write each statistics entry
-        for _, planet in  stats.planets.items():
-            stat=planet.statistics
+        for _, planet in stats.planets.items():
+            stat = planet.statistics
             row = {
                 "planet_name": planet.name,
                 "biome": planet.biome.name,
@@ -518,6 +526,6 @@ def write_statistics_to_csv(stats: ApiStatus):
                 "friendlies": stat.friendlies,
                 "missionSuccessRate": stat.missionSuccessRate,
                 "accuracy": stat.accuracy,
-                "playerCount": stat.playerCount
+                "playerCount": stat.playerCount,
             }
             writer.writerow(row)

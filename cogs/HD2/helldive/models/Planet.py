@@ -263,7 +263,8 @@ class Planet(BaseApiModel, HealthMixin):
             timev = fdt(et(evt.endTime), "R")
             event_fact = emj(self.event.faction.lower())
             # , {evt.health}{cfi(diff.event.health)}/{evt.maxHealth}.
-            out += f"\n Time limit:{timev}\n Defend from {event_fact} \n Lib {round((evt.health/evt.maxHealth)*100.0, 5)}% {cfi(round((diff.event.health/evt.maxHealth)*100.0, 5))}"
+            out += f"\n Defend from {event_fact} \n Lib {round((evt.health/evt.maxHealth)*100.0, 5)}% {cfi(round((diff.event.health/evt.maxHealth)*100.0, 5))}"
+            out += f"\n Deadline: {timev}"
             if avg:
                 if avg.event:
                     out += f"\n {self.event.estimate_remaining_lib_time(avg.event)}"

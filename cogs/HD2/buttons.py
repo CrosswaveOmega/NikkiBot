@@ -1,6 +1,7 @@
 import discord
 from utility.embed_paginator import *
 
+
 class ListButtons(discord.ui.View):
     def __init__(self, *, timeout: int = 180, callbacker: PageClassContainer) -> None:
         super().__init__(timeout=timeout)
@@ -32,7 +33,6 @@ class ListButtons(discord.ui.View):
             await interaction.followup.send(
                 f"Oops! Something went wrong: {str(error)}.", ephemeral=True
             )
-    
 
     # All button
     @discord.ui.button(emoji="🔢", label="pages", style=discord.ButtonStyle.blurple)
@@ -89,4 +89,3 @@ class ListButtons(discord.ui.View):
     # ) -> None:
     #     # Call mycallback method of the callbacker object with "last" argument
     #     await self.callbacker.mycallback(interaction, self, "last")
-

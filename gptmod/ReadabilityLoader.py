@@ -1,4 +1,4 @@
-print('importing readability loader')
+print("importing readability loader")
 """Web base loader class."""
 
 import langchain_community.document_loaders as dl

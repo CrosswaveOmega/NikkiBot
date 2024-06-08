@@ -35,7 +35,6 @@ class Assignment2(BaseApiModel):
 
     expiration: Optional[str] = Field(alias="expiration", default=None)
 
-
     def __sub__(self, other):
         new_progress = [s - o for s, o in zip(self.progress, other.progress)]
         return Assignment2(

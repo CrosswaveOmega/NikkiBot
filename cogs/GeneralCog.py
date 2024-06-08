@@ -64,6 +64,7 @@ class PersistentView(discord.ui.View):
     async def grey(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.callback(interaction, button)
 
+
 class General(commands.Cog, TC_Cog_Mixin):
     """General commands"""
 

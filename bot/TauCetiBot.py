@@ -281,7 +281,7 @@ class TCBot(
         zehttp.addHandler(handler)
 
     def set_ext_directory(self, dir: str):
-        '''Set the directory with extensions.'''
+        """Set the directory with extensions."""
         self.extensiondir = dir
 
     def update_ext_list(self):

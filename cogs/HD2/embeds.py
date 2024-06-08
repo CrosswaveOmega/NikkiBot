@@ -32,11 +32,10 @@ def create_war_embed(data: War, last=None):
     embed.add_field(name="Started", value=fdt(et(data["started"]), "F"), inline=True)
     embed.add_field(name="Ended", value=fdt(et(data["ended"]), "F"), inline=True)
     embed.add_field(name="Now", value=fdt(et(data["now"]), "F"), inline=True)
-    
+
     factions = ", ".join(data["factions"])
     embed.add_field(name="Factions", value=factions, inline=False)
     embed.add_field(name="Client Version", value=data["clientVersion"], inline=True)
-
 
     embed.add_field(
         name="Impact Multiplier", value=data["impactMultiplier"], inline=True
@@ -111,11 +110,10 @@ def create_assignment_embed(
                 planet = planets[int(planet_id)]
                 planet_name = planet.get_name()
                 health = planet.health_percent()
-            if task['type']==11:
+            if task["type"] == 11:
                 taskstr = f"{e}. Liberate {planet_name}. Status: `{'ok' if curr==1 else f'{health},{curr}'}`"
-            if task['type']==13:
+            if task["type"] == 13:
                 taskstr = f"{e}. Controk {planet_name}. Status:`{'ok' if curr==1 else f'{health},{curr}'}`"
-
 
         elif task["type"] == 12:
             planet_name = taskdata["planet_index"]
@@ -206,10 +204,10 @@ def create_planet_embed(
         embed.add_field(name="Health", value=f"`{health}/{max_health}`.  ", inline=True)
 
     regen_per_second = data.get("regenPerSecond", 0)
-    mp_mult=stat.war.get_first().impactMultiplier
+    mp_mult = stat.war.get_first().impactMultiplier
     needed_eps = regen_per_second / mp_mult
 
-    needed_players,_ = predict_needed_players(needed_eps,mp_mult)
+    needed_players, _ = predict_needed_players(needed_eps, mp_mult)
     embed.add_field(
         name="Regeneration Per Second",
         value=f"`{regen_per_second}` .  \n Need `{round(needed_eps,2)}` eps and `{round(needed_players,2)}` divers ",
@@ -286,7 +284,7 @@ def campaign_view(stat: ApiStatus, hdtext={}):
     emb = discord.Embed(title="Galactic War Overview", description=f"{flav}\n")
     all_players, last = stat.war.get_first_change()
     change_war = all_players - last
-    total_contrib = [0,0.0]
+    total_contrib = [0, 0.0, 0.0,0.0]
     total = 0
 
     prop = defaultdict(int)
@@ -300,12 +298,30 @@ def campaign_view(stat: ApiStatus, hdtext={}):
         avg = None
         if changes:
             avg = Planet.average([c.planet for c in changes])
-        planet_difference:Planet=(camp - last).planet
+        planet_difference: Planet = (camp - last).planet
         name, desc = camp.planet.simple_planet_view(planet_difference, avg)
-        if planet_difference.health_percent()!=0:
-            rate=(-1*(planet_difference.health))+((camp.planet.regenPerSecond)*planet_difference.retrieved_at.total_seconds() )
-            total_contrib[0]+=camp.planet.statistics.playerCount
-            total_contrib[1]+=rate
+        
+        if planet_difference.event!=None:
+            p_evt=planet_difference.event
+            total_sec = p_evt.retrieved_at.total_seconds()
+            rate = (-1 * (p_evt.health)) + ()
+            total_contrib[0] += camp.planet.statistics.playerCount
+            total_contrib[1] += rate
+            thisamt=round((rate / camp.planet.event.maxHealth) * 100.0, 5)
+            total_contrib[2] += thisamt
+            total_contrib[3] += round((thisamt/total_sec)*60*60,5)
+        
+        elif planet_difference.health_percent() != 0:
+            total_sec = planet_difference.retrieved_at.total_seconds()
+            rate = (-1 * (planet_difference.health)) + (
+                (camp.planet.regenPerSecond) * total_sec
+            )
+            total_contrib[0] += camp.planet.statistics.playerCount
+            total_contrib[1] += rate
+            thisamt=round((rate / camp.planet.maxHealth) * 100.0, 5)
+            total_contrib[2] += thisamt
+            total_contrib[3] += round((thisamt/total_sec)*60*60,5)
+        
 
         features = get_feature_dictionary(stat, k)
         pred = make_prediction_for_eps(features)
@@ -317,6 +333,6 @@ def campaign_view(stat: ApiStatus, hdtext={}):
     emb.description += f"???:{all_players.statistics.playerCount-total}," + ",".join(
         [f"{k}:{v}" for k, v in prop.items()]
     )
-    emb.description += f"\n `{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}` players contributed `{round(total_contrib[1], 4)}` Impact"
+    emb.description += f"\n `{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}` divers contributed `{round(total_contrib[1], 4)}({total_contrib[2]}%, est {total_contrib[3]}% per hour)` visible impact"
 
     return emb

@@ -4,6 +4,7 @@ import pandas as pd
 from sklearn.metrics import mean_squared_error, r2_score
 
 import matplotlib.pyplot as plt
+
 # Regression models
 from sklearn.linear_model import LinearRegression, ElasticNet
 from sklearn.model_selection import train_test_split
@@ -37,22 +38,21 @@ X = data[
 Y = data["eps"]
 
 
-#XE = data[["eps", "mp_mult",'wins_per_sec','loss_per_sec','kills_per_sec','deaths_per_sec']]
-XE= data[['eps','mp_mult']]
+# XE = data[["eps", "mp_mult",'wins_per_sec','loss_per_sec','kills_per_sec','deaths_per_sec']]
+XE = data[["eps", "mp_mult"]]
 YE = data["player_count"]
 model = LinearRegression()
 model.fit(X, Y)
 # Fit the linear regression model
 players_needed_model = LinearRegression()
-players_needed_model.fit(XE[['eps','mp_mult']], YE)
+players_needed_model.fit(XE[["eps", "mp_mult"]], YE)
 
 # Predict values
-predicted_eps = players_needed_model.predict(XE[['eps','mp_mult']])
+predicted_eps = players_needed_model.predict(XE[["eps", "mp_mult"]])
 
 # Calculate the mean squared error
 mse = mean_squared_error(YE, predicted_eps)
-print(f'Mean Squared Error: {mse}')
-
+print(f"Mean Squared Error: {mse}")
 
 
 def experiment_models():
@@ -60,8 +60,8 @@ def experiment_models():
         ("Linear Regression", LinearRegression()),
         ("ElasticNet", ElasticNet()),
         ("Decision Tree", DecisionTreeRegressor(random_state=42)),
-        #("Random Forest", RandomForestRegressor(n_estimators=1000)),
-        #(            "Gradient Boosting",    GradientBoostingRegressor(n_estimators=1000),        ),
+        # ("Random Forest", RandomForestRegressor(n_estimators=1000)),
+        # (            "Gradient Boosting",    GradientBoostingRegressor(n_estimators=1000),        ),
         ("KNeighbors", KNeighborsRegressor()),
     ]
     # Train and evaluate each model
@@ -89,7 +89,9 @@ def experiment_models():
         print(f"  Average Mean Squared Error: {avg_mse:.4f}")
         print(f"  Average R^2 Score: {avg_r2:.4f}\n")
 
-#experiment_models()
+
+# experiment_models()
+
 
 def make_prediction_for_eps(data_dict):
 
@@ -128,7 +130,8 @@ def make_prediction_for_eps(data_dict):
 
     return eps_prediction[0]
 
-def predict_needed_players(target_eps,mp_mult):
+
+def predict_needed_players(target_eps, mp_mult):
 
     prediction_features = {
         "eps": target_eps,
@@ -136,20 +139,31 @@ def predict_needed_players(target_eps,mp_mult):
     }
     # Extract features for prediction
     features_for_prediction = pd.DataFrame([prediction_features])
-    X_new = features_for_prediction[['eps','mp_mult']]
+    X_new = features_for_prediction[["eps", "mp_mult"]]
     y_pred = players_needed_model.predict(X_new)
-    needed=y_pred[0]
+    needed = y_pred[0]
 
     y = YE
     # Calculate the standard error of the prediction
     X_with_intercept = np.hstack((np.ones((XE.shape[0], 1)), XE))
     X_new_with_intercept = np.hstack((np.ones((X_new.shape[0], 1)), X_new))
-    se_of_prediction = np.sqrt(mse * (1 + np.dot(np.dot(X_new_with_intercept, np.linalg.inv(np.dot(X_with_intercept.T, X_with_intercept))), X_new_with_intercept.T)))
+    se_of_prediction = np.sqrt(
+        mse
+        * (
+            1
+            + np.dot(
+                np.dot(
+                    X_new_with_intercept,
+                    np.linalg.inv(np.dot(X_with_intercept.T, X_with_intercept)),
+                ),
+                X_new_with_intercept.T,
+            )
+        )
+    )
 
     return needed, se_of_prediction
 
 
-    
 # # Calculate the standard error of the predictions
 # se = np.sqrt(mse)
 

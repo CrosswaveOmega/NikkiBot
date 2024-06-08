@@ -38,6 +38,7 @@ class MemoryFunctions(GPTFunctionLibrary):
 def warmup():
     with Timer() as timer:
         from langchain_community.embeddings import HuggingFaceEmbeddings
+
         hug_embed = HuggingFaceEmbeddings(model_name="thenlper/gte-small")
         hug_embed.embed_query("The quick brown fox jumped over the lazy frog.")
     print(timer.get_time())

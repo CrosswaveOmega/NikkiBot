@@ -409,17 +409,16 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
             )
 
 
-
 async def setup(bot):
     pass
     gui.dprint(__name__)
     # from .Polling import setup
     # await bot.load_extension(setup.__module__)
-    #await bot.add_cog(PollingCog(bot))
+    # await bot.add_cog(PollingCog(bot))
 
 
 async def teardown(bot):
     pass
     # from .Polling import setup
     # await bot.unload_extension(setup.__module__)
-    #await bot.remove_cog("PollingCog")
+    # await bot.remove_cog("PollingCog")

@@ -4,6 +4,7 @@ from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 from .GameStatus import ApiStatus
 from .helldive import Planet
+
 CELL_SIZE = 200
 from utility.views import BaseView
 
@@ -21,79 +22,97 @@ def draw_grid(filepath, cell_size=200):
         img = Image.alpha_composite(img, overlay2)
     return img
 
-def get_im_coordinates(x,y):
+
+def get_im_coordinates(x, y):
     coordinate = x * 1000.0 + 1000, 1000 - y * 1000.0
     return coordinate
 
-def draw_supply_lines(img, color=(0, 255, 0, 200),apistat:ApiStatus=None):
+
+def draw_supply_lines(img, color=(0, 255, 0, 200), apistat: ApiStatus = None):
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
 
     for index, planet in apistat.planets.items():
         gpos = planet.position
-        x,y=get_im_coordinates(gpos.x, gpos.y)
-        waypoints=planet.waypoints
+        x, y = get_im_coordinates(gpos.x, gpos.y)
+        waypoints = planet.waypoints
         for ind in waypoints:
-            target=apistat.planets[ind]
+            target = apistat.planets[ind]
             tgpos = target.position
-            tx,ty=get_im_coordinates(tgpos.x, tgpos.y)
-            draw.line([(x,y),(tx,ty)],fill=color,
-            width=1,)
-        waypoints=planet.attacking
+            tx, ty = get_im_coordinates(tgpos.x, tgpos.y)
+            draw.line(
+                [(x, y), (tx, ty)],
+                fill=color,
+                width=1,
+            )
+        waypoints = planet.attacking
         for ind in waypoints:
-            target=apistat.planets[ind]
+            target = apistat.planets[ind]
             tgpos = target.position
-            tx,ty=get_im_coordinates(tgpos.x, tgpos.y)
-            draw.line([(x,y),(tx,ty)],fill=(255,0,0,200),
-            width=3,)
+            tx, ty = get_im_coordinates(tgpos.x, tgpos.y)
+            draw.line(
+                [(x, y), (tx, ty)],
+                fill=(255, 0, 0, 200),
+                width=3,
+            )
     img = Image.alpha_composite(img, overlay)
     return img
 
-def highlight(img, planet:Planet, color=(255, 0, 0, 200)):
+
+def highlight(img, planet: Planet, color=(255, 0, 0, 200)):
     gpos = planet.position
     x, y = gpos.x, gpos.y
     coordinate = x * 1000.0 + 1000, 1000 - y * 1000.0
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
 
-
-    name=str(planet.name).replace(" ",'\n')
-    font = ImageFont.truetype("arial.ttf", 12)  
-    font2 = ImageFont.truetype("arial.ttf", 10)  
-    bbox = draw.textbbox((0, 0), name, font=font, align='center')
-    bbox2 = draw.textbbox((0, 0), str(planet.health_percent()), font=font2, align='center')
-    background_box = [
-        coordinate[0] - bbox[2] / 2, 
-        coordinate[1] - bbox[3] / 2, 
-        coordinate[0] + bbox[2] / 2, 
-        coordinate[1] + bbox[3] / 2
-    ]
-    owner=planet.currentOwner.lower()
-    colors = {
-        "automaton": (254-50, 109-50, 114-50, 200),  # Red
-        "terminids": (255-50, 193-50, 0, 200),  # Yellow
-        "humans": (0, 150, 150, 200),  # Cyan-like color
-        'illuminate': (150, 0, 150, 200)
-    }
-    draw.rectangle(background_box, fill=colors[owner],outline=colors[owner],width=2)
-    draw.rectangle(
-        ([background_box[0],
-          background_box[3],
-          background_box[0]+bbox2[2],
-          background_box[3]+bbox2[3]])
-        ,fill=colors[owner],outline=colors[owner])
-    draw.text(
-        (coordinate[0] - bbox[2] / 2, coordinate[1] - bbox[3]/2), 
-        name, 
-        fill=(255, 255, 255), 
-        font=font, 
-        align='center'
+    name = str(planet.name).replace(" ", "\n")
+    font = ImageFont.truetype("arial.ttf", 12)
+    font2 = ImageFont.truetype("arial.ttf", 10)
+    bbox = draw.textbbox((0, 0), name, font=font, align="center")
+    bbox2 = draw.textbbox(
+        (0, 0), str(planet.health_percent()), font=font2, align="center"
     )
-    draw.text((background_box[0],background_box[3]),
-                      str(planet.health_percent()), 
-        fill=(255, 255, 255), 
-        font=font2, 
-        align='center')
+    background_box = [
+        coordinate[0] - bbox[2] / 2,
+        coordinate[1] - bbox[3] / 2,
+        coordinate[0] + bbox[2] / 2,
+        coordinate[1] + bbox[3] / 2,
+    ]
+    owner = planet.currentOwner.lower()
+    colors = {
+        "automaton": (254 - 50, 109 - 50, 114 - 50, 200),  # Red
+        "terminids": (255 - 50, 193 - 50, 0, 200),  # Yellow
+        "humans": (0, 150, 150, 200),  # Cyan-like color
+        "illuminate": (150, 0, 150, 200),
+    }
+    draw.rectangle(background_box, fill=colors[owner], outline=colors[owner], width=2)
+    draw.rectangle(
+        (
+            [
+                background_box[0],
+                background_box[3],
+                background_box[0] + bbox2[2],
+                background_box[3] + bbox2[3],
+            ]
+        ),
+        fill=colors[owner],
+        outline=colors[owner],
+    )
+    draw.text(
+        (coordinate[0] - bbox[2] / 2, coordinate[1] - bbox[3] / 2),
+        name,
+        fill=(255, 255, 255),
+        font=font,
+        align="center",
+    )
+    draw.text(
+        (background_box[0], background_box[3]),
+        str(planet.health_percent()),
+        fill=(255, 255, 255),
+        font=font2,
+        align="center",
+    )
     img = Image.alpha_composite(img, overlay)
     return img
 
