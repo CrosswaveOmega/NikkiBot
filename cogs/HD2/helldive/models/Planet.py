@@ -144,7 +144,7 @@ class Planet(BaseApiModel, HealthMixin):
 
         return f"`[{change_str} dps]`, {timeval_str}"
 
-    def estimate_remaining_lib_time(self:"Planet", diff: "Planet") -> str:
+    def estimate_remaining_lib_time(self, diff: "Planet") -> str:
         """
         Estimate the remaining life time of the planet based on the current rate of health change.
 
@@ -254,7 +254,7 @@ class Planet(BaseApiModel, HealthMixin):
         name = f"{faction}P#{self.index}: {self.name}"
         players = f"{emj('hdi')}: `{self.statistics.playerCount} {cfi(diff.statistics.playerCount)}`"
         out = f"{players}\nHP {round((self.health/self.maxHealth)*100.0,5)}% {cfi(round((diff.health/self.maxHealth)*100.0,5))}"
-        out += f"\nDecay:`{round((self.regenPerSecond/self.maxHealth)*60*60,2)}`"
+        out += f"\nDecay:`{round((100*(self.regenPerSecond/self.maxHealth))*60*60,2)}`"
         if avg:
             remaining_time = self.estimate_remaining_lib_time(avg)
             out += "\n" + remaining_time
