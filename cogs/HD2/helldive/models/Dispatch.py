@@ -44,5 +44,5 @@ class Dispatch(BaseApiModel):
         extract_time=et(self.published)
         return discord.Embed(
             title=f"Dispatch {self.id}, type {self.type}",
-            description=f"{self.message}\n{converted_text}\n{fdt(extract_time)}",
+            description=f"{converted_text}\n{fdt(extract_time)}",
         )

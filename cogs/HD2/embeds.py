@@ -286,6 +286,7 @@ def campaign_view(stat: ApiStatus, hdtext={}):
     emb = discord.Embed(title="Galactic War Overview", description=f"{flav}\n")
     all_players, last = stat.war.get_first_change()
     change_war = all_players - last
+    total_contrib = [0,0.0]
     total = 0
 
     prop = defaultdict(int)
@@ -299,7 +300,13 @@ def campaign_view(stat: ApiStatus, hdtext={}):
         avg = None
         if changes:
             avg = Planet.average([c.planet for c in changes])
-        name, desc = camp.planet.simple_planet_view((camp - last).planet, avg)
+        planet_difference:Planet=(camp - last).planet
+        name, desc = camp.planet.simple_planet_view(planet_difference, avg)
+        if planet_difference.health_percent()!=0:
+            rate=(-1*(planet_difference.health))+((camp.planet.regenPerSecond)*planet_difference.retrieved_at.total_seconds() )
+            total_contrib[0]+=camp.planet.statistics.playerCount
+            total_contrib[1]=rate
+
         features = get_feature_dictionary(stat, k)
         pred = make_prediction_for_eps(features)
         print(features["eps"], pred)
@@ -310,5 +317,6 @@ def campaign_view(stat: ApiStatus, hdtext={}):
     emb.description += f"???:{all_players.statistics.playerCount-total}," + ",".join(
         [f"{k}:{v}" for k, v in prop.items()]
     )
+    emb.description += f"\n `{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}` players contributed `{round(total_contrib[1], 4)}` Impact"
 
     return emb
