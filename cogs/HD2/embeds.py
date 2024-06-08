@@ -305,7 +305,7 @@ def campaign_view(stat: ApiStatus, hdtext={}):
         if planet_difference.health_percent()!=0:
             rate=(-1*(planet_difference.health))+((camp.planet.regenPerSecond)*planet_difference.retrieved_at.total_seconds() )
             total_contrib[0]+=camp.planet.statistics.playerCount
-            total_contrib[1]=rate
+            total_contrib[1]+=rate
 
         features = get_feature_dictionary(stat, k)
         pred = make_prediction_for_eps(features)
