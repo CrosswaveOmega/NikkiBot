@@ -333,6 +333,6 @@ def campaign_view(stat: ApiStatus, hdtext={}):
     emb.description += f"???:{all_players.statistics.playerCount-total}," + ",".join(
         [f"{k}:{v}" for k, v in prop.items()]
     )
-    emb.description += f"\n`{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}%` divers contributed `{round(total_contrib[1], 4)}({round(total_contrib[2],5)}%, est {round(total_contrib[3],5)}% per hour)` visible impact"
+    emb.description += f"\n`{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}%` divers contributed `{round(total_contrib[1], 4)}` visible Impact, so about ({round(total_contrib[2],5)}%, est {round(total_contrib[3],5)}% per hour)` lib."
 
     return emb
