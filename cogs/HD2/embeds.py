@@ -309,7 +309,7 @@ def campaign_view(stat: ApiStatus, hdtext={}):
             total_contrib[1] += rate
             thisamt=round((rate / camp.planet.event.maxHealth) * 100.0, 5)
             total_contrib[2] += thisamt
-            total_contrib[3] += round((thisamt/total_sec)*60*60,5)
+            total_contrib[3] += round((thisamt/max(1,total_sec))*60*60,5)
         
         elif planet_difference.health_percent() != 0:
             total_sec = planet_difference.retrieved_at.total_seconds()
