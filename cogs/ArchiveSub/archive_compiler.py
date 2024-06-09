@@ -59,8 +59,8 @@ class ArchiveProgress:
             self.avgsep = avgsep
 
     def get_avgs(self):
-        savg = self.t_sep / self.g_arc
-        mavg = self.t_mess / self.m_arc
+        savg = self.t_sep / max(self.g_arc,1)
+        mavg = self.t_mess / max(self.m_arc,1)
         return savg, mavg
 
     def remain_time(self):
