@@ -8,6 +8,7 @@ from utility import (
     select_emoji as emj,
     changeformatif as cfi,
     extract_timestamp as et,
+    seconds_to_time_stamp as sts,
 )
 from discord.utils import format_dt as fdt
 
@@ -207,7 +208,7 @@ class Statistics(BaseApiModel):
         mission_stats = f"W:{hf(self.missionsWon)} ({other.missionsWon}),"
         mission_stats += f"L:{hf(self.missionsLost)} ({other.missionsLost})"
         mission_stats += f"{round(100.0*(other.missionsWon/(max(other.missionsWon+other.missionsLost,1))),1)}"
-        mission_stats+= f"\nTime:{hf(self.missionTime)}({hf(other.missionTime)})"
+        mission_stats+= f"\nTime:{sts(self.missionTime)}({sts(other.missionTime)})"
         mission_stats+= f"\n MPS: {round((self.missionsWon+self.missionsLost)/max(self.missionTime,1),0.4)}({round((other.missionsWon+other.missionsLost)/max(other.missionTime),4)})"
         kill_stats = f"T:{hf(self.terminidKills)} ({other.terminidKills}),"
         kill_stats += f"A:{hf(self.automatonKills)} ({other.automatonKills}),"
