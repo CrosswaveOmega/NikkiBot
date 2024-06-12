@@ -83,7 +83,7 @@ class NotebookAux(NoteBase):
                 .where(NotebookAux.user_id == user_id)
                 .order_by(NotebookAux.topic)  # Ensure results are ordered by topic
             )
-            topic_key_pairs = await result_proxy.fetchall()
+            topic_key_pairs = result_proxy.fetchall()
 
         grouped_by_topic = {}
         for topic, key in topic_key_pairs:
