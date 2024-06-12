@@ -209,7 +209,7 @@ class Statistics(BaseApiModel):
         mission_stats += f"L:{hf(self.missionsLost)} ({other.missionsLost})"
         mission_stats += f"{round(100.0*(other.missionsWon/(max(other.missionsWon+other.missionsLost,1))),1)}"
         mission_stats+= f"\nTime:{sts(self.missionTime)}({sts(other.missionTime)})"
-        mission_stats+= f"\n MPS: {round((self.missionsWon+self.missionsLost)/max(self.missionTime,1),0.4)}({round((other.missionsWon+other.missionsLost)/max(other.missionTime,1),4)})"
+        mission_stats+= f"\n MPS: {round((self.missionsWon+self.missionsLost)/max(self.missionTime,1),4)}({round((other.missionsWon+other.missionsLost)/max(other.missionTime,1),4)})"
         kill_stats = f"T:{hf(self.terminidKills)} ({other.terminidKills}),"
         kill_stats += f"A:{hf(self.automatonKills)} ({other.automatonKills}),"
         kill_stats += "DATA EXPUNGED"
