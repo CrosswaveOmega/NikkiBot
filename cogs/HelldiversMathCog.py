@@ -97,7 +97,7 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
     )
     @app_commands.autocomplete(byplanet=campaign_autocomplete)
     @app_commands.describe(lph="liberation percent per hour")
-    async def players_for_dps(
+    async def players_for_lph(
         self, interaction: discord.Interaction, lph: float, byplanet: int
     ):
         ctx: commands.Context = await self.bot.get_context(interaction)
