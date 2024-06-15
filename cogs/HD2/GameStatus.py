@@ -93,6 +93,7 @@ class ApiStatus:
             },
             "planets": {k: p.model_dump() for k, p in self.planets.items()},
             "dispatches": [d.model_dump() for d in self.dispatches],
+            "warstat": self.warstat.model_dump(),
         }
 
     @classmethod
@@ -118,6 +119,8 @@ class ApiStatus:
             print(newcks.campaigns)
         newcks.planets = {int(k): Planet(**v) for k, v in data["planets"].items()}
         newcks.dispatches = [Dispatch(**d) for d in data["dispatches"]]
+        if 'warstat' in data:
+            newcks.warstat = WarStatus(**data['warstat'])
         return newcks
 
     def __repr__(self):
@@ -287,6 +290,7 @@ def load_from_json(filepath):
         with open(filepath, "r", encoding="utf8") as file:
             data = json.load(file)
     except Exception as e:
+        print(e)
         return None
     return data
 

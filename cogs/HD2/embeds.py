@@ -36,12 +36,12 @@ def create_war_embed(stat:ApiStatus):
             if evt.title and evt.message:
                 mes= re.sub(pattern, r"**\1**", evt.message)
                 mes = re.sub(pattern3, r"***\1***", mes)
-                globtex+=f"{evt.title}\n{mes}\n"
-    embed = discord.Embed(title="War", description=f"{}\n{stat_str}", color=0xFF0000)
+                globtex+=f"### {evt.title}\n{mes}\n\n"
+    embed = discord.Embed(title="War", description=f"{globtex}\n{stat_str}"[:4096], color=0xFF0000)
 
     embed.add_field(name="Started", value=fdt(et(data["started"]), "F"), inline=True)
     embed.add_field(name="Ended", value=fdt(et(data["ended"]), "F"), inline=True)
-    embed.add_field(name="Now", value=fdt(et(data["now"]), "F"), inline=True)
+    embed.add_field(name="Now", value=fdt(data.retrieved_at, "F"), inline=True)
 
     factions = ", ".join(data["factions"])
     embed.add_field(name="Factions", value=factions, inline=False)

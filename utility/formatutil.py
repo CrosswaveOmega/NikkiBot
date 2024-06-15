@@ -135,6 +135,7 @@ def progress_bar(current, total, width=5):
         bar = f"{bar_emoji['1e']}{bar_emoji['2e']}"
     return bar
 
+#Important status emoji.
 
 status_emoji = {
     "onc": "<:checkboxon:1199756987471241346>",

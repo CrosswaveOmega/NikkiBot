@@ -205,12 +205,15 @@ class Statistics(BaseApiModel):
         # Calculate differences for each statistic
 
         # Format each statistic with its difference
+        missiontotal=max(1,self.missionsWon+self.missionsLost)
+        misiontotalother=max(1,other.missionsWon+other.missionsLost)
         mission_stats = f"W:{hf(self.missionsWon)} ({other.missionsWon}),"
         mission_stats += f"L:{hf(self.missionsLost)} ({other.missionsLost})"
         mission_stats += f"{round(100.0*(other.missionsWon/(max(other.missionsWon+other.missionsLost,1))),1)}"
         mission_stats+= f"\nTime:{sts(self.missionTime)}({sts(other.missionTime)})"
-        thistime=round(max(self.missionTime,1)/(self.missionsWon+self.missionsLost),4)
-        lasttime=round(max(other.missionTime,1)/(other.missionsWon+other.missionsLost),4)
+        
+        thistime=round(max(self.missionTime,1)/(missiontotal),4)
+        lasttime=round(max(other.missionTime,1)/(misiontotalother),4)
         mission_stats+= f"\n Time per mission: {sts(thistime)}({sts(lasttime)})"
         kill_stats = f"T:{hf(self.terminidKills)} ({other.terminidKills}),"
         kill_stats += f"A:{hf(self.automatonKills)} ({other.automatonKills}),"
