@@ -9,6 +9,7 @@ from .helldive import Assignment2, Campaign2, Planet, War
 Collection of embeds for formatting.
 """
 from collections import defaultdict
+import re
 
 from discord.utils import format_dt as fdt
 
@@ -20,14 +21,23 @@ import random
 from .GameStatus import ApiStatus, get_feature_dictionary
 from .predict import make_prediction_for_eps, predict_needed_players
 
+pattern = r"<i=1>(.*?)<\/i>"
+pattern3 = r"<i=3>(.*?)<\/i>"
 
-def create_war_embed(data: War, last=None):
+def create_war_embed(stat:ApiStatus):
+    data, last=stat.war.get_first_change()
     stats = data["statistics"]
     stat_str = data.statistics.format_statistics()
     if stats and (last is not None):
         stat_str = stats.diff_format(stats - last.statistics)
-
-    embed = discord.Embed(title="War", description=f"{stat_str}", color=0xFF0000)
+    globtex=""
+    if stat.warstat:
+        for evt in stat.warstat.globalEvents:
+            if evt.title and evt.message:
+                mes= re.sub(pattern, r"**\1**", evt.message)
+                mes = re.sub(pattern3, r"***\1***", mes)
+                globtex+=f"{evt.title}\n{mes}\n"
+    embed = discord.Embed(title="War", description=f"{}\n{stat_str}", color=0xFF0000)
 
     embed.add_field(name="Started", value=fdt(et(data["started"]), "F"), inline=True)
     embed.add_field(name="Ended", value=fdt(et(data["ended"]), "F"), inline=True)

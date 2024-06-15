@@ -65,6 +65,7 @@ class ApiStatus:
         "planets",
         "dispatches",
         "last_planet_get",
+        "warstat"
     ]
 
     def __init__(self, client: APIConfig = APIConfig(), max_list_size=8):
@@ -76,6 +77,7 @@ class ApiStatus:
         self.planets: Dict[int, Planet] = {}
         self.dispatches: List[Dispatch] = []
         self.last_planet_get: datetime.datetime = datetime.datetime(2024, 1, 1, 0, 0, 0)
+        self.warstat: WarStatus = None
 
     def to_dict(self):
         return {
@@ -123,7 +125,7 @@ class ApiStatus:
         s += repr(self.war) + "\n"
         s += repr(self.assignments) + "\n"
         s += repr(self.campaigns) + "\n"
-        # s+=repr(self.dispatches )+"\n"
+        s+=repr(self.warstat )+"\n"
         # s+=repr(self.planets)
         return s
 
@@ -140,16 +142,16 @@ class ApiStatus:
             war = await GetApiV1War(api_config_override=self.client)
             assignments = await GetApiV1AssignmentsAll(api_config_override=self.client)
             campaigns = await GetApiV1CampaignsAll(api_config_override=self.client)
-            dispatches = await GetApiV1DispatchesAll(api_config_override=self.client)
+            warstat=await GetApiRawStatus(api_config_override=self.client)            
+            
         except Exception as e:
             raise e
 
-        if dispatches is not None:
-            self.dispatches = dispatches
 
         if war is not None:
             self.war.add(war)
-
+        if warstat:
+            self.warstat = warstat
         self.handle_data(assignments, self.assignments, "assignment")
         self.handle_data(campaigns, self.campaigns, "campaign")
         for l in self.campaigns.values():
@@ -164,6 +166,12 @@ class ApiStatus:
                 planet_data[planet.index] = planet
             self.planets = planet_data
             self.last_planet_get = datetime.datetime.now()
+        else:
+            dispatches = await GetApiV1DispatchesAll(api_config_override=self.client)
+            if dispatches is not None:
+                self.dispatches = dispatches
+
+            print(self.warstat)
 
     def handle_data(
         self,

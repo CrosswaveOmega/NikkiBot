@@ -69,7 +69,7 @@ class HD2OverviewView(discord.ui.View):
         this, last = self.cog.apistatus.war.get_first_change()
         await interaction.response.send_message(
             f"Embed",
-            embed=(hd2.create_war_embed(this, last)),
+            embed=(hd2.create_war_embed(self.cog.apistatus)),
             ephemeral=True,
         )
 
@@ -346,7 +346,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if not self.apistatus.war:
             return await ctx.send("No result")
         this, last = self.apistatus.war.get_first_change()
-        await ctx.send(embed=hd2.create_war_embed(this, last))
+        await ctx.send(embed=hd2.create_war_embed(self.apistatus))
         return
 
     @pc.command(name="assign", description="get assignment state.")
