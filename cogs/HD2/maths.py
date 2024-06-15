@@ -12,9 +12,9 @@ class maths:
         return output * 100.0
 
     @staticmethod
-    def lph_to_dps(dps, maxHealth: float = 1000000.0):
-        """Damage per second to liberation per hour."""
-        output = (dps * 60 * 60) / maxHealth
+    def lph_to_dps(lph, maxHealth: float = 1000000.0):
+        """Liberation per hour to damage per second."""
+        output = (lph * 60 * 60) / maxHealth
         return output * 100.0
 
     @staticmethod

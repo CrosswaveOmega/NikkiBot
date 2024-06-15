@@ -92,6 +92,39 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send("Planet not found.", ephemeral=True)
 
     @calc.command(
+        name="players_for_lph",
+        description="estimate players needed to get a target lph on a specific planet",
+    )
+    @app_commands.autocomplete(byplanet=campaign_autocomplete)
+    @app_commands.describe(lph="liberation percent per hour")
+    async def players_for_dps(
+        self, interaction: discord.Interaction, lph: float, byplanet: int
+    ):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+
+        embeds = []
+        mp_mult = self.apistatus.war.get_first().impactMultiplier
+        if byplanet in self.apistatus.planets:
+            planet = self.apistatus.planets[byplanet]
+            dps= hd2.maths.lph_to_dps(lph,planet.maxHealth)
+            eps = hd2.maths.dps_to_eps(dps, planet.regenPerSecond, mp_mult)
+            play, conf = hd2.predict_needed_players(eps, mp_mult)
+            embeds.append(
+                hd2.create_planet_embed(
+                    planet, cstr=None, last=None, stat=self.apistatus
+                )
+            )
+            await ctx.send(
+                f"Need `{play}` players to achieve lph of `{lph}({dps} dps)` on {planet.get_name()}."
+                + f"\n standard error `{conf}`.",
+                ephemeral=True,
+            )
+            # await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
+        else:
+            await ctx.send("Planet not found.", ephemeral=True)
+
+
+    @calc.command(
         name="dps_to_lph",
         description="Convert damage per second to liberation per hour.",
     )

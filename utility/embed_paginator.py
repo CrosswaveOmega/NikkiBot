@@ -55,6 +55,7 @@ class PageClassContainer:
     async def generate_select(self):
         selectlist = []
         for e, i in enumerate(self.display):
+            title=i.title if i.title else ""
             subtitle = re.sub(r"\<[^>]*\>", "", i.title)
             selectlist.append(
                 discord.SelectOption(
