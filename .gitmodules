@@ -1,0 +1,3 @@
+[submodule "hd2json"]
+	path = hd2json
+	url = https://github.com/CrosswaveOmega/json.git

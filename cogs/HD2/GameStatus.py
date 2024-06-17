@@ -6,7 +6,7 @@ import numpy as np
 
 from .helldive import *
 from utility import prioritized_string_split
-
+from hd2json.jsonutils import load_planets_from_directory
 
 class LimitedSizeList(list):
     """A list that can only have a fixed amount of elements."""
@@ -65,7 +65,8 @@ class ApiStatus:
         "planets",
         "dispatches",
         "last_planet_get",
-        "warstat"
+        "warstat",
+        'planetdata'
     ]
 
     def __init__(self, client: APIConfig = APIConfig(), max_list_size=8):
@@ -78,6 +79,8 @@ class ApiStatus:
         self.dispatches: List[Dispatch] = []
         self.last_planet_get: datetime.datetime = datetime.datetime(2024, 1, 1, 0, 0, 0)
         self.warstat: WarStatus = None
+        self.planetdata:Dict[str,Any]=load_planets_from_directory('hd2json/planets')
+
 
     def to_dict(self):
         return {
@@ -489,6 +492,7 @@ def write_statistics_to_csv(stats: ApiStatus):
     """dump planet statistics at current time to csv file."""
     headers = [
         "planet_name",
+        "sector_name",
         "biome",
         "initial_owner",
         "current_owner",
@@ -522,6 +526,7 @@ def write_statistics_to_csv(stats: ApiStatus):
             row = {
                 "planet_name": planet.name,
                 "biome": planet.biome.name,
+                "sector_name": planet.sector.upper(),
                 "initial_owner": planet.initialOwner,
                 "current_owner": planet.currentOwner,
                 "missionsWon": stat.missionsWon,
