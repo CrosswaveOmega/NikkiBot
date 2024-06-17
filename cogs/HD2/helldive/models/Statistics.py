@@ -155,7 +155,7 @@ class Statistics(BaseApiModel):
         """
         mission_stats = f"W:{hf(self.missionsWon)},"
         mission_stats += f"L:{hf(self.missionsLost)}"
-        #mission_stats += f"Time: {hf(self.missionTime)} seconds"
+        mission_stats += f"Time: {sts(self.missionTime)} seconds"
 
         # Format kill statistics
         kill_stats = (
