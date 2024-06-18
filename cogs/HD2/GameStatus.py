@@ -500,12 +500,14 @@ def write_statistics_to_csv(stats: ApiStatus):
         "missionsWon",
         "missionsLost",
         "missionTime",
+        "timePerMission",
         "terminidKills",
         "automatonKills",
         "illuminateKills",
         "bulletsFired",
         "bulletsHit",
         "timePlayed",
+        'timePlayedPerMission',
         "deaths",
         "revives",
         "friendlies",
@@ -535,8 +537,8 @@ def write_statistics_to_csv(stats: ApiStatus):
             if central:
                 bname=central['biome']
                 bhazard=central['environmentals']
-                planet_biome=stat.planetdata['biomes'].get(bname,None)
-                planet_hazards=[stat.planetdata['environmentals'].get(h,None) for h in bhazard]
+                planet_biome=stats.planetdata['biomes'].get(bname,None)
+                planet_hazards=[stats.planetdata['environmentals'].get(h,None) for h in bhazard]
                 if planet_biome:
                     biome_name = planet_biome.get("name", "[GWW SEARCH ERROR]")
                     biome_description = planet_biome.get("description", "No description available")
@@ -552,6 +554,7 @@ def write_statistics_to_csv(stats: ApiStatus):
                     hazards=hazards_str
             
             kills=stat.terminidKills+stat.automatonKills+stat.illuminateKills
+            thistime=round(max(stat.missionTime,1)/(missions),4)
             row = {
                 "planet_name": planet.name,
 
@@ -562,12 +565,14 @@ def write_statistics_to_csv(stats: ApiStatus):
                 "missionsWon": stat.missionsWon,
                 "missionsLost": stat.missionsLost,
                 "missionTime": stat.missionTime,
+                "timePerMission":thistime,
                 "terminidKills": stat.terminidKills,
                 "automatonKills": stat.automatonKills,
                 "illuminateKills": stat.illuminateKills,
                 "bulletsFired": stat.bulletsFired,
                 "bulletsHit": stat.bulletsHit,
                 "timePlayed": stat.timePlayed,
+                "timePlayedPerMission" :( stat.timePlayed/missions),
                 "deaths": stat.deaths,
                 "revives": stat.revives,
                 "friendlies": stat.friendlies,
