@@ -191,8 +191,8 @@ class Statistics(BaseApiModel):
             f"`[Missions: {mission_stats}]`\n`[Kills: {kill_stats}] [{bullets_stats}]`"
         )
         statsb = f"`[{deaths_and_friendlies}] [{mission_success_rate}] [{accuracy}]`"
-
-        return f"{player_count}\n{statsa}\n{statsb}"
+        statsc = f"`Total Time: {sts(self.timePlayed)}"
+        return f"{player_count}\n{statsa}\n{statsb}\n{statsc}"
 
     def diff_format(self, other: "Statistics") -> str:
         """
@@ -228,5 +228,5 @@ class Statistics(BaseApiModel):
         # Concatenate all formatted statistics
         statsa = f"`[Missions: {mission_stats}]`\n `[Kills: {kill_stats}]`\n`[{bullets_stats}]`"
         statsb = f"`[{deaths_and_friendlies}]`"
-
+        statsc = f"`Total Time: {sts(self.timePlayed)}({sts(other.timePlayed)})"
         return f"{player_count}\n{statsa}\n{statsb}"
