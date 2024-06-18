@@ -494,7 +494,6 @@ def write_statistics_to_csv(stats: ApiStatus):
     headers = [
         "planet_name",
         "sector_name",
-        "biome",
         "initial_owner",
         "current_owner",
         "missionsWon",
@@ -516,6 +515,8 @@ def write_statistics_to_csv(stats: ApiStatus):
         "deathsPerMission",
         "killsPerMission",
         "killsToDeaths",
+        "biome",
+        "hazards",
         "playerCount",
     ]
     csv_file_path = "statistics_sub.csv"
