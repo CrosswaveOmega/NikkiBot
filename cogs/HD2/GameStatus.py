@@ -529,7 +529,7 @@ def write_statistics_to_csv(stats: ApiStatus):
             stat = planet.statistics
             missions=max(stat.missionsWon+stat.missionsLost,1)
 
-            central=stat.planetdata['planets'].get(str(planet.index),None)
+            central=stats.planetdata['planets'].get(str(planet.index),None)
             biome="unknown"
             hazards=""
             if central:
