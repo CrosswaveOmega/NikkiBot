@@ -229,4 +229,4 @@ class Statistics(BaseApiModel):
         statsa = f"`[Missions: {mission_stats}]`\n `[Kills: {kill_stats}]`\n`[{bullets_stats}]`"
         statsb = f"`[{deaths_and_friendlies}]`"
         statsc = f"`Total Time: {sts(self.timePlayed)}({sts(other.timePlayed)})"
-        return f"{player_count}\n{statsa}\n{statsb}"
+        return f"{player_count}\n{statsa}\n{statsb}\n{statsc}"

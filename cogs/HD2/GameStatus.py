@@ -5,7 +5,8 @@ import json
 import numpy as np
 
 from .helldive import *
-from utility import prioritized_string_split
+from utility import (prioritized_string_split, 
+    seconds_to_time_stamp as sts)
 from hd2json.jsonutils import load_planets_from_directory
 
 class LimitedSizeList(list):
@@ -510,6 +511,9 @@ def write_statistics_to_csv(stats: ApiStatus):
         "friendlies",
         "missionSuccessRate",
         "accuracy",
+        "deathsPerMission",
+        "killsPerMission",
+        "killsToDeaths",
         "playerCount",
     ]
     csv_file_path = "statistics_sub.csv"
@@ -523,9 +527,35 @@ def write_statistics_to_csv(stats: ApiStatus):
         # Write each statistics entry
         for _, planet in stats.planets.items():
             stat = planet.statistics
+            missions=max(stat.missionsWon+stat.missionsLost,1)
+
+            central=stat.planetdata['planets'].get(str(planet.index),None)
+            biome="unknown"
+            hazards=""
+            if central:
+                bname=central['biome']
+                bhazard=central['environmentals']
+                planet_biome=stat.planetdata['biomes'].get(bname,None)
+                planet_hazards=[stat.planetdata['environmentals'].get(h,None) for h in bhazard]
+                if planet_biome:
+                    biome_name = planet_biome.get("name", "[GWW SEARCH ERROR]")
+                    biome_description = planet_biome.get("description", "No description available")
+                    biome=biome_name
+
+
+                if planet_hazards:
+                    hazards_str = ""
+                    for hazard in planet_hazards:
+                        hazard_name = hazard.get("name", "Unknown Hazard")
+                        hazard_description = hazard.get("description", "No description available")
+                        hazards_str += f"{hazard_name}, "
+                    hazards=hazards_str
+            
+            kills=stat.terminidKills+stat.automatonKills+stat.illuminateKills
             row = {
                 "planet_name": planet.name,
-                "biome": planet.biome.name,
+
+
                 "sector_name": planet.sector.upper(),
                 "initial_owner": planet.initialOwner,
                 "current_owner": planet.currentOwner,
@@ -543,6 +573,11 @@ def write_statistics_to_csv(stats: ApiStatus):
                 "friendlies": stat.friendlies,
                 "missionSuccessRate": stat.missionSuccessRate,
                 "accuracy": stat.accuracy,
+                "deathsPerMission":stat.deaths/missions,
+                "killsPerMission":kills/missions,
+                "killsToDeaths":kills/max(stat.deaths,1),
+                "biome": biome,
+                "hazards": hazards,
                 "playerCount": stat.playerCount,
             }
             writer.writerow(row)
