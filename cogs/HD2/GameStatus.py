@@ -195,7 +195,6 @@ class ApiStatus:
             data_type (str): The type of the data being handled.
         """
         if data is not None:
-            data_ids = set()
             data_ids: Set[int] = set()
             for item in data:
                 data_ids.add(item.id)
@@ -208,7 +207,13 @@ class ApiStatus:
                     print(f"removing {data_type} {k}")
                     storage.pop(k)
 
-    def estimates(self):
+    def estimates(self)->List[Tuple[str, List[str]]]:
+        """Estimate the projected liberation/loss times for each campaign,
+         and calculate planet liberation amounts at each of those timestamps.
+
+        Returns:
+            List[Tuple[str, List[str]]]: 
+        """
         acts: List[Tuple[Union[Planet, Event], float]] = []
         dates: List[datetime.datetime] = []
         outv: str = ""
@@ -275,11 +280,49 @@ class ApiStatus:
                 health_value = round(
                     ((p_e.health + (dps * sec)) / p_e.maxHealth) * 100.0, 4
                 )
-                if health_value < 100.0 and health_value > 0.0:
+                if 0.0 < health_value < 100.0:
                     outv += f"\n* {p_e.get_name()}: `{health_value}`"
             output_list.append((name, prioritized_string_split(outv, ["\n"])))
 
         return output_list
+    
+    def get_planet_fronts(self,  planet:Planet)->List[int]:
+        '''Get the "front" of the planet.  The front is all factions connected to it via 
+        warp link.'''
+        results=self.depth_first_planet_search(planet)
+        
+        fronts=set()
+        for index in results:
+            planet=self.planets.get(index,None)
+            if planet:
+                
+                fronts.add(planet.currentOwner.upper())
+
+        return list(fronts)
+    
+    def depth_first_planet_search(self,planet:Planet):
+        visited = set()
+        stack = [planet.index]
+        
+        result = []
+
+        while stack:
+            planet_ind = stack.pop()
+            planet=self.planets.get(planet_ind,None)
+            if not planet: 
+                continue
+            if planet.index not in visited:
+                #fronts.add(planet.currentOwner.upper())
+                visited.add(planet.index)
+                result.append(planet.index)
+                for neighbor_index in planet.waypoints:
+                    if neighbor_index not in visited:
+                        stack.append(neighbor_index)
+
+        return result
+    
+
+        
 
 
 def save_to_json(api_status, filepath):
@@ -494,29 +537,36 @@ def write_statistics_to_csv(stats: ApiStatus):
     headers = [
         "planet_name",
         "sector_name",
-        "initial_owner",
+        'front',
         "current_owner",
         "missionsWon",
         "missionsLost",
-        "missionTime",
-        "timePerMission",
-        "terminidKills",
-        "automatonKills",
-        "illuminateKills",
-        "bulletsFired",
-        "bulletsHit",
-        "timePlayed",
-        'timePlayedPerMission',
+        "kills",
+
+
         "deaths",
-        "revives",
         "friendlies",
-        "missionSuccessRate",
-        "accuracy",
-        "deathsPerMission",
-        "killsPerMission",
-        "killsToDeaths",
+        "DPM",
+        "KPM",
+        "KTD",
+        "WTL",
         "biome",
         "hazards",
+        
+        "MSR",
+        "missionTime",
+        "timePerMission",
+        "timePlayed",
+        'timePlayedPerMission',
+        "bulletsFired",
+        "bulletsHit",
+        "accuracy",
+        "bug_kills",
+        "bot_kills",
+        "squid_kills",
+        "initial_owner",
+        
+        "revives",
         "playerCount",
     ]
     csv_file_path = "statistics_sub.csv"
@@ -547,29 +597,35 @@ def write_statistics_to_csv(stats: ApiStatus):
 
 
                 if planet_hazards:
-                    hazards_str = ""
+                    hazards_str = []
                     for hazard in planet_hazards:
                         hazard_name = hazard.get("name", "Unknown Hazard")
                         hazard_description = hazard.get("description", "No description available")
-                        hazards_str += f"{hazard_name}, "
-                    hazards=hazards_str
+                        hazards_str.append(f"{hazard_name}")
+                    hazards=",".join(h for h in hazards_str)
             
             kills=stat.terminidKills+stat.automatonKills+stat.illuminateKills
             thistime=round(max(stat.missionTime,1)/(missions),4)
+            front=stats.get_planet_fronts(planet)
+            print(front)
+            if "HUMANS" in front and len(front)>1: 
+                front.remove("HUMANS")
             row = {
                 "planet_name": planet.name,
 
 
                 "sector_name": planet.sector.upper(),
+                "front":",".join(f for f in front),
                 "initial_owner": planet.initialOwner,
                 "current_owner": planet.currentOwner,
                 "missionsWon": stat.missionsWon,
                 "missionsLost": stat.missionsLost,
                 "missionTime": stat.missionTime,
                 "timePerMission":thistime,
-                "terminidKills": stat.terminidKills,
-                "automatonKills": stat.automatonKills,
-                "illuminateKills": stat.illuminateKills,
+                "kills":kills,
+                "bug_kills": stat.terminidKills,
+                "bot_kills": stat.automatonKills,
+                "squid_kills": stat.illuminateKills,
                 "bulletsFired": stat.bulletsFired,
                 "bulletsHit": stat.bulletsHit,
                 "timePlayed": stat.timePlayed,
@@ -577,11 +633,12 @@ def write_statistics_to_csv(stats: ApiStatus):
                 "deaths": stat.deaths,
                 "revives": stat.revives,
                 "friendlies": stat.friendlies,
-                "missionSuccessRate": stat.missionSuccessRate,
+                "MSR": stat.missionSuccessRate,
                 "accuracy": stat.accuracy,
-                "deathsPerMission":stat.deaths/missions,
-                "killsPerMission":kills/missions,
-                "killsToDeaths":kills/max(stat.deaths,1),
+                "DPM":stat.deaths/missions,
+                "KPM":kills/missions,
+                "KTD":kills/max(stat.deaths,1),
+                "WTL": stat.missionsWon/max(stat.missionsLost,1),
                 "biome": biome,
                 "hazards": hazards,
                 "playerCount": stat.playerCount,
