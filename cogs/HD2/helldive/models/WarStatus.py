@@ -51,3 +51,7 @@ class WarStatus(BaseApiModel):
 
     
     globalEvents:  Optional[List[GlobalEvent]] = Field(alias="globalEvents", default=None)
+
+    
+    superEarthWarResults: Optional[List[Any]] = Field(alias="superEarthWarResults", default=None)
+
