@@ -333,4 +333,4 @@ def make_graph2():
     return image
 
 
-img=make_graph()
+#img=make_graph()
