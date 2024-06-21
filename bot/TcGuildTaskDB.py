@@ -1,11 +1,10 @@
 from utility import urltomessage
 from .Tasks.TCTasks import TCTask, TCTaskManager
-from database import DatabaseSingleton, AwareDateTime
+from database import DatabaseSingleton
 import sqlalchemy
 import gui
 from sqlalchemy import (
     Boolean,
-    create_engine,
     Column,
     Integer,
     String,
@@ -15,7 +14,7 @@ from sqlalchemy import (
 )
 from sqlalchemy import PrimaryKeyConstraint
 from sqlalchemy.orm import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import Optional, Tuple
 

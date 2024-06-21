@@ -1,7 +1,7 @@
 import asyncio
 import json
 from typing import Literal, Dict, List
-from assets import AssetLookup
+from assetloader import AssetLookup
 import gui
 import discord
 
@@ -206,12 +206,13 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     async def update_data(self):
         if self.api_up:
             await self.apistatus.update_data()
-
+            hd2.save_to_json(self.apistatus, "./saveData/hd2_snapshot.json")
             print(self.apistatus.war)
             hd2.add_to_csv(self.apistatus)
         return
 
     def draw_img(self):
+        print("Updating map.")
         file_path = "./assets/GalacticMap.png"
         img = hd2.draw_grid(file_path)
         img = hd2.draw_supply_lines(img, apistat=self.apistatus)

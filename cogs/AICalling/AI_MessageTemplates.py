@@ -4,7 +4,7 @@ from discord.ext import commands
 
 from utility import MessageTemplates, get_server_icon_color
 from bot import TCGuildTask
-from assets import AssetLookup
+from assetloader import AssetLookup
 from gptmod import ChatCreation
 import gui
 

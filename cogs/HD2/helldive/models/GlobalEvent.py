@@ -4,7 +4,6 @@ from pydantic import Field
 from .ABC.model import BaseApiModel, HealthMixin
 
 
-
 class GlobalEvent(BaseApiModel):
     """
     None model
@@ -24,4 +23,6 @@ class GlobalEvent(BaseApiModel):
     flag: Optional[int] = Field(alias="flag", default=None)
     assignmentId32: Optional[int] = Field(alias="assignmentId32", default=None)
     effectIds: Optional[List[int]] = Field(alias="effectIds", default_factory=list)
-    planetIndices: Optional[List[int]] = Field(alias="planetIndices", default_factory=list)
+    planetIndices: Optional[List[int]] = Field(
+        alias="planetIndices", default_factory=list
+    )

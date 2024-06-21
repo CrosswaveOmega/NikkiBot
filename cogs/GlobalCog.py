@@ -10,7 +10,7 @@ import discord
 from discord.ext import commands
 
 from discord import app_commands
-from assets import AssetLookup
+from assetloader import AssetLookup
 from bot import TC_Cog_Mixin, super_context_menu
 import cogs.ResearchAgent as ra
 

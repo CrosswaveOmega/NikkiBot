@@ -183,9 +183,11 @@ class Statistics(BaseApiModel):
 
         # Format player count
         player_count = f"Player Count: {hf(self.playerCount)}"
-        thistime=round(max(self.missionTime,1)/(self.missionsWon+self.missionsLost),4)
-        
-        mission_stats+= f"\n Time per mission: {sts(thistime)}"
+        thistime = round(
+            max(self.missionTime, 1) / (self.missionsWon + self.missionsLost), 4
+        )
+
+        mission_stats += f"\n Time per mission: {sts(thistime)}"
         # Concatenate all formatted statistics
         statsa = (
             f"`[Missions: {mission_stats}]`\n`[Kills: {kill_stats}] [{bullets_stats}]`"
@@ -207,16 +209,16 @@ class Statistics(BaseApiModel):
         # Calculate differences for each statistic
 
         # Format each statistic with its difference
-        missiontotal=max(1,self.missionsWon+self.missionsLost)
-        misiontotalother=max(1,other.missionsWon+other.missionsLost)
+        missiontotal = max(1, self.missionsWon + self.missionsLost)
+        misiontotalother = max(1, other.missionsWon + other.missionsLost)
         mission_stats = f"W:{hf(self.missionsWon)} ({other.missionsWon}),"
         mission_stats += f"L:{hf(self.missionsLost)} ({other.missionsLost})"
         mission_stats += f"{round(100.0*(other.missionsWon/(max(other.missionsWon+other.missionsLost,1))),1)}"
-        mission_stats+= f"\nTime:{sts(self.missionTime)}({sts(other.missionTime)})"
-        
-        thistime=round(max(self.missionTime,1)/(missiontotal),4)
-        lasttime=round(max(other.missionTime,1)/(misiontotalother),4)
-        mission_stats+= f"\n Time per mission: {sts(thistime)}({sts(lasttime)})"
+        mission_stats += f"\nTime:{sts(self.missionTime)}({sts(other.missionTime)})"
+
+        thistime = round(max(self.missionTime, 1) / (missiontotal), 4)
+        lasttime = round(max(other.missionTime, 1) / (misiontotalother), 4)
+        mission_stats += f"\n Time per mission: {sts(thistime)}({sts(lasttime)})"
         kill_stats = f"T:{hf(self.terminidKills)} ({other.terminidKills}),"
         kill_stats += f"A:{hf(self.automatonKills)} ({other.automatonKills}),"
         kill_stats += "DATA EXPUNGED"

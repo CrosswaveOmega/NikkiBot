@@ -1,5 +1,3 @@
-
-
 /*
 dependencies:
 none
@@ -11,6 +9,7 @@ const {addFilterIfNotExists,runthroughfilters}=require('./filters.js')
 
 
 function load_filters(){
+
     console.log("Pass");
 }
 

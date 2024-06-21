@@ -9,6 +9,8 @@ from .PlanetAttack import PlanetAttack
 from .PlanetEvent import PlanetEvent
 from .PlanetStatus import PlanetStatus
 from .GlobalEvent import GlobalEvent
+
+
 class PlanetActiveEffects(BaseApiModel):
     """
     None model
@@ -19,6 +21,7 @@ class PlanetActiveEffects(BaseApiModel):
     index: Optional[int] = Field(alias="index", default=None)
 
     galacticEffectId: Optional[int] = Field(alias="galacticEffectId", default=None)
+
 
 class WarStatus(BaseApiModel):
     """
@@ -35,23 +38,38 @@ class WarStatus(BaseApiModel):
 
     storyBeatId32: Optional[int] = Field(alias="storyBeatId32", default=None)
 
-    planetStatus: Optional[List[Optional[PlanetStatus]]] = Field(alias="planetStatus", default=None)
+    planetStatus: Optional[List[Optional[PlanetStatus]]] = Field(
+        alias="planetStatus", default=None
+    )
 
-    planetAttacks: Optional[List[Optional[PlanetAttack]]] = Field(alias="planetAttacks", default=None)
+    planetAttacks: Optional[List[Optional[PlanetAttack]]] = Field(
+        alias="planetAttacks", default=None
+    )
 
-    campaigns: Optional[List[Optional[Campaign]]] = Field(alias="campaigns", default=None)
+    campaigns: Optional[List[Optional[Campaign]]] = Field(
+        alias="campaigns", default=None
+    )
 
-    jointOperations: Optional[List[Optional[JointOperation]]] = Field(alias="jointOperations", default=None)
+    jointOperations: Optional[List[Optional[JointOperation]]] = Field(
+        alias="jointOperations", default=None
+    )
 
-    planetEvents: Optional[List[Optional[PlanetEvent]]] = Field(alias="planetEvents", default=None)
+    planetEvents: Optional[List[Optional[PlanetEvent]]] = Field(
+        alias="planetEvents", default=None
+    )
 
-    communityTargets: Optional[List[Any]] = Field(alias="communityTargets", default=None)
+    communityTargets: Optional[List[Any]] = Field(
+        alias="communityTargets", default=None
+    )
 
-    planetActiveEffects:  Optional[List[PlanetActiveEffects]] = Field(alias="planetActiveEffects", default=None)
+    planetActiveEffects: Optional[List[PlanetActiveEffects]] = Field(
+        alias="planetActiveEffects", default=None
+    )
 
-    
-    globalEvents:  Optional[List[GlobalEvent]] = Field(alias="globalEvents", default=None)
+    globalEvents: Optional[List[GlobalEvent]] = Field(
+        alias="globalEvents", default=None
+    )
 
-    
-    superEarthWarResults: Optional[List[Any]] = Field(alias="superEarthWarResults", default=None)
-
+    superEarthWarResults: Optional[List[Any]] = Field(
+        alias="superEarthWarResults", default=None
+    )

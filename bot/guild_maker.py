@@ -1,7 +1,7 @@
 import configparser
 import discord
 import aiohttp
-from assets import AssetLookup
+from assetloader import AssetLookup
 import gui
 
 """

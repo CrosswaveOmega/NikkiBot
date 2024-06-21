@@ -14,7 +14,7 @@ from functools import partial
 from queue import Queue
 from typing import Any, List, Optional, Union
 
-from assets import AssetLookup
+from assetloader import AssetLookup
 from utility import seconds_to_time_string, seconds_to_time_stamp, urltomessage
 from utility import PageClassContainer
 from .AudioContainer import AudioContainer, speciallistsplitter

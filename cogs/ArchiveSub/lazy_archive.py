@@ -58,7 +58,7 @@ The lazy archive preforms each phase for about 15 minutes, then takes a pause.
 This reduces the  load on the server and system resources, and leaves the bot open for 
 preforming other tasks in the meantime.
 """
-from assets import AssetLookup
+from assetloader import AssetLookup
 from utility import hash_string
 
 LazyBase = declarative_base(name="Archive System LazyMode Base")

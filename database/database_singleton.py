@@ -136,7 +136,7 @@ class EngineContainer:
 class DatabaseSingleton:
     """A singleton storage class that stores the database engine and connection objects."""
 
-    class __DatabaseSingleton:
+    class _DatabaseSingleton:
         def __init__(
             self,
             arg,
@@ -223,12 +223,12 @@ class DatabaseSingleton:
                 if val.async_mode:
                     return val.get_async_session()
 
-    _instance = None
+    _instance: _DatabaseSingleton = None
 
     def __init__(self, arg, **kwargs):
         if not DatabaseSingleton._instance:
             gui.dprint("Running singleton 2")
-            instance = self.__DatabaseSingleton(arg, **kwargs)
+            instance = self._DatabaseSingleton(arg, **kwargs)
             DatabaseSingleton._instance = instance
 
     async def database_check(self):
@@ -289,3 +289,9 @@ class DatabaseSingleton:
         inst = DatabaseSingleton.get_instance()
         session = inst.get_async_session()
         return session
+
+
+class DSCTX:
+
+    def __init__(self):
+        self._instance = DatabaseSingleton._DatabaseSingleton("setup")

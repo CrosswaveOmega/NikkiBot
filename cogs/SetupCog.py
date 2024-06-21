@@ -22,7 +22,7 @@ from pathlib import Path
 from utility import serverAdmin, serverOwner, load_manual, MessageTemplates
 from utility.embed_paginator import pages_of_embeds
 
-from assets import AssetLookup
+from assetloader import AssetLookup
 from discord.app_commands import AppCommand
 from database import Users_DoNotTrack
 import gui

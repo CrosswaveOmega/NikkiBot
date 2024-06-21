@@ -31,7 +31,7 @@ Initalizes TCBot, defines some checks, and contains the main setup coroutine.
 """
 
 import database.database_main as dbmain
-from assets import AssetLookup
+from assetloader import AssetLookup
 
 
 bot: TCBot = TCBot()

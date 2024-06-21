@@ -46,7 +46,7 @@ from .ToontownStuff import (
     extract_cheat_soup,
     read_article,
 )
-from assets import AssetLookup
+from assetloader import AssetLookup
 from sqlitedict import SqliteDict
 
 tattle_prompt = """You are tasked with generating new tattles for enemy characters in a video game called ToonTown Online. Each tattle should be written in the same style as the tattles from Paper Mario. Tattles provide amusing and informative descriptions of the enemy, their abilities, and any other noteworthy characteristics. When provided with information about a new enemy, generate a tattle based on the available information.

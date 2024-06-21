@@ -35,7 +35,7 @@ This script defines Tables that are used exclusively within the
 context of the ServerRPArchive Cog and it's ArchiveSub subpackage.
 
 """
-from assets import AssetLookup
+from assetloader import AssetLookup
 from utility import hash_string
 
 ArchiveBase = declarative_base(name="Archive System Base")

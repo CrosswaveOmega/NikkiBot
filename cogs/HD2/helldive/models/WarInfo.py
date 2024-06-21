@@ -20,14 +20,20 @@ class WarInfo(BaseApiModel):
 
     endDate: Optional[int] = Field(alias="endDate", default=None)
 
-    minimumClientVersion: Optional[str] = Field(alias="minimumClientVersion", default=None)
+    minimumClientVersion: Optional[str] = Field(
+        alias="minimumClientVersion", default=None
+    )
 
-    planetInfos: Optional[List[Optional[PlanetInfo]]] = Field(alias="planetInfos", default=None)
+    planetInfos: Optional[List[Optional[PlanetInfo]]] = Field(
+        alias="planetInfos", default=None
+    )
 
-    homeWorlds: Optional[List[Optional[HomeWorld]]] = Field(alias="homeWorlds", default=None)
-    
+    homeWorlds: Optional[List[Optional[HomeWorld]]] = Field(
+        alias="homeWorlds", default=None
+    )
+
     capitalInfos: Optional[List[Any]] = Field(alias="capitalInfos", default=None)
-    
-    planetPermanentEffects: Optional[List[Any]] = Field(alias="planetPermanentEffects", default=None)
 
-
+    planetPermanentEffects: Optional[List[Any]] = Field(
+        alias="planetPermanentEffects", default=None
+    )

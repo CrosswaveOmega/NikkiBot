@@ -1,4 +1,8 @@
 print("importing sentence_mem")
+
+"""
+Functions for a chromadb based memory for the gptfunctions.
+"""
 import copy
 import uuid
 from typing import Any, Dict, List

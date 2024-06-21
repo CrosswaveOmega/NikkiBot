@@ -12,7 +12,7 @@ from discord.ext import commands, tasks
 
 import cogs.HD2 as hd2
 import gui
-from assets import AssetLookup
+from assetloader import AssetLookup
 
 # import datetime
 from bot import (
@@ -106,7 +106,7 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         mp_mult = self.apistatus.war.get_first().impactMultiplier
         if byplanet in self.apistatus.planets:
             planet = self.apistatus.planets[byplanet]
-            dps= hd2.maths.lph_to_dps(lph,planet.maxHealth)
+            dps = hd2.maths.lph_to_dps(lph, planet.maxHealth)
             eps = hd2.maths.dps_to_eps(dps, planet.regenPerSecond, mp_mult)
             play, conf = hd2.predict_needed_players(eps, mp_mult)
             embeds.append(
@@ -122,7 +122,6 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
             # await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
         else:
             await ctx.send("Planet not found.", ephemeral=True)
-
 
     @calc.command(
         name="dps_to_lph",

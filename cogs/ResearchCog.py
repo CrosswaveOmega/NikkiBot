@@ -16,7 +16,7 @@ import assets
 import cogs.ResearchAgent as ra
 import gptmod
 import gui
-from assets import AssetLookup
+from assetloader import AssetLookup
 from bot import StatusEditMessage, TC_Cog_Mixin, TCBot, super_context_menu
 from database.database_ai import AuditProfile
 from utility import prioritized_string_split

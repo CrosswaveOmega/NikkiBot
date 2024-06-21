@@ -260,7 +260,7 @@ def seconds_to_time_stamp(seconds_init):
     hours_r = (minutes_r - minutes) // 60
     hours = hours_r % 24
     days = (hours_r - hours) // 24
-    if days>1:
+    if days > 1:
         return_string += f"{days}:"
     if hours > 1:
         return_string += "{:02d}:".format(hours)

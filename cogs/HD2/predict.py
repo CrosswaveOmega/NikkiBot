@@ -16,6 +16,7 @@ from sklearn.neural_network import MLPRegressor
 from scipy import stats
 from io import BytesIO
 from PIL import Image
+
 # Load your dataset (Assume your dataset is in a CSV file)
 # Replace 'your_dataset.csv' with your actual dataset file
 
@@ -136,11 +137,11 @@ def predict_needed_players(target_eps, mp_mult):
 
     prediction_features = {
         "eps": target_eps,
-        #"mp_mult": mp_mult,
+        # "mp_mult": mp_mult,
     }
     # Extract features for prediction
     features_for_prediction = pd.DataFrame([prediction_features])
-    #X_new = features_for_prediction[["eps", "mp_mult"]]
+    # X_new = features_for_prediction[["eps", "mp_mult"]]
     X_new = features_for_prediction[["eps"]]
     y_pred = players_needed_model.predict(X_new)
     needed = y_pred[0]
@@ -170,7 +171,10 @@ def make_graph():
     se = np.sqrt(mse)
 
     from matplotlib.font_manager import FontProperties
-    terminal_font = FontProperties(fname=r'assets\Michroma-Regular.ttf')  # Update the path to your font file
+
+    terminal_font = FontProperties(
+        fname=r"assets\Michroma-Regular.ttf"
+    )  # Update the path to your font file
 
     # Calculate the confidence intervals
     confidence_level = 0.5
@@ -184,72 +188,103 @@ def make_graph():
     lower_bound = predicted_eps - interval
     upper_bound = predicted_eps + interval
 
-    plt.figure(figsize=(20, 12), facecolor='black'   )
+    plt.figure(figsize=(20, 12), facecolor="black")
     # Create a colormap that transitions from blue to red
-    colors = plt.colormaps['cool'](np.linspace(0, 1, len(YE)))
+    colors = plt.colormaps["cool"](np.linspace(0, 1, len(YE)))
 
     # Adjust alpha value to make colors opaque by about 0.2
     colors[:, -1] = 0.5  # Setting the alpha channel to 0.2
     ax = plt.gca()
-    maxy=50+np.max(YE)
-    maxx=50+np.max(XE['eps'])
+    maxy = 50 + np.max(YE)
+    maxx = 50 + np.max(XE["eps"])
     # Set the background color to black
-    ax.set_facecolor('black')
+    ax.set_facecolor("black")
 
-    plt.scatter(YE, XE['eps'], color=colors, label='Recorded influence Per Second',marker='+')
-    plt.plot(predicted_eps, XE['eps'], color="#FFE702", label='Regression Line')
-    plt.plot(lower_bound, XE['eps'], color='#706CD6', alpha=0.2, label=f'{round(confidence_level*100.0,0)}% Confidence Interval')
-    plt.plot(upper_bound, XE['eps'], color='#706CD6', alpha=0.2, label=f'{round(confidence_level*100.0,0)}% Confidence Interval')
-    plt.xlim(left=0,right=maxy)  # Lower limit set to 0,0
-    plt.ylim(bottom=0,top=maxx)
+    plt.scatter(
+        YE, XE["eps"], color=colors, label="Recorded influence Per Second", marker="+"
+    )
+    plt.plot(predicted_eps, XE["eps"], color="#FFE702", label="Regression Line")
+    plt.plot(
+        lower_bound,
+        XE["eps"],
+        color="#706CD6",
+        alpha=0.2,
+        label=f"{round(confidence_level*100.0,0)}% Confidence Interval",
+    )
+    plt.plot(
+        upper_bound,
+        XE["eps"],
+        color="#706CD6",
+        alpha=0.2,
+        label=f"{round(confidence_level*100.0,0)}% Confidence Interval",
+    )
+    plt.xlim(left=0, right=maxy)  # Lower limit set to 0,0
+    plt.ylim(bottom=0, top=maxx)
 
-    plt.xticks(np.arange(0, maxy, 5000),color='white', fontproperties=terminal_font)
+    plt.xticks(np.arange(0, maxy, 5000), color="white", fontproperties=terminal_font)
 
-    plt.xticks(np.arange(0, maxy, 1000), minor=True,)
-    plt.yticks(np.arange(0, maxx, 50),color='white', fontproperties=terminal_font)
+    plt.xticks(
+        np.arange(0, maxy, 1000),
+        minor=True,
+    )
+    plt.yticks(np.arange(0, maxx, 50), color="white", fontproperties=terminal_font)
 
-    plt.yticks(np.arange(0, maxx, 10),minor=True)
+    plt.yticks(np.arange(0, maxx, 10), minor=True)
 
+    plt.grid(True, which="major", color="white", linestyle="--", linewidth=0.5)
 
-    plt.grid(True, which='major',color='white', linestyle='--', linewidth=0.5)
-
-    plt.grid(True, which='minor',color='#323232', linestyle=':', linewidth=0.5)
+    plt.grid(True, which="minor", color="#323232", linestyle=":", linewidth=0.5)
 
     # Plot confidenc
-    plt.xlabel('Player Count', color='white', fontproperties=terminal_font)
-    plt.ylabel('Influence per second', color='white', fontproperties=terminal_font)
-    legend=ax.legend(facecolor='black', edgecolor='white', framealpha=1, loc='upper left', prop=terminal_font)
-    plt.setp(legend.get_texts(), color='white')  # Set the color of the legend text to white
+    plt.xlabel("Player Count", color="white", fontproperties=terminal_font)
+    plt.ylabel("Influence per second", color="white", fontproperties=terminal_font)
+    legend = ax.legend(
+        facecolor="black",
+        edgecolor="white",
+        framealpha=1,
+        loc="upper left",
+        prop=terminal_font,
+    )
+    plt.setp(
+        legend.get_texts(), color="white"
+    )  # Set the color of the legend text to white
 
     # Customize the spines to be white
-    ax.spines['bottom'].set_color('white')
-    ax.spines['left'].set_color('white')
-    ax.spines['top'].set_color('white')
-    ax.spines['right'].set_color('white')
+    ax.spines["bottom"].set_color("white")
+    ax.spines["left"].set_color("white")
+    ax.spines["top"].set_color("white")
+    ax.spines["right"].set_color("white")
 
-    plt.title('Scatter plot of player count vs influence per second with confidence intervals', color='white', fontproperties=terminal_font)
-
+    plt.title(
+        "Scatter plot of player count vs influence per second with confidence intervals",
+        color="white",
+        fontproperties=terminal_font,
+    )
 
     buffer = BytesIO()
-    plt.savefig(buffer, format='png')
+    plt.savefig(buffer, format="png")
     buffer.seek(0)
 
     # Convert the plot to a PIL image
-    image = Image.open(buffer)
+    image = Image.open(BytesIO(buffer.read()))
 
     # Close buffer
-    
-    image.save("saveData/graph1.png")
     buffer.close()
 
-    return image
+    # Save the image
+    image.save("saveData/graph1.png")
 
+    # Return the image
+    return image
 
 
 def make_graph2():
 
     from matplotlib.font_manager import FontProperties
-    terminal_font = FontProperties(fname=r'assets\Michroma-Regular.ttf')  # Update the path to your font file
+
+    terminal_font = FontProperties(
+        fname=r"assets\Michroma-Regular.ttf"
+    )  # Update the path to your font file
 
     # Calculate the confidence intervals
     confidence_level = 0.5
@@ -262,15 +297,14 @@ def make_graph2():
     chosen_entry = X.sample(n=1, random_state=random.randint(0, 100)).iloc[0]
     print(chosen_entry)
 
-    predicted=[]
+    predicted = []
     for i in np.linspace(0, 140, num=500):
-        cho=chosen_entry
-        cho['deaths_per_sec']=i
-        out=model.predict(pd.DataFrame([cho]))
+        cho = chosen_entry
+        cho["deaths_per_sec"] = i
+        out = model.predict(pd.DataFrame([cho]))
         predicted.append(out)
 
-        
-    #predicted=model.predict(X)
+    # predicted=model.predict(X)
     print(predicted)
     predicted_std = np.std(predicted)
     interval = t_value * predicted_std
@@ -278,59 +312,82 @@ def make_graph2():
     lower_bound = predicted - interval
     upper_bound = predicted + interval
 
-    plt.figure(figsize=(20, 12), facecolor='black'   )
+    plt.figure(figsize=(20, 12), facecolor="black")
     # Create a colormap that transitions from blue to red
-    colors = plt.colormaps['cool'](np.linspace(0, 1, len(YE)))
+    colors = plt.colormaps["cool"](np.linspace(0, 1, len(YE)))
 
     # Adjust alpha value to make colors opaque by about 0.2
     colors[:, -1] = 0.5  # Setting the alpha channel to 0.2
     ax = plt.gca()
 
-    maxy=np.max(Y)
-    maxx=np.max(X['deaths_per_sec'])
+    maxy = np.max(Y)
+    maxx = np.max(X["deaths_per_sec"])
     # Set the background color to black
-    ax.set_facecolor('black')
+    ax.set_facecolor("black")
 
-    plt.scatter(X['deaths_per_sec'],Y, color=colors, label='Recorded deaths Per Second',marker='+')
-    plt.scatter(np.linspace(0, 140, num=500),predicted, color="#FFE702", marker='+',label='Regression Line')
-    #plt.xlim(left=0,right=maxy)  # Lower limit set to 0,0
+    plt.scatter(
+        X["deaths_per_sec"],
+        Y,
+        color=colors,
+        label="Recorded deaths Per Second",
+        marker="+",
+    )
+    plt.scatter(
+        np.linspace(0, 140, num=500),
+        predicted,
+        color="#FFE702",
+        marker="+",
+        label="Regression Line",
+    )
+    # plt.xlim(left=0,right=maxy)  # Lower limit set to 0,0
     # plt.ylim(bottom=0,top=maxx)
 
-    plt.xticks(color='white', fontproperties=terminal_font)
+    plt.xticks(color="white", fontproperties=terminal_font)
 
-    plt.yticks(color='white', fontproperties=terminal_font)
+    plt.yticks(color="white", fontproperties=terminal_font)
 
+    plt.grid(True, which="major", color="white", linestyle="--", linewidth=0.5)
 
-
-    plt.grid(True, which='major',color='white', linestyle='--', linewidth=0.5)
-
-    plt.grid(True, which='minor',color='#323232', linestyle=':', linewidth=0.5)
+    plt.grid(True, which="minor", color="#323232", linestyle=":", linewidth=0.5)
 
     # Plot confidenc
-    plt.xlabel('deaths per second', color='white', fontproperties=terminal_font)
-    plt.ylabel('Influence per second', color='white', fontproperties=terminal_font)
-    legend=ax.legend(facecolor='black', edgecolor='white', framealpha=1, loc='upper left', prop=terminal_font)
-    plt.setp(legend.get_texts(), color='white')  # Set the color of the legend text to white
+    plt.xlabel("deaths per second", color="white", fontproperties=terminal_font)
+    plt.ylabel("Influence per second", color="white", fontproperties=terminal_font)
+    legend = ax.legend(
+        facecolor="black",
+        edgecolor="white",
+        framealpha=1,
+        loc="upper left",
+        prop=terminal_font,
+    )
+    plt.setp(
+        legend.get_texts(), color="white"
+    )  # Set the color of the legend text to white
 
     # Customize the spines to be white
-    ax.spines['bottom'].set_color('white')
-    ax.spines['left'].set_color('white')
-    ax.spines['top'].set_color('white')
-    ax.spines['right'].set_color('white')
+    ax.spines["bottom"].set_color("white")
+    ax.spines["left"].set_color("white")
+    ax.spines["top"].set_color("white")
+    ax.spines["right"].set_color("white")
 
-    plt.title('Graph', color='white', fontproperties=terminal_font)
+    plt.title("Graph", color="white", fontproperties=terminal_font)
 
     buffer = BytesIO()
-    plt.savefig(buffer, format='png')
+    plt.savefig(buffer, format="png")
     buffer.seek(0)
 
     # Convert the plot to a PIL image
-    image = Image.open(buffer)
+    image = Image.open(BytesIO(buffer.read()))
 
     # Close buffer
     buffer.close()
 
+    # Save the image
+    image.save("saveData/graph2.png")
+
+    # Return the image
     return image
 
 
-#img=make_graph()
+img = make_graph()
+img2 = make_graph2()

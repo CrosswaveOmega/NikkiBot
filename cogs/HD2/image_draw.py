@@ -67,8 +67,8 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200)):
     draw = ImageDraw.Draw(overlay)
 
     name = str(planet.name).replace(" ", "\n")
-    font = ImageFont.truetype("arial.ttf", 12)
-    font2 = ImageFont.truetype("arial.ttf", 10)
+    font = ImageFont.truetype("./assets/Michroma-Regular.ttf", 12)
+    font2 = ImageFont.truetype("./assets/Michroma-Regular.ttf", 10)
     bbox = draw.textbbox((0, 0), name, font=font, align="center")
     bbox2 = draw.textbbox(
         (0, 0), str(planet.health_percent()), font=font2, align="center"

@@ -8,7 +8,7 @@ import asyncio
 from PIL import Image, ImageDraw
 from discord import app_commands
 import numpy as np
-from assets import GeoJSONGeometry, GeoJSONFeature
+from assetloader import GeoJSONGeometry, GeoJSONFeature
 
 # import datetime
 from utility.views import BaseView

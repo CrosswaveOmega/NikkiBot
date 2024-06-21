@@ -6,7 +6,7 @@ from discord.ext import commands, tasks
 
 from utility import MessageTemplates
 
-from assets import AssetLookup
+from assetloader import AssetLookup
 
 
 class PollMessageTemplates(MessageTemplates):

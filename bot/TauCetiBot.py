@@ -1,35 +1,35 @@
 from __future__ import annotations
-import gptmod
-from discord.app_commands import CommandTree
-from discord import Interaction
-from .PlaywrightAPI import PlaywrightMixin
-from .StatusMessages import StatusMessageManager, StatusMessage, StatusMessageMixin
-from database import DatabaseSingleton, Users_DoNotTrack, ServerData
-import configparser
-import discord
-import traceback
-import asyncio
 
+import asyncio
+import configparser
+import datetime
 import logging
 import logging.handlers
 import os
-
-from discord.ext import commands, tasks
-import datetime
 import random
 import string
-from .Tasks.TCTasks import TCTaskManager
-from sqlalchemy.exc import IntegrityError
-import gui
-from utility import Chelp, MessageTemplates, replace_working_directory
-from .TcGuildTaskDB import Guild_Task_Base, TCGuildTask
-from .TCAppCommandAutoSync import (
-    Guild_Sync_Base,
-    SpecialAppSync,
-)
-from .TCMixins import CogFieldList, StatusTicker
+import traceback
+from typing import Dict, Optional, Tuple
+
+import discord
+from discord import Interaction
+from discord.app_commands import CommandTree
+from discord.ext import commands, tasks
 from javascriptasync import JSContext
-from javascriptasync.logging import setup_logging, get_filehandler
+from javascriptasync.logging import get_filehandler, setup_logging
+from sqlalchemy.exc import IntegrityError
+
+import gptmod
+import gui
+from database import DSCTX, DatabaseSingleton, ServerData, Users_DoNotTrack
+from utility import Chelp, MessageTemplates, replace_working_directory
+import database
+from .PlaywrightAPI import PlaywrightMixin
+from .StatusMessages import StatusMessage, StatusMessageManager, StatusMessageMixin
+from .Tasks.TCTasks import TCTaskManager
+from .TCAppCommandAutoSync import Guild_Sync_Base, SpecialAppSync
+from .TcGuildTaskDB import Guild_Task_Base, TCGuildTask
+from .TCMixins import CogFieldList, StatusTicker
 
 """ Primary Class
 
@@ -108,13 +108,17 @@ class TCBot(
         )
         # The Database Singleton is initalized in here.
         print("Starting up bot.")
-        self.database = None
+        # self.databasectx:database.database_singleton.DSCTX= database.database_singleton.DSCTX()
+        self.database: database.database_singleton.DatabaseSingleton = (
+            database.database_singleton.DatabaseSingleton("sd")
+        )
+
         self.keys = {}
-        self.gptapi = None
-        self.error_channel = None
-        self.jsenv = JSContext()
+        self.gptapi: gptmod.GptmodAPI = None
+        self.error_channel: int = None
+        self.jsenv: JSContext = JSContext()
         self.config: ConfigParserSub = ConfigParserSub()
-        self.exit_status = "none"
+        self.exit_status: str = "none"
         self.statmess: StatusMessageManager = StatusMessageManager(self)
 
         self.logs = logging.getLogger("TCLogger")
@@ -126,8 +130,8 @@ class TCBot(
         self.guimode = False
         self.gui = None
 
-        self.loaded_extensions = {}
-        self.loaded_plugins = {}
+        self.loaded_extensions: Dict[str, Tuple[str, Optional[str]]] = {}
+        self.loaded_plugins: Dict[str, Tuple[str, Optional[str]]] = {}
         self.default_error = self.on_command_error
         self.bot_ready = False
 
@@ -138,7 +142,7 @@ class TCBot(
         self.database.load_base(Base=Guild_Sync_Base)
         await self.database.startup_all()
 
-    def set_error_channel(self, newid):
+    def set_error_channel(self, newid: int):
         """set the error channel id."""
         if str(newid).isdigit():
             self.error_channel = int(newid)

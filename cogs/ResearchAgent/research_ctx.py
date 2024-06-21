@@ -2,7 +2,7 @@ from typing import List, Tuple, Optional, Set, Dict, Any
 import chromadb
 import discord
 import asyncio
-from assets import AssetLookup
+from assetloader import AssetLookup
 import re
 import openai
 

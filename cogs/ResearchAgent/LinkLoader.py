@@ -2,7 +2,7 @@ from typing import List, Optional, Tuple
 import chromadb
 import discord
 import asyncio
-from assets import AssetLookup
+from assetloader import AssetLookup
 import re
 
 # import datetime

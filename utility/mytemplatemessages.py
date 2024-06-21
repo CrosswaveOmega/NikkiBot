@@ -4,7 +4,7 @@ from discord.ext import commands
 from .globalfunctions import get_server_icon_color
 from .manual_load import load_manual
 from .views import ConfirmView
-from assets import AssetLookup
+from assetloader import AssetLookup
 from database.database_ai import ServerAIConfig
 import re
 

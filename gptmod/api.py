@@ -1,15 +1,14 @@
 print("importing api")
 import asyncio
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict
 import aiohttp
 import json
-import urllib
 import gptmod
 import openai
 import gui
 from gptmod.object_core import ApiCore
 import gptmod.error as error
-from assets import AssetLookup
+from assetloader import AssetLookup
 
 
 TIMEOUT_SECS = 60 * 10

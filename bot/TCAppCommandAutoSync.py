@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import select, not_, func
 import datetime
-from assets import *
+from assetloader import *
 import gui
 
 from discord.ext import commands

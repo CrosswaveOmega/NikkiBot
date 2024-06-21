@@ -29,4 +29,6 @@ class PlanetEvent(BaseApiModel):
 
     campaignId: Optional[int] = Field(alias="campaignId", default=None)
 
-    jointOperationIds: Optional[List[int]] = Field(alias="jointOperationIds", default=None)
+    jointOperationIds: Optional[List[int]] = Field(
+        alias="jointOperationIds", default=None
+    )

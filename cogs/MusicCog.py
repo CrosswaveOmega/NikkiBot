@@ -27,7 +27,7 @@ from bot import TCBot, TC_Cog_Mixin
 import yt_dlp  # type: ignore
 import itertools
 
-from assets import AssetLookup
+from assetloader import AssetLookup
 
 from utility import seconds_to_time_string, seconds_to_time_stamp
 

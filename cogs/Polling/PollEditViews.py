@@ -2,7 +2,7 @@ import gui
 from typing import Any, Coroutine
 import discord
 from discord.interactions import Interaction
-from assets import AssetLookup
+from assetloader import AssetLookup
 
 
 class Poll_Choice_Make(discord.ui.Modal, title="Edit your poll choices."):

@@ -126,11 +126,16 @@ async def make_raw_api_request(
                 return mod
             return {}
 
+
 async def GetApiV1War(api_config_override: Optional[APIConfig] = None) -> War:
     return await make_api_request("war", War, api_config_override=api_config_override)
 
+
 async def GetApiRawStatus(api_config_override: Optional[APIConfig] = None) -> WarStatus:
-    return await make_raw_api_request("WarSeason/801/Status", WarStatus, api_config_override=api_config_override)
+    return await make_raw_api_request(
+        "WarSeason/801/Status", WarStatus, api_config_override=api_config_override
+    )
+
 
 async def GetApiV1AssignmentsAll(
     api_config_override: Optional[APIConfig] = None,

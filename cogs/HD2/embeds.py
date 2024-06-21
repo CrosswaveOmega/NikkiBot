@@ -24,20 +24,23 @@ from .predict import make_prediction_for_eps, predict_needed_players
 pattern = r"<i=1>(.*?)<\/i>"
 pattern3 = r"<i=3>(.*?)<\/i>"
 
-def create_war_embed(stat:ApiStatus):
-    data, last=stat.war.get_first_change()
+
+def create_war_embed(stat: ApiStatus):
+    data, last = stat.war.get_first_change()
     stats = data["statistics"]
     stat_str = data.statistics.format_statistics()
     if stats and (last is not None):
         stat_str = stats.diff_format(stats - last.statistics)
-    globtex=""
+    globtex = ""
     if stat.warstat:
         for evt in stat.warstat.globalEvents:
             if evt.title and evt.message:
-                mes= re.sub(pattern, r"**\1**", evt.message)
+                mes = re.sub(pattern, r"**\1**", evt.message)
                 mes = re.sub(pattern3, r"***\1***", mes)
-                globtex+=f"### {evt.title}\n{mes}\n\n"
-    embed = discord.Embed(title="War", description=f"{globtex}\n{stat_str}"[:4096], color=0xFF0000)
+                globtex += f"### {evt.title}\n{mes}\n\n"
+    embed = discord.Embed(
+        title="War", description=f"{globtex}\n{stat_str}"[:4096], color=0xFF0000
+    )
 
     embed.add_field(name="Started", value=fdt(et(data["started"]), "F"), inline=True)
     embed.add_field(name="Ended", value=fdt(et(data["ended"]), "F"), inline=True)
@@ -182,15 +185,19 @@ def create_planet_embed(
     )
     embed.set_footer(text=cstri)
     embed.set_author(name=f"Planet Index {planet_index}")
-    central=stat.planetdata['planets'].get(str(planet_index),None)
+    central = stat.planetdata["planets"].get(str(planet_index), None)
     if central:
-        bname=central['biome']
-        bhazard=central['environmentals']
-        planet_biome=stat.planetdata['biomes'].get(bname,None)
-        planet_hazards=[stat.planetdata['environmentals'].get(h,None) for h in bhazard]
+        bname = central["biome"]
+        bhazard = central["environmentals"]
+        planet_biome = stat.planetdata["biomes"].get(bname, None)
+        planet_hazards = [
+            stat.planetdata["environmentals"].get(h, None) for h in bhazard
+        ]
         if planet_biome:
             biome_name = planet_biome.get("name", "[GWW SEARCH ERROR]")
-            biome_description = planet_biome.get("description", "No description available")
+            biome_description = planet_biome.get(
+                "description", "No description available"
+            )
             embed.add_field(
                 name=f"Biome:{biome_name}",
                 value=f"{biome_description}",
@@ -201,7 +208,9 @@ def create_planet_embed(
             hazards_str = ""
             for hazard in planet_hazards:
                 hazard_name = hazard.get("name", "Unknown Hazard")
-                hazard_description = hazard.get("description", "No description available")
+                hazard_description = hazard.get(
+                    "description", "No description available"
+                )
                 hazards_str += f"**{hazard_name}:** {hazard_description}\n"
             embed.add_field(name="Hazards", value=hazards_str, inline=False)
 
@@ -297,7 +306,7 @@ def campaign_view(stat: ApiStatus, hdtext={}):
     emb = discord.Embed(title="Galactic War Overview", description=f"{flav}\n")
     all_players, last = stat.war.get_first_change()
     change_war = all_players - last
-    total_contrib = [0, 0.0, 0.0,0.0]
+    total_contrib = [0, 0.0, 0.0, 0.0]
     total = 0
 
     prop = defaultdict(int)
@@ -313,17 +322,17 @@ def campaign_view(stat: ApiStatus, hdtext={}):
             avg = Planet.average([c.planet for c in changes])
         planet_difference: Planet = (camp - last).planet
         name, desc = camp.planet.simple_planet_view(planet_difference, avg)
-        
-        if planet_difference.event!=None:
-            p_evt=planet_difference.event
+
+        if planet_difference.event != None:
+            p_evt = planet_difference.event
             total_sec = p_evt.retrieved_at.total_seconds()
             rate = -1 * (p_evt.health)
             total_contrib[0] += camp.planet.statistics.playerCount
             total_contrib[1] += rate
-            thisamt=round((rate / camp.planet.event.maxHealth) * 100.0, 5)
+            thisamt = round((rate / camp.planet.event.maxHealth) * 100.0, 5)
             total_contrib[2] += thisamt
-            total_contrib[3] += round((thisamt/max(1,total_sec))*60*60,5)
-        
+            total_contrib[3] += round((thisamt / max(1, total_sec)) * 60 * 60, 5)
+
         elif planet_difference.health_percent() != 0:
             total_sec = planet_difference.retrieved_at.total_seconds()
             rate = (-1 * (planet_difference.health)) + (
@@ -331,10 +340,9 @@ def campaign_view(stat: ApiStatus, hdtext={}):
             )
             total_contrib[0] += camp.planet.statistics.playerCount
             total_contrib[1] += rate
-            thisamt=round((rate / camp.planet.maxHealth) * 100.0, 5)
+            thisamt = round((rate / camp.planet.maxHealth) * 100.0, 5)
             total_contrib[2] += thisamt
-            total_contrib[3] += round((thisamt/total_sec)*60*60,5)
-        
+            total_contrib[3] += round((thisamt / total_sec) * 60 * 60, 5)
 
         features = get_feature_dictionary(stat, k)
         pred = make_prediction_for_eps(features)
