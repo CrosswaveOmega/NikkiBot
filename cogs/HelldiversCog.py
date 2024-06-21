@@ -107,7 +107,7 @@ class HD2OverviewView(discord.ui.View):
     ):
         est = self.cog.apistatus.estimates()
         print(est)
-        title = "Health estimates over time"
+        title = "Galactic War Forecast"
         embed = discord.Embed(title=f"{title}")
         embeds = [embed]
         total_size = len(title)
@@ -122,7 +122,7 @@ class HD2OverviewView(discord.ui.View):
                 else:
                     total_size += len(v)
                 embed.add_field(name=name, value=v[:1024], inline=False)
-        pcc, _ = await pages_of_embeds_2(True, embeds, show_page_nums=True)
+        pcc, _ = await pages_of_embeds_2(True, embeds, show_page_nums=False)
         but = hd2.ListButtons(callbacker=pcc)
         await interaction.response.send_message(
             embed=pcc.make_embed(), view=but, ephemeral=True
