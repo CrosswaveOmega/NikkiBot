@@ -346,8 +346,11 @@ class Main(commands.Cog):
         new.to_task(bot)
 
     @commands.command()
-    async def task_remove(self, ctx):
+    async def task_remove(self, ctx, taskname:str):
+
         """debugging only."""
+        new = TCGuildTask.remove_guild_task(ctx.guild.id, taskname)
+        await ctx.send("done")
         return
 
     @commands.command()
