@@ -322,12 +322,28 @@ class ApiStatus:
         return result
 
 
-def save_to_json(api_status, filepath):
+def save_to_json(api_status: 'ApiStatus', filepath: str) -> None:
+    """
+    Save the given api_status to a JSON file.
+
+    Args:
+        api_status (ApiStatus): The API status object to be saved.
+        filepath (str): The path to the file where data should be saved.
+    """
     with open(filepath, "w", encoding="utf8") as file:
         json.dump(api_status.to_dict(), file, default=str, indent=4)
 
 
-def load_from_json(filepath):
+def load_from_json(filepath: str) -> 'ApiStatus':
+    """
+    Load API status data from a JSON file.
+
+    Args:
+        filepath (str): The path to the file from which data should be loaded.
+
+    Returns:
+        ApiStatus: The API status object if the file exists and is valid, otherwise None.
+    """
     if not os.path.exists(filepath):
         return None
     try:
@@ -337,7 +353,6 @@ def load_from_json(filepath):
         print(e)
         return None
     return data
-
 
 faction_map = {
     "humans": 1,
