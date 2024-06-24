@@ -329,7 +329,7 @@ def campaign_view(stat: ApiStatus, hdtext={}):
             rate = -1 * (p_evt.health)
             total_contrib[0] += camp.planet.statistics.playerCount
             total_contrib[1] += rate
-            thisamt = round((rate / camp.planet.event.maxHealth) * 100.0, 5)
+            thisamt = round((rate / camp.planet.maxHealth) * 100.0, 5)
             total_contrib[2] += thisamt
             total_contrib[3] += round((thisamt / max(1, total_sec)) * 60 * 60, 5)
 
