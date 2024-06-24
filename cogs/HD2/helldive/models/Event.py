@@ -158,8 +158,6 @@ class Event(BaseApiModel, HealthMixin):
 
         change = self.calculate_change(diff)
         if change == 0:
-            if self.currentOwner.lower() != "humans":
-                return "Stalemate."
             return ""
 
         timeval = self.calculate_timeval(change, change > 0)
