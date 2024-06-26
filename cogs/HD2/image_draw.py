@@ -59,9 +59,13 @@ def draw_supply_lines(img, color=(0, 255, 0, 200), apistat: ApiStatus = None):
     return img
 
 
-def highlight(img, planet: Planet, color=(255, 0, 0, 200)):
+def highlight(img, planet: Planet, color=(255, 0, 0, 200), apistat: ApiStatus = None):
     gpos = planet.position
     x, y = gpos.x, gpos.y
+    task_planets=[]
+    if apistat:
+        assignment=apistat.assignments.get_first()
+        task_planets=assignment.get_task_planets()
     coordinate = x * 1000.0 + 1000, 1000 - y * 1000.0
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
@@ -86,7 +90,12 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200)):
         "humans": (0, 150, 150, 200),  # Cyan-like color
         "illuminate": (150, 0, 150, 200),
     }
-    draw.rectangle(background_box, fill=colors[owner], outline=colors[owner], width=2)
+    out=2
+    hper=str(planet.health_percent())
+    if planet.index in task_planets:
+        out=5
+        hper=f"!!{hper}"
+    draw.rectangle(background_box, fill=colors[owner], outline=colors[owner], width=out)
     draw.rectangle(
         (
             [
@@ -108,7 +117,7 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200)):
     )
     draw.text(
         (background_box[0], background_box[3]),
-        str(planet.health_percent()),
+        hper,
         fill=(255, 255, 255),
         font=font2,
         align="center",
@@ -119,7 +128,7 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200)):
 
 def crop_image(image, coordinate, off_by, cell_size=200):
     ccr = coordinate
-    bc = ccr + off_by + np.array((2, 1))
+    bc = ccr + off_by + np.array((2, 2))
     uc = ccr - off_by
     left = max(uc[0] * cell_size, 0)
     top = max(uc[1] * cell_size, 0)
@@ -148,17 +157,6 @@ class MapViewer(BaseView):
         self.img = img
         self.focus_cell = np.array(initial_coor) // CELL_SIZE
 
-    async def highlight_points(self, interaction: discord.Integration, coor):
-        x2 = coor[0] + 1000
-        y2 = 1000 - coor[1]
-        coordinate = (x2 * 2, y2 * 2)
-        self.img = highlight(self.img, coordinate)
-        self.focus_cell = np.array(coordinate) // CELL_SIZE
-        embed, file = self.make_embed()
-
-        await interaction.edit_original_response(
-            content="", embed=embed, attachments=[file]
-        )
 
     def make_embed(self):
         coors = f"Viewing cell {self.focus_cell[0]}, {self.focus_cell[1]}"

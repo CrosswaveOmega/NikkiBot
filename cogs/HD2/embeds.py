@@ -106,39 +106,9 @@ def create_assignment_embed(
         progress = [(t, l) for t, l in zip(data.progress, last.progress)]
     embed.add_field(name="Objective", value=data["description"], inline=False)
     tasks = ""
-    for e, task in enumerate(data["tasks"]):
-        task_type = task_types.get(task["type"], "Unknown Task Type")
-        taskdata = {"planet_index": "ERR", "race": 15}
-        curr, last = progress[e]
-        taskstr = f"{e}. {task_type}: {hf(curr)}"
-        for v, vt in zip(task["values"], task["valueTypes"]):
-            # print(v, value_types.get(vt, "Unmapped vt"))
-            taskdata[value_types[vt]] = v
-
-        if task["type"] in (11, 13):
-            planet_id = taskdata["planet_index"]
-            planet_name = "ERR"
-            health = "?"
-            if int(planet_id) in planets:
-                planet = planets[int(planet_id)]
-                planet_name = planet.get_name()
-                health = planet.health_percent()
-            if task["type"] == 11:
-                taskstr = f"{e}. Liberate {planet_name}. Status: `{'ok' if curr==1 else f'{health},{curr}'}`"
-            if task["type"] == 13:
-                taskstr = f"{e}. Controk {planet_name}. Status:`{'ok' if curr==1 else f'{health},{curr}'}`"
-
-        elif task["type"] == 12:
-            planet_name = taskdata["planet_index"]
-            taskstr += f"{task['values'][0]} planets"
-        elif task["type"] == 3:
-            faction_name = faction_names.get(
-                taskdata["race"], f"Unknown Faction {taskdata['race']}"
-            )
-            taskstr += f"/{hf(taskdata['goal'])} ({(int(curr)/int(taskdata['goal']))*100.0}){faction_name}"
-        else:
-            taskstr += f"DATA CORRUPTED.{json.dumps(task)[:50]}."
-        tasks += taskstr + "\n"
+    for e, task in enumerate(data.tasks):
+        task_type,taskdata=task.taskAdvanced()
+        tasks+=task.task_str(progress[e],task_type,taskdata,e,planets)+"\n"
 
     embed.add_field(name="Tasks", value=tasks, inline=False)
 
