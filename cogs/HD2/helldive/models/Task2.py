@@ -94,3 +94,4 @@ class Task2(BaseApiModel):
             taskstr += f"/{hf(taskdata['goal'])} ({(int(curr)/int(taskdata['goal']))*100.0}){faction_name}"
         else:
             taskstr += f"DATA CORRUPTED.{json.dumps(self)[:50]}."
+        return taskstr
