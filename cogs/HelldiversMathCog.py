@@ -165,7 +165,7 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
     @app_commands.describe(diff="mission difficulty")
     async def impactdc(self, interaction: discord.Interaction, imp: float, samples:int, xp:float, deaths:float,diff:int=0):
         ctx: commands.Context = await self.bot.get_context(interaction)
-        war = self.apistatus.get_war_now()
+        war = await self.apistatus.get_war_now()
         influence = war.impactMultiplier * imp
         now = datetime.datetime.now(tz=datetime.timezone.utc)
 
