@@ -67,6 +67,7 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200), apistat: ApiStatus = 
         for a in apistat.assignments.values():
             assignment=a.get_first()
             task_planets.extend(assignment.get_task_planets())
+
     coordinate = x * 1000.0 + 1000, 1000 - y * 1000.0
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
@@ -74,18 +75,10 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200), apistat: ApiStatus = 
     name = str(planet.name).replace(" ", "\n")
     font = ImageFont.truetype("./assets/Michroma-Regular.ttf", 10)
     font2 = ImageFont.truetype("./assets/Michroma-Regular.ttf", 8)
-    bbox = draw.textbbox((0, 0), name, font=font, align="center")
-    
+    bbox = draw.textbbox((0, 0), name, font=font, align="center", spacing=0)
     hper=str(planet.health_percent())
-    bbox2 = draw.textbbox(
-        (0, 0), str(hper), font=font2, align="center"
-    )
-    background_box = [
-        coordinate[0] - bbox[2] / 2,
-        coordinate[1] - bbox[3] / 2,
-        coordinate[0] + bbox[2] / 2,
-        coordinate[1] + bbox[3] / 2,
-    ]
+    
+    out=2
     owner = planet.currentOwner.lower()
     colors = {
         "automaton": (254 - 50, 109 - 50, 114 - 50, 200),  # Red
@@ -95,11 +88,22 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200), apistat: ApiStatus = 
     }
     outline=colors[owner]
 
-    out=2
     if planet.index in task_planets:
-        out=5
+        print(task_planets)
+        out=3
         hper=f"!!{hper}"
         outline=(255,255,255)
+    bbox2 = draw.textbbox(
+        (0, 0), str(hper), font=font2, align="center"
+    )
+    background_box = [
+        coordinate[0] - bbox[2] / 2 -2,
+        coordinate[1] - bbox[3] / 2 -2,
+        coordinate[0] + bbox[2] / 2 +2,
+        coordinate[1] + bbox[3] / 2 +2,
+    ]
+
+
     draw.rectangle(background_box, fill=colors[owner], outline=outline, width=out)
     draw.rectangle(
         (
@@ -119,6 +123,7 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200), apistat: ApiStatus = 
         fill=(255, 255, 255),
         font=font,
         align="center",
+        spacing=0
     )
     draw.text(
         (background_box[0], background_box[3]),
@@ -126,6 +131,7 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200), apistat: ApiStatus = 
         fill=(255, 255, 255),
         font=font2,
         align="center",
+        spacing=0
     )
     img = Image.alpha_composite(img, overlay)
     return img
@@ -133,7 +139,7 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200), apistat: ApiStatus = 
 
 def crop_image(image, coordinate, off_by, cell_size=200):
     ccr = coordinate
-    bc = ccr + off_by + np.array((2, 2))
+    bc = ccr + off_by + np.array((0, 0))
     uc = ccr - off_by
     left = max(uc[0] * cell_size, 0)
     top = max(uc[1] * cell_size, 0)
@@ -170,7 +176,7 @@ class MapViewer(BaseView):
             timestamp=discord.utils.utcnow(),
         )
 
-        cropped_img = crop_image(self.img, self.focus_cell, off_by=np.array((1, 1)))
+        cropped_img = crop_image(self.img, self.focus_cell, off_by=np.array((2, 2)))
         with io.BytesIO() as image_binary:
             cropped_img.save(image_binary, "PNG")
             image_binary.seek(0)
