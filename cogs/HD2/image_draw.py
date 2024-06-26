@@ -64,8 +64,9 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200), apistat: ApiStatus = 
     x, y = gpos.x, gpos.y
     task_planets=[]
     if apistat:
-        assignment=apistat.assignments.get_first()
-        task_planets=assignment.get_task_planets()
+        for a in apistat.assignments.values():
+            assignment=a.get_first()
+            task_planets.extend(assignment.get_task_planets())
     coordinate = x * 1000.0 + 1000, 1000 - y * 1000.0
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
