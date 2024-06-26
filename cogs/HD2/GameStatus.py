@@ -136,6 +136,10 @@ class ApiStatus:
         s += repr(self.warstat) + "\n"
         # s+=repr(self.planets)
         return s
+    
+    async def get_war_now(self)->War:
+        war = await GetApiV1War(api_config_override=self.client)
+        return war
 
     async def update_data(self):
         """
@@ -286,7 +290,7 @@ class ApiStatus:
 
         return output_list
 
-    def get_planet_fronts(self, planet: Planet) -> List[int]:
+    def get_planet_fronts(self, planet: Planet) -> List[str]:
         """Get the "front" of the planet.  The front is all factions connected to it via
         warp link."""
         results = self.depth_first_planet_search(planet)
@@ -300,7 +304,7 @@ class ApiStatus:
 
         return list(fronts)
 
-    def depth_first_planet_search(self, planet: Planet):
+    def depth_first_planet_search(self, planet: Planet)->int:
         visited = set()
         stack = [planet.index]
 

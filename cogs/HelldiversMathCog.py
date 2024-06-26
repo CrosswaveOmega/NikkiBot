@@ -1,7 +1,8 @@
 import asyncio
+import csv
 import importlib
 import json
-from datetime import datetime, timedelta
+import datetime
 from typing import Dict, List, Literal
 
 import discord
@@ -152,6 +153,44 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
             f"`{eps}` dps is about `{dps}` dps per second, and `{lps}` liberation per hour.",
             ephemeral=True,
         )
+
+    @calc.command(
+        name="impactdatacollection",
+        description="Convert experience per second to damage per second.",
+    )
+    @app_commands.describe(imp="squad impact")
+    @app_commands.describe(samples="total number of samples collected")
+    @app_commands.describe(xp="mission xp total")
+    @app_commands.describe(deaths="total number of deaths")
+    @app_commands.describe(diff="mission difficulty")
+    async def impactdc(self, interaction: discord.Interaction, imp: float, samples:int, xp:float, deaths:float,diff:int=0):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        war = self.apistatus.get_war_now()
+        influence = war.impactMultiplier * imp
+        now = datetime.datetime.now(tz=datetime.timezone.utc)
+
+        timestamp = int(now.timestamp())
+        await ctx.send(
+            f"`{imp}` impact (influence `{influence}` at mp_mult `{war.impactMultiplier}`), difficulty `{diff}`, `{samples}` samples,`{xp}` xp, `{deaths}` deaths. ",
+            ephemeral=False,
+        )
+        row = {
+            "timestamp":timestamp,
+            "mp_mult": war.impactMultiplier,
+            "impact": imp,
+            'influence':influence,
+            "samples": samples,
+            "xp": xp,
+            "diff": diff,
+        }
+        with open('sample_impact.csv', mode="a", newline="", encoding="utf8") as file:
+            writer = csv.DictWriter(file, fieldnames=row.keys())
+
+            # If the file is empty, write the header
+            if file.tell() == 0:
+                writer.writeheader()
+
+            writer.writerow(row)
 
 
 async def setup(bot):

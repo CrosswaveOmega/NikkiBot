@@ -513,10 +513,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     @app_commands.describe(planet="Focus map on this planet.")
     @app_commands.autocomplete(planet=planet_autocomplete)
     async def map(self, interaction: discord.Interaction, planet: int = 0):
-
         ctx: commands.Context = await self.bot.get_context(interaction)
         mes = await ctx.send("please wait...", ephemeral=True)
-
         img = self.img
         if not img:
             await asyncio.gather(asyncio.to_thread(self.draw_img), asyncio.sleep(1))
@@ -530,7 +528,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         view = hd2.MapViewer(
             user=ctx.author, img=img, initial_coor=hd2.get_im_coordinates(cx, cy)
         )
-
         emb, file = view.make_embed()
         await mes.edit(content="done", attachments=[file], embed=emb, view=view)
 
