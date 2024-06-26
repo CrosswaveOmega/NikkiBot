@@ -72,11 +72,13 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200), apistat: ApiStatus = 
     draw = ImageDraw.Draw(overlay)
 
     name = str(planet.name).replace(" ", "\n")
-    font = ImageFont.truetype("./assets/Michroma-Regular.ttf", 12)
-    font2 = ImageFont.truetype("./assets/Michroma-Regular.ttf", 10)
+    font = ImageFont.truetype("./assets/Michroma-Regular.ttf", 10)
+    font2 = ImageFont.truetype("./assets/Michroma-Regular.ttf", 8)
     bbox = draw.textbbox((0, 0), name, font=font, align="center")
+    
+    hper=str(planet.health_percent())
     bbox2 = draw.textbbox(
-        (0, 0), str(planet.health_percent()), font=font2, align="center"
+        (0, 0), str(hper), font=font2, align="center"
     )
     background_box = [
         coordinate[0] - bbox[2] / 2,
@@ -91,12 +93,14 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200), apistat: ApiStatus = 
         "humans": (0, 150, 150, 200),  # Cyan-like color
         "illuminate": (150, 0, 150, 200),
     }
+    outline=colors[owner]
+
     out=2
-    hper=str(planet.health_percent())
     if planet.index in task_planets:
         out=5
         hper=f"!!{hper}"
-    draw.rectangle(background_box, fill=colors[owner], outline=colors[owner], width=out)
+        outline=(255,255,255)
+    draw.rectangle(background_box, fill=colors[owner], outline=outline, width=out)
     draw.rectangle(
         (
             [
@@ -107,7 +111,7 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200), apistat: ApiStatus = 
             ]
         ),
         fill=colors[owner],
-        outline=colors[owner],
+        outline=outline,
     )
     draw.text(
         (coordinate[0] - bbox[2] / 2, coordinate[1] - bbox[3] / 2),

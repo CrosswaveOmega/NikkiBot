@@ -37,4 +37,4 @@ class HealthMixin:
 
     def health_percent(self):
         value = self.health / max(self.maxHealth, 1)
-        return value * 100.0
+        return round(value * 100.0,3)
