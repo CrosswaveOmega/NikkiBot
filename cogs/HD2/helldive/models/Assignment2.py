@@ -50,7 +50,7 @@ class Assignment2(BaseApiModel):
     
     def get_task_planets(self)->List[int]:
         planets=[]
-        for e, task in enumerate(data.tasks):
+        for e, task in enumerate(self.tasks):
             task_type,taskdata=task.taskAdvanced()
             if 'planet_index' in taskdata:
                 planets.append(taskdata['planet_index'])
