@@ -107,8 +107,8 @@ def create_assignment_embed(
     embed.add_field(name="Objective", value=data["description"], inline=False)
     tasks = ""
     for e, task in enumerate(data.tasks):
-        task_type,taskdata=task.taskAdvanced()
-        tasks+=task.task_str(progress[e],task_type,taskdata,e,planets)+"\n"
+        task_type, taskdata = task.taskAdvanced()
+        tasks += task.task_str(progress[e], task_type, taskdata, e, planets) + "\n"
 
     embed.add_field(name="Tasks", value=tasks, inline=False)
 

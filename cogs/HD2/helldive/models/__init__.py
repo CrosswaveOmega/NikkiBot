@@ -22,3 +22,13 @@ from .HomeWorld import *
 from .PlanetCoordinates import *
 from .PlanetInfo import *
 from .WarInfo import *
+
+from .Assignment import *
+from .DiveharderAll import *
+from .GalaxyStats import *
+from .PlanetStats import *
+from .Reward import *
+from .Setting import *
+from .Task import *
+from .WarId import *
+from .WarSummary import *

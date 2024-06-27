@@ -217,7 +217,9 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         img = hd2.draw_grid(file_path)
         img = hd2.draw_supply_lines(img, apistat=self.apistatus)
         for _, planet_obj in self.apistatus.planets.items():
-            img = hd2.highlight(img, planet_obj, (0, 0, 255, 200),apistat=self.apistatus)
+            img = hd2.highlight(
+                img, planet_obj, (0, 0, 255, 200), apistat=self.apistatus
+            )
         self.img = img
 
     async def update_api(self):

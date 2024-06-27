@@ -14,6 +14,7 @@ async def make_api_request(
     model: Type[T],
     index: Optional[int] = None,
     api_config_override: Optional[APIConfig] = None,
+    path2: bool = False,
 ) -> Union[T, List[T]]:
     api_config = api_config_override or APIConfig()
 
@@ -22,6 +23,11 @@ async def make_api_request(
     if index is not None:
         path += f"/{index}"
 
+    if path2:
+        base_path = api_config.base_path_2
+        path = f"/api/v1/{endpoint}"
+        if index is not None:
+            path += f"/{index}"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -73,6 +79,7 @@ async def make_raw_api_request(
     model: Type[T],
     index: Optional[int] = None,
     api_config_override: Optional[APIConfig] = None,
+    path2=False,
 ) -> Union[T, List[T]]:
     api_config = api_config_override or APIConfig()
 
@@ -80,6 +87,12 @@ async def make_raw_api_request(
     path = f"/raw/api/{endpoint}"
     if index is not None:
         path += f"/{index}"
+
+    if path2:
+        base_path = api_config.base_path_2
+        path = f"/raw/{endpoint}"
+        if index is not None:
+            path += f"/{index}"
 
     headers = {
         "Content-Type": "application/json",
@@ -134,6 +147,14 @@ async def GetApiV1War(api_config_override: Optional[APIConfig] = None) -> War:
 async def GetApiRawStatus(api_config_override: Optional[APIConfig] = None) -> WarStatus:
     return await make_raw_api_request(
         "WarSeason/801/Status", WarStatus, api_config_override=api_config_override
+    )
+
+
+async def GetApiRawAll(
+    api_config_override: Optional[APIConfig] = None,
+) -> DiveharderAll:
+    return await make_raw_api_request(
+        "all", DiveharderAll, api_config_override=api_config_override, path2=True
     )
 
 

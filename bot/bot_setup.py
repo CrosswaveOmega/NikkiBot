@@ -1,29 +1,27 @@
-import datetime
-from typing import Any
-import discord
-import traceback
 import asyncio
-
+import datetime
 import logging
 import logging.handlers
+import traceback
+from collections import defaultdict
+from typing import Any
 
-
-from utility import MessageTemplates
-
+import discord
+from dateutil.rrule import SECONDLY, rrule
 from discord.ext import commands
-from discord import app_commands
 
 import gui
+from utility import MessageTemplates
 
-from collections import defaultdict
-from dateutil.rrule import rrule, WEEKLY, SU, SECONDLY, MINUTELY
-from .TauCetiBot import TCBot
-from .Tasks.TCTasks import TCTaskManager
-from .TcGuildTaskDB import Guild_Task_Functions, TCGuildTask
-from .TCAppCommandAutoSync import AppGuildTreeSync, GuildCogToggle
+from .config_gen import config_update, setup
 from .errorformat import client_error_message
-from .config_gen import setup, config_update
 from .key_vault import get_token
+from .Tasks.TCTasks import TCTaskManager
+
+# importing bot
+from .TauCetiBot import TCBot
+from .TCAppCommandAutoSync import AppGuildTreeSync
+from .TcGuildTaskDB import Guild_Task_Functions, TCGuildTask
 
 """
 Initalizes TCBot, defines some checks, and contains the main setup coroutine.
@@ -32,7 +30,6 @@ Initalizes TCBot, defines some checks, and contains the main setup coroutine.
 
 import database.database_main as dbmain
 from assetloader import AssetLookup
-
 
 bot: TCBot = TCBot()
 
@@ -346,8 +343,7 @@ class Main(commands.Cog):
         new.to_task(bot)
 
     @commands.command()
-    async def task_remove(self, ctx, taskname:str):
-
+    async def task_remove(self, ctx, taskname: str):
         """debugging only."""
         new = TCGuildTask.remove_guild_task(ctx.guild.id, taskname)
         await ctx.send("done")
@@ -444,6 +440,7 @@ class Main(commands.Cog):
 
 async def main(args):
     """setup and start the bot."""
+    print("Startup bot")
     config, keys = setup(args)
     config_update(config)
     AssetLookup()

@@ -68,6 +68,7 @@ class ApiStatus:
         "last_planet_get",
         "warstat",
         "planetdata",
+        "warall",
     ]
 
     def __init__(self, client: APIConfig = APIConfig(), max_list_size=8):
@@ -80,6 +81,7 @@ class ApiStatus:
         self.dispatches: List[Dispatch] = []
         self.last_planet_get: datetime.datetime = datetime.datetime(2024, 1, 1, 0, 0, 0)
         self.warstat: WarStatus = None
+        self.warall: DiveharderAll = None
         self.planetdata: Dict[str, Any] = load_planets_from_directory(
             "./hd2json/planets"
         )
@@ -98,7 +100,8 @@ class ApiStatus:
             },
             "planets": {k: p.model_dump() for k, p in self.planets.items()},
             "dispatches": [d.model_dump() for d in self.dispatches],
-            "warstat": self.warstat.model_dump(),
+            # "warstat": self.warstat.model_dump(),
+            "warall": self.warall.model_dump(),
         }
 
     @classmethod
@@ -126,6 +129,8 @@ class ApiStatus:
         newcks.dispatches = [Dispatch(**d) for d in data["dispatches"]]
         if "warstat" in data:
             newcks.warstat = WarStatus(**data["warstat"])
+        if "warall" in data:
+            newcks.warall = DiveharderAll(**data["warall"])
         return newcks
 
     def __repr__(self):
@@ -136,8 +141,8 @@ class ApiStatus:
         s += repr(self.warstat) + "\n"
         # s+=repr(self.planets)
         return s
-    
-    async def get_war_now(self)->War:
+
+    async def get_war_now(self) -> War:
         war = await GetApiV1War(api_config_override=self.client)
         return war
 
@@ -154,15 +159,15 @@ class ApiStatus:
             war = await GetApiV1War(api_config_override=self.client)
             assignments = await GetApiV1AssignmentsAll(api_config_override=self.client)
             campaigns = await GetApiV1CampaignsAll(api_config_override=self.client)
-            warstat = await GetApiRawStatus(api_config_override=self.client)
+            warall = await GetApiRawAll(api_config_override=self.client)
 
         except Exception as e:
             raise e
 
         if war is not None:
             self.war.add(war)
-        if warstat:
-            self.warstat = warstat
+        if warall:
+            self.warall = warall
         self.handle_data(assignments, self.assignments, "assignment")
         self.handle_data(campaigns, self.campaigns, "campaign")
         for l in self.campaigns.values():
@@ -304,7 +309,7 @@ class ApiStatus:
 
         return list(fronts)
 
-    def depth_first_planet_search(self, planet: Planet)->int:
+    def depth_first_planet_search(self, planet: Planet) -> int:
         visited = set()
         stack = [planet.index]
 
@@ -326,7 +331,7 @@ class ApiStatus:
         return result
 
 
-def save_to_json(api_status: 'ApiStatus', filepath: str) -> None:
+def save_to_json(api_status: "ApiStatus", filepath: str) -> None:
     """
     Save the given api_status to a JSON file.
 
@@ -338,7 +343,7 @@ def save_to_json(api_status: 'ApiStatus', filepath: str) -> None:
         json.dump(api_status.to_dict(), file, default=str, indent=4)
 
 
-def load_from_json(filepath: str) -> 'ApiStatus':
+def load_from_json(filepath: str) -> "ApiStatus":
     """
     Load API status data from a JSON file.
 
@@ -357,6 +362,7 @@ def load_from_json(filepath: str) -> 'ApiStatus':
         print(e)
         return None
     return data
+
 
 faction_map = {
     "humans": 1,

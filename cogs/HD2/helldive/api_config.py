@@ -7,6 +7,8 @@ from pydantic import BaseModel, Field
 
 class APIConfig(BaseModel):
     base_path: str = "https://api.helldivers2.dev"
+
+    base_path_2: str = "https://api.diveharder.com"
     verify: Union[bool, str] = True
     client_name: str = "DefaultClientName"
 

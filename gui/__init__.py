@@ -1,3 +1,4 @@
+print("importing gui")
 from .BotEntry import DataStore
 from .GuiSide import (
     Gui,
@@ -6,3 +7,5 @@ from .GuiSide import (
     toggle_debug_mode,
     dprint,
 )
+
+print("import done.")

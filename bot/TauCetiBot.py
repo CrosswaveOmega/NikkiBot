@@ -4,7 +4,6 @@ import asyncio
 import configparser
 import datetime
 import logging
-import logging.handlers
 import os
 import random
 import string
@@ -21,7 +20,6 @@ from sqlalchemy.exc import IntegrityError
 
 import gptmod
 import gui
-from database import DSCTX, DatabaseSingleton, ServerData, Users_DoNotTrack
 from utility import Chelp, MessageTemplates, replace_working_directory
 import database
 from .PlaywrightAPI import PlaywrightMixin
@@ -74,7 +72,7 @@ class TreeOverride(CommandTree):
                 if "nocheck" in interaction.command.extras:
                     return True
         uid = interaction.user.id
-        if Users_DoNotTrack.check_entry(uid):
+        if database.Users_DoNotTrack.check_entry(uid):
             return False
         return True
 
@@ -108,7 +106,6 @@ class TCBot(
         )
         # The Database Singleton is initalized in here.
         print("Starting up bot.")
-        # self.databasectx:database.database_singleton.DSCTX= database.database_singleton.DSCTX()
         self.database: database.database_singleton.DatabaseSingleton = (
             database.database_singleton.DatabaseSingleton("sd")
         )
@@ -116,14 +113,17 @@ class TCBot(
         self.keys = {}
         self.gptapi: gptmod.GptmodAPI = None
         self.error_channel: int = None
+        print("JS CONTEXT setup")
         self.jsenv: JSContext = JSContext()
+        print("done")
         self.config: ConfigParserSub = ConfigParserSub()
         self.exit_status: str = "none"
         self.statmess: StatusMessageManager = StatusMessageManager(self)
 
         self.logs = logging.getLogger("TCLogger")
         self.loggersetup()
-        self.embedding = gptmod.warmup()
+        self.embedding = gptmod.GenericThread(gptmod.warmup)
+        self.embedding.run()
 
         self.extensiondir, self.extension_list = "", []
         self.plugindir, self.plugin_list = "", []
@@ -137,7 +137,7 @@ class TCBot(
 
     async def database_on(self):
         """turn the database on."""
-        self.database = DatabaseSingleton("Startup")
+        self.database = database.DatabaseSingleton("Startup")
         self.database.load_base(Base=Guild_Task_Base)
         self.database.load_base(Base=Guild_Sync_Base)
         await self.database.startup_all()
@@ -323,7 +323,7 @@ class TCBot(
             gui.gprint(guild.id, override_for)
             if guild.id != override_for:
                 guilds_im_in.append(guild.id)
-        audit_results = ServerData.Audit(guilds_im_in)
+        audit_results = database.ServerData.Audit(guilds_im_in)
         to_purge = [auditme.server_id for auditme in audit_results]
         self.logs.info(audit_results)
         session = self.database.get_session()

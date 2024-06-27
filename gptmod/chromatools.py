@@ -1,10 +1,3 @@
-print("importing chromatools")
-"""
-Class extensions that assist with the Chromadb vector store.
-
-
-"""
-
 from typing import (
     Any,
     Dict,
@@ -25,6 +18,12 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 from chromadb.config import Settings
 import numpy as np
+
+"""
+Class extensions that assist with the Chromadb vector store.
+
+
+"""
 
 
 DocumentScoreVector = Tuple[Document, float, Vector]

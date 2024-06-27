@@ -1,8 +1,7 @@
-print("importing sentence_mem")
-
 """
 Functions for a chromadb based memory for the gptfunctions.
 """
+
 import copy
 import uuid
 from typing import Any, Dict, List
@@ -13,6 +12,8 @@ from discord.ext import commands
 from gptfunctionutil import AILibFunction, GPTFunctionLibrary, LibParamSpec
 from langchain.docstore.document import Document
 
+
+import threading
 import gptmod.util as util
 import gui
 from gptmod.chromatools import ChromaTools, DocumentScoreVector
@@ -39,13 +40,43 @@ class MemoryFunctions(GPTFunctionLibrary):
         return sentences, need_to_add
 
 
+class GenericThread:
+    def __init__(self, function):
+        self.thread = None
+        self.target = function
+        self.result = None
+
+    def run(self):
+        def wrapper():
+            self.result = self.target()
+            self.get_result()
+
+        self.thread = threading.Thread(target=wrapper)
+        self.thread.start()
+
+    def get_result(self):
+        if self.thread is None:
+            return False
+        if self.thread.is_alive():
+            return False
+        return self.result
+
+    def __call__(self):
+        return self.get_result()
+
+
+print("importing sentence_mem")
+
+
+# Example target function
 def warmup():
+    print("Starting embedding model.")
     with Timer() as timer:
         from langchain_community.embeddings import HuggingFaceEmbeddings
 
         hug_embed = HuggingFaceEmbeddings(model_name="thenlper/gte-small")
         hug_embed.embed_query("The quick brown fox jumped over the lazy frog.")
-    print(timer.get_time())
+    print("embedding model loaded in", timer.get_time())
     return hug_embed
 
 
@@ -195,7 +226,7 @@ class SentenceMemory:
         self.userid = user.id
         metadata = {"desc": "Simple long term memory.  384 dimensions."}
         self.coll = ChromaTools.get_collection(
-            "sentence_mem", embed=bot.embedding, path="saveData/longterm"
+            "sentence_mem", embed=bot.embedding(), path="saveData/longterm"
         )
         self.shortterm = {}
 

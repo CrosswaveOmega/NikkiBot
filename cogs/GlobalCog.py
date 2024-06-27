@@ -210,7 +210,7 @@ class UserNotes:
         }
         self.coll = ChromaTools.get_collection(
             f"usernotes_{self.userid}",
-            embed=bot.embedding,
+            embed=bot.embedding(),
             path="saveData/usernotes",
             metadata=metadata,
         )
@@ -417,6 +417,11 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
         self.usertopics = {}
         self.init_context_menus()
 
+    def check_warmup(self, interaction: discord.Interaction) -> bool:
+        if self.bot.embedding():
+            return False
+        return True
+
     gnote = Notes()
 
     @gnote.command(name="set_topic", description="WIP.  Set your note topic")
@@ -429,6 +434,11 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
         """get bot info for this server"""
 
         ctx: commands.Context = await self.bot.get_context(interaction)
+        if self.check_warmup(interaction):
+            await ctx.send(
+                f"Please wait, I'm still setting up the notes!", ephemeral=True
+            )
+            return
         user = interaction.user
         if not user.id in self.usertopics:
             self.usertopics[user.id] = "any"
@@ -454,6 +464,11 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
         if not topic:
             topic = self.usertopics.get(interaction.user.id, "any")
         ctx: commands.Context = await self.bot.get_context(interaction)
+        if self.check_warmup(interaction):
+            await ctx.send(
+                f"Please wait, I'm still setting up the notes!", ephemeral=True
+            )
+            return
         view = NoteEditView(
             user=interaction.user,
             content=content,
@@ -516,6 +531,11 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
         """get 5 notes"""
 
         ctx: commands.Context = await self.bot.get_context(interaction)
+        if self.check_warmup(interaction):
+            await ctx.send(
+                f"Please wait, I'm still setting up the notes!", ephemeral=True
+            )
+            return
         mess = await ctx.send(
             "<a:LoadingBlue:1206301904863502337> getting note", ephemeral=True
         )
@@ -552,6 +572,11 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
             )
             return
         ctx: commands.Context = await self.bot.get_context(interaction)
+        if self.check_warmup(interaction):
+            await ctx.send(
+                f"Please wait, I'm still setting up the notes!", ephemeral=True
+            )
+            return
         mess = await ctx.send(
             "<a:LoadingBlue:1206301904863502337> getting note", ephemeral=True
         )
@@ -595,6 +620,11 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
         """get 5 notes"""
 
         ctx: commands.Context = await self.bot.get_context(interaction)
+        if self.check_warmup(interaction):
+            await ctx.send(
+                f"Please wait, I'm still setting up the notes!", ephemeral=True
+            )
+            return
         mess = await ctx.send(
             "<a:LoadingBlue:1206301904863502337> getting topics", ephemeral=True
         )
@@ -623,6 +653,11 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
         """get 5 notes"""
 
         ctx: commands.Context = await self.bot.get_context(interaction)
+        if self.check_warmup(interaction):
+            await ctx.send(
+                f"Please wait, I'm still setting up the notes!", ephemeral=True
+            )
+            return
         mess = await ctx.send(
             "<a:LoadingBlue:1206301904863502337> getting topics", ephemeral=True
         )
@@ -663,6 +698,11 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
         """get 5 notes"""
 
         ctx: commands.Context = await self.bot.get_context(interaction)
+        if self.check_warmup(interaction):
+            await ctx.send(
+                f"Please wait, I'm still setting up the notes!", ephemeral=True
+            )
+            return
         mess = await ctx.send(
             "<a:LoadingBlue:1206301904863502337> getting note", ephemeral=True
         )
@@ -682,6 +722,11 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
         """Delete all notes that belong to you."""
 
         ctx: commands.Context = await self.bot.get_context(interaction)
+        if self.check_warmup(interaction):
+            await ctx.send(
+                f"Please wait, I'm still setting up the notes!", ephemeral=True
+            )
+            return
         cont, mess = await MessageTemplates.confirm(
             ctx,
             "Are you sure you want to delete all your notes?  **Deleted notes can never be recovered.**",

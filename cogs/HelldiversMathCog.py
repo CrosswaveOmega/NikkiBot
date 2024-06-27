@@ -163,7 +163,15 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
     @app_commands.describe(xp="mission xp total")
     @app_commands.describe(deaths="total number of deaths")
     @app_commands.describe(diff="mission difficulty")
-    async def impactdc(self, interaction: discord.Interaction, imp: float, samples:int, xp:float, deaths:float,diff:int=0):
+    async def impactdc(
+        self,
+        interaction: discord.Interaction,
+        imp: float,
+        samples: int,
+        xp: float,
+        deaths: float,
+        diff: int = 0,
+    ):
         ctx: commands.Context = await self.bot.get_context(interaction)
         war = await self.apistatus.get_war_now()
         influence = war.impactMultiplier * imp
@@ -175,15 +183,15 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
             ephemeral=False,
         )
         row = {
-            "timestamp":timestamp,
+            "timestamp": timestamp,
             "mp_mult": war.impactMultiplier,
             "impact": imp,
-            'influence':influence,
+            "influence": influence,
             "samples": samples,
             "xp": xp,
             "diff": diff,
         }
-        with open('sample_impact.csv', mode="a", newline="", encoding="utf8") as file:
+        with open("sample_impact.csv", mode="a", newline="", encoding="utf8") as file:
             writer = csv.DictWriter(file, fieldnames=row.keys())
 
             # If the file is empty, write the header

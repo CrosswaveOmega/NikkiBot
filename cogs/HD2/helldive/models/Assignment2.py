@@ -47,12 +47,11 @@ class Assignment2(BaseApiModel):
             reward=self.reward,
             expiration=self.expiration,
         )
-    
-    def get_task_planets(self)->List[int]:
-        planets=[]
+
+    def get_task_planets(self) -> List[int]:
+        planets = []
         for e, task in enumerate(self.tasks):
-            task_type,taskdata=task.taskAdvanced()
-            if 'planet_index' in taskdata:
-                planets.append(taskdata['planet_index'])
+            task_type, taskdata = task.taskAdvanced()
+            if "planet_index" in taskdata:
+                planets.append(taskdata["planet_index"])
         return planets
-    

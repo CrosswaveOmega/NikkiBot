@@ -241,6 +241,7 @@ async def ai_message_invoke(
     thread_id=None,
 ):
     """Evaluate if a message should be processed."""
+
     permissions = message.channel.permissions_for(message.channel.guild.me)
     if permissions.send_messages:
         pass
@@ -252,6 +253,9 @@ async def ai_message_invoke(
         await message.channel.send("This message is too big.")
         return False
     ctx = await bot.get_context(message)
+    if not bot.embedding():
+        await message.channel.send("I'm still warming up!")
+        return False
     if await ctx.bot.gptapi.check_oai(ctx):
         return
 
