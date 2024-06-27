@@ -168,6 +168,7 @@ class ApiStatus:
             self.war.add(war)
         if warall:
             self.warall = warall
+            self.warstat=self.warall.war_info
         self.handle_data(assignments, self.assignments, "assignment")
         self.handle_data(campaigns, self.campaigns, "campaign")
         for l in self.campaigns.values():
