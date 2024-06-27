@@ -150,7 +150,7 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200), apistat: ApiStatus = 
 
 
 def crop_image(image, coordinate, off_by, cell_size=200):
-    return image
+    #return image
     ccr = coordinate
     bc = ccr + off_by + np.array((0, 0))
     uc = ccr - off_by
