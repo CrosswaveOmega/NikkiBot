@@ -28,6 +28,7 @@ def draw_streak(draw, xpix, ypix, lightest_color):
         fill=(lightest_color[0], lightest_color[1], lightest_color[2], CLOUD_ALPHA),
         width=thickness,
     )
+    
 def draw_spiral(draw, xpix, ypix, lightest_color):
     cx = xpix // 2
     cy = ypix // 2
