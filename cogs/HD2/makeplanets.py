@@ -159,7 +159,7 @@ def generate_planet_texture(colors, num_craters, num_clouds,name=''):
 
     for _ in range(num_craters):
         crater_center = (random.randint(0, xpix-1), random.randint(0, ypix-1))
-        crater_radius = random.randint(1, 3)
+        crater_radius = random.randint(1, 2)
         draw.ellipse(
             [
                 (crater_center[0] - crater_radius, crater_center[1] - crater_radius),
@@ -246,7 +246,7 @@ def get_planet(ind,biome_name):
     labels = []
     use=all_colors.get(biome_name,None)
     if biome_name in has_c:
-        return generate_planet_texture(use,3,9,f"planet_{ind}")
+        return generate_planet_texture(use,3,2,f"planet_{ind}")
     return None
 
 
