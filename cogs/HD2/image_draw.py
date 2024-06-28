@@ -1,10 +1,11 @@
 import io
+import os
 import discord
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 from .GameStatus import ApiStatus
 from .helldive import Planet
-
+from .makeplanets import get_planet
 CELL_SIZE = 200
 from utility.views import BaseView
 
@@ -126,8 +127,14 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200), apistat: ApiStatus = 
         fill=colors[owner],
         outline=outline,
     )
-    with Image.open("./assets/planet.png").convert("RGBA") as planet:
-        img.alpha_composite(planet, (coordinate[0] - 10, coordinate[1] - 10))
+
+    if os.path.exists(f"./assets/planets/planet_{planet.index}.png"):
+        filepath = f"./assets/planets/planet_{planet.index}.png"
+    else:
+        filepath = "./assets/planet.png"
+
+    with Image.open(filepath).convert("RGBA") as planetimg:
+        img.alpha_composite(planetimg, (coordinate[0] - 10, coordinate[1] - 10))
 
     draw.text(
         (coordinate[0] - bbox[2] / 2, coordinate[1] - bbox[3] - 10),

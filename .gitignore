@@ -18,6 +18,7 @@ statistics.csv
 statistics_new.csv
 # Dependency directories
 node_modules/
+assets/planets/*
 
 
 # Build directory

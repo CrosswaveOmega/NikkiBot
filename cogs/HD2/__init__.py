@@ -20,7 +20,7 @@ from .image_draw import *
 from .maths import maths
 from .predict import predict_needed_players, make_prediction_for_eps
 from .buttons import ListButtons
-
+from .makeplanets import get_planet
 
 async def setup(bot):
     print(f"loading in child module {__name__}")

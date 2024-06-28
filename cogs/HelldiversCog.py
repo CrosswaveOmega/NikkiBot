@@ -210,7 +210,25 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             print(self.apistatus.war)
             hd2.add_to_csv(self.apistatus)
         return
+    
+    async def make_planets(self, ctx):
 
+        print("Updating planets.")
+        async def update_planet(planet, ctx):
+            await ctx.send(f"Adding {planet.index}:{planet.name}.")
+            planetbiome = self.apistatus.planetdata["planets"].get(str(planet.index), None)
+            
+            if planetbiome:
+                print(planetbiome['biome'])
+                thread= asyncio.to_thread(hd2.get_planet, planet.index, planetbiome['biome'])
+                await thread
+            await ctx.send(f"Done with {planet.index}:{planet.name}.")
+
+        ttasks = [update_planet(planet, ctx) for _, planet in self.apistatus.planets.items()]
+        lst=[ttasks[i:i+8] for i in range(0, len(ttasks), 8)]
+        for ttas in lst:
+            await asyncio.gather(*ttas)
+        
     def draw_img(self):
         print("Updating map.")
         file_path = "./assets/GalacticMap.png"
@@ -278,6 +296,15 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     async def load_now(self, ctx: commands.Context):
         await self.update_data()
         await ctx.send("force loaded api data now.")
+
+    @commands.is_owner()
+    @commands.command(name="make_planets")
+    async def planetmaker(self, ctx: commands.Context):
+        
+        await ctx.send("Making planets")
+        await self.make_planets(ctx)
+        
+        await ctx.send("made planets")
 
     @commands.is_owner()
     @commands.command(name="get_csv")
