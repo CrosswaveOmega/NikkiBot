@@ -225,7 +225,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         ttasks = [update_planet(planet, ctx) for _, planet in self.apistatus.planets.items()]
         lst=[ttasks[i:i+8] for i in range(0, len(ttasks), 8)]
         allv=len(lst)
-        for e, ttas in lst:
+        for e, ttas in enumerate(lst):
             await asyncio.gather(*ttas)
             
             await ctx.send(f"Done with chunk {e+1}:{allv}.")
