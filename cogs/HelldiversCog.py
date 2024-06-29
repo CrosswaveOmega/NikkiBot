@@ -224,8 +224,16 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                         return
                 thread= asyncio.to_thread(hd2.get_planet, planet.index, planetbiome['biome'])
                 await thread
-
-        ttasks = [update_planet(planet, ctx) for _, planet in self.apistatus.planets.items()]
+        ttasks=[]
+        for _, planet in self.apistatus.planets.items():
+            planetbiome = self.apistatus.planetdata["planets"].get(str(planet.index), None)
+            
+            if planetbiome:
+                print(planetbiome['biome'])
+                if usebiome:
+                    if planetbiome['biome']!=usebiome:
+                        continue
+                ttasks.append(update_planet(planet, ctx))
         lst=[ttasks[i:i+8] for i in range(0, len(ttasks), 8)]
         allv=len(lst)
         for e, ttas in enumerate(lst):

@@ -94,22 +94,6 @@ def extract_colors(image_path, num_colors=7):
 
     return colors
 
-def plot_colors(colors, num_colors=7):
-    num_images = len(colors.keys())
-
-    fig, ax = plt.subplots(num_images, num_colors, figize=(18, 6*num_images))
-
-    for i, key in enumerate(colors.keys()):
-        for j in range(num_colors):
-            color_block = np.zeros((100,100, 3), dtype='uint8')
-            color_block[:, :] = colors[key][j]
-            ax[i, j].imshow(color_block)
-            ax[i, j].set_title(key)
-            ax[i, j].axis('off')
-
-    plt.tight_layout()
-    plt.show()
-
 
 
 def generate_planet_texture(colors, num_craters, num_clouds,name=''):
@@ -247,7 +231,7 @@ def extract_colors_image(all_colors):
                 [i*100, j * 100, (i+1)*100, (j+1) * 100],
                 fill=tuple(color)
             )
-        draw.text((700, j * 100), f"{keys[j]}", font=ImageFont.truetype("arial.ttf", 30))
+        draw.text((700, j * 100), f"{keys[j]}", font= ImageFont.truetype("./assets/Michroma-Regular.ttf", 16))
 
     return color_image
 
