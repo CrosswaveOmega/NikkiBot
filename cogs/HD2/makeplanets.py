@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 from perlin_noise import PerlinNoise
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 from sklearn.cluster import KMeans
 
 CLOUD_ALPHA=80
@@ -28,7 +28,7 @@ def draw_streak(draw, xpix, ypix, lightest_color):
         fill=(lightest_color[0], lightest_color[1], lightest_color[2], CLOUD_ALPHA),
         width=thickness,
     )
-    
+
 def draw_spiral(draw, xpix, ypix, lightest_color):
     cx = xpix // 2
     cy = ypix // 2
@@ -51,16 +51,6 @@ def draw_spiral(draw, xpix, ypix, lightest_color):
         width=1,
     )
 
-def draw_blob(draw, xpix, ypix, lightest_color):
-    for _ in range(random.randint(1, 3)):
-        cx = random.randint(0, xpix - 1)
-        cy = random.randint(0, ypix - 1)
-        radius = random.randint(5, 20)
-
-        draw.ellipse(
-            [(cx - radius, cy - radius), (cx + radius, cy + radius)],
-            fill=(lightest_color[0], lightest_color[1], lightest_color[2], CLOUD_ALPHA),
-        )
 
 def draw_squacked_ellipse(draw, xpix, ypix, lightest_color):
     cx = random.randint(0, xpix - 1)
@@ -104,18 +94,17 @@ def extract_colors(image_path, num_colors=7):
 
     return colors
 
-def plot_colors(colors, labels, num_colors=7):
-    num_images = len(labels) // num_colors
+def plot_colors(colors, num_colors=7):
+    num_images = len(colors.keys())
     
     fig, ax = plt.subplots(num_images, num_colors, figsize=(18, 6*num_images))
 
-    for i in range(num_images):
+    for i, key in enumerate(colors.keys()):
         for j in range(num_colors):
-            idx = i * num_colors + j
             color_block = np.zeros((100, 100, 3), dtype='uint8')
-            color_block[:, :] = colors[idx]
+            color_block[:, :] = colors[key][j]
             ax[i, j].imshow(color_block)
-            ax[i, j].set_title(labels[idx])
+            ax[i, j].set_title(key)
             ax[i, j].axis('off')
 
     plt.tight_layout()
@@ -233,15 +222,35 @@ for image_path in image_paths:
     all_colors[filename_without_extension]=distinct_colors
     has_c.append(filename_without_extension)
 
-all_colors['highlands'] = np.array([
-        [128, 128, 105],
-        [186, 186, 150],
-        [105, 105, 89],
-        [139, 139, 122],
-        [160, 160, 130],
-        [205, 205, 180],
-        [245, 245, 220]
-    ])
+# all_colors['highlands'] = np.array([
+#         [128, 128, 105],
+#         [186, 186, 150],
+#         [105, 105, 89],
+#         [139, 139, 122],
+#         [160, 160, 130],
+#         [205, 205, 180],
+#         [245, 245, 220]
+#     ])
+print(all_colors)
+
+def extract_colors_image(all_colors):
+    
+
+
+    # Create a new image where each row is one of the found colors
+    color_image = Image.new('RGB', (10 * 100,len(all_colors.keys())*100,))
+    draw = ImageDraw.Draw(color_image)
+    keys=list(all_colors.keys())
+    for j, colors in enumerate(all_colors.values()):
+        for i, color in enumerate(colors):
+            draw.rectangle(
+                [i*100, j * 100, (i+1)*100, (j+1) * 100],
+                fill=tuple(color)
+            )
+        draw.text((700, j * 100), f"{keys[j]}", font=ImageFont.truetype("arial.ttf", 30))
+
+    return color_image
+
 
 def get_planet(ind,biome_name):
     labels = []

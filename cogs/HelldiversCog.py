@@ -211,7 +211,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             hd2.add_to_csv(self.apistatus)
         return
     
-    async def make_planets(self, ctx):
+    async def make_planets(self, ctx,usebiome=""):
 
         print("Updating planets.")
         async def update_planet(planet, ctx):
@@ -219,6 +219,9 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             
             if planetbiome:
                 print(planetbiome['biome'])
+                if usebiome:
+                    if planetbiome['biome']!=usebiome:
+                        return
                 thread= asyncio.to_thread(hd2.get_planet, planet.index, planetbiome['biome'])
                 await thread
 
@@ -300,10 +303,10 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
     @commands.is_owner()
     @commands.command(name="make_planets")
-    async def planetmaker(self, ctx: commands.Context):
+    async def planetmaker(self, ctx: commands.Context,usebiome:str=""):
         
         await ctx.send("Making planets")
-        await self.make_planets(ctx)
+        await self.make_planets(ctx,usebiome)
         
         await ctx.send("made planets")
 
