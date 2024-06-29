@@ -165,7 +165,7 @@ def generate_planet_texture(colors, num_craters, num_clouds,name=''):
 
         for _ in range(num_clouds):
             lightest_color = (random.randint(200, 255), random.randint(200, 255), random.randint(200, 255))
-            choice = random.choice([draw_streak, draw_spiral, draw_blob, draw_squacked_ellipse])
+            choice = random.choice([draw_streak, draw_spiral, draw_squacked_ellipse])
             choice(draw, xpix, ypix, lightest_color)
     generate_random_clouds(xpix, ypix, num_clouds, lightest_color, draw)
 
