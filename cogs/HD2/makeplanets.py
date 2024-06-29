@@ -95,16 +95,16 @@ def extract_colors(image_path, num_colors=7):
     return colors
 
 def plot_colors(colors, num_colors=7):
-   num_images = len(colors.keys())
-    
+    num_images = len(colors.keys())
+
     fig, ax = plt.subplots(num_images, num_colors, figize=(18, 6*num_images))
 
     for i, key in enumerate(colors.keys()):
         for j in range(num_colors):
             color_block = np.zeros((100,100, 3), dtype='uint8')
             color_block[:, :] = colors[key][j]
-           ax[i, j].imshow(color_block)
-            ax[i, j].set_title(key) math
+            ax[i, j].imshow(color_block)
+            ax[i, j].set_title(key)
             ax[i, j].axis('off')
 
     plt.tight_layout()
