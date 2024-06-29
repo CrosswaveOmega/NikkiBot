@@ -85,7 +85,7 @@ def extract_colors(image_path, num_colors=7):
     img_data = img_data.reshape((-1, 3))
 
     # Use k-means clustering to find the most common colors
-    kmeans = KMeans(n_clusters=num_colors)
+    kmeans = KMeans(n_clusters=num_colors, random_state=1024)
     kmeans.fit(img_data)
 
     # Get the colors as a list of RGB values
@@ -95,16 +95,16 @@ def extract_colors(image_path, num_colors=7):
     return colors
 
 def plot_colors(colors, num_colors=7):
-    num_images = len(colors.keys())
+   num_images = len(colors.keys())
     
-    fig, ax = plt.subplots(num_images, num_colors, figsize=(18, 6*num_images))
+    fig, ax = plt.subplots(num_images, num_colors, figize=(18, 6*num_images))
 
     for i, key in enumerate(colors.keys()):
         for j in range(num_colors):
-            color_block = np.zeros((100, 100, 3), dtype='uint8')
+            color_block = np.zeros((100,100, 3), dtype='uint8')
             color_block[:, :] = colors[key][j]
-            ax[i, j].imshow(color_block)
-            ax[i, j].set_title(key)
+           ax[i, j].imshow(color_block)
+            ax[i, j].set_title(key) math
             ax[i, j].axis('off')
 
     plt.tight_layout()
@@ -251,7 +251,8 @@ def extract_colors_image(all_colors):
 
     return color_image
 
-
+im=extract_colors_image(all_colors)
+im.save("./assets/planets/colorpallate.png")
 def get_planet(ind,biome_name):
     labels = []
     use=all_colors.get(biome_name,None)
