@@ -106,7 +106,7 @@ class ApiStatus:
 
     @classmethod
     def from_dict(cls, data, client: APIConfig = APIConfig()):
-        print(data)
+        # print(data)
         newcks = cls(client=client)
         newcks.max_list_size = data["max_list_size"]
         newcks.war = LimitedSizeList(newcks.max_list_size)
@@ -124,7 +124,7 @@ class ApiStatus:
             for item in v:
                 campaign_list.push(Campaign2(**item))
             newcks.campaigns[int(k)] = campaign_list
-            print(newcks.campaigns)
+            # print(newcks.campaigns)
         newcks.planets = {int(k): Planet(**v) for k, v in data["planets"].items()}
         newcks.dispatches = [Dispatch(**d) for d in data["dispatches"]]
         if "warstat" in data:
@@ -150,7 +150,7 @@ class ApiStatus:
         """
         Query the community api, and load the data into the classes.
         """
-        print(self.client)
+        # print(self.client)
         war = None
         campaigns = None
         assignments = None
@@ -168,7 +168,7 @@ class ApiStatus:
             self.war.add(war)
         if warall:
             self.warall = warall
-            self.warstat=self.warall.war_info
+            self.warstat = self.warall.war_info
         self.handle_data(assignments, self.assignments, "assignment")
         self.handle_data(campaigns, self.campaigns, "campaign")
         for l in self.campaigns.values():
@@ -188,7 +188,7 @@ class ApiStatus:
             if dispatches is not None:
                 self.dispatches = dispatches
 
-            print(self.warstat)
+            # print(self.warstat)
 
     def handle_data(
         self,
@@ -214,7 +214,7 @@ class ApiStatus:
             key_list = list(storage.keys())
             for k in key_list:
                 if k not in data_ids:
-                    print(f"removing {data_type} {k}")
+                    # print(f"removing {data_type} {k}")
                     storage.pop(k)
 
     def estimates(self) -> List[Tuple[str, List[str]]]:
@@ -230,7 +230,7 @@ class ApiStatus:
         # Get all planets and Events out of the current list of campaigns.
         for _, list in self.assignments.items():
             camp = list.get_first()
-            print(camp.title, camp.briefing)
+            # print(camp.title, camp.briefing)
             dates.append(
                 (
                     f"{camp.title}:End at{fdt(et(camp.expiration),'R')}",
@@ -360,7 +360,7 @@ def load_from_json(filepath: str) -> "ApiStatus":
         with open(filepath, "r", encoding="utf8") as file:
             data = json.load(file)
     except Exception as e:
-        print(e)
+        # print(e)
         return None
     return data
 
@@ -376,7 +376,7 @@ faction_map = {
 def add_to_csv(stat: ApiStatus):
     """Add the data from the last period of time to the csv file."""
     # Get the first change in the war statistics
-    print(type(stat), stat.war)
+    # print(type(stat), stat.war)
     war, lastwar = stat.war.get_first_change()
     mp_mult = (war.impactMultiplier + lastwar.impactMultiplier) / 2
 
@@ -389,7 +389,7 @@ def add_to_csv(stat: ApiStatus):
     # Iterate through the campaigns to gather statistics
     for k, campaign_list in stat.campaigns.items():
         if len(campaign_list) <= 1:
-            print(f"{timestamp} {k} not enough campaigns.")
+            # print(f"{timestamp} {k} not enough campaigns.")
             continue
 
         camp, last = campaign_list.get_first_change()
@@ -412,7 +412,7 @@ def add_to_csv(stat: ApiStatus):
             eps = 0
             if evt_damage:
                 if evt_damage <= 0:
-                    print("Event Damage too low!")
+                    # print("Event Damage too low!")
                     continue
                 else:
                     mode = 2
@@ -473,7 +473,7 @@ def add_to_csv(stat: ApiStatus):
     csv_newfile_path = "statistics_new.csv"
     csv_file_path = "statistics.csv"
     # Write the rows to the CSV file
-    print(rows)
+    # print(rows)
     if not rows:
         return
     with open(csv_file_path, mode="a", newline="", encoding="utf8") as file:
@@ -631,7 +631,7 @@ def write_statistics_to_csv(stats: ApiStatus):
             kills = stat.terminidKills + stat.automatonKills + stat.illuminateKills
             thistime = round(max(stat.missionTime, 1) / (missions), 4)
             front = stats.get_planet_fronts(planet)
-            print(front)
+            # print(front)
             if "HUMANS" in front and len(front) > 1:
                 front.remove("HUMANS")
             row = {

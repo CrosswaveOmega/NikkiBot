@@ -54,7 +54,7 @@ predicted_eps = players_needed_model.predict(XE[["eps"]])
 
 # Calculate the mean squared error
 mse = mean_squared_error(YE, predicted_eps)
-print(f"Mean Squared Error: {mse}")
+# print(f"Mean Squared Error: {mse}")
 
 
 def experiment_models():
@@ -82,14 +82,14 @@ def experiment_models():
             r2 = r2_score(YE_test, y_pred)
             mse_results[name].append(mse)
             r2_results[name].append(r2)
-            print(i, name, mse, r2)
+            # print(i, name, mse, r2)
 
     for name in mse_results:
         avg_mse = np.mean(mse_results[name])
         avg_r2 = np.mean(r2_results[name])
-        print(f"{name}:")
-        print(f"  Average Mean Squared Error: {avg_mse:.4f}")
-        print(f"  Average R^2 Score: {avg_r2:.4f}\n")
+        # print(f"{name}:")
+        # print(f"  Average Mean Squared Error: {avg_mse:.4f}")
+        # print(f"  Average R^2 Score: {avg_r2:.4f}\n")
 
 
 # experiment_models()
@@ -128,7 +128,7 @@ def make_prediction_for_eps(data_dict):
     )
 
     # Add the prediction result to the schema
-    print(eps_prediction)
+    # print(eps_prediction)
 
     return eps_prediction[0]
 
@@ -295,7 +295,7 @@ def make_graph2():
     import random
 
     chosen_entry = X.sample(n=1, random_state=random.randint(0, 100)).iloc[0]
-    print(chosen_entry)
+    # print(chosen_entry)
 
     predicted = []
     for i in np.linspace(0, 140, num=500):
@@ -305,7 +305,7 @@ def make_graph2():
         predicted.append(out)
 
     # predicted=model.predict(X)
-    print(predicted)
+    # print(predicted)
     predicted_std = np.std(predicted)
     interval = t_value * predicted_std
 

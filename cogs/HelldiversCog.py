@@ -5,11 +5,11 @@ from assetloader import AssetLookup
 import gui
 import discord
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from discord import app_commands
 import importlib
 
-from dateutil.rrule import MINUTELY, SU, WEEKLY, rrule
+from dateutil.rrule import MINUTELY, DAILY, SU, WEEKLY, rrule
 from discord.ext import commands, tasks
 
 from discord.app_commands import Choice
@@ -30,6 +30,7 @@ from bot import (
 )
 from discord.ext import commands
 from .HD2.db import ServerHDProfile
+import re
 import cogs.HD2 as hd2
 from utility.embed_paginator import pages_of_embeds, pages_of_embeds_2
 from utility import load_json_with_substitutions
@@ -161,6 +162,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         Guild_Task_Functions.add_task_function("UPDATEOVERVIEW", self.gtask_update)
 
+        Guild_Task_Functions.add_task_function("WARSTATUS", self.gtask_map)
         snap = hd2.load_from_json("./saveData/hd2_snapshot.json")
         print(snap)
         self.bot.add_view(HD2OverviewView(self))
@@ -198,7 +200,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
     def cog_unload(self):
         if self.img:
-            self.img.close()
+            self.img = None
         hd2.save_to_json(self.apistatus, "./saveData/hd2_snapshot.json")
         TCTaskManager.remove_task("SuperEarthStatus")
         Guild_Task_Functions.remove_task_function("UPDATEOVERVIEW")
@@ -210,41 +212,49 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             print(self.apistatus.war)
             hd2.add_to_csv(self.apistatus)
         return
-    
-    async def make_planets(self, ctx,usebiome=""):
+
+    async def make_planets(self, ctx, usebiome=""):
 
         print("Updating planets.")
+
         async def update_planet(planet, ctx):
-            planetbiome = self.apistatus.planetdata["planets"].get(str(planet.index), None)
-            
+            planetbiome = self.apistatus.planetdata["planets"].get(
+                str(planet.index), None
+            )
+
             if planetbiome:
-                print(planetbiome['biome'])
+                print(planetbiome["biome"])
                 if usebiome:
-                    if planetbiome['biome']!=usebiome:
+                    if planetbiome["biome"] != usebiome:
                         return
-                thread= asyncio.to_thread(hd2.get_planet, planet.index, planetbiome['biome'])
+                thread = asyncio.to_thread(
+                    hd2.get_planet, planet.index, planetbiome["biome"]
+                )
                 await thread
-        ttasks=[]
+
+        ttasks = []
         for _, planet in self.apistatus.planets.items():
-            planetbiome = self.apistatus.planetdata["planets"].get(str(planet.index), None)
-            
+            planetbiome = self.apistatus.planetdata["planets"].get(
+                str(planet.index), None
+            )
+
             if planetbiome:
-                print(planetbiome['biome'])
+                print(planetbiome["biome"])
                 if usebiome:
-                    if planetbiome['biome']!=usebiome:
+                    if planetbiome["biome"] != usebiome:
                         continue
                 ttasks.append(update_planet(planet, ctx))
-        lst=[ttasks[i:i+8] for i in range(0, len(ttasks), 8)]
-        allv=len(lst)
+        lst = [ttasks[i : i + 8] for i in range(0, len(ttasks), 8)]
+        allv = len(lst)
         for e, ttas in enumerate(lst):
             await asyncio.gather(*ttas)
-            
+
             await ctx.send(f"Done with chunk {e+1}:{allv}.")
-        
+
     def draw_img(self):
         print("Updating map.")
         file_path = "./assets/GalacticMap.png"
-        img = hd2.create_gif(file_path,apistat=self.apistatus)
+        img = hd2.create_gif(file_path, apistat=self.apistatus)
         # img = hd2.draw_supply_lines(img, apistat=self.apistatus)
         # for _, planet_obj in self.apistatus.planets.items():
         #     img = hd2.highlight(
@@ -260,6 +270,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         try:
             print("updating war")
             await self.update_data()
+
             await asyncio.gather(asyncio.to_thread(self.draw_img), asyncio.sleep(1))
 
         except Exception as e:
@@ -282,7 +293,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                     await target.edit(content="**WARNING, COMMS ARE DOWN!**")
                     return
                 emb = hd2.campaign_view(self.apistatus, self.hd2)
-                emb.timestamp = discord.utils.utcnow()
+
                 embs = [emb]
                 if self.apistatus.assignments:
                     for i, assignment in self.apistatus.assignments.items():
@@ -303,6 +314,26 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             await source_message.channel.send(embed=er)
             raise e
 
+    async def gtask_map(self, source_message: discord.Message = None):
+        """
+        Guild task that updates the overview message.
+        """
+        if not source_message:
+            return "REMOVE"
+        context = await self.bot.get_context(source_message)
+        try:
+            profile = ServerHDProfile.get(context.guild.id)
+            if profile:
+
+                await self.get_map(context)
+                return "OK"
+        except Exception as e:
+            er = MessageTemplates.get_error_embed(
+                title=f"Error with AUTO", description=f"{str(e)}"
+            )
+            await source_message.channel.send(embed=er)
+            raise e
+
     @commands.is_owner()
     @commands.command(name="load_now")
     async def load_now(self, ctx: commands.Context):
@@ -311,11 +342,11 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
     @commands.is_owner()
     @commands.command(name="make_planets")
-    async def planetmaker(self, ctx: commands.Context,usebiome:str=""):
-        
+    async def planetmaker(self, ctx: commands.Context, usebiome: str = ""):
+
         await ctx.send("Making planets")
-        await self.make_planets(ctx,usebiome)
-        
+        await self.make_planets(ctx, usebiome)
+
         await ctx.send("made planets")
 
     @commands.is_owner()
@@ -323,8 +354,46 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     async def get_csv(self, ctx: commands.Context):
         hd2.write_statistics_to_csv(self.apistatus)
         await ctx.send(file=discord.File("statistics.csv"))
-
         await ctx.send(file=discord.File("statistics_sub.csv"))
+
+    @commands.is_owner()
+    @commands.command(name="get_map")
+    async def mapget(self, context: commands.Context):
+        await self.get_map(context)
+
+    async def get_map(self, context: commands.Context):
+        img = self.img
+        globtex = ""
+        if self.apistatus.warall:
+            for evt in self.apistatus.warall.status.globalEvents:
+                if evt.title and evt.message:
+                    mes = re.sub(hd2.pattern, r"**\1**", evt.message)
+                    mes = re.sub(hd2.pattern3, r"***\1***", mes)
+                    globtex += f"### {evt.title}\n{mes}\n\n"
+        embed = discord.Embed(
+            title="Daily Galactic War Status.",
+            description=f"{globtex}\n"[:4096],
+            color=0x0000FF,
+        )
+        if not img:
+            await asyncio.gather(asyncio.to_thread(self.draw_img), asyncio.sleep(1))
+            img = self.img
+
+        print(img)
+        liberations, defenses = 0, 0
+        for i, campl in self.apistatus.campaigns.items():
+            this = campl.get_first()
+            if this.planet.event:
+                defenses += 1
+            else:
+                liberations += 1
+        embed.add_field(
+            name="Current Field",
+            value=f"Liberations:{liberations}\n Defences:{defenses}",
+        )
+        embed.set_image(url="attachment://map.gif")
+        embed.timestamp = discord.utils.utcnow()
+        await context.send(embed=embed, file=discord.File(img))
 
     @commands.is_owner()
     @commands.command(name="api_down")
@@ -377,6 +446,43 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             old.target_message_url = target_message.jump_url
             self.bot.database.commit()
             result = f"Changed the dashboard channel to <#{autochannel.id}>"
+            await ctx.send(result)
+
+    @pcs.command(
+        name="subscribe_for_maps", description="Subscribe for daily war map gifs."
+    )
+    async def map_subscribe(self, interaction: discord.Interaction):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+
+        profile = ServerHDProfile.get_or_new(ctx.guild.id)
+        guild = ctx.guild
+        task_name = "WARSTATUS"
+        autochannel = ctx.channel
+
+        target_message = await autochannel.send(
+            "MESSAGE FOR REOCCURING GALACTIC STATUS, DELETE IF YOU WANT TO STOP."
+        )
+        old = TCGuildTask.get(guild.id, task_name)
+        url = target_message.jump_url
+        if not old:
+            now = datetime.now()
+            start_date = datetime(2023, 1, 1, 20, 5)
+            robj = rrule(freq=DAILY, interval=1, dtstart=start_date)
+
+            new = TCGuildTask.add_guild_task(
+                guild.id, task_name, target_message, robj, True
+            )
+            new.to_task(ctx.bot)
+
+            result = f"Overview message set.  every DAY, this message will update with the latest galactic status.  Please don't delete it unless you want to stop."
+            await ctx.send(result)
+        else:
+            old.target_channel_id = autochannel.id
+
+            # target_message = await autochannel.send("**ALTERING AUTO CHANNEL...**",view=HD2OverviewView(self))
+            old.target_message_url = target_message.jump_url
+            self.bot.database.commit()
+            result = f"Changed the regular update channel to <#{autochannel.id}>"
             await ctx.send(result)
 
     pc = app_commands.Group(name="hd2", description="Commands for Helldivers 2.")

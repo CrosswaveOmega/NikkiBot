@@ -1,15 +1,41 @@
 import io
 import os
+import json
 import discord
 from PIL import Image, ImageDraw, ImageFont, ImageSequence
 import numpy as np
 from .GameStatus import ApiStatus
 from .helldive import Planet
 from .makeplanets import get_planet
+
 CELL_SIZE = 200
 from utility.views import BaseView
 
 SCALE = 1.2
+
+pattern = r"<i=1>(.*?)<\/i>"
+pattern3 = r"<i=3>(.*?)<\/i>"
+
+
+def update_lastval_file(lastplanets):
+    lastval_file = "./saveData/lastval.json"
+
+    lastplanets_str = json.dumps(lastplanets, sort_keys=True)
+
+    # Load existing lastval JSON string or initialize empty
+    try:
+        with open(lastval_file, "r") as f:
+            lastval_str = f.read().strip()
+    except IOError:
+        lastval_str = ""
+
+    # Compare JSON strings and update file if necessary
+    if lastplanets_str != lastval_str:
+        with open(lastval_file, "w") as f:
+            f.write(lastplanets_str)
+        return True  # Updated
+    else:
+        return False  # Not updated
 
 
 def draw_grid(filepath, cell_size=200):
@@ -67,33 +93,17 @@ def draw_supply_lines(img, color=(0, 255, 0, 200), apistat: ApiStatus = None):
     return img
 
 
-def highlight(img, planet: Planet, color=(255, 0, 0, 200), frame:int=0,apistat: ApiStatus = None):
-    gpos = planet.position
-    x, y = gpos.x, gpos.y
+def highlight(img, index, x, y, name, hper, owner, event, task_planets):
     coordinate = get_im_coordinates(x, y)
-    task_planets = []
-    if apistat:
-        for a in apistat.assignments.values():
-            assignment = a.get_first()
-            task_planets.extend(assignment.get_task_planets())
 
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
-    hper = str(planet.health_percent())
-    name = str(planet.name).replace(" ", "\n")
-    if apistat and apistat.warall:
-        for pf in apistat.warall.war_info.planetInfos:
-            if pf.index == planet.index:
-                name = str(planet.name).replace(" ", "\n")
-                hper = f"{pf.sector}:" + str(planet.sector)
-                break
 
     font = ImageFont.truetype("./assets/Michroma-Regular.ttf", 8)
     font2 = ImageFont.truetype("./assets/Michroma-Regular.ttf", 8)
     bbox = draw.textbbox((0, 0), name, font=font, align="center", spacing=0)
 
     out = 2
-    owner = planet.currentOwner.lower()
     colors = {
         "automaton": (254 - 50, 109 - 50, 114 - 50, 200),  # Red
         "terminids": (255 - 50, 193 - 50, 0, 200),  # Yellow
@@ -102,7 +112,7 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200), frame:int=0,apistat: 
     }
     outline = colors[owner]
 
-    if planet.index in task_planets:
+    if index in task_planets:
         print(task_planets)
         hper = f"{hper}"
         outline = (255, 255, 255)
@@ -128,8 +138,6 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200), frame:int=0,apistat: 
         outline=outline,
     )
 
-
-
     draw.text(
         (coordinate[0] - bbox[2] / 2, coordinate[1] - bbox[3] - 10),
         name,
@@ -150,20 +158,21 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200), frame:int=0,apistat: 
     return img
 
 
+def place_planet(index, frames_dict):
 
-def place_planet(planet, frames_dict):
-
-
-    if hasattr(planet, 'planet_path'):
-        filepath = f"./assets/planets/planet_{planet.index}_rotate.gif"
-        frames_dict[planet.index] = []
+    filepath = f"./assets/planets/planet_{index}_rotate.gif"
+    if os.path.exists(filepath):
+        frames_dict[index] = []
         with Image.open(filepath) as planetimg:
             for frame in ImageSequence.Iterator(planetimg):
-                frames_dict[planet.index].append(frame.copy().convert("RGBA"))
+                frames_dict[index].append(frame.copy().convert("RGBA"))
     else:
         filepath = "./assets/planet.png"
-        with Image.open(filepath).convert("RGBA") as planetimg:
-            frames_dict[planet.index] = [planetimg.copy() for _ in range(30)]  # Assuming 30 frames for PNG
+        if os.path.exists(filepath):
+            with Image.open(filepath).convert("RGBA") as planetimg:
+                frames_dict[index] = [
+                    planetimg.copy() for _ in range(30)
+                ]  # Assuming 30 frames for PNG
 
 
 def crop_image(image, coordinate, off_by, cell_size=200):
@@ -179,14 +188,48 @@ def crop_image(image, coordinate, off_by, cell_size=200):
 
 
 def create_gif(filepath, apistat):
-    # Create the static background
+    # create gif only if needed
     img = draw_grid(filepath)
     img = draw_supply_lines(img, apistat=apistat)
-    planets={}
-    for _, planet_obj in apistat.planets.items():
-        img = highlight(img, planet_obj, (0, 0, 255, 200), apistat=apistat,frame=0)
-        place_planet(planet_obj,planets)
-    
+    task_planets = []
+    if apistat:
+        for a in apistat.assignments.values():
+            assignment = a.get_first()
+            task_planets.extend(assignment.get_task_planets())
+    planets = {}
+    lastplanets = {}
+    for _, planet in apistat.planets.items():
+        gpos = planet.position
+        x = gpos.x
+        y = gpos.y
+        hper = str(planet.health_percent())
+
+        name = str(planet.name).replace(" ", "\n")
+        if apistat and apistat.warall:
+            for pf in apistat.warall.war_info.planetInfos:
+                if pf.index == planet.index:
+                    name = str(planet.name).replace(" ", "\n")
+                    hper = f"{pf.sector}:" + str(planet.sector)
+                    break
+        event = True if planet.event is not None else False
+        owner = planet.currentOwner.lower()
+        lastplanets[planet.index] = {
+            "index": planet.index,
+            "event": event,
+            "x": x,
+            "y": y,
+            "hper": hper,
+            "task_planets": task_planets,
+            "name": name,
+            "owner": owner,
+        }
+    if not update_lastval_file(lastplanets):
+        return "./saveData/map.gif"
+
+    for index, value in lastplanets.items():
+        img = highlight(img, **value)
+        place_planet(index, planets)
+
     frames = []
     for frame in range(30):  # Assuming 30 frames
         frame_img = img.copy()
@@ -194,15 +237,23 @@ def create_gif(filepath, apistat):
             gpos = planet_obj.position
             x, y = gpos.x, gpos.y
             coordinate = get_im_coordinates(x, y)
-            frame_img.alpha_composite(planets[planet_obj.index][frame], (coordinate[0] - 10, coordinate[1] - 10))
+            frame_img.alpha_composite(
+                planets[planet_obj.index][frame],
+                (coordinate[0] - 10, coordinate[1] - 10),
+            )
         frames.append(frame_img)
 
-
     # Save the frames to the buffer
-    frames[0].save("./saveData/map.gif", format="GIF", save_all=True, append_images=frames[1:], duration=100, transparency=1,loop=0)
+    frames[0].save(
+        "./saveData/map.gif",
+        format="GIF",
+        save_all=True,
+        append_images=frames[1:],
+        duration=100,
+        transparency=1,
+        loop=0,
+    )
     return "./saveData/map.gif"
-
-
 
 
 def crop_gif(frames, coordinate, off_by, cell_size=200):
@@ -213,6 +264,7 @@ def crop_gif(frames, coordinate, off_by, cell_size=200):
         cropped_frame = crop_image(frame, coordinate, off_by, cell_size)
         cropped_frames.append(cropped_frame)
     return cropped_frames
+
 
 class MapViewer(BaseView):
     """
@@ -229,14 +281,14 @@ class MapViewer(BaseView):
     ):
         super().__init__(user=user, timeout=timeout)
         self.value = False
-        self.crops={}
+        self.crops = {}
         self.done = NotImplemented
         with Image.open(img) as planetimg:
             frames_list = []
             for frame in ImageSequence.Iterator(planetimg):
                 frames_list.append(frame.copy())
-            self.img= frames_list
-        #self.img = [frame for frame in ImageSequence.Iterator(Image.open(img))]
+            self.img = frames_list
+        # self.img = [frame for frame in ImageSequence.Iterator(Image.open(img))]
         self.focus_cell = np.array(initial_coor) // CELL_SIZE
 
     def make_embed(self):
@@ -248,7 +300,15 @@ class MapViewer(BaseView):
 
         cropped_frames = crop_gif(self.img, self.focus_cell, off_by=np.array((2, 2)))
         with io.BytesIO() as image_binary:
-            cropped_frames[0].save(image_binary, format="GIF", save_all=True, append_images=cropped_frames[1:], duration=100, loop=0, transparency=1)
+            cropped_frames[0].save(
+                image_binary,
+                format="GIF",
+                save_all=True,
+                append_images=cropped_frames[1:],
+                duration=100,
+                loop=0,
+                transparency=1,
+            )
             image_binary.seek(0)
             file = discord.File(fp=image_binary, filename="highlighted_palmap.gif")
 

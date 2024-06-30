@@ -32,8 +32,8 @@ def create_war_embed(stat: ApiStatus):
     if stats and (last is not None):
         stat_str = stats.diff_format(stats - last.statistics)
     globtex = ""
-    if stat.warstat:
-        for evt in stat.warstat.globalEvents:
+    if stat.warall:
+        for evt in stat.warall.status.globalEvents:
             if evt.title and evt.message:
                 mes = re.sub(pattern, r"**\1**", evt.message)
                 mes = re.sub(pattern3, r"***\1***", mes)
@@ -325,5 +325,5 @@ def campaign_view(stat: ApiStatus, hdtext={}):
         [f"{k}:{v}" for k, v in prop.items()]
     )
     emb.description += f"\n`{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}%` divers contributed `{round(total_contrib[1], 4)}` visible Impact, so about `({round(total_contrib[2],5)}%, {round(total_contrib[3],5)}% per hour)` lib."
-
+    emb.timestamp = discord.utils.utcnow()
     return emb

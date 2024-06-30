@@ -46,12 +46,12 @@ class GenericThread:
         self.target = function
         self.result = None
 
-    def run(self,*args,**kwargs):
-        def wrapper(*args,**kwargs):
-            self.result = self.target(*args,**kwargs)
+    def run(self, *args, **kwargs):
+        def wrapper(*args, **kwargs):
+            self.result = self.target(*args, **kwargs)
             self.get_result()
 
-        self.thread = threading.Thread(target=wrapper,args=args,kwargs=kwargs)
+        self.thread = threading.Thread(target=wrapper, args=args, kwargs=kwargs)
         self.thread.start()
 
     def get_result(self):
