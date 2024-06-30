@@ -8,6 +8,7 @@ from .GameStatus import ApiStatus
 from .helldive import Planet
 from .makeplanets import get_planet
 
+import importlib
 CELL_SIZE = 200
 from utility.views import BaseView
 
@@ -253,6 +254,13 @@ def create_gif(filepath, apistat):
         transparency=1,
         loop=0,
     )
+
+    if importlib.util.find_spec("pygifsicle") is not None:
+        from pygifsicle import optimize
+
+        # Your specific code here
+        optimize("./saveData/map.gif")
+
     return "./saveData/map.gif"
 
 
