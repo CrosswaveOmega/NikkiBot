@@ -1,7 +1,7 @@
 import io
 import os
 import discord
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageSequence
 import numpy as np
 from .GameStatus import ApiStatus
 from .helldive import Planet
@@ -67,7 +67,7 @@ def draw_supply_lines(img, color=(0, 255, 0, 200), apistat: ApiStatus = None):
     return img
 
 
-def highlight(img, planet: Planet, color=(255, 0, 0, 200), apistat: ApiStatus = None):
+def highlight(img, planet: Planet, color=(255, 0, 0, 200), frame:int=0,apistat: ApiStatus = None):
     gpos = planet.position
     x, y = gpos.x, gpos.y
     coordinate = get_im_coordinates(x, y)
@@ -128,13 +128,7 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200), apistat: ApiStatus = 
         outline=outline,
     )
 
-    if os.path.exists(f"./assets/planets/planet_{planet.index}.png"):
-        filepath = f"./assets/planets/planet_{planet.index}.png"
-    else:
-        filepath = "./assets/planet.png"
 
-    with Image.open(filepath).convert("RGBA") as planetimg:
-        img.alpha_composite(planetimg, (coordinate[0] - 10, coordinate[1] - 10))
 
     draw.text(
         (coordinate[0] - bbox[2] / 2, coordinate[1] - bbox[3] - 10),
@@ -156,6 +150,22 @@ def highlight(img, planet: Planet, color=(255, 0, 0, 200), apistat: ApiStatus = 
     return img
 
 
+
+def place_planet(planet, frames_dict):
+
+
+    if hasattr(planet, 'planet_path'):
+        filepath = f"./assets/planets/planet_{planet.index}_rotate.gif"
+        frames_dict[planet.index] = []
+        with Image.open(filepath) as planetimg:
+            for frame in ImageSequence.Iterator(planetimg):
+                frames_dict[planet.index].append(frame.copy().convert("RGBA"))
+    else:
+        filepath = "./assets/planet.png"
+        with Image.open(filepath).convert("RGBA") as planetimg:
+            frames_dict[planet.index] = [planetimg.copy() for _ in range(30)]  # Assuming 30 frames for PNG
+
+
 def crop_image(image, coordinate, off_by, cell_size=200):
     ccr = coordinate
     bc = ccr + off_by + np.array((0, 0))
@@ -167,6 +177,42 @@ def crop_image(image, coordinate, off_by, cell_size=200):
     cropped_img = image.crop((left, top, right, bottom))
     return cropped_img
 
+
+def create_gif(filepath, apistat):
+    # Create the static background
+    img = draw_grid(filepath)
+    img = draw_supply_lines(img, apistat=apistat)
+    planets={}
+    for _, planet_obj in apistat.planets.items():
+        img = highlight(img, planet_obj, (0, 0, 255, 200), apistat=apistat,frame=0)
+        place_planet(planet_obj,planets)
+    
+    frames = []
+    for frame in range(30):  # Assuming 30 frames
+        frame_img = img.copy()
+        for _, planet_obj in apistat.planets.items():
+            gpos = planet_obj.position
+            x, y = gpos.x, gpos.y
+            coordinate = get_im_coordinates(x, y)
+            frame_img.alpha_composite(planets[planet_obj.index][frame], (coordinate[0] - 10, coordinate[1] - 10))
+        frames.append(frame_img)
+
+
+    # Save the frames to the buffer
+    frames[0].save("./saveData/map.gif", format="GIF", save_all=True, append_images=frames[1:], duration=100, transparency=1,loop=0)
+    return "./saveData/map.gif"
+
+
+
+
+def crop_gif(frames, coordinate, off_by, cell_size=200):
+    # Load the GIF from the buffer
+
+    cropped_frames = []
+    for frame in frames:
+        cropped_frame = crop_image(frame, coordinate, off_by, cell_size)
+        cropped_frames.append(cropped_frame)
+    return cropped_frames
 
 class MapViewer(BaseView):
     """
@@ -183,8 +229,14 @@ class MapViewer(BaseView):
     ):
         super().__init__(user=user, timeout=timeout)
         self.value = False
-        self.done = None
-        self.img = img
+        self.crops={}
+        self.done = NotImplemented
+        with Image.open(img) as planetimg:
+            frames_list = []
+            for frame in ImageSequence.Iterator(planetimg):
+                frames_list.append(frame.copy())
+            self.img= frames_list
+        #self.img = [frame for frame in ImageSequence.Iterator(Image.open(img))]
         self.focus_cell = np.array(initial_coor) // CELL_SIZE
 
     def make_embed(self):
@@ -194,13 +246,13 @@ class MapViewer(BaseView):
             timestamp=discord.utils.utcnow(),
         )
 
-        cropped_img = crop_image(self.img, self.focus_cell, off_by=np.array((2, 2)))
+        cropped_frames = crop_gif(self.img, self.focus_cell, off_by=np.array((2, 2)))
         with io.BytesIO() as image_binary:
-            cropped_img.save(image_binary, "PNG")
+            cropped_frames[0].save(image_binary, format="GIF", save_all=True, append_images=cropped_frames[1:], duration=100, loop=0, transparency=1)
             image_binary.seek(0)
-            file = discord.File(fp=image_binary, filename="highlighted_palmap.png")
+            file = discord.File(fp=image_binary, filename="highlighted_palmap.gif")
 
-        embed.set_image(url="attachment://highlighted_palmap.png")
+        embed.set_image(url="attachment://highlighted_palmap.gif")
 
         return embed, file
 
