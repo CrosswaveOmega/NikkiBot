@@ -328,6 +328,11 @@ class ApiStatus:
                 for neighbor_index in planet.waypoints:
                     if neighbor_index not in visited:
                         stack.append(neighbor_index)
+                for k, p in self.planets.items():
+                    if planet_ind in p.waypoints:
+                        if k not in visited:
+                            stack.append(neighbor_index)
+
 
         return result
 
