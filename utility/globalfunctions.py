@@ -262,7 +262,7 @@ def seconds_to_time_stamp(seconds_init):
     days = (hours_r - hours) // 24
     years = days//365
     if years>1:
-        return_string += f"{years}"
+        return_string += f"{years}:"
     if days > 1:
         return_string += f"{days%365}:"
     if hours > 1:
