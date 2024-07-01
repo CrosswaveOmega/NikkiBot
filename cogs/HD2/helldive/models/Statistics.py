@@ -155,7 +155,7 @@ class Statistics(BaseApiModel):
         """
         mission_stats = f"W:{(self.missionsWon)},"
         mission_stats += f"L:{(self.missionsLost)}"
-        mission_stats += f"Time:{sts(self.missionTime)} sec"
+        missiontime = f"Time:{sts(self.missionTime)} sec"
 
         # Format kill statistics
         kill_stats = (
@@ -179,7 +179,7 @@ class Statistics(BaseApiModel):
         mission_stats += f"\n Time per mission: {sts(thistime)}"
         # Concatenate all formatted statistics
         statsa = (
-            f"`[Missions: {mission_stats}]`\n`[Kills: {kill_stats}]`"
+            f"`[Missions: {mission_stats}]`\n`[{missiontime}]`\n`[Kills: {kill_stats}]`"
         )
         statsb = f"`[{deaths_and_friendlies}]`"
         statsc = f"`Total Time: {sts(self.timePlayed)}`"
