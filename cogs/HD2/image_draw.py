@@ -1,4 +1,5 @@
 import io
+import math
 import os
 import json
 import discord
@@ -8,7 +9,8 @@ from .GameStatus import ApiStatus
 from .helldive import Planet
 from .makeplanets import get_planet
 
-import importlib
+import importlib.util
+
 CELL_SIZE = 200
 from utility.views import BaseView
 
@@ -94,7 +96,7 @@ def draw_supply_lines(img, color=(0, 255, 0, 200), apistat: ApiStatus = None):
     return img
 
 
-def highlight(img, index, x, y, name, hper, owner, event, task_planets):
+def highlight(img, index, x, y, name, hper, owner, event, task_planets,health=0):
     coordinate = get_im_coordinates(x, y)
 
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
@@ -113,11 +115,12 @@ def highlight(img, index, x, y, name, hper, owner, event, task_planets):
     }
     outline = colors[owner]
 
-    if index in task_planets:
+    if index in task_planets or event:
         print(task_planets)
-        hper = f"{hper}"
         outline = (255, 255, 255)
-    bbox2 = draw.textbbox((0, 0), str(hper), font=font2, align="center", spacing=0)
+        if event:
+            outline=(64, 64, 255)
+    bbox2 = draw.textbbox((0, 0), f"{str(hper)}\n{100-int(health)}", font=font2, align="center", spacing=0)
     background_box = [
         coordinate[0] - bbox[2] / 2 - 2,
         coordinate[1] - bbox[3] - 2 - 10,
@@ -149,7 +152,7 @@ def highlight(img, index, x, y, name, hper, owner, event, task_planets):
     )
     draw.text(
         (background_box[0], background_box[3] + 20),
-        hper,
+        f"{str(hper)}\n{100-int(health)}",
         fill=(255, 255, 255),
         font=font2,
         align="center",
@@ -188,7 +191,7 @@ def crop_image(image, coordinate, off_by, cell_size=200):
     return cropped_img
 
 
-def create_gif(filepath, apistat):
+def create_gif(filepath, apistat:ApiStatus):
     # create gif only if needed
     img = draw_grid(filepath)
     img = draw_supply_lines(img, apistat=apistat)
@@ -204,7 +207,7 @@ def create_gif(filepath, apistat):
         x = gpos.x
         y = gpos.y
         hper = str(planet.health_percent())
-
+        hp=(math.ceil(planet.health_percent())//10)*10
         name = str(planet.name).replace(" ", "\n")
         if apistat and apistat.warall:
             for pf in apistat.warall.war_info.planetInfos:
@@ -220,11 +223,13 @@ def create_gif(filepath, apistat):
             "x": x,
             "y": y,
             "hper": hper,
+            'health':str(hp),
             "task_planets": task_planets,
             "name": name,
             "owner": owner,
         }
     if not update_lastval_file(lastplanets):
+        print("No significant change.")
         return "./saveData/map.gif"
 
     for index, value in lastplanets.items():
@@ -232,26 +237,31 @@ def create_gif(filepath, apistat):
         place_planet(index, planets)
 
     frames = []
-    for frame in range(30):  # Assuming 30 frames
-        frame_img = img.copy()
+    for _, planet_obj in apistat.planets.items():
+        gpos = planet_obj.position
+        c = get_im_coordinates(gpos.x, gpos.y)
+        img.alpha_composite(planets[planet_obj.index][0], (c[0] - 10, c[1] - 10))
+
+    for frame in range(1, 30):  # Assuming 30 frames
+        frame_img = Image.new('RGBA', (img.width, img.height), (0, 0, 0, 0))
         for _, planet_obj in apistat.planets.items():
             gpos = planet_obj.position
-            x, y = gpos.x, gpos.y
-            coordinate = get_im_coordinates(x, y)
-            frame_img.alpha_composite(
-                planets[planet_obj.index][frame],
-                (coordinate[0] - 10, coordinate[1] - 10),
-            )
+            c = get_im_coordinates(gpos.x, gpos.y)
+            frame_img.alpha_composite(planets[planet_obj.index][frame], (c[0] - 10, c[1] - 10))
         frames.append(frame_img)
 
     # Save the frames to the buffer
-    frames[0].save(
+    img.save(
         "./saveData/map.gif",
         format="GIF",
         save_all=True,
-        append_images=frames[1:],
+        default_image=True,
+        interlace=False,
+        append_images=frames[0:],
         duration=100,
-        transparency=1,
+        optimize=True,
+        dispose=2,
+        transparency=0,
         loop=0,
     )
 
@@ -315,7 +325,6 @@ class MapViewer(BaseView):
                 append_images=cropped_frames[1:],
                 duration=100,
                 loop=0,
-                transparency=1,
             )
             image_binary.seek(0)
             file = discord.File(fp=image_binary, filename="highlighted_palmap.gif")

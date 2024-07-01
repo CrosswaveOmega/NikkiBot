@@ -164,7 +164,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         Guild_Task_Functions.add_task_function("WARSTATUS", self.gtask_map)
         snap = hd2.load_from_json("./saveData/hd2_snapshot.json")
-        print(snap)
         self.bot.add_view(HD2OverviewView(self))
         if snap:
             try:

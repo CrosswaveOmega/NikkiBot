@@ -178,6 +178,73 @@ def render_planet(texture, xpix, ypix, sphere_center, sphere_radius, angle, ligh
 
     return sphere_img
 
+def make_new_texture(colors, nme, num_craters, num_clouds, xpix, ypix):
+    lightest_color = max(colors, key=lambda c: sum(c[:-1]))
+    darkest_color = min(colors, key=lambda c: sum(c[:-1]))
+
+    print(f"{nme} Lightest color: {lightest_color}")
+    print(f"{nme} Darkest color: {darkest_color}")
+
+    cm = LinearSegmentedColormap.from_list("", np.array(colors) / 256, 256)
+
+    img = Image.new("RGBA", (xpix, ypix), (255, 255, 255, 255))
+    draw = ImageDraw.Draw(img)
+
+    noise1 = PerlinNoise(octaves=3)
+    noise2 = PerlinNoise(octaves=6)
+    noise3 = PerlinNoise(octaves=12)
+    noise4 = PerlinNoise(octaves=24)
+
+    pic = []
+    for i in range(xpix):
+        row = []
+        for j in range(ypix):
+            noise_val = noise1([i / xpix, j / ypix])
+            noise_val += 0.5 * noise2([i / xpix, j / ypix])
+            noise_val += 0.25 * noise3([i / xpix, j / ypix])
+            noise_val += 0.125 * noise4([i / xpix, j / ypix])
+
+            color = cm((noise_val + 1) / 2)
+            color = tuple(int(c * 255) for c in color[:3])
+            img.putpixel((i, j), tuple(color))
+
+            row.append(255)
+
+        pic.append(row)
+
+    for _ in range(num_craters):
+        crater_center = (random.randint(0, xpix - 1), random.randint(0, ypix - 1))
+        crater_radius = random.randint(1, 2)
+        draw.ellipse(
+            [
+                (
+                    crater_center[0] - crater_radius,
+                    crater_center[1] - crater_radius,
+                ),
+                (
+                    crater_center[0] + crater_radius,
+                    crater_center[1] + crater_radius,
+                ),
+            ],
+            fill=tuple(darkest_color),
+            outline=tuple(darkest_color),
+            width=1,
+        )
+
+    def generate_random_clouds(xpix, ypix, num_clouds, lightest_color, img: Image):
+        cloudimg = Image.new("RGBA", (xpix, ypix), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(cloudimg)
+
+        for _ in range(num_clouds):
+            choice = random.choice([draw_streak, draw_spiral])
+            choice(draw, xpix, ypix, lightest_color)
+
+        img.alpha_composite(cloudimg)
+
+    generate_random_clouds(xpix, ypix, num_clouds, lightest_color, img)
+    img.save(f"./assets/planets/planet_{nme}_texture.png")
+    return img
+
 
 def generate_planet_texture(
     colors, num_craters, num_clouds, nme="", make_new_texture=True
@@ -185,70 +252,39 @@ def generate_planet_texture(
 
     xpix, ypix = 40, 40
     if make_new_texture:
-        lightest_color = max(colors, key=lambda c: sum(c[:-1]))
-        darkest_color = min(colors, key=lambda c: sum(c[:-1]))
+        img = make_new_texture(colors, nme, num_craters, num_clouds, xpix, ypix)
+    textureimg = Image.open(f"./assets/planets/planet_{nme}_texture.png")
+    texture = np.array(textureimg)
+    sphere_center = (10, 10)
+    sphere_radius = 10
 
-        print(f"{nme} Lightest color: {lightest_color}")
-        print(f"{nme} Darkest color: {darkest_color}")
+    def create_gif_with_light_variation(
+        texture, sphere_center, sphere_radius, frames, output_path
+    ):
+        images = []
+        for frame in range(frames):
 
-        cm = LinearSegmentedColormap.from_list("", np.array(colors) / 256, 256)
+            angle = (frame / frames) * 360
+            # print(angle)
+            light_dir = np.array([0.8, 0, 1])
+            light_dir = light_dir / np.linalg.norm(light_dir)
 
-        img = Image.new("RGBA", (xpix, ypix), (255, 255, 255, 255))
-        draw = ImageDraw.Draw(img)
-
-        noise1 = PerlinNoise(octaves=3)
-        noise2 = PerlinNoise(octaves=6)
-        noise3 = PerlinNoise(octaves=12)
-        noise4 = PerlinNoise(octaves=24)
-
-        pic = []
-        for i in range(xpix):
-            row = []
-            for j in range(ypix):
-                noise_val = noise1([i / xpix, j / ypix])
-                noise_val += 0.5 * noise2([i / xpix, j / ypix])
-                noise_val += 0.25 * noise3([i / xpix, j / ypix])
-                noise_val += 0.125 * noise4([i / xpix, j / ypix])
-
-                color = cm((noise_val + 1) / 2)
-                color = tuple(int(c * 255) for c in color[:3])
-                img.putpixel((i, j), tuple(color))
-
-                row.append(255)
-
-            pic.append(row)
-
-        for _ in range(num_craters):
-            crater_center = (random.randint(0, xpix - 1), random.randint(0, ypix - 1))
-            crater_radius = random.randint(1, 2)
-            draw.ellipse(
-                [
-                    (
-                        crater_center[0] - crater_radius,
-                        crater_center[1] - crater_radius,
-                    ),
-                    (
-                        crater_center[0] + crater_radius,
-                        crater_center[1] + crater_radius,
-                    ),
-                ],
-                fill=tuple(darkest_color),
-                outline=tuple(darkest_color),
-                width=1,
+            sphere_img = render_planet(
+                texture, xpix, ypix, sphere_center, sphere_radius, angle, light_dir
             )
 
-        def generate_random_clouds(xpix, ypix, num_clouds, lightest_color, img: Image):
-            cloudimg = Image.new("RGBA", (xpix, ypix), (0, 0, 0, 0))
-            draw = ImageDraw.Draw(cloudimg)
+            images.append(sphere_img)
 
-            for _ in range(num_clouds):
-                choice = random.choice([draw_streak, draw_spiral])
-                choice(draw, xpix, ypix, lightest_color)
+        images[0].save(
+            output_path, save_all=True, append_images=images[1:], duration=100, loop=0
+        )
 
-            img.alpha_composite(cloudimg)
-
-        generate_random_clouds(xpix, ypix, num_clouds, lightest_color, img)
-        img.save(f"./assets/planets/planet_{nme}_texture.png")
+    texture = np.array(textureimg)
+    frames = 30
+    output_path = f"./assets/planets/{nme}_rotate.gif"
+    create_gif_with_light_variation(
+        texture, sphere_center, sphere_radius, frames, output_path
+    )
     textureimg = Image.open(f"./assets/planets/planet_{nme}_texture.png")
     texture = np.array(textureimg)
     sphere_center = (10, 10)
@@ -355,5 +391,5 @@ def get_planet(ind, biome_name):
     labels = []
     use = all_colors.get(biome_name, None)
     if biome_name in has_c:
-        return generate_planet_texture(use, 3, 2, f"planet_{ind}")
+        return generate_planet_texture(use, 0, 2, f"planet_{ind}")
     return None
