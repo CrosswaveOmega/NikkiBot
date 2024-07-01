@@ -369,6 +369,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                     mes = re.sub(hd2.pattern, r"**\1**", evt.message)
                     mes = re.sub(hd2.pattern3, r"***\1***", mes)
                     globtex += f"### {evt.title}\n{mes}\n\n"
+        war=self.apistatus.war.get_first()
+        stats=war.statistics.format_statistics()
         embed = discord.Embed(
             title="Daily Galactic War Status.",
             description=f"{globtex}\n"[:4096],
@@ -386,6 +388,11 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 defenses += 1
             else:
                 liberations += 1
+        embed.add_field(
+            name="War Stats",
+            value=f"{stats[:1000]}",
+            inline=False
+        )
         embed.add_field(
             name="Current Field",
             value=f"Liberations:{liberations}\n Defences:{defenses}",

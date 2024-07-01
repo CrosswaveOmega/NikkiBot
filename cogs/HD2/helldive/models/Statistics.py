@@ -153,36 +153,25 @@ class Statistics(BaseApiModel):
         """
         Return statistics formatted in a nice string.
         """
-        mission_stats = f"W:{hf(self.missionsWon)},"
-        mission_stats += f"L:{hf(self.missionsLost)}"
-        mission_stats += f"Time: {sts(self.missionTime)} seconds"
+        mission_stats = f"W:{(self.missionsWon)},"
+        mission_stats += f"L:{(self.missionsLost)}"
+        mission_stats += f"Time:{sts(self.missionTime)} sec"
 
         # Format kill statistics
         kill_stats = (
-            f"T:{hf(self.terminidKills)}, "
-            f"A:{hf(self.automatonKills)}, "
+            f"T:{(self.terminidKills)}, "
+            f"A:{(self.automatonKills)}, "
             f"DATA EXPUNGED"
         )
         #             f"I: {hf(self.illuminateKills)}"
 
-        # Format bullets statistics
-        bullets_fired = self.bulletsFired
-        bullets_hit = self.bulletsHit
-        bullets_stats = f"Bullets Hit/Fired: {hf(bullets_hit)}/{hf(bullets_fired)}"
-
         # Format deaths and friendlies statistics
         deaths_and_friendlies = (
-            f"Deaths/Friendlies: {hf(self.deaths)}/" f"{hf(self.friendlies)}"
+            f"Deaths/Friendlies: {(self.deaths)}/" f"{(self.friendlies)}"
         )
 
-        # Format mission success rate
-        mission_success_rate = f"MCR: {self.missionSuccessRate}%"
-
-        # Format accuracy
-        accuracy = f"ACC: {self.accuracy}%"
-
         # Format player count
-        player_count = f"Player Count: {hf(self.playerCount)}"
+        player_count = f"{emj('hdi')}: {hf(self.playerCount)}"
         thistime = round(
             max(self.missionTime, 1) / (self.missionsWon + self.missionsLost), 4
         )
@@ -192,7 +181,7 @@ class Statistics(BaseApiModel):
         statsa = (
             f"`[Missions: {mission_stats}]`\n`[Kills: {kill_stats}] [{bullets_stats}]`"
         )
-        statsb = f"`[{deaths_and_friendlies}] [{mission_success_rate}] [{accuracy}]`"
+        statsb = f"`[{deaths_and_friendlies}]`"
         statsc = f"`Total Time: {sts(self.timePlayed)}`"
         return f"{player_count}\n{statsa}\n{statsb}\n{statsc}"
 
