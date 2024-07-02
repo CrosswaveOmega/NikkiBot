@@ -17,8 +17,7 @@ import re
 from typing import Union
 import markdown
 from PIL import Image, ImageDraw, ImageFont
-from html2image import Html2Image
-from lxml import etree
+
 
 
 
@@ -67,6 +66,7 @@ class HTMLRenderer:
         self.position = (10, 10)  # Starting position for rendering
 
     def render_html_to_image(self, html_text, output_image_path):
+        from lxml import etree
         html_tree = etree.fromstring(html_text, parser=etree.HTMLParser())
         self.render_node(html_tree)
 
