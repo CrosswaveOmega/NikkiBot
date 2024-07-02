@@ -5,7 +5,13 @@ from .ABC.model import BaseApiModel
 
 from .Reward2 import Reward2
 from .Task2 import Task2
-
+from .Planet import Planet
+from PIL import Image,ImageDraw,ImageFont
+from discord.utils import format_dt as fdt
+from utility import changeformatif as cfi
+from utility import extract_timestamp as et
+from utility import human_format as hf
+from utility import select_emoji as emj, wrap_text
 
 class Assignment2(BaseApiModel):
     """
@@ -55,3 +61,104 @@ class Assignment2(BaseApiModel):
             if "planet_index" in taskdata:
                 planets.append(taskdata["planet_index"])
         return planets
+    
+    def get_overview_image(self, planets: Dict[int, Planet] = None):
+        if not planets: planets={}
+        width, height = 800, 1000  # Increased height to accommodate more text
+        image = Image.new("RGB", (width, height), "white")
+        draw = ImageDraw.Draw(image)
+        
+        # Load a font
+        font = ImageFont.truetype("arial.ttf", size=20)
+        
+        # Extract self
+        did = self["id"]
+        title = self["title"]
+        briefing = self["briefing"]
+        progress = self["progress"]
+
+        # Add title and author
+        text = f"Assignment A#{did}"
+        wrapped_text = wrap_text(draw, text, font, width - 20)
+        y_text = 10
+        for line in wrapped_text:
+            draw.text((10, y_text), line, font=font, fill="black")
+            y_text += font.getsize(line)[1]
+
+        text = f"Title: {title}"
+        wrapped_text = wrap_text(draw, text, font, width - 20)
+        for line in wrapped_text:
+            draw.text((10, y_text), line, font=font, fill="black")
+            y_text += font.getsize(line)[1]
+
+        text = f"Briefing: {briefing}"
+        wrapped_text = wrap_text(draw, text, font, width - 20)
+        for line in wrapped_text:
+            draw.text((10, y_text), line, font=font, fill="black")
+            y_text += font.getsize(line)[1]
+
+        # Add objective
+        text = "Objective:"
+        wrapped_text = wrap_text(draw, text, font, width - 20)
+        for line in wrapped_text:
+            draw.text((10, y_text), line, font=font, fill="black")
+            y_text += font.getsize(line)[1]
+
+        text = self["description"]
+        wrapped_text = wrap_text(draw, text, font, width - 20)
+        for line in wrapped_text:
+            draw.text((10, y_text), line, font=font, fill="black")
+            y_text += font.getsize(line)[1]
+
+        # Add tasks
+        tasks = []
+        for e, task in enumerate(self.tasks):
+            task_type, taskdata = task.taskAdvanced()
+            taskstr=task.task_str(progress[e], task_type, taskdata, e, planets)
+            print(taskstr)
+            tasks.append(taskstr)
+
+        text = "Tasks:"
+        wrapped_text = wrap_text(draw, text, font, width - 20)
+        for line in wrapped_text:
+            draw.text((10, y_text), line, font=font, fill="black")
+            y_text += font.getsize(line)[1]
+
+        for t in tasks:
+            text = t
+            wrapped_text = wrap_text(draw, text, font, width - 20)
+            for line in wrapped_text:
+                draw.text((10, y_text), line, font=font, fill="black")
+                y_text += font.getsize(line)[1]
+
+        # Add reward
+        text = "Reward:"
+        wrapped_text = wrap_text(draw, text, font, width - 20)
+        for line in wrapped_text:
+            draw.text((10, y_text), line, font=font, fill="black")
+            y_text += font.getsize(line)[1]
+
+        text = self["reward"].format()
+        wrapped_text = wrap_text(draw, text, font, width - 20)
+        for line in wrapped_text:
+            draw.text((10, y_text), line, font=font, fill="black")
+            y_text += font.getsize(line)[1]
+
+        # Add expiration
+        exptime = et(self["expiration"])
+
+        text = "Expiration:"
+        wrapped_text = wrap_text(draw, text, font, width - 20)
+        for line in wrapped_text:
+            draw.text((10, y_text), line, font=font, fill="black")
+            y_text += font.getsize(line)[1]
+
+        text = fdt(exptime, "f")
+        wrapped_text = wrap_text(draw, text, font, width - 20)
+        for line in wrapped_text:
+            draw.text((10, y_text), line, font=font, fill="black")
+            y_text += font.getsize(line)[1]
+
+        return image
+
+

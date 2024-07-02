@@ -1,4 +1,5 @@
 import asyncio
+import io
 import json
 from typing import Literal, Dict, List
 from assetloader import AssetLookup
@@ -517,6 +518,22 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                     this, this - last, planets=self.apistatus.planets
                 )
             )
+
+    @commands.is_owner()
+    @commands.command(name="assigntest")
+    async def assigntest(self, context: commands.Context):
+        for ind, key in self.apistatus.assignments.items():
+            this, last = key.get_first_change()
+            img = this.get_overview_image(self.apistatus.planets)
+            with io.BytesIO() as image_binary:
+                img.save(image_binary, 'PNG')
+                image_binary.seek(0)
+                await context.send(
+                    embed=hd2.create_assignment_embed(
+                        this, this - last, planets=self.apistatus.planets
+                    ),
+                    file=discord.File(fp=image_binary, filename='overview.png')
+                )
 
     async def planet_autocomplete(self, interaction: discord.Interaction, current: str):
         """

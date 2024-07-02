@@ -53,6 +53,7 @@ class Task2(BaseApiModel):
     valueTypes: Optional[List[int]] = Field(alias="valueTypes", default=None)
 
     def taskAdvanced(self):
+        '''return task type, and dictionary containing task details.'''
         task_type = task_types.get(self["type"], "Unknown Task Type")
         taskdata = {"planet_index": "ERR", "race": 15}
 
@@ -69,8 +70,9 @@ class Task2(BaseApiModel):
         taskdata: Dict[str, Any],
         e=0,
         planets: Dict[int, Planet] = {},
+        show_faction=False,
     ):
-        curr, _ = curr_progress
+        curr = curr_progress
         taskstr = f"{e}. {task_type}: {hf(curr)}"
         if self["type"] in (11, 13):
             planet_id = taskdata["planet_index"]

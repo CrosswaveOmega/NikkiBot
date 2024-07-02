@@ -102,8 +102,6 @@ def create_assignment_embed(
     embed.set_author(name=f"Assignment A#{did}")
 
     progress = data["progress"]
-    if last is not None:
-        progress = [(t, l) for t, l in zip(data.progress, last.progress)]
     embed.add_field(name="Objective", value=data["description"], inline=False)
     tasks = ""
     for e, task in enumerate(data.tasks):

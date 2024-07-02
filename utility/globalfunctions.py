@@ -2,7 +2,7 @@ import os
 import re
 import discord
 from io import BytesIO
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 
 from datetime import datetime, timedelta, timezone
@@ -286,6 +286,7 @@ async def get_server_icon_color(guild: discord.Guild) -> str:
     hex_color = "{:02x}{:02x}{:02x}".format(icon_color[0], icon_color[1], icon_color[2])
     hex = int(hex_color, 16)
     return hex
+
 
 
 def extract_timestamp(timestamp):
