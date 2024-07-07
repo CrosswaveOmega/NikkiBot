@@ -137,8 +137,4 @@ class NotebookAux(NoteBase):
             )
             await session.commit()
 
-    def __str__(self):
-        return f"Timer: **{self.name}**, in <t:{int(self.invoke_on.timestamp())}:R>, on {self.message_url}"
-
-
 DatabaseSingleton("mainsetup").load_base(NotebookAux)

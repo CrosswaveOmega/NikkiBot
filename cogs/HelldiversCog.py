@@ -448,9 +448,12 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(result)
         else:
             old.target_channel_id = autochannel.id
-
+            now = datetime.now()
+            start_date = datetime(2023, 1, 1, now.hour, max(0, now.minute - 15))
+            robj = rrule(freq=MINUTELY, interval=15, dtstart=start_date)
             # target_message = await autochannel.send("**ALTERING AUTO CHANNEL...**",view=HD2OverviewView(self))
             old.target_message_url = target_message.jump_url
+            old.change_rrule(ctx.bot,robj)
             self.bot.database.commit()
             result = f"Changed the dashboard channel to <#{autochannel.id}>"
             await ctx.send(result)
