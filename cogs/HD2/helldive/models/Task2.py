@@ -53,7 +53,7 @@ class Task2(BaseApiModel):
     valueTypes: Optional[List[int]] = Field(alias="valueTypes", default=None)
 
     def taskAdvanced(self):
-        '''return task type, and dictionary containing task details.'''
+        """return task type, and dictionary containing task details."""
         task_type = task_types.get(self["type"], "Unknown Task Type")
         taskdata = {"planet_index": "ERR", "race": 15}
 

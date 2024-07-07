@@ -260,8 +260,8 @@ def seconds_to_time_stamp(seconds_init):
     hours_r = (minutes_r - minutes) // 60
     hours = hours_r % 24
     days = (hours_r - hours) // 24
-    years = days//365
-    if years>1:
+    years = days // 365
+    if years > 1:
         return_string += f"{years}:"
     if days > 1:
         return_string += f"{days%365}:"
@@ -286,7 +286,6 @@ async def get_server_icon_color(guild: discord.Guild) -> str:
     hex_color = "{:02x}{:02x}{:02x}".format(icon_color[0], icon_color[1], icon_color[2])
     hex = int(hex_color, 16)
     return hex
-
 
 
 def extract_timestamp(timestamp):

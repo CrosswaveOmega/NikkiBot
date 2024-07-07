@@ -6,12 +6,13 @@ from .ABC.model import BaseApiModel
 from .Reward2 import Reward2
 from .Task2 import Task2
 from .Planet import Planet
-from PIL import Image,ImageDraw,ImageFont
+from PIL import Image, ImageDraw, ImageFont
 from discord.utils import format_dt as fdt
 from utility import changeformatif as cfi
 from utility import extract_timestamp as et
 from utility import human_format as hf
 from utility import select_emoji as emj, wrap_text
+
 
 class Assignment2(BaseApiModel):
     """
@@ -61,16 +62,17 @@ class Assignment2(BaseApiModel):
             if "planet_index" in taskdata:
                 planets.append(taskdata["planet_index"])
         return planets
-    
+
     def get_overview_image(self, planets: Dict[int, Planet] = None):
-        if not planets: planets={}
+        if not planets:
+            planets = {}
         width, height = 800, 1000  # Increased height to accommodate more text
         image = Image.new("RGB", (width, height), "white")
         draw = ImageDraw.Draw(image)
-        
+
         # Load a font
         font = ImageFont.truetype("arial.ttf", size=20)
-        
+
         # Extract self
         did = self["id"]
         title = self["title"]
@@ -114,7 +116,7 @@ class Assignment2(BaseApiModel):
         tasks = []
         for e, task in enumerate(self.tasks):
             task_type, taskdata = task.taskAdvanced()
-            taskstr=task.task_str(progress[e], task_type, taskdata, e, planets)
+            taskstr = task.task_str(progress[e], task_type, taskdata, e, planets)
             print(taskstr)
             tasks.append(taskstr)
 
@@ -160,5 +162,3 @@ class Assignment2(BaseApiModel):
             y_text += font.getsize(line)[1]
 
         return image
-
-

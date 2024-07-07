@@ -370,8 +370,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                     mes = re.sub(hd2.pattern, r"**\1**", evt.message)
                     mes = re.sub(hd2.pattern3, r"***\1***", mes)
                     globtex += f"### {evt.title}\n{mes}\n\n"
-        war=self.apistatus.war.get_first()
-        stats=war.statistics.format_statistics()
+        war = self.apistatus.war.get_first()
+        stats = war.statistics.format_statistics()
         embed = discord.Embed(
             title="Daily Galactic War Status.",
             description=f"{globtex}\n"[:4096],
@@ -389,11 +389,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 defenses += 1
             else:
                 liberations += 1
-        embed.add_field(
-            name="War Stats",
-            value=f"{stats[:1000]}",
-            inline=False
-        )
+        embed.add_field(name="War Stats", value=f"{stats[:1000]}", inline=False)
         embed.add_field(
             name="Current Field",
             value=f"Liberations:{liberations}\n Defences:{defenses}",
@@ -453,7 +449,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             robj = rrule(freq=MINUTELY, interval=15, dtstart=start_date)
             # target_message = await autochannel.send("**ALTERING AUTO CHANNEL...**",view=HD2OverviewView(self))
             old.target_message_url = target_message.jump_url
-            old.change_rrule(ctx.bot,robj)
+            old.change_rrule(ctx.bot, robj)
             self.bot.database.commit()
             result = f"Changed the dashboard channel to <#{autochannel.id}>"
             await ctx.send(result)
@@ -529,13 +525,13 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             this, last = key.get_first_change()
             img = this.get_overview_image(self.apistatus.planets)
             with io.BytesIO() as image_binary:
-                img.save(image_binary, 'PNG')
+                img.save(image_binary, "PNG")
                 image_binary.seek(0)
                 await context.send(
                     embed=hd2.create_assignment_embed(
                         this, this - last, planets=self.apistatus.planets
                     ),
-                    file=discord.File(fp=image_binary, filename='overview.png')
+                    file=discord.File(fp=image_binary, filename="overview.png"),
                 )
 
     async def planet_autocomplete(self, interaction: discord.Interaction, current: str):

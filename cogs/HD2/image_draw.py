@@ -96,7 +96,7 @@ def draw_supply_lines(img, color=(0, 255, 0, 200), apistat: ApiStatus = None):
     return img
 
 
-def highlight(img, index, x, y, name, hper, owner, event, task_planets,health=0):
+def highlight(img, index, x, y, name, hper, owner, event, task_planets, health=0):
     coordinate = get_im_coordinates(x, y)
 
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
@@ -119,8 +119,10 @@ def highlight(img, index, x, y, name, hper, owner, event, task_planets,health=0)
         print(task_planets)
         outline = (255, 255, 255)
         if event:
-            outline=(64, 64, 255)
-    bbox2 = draw.textbbox((0, 0), f"{str(hper)}\n{100-int(health)}", font=font2, align="center", spacing=0)
+            outline = (64, 64, 255)
+    bbox2 = draw.textbbox(
+        (0, 0), f"{str(hper)}\n{100-int(health)}", font=font2, align="center", spacing=0
+    )
     background_box = [
         coordinate[0] - bbox[2] / 2 - 2,
         coordinate[1] - bbox[3] - 2 - 10,
@@ -191,7 +193,7 @@ def crop_image(image, coordinate, off_by, cell_size=200):
     return cropped_img
 
 
-def create_gif(filepath, apistat:ApiStatus):
+def create_gif(filepath, apistat: ApiStatus):
     # create gif only if needed
     img = draw_grid(filepath)
     img = draw_supply_lines(img, apistat=apistat)
@@ -207,7 +209,7 @@ def create_gif(filepath, apistat:ApiStatus):
         x = gpos.x
         y = gpos.y
         hper = str(planet.health_percent())
-        hp=(math.ceil(planet.health_percent())//10)*10
+        hp = (math.ceil(planet.health_percent()) // 10) * 10
         name = str(planet.name).replace(" ", "\n")
         if apistat and apistat.warall:
             for pf in apistat.warall.war_info.planetInfos:
@@ -223,7 +225,7 @@ def create_gif(filepath, apistat:ApiStatus):
             "x": x,
             "y": y,
             "hper": hper,
-            'health':str(hp),
+            "health": str(hp),
             "task_planets": task_planets,
             "name": name,
             "owner": owner,
@@ -243,11 +245,13 @@ def create_gif(filepath, apistat:ApiStatus):
         img.alpha_composite(planets[planet_obj.index][0], (c[0] - 10, c[1] - 10))
 
     for frame in range(1, 30):  # Assuming 30 frames
-        frame_img = Image.new('RGBA', (img.width, img.height), (0, 0, 0, 0))
+        frame_img = Image.new("RGBA", (img.width, img.height), (0, 0, 0, 0))
         for _, planet_obj in apistat.planets.items():
             gpos = planet_obj.position
             c = get_im_coordinates(gpos.x, gpos.y)
-            frame_img.alpha_composite(planets[planet_obj.index][frame], (c[0] - 10, c[1] - 10))
+            frame_img.alpha_composite(
+                planets[planet_obj.index][frame], (c[0] - 10, c[1] - 10)
+            )
         frames.append(frame_img)
 
     # Save the frames to the buffer

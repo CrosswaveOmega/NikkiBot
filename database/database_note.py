@@ -137,4 +137,5 @@ class NotebookAux(NoteBase):
             )
             await session.commit()
 
+
 DatabaseSingleton("mainsetup").load_base(NotebookAux)

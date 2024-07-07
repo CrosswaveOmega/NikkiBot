@@ -178,6 +178,7 @@ def render_planet(texture, xpix, ypix, sphere_center, sphere_radius, angle, ligh
 
     return sphere_img
 
+
 def make_new_texture(colors, nme, num_craters, num_clouds, xpix, ypix):
     lightest_color = max(colors, key=lambda c: sum(c[:-1]))
     darkest_color = min(colors, key=lambda c: sum(c[:-1]))

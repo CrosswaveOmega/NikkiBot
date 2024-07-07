@@ -19,11 +19,9 @@ from .globalfunctions import (
     prioritized_string_split,
     extract_timestamp,
     find_urls,
-    human_format
+    human_format,
 )
-from .image_functions import (
-    wrap_text
-)
+from .image_functions import wrap_text
 from .mytemplatemessages import MessageTemplates
 from .hash import get_hash_sets, hash_string
 from .formatutil import (
