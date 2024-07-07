@@ -243,11 +243,12 @@ class StarboardCog(commands.Cog):
         starboard_channel = self.bot.get_channel(starboard.channel_id)
         entry = await StarboardEntryTable.get_entry(guild.id, message.id)
         if not bot_message:
-            content, embed = self.get_emoji_message(message, entry.total)
-            bm = await starboard_channel.send(content, embed=embed)
-            entry = await StarboardEntryTable.add_or_update_bot_message(
-                guild.id, message.id, bm.id, bm.jump_url
-            )
+            if entry.total>=starboard.threshold:
+                content, embed = self.get_emoji_message(message, entry.total)
+                bm = await starboard_channel.send(content, embed=embed)
+                entry = await StarboardEntryTable.add_or_update_bot_message(
+                    guild.id, message.id, bm.id, bm.jump_url
+                )
         else:
             self.to_be_edited.add((bot_message, message))
 
