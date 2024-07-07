@@ -27,7 +27,7 @@ class StarboardCog(commands.Cog):
         async with self.lock:
             if self.to_be_edited:
                 (bot_message, message) = random.choice(list(self.to_be_edited))
-                self.to_be_edited.remove(bot_message)
+                self.to_be_edited.remove((bot_message,message))
                 mess = await urltomessage(bot_message, self.bot)
                 if mess:
                     entry = await StarboardEntryTable.get_entry(mess.guild.id, mess.id)
