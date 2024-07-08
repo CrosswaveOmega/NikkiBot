@@ -1,7 +1,8 @@
 import datetime
 import discord
 from discord.ext import commands, tasks
-from cogs.dat_Starboard import Starboard, StarboardEntryTable
+from database import DatabaseSingleton
+from cogs.dat_Starboard import Starboard, StarboardEntryTable, StarboardEntryGivers
 from utility import (
     urltomessage,
 )
@@ -14,62 +15,59 @@ class StarboardCog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.to_be_edited = set()
+        self.to_be_edited = {}
         self.lock = asyncio.Lock()
+        self.emojilist = ["\N{Honeybee}"]
 
         self.timerloop.start()  # type: ignore
 
     def cog_unload(self):
         self.timerloop.cancel()  # type: ignore
 
-    @tasks.loop(seconds=30)
-    async def timerloop(self):
-        async with self.lock:
-            if self.to_be_edited:
-                (bot_message, message) = random.choice(list(self.to_be_edited))
-                self.to_be_edited.remove((bot_message,message))
-                mess = await urltomessage(bot_message, self.bot)
-                if mess:
-                    entry = await StarboardEntryTable.get_entry(mess.guild.id, mess.id)
-                    starboard = await Starboard.get_starboard(mess.guild.id)
-                    if entry and starboard:
-                        if entry.total < starboard.threshold:
-                            await StarboardEntryTable.delete_entry_by_bot_message_url(
-                                bot_message
-                            )
-                            await mess.delete()
-                        else:
-                            content, embed = self.get_emoji_message(
-                                message, entry.total
-                            )
-                            await mess.edit(content=content, embed=embed)
-                    else:
-                        await StarboardEntryTable.delete_entry_by_bot_message_url(
-                            bot_message
-                        )
-                else:
-                    starboard = await Starboard.get_starboard(mess.guild.id)
-                    starboard_channel = self.bot.get_channel(starboard.channel_id)
-                    entry = await StarboardEntryTable.get_entry(
-                        message.guild.id, message.id
+    async def edit_one_random(self):
+        (bot_message, message) = random.choice(list(self.to_be_edited.items()))
+        self.to_be_edited.pop(bot_message)
+        mess = await urltomessage(bot_message, self.bot)
+        if mess:
+            entry = await StarboardEntryTable.get_with_url(bot_message)
+            starboard = await Starboard.get_starboard(mess.guild.id)
+            if entry and starboard:
+                if entry.total < starboard.threshold:
+                    await StarboardEntryTable.delete_entry_by_bot_message_url(
+                        bot_message
                     )
-                    if entry and starboard and starboard_channel:
-                        if entry.total > starboard.threshold:
-                            content, embed = self.get_emoji_message(
-                                message, entry.total
-                            )
-                            bm = await starboard_channel.send(content, embed=embed)
-                            entry = await StarboardEntryTable.add_or_update_bot_message(
-                                message.guild.id, message.id, bm.id, bm.jump_url
-                            )
-                        else:
-                            await StarboardEntryTable.delete_entry_by_bot_message_url(
-                                bot_message
-                            )
-                    else:
-                        await StarboardEntryTable.delete_entry_by_bot_message_url(
-                            bot_message
-                        )
+                    await mess.delete()
+                else:
+                    content, embed = self.get_emoji_message(message, entry.total)
+                    await mess.edit(content=content, embed=embed)
+            else:
+                await StarboardEntryTable.delete_entry_by_bot_message_url(bot_message)
+        else:
+            starboard = await Starboard.get_starboard(mess.guild.id)
+            starboard_channel = self.bot.get_channel(starboard.channel_id)
+            entry = await StarboardEntryTable.get_entry(message.guild.id, message.id)
+            if entry and starboard and starboard_channel:
+                if entry.total >= starboard.threshold:
+                    content, embed = self.get_emoji_message(message, entry.total)
+                    bm = await starboard_channel.send(content, embed=embed)
+                    entry = await StarboardEntryTable.add_or_update_bot_message(
+                        message.guild.id, message.id, bm.id, bm.jump_url
+                    )
+                else:
+                    await StarboardEntryTable.delete_entry_by_bot_message_url(
+                        bot_message
+                    )
+            else:
+                await StarboardEntryTable.delete_entry_by_bot_message_url(bot_message)
+
+    @tasks.loop(seconds=15)
+    async def timerloop(self):
+        try:
+            async with self.lock:
+                if self.to_be_edited:
+                    await self.edit_one_random()
+        except Exception as e:
+            await self.bot.send_error(e, "Task Error")
 
     @commands.group(invoke_without_command=True)
     @commands.has_permissions(manage_guild=True)
@@ -121,11 +119,80 @@ class StarboardCog(commands.Cog):
         else:
             await ctx.send("No starboard found for this server.")
 
+    @starboard.command()
+    async def migrate(self, ctx):
+        """Set the star threshold for the starboard."""
+        existing = await Starboard.get_starboard(ctx.guild.id)
+        if not existing:
+            await ctx.send("Starboard does not exist for this server.")
+            return
+        async with DatabaseSingleton.get_async_session() as session:
+            all_entries = await StarboardEntryTable.get_entries_by_guild(
+                ctx.guild.id, session=session
+            )
+            for i, e in enumerate(all_entries):
+                print("checking entry ", i)
+                starrers = []
+                message = await urltomessage(e.message_url, ctx.bot)
+                if not message:
+                    await session.delete(e)
+                    continue
+                for react in message.reactions:
+                    if str(react.emoji) in self.emojilist:
+                        async for user in react.users():
+                            starrers.append(
+                                (
+                                    message.id,
+                                    ctx.guild.id,
+                                    user.id,
+                                    str(react.emoji),
+                                    e.message_url,
+                                )
+                            )
+                if starrers:
+                    await StarboardEntryGivers.add_starrers_bulk(
+                        starrers, session=session
+                    )
+
+                e.total = await StarboardEntryGivers.count_starrers(
+                    ctx.guild.id, message.id, session=session
+                )
+
+            await session.commit()
+            await ctx.send("Done")
+
+    @starboard.command()
+    async def dump_stars(self, ctx):
+        """Dump stars"""
+        existing = await Starboard.get_starboard(ctx.guild.id)
+        if not existing:
+            await ctx.send("Starboard does not exist for this server.")
+            return
+        async with DatabaseSingleton.get_async_session() as session:
+            all_entries = await StarboardEntryTable.get_entries_by_guild(
+                ctx.guild.id, session=session
+            )
+            listv = ""
+            for i, e in enumerate(all_entries):
+                # await ctx.send(str(e))
+                if e.bot_message_url is None:
+                    await ctx.send(f"deleting {e}")
+                    await session.delete(e)
+                if len(listv) + len(f"{str(e)}\n") >= 1500:
+                    await ctx.send(listv)
+                    listv = ""
+                listv += f"{i},{str(e)}\n"
+            if listv:
+                await ctx.send(listv)
+
+            await session.commit()
+            await ctx.send("Done")
+
     async def reaction_action(
         self, fmt: str, payload: discord.RawReactionActionEvent
     ) -> None:
         try:
-            if str(payload.emoji) != "\N{Honeybee}":
+            if str(payload.emoji) not in self.emojilist:
                 return
 
             guild = self.bot.get_guild(payload.guild_id)  # type: ignore
@@ -150,12 +217,19 @@ class StarboardCog(commands.Cog):
                 message = await channel.fetch_message(payload.message_id)
 
                 url = message.jump_url
-                starrer = payload.member
-                if starrer:
-                    if starrer.bot:
-                        return
-                if fmt == "star":
+                starrer = payload.member or (await guild.fetch_member(payload.user_id))
+                if starrer is None or starrer.bot:
+                    return
 
+                if fmt == "star":
+                    print("adding starrer message", message.id, guild.id, starrer.id)
+                    await StarboardEntryGivers.add_starrer(
+                        message.id,
+                        guild.id,
+                        starrer.id,
+                        str(payload.emoji),
+                        message.jump_url,
+                    )
                     await StarboardEntryTable.add_or_update_entry(
                         guild.id,
                         message.id,
@@ -164,16 +238,26 @@ class StarboardCog(commands.Cog):
                         message_url=url,
                     )
                 else:
-                    entry = await StarboardEntryTable.get_entry(guild.id, message.id)
-                    if not entry:
-                        return
+                    async with DatabaseSingleton.get_async_session() as session:
+                        entry = await StarboardEntryTable.get_entry(
+                            guild.id, message.id, session=session
+                        )
+                        if not entry:
+                            return
+                        old_entry = await StarboardEntryGivers.get_starrer(
+                            guild.id, message.id, starrer.id
+                        )
+
+                        print("unstarring message", old_entry, message.id, guild.id)
+                        if old_entry:
+                            await session.delete(old_entry)
+                            await session.commit()
                     await StarboardEntryTable.add_or_update_entry(
                         guild.id,
                         message.id,
                         message.channel.id,
                         message.author.id,
                         url,
-                        -1,
                     )
                 entry = await StarboardEntryTable.get_entry(guild.id, message.id)
                 await self.update_starboard_message(
@@ -236,21 +320,20 @@ class StarboardCog(commands.Cog):
 
     async def update_starboard_message(self, guild, message, bot_message):
         starboard = await Starboard.get_starboard(guild.id)
-        print(starboard)
         if not starboard:
             return
-
+        print(bot_message, message)
         starboard_channel = self.bot.get_channel(starboard.channel_id)
         entry = await StarboardEntryTable.get_entry(guild.id, message.id)
         if not bot_message:
-            if entry.total>=starboard.threshold:
+            if entry.total >= starboard.threshold:
                 content, embed = self.get_emoji_message(message, entry.total)
                 bm = await starboard_channel.send(content, embed=embed)
                 entry = await StarboardEntryTable.add_or_update_bot_message(
                     guild.id, message.id, bm.id, bm.jump_url
                 )
         else:
-            self.to_be_edited.add((bot_message, message))
+            self.to_be_edited[bot_message] = message
 
     def get_emoji_message(
         self, message: discord.Message, stars: int

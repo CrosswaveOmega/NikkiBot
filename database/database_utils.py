@@ -2,6 +2,12 @@ from sqlalchemy import MetaData, select
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
+from sqlalchemy import select, delete, func
+from sqlalchemy.dialects.sqlite import insert
+from typing import List, Type, Dict, Any
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.expression import Insert
+
 
 def get_primary_key(instance):
     primary_key_cols = instance.__mapper__.primary_key
@@ -38,6 +44,27 @@ async def add_or_update_all_a(session: AsyncSession, model_class, data_list):
             pass
     if insert_data:
         session.add_all(insert_data)
+
+
+async def upsert_a(
+    session: AsyncSession,
+    model: Any,
+    index_elements: List[str],
+    values_list: List[Dict[str, Any]],
+    do_commit: bool = True,
+) -> None:
+    stmt: Insert = insert(model)
+    do_update_stmt = stmt.on_conflict_do_update(
+        index_elements=index_elements,
+        set_={
+            key: getattr(stmt.excluded, key)
+            for key in values_list[0].keys()
+            if key not in index_elements
+        },
+    )
+    await session.execute(do_update_stmt, values_list)
+    if do_commit:
+        await session.commit()
 
 
 def merge_metadata(*original_metadata) -> MetaData:

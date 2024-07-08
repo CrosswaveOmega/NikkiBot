@@ -4,7 +4,7 @@
 """Database Main stores some common tables."""
 print("importing database main")
 from .database_singleton import DatabaseSingleton, DSCTX
-from .database_utils import add_or_update_all
+from .database_utils import add_or_update_all, upsert_a
 from .database_main import (
     AwareDateTime,
     ServerData,
@@ -13,3 +13,4 @@ from .database_main import (
     IgnoredUser,
     Users_DoNotTrack,
 )
+from .database_session_decorators import ensure_session
