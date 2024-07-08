@@ -168,7 +168,7 @@ class AudioContainer:
         self.json_dict = info
         self.title, self.duration, self.url = (
             info["title"],
-            info["duration"],
+            info.get('duration',9999999),
             info["webpage_url"],
         )
         self.thumbnail = info["thumbnail"]
@@ -209,7 +209,7 @@ class AudioContainer:
         self.json_dict = info
         self.title, self.duration, self.url = (
             info["title"],
-            info["duration"],
+            info.get('duration',9999999),
             info["webpage_url"],
         )
         self.thumbnail = info["thumbnail"]
@@ -241,7 +241,7 @@ class AudioContainer:
 
         self.title, self.duration, self.url = (
             info["title"],
-            info["duration"],
+            info.get('duration',9999999),
             info["webpage_url"],
         )
         self.thumbnail = info["thumbnail"]
