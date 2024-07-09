@@ -85,6 +85,8 @@ def draw_supply_lines(img, color=(0, 255, 0, 100), apistat: ApiStatus = None):
 
     for index, planet in apistat.planets.items():
         waypoints = planet.attacking
+        gpos = planet.position
+        x, y = get_im_coordinates(gpos.x, gpos.y)
         for ind in waypoints:
             target = apistat.planets[ind]
             tgpos = target.position
