@@ -65,7 +65,7 @@ def get_im_coordinates(x, y):
     return coordinate
 
 
-def draw_supply_lines(img, color=(0, 255, 0, 200), apistat: ApiStatus = None):
+def draw_supply_lines(img, color=(0, 255, 0, 100), apistat: ApiStatus = None):
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
 
@@ -82,6 +82,8 @@ def draw_supply_lines(img, color=(0, 255, 0, 200), apistat: ApiStatus = None):
                 fill=color,
                 width=1,
             )
+
+    for index, planet in apistat.planets.items():
         waypoints = planet.attacking
         for ind in waypoints:
             target = apistat.planets[ind]
@@ -89,7 +91,7 @@ def draw_supply_lines(img, color=(0, 255, 0, 200), apistat: ApiStatus = None):
             tx, ty = get_im_coordinates(tgpos.x, tgpos.y)
             draw.line(
                 [(x, y), (tx, ty)],
-                fill=(255, 0, 0, 200),
+                fill=(255, 0, 0, 100),
                 width=3,
             )
     img = Image.alpha_composite(img, overlay)
