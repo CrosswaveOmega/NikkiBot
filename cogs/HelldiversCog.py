@@ -252,14 +252,10 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(f"Done with chunk {e+1}:{allv}.")
 
     def draw_img(self):
+        '''Create a GIF map.'''
         print("Updating map.")
         file_path = "./assets/GalacticMap.png"
         img = hd2.create_gif(file_path, apistat=self.apistatus)
-        # img = hd2.draw_supply_lines(img, apistat=self.apistatus)
-        # for _, planet_obj in self.apistatus.planets.items():
-        #     img = hd2.highlight(
-        #         img, planet_obj, (0, 0, 255, 200), apistat=self.apistatus
-        #     )
         self.img = img
 
     async def update_api(self):

@@ -269,11 +269,6 @@ def create_gif(filepath, apistat: ApiStatus):
         loop=0,
     )
 
-    if importlib.util.find_spec("pygifsicle") is not None:
-        from pygifsicle import optimize
-
-        # Your specific code here
-        optimize("./saveData/map.gif")
 
     return "./saveData/map.gif"
 

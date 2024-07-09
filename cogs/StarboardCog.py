@@ -17,12 +17,143 @@ class StarboardCog(commands.Cog):
         self.bot = bot
         self.to_be_edited = {}
         self.lock = asyncio.Lock()
-        self.emojilist = ["\N{Honeybee}"]
+        self.emojilist = ["\N{Honeybee}", '<:2diverHeart:1221738356950564926>']
 
         self.timerloop.start()  # type: ignore
 
     def cog_unload(self):
         self.timerloop.cancel()  # type: ignore
+
+    async def reaction_action(
+        self, fmt: str, payload: discord.RawReactionActionEvent
+    ) -> None:
+        try:
+            print(str(payload.emoji))
+            if str(payload.emoji) not in self.emojilist:
+                return
+
+            guild = self.bot.get_guild(payload.guild_id)  # type: ignore
+            if guild is None:
+                return
+
+            channel = guild.get_channel_or_thread(payload.channel_id)
+            if not isinstance(channel, (discord.Thread, discord.TextChannel)):
+                return
+            starboard = await Starboard.get_starboard(guild.id)
+            if starboard:
+                if starboard.channel_id == channel.id:
+                    return
+            else:
+                return
+            if (
+                discord.utils.utcnow()
+                - discord.utils.snowflake_time(payload.message_id)
+            ) > datetime.timedelta(days=7):
+                return
+            async with self.lock:
+                message = await channel.fetch_message(payload.message_id)
+
+                url = message.jump_url
+                starrer = payload.member or (await guild.fetch_member(payload.user_id))
+                if starrer is None or starrer.bot:
+                    return
+
+                if fmt == "star":
+                    print("adding starrer message", message.id, guild.id, starrer.id)
+                    await StarboardEntryGivers.add_starrer(
+                        message.id,
+                        guild.id,
+                        starrer.id,
+                        str(payload.emoji),
+                        message.jump_url,
+                    )
+                    await StarboardEntryTable.add_or_update_entry(
+                        guild.id,
+                        message.id,
+                        message.channel.id,
+                        message.author.id,
+                        message_url=url,
+                    )
+                else:
+                    async with DatabaseSingleton.get_async_session() as session:
+                        entry = await StarboardEntryTable.get_entry(
+                            guild.id, message.id, session=session
+                        )
+                        if not entry:
+                            return
+                        old_entry = await StarboardEntryGivers.get_starrer(
+                            guild.id, message.id, starrer.id
+                        )
+
+                        print("unstarring message", old_entry, message.id, guild.id)
+                        if old_entry:
+                            await session.delete(old_entry)
+                            await session.commit()
+                    await StarboardEntryTable.add_or_update_entry(
+                        guild.id,
+                        message.id,
+                        message.channel.id,
+                        message.author.id,
+                        url,
+                    )
+                entry = await StarboardEntryTable.get_entry(guild.id, message.id)
+                await self.update_starboard_message(
+                    guild, message, entry.bot_message_url
+                )
+        except Exception as e:
+            await self.bot.send_error(e, "React", True)
+
+    @commands.Cog.listener()
+    async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel) -> None:
+        if not isinstance(channel, discord.TextChannel):
+            return
+
+        starboard = await Starboard.get_starboard(channel.guild.id)
+        if starboard.channel_id != channel.id:
+            return
+
+        # The starboard channel got deleted, so let's clear it from the database.
+        await Starboard.remove_starboard(channel.guild.id)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(
+        self, payload: discord.RawReactionActionEvent
+    ) -> None:
+        await self.reaction_action("star", payload)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(
+        self, payload: discord.RawReactionActionEvent
+    ) -> None:
+        await self.reaction_action("unstar", payload)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_clear(
+        self, payload: discord.RawReactionClearEmojiEvent
+    ) -> None:
+        guild = self.bot.get_guild(payload.guild_id)  # type: ignore
+        if guild is None:
+            return
+
+        channel = guild.get_channel_or_thread(payload.channel_id)
+        if channel is None or not isinstance(
+            channel, (discord.Thread, discord.TextChannel)
+        ):
+            return
+
+        entry = await StarboardEntryTable.get_entry(guild.id, payload.message_id)
+        if entry.bot_message_url is None:
+            return
+
+        starboard = await Starboard.get_starboard(channel.guild.id)
+        if starboard.channel_id is None:
+            return
+        urlv = entry.bot_message_url
+
+        await StarboardEntryTable.delete_entry_by_bot_message_url(urlv)
+        msg = await urltomessage(urlv, self.bot)
+        if msg is not None:
+            await msg.delete()
 
     async def edit_one_random(self):
         (bot_message, message) = random.choice(list(self.to_be_edited.items()))
@@ -188,135 +319,7 @@ class StarboardCog(commands.Cog):
             await session.commit()
             await ctx.send("Done")
 
-    async def reaction_action(
-        self, fmt: str, payload: discord.RawReactionActionEvent
-    ) -> None:
-        try:
-            if str(payload.emoji) not in self.emojilist:
-                return
 
-            guild = self.bot.get_guild(payload.guild_id)  # type: ignore
-            if guild is None:
-                return
-
-            channel = guild.get_channel_or_thread(payload.channel_id)
-            if not isinstance(channel, (discord.Thread, discord.TextChannel)):
-                return
-            starboard = await Starboard.get_starboard(guild.id)
-            if starboard:
-                if starboard.channel_id == channel.id:
-                    return
-            else:
-                return
-            if (
-                discord.utils.utcnow()
-                - discord.utils.snowflake_time(payload.message_id)
-            ) > datetime.timedelta(days=7):
-                return
-            async with self.lock:
-                message = await channel.fetch_message(payload.message_id)
-
-                url = message.jump_url
-                starrer = payload.member or (await guild.fetch_member(payload.user_id))
-                if starrer is None or starrer.bot:
-                    return
-
-                if fmt == "star":
-                    print("adding starrer message", message.id, guild.id, starrer.id)
-                    await StarboardEntryGivers.add_starrer(
-                        message.id,
-                        guild.id,
-                        starrer.id,
-                        str(payload.emoji),
-                        message.jump_url,
-                    )
-                    await StarboardEntryTable.add_or_update_entry(
-                        guild.id,
-                        message.id,
-                        message.channel.id,
-                        message.author.id,
-                        message_url=url,
-                    )
-                else:
-                    async with DatabaseSingleton.get_async_session() as session:
-                        entry = await StarboardEntryTable.get_entry(
-                            guild.id, message.id, session=session
-                        )
-                        if not entry:
-                            return
-                        old_entry = await StarboardEntryGivers.get_starrer(
-                            guild.id, message.id, starrer.id
-                        )
-
-                        print("unstarring message", old_entry, message.id, guild.id)
-                        if old_entry:
-                            await session.delete(old_entry)
-                            await session.commit()
-                    await StarboardEntryTable.add_or_update_entry(
-                        guild.id,
-                        message.id,
-                        message.channel.id,
-                        message.author.id,
-                        url,
-                    )
-                entry = await StarboardEntryTable.get_entry(guild.id, message.id)
-                await self.update_starboard_message(
-                    guild, message, entry.bot_message_url
-                )
-        except Exception as e:
-            await self.bot.send_error(e, "React", True)
-
-    @commands.Cog.listener()
-    async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel) -> None:
-        if not isinstance(channel, discord.TextChannel):
-            return
-
-        starboard = await Starboard.get_starboard(channel.guild.id)
-        if starboard.channel_id != channel.id:
-            return
-
-        # The starboard channel got deleted, so let's clear it from the database.
-        await Starboard.remove_starboard(channel.guild.id)
-
-    @commands.Cog.listener()
-    async def on_raw_reaction_add(
-        self, payload: discord.RawReactionActionEvent
-    ) -> None:
-        await self.reaction_action("star", payload)
-
-    @commands.Cog.listener()
-    async def on_raw_reaction_remove(
-        self, payload: discord.RawReactionActionEvent
-    ) -> None:
-        await self.reaction_action("unstar", payload)
-
-    @commands.Cog.listener()
-    async def on_raw_reaction_clear(
-        self, payload: discord.RawReactionClearEmojiEvent
-    ) -> None:
-        guild = self.bot.get_guild(payload.guild_id)  # type: ignore
-        if guild is None:
-            return
-
-        channel = guild.get_channel_or_thread(payload.channel_id)
-        if channel is None or not isinstance(
-            channel, (discord.Thread, discord.TextChannel)
-        ):
-            return
-
-        entry = await StarboardEntryTable.get_entry(guild.id, payload.message_id)
-        if entry.bot_message_url is None:
-            return
-
-        starboard = await Starboard.get_starboard(channel.guild.id)
-        if starboard.channel_id is None:
-            return
-        urlv = entry.bot_message_url
-
-        await StarboardEntryTable.delete_entry_by_bot_message_url(urlv)
-        msg = await urltomessage(urlv, self.bot)
-        if msg is not None:
-            await msg.delete()
 
     async def update_starboard_message(self, guild, message, bot_message):
         starboard = await Starboard.get_starboard(guild.id)
