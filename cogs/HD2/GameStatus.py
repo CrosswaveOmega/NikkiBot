@@ -376,13 +376,35 @@ faction_map = {
     "illuminate": 4,
 }
 
-
+biome_map = {
+    "unknown": 0,
+	"rainforest": 1,
+	"ethereal": 2,
+	"jungle": 3,
+	"moon": 4,
+	"desert": 5,
+	"winter": 6,
+	"highlands": 7,
+	"icemoss": 8,
+	"icemoss_special": 9,
+	"tundra": 10,
+	"supercolony": 11,
+	"blackhole": 12,
+	"swamp": 13,
+	"rainyjungle": 14,
+	"desolate": 15,
+	"crimsonmoor": 16,
+	"canyon": 17,
+	"mesa": 18,
+	"toxic": 19
+}
 def add_to_csv(stat: ApiStatus):
     """Add the data from the last period of time to the csv file."""
     # Get the first change in the war statistics
     # print(type(stat), stat.war)
     war, lastwar = stat.war.get_first_change()
     mp_mult = (war.impactMultiplier + lastwar.impactMultiplier) / 2
+    all_players=war.statistics.playerCount
 
     # Prepare a list to hold the rows to be written to the CSV
     rows = []
@@ -390,6 +412,7 @@ def add_to_csv(stat: ApiStatus):
     now = datetime.datetime.now(tz=datetime.timezone.utc)
 
     timestamp = int(now.timestamp())
+
     # Iterate through the campaigns to gather statistics
     for k, campaign_list in stat.campaigns.items():
         if len(campaign_list) <= 1:
@@ -435,7 +458,14 @@ def add_to_csv(stat: ApiStatus):
         ) / total_sec
         deaths = stats.deaths / total_sec
 
-        # Prepare the row for the CSV
+        planet=change.planet
+        central = stats.planetdata["planets"].get(str(planet.index), None)
+        biome = "unknown"
+        hazards = ""
+        if central:
+            bname = central["biome"]
+            if bname:
+                biome=bname
 
         row = {
             "timestamp": timestamp,
@@ -452,9 +482,10 @@ def add_to_csv(stat: ApiStatus):
 
         row2 = {
             "timestamp": timestamp,
-            "player_count": avg_players,
+            "player_count": players,
+            "all_players": all_players,
             "mode": mode,
-            "mp_mult": mp_mult,
+            "mp_mult": war.impactMultiplier,
             "wins_per_sec": wins,
             "loss_per_sec": loss,
             "decay_rate": decay,
@@ -463,6 +494,7 @@ def add_to_csv(stat: ApiStatus):
             "eps": eps,
             "cid": change.id,
             "pid": change.planet.index,
+            "biomeid": biome_map.get(biome,0),
             "dow": now.weekday() + 1,
             "hour": now.hour + 1,
             "owner": faction_map.get(owner, 4),
@@ -474,7 +506,7 @@ def add_to_csv(stat: ApiStatus):
         rows_for_new.append(row2)
 
     # Define the CSV file path
-    csv_newfile_path = "statistics_new.csv"
+    csv_newfile_path = "statistics_newer.csv"
     csv_file_path = "statistics.csv"
     # Write the rows to the CSV file
     # print(rows)
