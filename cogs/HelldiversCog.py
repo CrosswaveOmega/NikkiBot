@@ -351,6 +351,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         hd2.write_statistics_to_csv(self.apistatus)
         await ctx.send(file=discord.File("statistics.csv"))
         await ctx.send(file=discord.File("statistics_sub.csv"))
+        
+        await ctx.send(file=discord.File("statistics_new.csv"))
 
     @commands.is_owner()
     @commands.command(name="get_map")
