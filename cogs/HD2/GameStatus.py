@@ -459,7 +459,7 @@ def add_to_csv(stat: ApiStatus):
         deaths = stats.deaths / total_sec
 
         planet=change.planet
-        central = stats.planetdata["planets"].get(str(planet.index), None)
+        central = stat.planetdata["planets"].get(str(planet.index), None)
         biome = "unknown"
         hazards = ""
         if central:
