@@ -331,7 +331,7 @@ class ApiStatus:
                 for k, p in self.planets.items():
                     if planet_ind in p.waypoints:
                         if k not in visited:
-                            stack.append(neighbor_index)
+                            stack.append(planet_ind)
 
         return result
 
