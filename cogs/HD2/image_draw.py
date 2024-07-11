@@ -225,7 +225,7 @@ def create_gif(filepath, apistat: ApiStatus):
                     break
         event = True if planet.event is not None else False
         owner = planet.currentOwner.lower()
-        lastplanets[planet.index] = {
+        lastplanets['planets'][planet.index] = {
             "index": planet.index,
             "event": event,
             "x": x,
