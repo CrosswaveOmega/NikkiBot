@@ -209,7 +209,7 @@ def create_gif(filepath, apistat: ApiStatus):
             assignment = a.get_first()
             task_planets.extend(assignment.get_task_planets())
     planets = {}
-    lastplanets = {}
+    lastplanets = {'planets':{}}
     for _, planet in apistat.planets.items():
         gpos = planet.position
         x = gpos.x
@@ -240,7 +240,7 @@ def create_gif(filepath, apistat: ApiStatus):
         print("No significant change.")
         return "./saveData/map.gif"
 
-    for index, value in lastplanets.items():
+    for index, value in lastplanets['planets'].items():
         img = highlight(img, **value)
         place_planet(index, planets)
 
