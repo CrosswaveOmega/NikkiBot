@@ -138,3 +138,38 @@ text = """
 
 ### Fine thank you.
 """
+
+
+def draw_dashed_line(
+    draw: ImageDraw.ImageDraw,
+    color: Union[str, tuple[int, int, int]],
+    a: tuple[int, int],
+    b: tuple[int, int],
+    dash_length=5,
+    width=1,
+):
+    """
+    Draw a dashed line from point 'a' to point 'b' with given dash length and width.
+
+    Parameters:
+    - draw: ImageDraw instance used to draw on the image.
+    - color: Color of the dashed line, can be a string or tuple of RGB values.
+    - a: Starting point (x, y) tuple of the line.
+    - b: Ending point (x, y) tuple of the line.
+    - dash_length: Length of each dash in pixels (default is 5).
+    - width: Width of the line dashes (default is 1).
+
+    """
+
+    total_length = ((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2) ** 0.5
+    # Euclidean distance
+    steps = (
+        int(total_length / dash_length) // 2 * 2
+    )  # Ensure we have an even number of steps
+    for i in range(0, steps, 3):
+        start = (a[0] + (b[0] - a[0]) * i / steps, a[1] + (b[1] - a[1]) * i / steps)
+        end = (
+            a[0] + (b[0] - a[0]) * (i + 2) / steps,
+            a[1] + (b[1] - a[1]) * (i + 2) / steps,
+        )
+        draw.line([start, end], fill=color, width=width)

@@ -17,7 +17,7 @@ class StarboardCog(commands.Cog):
         self.bot = bot
         self.to_be_edited = {}
         self.lock = asyncio.Lock()
-        self.emojilist = ["\N{Honeybee}", '<:2diverHeart:1221738356950564926>']
+        self.emojilist = ["\N{Honeybee}", "<:2diverHeart:1221738356950564926>"]
 
         self.timerloop.start()  # type: ignore
 
@@ -318,8 +318,6 @@ class StarboardCog(commands.Cog):
 
             await session.commit()
             await ctx.send("Done")
-
-
 
     async def update_starboard_message(self, guild, message, bot_message):
         starboard = await Starboard.get_starboard(guild.id)

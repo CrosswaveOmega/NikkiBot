@@ -13,6 +13,7 @@ import importlib.util
 
 CELL_SIZE = 200
 from utility.views import BaseView
+from utility.image_functions import draw_dashed_line
 
 SCALE = 1.2
 
@@ -57,45 +58,46 @@ def draw_grid(filepath, cell_size=200):
     return img
 
 
-def get_im_coordinates(x, y):
+def get_im_coordinates(x, y, scale=1):
 
     coordinate = int(round(x * 1000.0 * SCALE + 1000 * SCALE, 0)), int(
         round(1000 * SCALE - y * 1000.0 * SCALE, 1)
     )
+    coordinate = coordinate[0] * scale, coordinate[1] * scale
     return coordinate
 
 
 def draw_supply_lines(img, color=(0, 255, 0, 255), apistat: ApiStatus = None):
-    overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    width, height = img.size
+    overlay = Image.new("RGBA", (width * 2, height * 2), (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
 
     for index, planet in apistat.planets.items():
         gpos = planet.position
-        x, y = get_im_coordinates(gpos.x, gpos.y)
+        x, y = get_im_coordinates(gpos.x, gpos.y, 2)
         waypoints = planet.waypoints
         for ind in waypoints:
             target = apistat.planets[ind]
             tgpos = target.position
-            tx, ty = get_im_coordinates(tgpos.x, tgpos.y)
+            tx, ty = get_im_coordinates(tgpos.x, tgpos.y, 2)
             draw.line(
                 [(x, y), (tx, ty)],
                 fill=color,
-                width=2,
+                width=4,
             )
 
     for index, planet in apistat.planets.items():
         waypoints = planet.attacking
         gpos = planet.position
-        x, y = get_im_coordinates(gpos.x, gpos.y)
+        x, y = get_im_coordinates(gpos.x, gpos.y, 2)
         for ind in waypoints:
             target = apistat.planets[ind]
             tgpos = target.position
-            tx, ty = get_im_coordinates(tgpos.x, tgpos.y)
-            draw.line(
-                [(x, y), (tx, ty)],
-                fill=(255, 0, 0, 100),
-                width=2,
-            )
+            tx, ty = get_im_coordinates(tgpos.x, tgpos.y, 2)
+            draw_dashed_line(draw, (255, 0, 0, 255), (x, y), (tx, ty), width=5)
+
+    overlay = overlay.resize((overlay.width // 2, overlay.height // 2))
+
     img = Image.alpha_composite(img, overlay)
     return img
 
@@ -273,7 +275,6 @@ def create_gif(filepath, apistat: ApiStatus):
         loop=0,
     )
 
-
     return "./saveData/map.gif"
 
 
@@ -327,6 +328,8 @@ class MapViewer(BaseView):
                 save_all=True,
                 append_images=cropped_frames[1:],
                 duration=100,
+                dispose=2,
+                transparency=0,
                 loop=0,
             )
             image_binary.seek(0)

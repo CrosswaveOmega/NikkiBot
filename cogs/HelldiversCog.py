@@ -252,7 +252,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(f"Done with chunk {e+1}:{allv}.")
 
     def draw_img(self):
-        '''Create a GIF map.'''
+        """Create a GIF map."""
         print("Updating map.")
         file_path = "./assets/GalacticMap.png"
         img = hd2.create_gif(file_path, apistat=self.apistatus)
@@ -351,7 +351,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         hd2.write_statistics_to_csv(self.apistatus)
         await ctx.send(file=discord.File("statistics.csv"))
         await ctx.send(file=discord.File("statistics_sub.csv"))
-        
+
         await ctx.send(file=discord.File("statistics_new.csv"))
 
     @commands.is_owner()
