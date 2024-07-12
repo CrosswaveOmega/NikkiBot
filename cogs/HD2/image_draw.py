@@ -143,7 +143,7 @@ def highlight(img, index, x, y, name, hper, owner, event, task_planets, health=0
         (0, 0), f"{str(hper)}\n{100-int(health)}", font=font2, align="center", spacing=0
     )
     background_box = [
-        coordinate[0] - bbox[2] / 2 - 2,
+        coordinate[0] - bbox[2] / 2 -2,
         coordinate[1] - bbox[3] - 2 - 10,
         coordinate[0] + bbox[2] / 2 + 2,
         coordinate[1] - 10,
@@ -164,7 +164,7 @@ def highlight(img, index, x, y, name, hper, owner, event, task_planets, health=0
     )
 
     draw.text(
-        (coordinate[0] - bbox[2] / 2, coordinate[1] - bbox[3] - 10),
+        (coordinate[0] - bbox[2] / 2, coordinate[1] - bbox[3] - 12),
         name,
         fill=(255, 255, 255),
         font=font,
