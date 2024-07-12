@@ -711,3 +711,5 @@ async def setup(bot):
 
 async def teardown(bot):
     await bot.remove_cog("HelldiversCog")
+
+

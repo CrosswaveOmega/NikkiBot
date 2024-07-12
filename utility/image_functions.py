@@ -4,7 +4,7 @@ import discord
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 
-
+import math
 from datetime import datetime, timedelta, timezone
 
 from discord.ext import commands, tasks
@@ -147,6 +147,7 @@ def draw_dashed_line(
     b: tuple[int, int],
     dash_length=5,
     width=1,
+    offset=0,
 ):
     """
     Draw a dashed line from point 'a' to point 'b' with given dash length and width.
@@ -158,7 +159,7 @@ def draw_dashed_line(
     - b: Ending point (x, y) tuple of the line.
     - dash_length: Length of each dash in pixels (default is 5).
     - width: Width of the line dashes (default is 1).
-
+    - offset: Number of steps to offset the start of the dashes (default is 0).
     """
 
     total_length = ((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2) ** 0.5
@@ -173,3 +174,88 @@ def draw_dashed_line(
             a[1] + (b[1] - a[1]) * (i + 2) / steps,
         )
         draw.line([start, end], fill=color, width=width)
+
+
+
+def draw_dot(
+    draw: ImageDraw.ImageDraw,
+    color: Union[str, tuple[int, int, int]],
+    a: tuple[int, int],
+    b: tuple[int, int],
+    width:int=5,
+    offset=0,
+):
+    """
+    Draw a dot somewhere between point 'a' and point 'b' with the position determined by offset.
+
+    Parameters:
+    - draw: ImageDraw instance used to draw on the image.
+    - color: Color of the dot, can be a string or tuple of RGB values.
+    - a: Starting point (x, y) tuple.
+    - b: Ending point (x, y) tuple.
+    - offset: A float between 0 and 1 representing the relative position between 'a' and 'b'.
+    """
+
+    x = a[0] + offset * (b[0] - a[0])
+    y = a[1] + offset * (b[1] - a[1])
+    position = (x, y)
+
+    #draw.point(position, fill=color)
+
+    draw.ellipse([position[0] - width, position[1] - width, position[0] + width, position[1] + width], outline=color, fill=color)
+
+
+def draw_arrow(
+    draw: ImageDraw.ImageDraw,
+    color: Union[str, tuple[int, int, int]],
+    st: tuple[int, int],
+    ed: tuple[int, int],
+    arrowhead_length=20,
+    arrowhead_angle=30,
+    width=1,
+    offset_a = 0.2,
+    offset_b = 0.7
+):
+    """
+    Draw a colored arrow from point 'a' to point 'b' with an arrowhead pointing at 'b'.
+
+    Parameters:
+    - draw: ImageDraw instance used to draw on the image.
+    - color: Color of the arrow, can be a string or tuple of RGB values.
+    - a: Starting point (x, y) tuple of the arrow.
+    - b: Ending point (x, y) tuple of the arrow.
+    - arrowhead_length: Length of each side of the arrowhead in pixels (default is 10).
+    - arrowhead_angle: Angle between the arrow shaft and each side of the arrowhead in degrees (default is 30).
+    - width: Width of the arrow shaft (default is 1).
+    """
+
+    # Draw the arrow shaft
+
+    a = (st[0] + offset_a * (ed[0] - st[0]), st[1] + offset_a * (ed[1] - st[1]))
+    b = (st[0] + offset_b * (ed[0] - st[0]), st[1] + offset_b * (ed[1] - st[1]))
+    draw.line([a, b], fill=color, width=width)
+
+    # Calculate the direction of the arrow shaft
+    dx = b[0] - a[0]
+    dy = b[1] - a[1]
+    length = (dx ** 2 + dy ** 2) ** 0.5
+    direction = (dx / length, dy / length)
+
+    # Calculate the points to draw two lines out of the target
+    arrowhead_angle_rad = math.radians(arrowhead_angle)
+    sin_angle = math.sin(arrowhead_angle_rad)
+    cos_angle = math.cos(arrowhead_angle_rad)
+
+    left_x = b[0] - arrowhead_length * (cos_angle * direction[0] - sin_angle * direction[1])
+    left_y = b[1] - arrowhead_length * (cos_angle * direction[1] + sin_angle * direction[0])
+    left = (left_x, left_y)
+
+    right_x = b[0] - arrowhead_length * (cos_angle * direction[0] + sin_angle * direction[1])
+    right_y = b[1] - arrowhead_length * (cos_angle * direction[1] - sin_angle * direction[0])
+    right = (right_x, right_y)
+
+    # Draw the arrowhead
+    draw.line([b, left], fill=color, width=width)
+    draw.line([b, right], fill=color, width=width)
+    draw.polygon([b, left, right], fill=color)
+

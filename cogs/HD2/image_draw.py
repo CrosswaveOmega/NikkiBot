@@ -13,7 +13,7 @@ import importlib.util
 
 CELL_SIZE = 200
 from utility.views import BaseView
-from utility.image_functions import draw_dashed_line
+from utility.image_functions import draw_arrow, draw_dot
 
 SCALE = 1.2
 
@@ -85,22 +85,35 @@ def draw_supply_lines(img, color=(0, 255, 0, 255), apistat: ApiStatus = None):
                 fill=color,
                 width=4,
             )
-
-    for index, planet in apistat.planets.items():
-        waypoints = planet.attacking
-        gpos = planet.position
-        x, y = get_im_coordinates(gpos.x, gpos.y, 2)
-        for ind in waypoints:
-            target = apistat.planets[ind]
-            tgpos = target.position
-            tx, ty = get_im_coordinates(tgpos.x, tgpos.y, 2)
-            draw_dashed_line(draw, (255, 0, 0, 255), (x, y), (tx, ty), width=5)
+    
+        for index, planet in apistat.planets.items():
+            
+            draw_attack_lines(draw,planet,apistat)
+    #     waypoints = planet.attacking
+    #     gpos = planet.position
+    #     x, y = get_im_coordinates(gpos.x, gpos.y, 2)
+    #     for ind in waypoints:
+    #         target = apistat.planets[ind]
+    #         tgpos = target.position
+    #         tx, ty = get_im_coordinates(tgpos.x, tgpos.y, 2)
+    #         draw_dashed_line(draw, (255, 0, 0, 255), (x, y), (tx, ty), width=5)
 
     overlay = overlay.resize((overlay.width // 2, overlay.height // 2))
 
     img = Image.alpha_composite(img, overlay)
     return img
 
+def draw_attack_lines(draw, planet, apistat: ApiStatus):
+    
+    waypoints = planet.attacking
+    gpos = planet.position
+    x, y = get_im_coordinates(gpos.x, gpos.y, 2)
+    for ind in waypoints:
+        target = apistat.planets[ind]
+        tgpos = target.position
+        tx, ty = get_im_coordinates(tgpos.x, tgpos.y, 2)
+        
+        draw_arrow(draw, (255, 0, 0, 255), (x, y), (tx, ty), width=5)
 
 def highlight(img, index, x, y, name, hper, owner, event, task_planets, health=0):
     coordinate = get_im_coordinates(x, y)
@@ -209,7 +222,7 @@ def create_gif(filepath, apistat: ApiStatus):
             assignment = a.get_first()
             task_planets.extend(assignment.get_task_planets())
     planets = {}
-    lastplanets = {'planets':{}}
+    lastplanets = {'version':2,'planets':{}}
     for _, planet in apistat.planets.items():
         gpos = planet.position
         x = gpos.x
@@ -251,15 +264,19 @@ def create_gif(filepath, apistat: ApiStatus):
         img.alpha_composite(planets[planet_obj.index][0], (c[0] - 10, c[1] - 10))
 
     for frame in range(1, 30):  # Assuming 30 frames
+        print(frame)
         frame_img = Image.new("RGBA", (img.width, img.height), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(frame_img)
         for _, planet_obj in apistat.planets.items():
             gpos = planet_obj.position
             c = get_im_coordinates(gpos.x, gpos.y)
             frame_img.alpha_composite(
                 planets[planet_obj.index][frame], (c[0] - 10, c[1] - 10)
             )
-        frames.append(frame_img)
 
+        
+        frames.append(frame_img)
+    print('saving')
     # Save the frames to the buffer
     img.save(
         "./saveData/map.gif",
@@ -394,3 +411,9 @@ class MapViewer(BaseView):
         self.value = False
         await interaction.response.edit_message(content="Terminating.")
         self.stop()
+
+
+
+
+
+

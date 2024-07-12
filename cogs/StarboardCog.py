@@ -156,6 +156,7 @@ class StarboardCog(commands.Cog):
             await msg.delete()
 
     async def edit_one_random(self):
+        """Edit one random key/value pair in the to be edited dictionary."""
         (bot_message, message) = random.choice(list(self.to_be_edited.items()))
         self.to_be_edited.pop(bot_message)
         mess = await urltomessage(bot_message, self.bot)
@@ -294,7 +295,7 @@ class StarboardCog(commands.Cog):
 
     @starboard.command()
     async def dump_stars(self, ctx):
-        """Dump stars"""
+        """Dump a list of all stars to the chat."""
         existing = await Starboard.get_starboard(ctx.guild.id)
         if not existing:
             await ctx.send("Starboard does not exist for this server.")
@@ -319,7 +320,15 @@ class StarboardCog(commands.Cog):
             await session.commit()
             await ctx.send("Done")
 
-    async def update_starboard_message(self, guild, message, bot_message):
+    async def update_starboard_message(self, guild: discord.Guild, message: discord.Message, bot_message: str) -> None:
+        """
+        Update the starboard message or add a new one based on entry threshold.
+
+        Args:
+            guild (discord.Guild): The guild where the message is located.
+            message (discord.Message): The original message to be added or checked on starboard.
+            bot_message (str): The URL of the bot's starboard message.
+        """
         starboard = await Starboard.get_starboard(guild.id)
         if not starboard:
             return
@@ -344,7 +353,7 @@ class StarboardCog(commands.Cog):
 
         Args:
             message (discord.Message): The original Discord message.
-            stars (int): The number of stars to display.
+            stars (int): The number of emojis to display.
 
         Returns:
             tuple[str, discord.Embed]: The message content and the embed.
