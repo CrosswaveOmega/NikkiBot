@@ -363,7 +363,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         img = self.img
         globtex = ""
         if self.apistatus.warall:
-            for evt in self.apistatus.warall.status.globalEvents:
+            for evt in self.apistatus.warall.status.globalEvents[:-1]:
                 if evt.title and evt.message:
                     mes = re.sub(hd2.pattern, r"**\1**", evt.message)
                     mes = re.sub(hd2.pattern3, r"***\1***", mes)
