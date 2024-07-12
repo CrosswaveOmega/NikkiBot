@@ -153,21 +153,21 @@ class Statistics(BaseApiModel):
         """
         Return statistics formatted in a nice string.
         """
-        mission_stats = f"W:{(self.missionsWon)},"
-        mission_stats += f"L:{(self.missionsLost)}"
+        mission_stats = f"W:{hf(self.missionsWon)},"
+        mission_stats += f"L:{hf(self.missionsLost)}"
         missiontime = f"Time:{sts(self.missionTime)} sec"
 
         # Format kill statistics
         kill_stats = (
-            f"T:{(self.terminidKills)}, "
-            f"A:{(self.automatonKills)}, "
+            f"T:{hf(self.terminidKills)}, "
+            f"A:{hf(self.automatonKills)}, "
             f"DATA EXPUNGED"
         )
         #             f"I: {hf(self.illuminateKills)}"
 
         # Format deaths and friendlies statistics
         deaths_and_friendlies = (
-            f"Deaths/Friendlies: {(self.deaths)}/" f"{(self.friendlies)}"
+            f"Deaths/Friendlies: {hf(self.deaths)}/" f"{hf(self.friendlies)}"
         )
 
         # Format player count
