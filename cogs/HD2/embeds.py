@@ -13,10 +13,8 @@ import re
 
 from discord.utils import format_dt as fdt
 
-from utility import changeformatif as cfi
-from utility import extract_timestamp as et
-from utility import human_format as hf
-from utility import select_emoji as emj
+from .helldive.models.ABC.utils import extract_timestamp as et
+
 import random
 from .GameStatus import ApiStatus, get_feature_dictionary
 from .predict import make_prediction_for_eps, predict_needed_players

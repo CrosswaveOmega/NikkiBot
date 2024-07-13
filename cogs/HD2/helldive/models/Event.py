@@ -4,7 +4,7 @@ from pydantic import Field
 from .ABC.model import BaseApiModel, HealthMixin
 
 
-from utility import (
+from .ABC.utils import (
     human_format as hf,
     select_emoji as emj,
     changeformatif as cfi,

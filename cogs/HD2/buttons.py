@@ -1,6 +1,6 @@
 import discord
-from utility.embed_paginator import *
-
+from utility.embed_paginator import PageClassContainer,PageSelect
+import logging
 
 class ListButtons(discord.ui.View):
     def __init__(self, *, timeout: int = 180, callbacker: PageClassContainer) -> None:
@@ -16,7 +16,6 @@ class ListButtons(discord.ui.View):
     async def on_error(
         self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item
     ):
-        gui.gprint(str(error))
         log = logging.getLogger("discord")
 
         log.error(

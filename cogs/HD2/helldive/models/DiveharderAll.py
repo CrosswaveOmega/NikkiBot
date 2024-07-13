@@ -13,19 +13,6 @@ from .SteamNews import SteamNewsRaw
 from .WarId import WarId
 
 
-from utility import (
-    human_format as hf,
-    select_emoji as emj,
-    changeformatif as cfi,
-    extract_timestamp as et,
-)
-from discord.utils import format_dt as fdt
-
-# Define the regex pattern to match <i=1>...</i> tags
-pattern = r"<i=1>(.*?)<\/i>"
-pattern3 = r"<i=3>(.*?)<\/i>"
-
-
 class DiveharderAll(BaseApiModel):
     """
     None model

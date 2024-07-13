@@ -5,7 +5,7 @@ import json
 import numpy as np
 
 from .helldive import *
-from utility import prioritized_string_split, seconds_to_time_stamp as sts
+from .utils import prioritized_string_split
 from hd2json.jsonutils import load_planets_from_directory
 
 
@@ -177,7 +177,7 @@ class ApiStatus:
         if datetime.datetime.now() >= self.last_planet_get + datetime.timedelta(
             hours=2
         ):
-            planets = await GetApiV1PlanetsAll()
+            planets = await GetApiV1PlanetsAll(api_config_override=self.client)
             planet_data = {}
             for planet in planets:
                 planet_data[planet.index] = planet
