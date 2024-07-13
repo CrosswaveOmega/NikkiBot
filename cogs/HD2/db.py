@@ -29,6 +29,7 @@ class ServerHDProfile(SuperEarthBase):
     server_id = Column(Integer, primary_key=True, nullable=False, unique=True)
     overview_message_url = Column(String, nullable=True, default=None)
     update_channel = Column(Integer, nullable=True, default=None)
+    last_global_briefing = Column(String, nullable=True, default=None)
 
     @classmethod
     def get(cls, server_id):
@@ -68,6 +69,7 @@ class ServerHDProfile(SuperEarthBase):
         session = DatabaseSingleton.get_session()
         for key, value in kwargs.items():
             setattr(self, key, value)
+        session.commit()
 
 
 DatabaseSingleton("mainsetup").load_base(SuperEarthBase)
