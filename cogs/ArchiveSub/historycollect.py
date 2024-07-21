@@ -416,7 +416,7 @@ async def collect_server_history(ctx, **kwargs):
 
     chantups.extend(("textchan", chan) for chan in guild.text_channels)
     chanlen = len(chantups)
-    hex = await get_server_icon_color(ctx.guild)
+    #hex = await get_server_icon_color(ctx.guild)
     arch_ctx = ArchiveContext(
         bot=bot,
         profile=profile,
@@ -424,7 +424,7 @@ async def collect_server_history(ctx, **kwargs):
         last_stored_time=last_time,
         latest_time=new_last_time,
         channel_count=chanlen,
-        color=hex,
+        #color=hex,
         **kwargs,
     )
 

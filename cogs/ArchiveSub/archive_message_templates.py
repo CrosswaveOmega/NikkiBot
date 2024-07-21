@@ -158,8 +158,8 @@ class ArchiveMessageTemplate(MessageTemplates):
     @staticmethod
     async def server_archive_message(ctx: commands.Context, description: str, **kwargs):
         """Create an embed"""
-        hex = await get_server_icon_color(ctx.guild)
+        #hex = await get_server_icon_color(ctx.guild)
         embed = ArchiveMessageTemplate.get_server_archive_embed(
-            ctx.guild, description, color=hex
+            ctx.guild, description, 
         )
         await ctx.send(embed=embed, **kwargs)
