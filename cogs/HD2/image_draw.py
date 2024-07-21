@@ -85,10 +85,10 @@ def draw_supply_lines(img, color=(0, 255, 0, 255), apistat: ApiStatus = None):
                 fill=color,
                 width=4,
             )
-    
+
         for index, planet in apistat.planets.items():
-            
-            draw_attack_lines(draw,planet,apistat)
+
+            draw_attack_lines(draw, planet, apistat)
     #     waypoints = planet.attacking
     #     gpos = planet.position
     #     x, y = get_im_coordinates(gpos.x, gpos.y, 2)
@@ -103,8 +103,9 @@ def draw_supply_lines(img, color=(0, 255, 0, 255), apistat: ApiStatus = None):
     img = Image.alpha_composite(img, overlay)
     return img
 
+
 def draw_attack_lines(draw, planet, apistat: ApiStatus):
-    
+
     waypoints = planet.attacking
     gpos = planet.position
     x, y = get_im_coordinates(gpos.x, gpos.y, 2)
@@ -112,8 +113,9 @@ def draw_attack_lines(draw, planet, apistat: ApiStatus):
         target = apistat.planets[ind]
         tgpos = target.position
         tx, ty = get_im_coordinates(tgpos.x, tgpos.y, 2)
-        
+
         draw_arrow(draw, (255, 0, 0, 255), (x, y), (tx, ty), width=5)
+
 
 def highlight(img, index, x, y, name, hper, owner, event, task_planets, health=0):
     coordinate = get_im_coordinates(x, y)
@@ -143,7 +145,7 @@ def highlight(img, index, x, y, name, hper, owner, event, task_planets, health=0
         (0, 0), f"{str(hper)}\n{100-int(health)}", font=font2, align="center", spacing=0
     )
     background_box = [
-        coordinate[0] - bbox[2] / 2 -2,
+        coordinate[0] - bbox[2] / 2 - 2,
         coordinate[1] - bbox[3] - 2 - 10,
         coordinate[0] + bbox[2] / 2 + 2,
         coordinate[1] - 10,
@@ -222,7 +224,7 @@ def create_gif(filepath, apistat: ApiStatus):
             assignment = a.get_first()
             task_planets.extend(assignment.get_task_planets())
     planets = {}
-    lastplanets = {'version':2,'planets':{}}
+    lastplanets = {"version": 2, "planets": {}}
     for _, planet in apistat.planets.items():
         gpos = planet.position
         x = gpos.x
@@ -238,7 +240,7 @@ def create_gif(filepath, apistat: ApiStatus):
                     break
         event = True if planet.event is not None else False
         owner = planet.currentOwner.lower()
-        lastplanets['planets'][planet.index] = {
+        lastplanets["planets"][planet.index] = {
             "index": planet.index,
             "event": event,
             "x": x,
@@ -253,7 +255,7 @@ def create_gif(filepath, apistat: ApiStatus):
         print("No significant change.")
         return "./saveData/map.gif"
 
-    for index, value in lastplanets['planets'].items():
+    for index, value in lastplanets["planets"].items():
         img = highlight(img, **value)
         place_planet(index, planets)
 
@@ -274,9 +276,8 @@ def create_gif(filepath, apistat: ApiStatus):
                 planets[planet_obj.index][frame], (c[0] - 10, c[1] - 10)
             )
 
-        
         frames.append(frame_img)
-    print('saving')
+    print("saving")
     # Save the frames to the buffer
     img.save(
         "./saveData/map.gif",
@@ -411,9 +412,3 @@ class MapViewer(BaseView):
         self.value = False
         await interaction.response.edit_message(content="Terminating.")
         self.stop()
-
-
-
-
-
-

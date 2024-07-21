@@ -1,6 +1,7 @@
 from typing import *
 import re
 
+
 def split_and_cluster_strings(
     input_string: str, max_cluster_size: int, split_substring: str, length=len
 ) -> list[str]:

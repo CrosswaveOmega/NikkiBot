@@ -320,7 +320,9 @@ class StarboardCog(commands.Cog):
             await session.commit()
             await ctx.send("Done")
 
-    async def update_starboard_message(self, guild: discord.Guild, message: discord.Message, bot_message: str) -> None:
+    async def update_starboard_message(
+        self, guild: discord.Guild, message: discord.Message, bot_message: str
+    ) -> None:
         """
         Update the starboard message or add a new one based on entry threshold.
 

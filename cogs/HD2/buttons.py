@@ -1,6 +1,7 @@
 import discord
-from utility.embed_paginator import PageClassContainer,PageSelect
+from utility.embed_paginator import PageClassContainer, PageSelect
 import logging
+
 
 class ListButtons(discord.ui.View):
     def __init__(self, *, timeout: int = 180, callbacker: PageClassContainer) -> None:

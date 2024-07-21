@@ -116,7 +116,9 @@ def extract_colors(image_path, num_colors=7):
     return colors
 
 
-def render_planet(texture, xpix, ypix, sphere_center, sphere_radius, angle, light_dir):
+def render_planet(
+    texture, xpix, ypix, sphere_center, sphere_radius, angle, light_dir, biome
+):
     sphere_img = Image.new("RGBA", (21, 21), (0, 0, 0, 0))
     sphere_draw = ImageDraw.Draw(sphere_img)
 
@@ -153,33 +155,38 @@ def render_planet(texture, xpix, ypix, sphere_center, sphere_radius, angle, ligh
 
                 color = get_texture_color(u, v)  # Get the texture color at (u, v)
                 normal = np.array([nx, ny, nz])  # Construct the normal vector
-                light_intensity = np.dot(
-                    normal, light_dir
-                )  # Calculate the light intensity
-                light_intensity = max(
-                    0.0, light_intensity
-                )  # Ensure a minimum light intensity
+                if biome == "blackhole":
+                    light_intensity = 0.5  # Make the light intensity constant
+                    sphere_img.putpixel((x, y), color)
 
-                # Adjust the light intensity to simulate a larger light source
-                light_falloff = 0.5 + 0.5 * light_intensity
-                light_intensity = max(0.5, light_falloff)
+                else:
+                    light_intensity = np.dot(
+                        normal, light_dir
+                    )  # Calculate the light intensity
+                    light_intensity = max(
+                        0.0, light_intensity
+                    )  # Ensure a minimum light intensity
 
-                color = tuple(
-                    int(c * light_intensity) for c in color
-                )  # Adjust the color by the light intensity
-                if color != (
-                    0,
-                    0,
-                    0,
-                ):  # If the color is not black, set the pixel in the image
-                    sphere_img.putpixel(
-                        (x, y), color
-                    )  # Set the pixel color in the image
+                    # Adjust the light intensity to simulate a larger light source
+                    light_falloff = 0.5 + 0.5 * light_intensity
+                    light_intensity = max(0.5, light_falloff)
 
+                    color = tuple(
+                        int(c * light_intensity) for c in color
+                    )  # Adjust the color by the light intensity
+                    if color != (
+                        0,
+                        0,
+                        0,
+                    ):  # If the color is not black, set the pixel in the image
+                        sphere_img.putpixel(
+                            (x, y), color
+                        )  # Set the pixel color in the image
+    sphere_draw.ellipse([(0, 0), (20, 20)], outline="purple", width=1)
     return sphere_img
 
 
-def make_new_texture(colors, nme, num_craters, num_clouds, xpix, ypix):
+def make_new_texture(colors, nme, num_craters, num_clouds, xpix, ypix, biome_name):
     lightest_color = max(colors, key=lambda c: sum(c[:-1]))
     darkest_color = min(colors, key=lambda c: sum(c[:-1]))
 
@@ -242,25 +249,34 @@ def make_new_texture(colors, nme, num_craters, num_clouds, xpix, ypix):
 
         img.alpha_composite(cloudimg)
 
+    if biome_name == "blackhole" or biome_name == "moon":
+        num_clouds = 0
     generate_random_clouds(xpix, ypix, num_clouds, lightest_color, img)
     img.save(f"./assets/planets/planet_{nme}_texture.png")
     return img
 
 
 def generate_planet_texture(
-    colors, num_craters, num_clouds, nme="", make_new_texture=True
+    colors,
+    num_craters,
+    num_clouds,
+    nme="",
+    biome_name="Unknown",
+    make_a_new_texture=True,
 ):
 
     xpix, ypix = 40, 40
-    if make_new_texture:
-        img = make_new_texture(colors, nme, num_craters, num_clouds, xpix, ypix)
+    if make_a_new_texture:
+        img = make_new_texture(
+            colors, nme, num_craters, num_clouds, xpix, ypix, biome_name
+        )
     textureimg = Image.open(f"./assets/planets/planet_{nme}_texture.png")
     texture = np.array(textureimg)
     sphere_center = (10, 10)
     sphere_radius = 10
 
     def create_gif_with_light_variation(
-        texture, sphere_center, sphere_radius, frames, output_path
+        texture, sphere_center, sphere_radius, frames, output_path, biome_name
     ):
         images = []
         for frame in range(frames):
@@ -271,52 +287,32 @@ def generate_planet_texture(
             light_dir = light_dir / np.linalg.norm(light_dir)
 
             sphere_img = render_planet(
-                texture, xpix, ypix, sphere_center, sphere_radius, angle, light_dir
+                texture,
+                xpix,
+                ypix,
+                sphere_center,
+                sphere_radius,
+                angle,
+                light_dir,
+                biome_name,
             )
 
             images.append(sphere_img)
 
         images[0].save(
-            output_path, save_all=True, append_images=images[1:], duration=100, loop=0
+            output_path,
+            save_all=True,
+            append_images=images[1:],
+            duration=100,
+            loop=0,
+            dispose=2,
         )
 
     texture = np.array(textureimg)
     frames = 30
     output_path = f"./assets/planets/{nme}_rotate.gif"
     create_gif_with_light_variation(
-        texture, sphere_center, sphere_radius, frames, output_path
-    )
-    textureimg = Image.open(f"./assets/planets/planet_{nme}_texture.png")
-    texture = np.array(textureimg)
-    sphere_center = (10, 10)
-    sphere_radius = 10
-
-    def create_gif_with_light_variation(
-        texture, sphere_center, sphere_radius, frames, output_path
-    ):
-        images = []
-        for frame in range(frames):
-
-            angle = (frame / frames) * 360
-            # print(angle)
-            light_dir = np.array([0.8, 0, 1])
-            light_dir = light_dir / np.linalg.norm(light_dir)
-
-            sphere_img = render_planet(
-                texture, xpix, ypix, sphere_center, sphere_radius, angle, light_dir
-            )
-
-            images.append(sphere_img)
-
-        images[0].save(
-            output_path, save_all=True, append_images=images[1:], duration=100, loop=0
-        )
-
-    texture = np.array(textureimg)
-    frames = 30
-    output_path = f"./assets/planets/{nme}_rotate.gif"
-    create_gif_with_light_variation(
-        texture, sphere_center, sphere_radius, frames, output_path
+        texture, sphere_center, sphere_radius, frames, output_path, biome_name
     )
 
 
@@ -349,6 +345,19 @@ all_colors["rainyjungle"] = np.array(
         [49, 102, 61],
         [115, 238, 177],
         [198, 199, 211],
+    ]
+)
+
+
+all_colors["blackhole"] = np.array(
+    [
+        [24, 24, 24],
+        [24, 32, 47],
+        [12, 15, 28],
+        [24, 24, 24],
+        [24, 32, 47],
+        [12, 15, 28],
+        [72, 70, 136],
     ]
 )
 
@@ -392,5 +401,8 @@ def get_planet(ind, biome_name):
     labels = []
     use = all_colors.get(biome_name, None)
     if biome_name in has_c:
-        return generate_planet_texture(use, 0, 2, f"planet_{ind}")
+        return generate_planet_texture(use, 0, 2, f"planet_{ind}", biome_name)
     return None
+
+
+get_planet(64, "blackhole")

@@ -176,13 +176,12 @@ def draw_dashed_line(
         draw.line([start, end], fill=color, width=width)
 
 
-
 def draw_dot(
     draw: ImageDraw.ImageDraw,
     color: Union[str, tuple[int, int, int]],
     a: tuple[int, int],
     b: tuple[int, int],
-    width:int=5,
+    width: int = 5,
     offset=0,
 ):
     """
@@ -200,9 +199,18 @@ def draw_dot(
     y = a[1] + offset * (b[1] - a[1])
     position = (x, y)
 
-    #draw.point(position, fill=color)
+    # draw.point(position, fill=color)
 
-    draw.ellipse([position[0] - width, position[1] - width, position[0] + width, position[1] + width], outline=color, fill=color)
+    draw.ellipse(
+        [
+            position[0] - width,
+            position[1] - width,
+            position[0] + width,
+            position[1] + width,
+        ],
+        outline=color,
+        fill=color,
+    )
 
 
 def draw_arrow(
@@ -213,8 +221,8 @@ def draw_arrow(
     arrowhead_length=20,
     arrowhead_angle=30,
     width=1,
-    offset_a = 0.2,
-    offset_b = 0.7
+    offset_a=0.2,
+    offset_b=0.7,
 ):
     """
     Draw a colored arrow from point 'a' to point 'b' with an arrowhead pointing at 'b'.
@@ -238,7 +246,7 @@ def draw_arrow(
     # Calculate the direction of the arrow shaft
     dx = b[0] - a[0]
     dy = b[1] - a[1]
-    length = (dx ** 2 + dy ** 2) ** 0.5
+    length = (dx**2 + dy**2) ** 0.5
     direction = (dx / length, dy / length)
 
     # Calculate the points to draw two lines out of the target
@@ -246,16 +254,23 @@ def draw_arrow(
     sin_angle = math.sin(arrowhead_angle_rad)
     cos_angle = math.cos(arrowhead_angle_rad)
 
-    left_x = b[0] - arrowhead_length * (cos_angle * direction[0] - sin_angle * direction[1])
-    left_y = b[1] - arrowhead_length * (cos_angle * direction[1] + sin_angle * direction[0])
+    left_x = b[0] - arrowhead_length * (
+        cos_angle * direction[0] - sin_angle * direction[1]
+    )
+    left_y = b[1] - arrowhead_length * (
+        cos_angle * direction[1] + sin_angle * direction[0]
+    )
     left = (left_x, left_y)
 
-    right_x = b[0] - arrowhead_length * (cos_angle * direction[0] + sin_angle * direction[1])
-    right_y = b[1] - arrowhead_length * (cos_angle * direction[1] - sin_angle * direction[0])
+    right_x = b[0] - arrowhead_length * (
+        cos_angle * direction[0] + sin_angle * direction[1]
+    )
+    right_y = b[1] - arrowhead_length * (
+        cos_angle * direction[1] - sin_angle * direction[0]
+    )
     right = (right_x, right_y)
 
     # Draw the arrowhead
     draw.line([b, left], fill=color, width=width)
     draw.line([b, right], fill=color, width=width)
     draw.polygon([b, left, right], fill=color)
-

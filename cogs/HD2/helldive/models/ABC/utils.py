@@ -14,6 +14,7 @@ status_emoji = {
     "medal": "<:Medal:1241748215087235143>",
 }
 
+
 def seconds_to_time_stamp(seconds_init):
     """return string of d:h:m:s"""
     return_string = ""
@@ -33,7 +34,6 @@ def seconds_to_time_stamp(seconds_init):
         return_string += "{:02d}:".format(hours)
     return_string += "{:02d}:{:02d}".format(minutes, seconds)
     return return_string
-
 
 
 def extract_timestamp(timestamp):
@@ -70,7 +70,6 @@ def human_format(num):
     return "{}{}".format(
         "{:f}".format(num).rstrip("0").rstrip("."), suffixes[magnitude]
     )
-
 
 
 def changeformatif(value):

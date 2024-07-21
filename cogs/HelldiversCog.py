@@ -369,12 +369,11 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                     mes = re.sub(hd2.pattern3, r"***\1***", mes)
                     globtex += f"### {evt.title}\n{mes}\n\n"
 
-        
         profile = ServerHDProfile.get_or_new(context.guild.id)
-        if profile.last_global_briefing!=globtex:
+        if profile.last_global_briefing != globtex:
             profile.update(last_global_briefing=globtex)
         else:
-            globtex=""
+            globtex = ""
         war = self.apistatus.war.get_first()
         stats = war.statistics.format_statistics()
         embed = discord.Embed(
@@ -718,5 +717,3 @@ async def setup(bot):
 
 async def teardown(bot):
     await bot.remove_cog("HelldiversCog")
-
-
