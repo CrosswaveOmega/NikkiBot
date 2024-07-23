@@ -225,8 +225,8 @@ class HelldiversGlobalCog(commands.Cog, TC_Cog_Mixin):
 
     hd2user=HD2Local()
 
-    hd2user.command(name="get_overview",description="get the current game state from helldivers2")
-    async def set_topic(
+    @hd2user.command(name="get_overview",description="get the current game state from helldivers2")
+    async def get_overview(
         self, interaction: discord.Interaction
     ) -> None:
         """get bot info for this server"""
