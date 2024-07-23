@@ -235,7 +235,7 @@ class HelldiversGlobalCog(commands.Cog, TC_Cog_Mixin):
         if self.apistatus.assignments:
             for i, assignment in self.apistatus.assignments.items():
                 b, a = assignment.get_first_change()
-                here=b.get_str()
+                here=b.to_str()
         use={"galactic_overview":{
             "value":[here]}}
         
