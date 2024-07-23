@@ -68,7 +68,7 @@ class ApiStatus:
         "last_planet_get",
         "warstat",
         "planetdata",
-        "warall",
+        "warall"
     ]
 
     def __init__(self, client: APIConfig = APIConfig(), max_list_size=8):
@@ -145,6 +145,8 @@ class ApiStatus:
     async def get_war_now(self) -> War:
         war = await GetApiV1War(api_config_override=self.client)
         return war
+    
+
 
     async def update_data(self):
         """
@@ -156,10 +158,42 @@ class ApiStatus:
         assignments = None
         dispatches = None
         try:
-            war = await GetApiV1War(api_config_override=self.client)
-            assignments = await GetApiV1AssignmentsAll(api_config_override=self.client)
-            campaigns = await GetApiV1CampaignsAll(api_config_override=self.client)
-            warall = await GetApiRawAll(api_config_override=self.client)
+            attempt_count = 0
+            while attempt_count < 3:
+                try:
+                    war = await GetApiV1War(api_config_override=self.client)
+                    break
+                except Exception as e:
+                    attempt_count+=1
+                    if attempt_count>=3:
+                        raise e
+
+            while attempt_count < 3:
+                try:
+                    assignments = await GetApiV1AssignmentsAll(api_config_override=self.client)
+                    break
+                except Exception as e:
+                    attempt_count+=1
+                    if attempt_count>=3:
+                        raise e
+
+            while attempt_count < 3:
+                try:
+                    campaigns = await GetApiV1CampaignsAll(api_config_override=self.client)
+                    break
+                except Exception as e:
+                    attempt_count+=1
+                    if attempt_count>=3:
+                        raise e
+
+            while attempt_count < 3:
+                try:
+                    warall = await GetApiRawAll(api_config_override=self.client)
+                    break
+                except Exception as e:
+                    attempt_count+=1
+                    if attempt_count>=3:
+                        raise e
 
         except Exception as e:
             raise e
