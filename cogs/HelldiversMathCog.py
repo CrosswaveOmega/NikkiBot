@@ -201,10 +201,58 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
             writer.writerow(row)
 
 
+
+
+@app_commands.allowed_installs(guilds=False, users=True)
+class HD2Local(app_commands.Group, name="hd2local", description="Helldivers Shortcut Commands"):
+    """Stub class"""
+
+class HelldiversGlobalCog(commands.Cog, TC_Cog_Mixin):
+    """Cog for helldivers 2.  Consider it my embedded automaton spy."""
+
+    def __init__(self, bot):
+        self.bot: TCBot = bot
+        
+        self.globalonly = True
+        self.hd2 = load_json_with_substitutions("./assets/json", "flavor.json", {}).get(
+            "hd2", {}
+        )
+        # self.session=aiohttp.ClientSession()
+
+    @property
+    def apistatus(self) -> hd2.ApiStatus:
+        return self.bot.get_cog("HelldiversCog").apistatus
+
+    hd2user=HD2Local()
+
+    hd2user.command(name="get_overview",description="get the current game state from helldivers2")
+    async def set_topic(
+        self, interaction: discord.Interaction
+    ) -> None:
+        """get bot info for this server"""
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        here=""
+        if self.apistatus.assignments:
+            for i, assignment in self.apistatus.assignments.items():
+                b, a = assignment.get_first_change()
+                here=b.get_str()
+        use={"galactic_overview":{
+            "value":[here]}}
+        
+        
+        emb = hd2.campaign_view(self.apistatus, self.hd2)
+        await ctx.send(embeds=[emb])
+
+
 async def setup(bot):
     module_name = "cogs.HD2Math"
+    HelldiversGlobalCog
     await bot.add_cog(HelldiversMathCog(bot))
+    await bot.add_cog(HelldiversGlobalCog(bot))
+
 
 
 async def teardown(bot):
     await bot.remove_cog("HelldiversMathCog")
+    
+    await bot.remove_cog("HelldiversGlobalCog")
