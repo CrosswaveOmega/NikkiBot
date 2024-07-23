@@ -159,10 +159,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         )
         self.api_up = True
 
-        # self.profiles=ServerHDProfile.get_entries_with_overview_message_id()
-
         Guild_Task_Functions.add_task_function("UPDATEOVERVIEW", self.gtask_update)
-
         Guild_Task_Functions.add_task_function("WARSTATUS", self.gtask_map)
         snap = hd2.load_from_json("./saveData/hd2_snapshot.json")
         self.bot.add_view(HD2OverviewView(self))
@@ -214,9 +211,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         return
 
     async def make_planets(self, ctx, usebiome=""):
-
         print("Updating planets.")
-
         async def update_planet(planet, ctx):
             planetbiome = self.apistatus.planetdata["planets"].get(
                 str(planet.index), None
@@ -336,6 +331,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         await self.update_data()
         await ctx.send("force loaded api data now.")
 
+
+
     @commands.is_owner()
     @commands.command(name="make_planets")
     async def planetmaker(self, ctx: commands.Context, usebiome: str = ""):
@@ -436,7 +433,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         profile.update(overview_message_url=url)
         if not old:
             now = datetime.now()
-            start_date = datetime(2023, 1, 1, now.hour, max(0, now.minute - 15))
+            start_date = datetime(2023, 1, 1, now.hour, 2)
             robj = rrule(freq=MINUTELY, interval=15, dtstart=start_date)
 
             new = TCGuildTask.add_guild_task(
@@ -449,7 +446,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         else:
             old.target_channel_id = autochannel.id
             now = datetime.now()
-            start_date = datetime(2023, 1, 1, now.hour, max(0, now.minute - 15))
+            start_date = datetime(2023, 1, 1, now.hour, 2)
             robj = rrule(freq=MINUTELY, interval=15, dtstart=start_date)
             # target_message = await autochannel.send("**ALTERING AUTO CHANNEL...**",view=HD2OverviewView(self))
             old.target_message_url = target_message.jump_url
