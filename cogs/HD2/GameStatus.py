@@ -151,7 +151,7 @@ class ApiStatus:
     async def get_now(self) -> War:
         nowv = await GetApiRawAll(api_config_override=self.client)
         if nowv:
-            print(nowv)
+            #print(nowv)
             if self.warall:
                 diff= detect_loggable_changes(self.warall,nowv)
                 self.warall=nowv
