@@ -158,20 +158,20 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             "hd2", {}
         )
         self.api_up = True
-
-        Guild_Task_Functions.add_task_function("UPDATEOVERVIEW", self.gtask_update)
-        Guild_Task_Functions.add_task_function("WARSTATUS", self.gtask_map)
         snap = hd2.load_from_json("./saveData/hd2_snapshot.json")
-        self.bot.add_view(HD2OverviewView(self))
         if snap:
             try:
-                if 'nowall' in snap:
-                    snap.pop('nowall')
+                #if 'nowall' in snap:   snap.pop('nowall')
                 new_cls = hd2.ApiStatus.from_dict(snap, client=hdoverride)
                 self.apistatus = new_cls
             except Exception as e:
                 print(e)
                 self.bot.logs.exception(e)
+        Guild_Task_Functions.add_task_function("UPDATEOVERVIEW", self.gtask_update)
+        Guild_Task_Functions.add_task_function("WARSTATUS", self.gtask_map)
+        
+        self.bot.add_view(HD2OverviewView(self))
+
         nowd = datetime.now()
         self.loghook = AssetLookup.get_asset("loghook", "urls")
         st = datetime(
