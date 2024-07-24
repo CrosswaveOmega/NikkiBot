@@ -28,7 +28,7 @@ def get_differing_fields(
         elif isinstance(val1, list) and isinstance(val2, list):
             list_diffs = {}
             for i, (v1, v2) in enumerate(zip(val1, val2)):
-                print(str(type(v1))[:25], str(type(v2))[:25])
+                #print(str(type(v1))[:25], str(type(v2))[:25])
                 if isinstance(v1, BaseApiModel) and isinstance(v2, BaseApiModel):
                     list_diffs[i] = get_differing_fields(v1, v2, lvd + 1)
                 elif v1 != v2:

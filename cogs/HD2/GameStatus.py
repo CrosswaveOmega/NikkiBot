@@ -69,7 +69,7 @@ class ApiStatus:
         "warstat",
         "planetdata",
         "warall",
-        "nowval",
+        'nowval'
     ]
 
     def __init__(self, client: APIConfig = APIConfig(), max_list_size=8):
@@ -83,7 +83,7 @@ class ApiStatus:
         self.last_planet_get: datetime.datetime = datetime.datetime(2024, 1, 1, 0, 0, 0)
         self.warstat: WarStatus = None
         self.warall: DiveharderAll = None
-        self.nowval = DiveharderAll(status=WarStatus(), war_info=WarInfo())
+        self.nowval=DiveharderAll(status=WarStatus(),war_info=WarInfo())
         self.planetdata: Dict[str, Any] = load_planets_from_directory(
             "./hd2json/planets"
         )
@@ -104,7 +104,7 @@ class ApiStatus:
             "dispatches": [d.model_dump() for d in self.dispatches],
             # "warstat": self.warstat.model_dump(),
             "warall": self.warall.model_dump(),
-            "nowall": self.nowval.model_dump(),
+            'nowall': self.nowval.model_dump()
         }
 
     @classmethod
@@ -150,17 +150,17 @@ class ApiStatus:
     async def get_war_now(self) -> War:
         war = await GetApiV1War(api_config_override=self.client)
         return war
-
+    
     async def get_now(self) -> War:
         now = await GetApiRawAll(api_config_override=self.client)
         if now:
             self.warall = now
             self.warstat = self.warall.war_info
         if self.nowval:
-            diff = detect_loggable_changes(self.nowval, now)
-            self.nowval = now
+            diff= detect_loggable_changes(self.nowval,now)
+            self.nowval=now
             return diff
-        self.nowval = now
+        self.nowval=now
 
         return None
 
@@ -180,38 +180,36 @@ class ApiStatus:
                     war = await GetApiV1War(api_config_override=self.client)
                     break
                 except Exception as e:
-                    attempt_count += 1
-                    if attempt_count >= 3:
+                    attempt_count+=1
+                    if attempt_count>=3:
                         raise e
 
             while attempt_count < 3:
                 try:
-                    assignments = await GetApiV1AssignmentsAll(
-                        api_config_override=self.client
-                    )
+                    assignments = await GetApiV1AssignmentsAll(api_config_override=self.client)
                     break
                 except Exception as e:
-                    attempt_count += 1
-                    if attempt_count >= 3:
+                    attempt_count+=1
+                    if attempt_count>=3:
                         raise e
 
             while attempt_count < 3:
                 try:
-                    campaigns = await GetApiV1CampaignsAll(
-                        api_config_override=self.client
-                    )
+                    campaigns = await GetApiV1CampaignsAll(api_config_override=self.client)
                     break
                 except Exception as e:
-                    attempt_count += 1
-                    if attempt_count >= 3:
+                    attempt_count+=1
+                    if attempt_count>=3:
                         raise e
+
+
 
         except Exception as e:
             raise e
 
         if war is not None:
             self.war.add(war)
-
+        
         self.handle_data(assignments, self.assignments, "assignment")
         self.handle_data(campaigns, self.campaigns, "campaign")
         for l in self.campaigns.values():

@@ -165,6 +165,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         self.bot.add_view(HD2OverviewView(self))
         if snap:
             try:
+                if 'nowall' in snap:
+                    snap.pop('nowall')
                 new_cls = hd2.ApiStatus.from_dict(snap, client=hdoverride)
                 self.apistatus = new_cls
             except Exception as e:
@@ -358,25 +360,25 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if nowval:
             for i, v in nowval["campaign"]["new"].items():
                 planet = self.apistatus.planets.get(int(v.planetIndex), None)
-                if planet:
-                    these_embeds.append(
-                        hd2.embeds.campaignLogEmbed(v, planet, "started")
-                    )
+
+                these_embeds.append(
+                    hd2.embeds.campaignLogEmbed(v, planet, "started")
+                )
             for i, v in nowval["campaign"]["old"].items():
                 planet = self.apistatus.planets.get(int(v.planetIndex), None)
-                if planet:
-                    these_embeds.append(hd2.embeds.campaignLogEmbed(v, planet, "ended"))
+
+                these_embeds.append(hd2.embeds.campaignLogEmbed(v, planet, "ended"))
 
             for i, v in nowval["planetevents"]["new"].items():
                 planet = self.apistatus.planets.get(int(v.planetIndex), None)
-                if planet:
-                    these_embeds.append(
-                        hd2.embeds.planetEventEmbed(v, planet, "started")
-                    )
+
+                these_embeds.append(
+                    hd2.embeds.planetEventEmbed(v, planet, "started")
+                )
             for i, v in nowval["planetevents"]["old"].items():
                 planet = self.apistatus.planets.get(int(v.planetIndex), None)
-                if planet:
-                    these_embeds.append(hd2.embeds.planetEventEmbed(v, planet, "ended"))
+
+                these_embeds.append(hd2.embeds.planetEventEmbed(v, planet, "ended"))
 
             for i, v in nowval["globalEvents"]["new"].items():
                 these_embeds.append(hd2.embeds.globalEventEmbed(v, "started"))

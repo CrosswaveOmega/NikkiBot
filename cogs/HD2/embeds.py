@@ -327,9 +327,12 @@ def campaign_view(stat: ApiStatus, hdtext={}):
 
 def campaignLogEmbed(campaign, planet, mode="started") -> discord.Embed:
     strc = create_campaign_str(campaign)
+    name, sector=campaign.planetIndex, None
+    if planet:
+        name, sector=planet.get_name(),planet.sector
     emb = discord.Embed(
         title=f"Campaign Detected",
-        description=f"A campaign has {mode} for {planet.get_name()}, in sector {planet.sector}.  \nTimestamp:{fdt(campaign.retrieved_at,'F')}",
+        description=f"A campaign has {mode} for {name}, in sector {sector}.  \nTimestamp:{fdt(campaign.retrieved_at,'F')}",
         timestamp=campaign.retrieved_at,
     )
     emb.set_author(name=f"Campaign {mode}.")
@@ -338,9 +341,12 @@ def campaignLogEmbed(campaign, planet, mode="started") -> discord.Embed:
 
 
 def planetEventEmbed(campaign, planet, mode="started") -> discord.Embed:
+    name, sector=campaign.planetIndex, None
+    if planet:
+        name, sector=planet.get_name(),planet.sector
     emb = discord.Embed(
         title=f"Planet Event Detected",
-        description=f"A new event has {mode} for {planet.get_name()}, in sector {planet.sector}.  \nTimestamp:{fdt(campaign.retrieved_at,'F')}",
+        description=f"A new event has {mode} for {name}, in sector {sector}.   \nTimestamp:{fdt(campaign.retrieved_at,'F')}",
         timestamp=campaign.retrieved_at,
     )
     emb.add_field(name="Event Details", value=campaign.long_event_details())
@@ -368,10 +374,13 @@ def globalEventEmbed(evt: GlobalEvent, mode="started") -> discord.Embed:
 
 
 def dumpEmbed(campaign, planet, mode="started") -> discord.Embed:
+    name, sector=campaign.index, None
+    if planet:
+        name, sector=planet.get_name(),planet.sector
     globtex = json.dumps(campaign)
     emb = discord.Embed(
         title=f"Global Event Detected",
-        description=f"Stats changed for {planet.get_name()}, in sector {planet.sector}.\n```{globtex[:4000]}```",
+        description=f"Stats changed for {name}, in sector {sector}.\n```{globtex[:4000]}```",
         timestamp=campaign.retrieved_at,
     )
     emb.add_field(name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at,'F')}")
