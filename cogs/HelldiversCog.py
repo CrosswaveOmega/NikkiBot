@@ -208,7 +208,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     def cog_unload(self):
         if self.img:
             self.img = None
-        hd2.save_to_json(self.apistatus, "./saveData/hd2_snapshot.json")
+        #hd2.save_to_json(self.apistatus, "./saveData/hd2_snapshot.json")
         TCTaskManager.remove_task("SuperEarthStatus")
         TCTaskManager.remove_task("UpdateLog")
         Guild_Task_Functions.remove_task_function("WARSTATUS")
