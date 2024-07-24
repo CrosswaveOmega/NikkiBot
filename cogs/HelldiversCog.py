@@ -397,7 +397,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             print(e)
             await web.postMessageAsWebhookWithURL(
                 self.loghook,
-                message_content=None,
+                message_content='',
                 display_username="Super Earth Event Log",
                 avatar_url=self.bot.user.avatar.url,
                 embed=[e],
