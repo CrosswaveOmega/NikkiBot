@@ -11,7 +11,7 @@ from .ABC.utils import (
     extract_timestamp as et,
 )
 
-factions: {1: "Humans", 2: "Terminids", 3: "Automaton", 4: "Illuminate"}
+
 
 
 class PlanetEvent(BaseApiModel):
@@ -44,6 +44,7 @@ class PlanetEvent(BaseApiModel):
     )
 
     def long_event_details(self):
+        factions={1: "Humans", 2: "Terminids", 3: "Automaton", 4: "Illuminate"}
         event_details = (
             f"ID: {self.id}, Type: {self.eventType}, Faction: {factions.get(self.race,'UNKNOWN')}\n"
             f"Event Health: `{(self.health)}/{(self.maxHealth)}`\n"
