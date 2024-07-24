@@ -357,10 +357,15 @@ def planetEventEmbed(campaign, planet, mode="started") -> discord.Embed:
 
 def globalEventEmbed(evt: GlobalEvent, mode="started") -> discord.Embed:
     globtex = ""
-    if evt.title and evt.message:
+    title=""
+    if evt.title:
+        mes = re.sub(pattern, r"**\1**", evt.title)
+        mes = re.sub(pattern3, r"***\1***", mes)
+        globtex += f"### {mes}\n"
+    if evt.message:
         mes = re.sub(pattern, r"**\1**", evt.message)
         mes = re.sub(pattern3, r"***\1***", mes)
-        globtex += f"### {evt.title}\n{mes}\n\n"
+        globtex += f"{mes}\n\n"
     emb = discord.Embed(
         title=f"Global Event Detected",
         description=f"A global event has {mode}.\n{globtex}",
