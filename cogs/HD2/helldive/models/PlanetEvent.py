@@ -45,7 +45,7 @@ class PlanetEvent(BaseApiModel):
 
     def long_event_details(self):
         event_details = (
-            f"ID: {self.id}, Type: {self.eventType}, Faction: {self.factions.get(self.race,'UNKNOWN')}\n"
+            f"ID: {self.id}, Type: {self.eventType}, Faction: {factions.get(self.race,'UNKNOWN')}\n"
             f"Event Health: `{(self.health)}/{(self.maxHealth)}`\n"
             f"Start Time: {self.startTime}, End Time: {self.expireTime}\n"
             f"Campaign ID: {hf(self.campaignId)}, Joint Operation IDs: {', '.join(map(str, self.jointOperationIds))}"
