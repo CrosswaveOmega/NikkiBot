@@ -62,16 +62,15 @@ class Assignment2(BaseApiModel):
             if "planet_index" in taskdata:
                 planets.append(taskdata["planet_index"])
         return planets
-    
+
     def to_str(self) -> str:
-        planets={}
+        planets = {}
         progress = self["progress"]
         tasks = ""
-        exptime=fdt(et(self.expiration),"f")
+        exptime = fdt(et(self.expiration), "f")
         for e, task in enumerate(self.tasks):
             task_type, taskdata = task.taskAdvanced()
             tasks += task.task_str(progress[e], task_type, taskdata, e, planets) + "\n"
-        tex=f"{self.briefing},by {exptime}\n{tasks}"
+        tex = f"{self.briefing},by {exptime}\n{tasks}"
 
         return tex
-        

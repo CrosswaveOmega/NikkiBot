@@ -13,6 +13,49 @@ from .SteamNews import SteamNewsRaw
 from .WarId import WarId
 
 
+def get_differing_fields(
+    model1: BaseApiModel, model2: BaseApiModel, lvd=0, to_ignore=[]
+) -> dict:
+    if type(model1) is not type(model2):
+        raise ValueError("Both models must be of the same type")
+
+    differing_fields = {}
+    to_ignore.append("retrieved_at")
+
+    def compare_values(val1, val2):
+        if isinstance(val1, BaseApiModel) and isinstance(val2, BaseApiModel):
+            return get_differing_fields(val1, val2, lvd + 1)
+        elif isinstance(val1, list) and isinstance(val2, list):
+            list_diffs = {}
+            for i, (v1, v2) in enumerate(zip(val1, val2)):
+                print(str(type(v1))[:25], str(type(v2))[:25])
+                if isinstance(v1, BaseApiModel) and isinstance(v2, BaseApiModel):
+                    list_diffs[i] = get_differing_fields(v1, v2, lvd + 1)
+                elif v1 != v2:
+                    list_diffs[i] = {"model1": v1, "model2": v2}
+            return list_diffs if list_diffs else None
+        else:
+            return str(val1) != str(val2)
+
+    for field in model1.model_fields:
+        if field not in to_ignore:
+            value1 = getattr(model1, field)
+            value2 = getattr(model2, field)
+
+            diffs = compare_values(value1, value2)
+            if isinstance(diffs, dict):
+                if diffs:
+                    differing_fields[field] = diffs
+            elif not diffs:
+                continue
+            else:
+                if value1 == value2:
+                    continue
+                differing_fields[field] = {"model1": value1, "model2": value2}
+
+    return differing_fields
+
+
 class DiveharderAll(BaseApiModel):
     """
     None model
@@ -37,3 +80,78 @@ class DiveharderAll(BaseApiModel):
     updates: Optional[List[SteamNewsRaw]] = Field(alias="updates", default=None)
 
     war_id: Optional[WarId] = Field(alias="war_id", default=None)
+
+
+def check_compare_value(key, value, target: List[Dict[str, Any]]):
+    for s in target:
+        if s[key] == value:
+            return s
+    return None
+
+
+def process_planet_events(source, target, out, place, key, exclude=[]):
+    for event in source:
+        oc = check_compare_value(key, event[key], target)
+        if not oc:
+            out[place]["new"][event[key]] = event
+        else:
+            differ = get_differing_fields(oc, event, to_ignore=exclude)
+            if differ:
+                out[place]["changes"][event[key]] = differ
+
+    for event in target:
+        if not check_compare_value(key, event[key], source):
+            out[place]["old"][event[key]] = event
+
+
+def detect_loggable_changes(old: BaseApiModel, new: BaseApiModel, lvd=0) -> dict:
+    out = {
+        "campaign": {"new": {}, "changes": {}, "old": {}},
+        "planetevents": {"new": {}, "changes": {}, "old": {}},
+        "planets": {"new": {}, "changes": {}, "old": {}},
+        "planetInfos": {"new": {}, "changes": {}, "old": {}},
+        "globalEvents": {"new": {}, "changes": {}, "old": {}},
+        "stats_raw": {
+            "changes": {},
+        },
+    }
+    new_campaigns = []
+    old_campaigns = []
+    # Check for new campaigns
+    rawout = get_differing_fields(
+        old.status,
+        new.status,
+        to_ignore=[
+            "planetAttacks",
+            "impactMultiplier",
+            "campaigns",
+            "planetStatus",
+            "planetEvents",
+            "jointOperations",
+            "globalEvents",
+        ],
+    )
+    out["stats_raw"]["changes"] = rawout
+    process_planet_events(
+        new.status.campaigns, old.status.campaigns, out, "campaign", "id"
+    )
+    process_planet_events(
+        new.status.planetEvents, old.status.planetEvents, out, "planetevents", "id"
+    )
+    process_planet_events(
+        new.status.planetStatus,
+        old.status.planetStatus,
+        out,
+        "planets",
+        "index",
+        ["health", "players"],
+    )
+    process_planet_events(
+        new.status.globalEvents, old.status.globalEvents, out, "globalEvents", "eventId"
+    )
+    process_planet_events(
+        new.war_info.planetInfos, old.war_info.planetInfos, out, "planetInfos", "index"
+    )
+    # process_planet_events(new.war_info.planetInfos, old.status.planetInfos, out,'planetInfos','index')
+
+    return out

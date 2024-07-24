@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Tuple
 
 import discord
 
-from .helldive import Assignment2, Campaign2, Planet, War
+from .helldive import Assignment2, Campaign2, Planet, War, GlobalEvent
 
 """
 Collection of embeds for formatting.
@@ -115,7 +115,7 @@ def create_assignment_embed(
     return embed
 
 
-def create_campaign_str(data):
+def create_campaign_str(data) -> str:
     cid = data["id"]
     campaign_type = campaign_types.get(data["type"], "Unknown type")
     count = data["count"]
@@ -322,4 +322,58 @@ def campaign_view(stat: ApiStatus, hdtext={}):
     )
     emb.description += f"\n`{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}%` divers contributed `{round(total_contrib[1], 4)}` visible Impact, so about `({round(total_contrib[2],5)}%, {round(total_contrib[3],5)}% per hour)` lib."
     emb.timestamp = discord.utils.utcnow()
+    return emb
+
+
+def campaignLogEmbed(campaign, planet, mode="started") -> discord.Embed:
+    strc = create_campaign_str(campaign)
+    emb = discord.Embed(
+        title=f"Campaign Detected",
+        description=f"A campaign has {mode} for {planet.get_name()}, in sector {planet.sector}.  \nTimestamp:{fdt(campaign.retrieved_at,'F')}",
+        timestamp=campaign.retrieved_at,
+    )
+    emb.set_author(name=f"Campaign {mode}.")
+    emb.set_footer(text=strc)
+    return emb
+
+
+def planetEventEmbed(campaign, planet, mode="started") -> discord.Embed:
+    emb = discord.Embed(
+        title=f"Planet Event Detected",
+        description=f"A new event has {mode} for {planet.get_name()}, in sector {planet.sector}.  \nTimestamp:{fdt(campaign.retrieved_at,'F')}",
+        timestamp=campaign.retrieved_at,
+    )
+    emb.add_field(name="Event Details", value=campaign.long_event_details())
+    emb.set_author(name=f"Planet Event {mode}.")
+    emb.set_footer(text=f"EID:{campaign.id}")
+    return emb
+
+
+def globalEventEmbed(evt: GlobalEvent, mode="started") -> discord.Embed:
+    globtex = ""
+    if evt.title and evt.message:
+        mes = re.sub(pattern, r"**\1**", evt.message)
+        mes = re.sub(pattern3, r"***\1***", mes)
+        globtex += f"### {evt.title}\n{mes}\n\n"
+    emb = discord.Embed(
+        title=f"Global Event Detected",
+        description=f"A global event has {mode}.\n{globtex}",
+        timestamp=evt.retrieved_at,
+    )
+    emb.add_field(name="Event Details", value=evt.strout())
+    emb.add_field(name="Timestamp", value=f"Timestamp:{fdt(evt.retrieved_at,'F')}")
+    emb.set_author(name=f"Global Event {mode}.")
+    emb.set_footer(text=f"EID:{evt.eventId}")
+    return emb
+
+
+def dumpEmbed(campaign, planet, mode="started") -> discord.Embed:
+    globtex = json.dumps(campaign)
+    emb = discord.Embed(
+        title=f"Global Event Detected",
+        description=f"Stats changed for {planet.get_name()}, in sector {planet.sector}.\n```{globtex[:4000]}```",
+        timestamp=campaign.retrieved_at,
+    )
+    emb.add_field(name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at,'F')}")
+    emb.set_author(name=f"Planet Value Change")
     return emb

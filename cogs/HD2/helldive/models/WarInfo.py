@@ -25,15 +25,15 @@ class WarInfo(BaseApiModel):
     )
 
     planetInfos: Optional[List[Optional[PlanetInfo]]] = Field(
-        alias="planetInfos", default=None
+        alias="planetInfos", default=[]
     )
 
     homeWorlds: Optional[List[Optional[HomeWorld]]] = Field(
-        alias="homeWorlds", default=None
+        alias="homeWorlds", default=[]
     )
 
-    capitalInfos: Optional[List[Any]] = Field(alias="capitalInfos", default=None)
+    capitalInfos: Optional[List[Any]] = Field(alias="capitalInfos", default=[])
 
     planetPermanentEffects: Optional[List[Any]] = Field(
-        alias="planetPermanentEffects", default=None
+        alias="planetPermanentEffects", default=[]
     )

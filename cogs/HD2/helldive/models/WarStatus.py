@@ -39,37 +39,31 @@ class WarStatus(BaseApiModel):
     storyBeatId32: Optional[int] = Field(alias="storyBeatId32", default=None)
 
     planetStatus: Optional[List[Optional[PlanetStatus]]] = Field(
-        alias="planetStatus", default=None
+        alias="planetStatus", default=[]
     )
 
     planetAttacks: Optional[List[Optional[PlanetAttack]]] = Field(
-        alias="planetAttacks", default=None
+        alias="planetAttacks", default=[]
     )
 
-    campaigns: Optional[List[Optional[Campaign]]] = Field(
-        alias="campaigns", default=None
-    )
+    campaigns: Optional[List[Optional[Campaign]]] = Field(alias="campaigns", default=[])
 
     jointOperations: Optional[List[Optional[JointOperation]]] = Field(
-        alias="jointOperations", default=None
+        alias="jointOperations", default=[]
     )
 
     planetEvents: Optional[List[Optional[PlanetEvent]]] = Field(
-        alias="planetEvents", default=None
+        alias="planetEvents", default=[]
     )
 
-    communityTargets: Optional[List[Any]] = Field(
-        alias="communityTargets", default=None
-    )
+    communityTargets: Optional[List[Any]] = Field(alias="communityTargets", default=[])
 
     planetActiveEffects: Optional[List[PlanetActiveEffects]] = Field(
-        alias="planetActiveEffects", default=None
+        alias="planetActiveEffects", default=[]
     )
 
-    globalEvents: Optional[List[GlobalEvent]] = Field(
-        alias="globalEvents", default=None
-    )
+    globalEvents: Optional[List[GlobalEvent]] = Field(alias="globalEvents", default=[])
 
     superEarthWarResults: Optional[List[Any]] = Field(
-        alias="superEarthWarResults", default=None
+        alias="superEarthWarResults", default=[]
     )

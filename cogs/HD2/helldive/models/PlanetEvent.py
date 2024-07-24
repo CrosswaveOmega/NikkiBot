@@ -4,6 +4,16 @@ from pydantic import Field
 from .ABC.model import BaseApiModel
 
 
+from .ABC.utils import (
+    human_format as hf,
+    select_emoji as emj,
+    changeformatif as cfi,
+    extract_timestamp as et,
+)
+
+factions: {1: "Humans", 2: "Terminids", 3: "Automaton", 4: "Illuminate"}
+
+
 class PlanetEvent(BaseApiModel):
     """
     None model
@@ -32,3 +42,12 @@ class PlanetEvent(BaseApiModel):
     jointOperationIds: Optional[List[int]] = Field(
         alias="jointOperationIds", default=None
     )
+
+    def long_event_details(self):
+        event_details = (
+            f"ID: {self.id}, Type: {self.eventType}, Faction: {self.factions.get(self.race,'UNKNOWN')}\n"
+            f"Event Health: `{(self.health)}/{(self.maxHealth)}`\n"
+            f"Start Time: {self.startTime}, End Time: {self.expireTime}\n"
+            f"Campaign ID: {hf(self.campaignId)}, Joint Operation IDs: {', '.join(map(str, self.jointOperationIds))}"
+        )
+        return event_details

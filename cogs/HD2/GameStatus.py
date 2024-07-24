@@ -68,7 +68,8 @@ class ApiStatus:
         "last_planet_get",
         "warstat",
         "planetdata",
-        "warall"
+        "warall",
+        "nowval",
     ]
 
     def __init__(self, client: APIConfig = APIConfig(), max_list_size=8):
@@ -82,6 +83,7 @@ class ApiStatus:
         self.last_planet_get: datetime.datetime = datetime.datetime(2024, 1, 1, 0, 0, 0)
         self.warstat: WarStatus = None
         self.warall: DiveharderAll = None
+        self.nowval = DiveharderAll(status=WarStatus(), war_info=WarInfo())
         self.planetdata: Dict[str, Any] = load_planets_from_directory(
             "./hd2json/planets"
         )
@@ -98,10 +100,11 @@ class ApiStatus:
                 k: [item.model_dump() for item in v.items]
                 for k, v in self.campaigns.items()
             },
-            "planets": {k: p.model_dump() for k, p in self.planets.items()},
+            "planets": {int(k): p.model_dump() for k, p in self.planets.items()},
             "dispatches": [d.model_dump() for d in self.dispatches],
             # "warstat": self.warstat.model_dump(),
             "warall": self.warall.model_dump(),
+            "nowall": self.nowval.model_dump(),
         }
 
     @classmethod
@@ -131,6 +134,8 @@ class ApiStatus:
             newcks.warstat = WarStatus(**data["warstat"])
         if "warall" in data:
             newcks.warall = DiveharderAll(**data["warall"])
+        if "nowall" in data:
+            newcks.nowall = DiveharderAll(**data["nowall"])
         return newcks
 
     def __repr__(self):
@@ -145,8 +150,19 @@ class ApiStatus:
     async def get_war_now(self) -> War:
         war = await GetApiV1War(api_config_override=self.client)
         return war
-    
 
+    async def get_now(self) -> War:
+        now = await GetApiRawAll(api_config_override=self.client)
+        if now:
+            self.warall = now
+            self.warstat = self.warall.war_info
+        if self.nowval:
+            diff = detect_loggable_changes(self.nowval, now)
+            self.nowval = now
+            return diff
+        self.nowval = now
+
+        return None
 
     async def update_data(self):
         """
@@ -164,35 +180,30 @@ class ApiStatus:
                     war = await GetApiV1War(api_config_override=self.client)
                     break
                 except Exception as e:
-                    attempt_count+=1
-                    if attempt_count>=3:
+                    attempt_count += 1
+                    if attempt_count >= 3:
                         raise e
 
             while attempt_count < 3:
                 try:
-                    assignments = await GetApiV1AssignmentsAll(api_config_override=self.client)
+                    assignments = await GetApiV1AssignmentsAll(
+                        api_config_override=self.client
+                    )
                     break
                 except Exception as e:
-                    attempt_count+=1
-                    if attempt_count>=3:
+                    attempt_count += 1
+                    if attempt_count >= 3:
                         raise e
 
             while attempt_count < 3:
                 try:
-                    campaigns = await GetApiV1CampaignsAll(api_config_override=self.client)
+                    campaigns = await GetApiV1CampaignsAll(
+                        api_config_override=self.client
+                    )
                     break
                 except Exception as e:
-                    attempt_count+=1
-                    if attempt_count>=3:
-                        raise e
-
-            while attempt_count < 3:
-                try:
-                    warall = await GetApiRawAll(api_config_override=self.client)
-                    break
-                except Exception as e:
-                    attempt_count+=1
-                    if attempt_count>=3:
+                    attempt_count += 1
+                    if attempt_count >= 3:
                         raise e
 
         except Exception as e:
@@ -200,9 +211,7 @@ class ApiStatus:
 
         if war is not None:
             self.war.add(war)
-        if warall:
-            self.warall = warall
-            self.warstat = self.warall.war_info
+
         self.handle_data(assignments, self.assignments, "assignment")
         self.handle_data(campaigns, self.campaigns, "campaign")
         for l in self.campaigns.values():

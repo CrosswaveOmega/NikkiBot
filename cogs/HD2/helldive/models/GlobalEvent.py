@@ -26,3 +26,10 @@ class GlobalEvent(BaseApiModel):
     planetIndices: Optional[List[int]] = Field(
         alias="planetIndices", default_factory=list
     )
+
+    def strout(self) -> str:
+        formatv = {
+            k: v for k, v in self.model_dump().items() if k not in ["message", "title"]
+        }
+
+        return ", ".join([f"{k}:{v}" for k, v in formatv.items()])
