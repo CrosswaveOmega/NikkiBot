@@ -100,7 +100,7 @@ class ApiStatus:
                 k: [item.model_dump() for item in v.items]
                 for k, v in self.campaigns.items()
             },
-            "planets": {int(k): p.model_dump() for k, p in self.planets.items()},
+            "planets": {k: p.model_dump() for k, p in self.planets.items()},
             "dispatches": [d.model_dump() for d in self.dispatches],
             # "warstat": self.warstat.model_dump(),
             "warall": self.warall.model_dump(),

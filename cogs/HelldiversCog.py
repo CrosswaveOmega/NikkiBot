@@ -357,24 +357,24 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         these_embeds = []
         if nowval:
             for i, v in nowval["campaign"]["new"].items():
-                planet = self.apistatus.planets.get(v.planetIndex, None)
+                planet = self.apistatus.planets.get(int(v.planetIndex), None)
                 if planet:
                     these_embeds.append(
                         hd2.embeds.campaignLogEmbed(v, planet, "started")
                     )
             for i, v in nowval["campaign"]["old"].items():
-                planet = self.apistatus.planets.get(v.planetIndex, None)
+                planet = self.apistatus.planets.get(int(v.planetIndex), None)
                 if planet:
                     these_embeds.append(hd2.embeds.campaignLogEmbed(v, planet, "ended"))
 
             for i, v in nowval["planetevents"]["new"].items():
-                planet = self.apistatus.planets.get(v.planetIndex, None)
+                planet = self.apistatus.planets.get(int(v.planetIndex), None)
                 if planet:
                     these_embeds.append(
                         hd2.embeds.planetEventEmbed(v, planet, "started")
                     )
             for i, v in nowval["planetevents"]["old"].items():
-                planet = self.apistatus.planets.get(v.planetIndex, None)
+                planet = self.apistatus.planets.get(int(v.planetIndex), None)
                 if planet:
                     these_embeds.append(hd2.embeds.planetEventEmbed(v, planet, "ended"))
 
