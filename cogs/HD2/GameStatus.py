@@ -149,14 +149,15 @@ class ApiStatus:
         return war
     
     async def get_now(self) -> War:
-        now = await GetApiRawAll(api_config_override=self.client)
-        if now:
-            print(now)
+        nowv = await GetApiRawAll(api_config_override=self.client)
+        if nowv:
+            print(nowv)
             if self.warall:
-                diff= detect_loggable_changes(self.warall,now)
-                self.warall=now
+                diff= detect_loggable_changes(self.warall,nowv)
+                self.warall=nowv
+                self.warstat = self.warall.war_info
                 return diff
-            self.warall=now
+            self.warall=nowv
             self.warstat = self.warall.war_info
         return None
 
