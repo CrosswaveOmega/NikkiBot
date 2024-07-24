@@ -103,8 +103,7 @@ class ApiStatus:
             "planets": {k: p.model_dump() for k, p in self.planets.items()},
             "dispatches": [d.model_dump() for d in self.dispatches],
             # "warstat": self.warstat.model_dump(),
-            "warall": self.warall.model_dump(),
-            'nowall': self.nowval.model_dump()
+            "warall": self.warall.model_dump()
         }
 
     @classmethod
@@ -134,8 +133,6 @@ class ApiStatus:
             newcks.warstat = WarStatus(**data["warstat"])
         if "warall" in data:
             newcks.warall = DiveharderAll(**data["warall"])
-        if "nowall" in data:
-            newcks.nowall = DiveharderAll(**data["nowall"])
         return newcks
 
     def __repr__(self):
@@ -154,14 +151,13 @@ class ApiStatus:
     async def get_now(self) -> War:
         now = await GetApiRawAll(api_config_override=self.client)
         if now:
-            self.warall = now
+            
+            if self.warall:
+                diff= detect_loggable_changes(self.warall,now)
+                self.warall=now
+                return diff
+            self.warall=now
             self.warstat = self.warall.war_info
-        if self.nowval:
-            diff= detect_loggable_changes(self.nowval,now)
-            self.nowval=now
-            return diff
-        self.nowval=now
-
         return None
 
     async def update_data(self):
@@ -203,10 +199,10 @@ class ApiStatus:
                         raise e
 
 
-
         except Exception as e:
             raise e
 
+        print(war,campaigns,assignments)
         if war is not None:
             self.war.add(war)
         

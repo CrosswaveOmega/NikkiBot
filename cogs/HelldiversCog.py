@@ -161,7 +161,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         snap = hd2.load_from_json("./saveData/hd2_snapshot.json")
         if snap:
             try:
-                #if 'nowall' in snap:   snap.pop('nowall')
+                if 'nowall' in snap:   
+                    snap.pop('nowall')
                 new_cls = hd2.ApiStatus.from_dict(snap, client=hdoverride)
                 self.apistatus = new_cls
             except Exception as e:
