@@ -776,10 +776,11 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         emb = hd2.campaign_view(self.apistatus, self.hd2)
         await ctx.send(embed=emb)
 
-    @pc.command(name="map", description="get a primitive galactic map.")
+    @pc.command(name="map", description="get a scrollable galactic map.")
     @app_commands.describe(planet="Focus map on this planet.")
+    @app_commands.describe(animated="Show an animated map, take more time to scroll.")
     @app_commands.autocomplete(planet=planet_autocomplete)
-    async def map(self, interaction: discord.Interaction, planet: int = 0):
+    async def map(self, interaction: discord.Interaction, planet: int = 0, animated:bool=False):
         ctx: commands.Context = await self.bot.get_context(interaction)
         mes = await ctx.send("please wait...", ephemeral=True)
         img = self.img
@@ -793,7 +794,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             pos = self.apistatus.planets[planet].position
             cx, cy = pos.x, pos.y
         view = hd2.MapViewer(
-            user=ctx.author, img=img, initial_coor=hd2.get_im_coordinates(cx, cy)
+            user=ctx.author, img=img, initial_coor=hd2.get_im_coordinates(cx, cy), oneonly=not animated
         )
         emb, file = view.make_embed()
         await mes.edit(content="done", attachments=[file], embed=emb, view=view)

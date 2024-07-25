@@ -289,13 +289,15 @@ def create_gif(filepath, apistat: ApiStatus):
     return "./saveData/map.gif"
 
 
-def crop_gif(frames, coordinate, off_by, cell_size=200):
+def crop_gif(frames, coordinate, off_by, cell_size=200,one_only=False):
     # Load the GIF from the buffer
 
     cropped_frames = []
     for frame in frames:
         cropped_frame = crop_image(frame, coordinate, off_by, cell_size)
         cropped_frames.append(cropped_frame)
+        if one_only:
+            return cropped_frames
     return cropped_frames
 
 
@@ -311,10 +313,12 @@ class MapViewer(BaseView):
         timeout=30 * 15,
         img=None,
         initial_coor=None,
+        oneonly=False
     ):
         super().__init__(user=user, timeout=timeout)
         self.value = False
         self.crops = {}
+        self.oneframe=not oneonly
         self.done = NotImplemented
         with Image.open(img) as planetimg:
             frames_list = []
@@ -332,7 +336,7 @@ class MapViewer(BaseView):
             timestamp=discord.utils.utcnow(),
         )
 
-        cropped_frames = crop_gif(self.img, self.focus_cell, off_by=np.array((2, 2)),cell_size=CELL_SIZE)
+        cropped_frames = crop_gif(self.img, self.focus_cell, off_by=np.array((2, 2)),cell_size=CELL_SIZE,one_only=self.oneframe)
         with io.BytesIO() as image_binary:
             cropped_frames[0].save(
                 image_binary,
