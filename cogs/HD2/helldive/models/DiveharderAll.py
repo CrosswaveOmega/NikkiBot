@@ -142,7 +142,7 @@ def detect_loggable_changes(old: BaseApiModel, new: BaseApiModel, lvd=0) -> dict
         new.war_info,
         to_ignore=["planetInfos"],
     )
-    out["info_raw"]["changes"] = rawout
+    out["info_raw"]["changes"] = infoout
     process_planet_events(new.news_feed, old.news_feed, out, "news", "id")
     process_planet_events(
         new.status.campaigns, old.status.campaigns, out, "campaign", "id"

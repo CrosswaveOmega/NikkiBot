@@ -264,11 +264,11 @@ def create_planet_embed(
     return embed
 
 
-def campaign_view(stat: ApiStatus, hdtext={}):
+def campaign_view(stat: ApiStatus, hdtext:Optional[Dict[str,str]]=None):
     flav = "Galactic Status."
-    if "galactic_overview" in hdtext:
-
-        flav = random.choice(hdtext["galactic_overview"]["value"])
+    if hdtext:
+        if "galactic_overview" in hdtext:
+            flav = random.choice(hdtext["galactic_overview"]["value"])
     emb = discord.Embed(title="Galactic War Overview", description=f"{flav}\n")
     all_players, last = stat.war.get_first_change()
     change_war = all_players - last
