@@ -16,6 +16,7 @@ from .WarId import WarId
 def get_differing_fields(
     model1: BaseApiModel, model2: BaseApiModel, lvd=0, to_ignore=[]
 ) -> dict:
+    """Determine which fields within the BaseApiModel are different from each other."""
     if type(model1) is not type(model2):
         raise ValueError("Both models must be of the same type")
 
@@ -28,11 +29,13 @@ def get_differing_fields(
         elif isinstance(val1, list) and isinstance(val2, list):
             list_diffs = {}
             for i, (v1, v2) in enumerate(zip(val1, val2)):
-                #print(str(type(v1))[:25], str(type(v2))[:25])
+                # print(str(type(v1))[:25], str(type(v2))[:25])
                 if isinstance(v1, BaseApiModel) and isinstance(v2, BaseApiModel):
-                    list_diffs[i] = get_differing_fields(v1, v2, lvd + 1)
-                elif v1 != v2:
-                    list_diffs[i] = {"model1": v1, "model2": v2}
+                    differing = get_differing_fields(v1, v2, lvd + 1)
+                    if differing:
+                        list_diffs[i] = differing
+                elif str(v1) != str(v2):
+                    list_diffs[i] = {"old": v1, "new": v2}
             return list_diffs if list_diffs else None
         else:
             return str(val1) != str(val2)
@@ -51,7 +54,7 @@ def get_differing_fields(
             else:
                 if value1 == value2:
                     continue
-                differing_fields[field] = {"model1": value1, "model2": value2}
+                differing_fields[field] = {"old": value1, "new": value2}
 
     return differing_fields
 
@@ -97,7 +100,7 @@ def process_planet_events(source, target, out, place, key, exclude=[]):
         else:
             differ = get_differing_fields(oc, event, to_ignore=exclude)
             if differ:
-                out[place]["changes"][event[key]] = differ
+                out[place]["changes"][event[key]] = (event, differ)
 
     for event in target:
         if not check_compare_value(key, event[key], source):
@@ -111,17 +114,18 @@ def detect_loggable_changes(old: BaseApiModel, new: BaseApiModel, lvd=0) -> dict
         "planets": {"new": {}, "changes": {}, "old": {}},
         "planetInfos": {"new": {}, "changes": {}, "old": {}},
         "globalEvents": {"new": {}, "changes": {}, "old": {}},
+        "news": {"new": {}, "changes": {}, "old": {}},
         "stats_raw": {
             "changes": {},
         },
+        "info_raw": {"changes": {}},
     }
-    new_campaigns = []
-    old_campaigns = []
     # Check for new campaigns
     rawout = get_differing_fields(
         old.status,
         new.status,
         to_ignore=[
+            "time",
             "planetAttacks",
             "impactMultiplier",
             "campaigns",
@@ -132,6 +136,14 @@ def detect_loggable_changes(old: BaseApiModel, new: BaseApiModel, lvd=0) -> dict
         ],
     )
     out["stats_raw"]["changes"] = rawout
+
+    infoout = get_differing_fields(
+        old.war_info,
+        new.war_info,
+        to_ignore=["planetInfos"],
+    )
+    out["info_raw"]["changes"] = rawout
+    process_planet_events(new.news_feed, old.news_feed, out, "news", "id")
     process_planet_events(
         new.status.campaigns, old.status.campaigns, out, "campaign", "id"
     )

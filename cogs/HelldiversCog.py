@@ -161,8 +161,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         snap = hd2.load_from_json("./saveData/hd2_snapshot.json")
         if snap:
             try:
-                if 'nowall' in snap:   
-                    snap.pop('nowall')
+                if "nowall" in snap:
+                    snap.pop("nowall")
                 new_cls = hd2.ApiStatus.from_dict(snap, client=hdoverride)
                 self.apistatus = new_cls
             except Exception as e:
@@ -170,7 +170,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 self.bot.logs.exception(e)
         Guild_Task_Functions.add_task_function("UPDATEOVERVIEW", self.gtask_update)
         Guild_Task_Functions.add_task_function("WARSTATUS", self.gtask_map)
-        
+
         self.bot.add_view(HD2OverviewView(self))
 
         nowd = datetime.now()
@@ -209,7 +209,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     def cog_unload(self):
         if self.img:
             self.img = None
-        #hd2.save_to_json(self.apistatus, "./saveData/hd2_snapshot.json")
+        # hd2.save_to_json(self.apistatus, "./saveData/hd2_snapshot.json")
         TCTaskManager.remove_task("SuperEarthStatus")
         TCTaskManager.remove_task("UpdateLog")
         Guild_Task_Functions.remove_task_function("WARSTATUS")
@@ -353,7 +353,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         await ctx.send("force loaded api data now.")
 
     async def load_log(self):
-        nowval = await self.apistatus.get_now()
+        nowval, warstat = await self.apistatus.get_now()
 
         tosend = []
 
@@ -362,9 +362,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             for i, v in nowval["campaign"]["new"].items():
                 planet = self.apistatus.planets.get(int(v.planetIndex), None)
 
-                these_embeds.append(
-                    hd2.embeds.campaignLogEmbed(v, planet, "started")
-                )
+                these_embeds.append(hd2.embeds.campaignLogEmbed(v, planet, "started"))
             for i, v in nowval["campaign"]["old"].items():
                 planet = self.apistatus.planets.get(int(v.planetIndex), None)
 
@@ -373,9 +371,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             for i, v in nowval["planetevents"]["new"].items():
                 planet = self.apistatus.planets.get(int(v.planetIndex), None)
 
-                these_embeds.append(
-                    hd2.embeds.planetEventEmbed(v, planet, "started")
-                )
+                these_embeds.append(hd2.embeds.planetEventEmbed(v, planet, "started"))
             for i, v in nowval["planetevents"]["old"].items():
                 planet = self.apistatus.planets.get(int(v.planetIndex), None)
 
@@ -386,25 +382,47 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             for i, v in nowval["globalEvents"]["old"].items():
                 these_embeds.append(hd2.embeds.globalEventEmbed(v, "ended"))
 
+            for i, v in nowval["news"]["new"].items():
+                these_embeds.append(hd2.embeds.globalEventEmbed(v, "started"))
+            for i, v in nowval["news"]["old"].items():
+                these_embeds.append(hd2.embeds.globalEventEmbed(v, "ended"))
+
             for i, v in nowval["planets"]["changes"].items():
-                planet = self.apistatus.planets.get(str(i), None)
+                info, dump = v
+                planet = self.apistatus.planets.get(int(i), None)
                 if planet:
-                    these_embeds.append(hd2.embeds.dumpEmbed(v, planet, "started"))
+                    these_embeds.append(
+                        hd2.embeds.dumpEmbedPlanet(info, dump, planet, "started")
+                    )
             for i, v in nowval["planetInfos"]["changes"].items():
-                planet = self.apistatus.planets.get(str(i), None)
+                planet = self.apistatus.planets.get(int(i), None)
+                info, dump = v
                 if planet:
-                    these_embeds.append(hd2.embeds.dumpEmbed(v, planet, "started"))
+                    these_embeds.append(
+                        hd2.embeds.dumpEmbedPlanet(info, dump, planet, "started")
+                    )
+            for i, v in nowval["stats_raw"]["changes"].items():
+                dump = v
+                these_embeds.append(
+                    hd2.embeds.dumpEmbed(warstat.status, dump, i, "started")
+                )
+            for i, v in nowval["info_raw"]["changes"].items():
+                dump = v
+                these_embeds.append(
+                    hd2.embeds.dumpEmbed(warstat.status, dump, i, "started")
+                )
+
         print(these_embeds)
         for e in these_embeds:
-            print(len(e), len(these_embeds))
             print(e)
             await web.postMessageAsWebhookWithURL(
                 self.loghook,
-                message_content='',
+                message_content="",
                 display_username="Super Earth Event Log",
                 avatar_url=self.bot.user.avatar.url,
                 embed=[e],
             )
+        self.apistatus.warall = warstat
 
     @commands.is_owner()
     @commands.command(name="now_test")

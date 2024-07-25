@@ -658,6 +658,8 @@ class AICog(commands.Cog, TC_Cog_Mixin):
                 targetid = message.channel.parent.id
                 thread_id = message.channel.id
             if self.bot.user.mentioned_in(message) and not message.mention_everyone:
+                if self.bot.gptapi.check_oai_silent(message.guild):
+                    return
                 if isinstance(message.channel, discord.Thread):
                     thread_id = message.channel.id
                 await ai_message_invoke(

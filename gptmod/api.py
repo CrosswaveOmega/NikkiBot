@@ -116,6 +116,16 @@ class GptmodAPI:
     def set_openai_mode(self, value: bool = False):
         self.openaimode = value
 
+    def check_oai_silent(self, guild=False):
+        target_server = AssetLookup.get_asset("oai_server")
+        targetserverlist = json.loads(target_server)
+        gui.dprint(targetserverlist, type(targetserverlist))
+        if not guild:
+            return True
+        if guild.id not in (targetserverlist):
+            return True
+        return False
+
     async def check_oai(self, ctx):
         if ctx.bot.gptapi.openaimode:
             target_server = AssetLookup.get_asset("oai_server")

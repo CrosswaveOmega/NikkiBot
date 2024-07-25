@@ -12,8 +12,6 @@ from .ABC.utils import (
 )
 
 
-
-
 class PlanetEvent(BaseApiModel):
     """
     None model
@@ -44,7 +42,7 @@ class PlanetEvent(BaseApiModel):
     )
 
     def long_event_details(self):
-        factions={1: "Humans", 2: "Terminids", 3: "Automaton", 4: "Illuminate"}
+        factions = {1: "Humans", 2: "Terminids", 3: "Automaton", 4: "Illuminate"}
         event_details = (
             f"ID: {self.id}, Type: {self.eventType}, Faction: {factions.get(self.race,'UNKNOWN')}\n"
             f"Event Health: `{(self.health)}/{(self.maxHealth)}`\n"

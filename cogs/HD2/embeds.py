@@ -327,9 +327,9 @@ def campaign_view(stat: ApiStatus, hdtext={}):
 
 def campaignLogEmbed(campaign, planet, mode="started") -> discord.Embed:
     strc = create_campaign_str(campaign)
-    name, sector=campaign.planetIndex, None
+    name, sector = campaign.planetIndex, None
     if planet:
-        name, sector=planet.get_name(),planet.sector
+        name, sector = planet.get_name(), planet.sector
     emb = discord.Embed(
         title=f"Campaign Detected",
         description=f"A campaign has {mode} for {name}, in sector {sector}.  \nTimestamp:{fdt(campaign.retrieved_at,'F')}",
@@ -341,9 +341,9 @@ def campaignLogEmbed(campaign, planet, mode="started") -> discord.Embed:
 
 
 def planetEventEmbed(campaign, planet, mode="started") -> discord.Embed:
-    name, sector=campaign.planetIndex, None
+    name, sector = campaign.planetIndex, None
     if planet:
-        name, sector=planet.get_name(),planet.sector
+        name, sector = planet.get_name(), planet.sector
     emb = discord.Embed(
         title=f"Planet Event Detected",
         description=f"A new event has {mode} for {name}, in sector {sector}.   \nTimestamp:{fdt(campaign.retrieved_at,'F')}",
@@ -357,7 +357,7 @@ def planetEventEmbed(campaign, planet, mode="started") -> discord.Embed:
 
 def globalEventEmbed(evt: GlobalEvent, mode="started") -> discord.Embed:
     globtex = ""
-    title=""
+    title = ""
     if evt.title:
         mes = re.sub(pattern, r"**\1**", evt.title)
         mes = re.sub(pattern3, r"***\1***", mes)
@@ -378,16 +378,41 @@ def globalEventEmbed(evt: GlobalEvent, mode="started") -> discord.Embed:
     return emb
 
 
-def dumpEmbed(campaign, planet, mode="started") -> discord.Embed:
-    name, sector=campaign.index, None
+def dumpEmbedPlanet(campaign, dump, planet, mode="started") -> discord.Embed:
+    name, sector = "?", None
     if planet:
-        name, sector=planet.get_name(),planet.sector
-    globtex = json.dumps(campaign)
+        name, sector = planet.get_name(), planet.sector
+    globtex = json.dumps(dump)
     emb = discord.Embed(
-        title=f"Global Event Detected",
+        title=f"Planet Field Change",
         description=f"Stats changed for {name}, in sector {sector}.\n```{globtex[:4000]}```",
         timestamp=campaign.retrieved_at,
     )
     emb.add_field(name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at,'F')}")
     emb.set_author(name=f"Planet Value Change")
+    return emb
+
+
+def dumpEmbed(campaign, dump, name, mode="started") -> discord.Embed:
+    name
+    globtex = json.dumps(dump)
+    emb = discord.Embed(
+        title=f"API Change",
+        description=f"Field changed for {name}\n```{globtex[:4000]}```",
+        timestamp=campaign.retrieved_at,
+    )
+    emb.add_field(name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at,'F')}")
+    emb.set_author(name=f"API Value Change")
+    return emb
+
+
+def NewsFeedEmbed(newsfeed, mode="started") -> discord.Embed:
+    title, desc = newsfeed.to_str()
+    emb = discord.Embed(
+        title=f"{title}",
+        description=desc,
+        timestamp=newsfeed.retrieved_at,
+    )
+    emb.add_field(name="Timestamp", value=f"Timestamp:{fdt(newsfeed.retrieved_at,'F')}")
+    emb.set_author(name=f"New dispatch from Super Earth...")
     return emb

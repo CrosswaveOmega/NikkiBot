@@ -1,32 +1,31 @@
+import base64
+import datetime
+import io
 from collections import defaultdict
 from io import BytesIO
-import io
 from typing import List, Optional, Tuple
+
 import discord
-
-# import datetime
-
-
-from discord.ext import commands
-
 from discord import app_commands
+from discord.ext import commands
+from langchain.docstore.document import Document
+
+import cogs.ResearchAgent as ra
+import gptmod.sentence_mem as smem
+import gui
 from assetloader import AssetLookup
 from bot import TC_Cog_Mixin, super_context_menu
-import cogs.ResearchAgent as ra
-
-from gptmod.chromatools import ChromaTools
-import gptmod.sentence_mem as smem
-from utility import WebhookMessageWrapper as web
-import gui
-from utility.mytemplatemessages import MessageTemplates
-from .AICalling import AIMessageTemplates
-from langchain.docstore.document import Document
-import datetime
-from utility.embed_paginator import pages_of_embeds, pages_of_embed_attachments
-from utility.debug import Timer
-from utility.views import BaseView
 from database.database_note import NotebookAux
-import base64
+from gptmod.chromatools import ChromaTools
+from utility import WebhookMessageWrapper as web
+from utility.debug import Timer
+from utility.embed_paginator import pages_of_embed_attachments, pages_of_embeds
+from utility.mytemplatemessages import MessageTemplates
+from utility.views import BaseView
+
+from .AICalling import AIMessageTemplates
+
+# import datetime
 
 
 async def owneronly(interaction: discord.Interaction):
