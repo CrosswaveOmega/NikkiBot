@@ -794,7 +794,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             pos = self.apistatus.planets[planet].position
             cx, cy = pos.x, pos.y
         view = hd2.MapViewer(
-            user=ctx.author, img=img, initial_coor=hd2.get_im_coordinates(cx, cy), oneonly=not animated
+            user=ctx.author, img=img, initial_coor=hd2.get_im_coordinates(cx, cy), oneonly=animated
         )
         emb, file = view.make_embed()
         await mes.edit(content="done", attachments=[file], embed=emb, view=view)
