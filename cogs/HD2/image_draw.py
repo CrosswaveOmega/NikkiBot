@@ -11,12 +11,13 @@ from .makeplanets import get_planet
 
 import importlib.util
 
-CELL_SIZE = 200
+
 from utility.views import BaseView
 from utility.image_functions import draw_arrow, draw_dot
 
 SCALE = 1.2
-
+CELL_SIZE = 200
+GRIDDRAW = False
 pattern = r"<i=1>(.*?)<\/i>"
 pattern3 = r"<i=3>(.*?)<\/i>"
 
@@ -49,11 +50,12 @@ def draw_grid(filepath, cell_size=200):
         overlay2 = Image.new("RGBA", img.size, (0, 0, 0, 0))
         draw2 = ImageDraw.Draw(overlay2)
         cell_size = int(CELL_SIZE * SCALE)
-        width, height = img.size
-        # for x in range(0, width, cell_size):
-        #     draw2.line([(x, 0), (x, height)], fill=(255, 255, 255, 60), width=1)
-        # for y in range(0, height, cell_size):
-        #     draw2.line([(0, y), (width, y)], fill=(255, 255, 255, 60), width=1)
+        if GRIDDRAW:
+            width, height = img.size
+            for x in range(0, width, cell_size):
+                draw2.line([(x, 0), (x, height)], fill=(255, 255, 255, 60), width=1)
+            for y in range(0, height, cell_size):
+                draw2.line([(0, y), (width, y)], fill=(255, 255, 255, 60), width=1)
         img = Image.alpha_composite(img, overlay2)
     return img
 
@@ -87,16 +89,7 @@ def draw_supply_lines(img, color=(0, 255, 0, 255), apistat: ApiStatus = None):
             )
 
         for index, planet in apistat.planets.items():
-
             draw_attack_lines(draw, planet, apistat)
-    #     waypoints = planet.attacking
-    #     gpos = planet.position
-    #     x, y = get_im_coordinates(gpos.x, gpos.y, 2)
-    #     for ind in waypoints:
-    #         target = apistat.planets[ind]
-    #         tgpos = target.position
-    #         tx, ty = get_im_coordinates(tgpos.x, tgpos.y, 2)
-    #         draw_dashed_line(draw, (255, 0, 0, 255), (x, y), (tx, ty), width=5)
 
     overlay = overlay.resize((overlay.width // 2, overlay.height // 2))
 
@@ -155,9 +148,9 @@ def highlight(img, index, x, y, name, hper, owner, event, task_planets, health=0
     draw.rectangle(
         (
             [
-                background_box[0],
+                coordinate[0] - bbox2[2]/2,
                 background_box[3] + 20,
-                background_box[0] + bbox2[2] + 2,
+                coordinate[0] +bbox2[2]/2,
                 background_box[3] + 20 + bbox2[3] + 2,
             ]
         ),
@@ -174,7 +167,7 @@ def highlight(img, index, x, y, name, hper, owner, event, task_planets, health=0
         spacing=0,
     )
     draw.text(
-        (background_box[0], background_box[3] + 20),
+        (coordinate[0] - bbox2[2]/2, background_box[3] + 20),
         f"{str(hper)}\n{100-int(health)}",
         fill=(255, 255, 255),
         font=font2,
@@ -202,7 +195,7 @@ def place_planet(index, frames_dict):
                 ]  # Assuming 30 frames for PNG
 
 
-def crop_image(image, coordinate, off_by, cell_size=200):
+def crop_image(image, coordinate, off_by, cell_size=250):
     ccr = coordinate
     bc = ccr + off_by + np.array((0, 0))
     uc = ccr - off_by
@@ -224,7 +217,7 @@ def create_gif(filepath, apistat: ApiStatus):
             assignment = a.get_first()
             task_planets.extend(assignment.get_task_planets())
     planets = {}
-    lastplanets = {"version": 2, "planets": {}}
+    lastplanets = {"version": 3, "planets": {}}
     for _, planet in apistat.planets.items():
         gpos = planet.position
         x = gpos.x
@@ -236,7 +229,7 @@ def create_gif(filepath, apistat: ApiStatus):
             for pf in apistat.warall.war_info.planetInfos:
                 if pf.index == planet.index:
                     name = str(planet.name).replace(" ", "\n")
-                    hper = f"{pf.sector}:" + str(planet.sector)
+                    hper = str(planet.sector)
                     break
         event = True if planet.event is not None else False
         owner = planet.currentOwner.lower()
@@ -308,7 +301,7 @@ def crop_gif(frames, coordinate, off_by, cell_size=200):
 
 class MapViewer(BaseView):
     """
-    scrollable palworld map.
+    scrollable map.
     """
 
     def __init__(
@@ -332,13 +325,14 @@ class MapViewer(BaseView):
         self.focus_cell = np.array(initial_coor) // CELL_SIZE
 
     def make_embed(self):
+        self.focus_cell = np.clip(self.focus_cell, (2, 2), (10, 10))
         coors = f"Viewing cell {self.focus_cell[0]}, {self.focus_cell[1]}"
         embed = discord.Embed(
             description=f"Current galactic map view.  \n{coors}"[:4000],
             timestamp=discord.utils.utcnow(),
         )
 
-        cropped_frames = crop_gif(self.img, self.focus_cell, off_by=np.array((2, 2)))
+        cropped_frames = crop_gif(self.img, self.focus_cell, off_by=np.array((2, 2)),cell_size=CELL_SIZE)
         with io.BytesIO() as image_binary:
             cropped_frames[0].save(
                 image_binary,

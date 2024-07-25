@@ -173,7 +173,7 @@ class Statistics(BaseApiModel):
         # Format player count
         player_count = f"{emj('hdi')}: {hf(self.playerCount)}"
         thistime = round(
-            max(self.missionTime, 1) / (self.missionsWon + self.missionsLost), 4
+            max(self.missionTime, 1) / max((self.missionsWon + self.missionsLost),1), 4
         )
 
         mission_stats += f"\n Time per mission: {sts(thistime)}"
