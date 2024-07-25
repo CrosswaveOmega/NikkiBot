@@ -329,7 +329,7 @@ def campaignLogEmbed(campaign, planet, mode="started") -> discord.Embed:
     strc = create_campaign_str(campaign)
     name, sector = campaign.planetIndex, None
     if planet:
-        name, sector = planet.get_name(), planet.sector
+        name, sector = planet.get_name(False), planet.sector
     emb = discord.Embed(
         title=f"Campaign Detected",
         description=f"A campaign has {mode} for {name}, in sector {sector}.  \nTimestamp:{fdt(campaign.retrieved_at,'F')}",
@@ -343,7 +343,7 @@ def campaignLogEmbed(campaign, planet, mode="started") -> discord.Embed:
 def planetEventEmbed(campaign, planet, mode="started") -> discord.Embed:
     name, sector = campaign.planetIndex, None
     if planet:
-        name, sector = planet.get_name(), planet.sector
+        name, sector = planet.get_name(False), planet.sector
     emb = discord.Embed(
         title=f"Planet Event Detected",
         description=f"A new event has {mode} for {name}, in sector {sector}.   \nTimestamp:{fdt(campaign.retrieved_at,'F')}",
@@ -381,7 +381,7 @@ def globalEventEmbed(evt: GlobalEvent, mode="started") -> discord.Embed:
 def dumpEmbedPlanet(campaign, dump, planet, mode="started") -> discord.Embed:
     name, sector = "?", None
     if planet:
-        name, sector = planet.get_name(), planet.sector
+        name, sector = planet.get_name(False), planet.sector
     globtex = json.dumps(dump)
     emb = discord.Embed(
         title=f"Planet Field Change",
