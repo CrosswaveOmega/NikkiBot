@@ -383,9 +383,9 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 these_embeds.append(hd2.embeds.globalEventEmbed(v, "ended"))
 
             for i, v in nowval["news"]["new"].items():
-                these_embeds.append(hd2.embeds.globalEventEmbed(v, "started"))
+                these_embeds.append(hd2.embeds.NewsFeedEmbed(v, "started"))
             for i, v in nowval["news"]["old"].items():
-                these_embeds.append(hd2.embeds.globalEventEmbed(v, "ended"))
+                these_embeds.append(hd2.embeds.NewsFeedEmbed(v, "ended"))
 
             for i, v in nowval["planets"]["changes"].items():
                 info, dump = v
