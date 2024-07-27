@@ -21,7 +21,8 @@ def get_differing_fields(
         raise ValueError("Both models must be of the same type")
 
     differing_fields = {}
-    to_ignore.append("retrieved_at", 'self')
+    to_ignore.append("retrieved_at")
+    to_ignore.append('self')
     if lvd>20:
         return 'ERROR'
 
