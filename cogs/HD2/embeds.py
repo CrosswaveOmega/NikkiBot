@@ -312,7 +312,7 @@ def campaign_view(stat: ApiStatus, hdtext:Optional[Dict[str,str]]=None):
 
         features = get_feature_dictionary(stat, k)
         pred = make_prediction_for_eps(features)
-        print(features["eps"], pred)
+        #print(features["eps"], pred)
         eps_estimated = round(pred, 3)
         eps_real = round(features["eps"], 3)
         desc += f"\nExp/s:`{eps_estimated},c{eps_real}`"

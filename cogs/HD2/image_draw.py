@@ -130,7 +130,7 @@ def highlight(img, index, x, y, name, hper, owner, event, task_planets, health=0
     outline = colors[owner]
 
     if index in task_planets or event:
-        print(task_planets)
+        #print(task_planets)
         outline = (255, 255, 255)
         if event:
             outline = (64, 64, 255)
@@ -259,7 +259,7 @@ def create_gif(filepath, apistat: ApiStatus):
         img.alpha_composite(planets[planet_obj.index][0], (c[0] - 10, c[1] - 10))
 
     for frame in range(1, 30):  # Assuming 30 frames
-        print(frame)
+        #        print(frame)
         frame_img = Image.new("RGBA", (img.width, img.height), (0, 0, 0, 0))
         draw = ImageDraw.Draw(frame_img)
         for _, planet_obj in apistat.planets.items():

@@ -112,7 +112,6 @@ class ApiStatus:
 
     @classmethod
     def from_dict(cls, data, client: APIConfig = APIConfig()):
-        # print(data)
         newcks = cls(client=client)
         newcks.max_list_size = data["max_list_size"]
         newcks.war = LimitedSizeList(newcks.max_list_size)
@@ -209,7 +208,7 @@ class ApiStatus:
         except Exception as e:
             raise e
 
-        print(war, campaigns, assignments)
+        #print(war, campaigns, assignments)
         if war is not None:
             self.war.add(war)
 

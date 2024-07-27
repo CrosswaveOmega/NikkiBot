@@ -287,7 +287,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         except Exception as e:
             await self.bot.send_error(e, f"Message update cleanup error.")
-            gui.gprint(str(e))
+            #gui.gprint(str(e))
 
     async def gtask_update(self, source_message: discord.Message = None):
         """
@@ -412,9 +412,9 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                     hd2.embeds.dumpEmbed(warstat.status, dump, i, "started")
                 )
 
-        print(these_embeds)
+        #print(these_embeds)
         for e in these_embeds:
-            print(e)
+            #print(e)
             await web.postMessageAsWebhookWithURL(
                 self.loghook,
                 message_content="",
@@ -479,7 +479,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             await asyncio.gather(asyncio.to_thread(self.draw_img), asyncio.sleep(1))
             img = self.img
 
-        print(img)
+        #print(img)
         liberations, defenses = 0, 0
         for i, campl in self.apistatus.campaigns.items():
             this = campl.get_first()
@@ -639,7 +639,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         planets = self._shared_autocomplete_logic(
             self.apistatus.planets.values(), current
         )
-        print(planets)
+        #print(planets)
         return planets
 
     async def campaign_autocomplete(
@@ -650,7 +650,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         """
         campaigns = (l.get_first().planet for l in self.apistatus.campaigns.values())
         planets = self._shared_autocomplete_logic(campaigns, current)
-        print(planets)
+        #print(planets)
         return planets
 
     def _shared_autocomplete_logic(self, items, current: str):
@@ -738,7 +738,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if not data:
             return await ctx.send("No result")
         embeds = []
-        print(byplanet)
+        
         if byplanet in self.apistatus.planets:
             planet = self.apistatus.planets[byplanet]
             embeds.append(
