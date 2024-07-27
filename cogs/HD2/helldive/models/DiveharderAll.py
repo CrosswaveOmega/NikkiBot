@@ -21,7 +21,9 @@ def get_differing_fields(
         raise ValueError("Both models must be of the same type")
 
     differing_fields = {}
-    to_ignore.append("retrieved_at")
+    to_ignore.append("retrieved_at", 'self')
+    if lvd>20:
+        return 'ERROR'
 
     def compare_values(val1, val2):
         if isinstance(val1, BaseApiModel) and isinstance(val2, BaseApiModel):
