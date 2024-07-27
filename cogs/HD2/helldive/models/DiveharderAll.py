@@ -42,8 +42,8 @@ def get_differing_fields(
 
     for field in model1.model_fields:
         if field not in to_ignore:
-            value1 = getattr(model1, field)
-            value2 = getattr(model2, field)
+            value1 = model1[field]
+            value2 = model2[field]
 
             diffs = compare_values(value1, value2)
             if isinstance(diffs, dict):
