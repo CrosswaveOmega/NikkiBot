@@ -428,6 +428,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     @commands.command(name="now_test")
     async def load_test_now(self, ctx: commands.Context):
         await self.load_log()
+        
+        await ctx.send("Done testing now.")
         # await ctx.send(embed=discord.Embed(description=s))
 
     @commands.is_owner()

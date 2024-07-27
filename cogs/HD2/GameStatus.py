@@ -158,7 +158,7 @@ class ApiStatus:
         if nowv:
             # print(nowv)
             if self.warall:
-                diff = detect_loggable_changes(self.warall, nowv)
+                diff = await detect_loggable_changes(self.warall, nowv)
                 return diff, nowv
 
         return None, nowv
