@@ -219,7 +219,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     async def updatelog(self):
         try:
             if not self.get_running:
-                task=asyncio.create_task(self.load_log)
+                task=asyncio.create_task(self.load_log())
             else:
                 print("NOT SCHEDULING.")
 
