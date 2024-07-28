@@ -148,6 +148,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
     def __init__(self, bot):
         self.bot: TCBot = bot
+        self.get_running=False
         # self.session=aiohttp.ClientSession()
         hdoverride = hd2.APIConfig()
         self.img = None
@@ -217,7 +218,10 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
     async def updatelog(self):
         try:
-            await self.load_log()
+            if not self.get_running:
+                task=asyncio.create_task(self.load_log)
+            else:
+                print("NOT SCHEDULING.")
 
         except Exception as e:
             await self.bot.send_error(e, "LOG ERROR", True)
@@ -353,6 +357,14 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         await ctx.send("force loaded api data now.")
 
     async def load_log(self):
+        try:
+            await asyncio.wait_for(self.main_log(), timeout=60)
+        except Exception as e:
+            await self.bot.send_error(e, "LOG ERROR", True)
+            self.get_running=False
+
+    async def main_log(self):
+        self.get_running=True
         nowval, warstat = await self.apistatus.get_now()
 
         tosend = []
@@ -423,6 +435,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 embed=[e],
             )
         self.apistatus.warall = warstat
+        self.get_running=False
 
     @commands.is_owner()
     @commands.command(name="now_test")

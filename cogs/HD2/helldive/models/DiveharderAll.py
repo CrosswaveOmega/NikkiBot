@@ -14,8 +14,8 @@ from .SteamNews import SteamNewsRaw
 from .WarId import WarId
 
 
-
-
+import logging
+logs=logging.getLogger("TCLogger")
 class DiveharderAll(BaseApiModel):
     """
     None model
@@ -147,6 +147,7 @@ async def detect_loggable_changes(old: BaseApiModel, new: BaseApiModel, lvd=0) -
         ],
     )
     out["stats_raw"]["changes"] = rawout
+    logs.info("Starting loggable detection, stand by...")
 
     infoout = await get_differing_fields(
         old.war_info,
@@ -154,13 +155,17 @@ async def detect_loggable_changes(old: BaseApiModel, new: BaseApiModel, lvd=0) -
         to_ignore=["planetInfos"],
     )
     out["info_raw"]["changes"] = infoout
+    logs.info("News feed loggable detection, stand by...")
     await process_planet_events(new.news_feed, old.news_feed, out, "news", "id")
+    logs.info("campaigns detection, stand by...")
     await process_planet_events(
         new.status.campaigns, old.status.campaigns, out, "campaign", "id"
     )
+    logs.info("planet events detection, stand by...")
     await process_planet_events(
         new.status.planetEvents, old.status.planetEvents, out, "planetevents", "id"
     )
+    logs.info("planet status detection, stand by...")
     await process_planet_events(
         new.status.planetStatus,
         old.status.planetStatus,
@@ -169,12 +174,15 @@ async def detect_loggable_changes(old: BaseApiModel, new: BaseApiModel, lvd=0) -
         "index",
         ["health", "players"],
     )
+    logs.info("global event detection, stand by...")
     await process_planet_events(
         new.status.globalEvents, old.status.globalEvents, out, "globalEvents", "eventId"
     )
+    logs.info("planet info detection, stand by...")
     await process_planet_events(
         new.war_info.planetInfos, old.war_info.planetInfos, out, "planetInfos", "index"
     )
+    logs.info("Done detection, stand by...")
     # process_planet_events(new.war_info.planetInfos, old.status.planetInfos, out,'planetInfos','index')
 
     return out
