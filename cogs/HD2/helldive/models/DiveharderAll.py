@@ -3,6 +3,7 @@ from typing import *
 from pydantic import Field
 from .ABC.model import BaseApiModel
 import discord
+import asyncio
 
 from .WarStatus import WarStatus
 from .WarInfo import WarInfo
@@ -40,7 +41,11 @@ class DiveharderAll(BaseApiModel):
 
     war_id: Optional[WarId] = Field(alias="war_id", default=None)
 
-
+async def compare_value_with_timeout(model1, field):
+    try:
+        return await asyncio.wait_for(asyncio.to_thread(model1.get, field, None), timeout=5)
+    except asyncio.TimeoutError:
+        return 'ERR'
 
 async def get_differing_fields(
     model1: BaseApiModel, model2: BaseApiModel, lvd=0, to_ignore=[]
@@ -74,9 +79,10 @@ async def get_differing_fields(
 
     for field in model1.model_fields:
         if field not in to_ignore:
-            value1 = model1[field]
-            value2 = model2[field]
 
+
+            value1 = await compare_value_with_timeout(model1, field)
+            value2 = await compare_value_with_timeout(model2, field)
             diffs = await compare_values(value1, value2)
             if isinstance(diffs, dict):
                 if diffs:
