@@ -47,7 +47,7 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         st = datetime.datetime(
             nowd.year, nowd.month, nowd.day, nowd.hour, int(nowd.minute // 2) * 2
         )
-        robj2 = rrule(freq=MINUTELY, interval=1, dtstart=st)
+        robj2 = rrule(freq=MINUTELY, interval=2, dtstart=st)
         self.QueueAll=asyncio.Queue()
         if not TCTaskManager.does_task_exist("UpdateLog"):
             self.tc_task2 = TCTask("UpdateLog", robj2, robj2.after(st))
