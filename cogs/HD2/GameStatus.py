@@ -152,13 +152,14 @@ class ApiStatus:
         return war
 
     async def get_now(
-        self,
+        self, current, Queue:asyncio.Queue
     ) -> Tuple[Dict[str, Dict[str, Union[List, Dict[str, Any]]]], DiveharderAll]:
         nowv = await GetApiRawAll(api_config_override=self.client)
+        self.warall=nowv
         if nowv:
             # print(nowv)
-            if self.warall:
-                diff = await detect_loggable_changes(self.warall, nowv)
+            if current:
+                diff = await detect_loggable_changes(current, nowv,Queue)
                 return diff, nowv
 
         return None, nowv

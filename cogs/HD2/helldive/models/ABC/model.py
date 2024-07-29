@@ -15,9 +15,12 @@ class BaseApiModel(BaseModel):
         if "retrieved_at" not in data:
             self.retrieved_at = datetime.now(tz=timezone.utc)
         else:
-            self.retrieved_at = datetime.fromisoformat(data["retrieved_at"]).replace(
-                tzinfo=timezone.utc
-            )
+            if isinstance(data['retrieved_at'], str):
+                self.retrieved_at = datetime.fromisoformat(data["retrieved_at"]).replace(
+                    tzinfo=timezone.utc
+                )
+            elif isinstance(data['retrieved_at'],datetime):
+                self.retrieved_at=data['retrieved_at']
 
     def __getitem__(self, attr):
         """

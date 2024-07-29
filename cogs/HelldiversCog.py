@@ -14,7 +14,7 @@ from dateutil.rrule import MINUTELY, DAILY, SU, WEEKLY, rrule
 from discord.ext import commands, tasks
 
 from discord.app_commands import Choice
-from utility import WebhookMessageWrapper as web
+
 from utility import MessageTemplates, urltomessage, prioritized_string_split
 from bot import (
     Guild_Task_Functions,
@@ -183,13 +183,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if not TCTaskManager.does_task_exist("SuperEarthStatus"):
             self.tc_task = TCTask("SuperEarthStatus", robj, robj.after(st))
             self.tc_task.assign_wrapper(self.update_api)
-        st = datetime(
-            nowd.year, nowd.month, nowd.day, nowd.hour, int(nowd.minute // 2) * 2
-        )
-        robj = rrule(freq=MINUTELY, interval=2, dtstart=st)
-        if not TCTaskManager.does_task_exist("UpdateLog"):
-            self.tc_task = TCTask("UpdateLog", robj, robj.after(st))
-            self.tc_task.assign_wrapper(self.updatelog)
+
         # self.update_api.start()
 
     def server_profile_field_ext(self, guild: discord.Guild):
@@ -212,19 +206,10 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             self.img = None
         # hd2.save_to_json(self.apistatus, "./saveData/hd2_snapshot.json")
         TCTaskManager.remove_task("SuperEarthStatus")
-        TCTaskManager.remove_task("UpdateLog")
         Guild_Task_Functions.remove_task_function("WARSTATUS")
         Guild_Task_Functions.remove_task_function("UPDATEOVERVIEW")
 
-    async def updatelog(self):
-        try:
-            if not self.get_running:
-                task=asyncio.create_task(self.load_log())
-            else:
-                print("NOT SCHEDULING.")
 
-        except Exception as e:
-            await self.bot.send_error(e, "LOG ERROR", True)
 
     async def update_data(self):
         if self.api_up:
@@ -356,94 +341,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         await self.update_data()
         await ctx.send("force loaded api data now.")
 
-    async def load_log(self):
-        try:
-            await asyncio.wait_for(self.main_log(), timeout=60)
-        except Exception as e:
-            await self.bot.send_error(e, "LOG ERROR", True)
-            self.get_running=False
-
-    async def main_log(self):
-        self.get_running=True
-        nowval, warstat = await self.apistatus.get_now()
-
-        tosend = []
-
-        these_embeds = []
-        if nowval:
-            for i, v in nowval["campaign"]["new"].items():
-                planet = self.apistatus.planets.get(int(v.planetIndex), None)
-
-                these_embeds.append(hd2.embeds.campaignLogEmbed(v, planet, "started"))
-            for i, v in nowval["campaign"]["old"].items():
-                planet = self.apistatus.planets.get(int(v.planetIndex), None)
-
-                these_embeds.append(hd2.embeds.campaignLogEmbed(v, planet, "ended"))
-
-            for i, v in nowval["planetevents"]["new"].items():
-                planet = self.apistatus.planets.get(int(v.planetIndex), None)
-
-                these_embeds.append(hd2.embeds.planetEventEmbed(v, planet, "started"))
-            for i, v in nowval["planetevents"]["old"].items():
-                planet = self.apistatus.planets.get(int(v.planetIndex), None)
-
-                these_embeds.append(hd2.embeds.planetEventEmbed(v, planet, "ended"))
-
-            for i, v in nowval["globalEvents"]["new"].items():
-                these_embeds.append(hd2.embeds.globalEventEmbed(v, "started"))
-            for i, v in nowval["globalEvents"]["old"].items():
-                these_embeds.append(hd2.embeds.globalEventEmbed(v, "ended"))
-
-            for i, v in nowval["news"]["new"].items():
-                these_embeds.append(hd2.embeds.NewsFeedEmbed(v, "started"))
-            for i, v in nowval["news"]["old"].items():
-                these_embeds.append(hd2.embeds.NewsFeedEmbed(v, "ended"))
-
-            for i, v in nowval["planets"]["changes"].items():
-                info, dump = v
-                planet = self.apistatus.planets.get(int(i), None)
-                if planet:
-                    these_embeds.append(
-                        hd2.embeds.dumpEmbedPlanet(info, dump, planet, "started")
-                    )
-            for i, v in nowval["planetInfos"]["changes"].items():
-                planet = self.apistatus.planets.get(int(i), None)
-                info, dump = v
-                if planet:
-                    these_embeds.append(
-                        hd2.embeds.dumpEmbedPlanet(info, dump, planet, "started")
-                    )
-            for i, v in nowval["stats_raw"]["changes"].items():
-                dump = v
-                these_embeds.append(
-                    hd2.embeds.dumpEmbed(warstat.status, dump, i, "started")
-                )
-            for i, v in nowval["info_raw"]["changes"].items():
-                dump = v
-                these_embeds.append(
-                    hd2.embeds.dumpEmbed(warstat.status, dump, i, "started")
-                )
-
-        #print(these_embeds)
-        for e in these_embeds:
-            #print(e)
-            await web.postMessageAsWebhookWithURL(
-                self.loghook,
-                message_content="",
-                display_username="Super Earth Event Log",
-                avatar_url=self.bot.user.avatar.url,
-                embed=[e],
-            )
-        self.apistatus.warall = warstat
-        self.get_running=False
-
-    @commands.is_owner()
-    @commands.command(name="now_test")
-    async def load_test_now(self, ctx: commands.Context):
-        await self.load_log()
-        
-        await ctx.send("Done testing now.")
-        # await ctx.send(embed=discord.Embed(description=s))
 
     @commands.is_owner()
     @commands.command(name="make_planets")

@@ -44,20 +44,18 @@ class DiveharderAll(BaseApiModel):
 async def compare_value_with_timeout(model1, field):
     try:
         return await asyncio.wait_for(asyncio.to_thread(model1.get, field, None), timeout=5)
-    except asyncio.TimeoutError:
-        return 'ERR'
+    except asyncio.TimeoutError as e:
+        logs.error("Could not get field %s ", field, exc_info=e)
+        raise e
 
-async def get_differing_fields(
-    model1: BaseApiModel, model2: BaseApiModel, lvd=0, to_ignore=[]
-) -> dict:
-    """Determine which fields within the BaseApiModel are different from each other."""
+async def get_differing_fields(model1: BaseApiModel, model2: BaseApiModel, lvd=0, to_ignore=[]) -> dict:
     if type(model1) is not type(model2):
         raise ValueError("Both models must be of the same type")
 
     differing_fields = {}
     to_ignore.append("retrieved_at")
     to_ignore.append('self')
-    if lvd>20:
+    if lvd > 20:
         return 'ERROR'
 
     async def compare_values(val1, val2):
@@ -66,7 +64,6 @@ async def get_differing_fields(
         elif isinstance(val1, list) and isinstance(val2, list):
             list_diffs = {}
             for i, (v1, v2) in enumerate(zip(val1, val2)):
-                # print(str(type(v1))[:25], str(type(v2))[:25])
                 if isinstance(v1, BaseApiModel) and isinstance(v2, BaseApiModel):
                     differing = await get_differing_fields(v1, v2, lvd + 1)
                     if differing:
@@ -79,8 +76,7 @@ async def get_differing_fields(
 
     for field in model1.model_fields:
         if field not in to_ignore:
-
-
+            logs.info("Retrieving field %s ", field)
             value1 = await compare_value_with_timeout(model1, field)
             value2 = await compare_value_with_timeout(model2, field)
             diffs = await compare_values(value1, value2)
@@ -102,23 +98,21 @@ async def check_compare_value(key, value, target: List[Dict[str, Any]]):
             return s
     return None
 
-
-async def process_planet_events(source, target, out, place, key, exclude=[]):
+async def process_planet_events(source, target, place, key, QueueAll, exclude=[]):
     for event in source:
         oc = await check_compare_value(key, event[key], target)
         if not oc:
-            out[place]["new"][event[key]] = event
+            await QueueAll.put({'mode':'new','place': place, 'value': event})
         else:
             differ = await get_differing_fields(oc, event, to_ignore=exclude)
             if differ:
-                out[place]["changes"][event[key]] = (event, differ)
+                await QueueAll.put({'mode':'change','place': place, 'value': (event, differ)})
 
     for event in target:
         if not await check_compare_value(key, event[key], source):
-            out[place]["old"][event[key]] = event
+            await QueueAll.put({'mode':'remove','place': place, 'value': event})
 
-
-async def detect_loggable_changes(old: BaseApiModel, new: BaseApiModel, lvd=0) -> dict:
+async def detect_loggable_changes(old: BaseApiModel, new: BaseApiModel, QueueAll:asyncio.Queue) -> dict:
     out = {
         "campaign": {"new": {}, "changes": {}, "old": {}},
         "planetevents": {"new": {}, "changes": {}, "old": {}},
@@ -126,63 +120,30 @@ async def detect_loggable_changes(old: BaseApiModel, new: BaseApiModel, lvd=0) -
         "planetInfos": {"new": {}, "changes": {}, "old": {}},
         "globalEvents": {"new": {}, "changes": {}, "old": {}},
         "news": {"new": {}, "changes": {}, "old": {}},
-        "stats_raw": {
-            "changes": {},
-        },
+        "stats_raw": {"changes": {}},
         "info_raw": {"changes": {}},
     }
-    # Check for new campaigns
-    rawout = await get_differing_fields(
-        old.status,
-        new.status,
-        to_ignore=[
-            "time",
-            "planetAttacks",
-            "impactMultiplier",
-            "campaigns",
-            "planetStatus",
-            "planetEvents",
-            "jointOperations",
-            "globalEvents",
-        ],
-    )
+    rawout = await get_differing_fields(old.status, new.status, to_ignore=[
+        "time","planetAttacks", "impactMultiplier", "campaigns", "planetStatus", "planetEvents", "jointOperations", "globalEvents"])
+    if rawout:
+        await QueueAll.put({'mode':'change','place': 'stats_raw', 'value': (new.status, rawout)})
     out["stats_raw"]["changes"] = rawout
     logs.info("Starting loggable detection, stand by...")
 
-    infoout = await get_differing_fields(
-        old.war_info,
-        new.war_info,
-        to_ignore=["planetInfos"],
-    )
-    out["info_raw"]["changes"] = infoout
+    infoout = await get_differing_fields(old.war_info, new.war_info, to_ignore=["planetInfos"])
+    if infoout:
+        await QueueAll.put({'mode':'change','place': 'info_raw', 'value': (new.war_info, infoout)})
     logs.info("News feed loggable detection, stand by...")
-    await process_planet_events(new.news_feed, old.news_feed, out, "news", "id")
+    await process_planet_events(new.news_feed, old.news_feed, "news", "id", QueueAll)
     logs.info("campaigns detection, stand by...")
-    await process_planet_events(
-        new.status.campaigns, old.status.campaigns, out, "campaign", "id"
-    )
+    await process_planet_events(new.status.campaigns, old.status.campaigns, "campaign", "id", QueueAll)
     logs.info("planet events detection, stand by...")
-    await process_planet_events(
-        new.status.planetEvents, old.status.planetEvents, out, "planetevents", "id"
-    )
+    await process_planet_events(new.status.planetEvents, old.status.planetEvents, "planetevents", "id", QueueAll)
     logs.info("planet status detection, stand by...")
-    await process_planet_events(
-        new.status.planetStatus,
-        old.status.planetStatus,
-        out,
-        "planets",
-        "index",
-        ["health", "players"],
-    )
+    await process_planet_events(new.status.planetStatus, old.status.planetStatus, "planets", "index", QueueAll, ["health", "players"])
     logs.info("global event detection, stand by...")
-    await process_planet_events(
-        new.status.globalEvents, old.status.globalEvents, out, "globalEvents", "eventId"
-    )
+    await process_planet_events(new.status.globalEvents, old.status.globalEvents, "globalEvents", "eventId", QueueAll)
     logs.info("planet info detection, stand by...")
-    await process_planet_events(
-        new.war_info.planetInfos, old.war_info.planetInfos, out, "planetInfos", "index"
-    )
+    await process_planet_events(new.war_info.planetInfos, old.war_info.planetInfos, "planetInfos", "index", QueueAll, ['position'])
     logs.info("Done detection, stand by...")
-    # process_planet_events(new.war_info.planetInfos, old.status.planetInfos, out,'planetInfos','index')
-
     return out

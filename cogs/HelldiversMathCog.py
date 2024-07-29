@@ -23,6 +23,7 @@ from bot import (
     TCBot,
     TCGuildTask,
 )
+from utility import WebhookMessageWrapper as web
 from bot.Tasks import TCTask, TCTaskManager
 from utility import MessageTemplates, load_json_with_substitutions, urltomessage
 from utility.embed_paginator import pages_of_embeds, pages_of_embeds_2
@@ -30,12 +31,129 @@ from utility.embed_paginator import pages_of_embeds, pages_of_embeds_2
 from .HD2.db import ServerHDProfile
 
 
+
 class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
     """Cog for helldivers 2.  Consider it my embedded automaton spy."""
 
+
     def __init__(self, bot):
         self.bot: TCBot = bot
+        self.loghook = AssetLookup.get_asset("loghook", "urls")
+        self.get_running=False
         # self.session=aiohttp.ClientSession()
+        
+
+        nowd = datetime.datetime.now()
+        st = datetime.datetime(
+            nowd.year, nowd.month, nowd.day, nowd.hour, int(nowd.minute // 2) * 2
+        )
+        robj2 = rrule(freq=MINUTELY, interval=1, dtstart=st)
+        self.QueueAll=asyncio.Queue()
+        if not TCTaskManager.does_task_exist("UpdateLog"):
+            self.tc_task2 = TCTask("UpdateLog", robj2, robj2.after(st))
+            self.tc_task2.assign_wrapper(self.updatelog)
+        self.run.start()
+
+    def cog_unload(self):
+        TCTaskManager.remove_task("UpdateLog")
+        self.run.cancel()
+
+    @tasks.loop(seconds=2)
+    async def run(self):
+        try:
+            item = self.QueueAll.get_nowait()
+        except asyncio.QueueEmpty:
+            return
+        event_type = item['mode']
+        place = item['place']
+        value = item['value']
+        embed = None
+
+        if event_type == 'new':
+            if place == 'campaign':
+                embed = hd2.embeds.campaignLogEmbed(value, self.apistatus.planets.get(int(value.planetIndex), None), "started")
+            elif place == 'planetevents':
+                embed = hd2.embeds.planetEventEmbed(value, self.apistatus.planets.get(int(value.planetIndex), None), "started")
+            elif place == 'globalEvents':
+                embed = hd2.embeds.globalEventEmbed(value, "started")
+            elif place == 'news':
+                embed = hd2.embeds.NewsFeedEmbed(value, "started")
+        elif event_type == 'remove':
+            if place == 'campaign':
+                embed = hd2.embeds.campaignLogEmbed(value, self.apistatus.planets.get(int(value.planetIndex), None), "ended")
+            elif place == 'planetevents':
+                embed = hd2.embeds.planetEventEmbed(value, self.apistatus.planets.get(int(value.planetIndex), None), "ended")
+            elif place == 'globalEvents':
+                embed = hd2.embeds.globalEventEmbed(value, "ended")
+            elif place == 'news':
+                embed = hd2.embeds.NewsFeedEmbed(value, "ended")
+        elif event_type == 'change':
+            (info, dump) = value
+            if place == 'planets' or place == 'planetInfos':
+                planet = self.apistatus.planets.get(int(info.index), None)
+                if planet:
+                    embed = hd2.embeds.dumpEmbedPlanet(info, dump, planet, "changed")
+            elif place == 'stats_raw':
+                embed = hd2.embeds.dumpEmbed(info, dump, 'stats', "changed")
+            elif place == 'info_raw':
+                embed = hd2.embeds.dumpEmbed(info, dump, 'info', "changed")
+
+        if embed:
+            print(embed.description)
+            await web.postMessageAsWebhookWithURL(
+                self.loghook,
+                message_content="",
+                display_username="Super Earth Event Log",
+                avatar_url=self.bot.user.avatar.url,
+                embed=[embed],
+            )
+
+    @run.error
+    async def logerror(self,ex):
+       await self.bot.send_error(ex, "LOG ERROR", True)
+
+    async def updatelog(self):
+        try:
+            if not self.get_running:
+                task=asyncio.create_task(self.load_log())
+            else:
+                print("NOT SCHEDULING.")
+
+        except Exception as e:
+            await self.bot.send_error(e, "LOG ERROR", True)
+
+
+    async def load_log(self):
+        try:
+            await asyncio.wait_for(self.main_log(), timeout=60)
+        except Exception as e:
+            await self.bot.send_error(e, "LOG ERROR", True)
+            self.get_running=False
+
+    async def main_log(self):
+        self.get_running=True
+        lastwar=hd2.helldive.models.DiveharderAll(**self.apistatus.warall.model_dump())
+        nowval, warstat = await self.apistatus.get_now(lastwar,self.QueueAll)
+
+        if nowval:
+            pass
+
+        self.apistatus.warall = warstat
+        self.get_running = False
+
+
+
+    @commands.is_owner()
+    @commands.command(name="now_test")
+    async def load_test_now(self, ctx: commands.Context):
+        await self.load_log()
+        await ctx.send("Done testing now.")
+    
+    @commands.is_owner()
+    @commands.command(name="now_test")
+    async def load_test_now(self, ctx: commands.Context):
+        await self.load_log()
+        await ctx.send("Done testing now.")
 
     @property
     def apistatus(self) -> hd2.ApiStatus:
