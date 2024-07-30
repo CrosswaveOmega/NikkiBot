@@ -1,9 +1,10 @@
 import json
 from typing import Dict, List, Optional, Tuple
 
+import os
 import discord
 
-from .helldive import Assignment2, Campaign2, Planet, War, GlobalEvent
+from .helldive import Assignment2, Campaign2, Planet, War, GlobalEvent, PlanetAttack
 
 """
 Collection of embeds for formatting.
@@ -324,6 +325,22 @@ def campaign_view(stat: ApiStatus, hdtext:Optional[Dict[str,str]]=None):
     emb.timestamp = discord.utils.utcnow()
     return emb
 
+def check_platform():
+    
+    if os.name == 'nt':
+        return "%#I:%M%p UTC %b {S} %Y"
+    return "%-I:%M%p UTC %b {S} %Y"
+
+def suffix(d):
+    return {1:'st',2:'nd',3:'rd'}.get(d%20, 'th')
+
+def custom_strftime(t):   
+    format="%#I:%M%p UTC %b {S} %Y"
+    out= t.strftime(format).replace('{S}', str(t.day) + suffix(t.day))
+    out=out.replace("AM",'am')
+    out=out.replace("PM",'pm')
+    return out
+
 
 def campaignLogEmbed(campaign, planet, mode="started") -> discord.Embed:
     strc = create_campaign_str(campaign)
@@ -336,10 +353,26 @@ def campaignLogEmbed(campaign, planet, mode="started") -> discord.Embed:
         timestamp=campaign.retrieved_at,
     )
     emb.set_author(name=f"Campaign {mode}.")
-    emb.set_footer(text=strc)
+    emb.set_footer(text=f"{strc},{custom_strftime(campaign.retrieved_at)}")
     return emb
 
-
+def planetAttackEmbed(atk:PlanetAttack, planets:Dict[int, Planet], mode="started"):
+    source = planets.get(atk.source, None)
+    target = planets.get(atk.target, None)
+    source_name=atk.source
+    target_name=atk.target
+    if source:
+        source_name=source.get_name(False)
+    if target:
+        target_name=target.get_name(False)
+    emb = discord.Embed(
+        title=f"Planet Attack Detected",
+        description=f"An attack has {mode} from {source_name} to {target_name}.   \nTimestamp:{fdt(atk.retrieved_at,'F')}",
+        timestamp=atk.retrieved_at,
+    )
+    emb.set_author(name=f"Planet Attack {mode}.")
+    emb.set_footer(text=f"{custom_strftime(atk.retrieved_at)}")
+    return emb
 def planetEventEmbed(campaign, planet, mode="started") -> discord.Embed:
     name, sector = campaign.planetIndex, None
     if planet:
@@ -351,7 +384,7 @@ def planetEventEmbed(campaign, planet, mode="started") -> discord.Embed:
     )
     emb.add_field(name="Event Details", value=campaign.long_event_details())
     emb.set_author(name=f"Planet Event {mode}.")
-    emb.set_footer(text=f"EID:{campaign.id}")
+    emb.set_footer(text=f"EID:{campaign.id}, {custom_strftime(campaign.retrieved_at)}")
     return emb
 
 
@@ -374,7 +407,7 @@ def globalEventEmbed(evt: GlobalEvent, mode="started") -> discord.Embed:
     emb.add_field(name="Event Details", value=evt.strout())
     emb.add_field(name="Timestamp", value=f"Timestamp:{fdt(evt.retrieved_at,'F')}")
     emb.set_author(name=f"Global Event {mode}.")
-    emb.set_footer(text=f"EID:{evt.eventId}")
+    emb.set_footer(text=f"EID:{evt.eventId}, {custom_strftime(evt.retrieved_at)}")
     return emb
 
 
@@ -390,6 +423,7 @@ def dumpEmbedPlanet(campaign, dump, planet, mode="started") -> discord.Embed:
     )
     emb.add_field(name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at,'F')}")
     emb.set_author(name=f"Planet Value Change")
+    emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
     return emb
 
 
@@ -403,6 +437,7 @@ def dumpEmbed(campaign, dump, name, mode="started") -> discord.Embed:
     )
     emb.add_field(name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at,'F')}")
     emb.set_author(name=f"API Value Change")
+    emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
     return emb
 
 
@@ -415,4 +450,5 @@ def NewsFeedEmbed(newsfeed, mode="started") -> discord.Embed:
     )
     emb.add_field(name="Timestamp", value=f"Timestamp:{fdt(newsfeed.retrieved_at,'F')}")
     emb.set_author(name=f"New dispatch from Super Earth...")
+    emb.set_footer(text=f"{custom_strftime(newsfeed.retrieved_at)}")
     return emb

@@ -45,9 +45,9 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
 
         nowd = datetime.datetime.now()
         st = datetime.datetime(
-            nowd.year, nowd.month, nowd.day, nowd.hour, int(nowd.minute // 2) * 2
+            nowd.year, nowd.month, nowd.day, nowd.hour, int(nowd.minute // 2) * 2, 
         )
-        robj2 = rrule(freq=MINUTELY, interval=2, dtstart=st)
+        robj2 = rrule(freq=MINUTELY, interval=1, dtstart=st)
         self.QueueAll=asyncio.Queue()
         if not TCTaskManager.does_task_exist("UpdateLog"):
             self.tc_task2 = TCTask("UpdateLog", robj2, robj2.after(st))
@@ -72,6 +72,8 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         if event_type == 'new':
             if place == 'campaign':
                 embed = hd2.embeds.campaignLogEmbed(value, self.apistatus.planets.get(int(value.planetIndex), None), "started")
+            elif place == 'planetAttacks':
+                embed = hd2.embeds.planetAttackEmbed(value, self.apistatus.planets, "started")
             elif place == 'planetevents':
                 embed = hd2.embeds.planetEventEmbed(value, self.apistatus.planets.get(int(value.planetIndex), None), "started")
             elif place == 'globalEvents':
@@ -81,6 +83,8 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         elif event_type == 'remove':
             if place == 'campaign':
                 embed = hd2.embeds.campaignLogEmbed(value, self.apistatus.planets.get(int(value.planetIndex), None), "ended")
+            elif place == 'planetAttacks':
+                embed = hd2.embeds.planetAttackEmbed(value, self.apistatus.planets, "ended")
             elif place == 'planetevents':
                 embed = hd2.embeds.planetEventEmbed(value, self.apistatus.planets.get(int(value.planetIndex), None), "ended")
             elif place == 'globalEvents':
@@ -93,6 +97,8 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
                 planet = self.apistatus.planets.get(int(info.index), None)
                 if planet:
                     embed = hd2.embeds.dumpEmbedPlanet(info, dump, planet, "changed")
+                else:
+                    embed = hd2.embeds.dumpEmbed(info, dump, "planet","changed")
             elif place == 'stats_raw':
                 embed = hd2.embeds.dumpEmbed(info, dump, 'stats', "changed")
             elif place == 'info_raw':

@@ -63,15 +63,33 @@ async def get_differing_fields(model1: BaseApiModel, model2: BaseApiModel, lvd=0
             return await get_differing_fields(val1, val2, lvd + 1)
         elif isinstance(val1, list) and isinstance(val2, list):
             list_diffs = {}
-            for i, (v1, v2) in enumerate(zip(val1, val2)):
-                if isinstance(v1, BaseApiModel) and isinstance(v2, BaseApiModel):
-                    differing = await get_differing_fields(v1, v2, lvd + 1)
-                    if differing:
-                        list_diffs[i] = differing
-                elif str(v1) != str(v2):
-                    list_diffs[i] = {"old": v1, "new": v2}
+            if len(val1) != len(val2):
+                print(len(val1),len(val2))
+                biggestsize = max(len(val1), len(val2))
+                for i in range(biggestsize):
+                    v1 = val1[i] if i < len(val1) else None
+                    v2 = val2[i] if i < len(val2) else None
+                    if isinstance(v1, BaseApiModel) and isinstance(v2, BaseApiModel):
+                        differing = await get_differing_fields(v1, v2, lvd + 1)
+                        if differing:
+                            list_diffs[i] = differing
+                    elif str(v1) != str(v2):
+                        target = {}
+                        target = {k: v for k, v in zip(["old", "new"], [v1, v2]) if v is not None}
+                        if target:
+                            list_diffs[i] = target
+            else:
+                for i, (v1, v2) in enumerate(zip(val1, val2)):
+                    if isinstance(v1, BaseApiModel) and isinstance(v2, BaseApiModel):
+                        differing = await get_differing_fields(v1, v2, lvd + 1)
+                        if differing:
+                            list_diffs[i] = differing
+                    elif str(v1) != str(v2):
+                        list_diffs[i] = {"old": v1, "new": v2}
+            
             return list_diffs if list_diffs else None
         else:
+            
             return str(val1) != str(val2)
 
     for field in model1.model_fields:
@@ -79,6 +97,7 @@ async def get_differing_fields(model1: BaseApiModel, model2: BaseApiModel, lvd=0
             logs.info("Retrieving field %s ", field)
             value1 = await compare_value_with_timeout(model1, field)
             value2 = await compare_value_with_timeout(model2, field)
+            
             diffs = await compare_values(value1, value2)
             if isinstance(diffs, dict):
                 if diffs:
@@ -98,6 +117,14 @@ async def check_compare_value(key, value, target: List[Dict[str, Any]]):
             return s
     return None
 
+async def check_compare_value_list(keys: List[str], values: List[Any], target: List[Dict[str, Any]]):
+    print(keys,values)
+    for s in target:
+        print('found, keys,values')
+        if all(s[key] == value for key, value in zip(keys, values)):
+            return s
+    return None
+
 async def process_planet_events(source, target, place, key, QueueAll, exclude=[]):
     for event in source:
         oc = await check_compare_value(key, event[key], target)
@@ -112,11 +139,24 @@ async def process_planet_events(source, target, place, key, QueueAll, exclude=[]
         if not await check_compare_value(key, event[key], source):
             await QueueAll.put({'mode':'remove','place': place, 'value': event})
 
+
+async def process_planet_attacks(source, target, place, keys, QueueAll, exclude=[]):
+    for event in source:
+        oc = await check_compare_value_list(keys, [event[key] for key in keys], target)
+        if not oc:
+            print(place,'new',event)
+            await QueueAll.put({'mode':'new','place': place, 'value': event})
+
+    for event in target:
+        if not await check_compare_value_list(keys, [event[key] for key in keys], source):
+            await QueueAll.put({'mode':'remove','place': place, 'value': event})
+
 async def detect_loggable_changes(old: BaseApiModel, new: BaseApiModel, QueueAll:asyncio.Queue) -> dict:
     out = {
         "campaign": {"new": {}, "changes": {}, "old": {}},
         "planetevents": {"new": {}, "changes": {}, "old": {}},
         "planets": {"new": {}, "changes": {}, "old": {}},
+        "planetAttacks": {"new": {}, "changes": {}, "old": {}},
         "planetInfos": {"new": {}, "changes": {}, "old": {}},
         "globalEvents": {"new": {}, "changes": {}, "old": {}},
         "news": {"new": {}, "changes": {}, "old": {}},
@@ -124,11 +164,12 @@ async def detect_loggable_changes(old: BaseApiModel, new: BaseApiModel, QueueAll
         "info_raw": {"changes": {}},
     }
     rawout = await get_differing_fields(old.status, new.status, to_ignore=[
-        "time","planetAttacks", "impactMultiplier", "campaigns", "planetStatus", "planetEvents", "jointOperations", "globalEvents"])
+        "time", "planetAttacks","impactMultiplier", "campaigns", "planetStatus", "planetEvents",  "globalEvents"])
     if rawout:
         await QueueAll.put({'mode':'change','place': 'stats_raw', 'value': (new.status, rawout)})
     out["stats_raw"]["changes"] = rawout
     logs.info("Starting loggable detection, stand by...")
+    await process_planet_attacks(new.status.planetAttacks, old.status.planetAttacks, "planetAttacks", ['source','target'], QueueAll)
 
     infoout = await get_differing_fields(old.war_info, new.war_info, to_ignore=["planetInfos"])
     if infoout:
