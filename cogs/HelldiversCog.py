@@ -148,7 +148,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
     def __init__(self, bot):
         self.bot: TCBot = bot
-        self.get_running=False
+        self.get_running = False
         # self.session=aiohttp.ClientSession()
         hdoverride = hd2.APIConfig()
         self.img = None
@@ -208,8 +208,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         TCTaskManager.remove_task("SuperEarthStatus")
         Guild_Task_Functions.remove_task_function("WARSTATUS")
         Guild_Task_Functions.remove_task_function("UPDATEOVERVIEW")
-
-
 
     async def update_data(self):
         if self.api_up:
@@ -276,7 +274,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         except Exception as e:
             await self.bot.send_error(e, f"Message update cleanup error.")
-            #gui.gprint(str(e))
+            # gui.gprint(str(e))
 
     async def gtask_update(self, source_message: discord.Message = None):
         """
@@ -341,7 +339,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         await self.update_data()
         await ctx.send("force loaded api data now.")
 
-
     @commands.is_owner()
     @commands.command(name="make_planets")
     async def planetmaker(self, ctx: commands.Context, usebiome: str = ""):
@@ -391,7 +388,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             await asyncio.gather(asyncio.to_thread(self.draw_img), asyncio.sleep(1))
             img = self.img
 
-        #print(img)
+        # print(img)
         liberations, defenses = 0, 0
         for i, campl in self.apistatus.campaigns.items():
             this = campl.get_first()
@@ -551,7 +548,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         planets = self._shared_autocomplete_logic(
             self.apistatus.planets.values(), current
         )
-        #print(planets)
+        # print(planets)
         return planets
 
     async def campaign_autocomplete(
@@ -562,7 +559,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         """
         campaigns = (l.get_first().planet for l in self.apistatus.campaigns.values())
         planets = self._shared_autocomplete_logic(campaigns, current)
-        #print(planets)
+        # print(planets)
         return planets
 
     def _shared_autocomplete_logic(self, items, current: str):
@@ -650,7 +647,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if not data:
             return await ctx.send("No result")
         embeds = []
-        
+
         if byplanet in self.apistatus.planets:
             planet = self.apistatus.planets[byplanet]
             embeds.append(
@@ -692,7 +689,9 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     @app_commands.describe(planet="Focus map on this planet.")
     @app_commands.describe(animated="Show an animated map, take more time to scroll.")
     @app_commands.autocomplete(planet=planet_autocomplete)
-    async def map(self, interaction: discord.Interaction, planet: int = 0, animated:bool=False):
+    async def map(
+        self, interaction: discord.Interaction, planet: int = 0, animated: bool = False
+    ):
         ctx: commands.Context = await self.bot.get_context(interaction)
         mes = await ctx.send("please wait...", ephemeral=True)
         img = self.img
@@ -706,7 +705,10 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             pos = self.apistatus.planets[planet].position
             cx, cy = pos.x, pos.y
         view = hd2.MapViewer(
-            user=ctx.author, img=img, initial_coor=hd2.get_im_coordinates(cx, cy), oneonly=animated
+            user=ctx.author,
+            img=img,
+            initial_coor=hd2.get_im_coordinates(cx, cy),
+            oneonly=animated,
         )
         emb, file = view.make_embed()
         await mes.edit(content="done", attachments=[file], embed=emb, view=view)

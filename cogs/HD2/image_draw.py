@@ -130,7 +130,7 @@ def highlight(img, index, x, y, name, hper, owner, event, task_planets, health=0
     outline = colors[owner]
 
     if index in task_planets or event:
-        #print(task_planets)
+        # print(task_planets)
         outline = (255, 255, 255)
         if event:
             outline = (64, 64, 255)
@@ -148,9 +148,9 @@ def highlight(img, index, x, y, name, hper, owner, event, task_planets, health=0
     draw.rectangle(
         (
             [
-                coordinate[0] - bbox2[2]/2,
+                coordinate[0] - bbox2[2] / 2,
                 background_box[3] + 20,
-                coordinate[0] +bbox2[2]/2,
+                coordinate[0] + bbox2[2] / 2,
                 background_box[3] + 20 + bbox2[3] + 2,
             ]
         ),
@@ -167,7 +167,7 @@ def highlight(img, index, x, y, name, hper, owner, event, task_planets, health=0
         spacing=0,
     )
     draw.text(
-        (coordinate[0] - bbox2[2]/2, background_box[3] + 20),
+        (coordinate[0] - bbox2[2] / 2, background_box[3] + 20),
         f"{str(hper)}\n{100-int(health)}",
         fill=(255, 255, 255),
         font=font2,
@@ -289,7 +289,7 @@ def create_gif(filepath, apistat: ApiStatus):
     return "./saveData/map.gif"
 
 
-def crop_gif(frames, coordinate, off_by, cell_size=200,one_only=False):
+def crop_gif(frames, coordinate, off_by, cell_size=200, one_only=False):
     # Load the GIF from the buffer
 
     cropped_frames = []
@@ -307,18 +307,12 @@ class MapViewer(BaseView):
     """
 
     def __init__(
-        self,
-        *,
-        user,
-        timeout=30 * 15,
-        img=None,
-        initial_coor=None,
-        oneonly=False
+        self, *, user, timeout=30 * 15, img=None, initial_coor=None, oneonly=False
     ):
         super().__init__(user=user, timeout=timeout)
         self.value = False
         self.crops = {}
-        self.oneframe=not oneonly
+        self.oneframe = not oneonly
         self.done = NotImplemented
         with Image.open(img) as planetimg:
             frames_list = []
@@ -336,7 +330,13 @@ class MapViewer(BaseView):
             timestamp=discord.utils.utcnow(),
         )
 
-        cropped_frames = crop_gif(self.img, self.focus_cell, off_by=np.array((2, 2)),cell_size=CELL_SIZE,one_only=self.oneframe)
+        cropped_frames = crop_gif(
+            self.img,
+            self.focus_cell,
+            off_by=np.array((2, 2)),
+            cell_size=CELL_SIZE,
+            one_only=self.oneframe,
+        )
         with io.BytesIO() as image_binary:
             cropped_frames[0].save(
                 image_binary,

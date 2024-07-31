@@ -25,7 +25,9 @@ class NewsFeedItem(BaseApiModel):
 
     def to_str(self) -> Tuple[str, str]:
         # message=self.# Replace the matched patterns with markdown bold syntax
-        converted_text = re.sub(pattern, r"**\1**", self.message if self.message else "")
+        converted_text = re.sub(
+            pattern, r"**\1**", self.message if self.message else ""
+        )
         converted_text = re.sub(pattern3, r"***\1***", converted_text)
         extract_time = self.published
         return (

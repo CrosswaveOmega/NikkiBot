@@ -1,0 +1,148 @@
+{
+    "cstart": [
+        "Heeth liberation campaign starts",
+        [
+            "[PLANET 0] liberation [TYPETEXT]"
+        ],
+        [
+            "campaign starts"
+        ],
+        "if campaign_add only"
+
+    ],
+    "planet won": [
+        "Heeth is liberated",
+        [
+            "[PLANET 0] [TYPETEXT]"
+        ],
+        [
+            "is liberated"
+        ],
+        "if campaign_remove and planet_change, where planet.owner==1"
+    ],
+
+    "defense start": [
+        "Mantes of the Xzar sector is attacked by Automatons",
+        [
+            "[PLANET 0] of the [SECTOR 1] sector [TYPETEXT] [FACTION]s"
+        ],
+        [
+            "is attacked by"
+        ],
+        
+        "if campaign_add and planetEvent_add"
+    ],
+    "defense lost": [
+        "Draupnir defense is failed",
+        [
+            "[PLANET 0] [TYPETEXT]"
+        ],
+        [
+            "defense is failed"
+        ]
+        ,"if campaign_remove and planetEvent_remove and planet_change, and planet.owner!=1"
+    ],
+    "cend": [
+        "\u21b3 Malevelon Creek liberation campaign ends",
+        [
+            "\u21b3 [PLANET 0] liberation [TYPETEXT]"
+        ],
+        [
+            "campaign ends"
+        ]
+        ,"if campaign_remove only"
+    ],
+
+    "defense won": [
+        "Ubanea defense is won",
+        [
+            "[PLANET 0] [TYPETEXT]"
+        ],
+        [
+            "defense is won"
+        ]
+        ,"if campaign_remove and planetEvent_remove"
+    ],
+    "full_lib": [
+        "\u21b3 Orion sector is fully liberated",
+        [
+            "\u21b3 The [SECTOR 1] sector is [TYPETEXT]"
+        ],
+        [
+            "fully liberated"
+        ],
+        "if all planets where sector=[SECTOR 1] has owner==1"
+    ],
+    "full_occ": [
+        "\u21b3 Severin sector is fully under Automaton control",
+        [
+            "[SECTOR 1] sector [TYPETEXT] [FACTION] control"
+        ],
+        [
+            "is fully under"
+        ],
+        "if all planets where sector=[SECTOR 1] has owner!=1"
+    ],
+
+    "planet flip": [
+        "Veld of the Orion sector instantly flips to Terminid control",
+        [
+            "[PLANET 0] of the [SECTOR 1] sector [TYPETEXT] [FACTION] control"
+        ],
+        [
+            "instantly flips to"
+        ],
+        "if planets_change and no planetEvent_add"
+    ],
+    "accessible_anomaly": [
+        "\u21b3 Malevelon Creek is still accessible despite being cut off",
+        [
+            "\u21b3 [PLANET 0] [TYPETEXT] being cut off"
+        ],
+        [
+            "is still accessible despite"
+        ],
+        "if no campaign_remove but no planetAttacks target PLANET 0"
+    ],
+
+    "inaccessable anomaly": [
+        "Maia is not accessible despite attacking liberated world of Troost",
+        [
+            "[PLANET 0] [TYPETEXT] connecting to the liberated world of [PLANET 1]"
+        ],
+        [
+            "is not accessible despite"
+        ],
+        "if campaign_remove but Planet 0 is a source in planetAttacks and targeting PLANET 1"
+    ],
+    "newlink": [
+        "Troost - Vandalon IV supply line is added",
+        [
+            "[PLANET 0] - [PLANET 1] supply line [TYPETEXT]"
+        ],
+        [
+            "is added"
+        ],
+        "if planetInfo_change and new Planet 0.waypoints has index of Planet 1"
+    ],
+    "destroylink": [
+        "Maia - Vandalon IV supply line is removed",
+        [
+            "[PLANET 0] - [PLANET 1] supply line [TYPETEXT]"
+        ],
+        [
+            "is removed"
+        ],
+        "if planetInfo_change and Planet 0.waypoints no longer index of Planet 1"
+    ],
+    "clearlinks": [
+        "Meridia of the Umlaut sector's supply lines are obliterated",
+        [
+            "[PLANET 0] of the [SECTOR 1] sector's supply lines [TYPETEXT]"
+        ],
+        [
+            "are obliterated"
+        ],
+        "IGNORE for NOW"
+    ]
+}

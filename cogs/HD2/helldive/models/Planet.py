@@ -30,6 +30,8 @@ class Planet(BaseApiModel, HealthMixin):
 
     name: Optional[Union[str, Dict[str, Any]]] = Field(alias="name", default=None)
 
+    owner: Optional[int] = Field(alias="owner", default=0)
+
     sector: Optional[str] = Field(alias="sector", default=None)
 
     biome: Optional[Biome] = Field(alias="biome", default=None)

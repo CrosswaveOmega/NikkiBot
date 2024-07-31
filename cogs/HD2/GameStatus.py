@@ -152,14 +152,16 @@ class ApiStatus:
         return war
 
     async def get_now(
-        self, current, Queue:asyncio.Queue
+        self, current, Queue: asyncio.Queue, nowval=None
     ) -> Tuple[Dict[str, Dict[str, Union[List, Dict[str, Any]]]], DiveharderAll]:
-        nowv = await GetApiRawAll(api_config_override=self.client)
-        self.warall=nowv
+        if nowval:
+            nowv = nowval
+        else:
+            nowv = await GetApiRawAll(api_config_override=self.client)
+        self.warall = nowv
         if nowv:
-            # print(nowv)
             if current:
-                diff = await detect_loggable_changes(current, nowv,Queue)
+                diff = await detect_loggable_changes(current, nowv, Queue)
                 return diff, nowv
 
         return None, nowv
@@ -209,7 +211,7 @@ class ApiStatus:
         except Exception as e:
             raise e
 
-        #print(war, campaigns, assignments)
+        # print(war, campaigns, assignments)
         if war is not None:
             self.war.add(war)
 
