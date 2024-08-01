@@ -13,23 +13,28 @@ from .GlobalEvent import GlobalEvent
 
 
 class SectorStates(BaseApiModel):
-    name: Optional[str]= Field(alias='name',default=None)
+    name: Optional[str] = Field(alias="name", default=None)
     planetStatus: Optional[List[Optional[PlanetStatus]]] = Field(
         alias="planetStatus", default=[]
     )
-    sector: Optional[str]= Field(alias='name',default=None)
-    owner: Optional[int] =  Field(alias='owner',default=0)
+    sector: Optional[str] = Field(alias="name", default=None)
+    owner: Optional[int] = Field(alias="owner", default=0)
 
     def __init__(self, **data):
         super().__init__(**data)
         self.check_common_owner()
 
     def check_common_owner(self):
-        owners = {ps.owner for ps in self.planetStatus if ps is not None and ps.owner is not None}
+        owners = {
+            ps.owner
+            for ps in self.planetStatus
+            if ps is not None and ps.owner is not None
+        }
         if len(owners) == 1:
             self.owner = owners.pop()
         else:
             self.owner = None
+
 
 class PlanetActiveEffects(BaseApiModel):
     """
@@ -93,13 +98,14 @@ class WarStatus(BaseApiModel):
 
         with open(data_path, "r") as file:
             planets_data_json = json.load(file)
-        sect={}
+        sect = {}
         if self.planetStatus:
             for s in self.planetStatus:
-                sector=planets_data_json[str(s.index)]['sector']
+                sector = planets_data_json[str(s.index)]["sector"]
                 if not sector in sect:
-                    sect[sector]=SectorStates(retrieved_at=self.retrieved_at,name=sector,sector=sector)
+                    sect[sector] = SectorStates(
+                        retrieved_at=self.retrieved_at, name=sector, sector=sector
+                    )
                 sect[sector].planetStatus.append(s)
                 sect[sector].check_common_owner()
         return list(sect.values())
-

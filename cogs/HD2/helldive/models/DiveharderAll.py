@@ -213,9 +213,10 @@ async def process_planet_attacks(
 
     return pushed_items
 
+
 async def detect_loggable_changes(
     old: BaseApiModel, new: BaseApiModel, QueueAll: asyncio.Queue
-) -> Tuple[dict,list]:
+) -> Tuple[dict, list]:
     out = {
         "campaign": {"new": {}, "changes": {}, "old": {}},
         "planetevents": {"new": {}, "changes": {}, "old": {}},
@@ -223,7 +224,7 @@ async def detect_loggable_changes(
         "planetAttacks": {"new": {}, "changes": {}, "old": {}},
         "planetInfo": {"new": {}, "changes": {}, "old": {}},
         "globalEvents": {"new": {}, "changes": {}, "old": {}},
-        "sectors":{"new": {}, "changes": {}, "old": {}},
+        "sectors": {"new": {}, "changes": {}, "old": {}},
         "news": {"new": {}, "changes": {}, "old": {}},
         "stats_raw": {"changes": {}},
         "info_raw": {"changes": {}},
@@ -281,7 +282,6 @@ async def detect_loggable_changes(
         new.news_feed, old.news_feed, "news", "id", QueueAll, batch
     )
 
-
     logs.info("campaigns detection, stand by...")
     superlist += await process_planet_events(
         new.status.campaigns, old.status.campaigns, "campaign", "id", QueueAll, batch
@@ -325,7 +325,13 @@ async def detect_loggable_changes(
         ["position"],
     )
     superlist += await process_planet_events(
-        new.status.sector_states(), old.status.sector_states(), "sectors", "name", QueueAll, batch, ['planetStatus']
+        new.status.sector_states(),
+        old.status.sector_states(),
+        "sectors",
+        "name",
+        QueueAll,
+        batch,
+        ["planetStatus"],
     )
     logs.info("Done detection, stand by...")
     return superlist
