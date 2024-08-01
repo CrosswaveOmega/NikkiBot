@@ -143,54 +143,79 @@ async def check_compare_value_list(
 async def process_planet_events(
     source, target, place, key, QueueAll, batch, exclude=[]
 ):
+    pushed_items = []
     for event in source:
         oc = await check_compare_value(key, event[key], target)
         if not oc:
-            await QueueAll.put(
-                {"mode": "new", "place": place, "batch": batch, "value": event}
-            )
+            item = {
+                "mode": "new",
+                "place": place,
+                "batch": batch,
+                "value": event,
+            }
+            pushed_items.append(item)
+            await QueueAll.put(item)
         else:
             differ = await get_differing_fields(oc, event, to_ignore=exclude)
             if differ:
-                await QueueAll.put(
-                    {
-                        "mode": "change",
-                        "place": place,
-                        "batch": batch,
-                        "value": (event, differ),
-                    }
-                )
+                item = {
+                    "mode": "change",
+                    "place": place,
+                    "batch": batch,
+                    "value": (event, differ),
+                }
+                pushed_items.append(item)
+                await QueueAll.put(item)
 
     for event in target:
         if not await check_compare_value(key, event[key], source):
-            await QueueAll.put(
-                {"mode": "remove", "place": place, "batch": batch, "value": event}
-            )
+            item = {
+                "mode": "remove",
+                "place": place,
+                "batch": batch,
+                "value": event,
+            }
+            pushed_items.append(item)
+            await QueueAll.put(item)
+
+    return pushed_items
 
 
 async def process_planet_attacks(
     source, target, place, keys, QueueAll, batch, exclude=[]
 ):
+    pushed_items = []
     for event in source:
         oc = await check_compare_value_list(keys, [event[key] for key in keys], target)
         if not oc:
             print(place, "new", event)
-            await QueueAll.put(
-                {"mode": "new", "place": place, "batch": batch, "value": event}
-            )
+            item = {
+                "mode": "new",
+                "place": place,
+                "batch": batch,
+                "value": event,
+            }
+            pushed_items.append(item)
+            await QueueAll.put(item)
 
     for event in target:
         if not await check_compare_value_list(
             keys, [event[key] for key in keys], source
         ):
-            await QueueAll.put(
-                {"mode": "remove", "place": place, "batch": batch, "value": event}
-            )
+            item = {
+                "mode": "remove",
+                "place": place,
+                "batch": batch,
+                "value": event,
+            }
+            pushed_items.append(item)
+            await QueueAll.put(item)
 
+    return pushed_items
 
 async def detect_loggable_changes(
     old: BaseApiModel, new: BaseApiModel, QueueAll: asyncio.Queue
-) -> dict:
+) -> Tuple[dict,list]:
     out = {
         "campaign": {"new": {}, "changes": {}, "old": {}},
         "planetevents": {"new": {}, "changes": {}, "old": {}},
@@ -198,11 +223,14 @@ async def detect_loggable_changes(
         "planetAttacks": {"new": {}, "changes": {}, "old": {}},
         "planetInfo": {"new": {}, "changes": {}, "old": {}},
         "globalEvents": {"new": {}, "changes": {}, "old": {}},
+        "sectors":{"new": {}, "changes": {}, "old": {}},
         "news": {"new": {}, "changes": {}, "old": {}},
         "stats_raw": {"changes": {}},
         "info_raw": {"changes": {}},
     }
     batch = int(new.retrieved_at.timestamp())
+    superlist = []
+
     rawout = await get_differing_fields(
         old.status,
         new.status,
@@ -217,17 +245,17 @@ async def detect_loggable_changes(
         ],
     )
     if rawout:
-        await QueueAll.put(
-            {
-                "mode": "change",
-                "place": "stats_raw",
-                "batch": batch,
-                "value": (new.status, rawout),
-            }
-        )
+        item = {
+            "mode": "change",
+            "place": "stats_raw",
+            "batch": batch,
+            "value": (new.status, rawout),
+        }
+        superlist.append(item)
+        await QueueAll.put(item)
     out["stats_raw"]["changes"] = rawout
     logs.info("Starting loggable detection, stand by...")
-    await process_planet_attacks(
+    superlist += await process_planet_attacks(
         new.status.planetAttacks,
         old.status.planetAttacks,
         "planetAttacks",
@@ -240,24 +268,26 @@ async def detect_loggable_changes(
         old.war_info, new.war_info, to_ignore=["planetInfos"]
     )
     if infoout:
-        await QueueAll.put(
-            {
-                "mode": "change",
-                "place": "info_raw",
-                "batch": batch,
-                "value": (new.war_info, infoout),
-            }
-        )
+        item = {
+            "mode": "change",
+            "place": "info_raw",
+            "batch": batch,
+            "value": (new.war_info, infoout),
+        }
+        superlist.append(item)
+        await QueueAll.put(item)
     logs.info("News feed loggable detection, stand by...")
-    await process_planet_events(
+    superlist += await process_planet_events(
         new.news_feed, old.news_feed, "news", "id", QueueAll, batch
     )
+
+
     logs.info("campaigns detection, stand by...")
-    await process_planet_events(
+    superlist += await process_planet_events(
         new.status.campaigns, old.status.campaigns, "campaign", "id", QueueAll, batch
     )
     logs.info("planet events detection, stand by...")
-    await process_planet_events(
+    superlist += await process_planet_events(
         new.status.planetEvents,
         old.status.planetEvents,
         "planetevents",
@@ -266,7 +296,7 @@ async def detect_loggable_changes(
         batch,
     )
     logs.info("planet status detection, stand by...")
-    await process_planet_events(
+    superlist += await process_planet_events(
         new.status.planetStatus,
         old.status.planetStatus,
         "planets",
@@ -276,7 +306,7 @@ async def detect_loggable_changes(
         ["health", "players"],
     )
     logs.info("global event detection, stand by...")
-    await process_planet_events(
+    superlist += await process_planet_events(
         new.status.globalEvents,
         old.status.globalEvents,
         "globalEvents",
@@ -285,7 +315,7 @@ async def detect_loggable_changes(
         batch,
     )
     logs.info("planet info detection, stand by...")
-    await process_planet_events(
+    superlist += await process_planet_events(
         new.war_info.planetInfos,
         old.war_info.planetInfos,
         "planetInfo",
@@ -294,5 +324,8 @@ async def detect_loggable_changes(
         batch,
         ["position"],
     )
+    superlist += await process_planet_events(
+        new.status.sector_states(), old.status.sector_states(), "sectors", "name", QueueAll, batch, ['planetStatus']
+    )
     logs.info("Done detection, stand by...")
-    return out
+    return superlist

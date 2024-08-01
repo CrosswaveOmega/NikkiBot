@@ -1,7 +1,7 @@
 import asyncio
 import json
 import datetime
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import discord
 from dateutil.rrule import MINUTELY, rrule
@@ -33,30 +33,36 @@ from cogs.HD2.helldive import (
     Campaign,
     Planet,
     GlobalEvent,
+    SectorStates,
     PlanetAttack,
 )
 from utility.manual_load import load_json_with_substitutions
 
 
 class PlanetEvents:
-    def __init__(self, planet):
-        self.planet = planet
-        self.planet_event = None
-        self.planet1 = None
-        self.lastInfo = {}
-        self.lastStatus = {}
-        self.evt = []
-        self.trig = []
+    def __init__(self, planet: Planet) -> None:
+        self.planet: Planet = planet
+        self.planet_event: Optional[str] = None
+        self.planet1: Optional[str] = None
+        self.lastInfo: Dict[str, Any] = {}
+        self.lastStatus: Dict[str, Any] = {}
+        self.evt: List[Dict[str, Any]] = []
+        self.trig: List[str] = []
+        self.ret=None
 
-    def add_event(self, event, key):
+    def add_event(self, event: Dict[str, Any], key: str) -> None:
         self.evt.append(event)
-        if event["place"] == "planetevents":
-            self.planet_event = event["value"]
-
+        if event['mode'] in ['new','remove']:
+            self.ret=event["value"].retrieved_at
+            if event["place"] == "planetevents":
+               self.planet_event = event["value"]
+        elif event['mode'] =='change':
+            self.ret=event["value"][0].retrieved_at
+        
         if key not in self.trig:
             self.trig.append(key)
 
-    def get_links(self):
+    def get_links(self) -> Tuple[List[int], List[int]]:
         new, old = [], []
         if "waypoints" in self.lastInfo:
             for i, v in self.lastInfo["waypoints"].items():
@@ -67,26 +73,53 @@ class PlanetEvents:
                         old.append(ind)
         return new, old
 
-    def update_planet(self, value, place):
+    def update_planet(self, value: Tuple[Any, Dict[str, Any]], place: str) -> None:
         v, _ = value
         if place == "planets":
             self.lastStatus = _
             self.planet.owner = v.owner
             self.planet.regenPerSecond = v.regenPerSecond
-
+            self.ret = v.retrieved_at
         elif place == "planetInfo":
-
             self.lastInfo = _
             self.planet.waypoints = v.waypoints
+            self.ret = v.retrieved_at
 
+
+
+
+class SectorEvents:
+    def __init__(self, planet: SectorStates) -> None:
+        self.planet: SectorStates = planet
+        self.planet_event = None
+        self.lastInfo: Dict[str, Any] = {}
+        self.lastStatus: Dict[str, Any] = {}
+        self.evt: List[Dict[str, Any]] = []
+        self.trig: List[str] = []
+        self.ret=None
+
+    def add_event(self, event: Dict[str, Any], key: str) -> None:
+        self.evt.append(event)
+        if event['mode'] in ['new','remove']:
+            self.ret=event["value"].retrieved_at
+        elif event['mode'] =='change':
+            self.ret=event["value"][0].retrieved_at
+        if key not in self.trig:
+            self.trig.append(key)
 
 class GeneralEvents:
-    def __init__(self):
-        self.evt = []
-        self.trig = []
+    def __init__(self) -> None:
+        self.evt: List[Dict[str, Any]] = []
+        self.trig: List[str] = []
+        self.ret=None
 
-    def add_event(self, event, key):
+    def add_event(self, event: Dict[str, Any], key: str) -> None:
         self.evt.append(event)
+        if event['mode'] in ['new','remove']:
+            self.ret=event["value"].retrieved_at
+        elif event['mode'] =='change':
+            self.ret=event["value"][0].retrieved_at
+
         if key not in self.trig:
             self.trig.append(key)
 
@@ -95,34 +128,44 @@ faction_dict = {1: "Human", 2: "Terminid", 3: "Automaton", 4: "Illuminate"}
 
 
 class Batch:
-    def __init__(self, batch_id):
-        self.batch_id = batch_id
-        self.time = datetime.datetime.now()
-        self.planets = {}
-        self.hd2 = load_json_with_substitutions("./assets/json", "logreasons.json", {})
+    def __init__(self, batch_id: str) -> None:
+        self.batch_id: str = batch_id
+        self.time: datetime.datetime = datetime.datetime.now()
+        self.planets: Dict[str, PlanetEvents] = {}
+        self.hd2: Dict[str, Any] = load_json_with_substitutions(
+            "./assets/json", "logreasons.json", {}
+        )
         print(self.hd2)
-        self.general = GeneralEvents()
+        self.general: GeneralEvents = GeneralEvents()
+        self.sector: Dict[str, SectorEvents] = {}
 
-    def add_event(self, event, planet_name, key, planet):
-        if planet_name is not None:
+    def add_event(
+        self, event: Dict[str, Any], planet_name: Optional[str], key: str, planet: Optional[Planet], sector_name:Optional[str]
+    ) -> None:
+        if sector_name is not None:
+            if sector_name not in self.sector:
+                self.sector[sector_name] = SectorEvents(planet)
+            self.sector[sector_name].add_event(event, key)
+        elif planet_name is not None:
             if planet_name not in self.planets:
                 self.planets[planet_name] = PlanetEvents(planet)
             self.planets[planet_name].add_event(event, key)
         else:
             self.general.add_event(event, key)
 
-    def update_planet(self, planet_name, value, place):
+    def update_planet(self, planet_name: str, value: Tuple[Any, Dict[str, Any]], place: str) -> None:
         if planet_name in self.planets:
             self.planets[planet_name].update_planet(value, place)
 
-    def process_event(self, event, apistatus):
-        mode = event["mode"]
-        place = event["place"]
-        value = event["value"]
-        planet_name_source = None
-        planet = None
+    def process_event(self, event: Dict[str, Any], apistatus: Any) -> None:
+        mode: str = event["mode"]
+        place: str = event["place"]
+        value: Any = event["value"]
+        planet_name_source: Optional[str] = None
+        sector_name:Optional[str]=None
+        planet: Optional[Planet] = None
 
-        key = f"{place}_{mode}"
+        key: str = f"{place}_{mode}"
         print(key)
 
         if place in ["campaign", "planetevents"]:
@@ -136,6 +179,12 @@ class Batch:
             if planet:
                 planet_name_source = planet.get_name(False)
 
+        if place in ["sectors"]:
+            va, _ = value
+            planet = va
+            if planet:
+                sector_name = va.name
+
         if place in ["planetAttacks"]:
             planet_source = apistatus.planets.get(int(value.source), None)
             planet_target = apistatus.planets.get(int(value.target), None)
@@ -144,114 +193,93 @@ class Batch:
             if planet_target:
                 planet = planet_target
 
-        self.add_event(event, planet_name_source, key, planet)
+        self.add_event(event, planet_name_source, key, planet,sector_name)
 
-        if mode == "change":
+        if mode == "change" and place!='sectors':
             self.update_planet(planet_name_source, value, place)
-
-    def format_combo_text(self, ctype, planet_data, ctext):
-        targets = []
-        data_path = "./hd2json/planets/planets.json"
+        if mode == "change" and place=='sectors':
+            pass
+    def format_combo_text(
+        self, ctype: str, planet_data: PlanetEvents, ctext: List[List[str]]
+    ) -> List[str]:
+        targets: List[str] = []
+        data_path: str = "./hd2json/planets/planets.json"
 
         with open(data_path, "r") as file:
             planets_data_json = json.load(file)
 
-        if ctype == "newlink":
+        if ctype in ["newlink", "destroylink"]:
+            
             new, old = planet_data.get_links()
-            for i in new:
-                target = ctext[1][0]
-                typetext = ctext[2][0]
-                target = target.replace("[TYPETEXT]", typetext)
-                target = target.replace("[PLANET 0]", planet_data.planet.name)
+            links = new if ctype == "newlink" else old
+            for i in links:
+                target = ctext[1][0].replace("[TYPETEXT]", ctext[2][0]).replace("[PLANET 0]", planet_data.planet.name)
                 target = target.replace("[PLANET 1]", planets_data_json[str(i)]["name"])
                 target = target.replace("[SECTOR 1]", planet_data.planet.sector)
-                target = target.replace(
-                    "[FACTION]", faction_dict.get(planet_data.planet.owner, "UNKNOWN")
-                )
-                targets.append(target)
-        elif ctype == "destroylink":
-            new, old = planet_data.get_links()
-            for i in old:
-                target = ctext[1][0]
-                typetext = ctext[2][0]
-                target = target.replace("[TYPETEXT]", typetext)
-                target = target.replace("[PLANET 0]", planet_data.planet.name)
-                target = target.replace("[PLANET 1]", planets_data_json[str(i)])
-                target = target.replace("[SECTOR 1]", planet_data.planet.sector)
-                target = target.replace(
-                    "[FACTION]", faction_dict.get(planet_data.planet.owner, "UNKNOWN")
-                )
+                target = target.replace("[FACTION]", faction_dict.get(planet_data.planet.owner, "UNKNOWN")+str(planet_data.planet.owner))
+                target += f" ({custom_strftime(planet_data.ret)})"
                 targets.append(target)
         else:
-            target = ctext[1][0]
-            typetext = ctext[2][0]
-            target = target.replace("[TYPETEXT]", typetext)
-            target = target.replace("[PLANET 0]", planet_data.planet.name)
-
-            # target=target.replace('[PLANET 1]',i)
+            target = ctext[1][0].replace("[TYPETEXT]", ctext[2][0]).replace("[PLANET 0]", planet_data.planet.name)
             target = target.replace("[SECTOR 1]", planet_data.planet.sector)
-            if ctype == "defense start":
-                if planet_data.planet_event:
-                    target = target.replace(
-                        "[FACTION]",
-                        faction_dict.get(planet_data.planet_event.race, "UNKNOWN"),
-                    )
+            if ctype == "defense start" and planet_data.planet_event:
+                target = target.replace("[FACTION]", faction_dict.get(planet_data.planet_event.race, "UNKNOWN"))
             else:
-                target = target.replace(
-                    "[FACTION]", faction_dict.get(planet_data.planet.owner, "UNKNOWN")
-                )
+                target = target.replace("[FACTION]", faction_dict.get(planet_data.planet.owner, "UNKNOWN"))
+            target += f" ({custom_strftime(planet_data.ret)})"
             targets.append(target)
         return targets
 
-    def combo_checker(self):
-        combos = []
+    def combo_checker(self) -> List[str]:
+        combos: List[str] = []
 
         for planet_data in self.planets.values():
-            trig_list = planet_data.trig
-            combo = self.check_trig_combinations(trig_list, planet_data)
+            trig_list: List[str] = planet_data.trig
+            combo: Optional[List[str]] = self.check_trig_combinations(trig_list, planet_data)
             if combo:
                 for c in combo:
-                    print(c)
                     combos.append(str(c))
                     if c in self.hd2:
-                        text = self.format_combo_text(c, planet_data, self.hd2[c])
+                        text: List[str] = self.format_combo_text(c, planet_data, self.hd2[c])
                         print(text)
                         combos.extend(text)
-
-                # combos.extend(combo)
-
+        for sector_data in self.sector.values():
+            trig_list: List[str] = sector_data.trig
+            combo: Optional[List[str]] = self.check_sector_trig_combinations(trig_list, sector_data)
+            if combo:
+                for c in combo:
+                    combos.append(str(c))
+                    if c in self.hd2:
+                        text: List[str] = self.format_combo_text(c, sector_data, self.hd2[c])
+                        print(text)
+                        combos.extend(text)
         return combos
 
-    def contains_all_values(self, input_list, target_list):
+    def contains_all_values(self, input_list: List[str], target_list: List[str]) -> bool:
         for value in target_list:
             if value not in input_list:
                 return False
         return True
 
-    def check_trig_combinations(self, trig_list, planet_data: PlanetEvents):
-        planet = planet_data.planet
-        combinations = []
-        print(planet.index, trig_list)
-
+    def check_trig_combinations(self, trig_list: List[str], planet_data: PlanetEvents) -> Optional[List[str]]:
+        planet: Planet = planet_data.planet
+        combinations: List[str] = []
         if "campaign_new" in trig_list and "planetevents_new" not in trig_list:
             combinations.append("cstart")
 
         if self.contains_all_values(trig_list, ["campaign_new", "planetevents_new"]):
             combinations.append("defense start")
         if (
-            all(value in trig_list for value in ["campaign_remove"])
+            "campaign_remove" in trig_list
             and len(trig_list) == 1
         ):
             combinations.append("cend")
 
-        if all(value in trig_list for value in ["campaign_remove", "planets_change"]):
+        if self.contains_all_values(trig_list, ["campaign_remove", "planets_change"]):
             if planet and planet.owner == 1:
                 combinations.append("planet won")
 
-        if all(
-            value in trig_list
-            for value in ["campaign_remove", "planetevents_remove", "planets_change"]
-        ):
+        if self.contains_all_values(trig_list, ["campaign_remove", "planetevents_remove", "planets_change"]):
             if planet and planet.owner != 1:
                 combinations.append("defense lost")
 
@@ -262,7 +290,7 @@ class Batch:
             and "planets_change" not in trig_list
         ):
             combinations.append("defense won")
-
+        
         if (
             all(value in trig_list for value in ["planets_change"])
             and "campaign_remove" not in trig_list
@@ -284,15 +312,22 @@ class Batch:
             combinations.append("destroylink")
 
         return combinations if combinations else None
+    
+    def check_sector_trig_combinations(self, trig_list: List[str], planet_data: SectorEvents) -> Optional[List[str]]:
+        combinations: List[str] = []
+        if "sectors_change" in trig_list:
+            combinations.append("sector_state")
 
-    def is_new_link(self, planet, target_planet):
+        return combinations if combinations else None
+
+    def is_new_link(self, planet: Planet, target_planet: PlanetEvents) -> bool:
         if target_planet:
             new, old = target_planet.get_links()
             if new:
                 return True
         return False
 
-    def is_destroyed_link(self, planet, target_planet):
+    def is_destroyed_link(self, planet: Planet, target_planet: PlanetEvents) -> bool:
         if target_planet:
             new, old = target_planet.get_links()
             if old:
@@ -482,7 +517,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         self.spot = 1
         self.batches: dict[int, Batch] = {}
         self.test_with = []
-        self.load_test_files()
+        self.lock=asyncio.Lock()
+        #self.load_test_files()
         nowd = datetime.datetime.now()
         st = datetime.datetime(
             nowd.year,
@@ -520,31 +556,17 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
                         self.test_with.append(add)
 
-    @tasks.loop(seconds=5)
+    @tasks.loop(seconds=2)
     async def run2(self):
-        events = []
-        run_ok = True
-        while run_ok:
-            try:
-                item = self.QueueAll.get_nowait()
-                # await self.EventQueue.put(item)
-                events.append(item)
-                await self.run(item)
-
-                await asyncio.sleep(0.02)
-            except asyncio.QueueEmpty:
-                run_ok = False
-
-        if events:
-            print("once")
-
-            pass
         try:
-            await self.batch_events_2(events)
-        except Exception as ex:
-            await self.bot.send_error(ex, "LOG ERROR", True)
+            item = self.QueueAll.get_nowait()
+            await self.run(item)
+            await asyncio.sleep(0.02)
+        except asyncio.QueueEmpty:
+            pass
 
-    async def batch_events_2(self, events):
+
+    async def batch_events(self, events):
         for event in events:
             batch_id = event["batch"]
             if batch_id not in self.batches:
@@ -552,23 +574,35 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             self.batches[batch_id].process_event(event, self.apistatus)
 
         for batch_id in list(self.batches.keys()):
-            if datetime.datetime.now() - self.batches[
-                batch_id
-            ].time > datetime.timedelta(seconds=16):
-                texts = self.batches[batch_id].combo_checker()
-                for t in texts:
-                    await web.postMessageAsWebhookWithURL(
-                        self.loghook,
-                        message_content=t,
-                        display_username="SUPER EVENT",
-                        avatar_url=self.bot.user.avatar.url,
-                    )
-                self.batches.pop(batch_id)
+            
+            texts = self.batches[batch_id].combo_checker()
+            for t in texts:
+                await web.postMessageAsWebhookWithURL(
+                    self.loghook,
+                    message_content=t,
+                    display_username="SUPER EVENT",
+                    avatar_url=self.bot.user.avatar.url,
+                )
+            self.batches.pop(batch_id)
 
         return self.batches
+    
+    async def batch_events_2(self, events):
+        async with self.lock:
+            try:
+                await self.batch_events(events)
+            except Exception as ex:
+                await self.bot.send_error(ex, "LOG ERROR", True)
 
     async def run(self, item):
+
         event_type = item["mode"]
+        print(item)
+        if event_type=='group':
+            print('group',len(item["value"]))
+            task = asyncio.create_task(self.batch_events_2(item["value"]))
+            return
+
         batch = item["batch"]
         place = item["place"]
         value = item["value"]
@@ -660,7 +694,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             self.get_running = False
 
     async def main_log(self):
-        # print(self.spot,self.test_with)
+        '''
+        Load results from api.
+        '''
         self.get_running = True
         if self.test_with:
             if self.spot >= len(self.test_with):
@@ -668,17 +704,36 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
             lastwar = self.test_with[self.spot - 1]
             now = self.test_with[self.spot]
-            nowval, warstat = await self.apistatus.get_now(lastwar, self.QueueAll, now)
+            events, warstat = await self.apistatus.get_now(lastwar, self.QueueAll, now)
 
-            if nowval:
-                pass
             self.spot += 1
+            if events:
+                item = {
+                    "mode": "group",
+                    "place": "GROUP",
+                    "batch": 501,
+                    "value": events
+                }
+                
+                await self.QueueAll.put(item)
 
             self.apistatus.warall = warstat
         else:
-            nowval, warstat = await self.apistatus.get_now(
+            events, warstat = await self.apistatus.get_now(
                 self.apistatus.warall, self.QueueAll, None
             )
+            if events:
+                item = {
+                    "mode": "group",
+                    "place": "GROUP",
+                    "batch": 501,
+                    "value": events
+                }
+                print(item)
+                
+                await self.QueueAll.put(item)
+
+            
         self.get_running = False
 
     @commands.is_owner()

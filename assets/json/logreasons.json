@@ -45,7 +45,7 @@
     "cend": [
         "\u21b3 Malevelon Creek liberation campaign ends",
         [
-            "\u21b3 [PLANET 0] liberation [TYPETEXT]"
+            "[PLANET 0] liberation [TYPETEXT]"
         ],
         [
             "campaign ends"
@@ -66,7 +66,7 @@
     "full_lib": [
         "\u21b3 Orion sector is fully liberated",
         [
-            "\u21b3 The [SECTOR 1] sector is [TYPETEXT]"
+            "The [SECTOR 1] sector is [TYPETEXT]"
         ],
         [
             "fully liberated"
@@ -74,7 +74,7 @@
         "if all planets where sector=[SECTOR 1] has owner==1"
     ],
     "full_occ": [
-        "\u21b3 Severin sector is fully under Automaton control",
+        "Severin sector is fully under Automaton control",
         [
             "[SECTOR 1] sector [TYPETEXT] [FACTION] control"
         ],
@@ -83,6 +83,17 @@
         ],
         "if all planets where sector=[SECTOR 1] has owner!=1"
     ],
+    "sector_state": [
+        "Severin sector is fully under Automaton control",
+        [
+            "[SECTOR 1] sector [TYPETEXT] [FACTION] control"
+        ],
+        [
+            "is fully under"
+        ],
+        "if all planets where sector=[SECTOR 1] has owner!=1"
+    ],
+
 
     "planet flip": [
         "Veld of the Orion sector instantly flips to Terminid control",
@@ -95,9 +106,9 @@
         "if planets_change and no planetEvent_add"
     ],
     "accessible_anomaly": [
-        "\u21b3 Malevelon Creek is still accessible despite being cut off",
+        "Malevelon Creek is still accessible despite being cut off",
         [
-            "\u21b3 [PLANET 0] [TYPETEXT] being cut off"
+            "[PLANET 0] [TYPETEXT] being cut off"
         ],
         [
             "is still accessible despite"
