@@ -71,6 +71,7 @@ class ServerData(Main_DB_Base):
     """
     Server has read and acknowledged the terms of service and privacy policy before use.
     """
+    do_not_send_not_found = Column(Boolean, default=False)
 
     @classmethod
     def get(cls, server_id):

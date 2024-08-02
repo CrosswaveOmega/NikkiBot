@@ -111,6 +111,15 @@ class GuildCogToggle(Guild_Sync_Base):
     )
 
     @classmethod
+    def get(cls, server_id: int, cog: commands.Cog):
+        session: Session = DatabaseSingleton.get_session()
+        statement = select(cls).filter_by(
+            server_id=server_id, cog_name=cog.qualified_name
+        )
+        result = session.execute(statement).scalars().first()
+        return result
+
+    @classmethod
     def get_or_add(cls, server_id: int, cog: commands.Cog):
         session: Session = DatabaseSingleton.get_session()
         statement = select(cls).filter_by(

@@ -35,6 +35,7 @@ from cogs.HD2.helldive import (
     GlobalEvent,
     SectorStates,
     PlanetAttack,
+    SimplePlanet
 )
 from utility.manual_load import load_json_with_substitutions
 
@@ -73,7 +74,7 @@ class PlanetEvents:
                         old.append(ind)
         return new, old
 
-    def update_planet(self, value: Tuple[Any, Dict[str, Any]], place: str) -> None:
+    def update_planet(self, value: Tuple[SimplePlanet, Dict[str, Any]], place: str) -> None:
         v, _ = value
         if place == "planets":
             self.lastStatus = _
@@ -152,6 +153,7 @@ class Batch:
             self.sector[sector_name].add_event(event, key)
         elif planet_name is not None:
             if planet_name not in self.planets:
+                print("Adding ",planet_name)
                 self.planets[planet_name] = PlanetEvents(planet)
             self.planets[planet_name].add_event(event, key)
         else:
@@ -175,13 +177,16 @@ class Batch:
         print(key)
 
         if place in ["campaign", "planetevents"]:
-            planet = apistatus.planets.get(int(value.planetIndex), None)
+            planet=SimplePlanet.from_index(value.planetIndex)
+            #planet = apistatus.planets.get(int(value.planetIndex), None)
             if planet:
                 planet_name_source = planet.get_name(False)
 
         if place in ["planets", "planetInfo"]:
             va, _ = value
-            planet = apistatus.planets.get(int(va.index), None)
+            #planet = apistatus.planets.get(int(va.index), None)
+            
+            planet=SimplePlanet.from_index(va.index)
             if planet:
                 planet_name_source = planet.get_name(False)
 
@@ -192,12 +197,13 @@ class Batch:
                 sector_name = va.name
 
         if place in ["planetAttacks"]:
-            planet_source = apistatus.planets.get(int(value.source), None)
-            planet_target = apistatus.planets.get(int(value.target), None)
-            if planet_source:
-                planet_name_source = planet_source.get_name(False)
-            if planet_target:
-                planet = planet_target
+            pass
+            # planet_source = apistatus.planets.get(int(value.source), None)
+            # planet_target = apistatus.planets.get(int(value.target), None)
+            # if planet_source:
+            #     planet_name_source = planet_source.get_name(False)
+            # if planet_target:
+            #     planet = planet_target
 
         self.add_event(event, planet_name_source, key, planet, sector_name)
 
@@ -297,7 +303,7 @@ class Batch:
 
     def check_trig_combinations(
         self, trig_list: List[str], planet_data: PlanetEvents
-    ) -> Optional[List[str]]:
+    ) -> List[str]:
         planet: Planet = planet_data.planet
         combinations: List[str] = []
         if "campaign_new" in trig_list and "planetevents_new" not in trig_list:
@@ -555,7 +561,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         self.batches: dict[int, Batch] = {}
         self.test_with = []
         self.lock = asyncio.Lock()
-        # self.load_test_files()
+        self.load_test_files()
         nowd = datetime.datetime.now()
         st = datetime.datetime(
             nowd.year,

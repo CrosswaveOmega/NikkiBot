@@ -1,3 +1,4 @@
+import random
 from typing import *
 
 import logging
@@ -229,7 +230,7 @@ async def detect_loggable_changes(
         "stats_raw": {"changes": {}},
         "info_raw": {"changes": {}},
     }
-    batch = int(new.retrieved_at.timestamp())
+    batch = (int(new.retrieved_at.timestamp()) >> 4) | (random.randint(0, 15))
     superlist = []
 
     rawout = await get_differing_fields(
