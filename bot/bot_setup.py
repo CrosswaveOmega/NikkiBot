@@ -45,6 +45,8 @@ async def opening():
 async def is_cog_enabled(ctx: commands.Context):
     if ctx.guild:
         if ctx.command.cog:
+            if ctx.command.cog.qualified_name=='Main':
+                return True
             entry = GuildCogToggle.get(ctx.guild.id, ctx.command.cog)
             if entry:
                 if entry.enabled:
