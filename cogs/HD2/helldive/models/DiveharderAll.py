@@ -240,6 +240,7 @@ async def detect_loggable_changes(
             "time",
             "planetAttacks",
             "impactMultiplier",
+            "jointOperations",
             "campaigns",
             "planetStatus",
             "planetEvents",
