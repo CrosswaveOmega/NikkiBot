@@ -177,7 +177,10 @@ class Batch:
         print(key)
 
         if place in ["campaign", "planetevents"]:
-            planet=SimplePlanet.from_index(value.planetIndex)
+            va=value
+            if mode=='change':
+                va,_=value
+            planet=SimplePlanet.from_index(va.planetIndex)
             #planet = apistatus.planets.get(int(value.planetIndex), None)
             if planet:
                 planet_name_source = planet.get_name(False)
