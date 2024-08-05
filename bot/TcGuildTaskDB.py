@@ -281,6 +281,7 @@ class TCGuildTask(Guild_Task_Base):
                 try:
                     source_message = await urltomessage(self.target_message_url, bot)
                 except Exception as e:
+                    await bot.send_error(e,"ERROR GETTING MESSAGE")
                     this_out = "REMOVE"
             else:
                 source_message = await channel.send(
