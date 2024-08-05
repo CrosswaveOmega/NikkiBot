@@ -131,8 +131,9 @@ class HD2OverviewView(discord.ui.View):
         )
 
     @discord.ui.button(
-        label="View Map",
+        label="View App",
         style=discord.ButtonStyle.grey,
+        emoji='<:divericon:1270027381154910322>'
         custom_id="hd_persistent_view:grey",
     )
     async def map(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -443,7 +444,9 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             )
             url = target_message.jump_url
             profile.update(overview_message_url=url)
-            
+        elif target_message and edit==True:
+            target_message.edit(view=HD2OverviewView(self))
+
         old = TCGuildTask.get(guild.id, task_name)
         
         if not old:
