@@ -419,24 +419,32 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             manage_messages=True, manage_channels=True
         ),
     )
+    @commands.is_owner()
+    @commands.command(name="correct_overview")
+    async def correctover(self, context: commands.Context, guildid:int, channelid:int, edit=True):
+        guild=await context.bot.get_guild(guildid)
+        channel=await context.bot.get_channel(channelid)
+        await self.overview_make_logic(context,guild,channel,edit)
 
-    @pcs.command(
-        name="make_overview", description="Setup a constantly updating message "
-    )
-    async def overview_make(self, interaction: discord.Interaction):
-        ctx: commands.Context = await self.bot.get_context(interaction)
+    async def overview_make_logic(self,ctx,guild,autochannel,edit=False):
+        target_message=None
+        profile = ServerHDProfile.get_or_new(guild.id)
+        if profile.overview_message_url:
+            target_message=await urltomessage(profile.overview_message_url,ctx.bot)
+            if target_message and not edit:
+                await target_message.delete()
+                target_message=None
 
-        profile = ServerHDProfile.get_or_new(ctx.guild.id)
-        guild = ctx.guild
+
         task_name = "UPDATEOVERVIEW"
-        autochannel = ctx.channel
+        if not target_message:
+            target_message = await autochannel.send(
+                "Overview_message", view=HD2OverviewView(self)
+            )
 
-        target_message = await autochannel.send(
-            "Overview_message", view=HD2OverviewView(self)
-        )
+            profile.update(overview_message_url=url)
         old = TCGuildTask.get(guild.id, task_name)
         url = target_message.jump_url
-        profile.update(overview_message_url=url)
         if not old:
             now = datetime.now()
             start_date = datetime(2023, 1, 1, now.hour, 2)
@@ -460,6 +468,14 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             self.bot.database.commit()
             result = f"Changed the dashboard channel to <#{autochannel.id}>"
             await ctx.send(result)
+
+
+    @pcs.command(
+        name="make_overview", description="Setup a constantly updating message "
+    )
+    async def overview_make(self, interaction: discord.Interaction):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        await self.overview_make_logic(ctx,ctx.guild,ctx.channel,edit)
 
     @pcs.command(
         name="subscribe_for_maps", description="Subscribe for daily war map gifs."

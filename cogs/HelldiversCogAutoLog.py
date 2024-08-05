@@ -268,6 +268,7 @@ class Batch:
 
         for planet_data in self.planets.values():
             trig_list: List[str] = planet_data.trig
+            combos.append(str(planet_data.planet.name)+":"+",".join(trig_list))
             combo: Optional[List[str]] = self.check_trig_combinations(
                 trig_list, planet_data
             )
@@ -282,6 +283,8 @@ class Batch:
                         combos.extend(text)
         for sector_data in self.sector.values():
             trig_list: List[str] = sector_data.trig
+            combos.append(str(sector_data.planet.name)+":"+",".join(trig_list))
+
             combo: Optional[List[str]] = self.check_sector_trig_combinations(
                 trig_list, sector_data
             )
@@ -336,13 +339,21 @@ class Batch:
             combinations.append("defense won")
 
         if (
-            all(value in trig_list for value in ["planets_change"])
+            self.contains_all_values(
+                trig_list, ["campaign_remove", "planetevents_remove","planets_change"]
+            )
+        ):
+            if planet and planet.owner == 1:
+                combinations.append("defense won")
+
+        if (
+            "planets_change" in trig_list
             and "campaign_remove" not in trig_list
         ):
             if planet and planet.owner != 1:
                 combinations.append("planet flip")
 
-        if all(value in trig_list for value in ["planets_change"]):
+        if "planets_change" in trig_list:
             combinations.append("pcheck")
 
         if any(
