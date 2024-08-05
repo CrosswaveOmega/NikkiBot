@@ -133,7 +133,7 @@ class HD2OverviewView(discord.ui.View):
     @discord.ui.button(
         label="View App",
         style=discord.ButtonStyle.grey,
-        emoji='<:divericon:1270027381154910322>'
+        emoji='<:divericon:1270027381154910322>',
         custom_id="hd_persistent_view:grey",
     )
     async def map(self, interaction: discord.Interaction, button: discord.ui.Button):
