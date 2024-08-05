@@ -445,7 +445,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             url = target_message.jump_url
             profile.update(overview_message_url=url)
         elif target_message and edit==True:
-            target_message.edit(view=HD2OverviewView(self))
+            await target_message.edit(view=HD2OverviewView(self))
 
         old = TCGuildTask.get(guild.id, task_name)
         
