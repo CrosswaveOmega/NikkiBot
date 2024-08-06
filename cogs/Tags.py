@@ -117,7 +117,7 @@ async def dynamic_tag_get(dictionary, text, maxsize=2000):
     return value
 
 
-class Tags(commands.Cog):
+class Tags2(commands.Cog):
     def __init__(self, bot):
         self.helptext = (
             "This tag is for user tags.  Enter text, retrieve with a shortcut."
@@ -362,5 +362,6 @@ class Tags(commands.Cog):
 
 
 async def setup(bot):
-    pc = Tags(bot)
-    await bot.add_cog(pc)
+    pass
+    #pc = Tags2(bot)
+    #await bot.add_cog(pc)

@@ -70,7 +70,7 @@ class MessageTemplates:
             to_send = tag["text"]
             if len(to_send) > 2000:
                 to_send = to_send[:1950] + "...tag size limit."
-            tagres = f"{tag['tagname']}\n```{to_send}```"
+            tagres = f"{tag['tagname']}\n```{to_send}```\n Guild only:{tag.get('guild_only','???')}"
         embed = Embed(title=title, description=tagres, color=Color(color))
         embed.add_field(name="Result", value=description, inline=False)
         embed.set_thumbnail(url=AssetLookup.get_asset("embed_icon"))

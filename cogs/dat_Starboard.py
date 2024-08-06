@@ -1,12 +1,17 @@
-from typing import Optional
+from typing import Optional, ByteString
 from sqlalchemy import Column, Integer, Boolean, BigInteger, String
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete, func, insert
+from sqlalchemy import select, delete, func, insert, and_,or_
 from database.database_singleton import DatabaseSingleton
 from database.database_utils import upsert_a
 from database import ensure_session
+import discord
 from sqlalchemy.ext.declarative import declarative_base
 
+from sqlalchemy import Column, Integer, String, DateTime, LargeBinary
+from sqlalchemy.orm import declarative_base
+from database.database_main import AwareDateTime
+from datetime import datetime
 Base = declarative_base()
 
 
@@ -300,6 +305,111 @@ class StarboardEntryGivers(Base):
                 )
             await session.execute(stmt)
             await session.commit()
+
+class Tag(Base):
+    __tablename__ = "tags"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    tagname = Column(String, unique=True, nullable=False)
+    tag_category = Column(String, nullable=True,default="Uncategorized")
+    user = Column(Integer, nullable=False)
+    guildid = Column(Integer, nullable=True)
+    guild_only = Column(Boolean, nullable=True, default=False)
+    text = Column(String, nullable=False)
+    image = Column(LargeBinary, nullable=True, default=None)
+    imfilename =Column(String, nullable=True)
+    lastupdate = Column(AwareDateTime, nullable=False)
+
+    @classmethod
+    @ensure_session
+    async def add(cls,tagname: str, user: int, text: str, lastupdate: datetime, guildid:int, guildonly:bool=False,imb=None,imname:str=None,session: OptionalSession = None):
+        statement= select(cls).where(cls.tagname == tagname)
+        existing_tag = await session.execute(statement)
+        existing_tag = existing_tag.scalars().first()
+
+        if existing_tag:
+            if existing_tag.user!=user:
+                return None
+            existing_tag.text = text
+            existing_tag.lastupdate = lastupdate
+        else:
+            new_tag = cls(
+                tagname=tagname, user=user, text=text, tag_category='Uncategorized', lastupdate=lastupdate, guildid=guildid,guild_only=guildonly, image=imb,imfilename=imname
+            )
+            session.add(new_tag)
+
+        await session.commit()
+        return existing_tag if existing_tag else new_tag
+
+    @staticmethod
+    async def delete(tagname: str, user: int):
+        async with DatabaseSingleton.get_async_session() as session:
+            tag = await session.execute(
+                select(Tag).where(Tag.tagname == tagname)
+            )
+            tag = tag.scalars().first()
+            if tag and tag.user == user:
+                await session.delete(tag)
+                await session.commit()
+                return tag
+            return None
+
+    @staticmethod
+    async def edit(tagname: str, user: int, newtext: Optional[str]=None,guild_only:Optional[bool]=None,imb:Optional[ByteString]=None):
+        async with DatabaseSingleton.get_async_session() as session:
+            tagq = await session.execute(
+                select(Tag).where(Tag.tagname == tagname)
+            )
+            tag = tagq.scalars().first()
+            if tag and tag.user == user:
+                if newtext!=None:
+                    tag.text = newtext
+                if guild_only is not None:
+                    tag.guild_only=guild_only
+                tag.lastupdate = discord.utils.utcnow()
+                if imb!=None:
+                    tag.image=imb
+                await session.commit()
+                return tag
+            return None
+
+    
+    @classmethod
+    @ensure_session
+    async def get(cls,tagname: str,guildid:Optional[int]=None, session:OptionalSession=None):
+        statement_a=select(cls).where(and_(cls.tagname == tagname,or_(cls.guild_only == False, cls.guildid == guildid)))
+        if guildid==None:
+            statement_a=select(cls).where(cls.tagname == tagname)
+        tag = await session.execute(
+            statement_a
+        )
+        return tag.scalars().first()
+    
+    @classmethod
+    @ensure_session
+    async def get_matching_tags(cls,tagname: str, gid:int,session:OptionalSession=None):
+
+        tag = await session.execute(
+                    select(cls).where(and_(cls.tagname.like(f'%{tagname}%'),
+                    or_(cls.guild_only == False, cls.guildid == gid))).limit(25)
+                )
+        return tag.scalars().all()
+    
+    @staticmethod
+    async def list_all(gid:int):
+        async with DatabaseSingleton.get_async_session() as session:
+            tags = await session.execute(select(Tag.tagname).where(or_(Tag.guild_only == False, Tag.guildid == gid)))
+            return tags.scalars().all()
+        
+    @classmethod
+    @ensure_session
+    async def does_tag_exist(cls, tagname, session:OptionalSession=None):
+        statement= select(cls).where(cls.tagname == tagname)
+        existing_tag = await session.execute(statement)
+        existing_tag = existing_tag.scalars().first()
+        if existing_tag:
+            return True
+        return False
 
 
 async def setup(bot):
