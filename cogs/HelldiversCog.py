@@ -227,7 +227,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             )
 
             if planetbiome:
-                print(planetbiome["biome"])
+                print(planetbiome["biome"],usebiome)
                 if usebiome:
                     if planetbiome["biome"] != usebiome:
                         return
