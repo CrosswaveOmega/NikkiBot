@@ -506,7 +506,7 @@ class Embeds:
         name, sector = "?", None
         if planet:
             name, sector = planet.get_name(False), planet.sector
-        globtex = json.dumps(dump)
+        globtex = json.dumps(dump, default=str)
         emb = discord.Embed(
             title=f"Planet Field Change",
             description=f"Stats changed for {name}, in sector {sector}.\n```{globtex[:4000]}```",
@@ -523,7 +523,7 @@ class Embeds:
     def dumpEmbed(
         campaign: BaseApiModel, dump: Dict[str, Any], name: str, mode="started"
     ) -> discord.Embed:
-        globtex = json.dumps(dump)
+        globtex = json.dumps(dump, default=str)
         emb = discord.Embed(
             title=f"API Change",
             description=f"Field changed for {name}\n```{globtex[:4000]}```",
