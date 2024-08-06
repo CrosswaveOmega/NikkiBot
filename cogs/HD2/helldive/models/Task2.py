@@ -100,7 +100,7 @@ class Task2(BaseApiModel):
             faction_name = faction_names.get(
                 taskdata["race"], f"Unknown Faction {taskdata['race']}"
             )
-            taskstr += f"/{hf(taskdata['goal'])} ({(int(curr)/int(taskdata['goal']))*100.0}){faction_name}"
+            taskstr += f"/{hf(taskdata['goal'])} ({(int(curr)/int(taskdata['goal']))*100.0}) {faction_name}"
         else:
-            taskstr += f"DATA CORRUPTED.{json.dumps(self)[:50]}."
+            taskstr += f"DATA CORRUPTED.{json.dumps(self.model_dump(),default="str")[:50]}."
         return taskstr
