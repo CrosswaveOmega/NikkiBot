@@ -718,7 +718,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             elif place == "info_raw":
                 embed = Embeds.dumpEmbed(info, dump, "info", "changed")
             elif place == "globalEvents":
-                embed = Embeds.campaignLogEmbed(
+                embed = Embeds.globalEventEmbed(
                     info,
                     "changed",
                 )
