@@ -99,9 +99,9 @@ async def get_differing_fields(
                             list_diffs[i] = differing
                     elif str(v1) != str(v2):
                         if isinstance(v1, BaseApiModel):
-                            v1=v1.model_dump() 
+                            v1 = v1.model_dump(exclude="retrieved_at")
                         if isinstance(v2, BaseApiModel):
-                            v2=v2.model_dump()
+                            v2 = v2.model_dump(exclude="retrieved_at")
                         list_diffs[i] = {"old": v1, "new": v2}
 
             return list_diffs if list_diffs else None
@@ -125,9 +125,9 @@ async def get_differing_fields(
                 if value1 == value2:
                     continue
                 if isinstance(value1, BaseApiModel):
-                    value1=value1.model_dump() 
+                    value1 = value1.model_dump(exclude="retrieved_at")
                 if isinstance(value2, BaseApiModel):
-                    value2=value2.model_dump()
+                    value2 = value2.model_dump(exclude="retrieved_at")
                 differing_fields[field] = {"old": value1, "new": value2}
 
     return differing_fields
@@ -304,7 +304,7 @@ async def detect_loggable_changes(
         "id",
         QueueAll,
         batch,
-        ['health']
+        ["health"],
     )
     logs.info("planet status detection, stand by...")
     superlist += await process_planet_events(

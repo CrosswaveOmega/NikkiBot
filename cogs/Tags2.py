@@ -23,6 +23,7 @@ from bot import (
     TC_Cog_Mixin,
 )
 import numpy as np
+from utility.views import BaseView
 
 from cogs.dat_Starboard import Tag
 
@@ -30,7 +31,7 @@ from cogs.dat_Starboard import Tag
 async def is_cyclic_i(start_key):
     visited = set()
     stack = set()
-    
+
     async def visit(key):
         if key in stack:
             return True
@@ -43,7 +44,7 @@ async def is_cyclic_i(start_key):
         if not tag:
             return False
         text = tag.text
-        for word in re.findall(r'\{(.*?)\}', text):
+        for word in re.findall(r"\{(.*?)\}", text):
             if await visit(word):
                 return True
         stack.remove(key)
@@ -51,7 +52,8 @@ async def is_cyclic_i(start_key):
 
     return await visit(start_key)
 
-async def is_cyclic_mod(start_key, valuestart,guildid):
+
+async def is_cyclic_mod(start_key, valuestart, guildid):
     visited = set()
     stack = set()
     steps = []
@@ -65,14 +67,14 @@ async def is_cyclic_mod(start_key, valuestart,guildid):
         visited.add(key)
         stack.add(key)
 
-        tag = await Tag.get(key,guildid)
-        if not tag and key!=start_key:
+        tag = await Tag.get(key, guildid)
+        if not tag and key != start_key:
             return False, steps
-        elif key==start_key:
-            text=valuestart
+        elif key == start_key:
+            text = valuestart
         else:
             text = tag.text
-        for word in re.findall(r'\{(.*?)\}', text):
+        for word in re.findall(r"\{(.*?)\}", text):
             steps.append(word)
             if await visit(word, steps):
                 return True, steps
@@ -81,6 +83,7 @@ async def is_cyclic_mod(start_key, valuestart,guildid):
         return False, steps
 
     return await visit(start_key, steps)
+
 
 async def process_text(extracted_text, page):
     result = await page.evaluate(extracted_text)
@@ -104,32 +107,160 @@ async def execute_javascript(tagtext, browser):
     await page.close()
     return result
 
-async def dynamic_tag_get(text, guildid,maxsize=2000):
+
+async def dynamic_tag_get(text, guildid, maxsize=2000):
     result = text
-    pattern = re.compile(r'\{(.*?)\}')
+    pattern = re.compile(r"\{(.*?)\}")
     while True:
         matches = pattern.findall(result)
         if not matches:
             break
         for match in matches:
-            tag = await Tag.get(match,guildid)
+            tag = await Tag.get(match, guildid)
             if tag:
-                result = result.replace(f'{{{match}}}', tag.text)
+                result = result.replace(f"{{{match}}}", tag.text)
             if len(result) > maxsize:
-                result = result[:maxsize-4] + '...'
+                result = result[: maxsize - 4] + "..."
                 return result
     return result
 
-async def file_to_data_uri(file: discord.File) -> str:
-    # Read the bytes from the file
-    with BytesIO(file.fp.read()) as f:
-        # Read the bytes from the file-like object
-        file_bytes = f.read()
-    # Base64 encode the bytes
-    base64_encoded = base64.b64encode(file_bytes).decode("ascii")
-    # Construct the data URI
-    data_uri = f'data:{"image"};base64,{base64_encoded}'
-    return data_uri
+
+
+class TagContentModal(discord.ui.Modal, title="Enter Tag Contents"):
+    """Modal for editing tag data"""
+
+    def __init__(self, *args, content=None, key=None, topic=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.done = None
+        self.followup_input = discord.ui.TextInput(
+            label="Enter Content here.",
+            max_length=2000,
+            default=content,
+            required=True,
+            style=discord.TextStyle.paragraph,
+        )
+        self.add_item(self.followup_input)
+        self.topicvalue = discord.ui.TextInput(
+            label="Enter category", max_length=128, default=topic, required=True
+        )
+        self.add_item(self.topicvalue)
+
+    async def on_submit(self, interaction):
+        followup = self.followup_input.value
+        topic = self.topicvalue.value
+        self.done = (followup, "IGNORE ME", topic)
+        await interaction.response.defer()
+        self.stop()
+
+    async def on_timeout(self) -> None:
+        self.stop()
+
+    async def on_error(
+        self, interaction: discord.Interaction, error: Exception
+    ) -> None:
+        return await super().on_error(interaction, error)
+    
+class TagEditView(BaseView):
+    """
+    View that allows one to edit the work in progress tags.
+    """
+
+    def __init__(
+        self,
+        *,
+        user,
+        timeout=30 * 15,
+        content=None,
+        key=None,
+        topic=None,
+        has_image=False,
+        guild_only=False
+    ):
+        super().__init__(user=user, timeout=timeout)
+        self.value = False
+        self.done = None
+        self.content = content
+        self.key = key
+        self.has_image = has_image
+        self.guild_only = guild_only
+        self.topic = topic
+
+    def make_embed(self):
+        embed = discord.Embed(
+            description=f"{self.content}"[:4000],
+            timestamp=discord.utils.utcnow(),
+        )
+        embed.add_field(name="tag category", value=self.topic)
+
+        embed.add_field(name="tag name", value=self.key)
+        embed.add_field(
+                name="Guild Only",
+                value=f"Guild only is set to {self.guild_only}",
+                inline=False,
+            )
+        if not self.is_finished():
+            embed.add_field(
+                name="timeout",
+                value=f"timeout in: {discord.utils.format_dt(self.get_timeout_dt(),'R')}",
+                inline=False,
+            )
+        if self.has_image:
+            embed.add_field(
+                name="Image Display",
+                value="Your real tag will have your uploaded image added, but for efficiency sake a placeholder is used for this preview.",
+                inline=False,
+            )
+            embed.set_image(url="https://picsum.photos/400/200.jpg")
+        return embed
+
+    async def on_timeout(self) -> None:
+        self.value = "timeout"
+        self.stop()
+
+    @discord.ui.button(label="Edit tag", style=discord.ButtonStyle.primary, row=1)
+    async def edit(self, interaction: discord.Interaction, button: discord.ui.Button):
+        modal = TagContentModal(
+            content=self.content, key=self.key, topic=self.topic, timeout=self.timeout
+        )
+        await interaction.response.send_modal(modal)
+        await modal.wait()
+        if modal.done:
+            c, k, t = modal.done
+            self.content = c if c is not None else self.content
+            #self.key = k if k is not None else self.key
+            self.topic = t if t is not None else self.topic
+            self.update_timeout()
+            await interaction.edit_original_response(embed=self.make_embed())
+            # await self.tag_add_callback(interaction,c,k,t)
+        else:
+            await interaction.edit_original_response(content="Cancelled")
+
+    @discord.ui.button(label="Complete", style=discord.ButtonStyle.green, row=4)
+    async def confirm(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
+        if not (self.content and self.key and self.topic):
+            await interaction.response.edit_message(
+                content="You are missing the content, key, or topic!",
+                embed=self.make_embed(),
+            )
+        else:
+            await interaction.response.edit_message(
+                content="Complete", embed=self.make_embed()
+            )
+            self.value = True
+            self.done = (self.content, self.key, self.topic)
+            self.stop()
+
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.grey, row=4)
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.edit_message(
+            content="Canceled", embed=self.make_embed()
+        )
+        self.value = False
+        self.stop()
+
+
 
 def convertToBinaryData(file):
     # Convert digital data to binary format
@@ -138,24 +269,26 @@ def convertToBinaryData(file):
         file_bytes = f.read()
     return file_bytes
 
+
 async def binaryToFile(file_bytes: str, filename: str) -> discord.File:
     # Create a discord.File object
     file = discord.File(BytesIO(file_bytes), filename=filename, spoiler=False)
     return file
 
+
 class Tags(commands.Cog):
     def __init__(self, bot):
-        self.helptext = "This is for Server/User tags. Enter text, retrieve with a shortcut."
+        self.helptext = (
+            "This is for Server/User tags. Enter text, retrieve with a shortcut."
+        )
         self.bot = bot
 
-    async def tag_autocomplete(
-        self, interaction: discord.Interaction, current: str
-    ):
+    async def tag_autocomplete(self, interaction: discord.Interaction, current: str):
         """
         Autocomplete for tag names
         """
         if interaction.guild:
-            tags = await Tag.get_matching_tags(current,interaction.guild.id)
+            tags = await Tag.get_matching_tags(current, interaction.guild.id)
             choices = self._shared_autocomplete_logic(tags, current)
 
             return choices
@@ -168,26 +301,32 @@ class Tags(commands.Cog):
         for v in items:
             if len(results) >= 25:
                 break
-            
-            results.append(
-                app_commands.Choice(name=v.tagname, value=v.tagname)
-            )
+
+            results.append(app_commands.Choice(name=v.tagname, value=v.tagname))
         return results
 
     tags = app_commands.Group(name="tags", description="Tag commands")
 
     @tags.command(name="create", description="create a tag")
     @app_commands.describe(tagname="tagname to add")
-    @app_commands.describe(text="text of the tag.", guild_only="If this tag should only work in this guild")
-    async def create(self, interaction: discord.Interaction, tagname: str, text: str, guild_only:bool=True,
-        image: Optional[discord.Attachment] = None,):
+    @app_commands.describe(
+        text="text of the tag.", guild_only="If this tag should only work in this guild"
+    )
+    async def create(
+        self,
+        interaction: discord.Interaction,
+        tagname: app_commands.Range[str, 2, 128],
+        text: app_commands.Range[str, 5, 2000],
+        guild_only: bool = True,
+        image: Optional[discord.Attachment] = None,
+    ):
         ctx: commands.Context = await self.bot.get_context(interaction)
         taglist = await Tag.does_tag_exist(tagname)
         if taglist:
             await ctx.send("The desired tag name is not available.")
             return
 
-        cycle_check, steps = await is_cyclic_mod(tagname, text,ctx.guild.id)
+        cycle_check, steps = await is_cyclic_mod(tagname, text, ctx.guild.id)
         if cycle_check:
             await MessageTemplates.tag_message(
                 ctx,
@@ -196,28 +335,77 @@ class Tags(commands.Cog):
                 ephemeral=False,
             )
             return
-        bytes, fname=None,None
+        bytes, fname = None, None
         if image:
-            file=await image.to_file()
-            fname=file.filename
-            bytes=convertToBinaryData(file)
-        await Tag.add(tagname, interaction.user.id, text, discord.utils.utcnow(),ctx.guild.id,guild_only,imb=bytes,imname=fname)
-        new_tag=await Tag.get(tagname,ctx.guild.id)
-        if not new_tag:
+            file = await image.to_file()
+            fname = file.filename
+            bytes = convertToBinaryData(file)
+        view = TagEditView(
+            user=interaction.user,
+            content=text,
+            key=tagname,
+            topic='No Topic',
+            has_image=True if image is not None else False,
+            timeout=10 * 60,
+        )
+        emb = view.make_embed()
+        tmes = await ctx.send(
+            "Please apply any edits using the Edit Note button, and press complete when you're satisfied!",
+            embed=emb,
+            view=view,
+            ephemeral=True,
+        )
+        await view.wait()
+        if view.done:
+            await tmes.edit(view=None,content="View Closesd.")
+            if not view.value:
+                return
+            c, k, t = view.done
+            fil = None
+
+            await Tag.add(
+                tagname,
+                interaction.user.id,
+                c,
+                discord.utils.utcnow(),
+                ctx.guild.id,
+                guild_only,
+                tag_category=t,
+                imb=bytes,
+                imname=fname,
+            )
+            new_tag = await Tag.get(tagname, ctx.guild.id)
+            if not new_tag:
+                await MessageTemplates.tag_message(
+                    ctx,
+                    f"Tag {tagname} could not be created.  It likely already exists.",
+                    title="Tag not created",
+                    ephemeral=False,
+                )
+                return
             await MessageTemplates.tag_message(
                 ctx,
-                f"Tag {tagname} could not be created.  It likely already exists.",
-                title="Tag not created",
+                f"Tag {tagname} created, access it with /tags get",
+                tag={
+                    "tagname": new_tag.tagname,
+                    "user": new_tag.user,
+                    "text": new_tag.text,
+                    "lastupdate": new_tag.lastupdate,
+                    "filename": new_tag.imfilename,
+                    "guild_only": new_tag.guild_only,
+                },
+                title="Tag created",
                 ephemeral=False,
             )
-            return
-        await MessageTemplates.tag_message(
-            ctx,
-            f"Tag {tagname} created, access it with /tags get",
-            tag={"tagname": new_tag.tagname, "user": new_tag.user, "text": new_tag.text, "lastupdate": new_tag.lastupdate, "filename":new_tag.imfilename,"guild_only":new_tag.guild_only},
-            title="Tag created",
-            ephemeral=False,
-        )
+
+        else:
+            message = "Cancelled"
+            if view.value:
+                if view.value == "timeout":
+                    message = "You timed out."
+            await tmes.edit(content=message, view=None, embed=view.make_embed())
+        
+
 
     @tags.command(name="delete", description="delete a tag")
     @app_commands.describe(tagname="tagname to delete")
@@ -227,8 +415,13 @@ class Tags(commands.Cog):
         if deleted_tag:
             await MessageTemplates.tag_message(
                 ctx,
-                f"Tag {tagname} Deleted, access it with /tags get",
-                tag={"tagname": deleted_tag.tagname, "user": deleted_tag.user, "text": deleted_tag.text, "lastupdate": deleted_tag.lastupdate},
+                f"Tag {tagname} Deleted deleted successfully.",
+                tag={
+                    "tagname": deleted_tag.tagname,
+                    "user": deleted_tag.user,
+                    "text": deleted_tag.text,
+                    "lastupdate": deleted_tag.lastupdate,
+                },
                 title="Tag deleted.",
                 ephemeral=False,
             )
@@ -242,9 +435,15 @@ class Tags(commands.Cog):
     @tags.command(name="edit", description="edit a tag")
     @app_commands.describe(tagname="tagname to edit")
     @app_commands.describe(newtext="new text of the tag")
-    async def edit(self, interaction: discord.Interaction, tagname: str, newtext: Optional[str]=None,  guild_only:Optional[bool]=None,):
+    async def edit(
+        self,
+        interaction: discord.Interaction,
+        tagname: str,
+        newtext: Optional[str] = None,
+        guild_only: Optional[bool] = None,
+    ):
         ctx: commands.Context = await self.bot.get_context(interaction)
-        cycle_check, steps = await is_cyclic_mod(tagname, newtext,ctx.guild.id)
+        cycle_check, steps = await is_cyclic_mod(tagname, newtext, ctx.guild.id)
         if cycle_check:
             await MessageTemplates.tag_message(
                 ctx,
@@ -254,10 +453,18 @@ class Tags(commands.Cog):
             )
             return
 
-        edited_tag = await Tag.edit(tagname, interaction.user.id, newtext,guild_only)
+        edited_tag = await Tag.edit(tagname, interaction.user.id, newtext, guild_only)
         if edited_tag:
             await MessageTemplates.tag_message(
-                ctx, f"Tag '{tagname}' edited.", tag={"tagname": edited_tag.tagname, "user": edited_tag.user, "text": edited_tag.text, "lastupdate": edited_tag.lastupdate,"guild_only":edited_tag.guild_only}
+                ctx,
+                f"Tag '{tagname}' edited.",
+                tag={
+                    "tagname": edited_tag.tagname,
+                    "user": edited_tag.user,
+                    "text": edited_tag.text,
+                    "lastupdate": edited_tag.lastupdate,
+                    "guild_only": edited_tag.guild_only,
+                },
             )
         else:
             await MessageTemplates.tag_message(
@@ -273,7 +480,7 @@ class Tags(commands.Cog):
         if taglist:
             embed_list, e = [], 0
             for t in taglist:
-                key, val = t, await Tag.get(t,ctx.guild.id)
+                key, val = t, await Tag.get(t, ctx.guild.id)
                 if val:
                     value = val.text
                     if not embed_list or len(embed_list[-1].fields) == 4:
@@ -293,25 +500,23 @@ class Tags(commands.Cog):
         else:
             await MessageTemplates.tag_message(ctx, f"No tags found")
 
-
-    
     @tags.command(name="get", description="get a tag by name")
     @app_commands.autocomplete(tagname=tag_autocomplete)
     @app_commands.describe(tagname="tagname to get")
     async def get(self, interaction: discord.Interaction, tagname: str):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
-        tag = await Tag.get(tagname,ctx.guild.id)
+        tag = await Tag.get(tagname, ctx.guild.id)
         if tag:
             text = tag.text
-            im=None
+            im = None
             if tag.image:
-                im=await binaryToFile(tag.image,tag.imfilename)
-            output = await dynamic_tag_get(text,ctx.guild.id)
+                im = await binaryToFile(tag.image, tag.imfilename)
+            output = await dynamic_tag_get(text, ctx.guild.id)
             to_send = f"{output}"
             pattern_exists = bool(re.search(r"<js\:\{(.*?)\}>", to_send))
             if pattern_exists:
-                mes = await ctx.send("Javascript running",file=im)
+                mes = await ctx.send("Javascript running", file=im)
                 if not self.bot.browser_on:
                     mes = await mes.edit(content="Activating advanced utility...")
                     await self.bot.open_browser()
@@ -326,7 +531,7 @@ class Tags(commands.Cog):
             else:
                 if len(to_send) > 2000:
                     to_send = to_send[:1996] + "..."
-                await ctx.send(f"{to_send}",file=im)
+                await ctx.send(f"{to_send}", file=im)
 
         else:
             await MessageTemplates.tag_message(

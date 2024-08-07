@@ -34,7 +34,7 @@ class TCTaskRef:
 
     def __lt__(self, other):
         me = self.get_task()
-        if me!=None and other.get_task() is not None:
+        if me != None and other.get_task() is not None:
             return self.get_task().to_run_next < other.get_task().to_run_next
         return True
 

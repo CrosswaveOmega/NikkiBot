@@ -12,6 +12,7 @@ from .PlanetStatus import PlanetStatus
 from .GlobalEvent import GlobalEvent
 from .Position import Position
 
+
 class SimplePlanet(BaseApiModel):
     index: Optional[int] = Field(alias="index", default=None)
 
@@ -24,14 +25,14 @@ class SimplePlanet(BaseApiModel):
     waypoints: Optional[List[int]] = Field(alias="waypoints", default=None)
 
     regenPerSecond: Optional[float] = Field(alias="regenPerSecond", default=None)
-    
+
     def get_name(self, faction=True) -> str:
         """Get the name of the planet, along with occupying faction
         and planet index."""
         if not faction:
             return f"P#{self.index}: {self.name}"
         return f"P#{self.index}: {self.name}"
-    
+
     @classmethod
     def from_planet_status(cls, planet_status: PlanetStatus):
         data_path: str = "./hd2json/planets/planets.json"
@@ -39,11 +40,11 @@ class SimplePlanet(BaseApiModel):
         with open(data_path, "r") as file:
             planets_data_json = json.load(file)
 
-        pval=planets_data_json.get(str(planet_status.index),None)
-        name=sector="NA"
+        pval = planets_data_json.get(str(planet_status.index), None)
+        name = sector = "NA"
         if pval:
-            name=pval['name']
-            sector=pval['sector']
+            name = pval["name"]
+            sector = pval["sector"]
 
         return cls(
             index=int(planet_status.index),
@@ -61,12 +62,12 @@ class SimplePlanet(BaseApiModel):
         with open(data_path, "r") as file:
             planets_data_json = json.load(file)
 
-        pval=planets_data_json.get(str(index), None)
-        name=sector="NA"
+        pval = planets_data_json.get(str(index), None)
+        name = sector = "NA"
         if pval:
-            
-            name=pval['name']
-            sector=pval['sector']
+
+            name = pval["name"]
+            sector = pval["sector"]
 
         return cls(
             index=int(index),
@@ -76,6 +77,7 @@ class SimplePlanet(BaseApiModel):
             waypoints=[],
             regenPerSecond=0.0,
         )
+
 
 class SectorStates(BaseApiModel):
     name: Optional[str] = Field(alias="name", default=None)

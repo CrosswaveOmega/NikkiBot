@@ -45,7 +45,7 @@ async def opening():
 async def is_cog_enabled(ctx: commands.Context):
     if ctx.guild:
         if ctx.command.cog:
-            if ctx.command.cog.qualified_name=='Main':
+            if ctx.command.cog.qualified_name == "Main":
                 return True
             entry = GuildCogToggle.get(ctx.guild.id, ctx.command.cog)
             if entry:
@@ -125,13 +125,17 @@ async def on_command_error(ctx, error):
     log.error("Ignoring exception in command %s", command, exc_info=error)
     errormess = "Command not found I think..."
     command_details = f" Command {ctx.message.content}"
-    send_check=False
+    send_check = False
     if ctx.command:
         command_details = f" Command {command.name}"
-        errormess,send_check = client_error_message(error, name=f" Command {command.name}")
+        errormess, send_check = client_error_message(
+            error, name=f" Command {command.name}"
+        )
     else:
         print("Case b")
-        errormess,send_check = client_error_message(error, name=f"{ctx.message.content}")
+        errormess, send_check = client_error_message(
+            error, name=f"{ctx.message.content}"
+        )
     gui.gprint(errormess)
     if isinstance(error, discord.ext.commands.errors.CheckFailure):
         emb = MessageTemplates.get_checkfail_embed(
@@ -144,7 +148,7 @@ async def on_command_error(ctx, error):
     if send_check:
         serverdata = dbmain.ServerData.get_or_new(ctx.guild.id)
         if serverdata.do_not_send_not_found:
-            print("Error ",error, "suppressed")
+            print("Error ", error, "suppressed")
             return
     await bot.send_error(error, title=f"Error with {ctx.message.content}")
     try:
@@ -376,13 +380,13 @@ class Main(commands.Cog):
         profile = dbmain.ServerData.get_or_new(guildid)
         if profile:
             if not profile.do_not_send_not_found:
-                profile.do_not_send_not_found=True
+                profile.do_not_send_not_found = True
             else:
-                profile.do_not_send_not_found=False
+                profile.do_not_send_not_found = False
             ctx.bot.database.commit()
             await ctx.send(f"Silent Mode set to {profile.do_not_send_not_found}")
         return
-    
+
     @commands.command(hidden=True)
     async def purge_guild_data(self, ctx, guildid: int):
         """debugging only."""

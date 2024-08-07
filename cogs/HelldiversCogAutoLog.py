@@ -35,7 +35,7 @@ from cogs.HD2.helldive import (
     GlobalEvent,
     SectorStates,
     PlanetAttack,
-    SimplePlanet
+    SimplePlanet,
 )
 from utility.manual_load import load_json_with_substitutions
 
@@ -74,7 +74,9 @@ class PlanetEvents:
                         old.append(ind)
         return new, old
 
-    def update_planet(self, value: Tuple[SimplePlanet, Dict[str, Any]], place: str) -> None:
+    def update_planet(
+        self, value: Tuple[SimplePlanet, Dict[str, Any]], place: str
+    ) -> None:
         v, _ = value
         if place == "planets":
             self.lastStatus = _
@@ -153,7 +155,7 @@ class Batch:
             self.sector[sector_name].add_event(event, key)
         elif planet_name is not None:
             if planet_name not in self.planets:
-                print("Adding ",planet_name)
+                print("Adding ", planet_name)
                 self.planets[planet_name] = PlanetEvents(planet)
             self.planets[planet_name].add_event(event, key)
         else:
@@ -177,19 +179,19 @@ class Batch:
         print(key)
 
         if place in ["campaign", "planetevents"]:
-            va=value
-            if mode=='change':
-                va,_=value
-            planet=SimplePlanet.from_index(va.planetIndex)
-            #planet = apistatus.planets.get(int(value.planetIndex), None)
+            va = value
+            if mode == "change":
+                va, _ = value
+            planet = SimplePlanet.from_index(va.planetIndex)
+            # planet = apistatus.planets.get(int(value.planetIndex), None)
             if planet:
                 planet_name_source = planet.get_name(False)
 
         if place in ["planets", "planetInfo"]:
             va, _ = value
-            #planet = apistatus.planets.get(int(va.index), None)
-            
-            planet=SimplePlanet.from_index(va.index)
+            # planet = apistatus.planets.get(int(va.index), None)
+
+            planet = SimplePlanet.from_index(va.index)
             if planet:
                 planet_name_source = planet.get_name(False)
 
@@ -268,7 +270,7 @@ class Batch:
 
         for planet_data in self.planets.values():
             trig_list: List[str] = planet_data.trig
-            combos.append(str(planet_data.planet.name)+":"+",".join(trig_list))
+            combos.append(str(planet_data.planet.name) + ":" + ",".join(trig_list))
             combo: Optional[List[str]] = self.check_trig_combinations(
                 trig_list, planet_data
             )
@@ -283,7 +285,7 @@ class Batch:
                         combos.extend(text)
         for sector_data in self.sector.values():
             trig_list: List[str] = sector_data.trig
-            combos.append(str(sector_data.planet.name)+":"+",".join(trig_list))
+            combos.append(str(sector_data.planet.name) + ":" + ",".join(trig_list))
 
             combo: Optional[List[str]] = self.check_sector_trig_combinations(
                 trig_list, sector_data
@@ -338,18 +340,13 @@ class Batch:
         ):
             combinations.append("defense won")
 
-        if (
-            self.contains_all_values(
-                trig_list, ["campaign_remove", "planetevents_remove","planets_change"]
-            )
+        if self.contains_all_values(
+            trig_list, ["campaign_remove", "planetevents_remove", "planets_change"]
         ):
             if planet and planet.owner == 1:
                 combinations.append("defense won")
 
-        if (
-            "planets_change" in trig_list
-            and "campaign_remove" not in trig_list
-        ):
+        if "planets_change" in trig_list and "campaign_remove" not in trig_list:
             if planet and planet.owner != 1:
                 combinations.append("planet flip")
 
@@ -719,7 +716,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.dumpEmbed(info, dump, "info", "changed")
             elif place == "globalEvents":
                 pass
-                #embed = Embeds.globalEventEmbed(info,"changed")
+                # embed = Embeds.globalEventEmbed(info,"changed")
 
         if embed:
             # print(embed.description)

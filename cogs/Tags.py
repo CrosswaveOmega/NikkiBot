@@ -363,5 +363,5 @@ class Tags2(commands.Cog):
 
 async def setup(bot):
     pass
-    #pc = Tags2(bot)
-    #await bot.add_cog(pc)
+    # pc = Tags2(bot)
+    # await bot.add_cog(pc)

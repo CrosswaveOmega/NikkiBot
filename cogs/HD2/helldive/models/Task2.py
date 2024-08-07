@@ -54,12 +54,16 @@ class Task2(BaseApiModel):
 
     def taskAdvanced(self):
         """return task type, and dictionary containing task details."""
-        task_type = task_types.get(self["type"], "Unknown Task Type")
-        taskdata = {"planet_index": "ERR", "race": 15}
+        task_type = task_types.get(self["type"], f"Unknown Task Type {self['type']}")
+        taskdata = {}
 
         for v, vt in zip(self["values"], self["valueTypes"]):
             # print(v, value_types.get(vt, "Unmapped vt"))
-            taskdata[value_types[vt]] = v
+
+            if value_types[vt] in taskdata:
+                taskdata[value_types[vt]].append(v)
+            else:
+                taskdata[value_types[vt]] = [v]
 
         return task_type, taskdata
 
@@ -75,7 +79,11 @@ class Task2(BaseApiModel):
         curr = curr_progress
         taskstr = f"{e}. {task_type}: {hf(curr)}"
         if self["type"] in (11, 13):
-            planet_id = taskdata["planet_index"]
+            if not all(key in taskdata for key in ["planet_index"]):
+                dump = json.dumps(taskdata, default=str)[:108]
+                taskstr += f"{dump}"
+                return
+            planet_id = taskdata["planet_index"][0]
             planet_name = "ERR"
             health = "?"
             mode = ""
@@ -93,15 +101,28 @@ class Task2(BaseApiModel):
         elif self["type"] == 12:
             planet_name = taskdata["planet_index"]
             if self.values:
-                taskstr += f"{self.values[0]} planets"
+                taskstr += json.dumps(taskdata, default=str)[:108]
             else:
                 taskstr += "Defend planets?"
         elif self["type"] == 3:
+            if not all(key in taskdata for key in ["goal", "race"]):
+                dump = json.dumps(taskdata, default=str)[:108]
+                taskstr += f"{dump}"
+                return
             faction_name = faction_names.get(
-                taskdata["race"], f"Unknown Faction {taskdata['race']}"
+                taskdata["race"][0], f"Unknown Faction {taskdata['race'][0]}"
             )
-            taskstr += f"/{hf(taskdata['goal'])} ({(int(curr)/int(taskdata['goal']))*100.0}) {faction_name}"
+            goal = taskdata["goal"][0]
+
+            taskstr += f"/{hf(goal)} ({(int(curr)/int(goal))*100.0}) {faction_name}"
+            onplanet = taskdata.get("planet_index", None)
+            if onplanet is not None:
+                for ind in onplanet:
+                    if int(ind) in planets:
+                        planet = planets[int(ind)]
+                        planet_name = planet.get_name()
+                        taskstr += f", On {planet_name}"
         else:
-            dump=json.dumps(self.model_dump(),default=str)[:50]
-            taskstr += f"DATA CORRUPTED.{dump}."
+            dump = json.dumps(taskdata, default=str)[:108]
+            taskstr += f"{dump}"
         return taskstr

@@ -182,7 +182,7 @@ def render_planet(
                         sphere_img.putpixel(
                             (x, y), color
                         )  # Set the pixel color in the image
-    #sphere_draw.ellipse([(0, 0), (20, 20)], outline="purple", width=1)
+    # sphere_draw.ellipse([(0, 0), (20, 20)], outline="purple", width=1)
     return sphere_img
 
 
