@@ -5,14 +5,14 @@ from .ABC.model import BaseApiModel
 import json
 from .Planet import Planet
 
-task_types = {3: "Eradicate", 11: "Liberation", 12: "Defense", 13: "Control"}
+task_types = {2:"Get samples", 3: "Eradicate", 4: "Objectives", 7: "Extract", 11: "Liberation", 12: "Defense", 13: "Control"}
 
 value_types = {
     1: "race",
     2: "unknown",
     3: "goal",
     4: "unknown1",
-    5: "unknown2",
+    5: "rarity",
     6: "unknown3",
     7: "unknown4",
     8: "unknown5",
@@ -115,13 +115,15 @@ class Task2(BaseApiModel):
             goal = taskdata["goal"][0]
 
             taskstr += f"/{hf(goal)} ({(int(curr)/int(goal))*100.0}) {faction_name}"
+            lc=taskdata.get("liberate", None)
             onplanet = taskdata.get("planet_index", None)
-            if onplanet is not None:
-                for ind in onplanet:
-                    if int(ind) in planets:
-                        planet = planets[int(ind)]
-                        planet_name = planet.get_name()
-                        taskstr += f", On {planet_name}"
+            if onplanet is not None and lc is not None:
+                if lc[0]:
+                    for ind in onplanet:
+                        if int(ind) in planets:
+                            planet = planets[int(ind)]
+                            planet_name = planet.get_name()
+                            taskstr += f", On {planet_name}"
         else:
             dump = json.dumps(taskdata, default=str)[:108]
             taskstr += f"{dump}"

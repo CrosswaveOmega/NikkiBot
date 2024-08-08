@@ -19,6 +19,7 @@ from bot import TC_Cog_Mixin, TCBot, AppGuildTreeSync, GuildCogToggle
 from discord import app_commands
 from discord.app_commands import Choice
 from pathlib import Path
+from database.database_singleton import DatabaseSingleton
 from utility import serverAdmin, serverOwner, load_manual, MessageTemplates
 from utility.embed_paginator import pages_of_embeds
 
@@ -116,7 +117,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
     async def cogtoggle(self, interaction: discord.Interaction, cogname: str) -> None:
         """Open a view where you can configure Nikki's features."""
         ctx: commands.Context = await self.bot.get_context(interaction)
-        profile = AppGuildTreeSync.get(server_id=ctx.guild.id)
+        #profile = AppGuildTreeSync.get(server_id=ctx.guild.id)
         # list = AppGuildTreeSync.load_list(server_id=ctx.guild.id)
         # onlist = AppGuildTreeSync.load_onlist(server_id=ctx.guild.id)
         if cogname.lower() == "setup":
@@ -141,6 +142,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
 
                 if entry.enabled:
                     entry.enabled = False
+                    GuildCogToggle.edit(ctx.guild.id, cog,False)
                     await ctx.send(
                         f"I will not sync cog {cogname} here.", ephemeral=True
                     )
@@ -150,23 +152,27 @@ class Setup(commands.Cog, TC_Cog_Mixin):
                             await ctx.send(f"{cogname} is owner only.", ephemeral=True)
                             return
                     entry.enabled = True
+                    GuildCogToggle.edit(ctx.guild.id, cog,True)
                     await ctx.send(f"I will sync cog {cogname} here.", ephemeral=True)
                 # profile.save_onlist(onlist)
                 self.bot.database.commit()
                 ctx.bot.tree.clear_commands(guild=ctx.guild)
                 await ctx.bot.all_guild_startup()
             else:
+                print(entry, entry.enabled)
                 if not entry.enabled:
-                    entry.enabled = True
+                    #entry.enabled = True
+                    GuildCogToggle.edit(ctx.guild.id, cog,True)
                     await ctx.send(
                         f"I will once again sync cog {cogname} here.", ephemeral=True
                     )
                 else:
-                    entry.enabled = False
+                    #entry.enabled = False
+                    GuildCogToggle.edit(ctx.guild.id, cog,False)
                     await ctx.send(
                         f"I will no longer sync cog {cogname} here.", ephemeral=True
                     )
-                self.bot.database.commit()
+                    DatabaseSingleton.get_session().commit()
                 ctx.bot.tree.clear_commands(guild=ctx.guild)
                 await ctx.bot.all_guild_startup()
         else:

@@ -388,6 +388,7 @@ class Tags(commands.Cog):
                 f"Tag {tagname} created, access it with /tags get",
                 tag={
                     "tagname": new_tag.tagname,
+                    'topic': new_tag.tag_category,
                     "user": new_tag.user,
                     "text": new_tag.text,
                     "lastupdate": new_tag.lastupdate,
@@ -415,13 +416,8 @@ class Tags(commands.Cog):
         if deleted_tag:
             await MessageTemplates.tag_message(
                 ctx,
-                f"Tag {tagname} Deleted deleted successfully.",
-                tag={
-                    "tagname": deleted_tag.tagname,
-                    "user": deleted_tag.user,
-                    "text": deleted_tag.text,
-                    "lastupdate": deleted_tag.lastupdate,
-                },
+                f"Tag {tagname} deleted  successfully.",
+                tag={},
                 title="Tag deleted.",
                 ephemeral=False,
             )
@@ -439,7 +435,7 @@ class Tags(commands.Cog):
         self,
         interaction: discord.Interaction,
         tagname: str,
-        newtext: Optional[str] = None,
+        newtext: Optional[app_commands.Range[str, 5, 2000]] = None,
         guild_only: Optional[bool] = None,
     ):
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -455,15 +451,18 @@ class Tags(commands.Cog):
 
         edited_tag = await Tag.edit(tagname, interaction.user.id, newtext, guild_only)
         if edited_tag:
+            new_tag = await Tag.get(tagname, ctx.guild.id)
             await MessageTemplates.tag_message(
                 ctx,
                 f"Tag '{tagname}' edited.",
-                tag={
-                    "tagname": edited_tag.tagname,
-                    "user": edited_tag.user,
-                    "text": edited_tag.text,
-                    "lastupdate": edited_tag.lastupdate,
-                    "guild_only": edited_tag.guild_only,
+               tag={
+                    "tagname": new_tag.tagname,
+                    'topic': new_tag.tag_category,
+                    "user": new_tag.user,
+                    "text": new_tag.text,
+                    "lastupdate": new_tag.lastupdate,
+                    "filename": new_tag.imfilename,
+                    "guild_only": new_tag.guild_only,
                 },
             )
         else:
@@ -537,6 +536,34 @@ class Tags(commands.Cog):
             await MessageTemplates.tag_message(
                 ctx, f"Tag '{tagname}' not found", title="Tag get error"
             )
+
+    @tags.command(name="info", description="get a tag's info by name")
+    @app_commands.autocomplete(tagname=tag_autocomplete)
+    @app_commands.describe(tagname="tagname to get")
+    async def info(self, interaction: discord.Interaction, tagname: str):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+
+        tag = await Tag.get(tagname, ctx.guild.id)
+        if tag:
+            await MessageTemplates.tag_message(
+                ctx,
+                f"Tag '{tagname}' info.",
+               tag={
+                    "tagname": tag.tagname,
+                    'topic': tag.tag_category,
+                    "user": tag.user,
+                    "text": tag.text,
+                    "lastupdate": tag.lastupdate,
+                    "filename": tag.imfilename,
+                    "guild_only": tag.guild_only,
+                },
+                ephemeral=True
+            )
+        else:
+            await MessageTemplates.tag_message(
+                ctx, f"Tag '{tagname}' not found", title="Tag get error", ephemeral=True
+            )
+
 
 
 async def setup(bot):

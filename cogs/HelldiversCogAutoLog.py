@@ -392,8 +392,8 @@ class Batch:
 def check_platform():
 
     if os.name == "nt":
-        return "%#I:%M%p UTC %b {S} %Y"
-    return "%-I:%M%p UTC %b {S} %Y"
+        return "%#I:%M%p UTC {S} %b %Y"
+    return "%-I:%M%p UTC {S} %b %Y"
 
 
 def suffix(d):
@@ -401,7 +401,7 @@ def suffix(d):
 
 
 def custom_strftime(t):
-    format = "%#I:%M%p UTC %b {S} %Y"
+    format = "%#I:%M%p UTC {S} %b %Y"
     out = t.strftime(format).replace("{S}", str(t.day) + suffix(t.day))
     out = out.replace("AM", "am")
     out = out.replace("PM", "pm")
