@@ -310,7 +310,7 @@ class Tags(commands.Cog):
         ),
                                          guild_only=True)
     
-    @tag_maintenance.command(name="modremove", description="Remove innapropiatte tags")
+    @tag_maintenance.command(name="modremove", description="Remove tags with bad content")
     @app_commands.autocomplete(tagname=tag_autocomplete)
     async def modremove(self, interaction: discord.Interaction, tagname:str):
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -319,7 +319,7 @@ class Tags(commands.Cog):
         if not tag:
             await ctx.send("This tag doesn't exist.",ephemeral=True)
             return
-        await ctx.send(f"Tag ",ephemeral=True)
+        await ctx.send(f"Tag {tagname} was removed successfully.",ephemeral=True)
 
 
 
@@ -425,7 +425,7 @@ class Tags(commands.Cog):
                     ctx,
                     f"Tag {tagname} could not be created. It likely already exists.",
                     title="Tag not created",
-                    ephemeral=False,
+                    ephemeral=True,
                 )
                 return
             await MessageTemplates.tag_message(
@@ -433,7 +433,7 @@ class Tags(commands.Cog):
                 f"Tag {tagname} created, access it with /tags get",
                 tag=new_tag.get_dict(),
                 title="Tag created",
-                ephemeral=False,
+                ephemeral=True,
             )
         else:
             # Handle user cancellation or timeout
