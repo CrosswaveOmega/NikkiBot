@@ -304,9 +304,7 @@ class Tags(commands.Cog):
 
             results.append(app_commands.Choice(name=v.tagname, value=v.tagname))
         return results
-
-    tags = app_commands.Group(name="tags", description="Tag commands")
-
+    tags = app_commands.Group(name="tags", description="Tag commands", guild_only=True)
     @tags.command(name="create", description="create a tag")
     @app_commands.describe(tagname="tagname to add")
     @app_commands.describe(
@@ -322,24 +320,35 @@ class Tags(commands.Cog):
     ):
         ctx: commands.Context = await self.bot.get_context(interaction)
         taglist = await Tag.does_tag_exist(tagname)
+
         if taglist:
-            await ctx.send("The desired tag name is not available.")
+            await MessageTemplates.tag_message(
+                ctx,
+                f"The tag name `{tagname}` is not available.",
+                title="Tag creation error.",
+                ephemeral=True,
+            )
             return
 
+        # Check for cyclic references in the tag text
         cycle_check, steps = await is_cyclic_mod(tagname, text, ctx.guild.id)
         if cycle_check:
             await MessageTemplates.tag_message(
                 ctx,
                 f"The text will expand infinitely at keys {str(steps)}.",
                 title="Tag creation error.",
-                ephemeral=False,
+                ephemeral=True,
             )
             return
-        bytes, fname = None, None
+
+        # Handle image attachment
+        bytesv, fname = None, None
         if image:
             file = await image.to_file()
             fname = file.filename
-            bytes = convertToBinaryData(file)
+            bytesv = convertToBinaryData(file)
+
+        # Create the interactive view for editing the tag
         view = TagEditView(
             user=interaction.user,
             content=text,
@@ -355,14 +364,27 @@ class Tags(commands.Cog):
             view=view,
             ephemeral=True,
         )
+
         await view.wait()
+
         if view.done:
-            await tmes.edit(view=None,content="View Closesd.")
+            await tmes.edit(view=None, content="View Closed.")
             if not view.value:
                 return
-            c, k, t = view.done
-            fil = None
 
+            c, k, t = view.done
+            # Recheck for cyclic references with updated content
+            cycle_check, steps = await is_cyclic_mod(tagname, c, ctx.guild.id)
+            if cycle_check:
+                await MessageTemplates.tag_message(
+                    ctx,
+                    f"The text will expand infinitely at keys {str(steps)}.",
+                    title="Tag creation error.",
+                    ephemeral=True,
+                )
+                return
+
+            # Add the new tag to the database
             await Tag.add(
                 tagname,
                 interaction.user.id,
@@ -371,14 +393,16 @@ class Tags(commands.Cog):
                 ctx.guild.id,
                 guild_only,
                 tag_category=t,
-                imb=bytes,
+                imb=bytesv,
                 imname=fname,
             )
+
+            # Confirm tag creation
             new_tag = await Tag.get(tagname, ctx.guild.id)
             if not new_tag:
                 await MessageTemplates.tag_message(
                     ctx,
-                    f"Tag {tagname} could not be created.  It likely already exists.",
+                    f"Tag {tagname} could not be created. It likely already exists.",
                     title="Tag not created",
                     ephemeral=False,
                 )
@@ -386,24 +410,15 @@ class Tags(commands.Cog):
             await MessageTemplates.tag_message(
                 ctx,
                 f"Tag {tagname} created, access it with /tags get",
-                tag={
-                    "tagname": new_tag.tagname,
-                    'topic': new_tag.tag_category,
-                    "user": new_tag.user,
-                    "text": new_tag.text,
-                    "lastupdate": new_tag.lastupdate,
-                    "filename": new_tag.imfilename,
-                    "guild_only": new_tag.guild_only,
-                },
+                tag=new_tag.get_dict(),
                 title="Tag created",
                 ephemeral=False,
             )
-
         else:
+            # Handle user cancellation or timeout
             message = "Cancelled"
-            if view.value:
-                if view.value == "timeout":
-                    message = "You timed out."
+            if view.value == "timeout":
+                message = "You timed out."
             await tmes.edit(content=message, view=None, embed=view.make_embed())
         
 
@@ -455,21 +470,15 @@ class Tags(commands.Cog):
             await MessageTemplates.tag_message(
                 ctx,
                 f"Tag '{tagname}' edited.",
-               tag={
-                    "tagname": new_tag.tagname,
-                    'topic': new_tag.tag_category,
-                    "user": new_tag.user,
-                    "text": new_tag.text,
-                    "lastupdate": new_tag.lastupdate,
-                    "filename": new_tag.imfilename,
-                    "guild_only": new_tag.guild_only,
-                },
+               tag=new_tag.get_dict(),
+                ephemeral=True
             )
         else:
             await MessageTemplates.tag_message(
                 ctx,
                 f"You don't have permission to edit this tag.",
                 title="Tag edit error.",
+                ephemeral=True
             )
 
     @tags.command(name="list", description="list all tags")
@@ -508,6 +517,7 @@ class Tags(commands.Cog):
         tag = await Tag.get(tagname, ctx.guild.id)
         if tag:
             text = tag.text
+            inc=await Tag.increment(tagname,ctx.guild.id)
             im = None
             if tag.image:
                 im = await binaryToFile(tag.image, tag.imfilename)
@@ -548,15 +558,7 @@ class Tags(commands.Cog):
             await MessageTemplates.tag_message(
                 ctx,
                 f"Tag '{tagname}' info.",
-               tag={
-                    "tagname": tag.tagname,
-                    'topic': tag.tag_category,
-                    "user": tag.user,
-                    "text": tag.text,
-                    "lastupdate": tag.lastupdate,
-                    "filename": tag.imfilename,
-                    "guild_only": tag.guild_only,
-                },
+               tag=tag.get_dict(),
                 ephemeral=True
             )
         else:
