@@ -78,31 +78,22 @@ class StarboardEmojis(Base):
     @classmethod
     async def add_emoji(cls, starboard_id: int, emoji: str):
         async with DatabaseSingleton.get_async_session() as session:
-            new_emoji = cls(
-                guild_id=starboard_id,
-                emoji=emoji
-            )
+            new_emoji = cls(guild_id=starboard_id, emoji=emoji)
             session.add(new_emoji)
             await session.commit()
             return new_emoji
-        
+
     @classmethod
     async def get_emoji(cls, starboard_id: int, emoji: str):
         async with DatabaseSingleton.get_async_session() as session:
-            query = select(cls).where(
-                cls.guild_id == starboard_id,
-                cls.emoji == emoji
-            )
+            query = select(cls).where(cls.guild_id == starboard_id, cls.emoji == emoji)
             result = await session.execute(query)
             return result
 
     @classmethod
     async def remove_emoji(cls, starboard_id: int, emoji: str):
         async with DatabaseSingleton.get_async_session() as session:
-            query = select(cls).where(
-                cls.guild_id == starboard_id,
-                cls.emoji == emoji
-            )
+            query = select(cls).where(cls.guild_id == starboard_id, cls.emoji == emoji)
             result = await session.execute(query)
             emoji_entry = result.scalar()
             if emoji_entry:
@@ -116,8 +107,9 @@ class StarboardEmojis(Base):
         async with DatabaseSingleton.get_async_session() as session:
             query = select(cls).where(cls.guild_id == starboard_id).limit(limit)
             result = await session.execute(query)
-            emojis= result.scalars().all()
+            emojis = result.scalars().all()
             return [s.emoji for s in emojis]
+
 
 class StarboardEntryTable(Base):
     __tablename__ = "starboard_entry"
@@ -236,7 +228,6 @@ class StarboardEntryTable(Base):
 
     def __str__(self):
         return f"StarboardEntryTable(message_id={self.message_id}, channel_id={self.channel_id}, guild_id={self.guild_id}, author_id={self.author_id}, bot_message={self.bot_message}, bot_message_url={self.bot_message_url}, message_url={self.message_url}, total={self.total})"
-    
 
 
 class StarboardEntryGivers(Base):
@@ -380,7 +371,7 @@ class Tag(Base):
     image = Column(LargeBinary, nullable=True, default=None)
     imfilename = Column(String, nullable=True)
     lastupdate = Column(AwareDateTime, nullable=False)
-    taguses= Column(Integer,nullable=True,default=0)
+    taguses = Column(Integer, nullable=True, default=0)
 
     @classmethod
     @ensure_session
@@ -392,7 +383,7 @@ class Tag(Base):
         lastupdate: datetime,
         guildid: int,
         guildonly: bool = False,
-        tag_category:str = "Uncategorized",
+        tag_category: str = "Uncategorized",
         imb=None,
         imname: str = None,
         session: OptionalSession = None,
@@ -444,7 +435,7 @@ class Tag(Base):
                 await session.commit()
                 return tag
             return None
-        
+
     @staticmethod
     async def edit(
         tagname: str,
@@ -486,7 +477,7 @@ class Tag(Base):
             statement_a = select(cls).where(cls.tagname == tagname)
         tag = await session.execute(statement_a)
         return tag.scalars().first()
-    
+
     @classmethod
     @ensure_session
     async def increment(
@@ -504,15 +495,15 @@ class Tag(Base):
         if guildid == None:
             statement_a = select(cls).where(cls.tagname == tagname)
         tag = await session.execute(statement_a)
-        tag= tag.scalars().first()
+        tag = tag.scalars().first()
         if tag:
-            if tag.taguses==None:
-                tag.taguses=0
-            tag.taguses+=1
+            if tag.taguses == None:
+                tag.taguses = 0
+            tag.taguses += 1
             await session.commit()
             return True
         return False
-    
+
     @classmethod
     @ensure_session
     async def get_matching_tags(
@@ -541,6 +532,21 @@ class Tag(Base):
             )
             return tags.scalars().all()
 
+    @staticmethod
+    async def list_all_cat(gid: int):
+        async with DatabaseSingleton.get_async_session() as session:
+            tags = await session.execute(
+                select(Tag.tag_category, Tag.tagname, Tag.text).where(
+                    or_(Tag.guild_only == False, Tag.guildid == gid)
+                )
+            )
+            tag_dict = {}
+            for tag_category, tagname, text in tags:
+                if tag_category not in tag_dict:
+                    tag_dict[tag_category] = []
+                tag_dict[tag_category].append((tagname, text))
+            return tag_dict
+
     @classmethod
     @ensure_session
     async def does_tag_exist(cls, tagname, session: OptionalSession = None):
@@ -550,17 +556,17 @@ class Tag(Base):
         if existing_tag:
             return True
         return False
-    
+
     def get_dict(self):
-        tag={
+        tag = {
             "tagname": self.tagname,
-            'topic': self.tag_category,
+            "topic": self.tag_category,
             "user": self.user,
             "text": self.text,
             "lastupdate": self.lastupdate,
             "filename": self.imfilename,
             "guild_only": self.guild_only,
-            "uses":self.taguses
+            "uses": self.taguses,
         }
         return tag
 

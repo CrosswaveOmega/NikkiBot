@@ -128,7 +128,7 @@ class GuildCogToggle(Guild_Sync_Base):
         result = session.execute(statement).scalars().first()
 
         if result is None:
-            print(server_id,cog,result)
+            print(server_id, cog, result)
             default = True
             manual = False
             if hasattr(cog, "manual_enable"):
@@ -151,20 +151,18 @@ class GuildCogToggle(Guild_Sync_Base):
             session.commit()
 
         return result
-    
-    
+
     @classmethod
-    def edit(cls, server_id: int, cog: commands.Cog, enabled:bool):
+    def edit(cls, server_id: int, cog: commands.Cog, enabled: bool):
         session: Session = DatabaseSingleton.get_session()
         statement = select(cls).filter_by(
             server_id=server_id, cog_name=cog.qualified_name
         )
         result = session.execute(statement).scalars().first()
         if result:
-            result.enabled=enabled
+            result.enabled = enabled
             session.commit()
         return result
-    
 
 
 class AppGuildTreeSync(Guild_Sync_Base):
@@ -496,7 +494,7 @@ class SpecialAppSync:
                 print(name, app_tree)
             dbentry: AppGuildTreeSync = AppGuildTreeSync.get(guildid)
             if not dbentry:
-                print("NO DBENTRY for ",guild.id)
+                print("NO DBENTRY for ", guild.id)
                 dbentry = AppGuildTreeSync.add(guildid)
             same, diffscore, score = dbentry.compare_with_command_tree(app_tree)
             gui.gprint(f"Check Results: {name} (ID {guildid}):{score}")
@@ -535,7 +533,7 @@ class SpecialAppSync:
         entry = AppGuildTreeSync.get(server_id=guildid)
         if entry:
             if entry.migrated is None:
-                print(guildid,entry.migrated)
+                print(guildid, entry.migrated)
                 ignorelist = AppGuildTreeSync.load_list(guildid)
                 onlist = AppGuildTreeSync.load_onlist(guildid)
                 for cogname, cog in self.cogs.items():
@@ -545,7 +543,7 @@ class SpecialAppSync:
                     DatabaseSingleton.get_session().commit()
                 entry.migrated = True
                 DatabaseSingleton.get_session().commit()
-                print(guildid,entry.migrated)
+                print(guildid, entry.migrated)
 
         gui.dprint(ignorelist)
 

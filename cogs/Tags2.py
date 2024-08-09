@@ -125,7 +125,6 @@ async def dynamic_tag_get(text, guildid, maxsize=2000):
     return result
 
 
-
 class TagContentModal(discord.ui.Modal, title="Enter Tag Contents"):
     """Modal for editing tag data"""
 
@@ -159,7 +158,8 @@ class TagContentModal(discord.ui.Modal, title="Enter Tag Contents"):
         self, interaction: discord.Interaction, error: Exception
     ) -> None:
         return await super().on_error(interaction, error)
-    
+
+
 class TagEditView(BaseView):
     """
     View that allows one to edit the work in progress tags.
@@ -174,7 +174,7 @@ class TagEditView(BaseView):
         key=None,
         topic=None,
         has_image=False,
-        guild_only=False
+        guild_only=False,
     ):
         super().__init__(user=user, timeout=timeout)
         self.value = False
@@ -194,10 +194,10 @@ class TagEditView(BaseView):
 
         embed.add_field(name="tag name", value=self.key)
         embed.add_field(
-                name="Guild Only",
-                value=f"Guild only is set to {self.guild_only}",
-                inline=False,
-            )
+            name="Guild Only",
+            value=f"Guild only is set to {self.guild_only}",
+            inline=False,
+        )
         if not self.is_finished():
             embed.add_field(
                 name="timeout",
@@ -227,7 +227,7 @@ class TagEditView(BaseView):
         if modal.done:
             c, k, t = modal.done
             self.content = c if c is not None else self.content
-            #self.key = k if k is not None else self.key
+            # self.key = k if k is not None else self.key
             self.topic = t if t is not None else self.topic
             self.update_timeout()
             await interaction.edit_original_response(embed=self.make_embed())
@@ -259,7 +259,6 @@ class TagEditView(BaseView):
         )
         self.value = False
         self.stop()
-
 
 
 def convertToBinaryData(file):
@@ -303,39 +302,40 @@ class Tags(commands.Cog):
                 break
             results.append(app_commands.Choice(name=v.tagname, value=v.tagname))
         return results
-    
-    tag_maintenance = app_commands.Group(name="tag_maintenance", description="For tag moderation", 
-                                         default_permissions=discord.Permissions(
+
+    tag_maintenance = app_commands.Group(
+        name="tag_maintenance",
+        description="For tag moderation",
+        default_permissions=discord.Permissions(
             manage_channels=True, manage_messages=True
         ),
-                                         guild_only=True)
-    
-    @tag_maintenance.command(name="modremove", description="Remove tags with bad content")
+        guild_only=True,
+    )
+
+    @tag_maintenance.command(
+        name="modremove", description="Remove tags with bad content"
+    )
     @app_commands.autocomplete(tagname=tag_autocomplete)
-    async def modremove(self, interaction: discord.Interaction, tagname:str):
+    async def modremove(self, interaction: discord.Interaction, tagname: str):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
-        tag=await Tag.delete_without_user(tagname)
+        tag = await Tag.delete_without_user(tagname)
         if not tag:
-            await ctx.send("This tag doesn't exist.",ephemeral=True)
+            await ctx.send("This tag doesn't exist.", ephemeral=True)
             return
-        await ctx.send(f"Tag {tagname} was removed successfully.",ephemeral=True)
+        await ctx.send(f"Tag {tagname} was removed successfully.", ephemeral=True)
 
-
-
-    
     tags = app_commands.Group(name="tags", description="Tag commands", guild_only=True)
+
     @tags.command(name="create", description="create a tag")
     @app_commands.describe(tagname="tagname to add")
-    @app_commands.describe(
-        text="text of the tag."
-    )
+    @app_commands.describe(text="text of the tag.")
     async def create(
         self,
         interaction: discord.Interaction,
         tagname: app_commands.Range[str, 2, 128],
         text: app_commands.Range[str, 5, 2000],
-        #guild_only: bool = True,
+        # guild_only: bool = True,
         image: Optional[discord.Attachment] = None,
     ):
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -373,7 +373,7 @@ class Tags(commands.Cog):
             user=interaction.user,
             content=text,
             key=tagname,
-            topic='No Topic',
+            topic="No Topic",
             has_image=True if image is not None else False,
             guild_only=True,
             timeout=10 * 60,
@@ -441,8 +441,6 @@ class Tags(commands.Cog):
             if view.value == "timeout":
                 message = "You timed out."
             await tmes.edit(content=message, view=None, embed=view.make_embed())
-        
-
 
     @tags.command(name="delete", description="delete a tag")
     @app_commands.describe(tagname="tagname to delete")
@@ -488,45 +486,44 @@ class Tags(commands.Cog):
         if edited_tag:
             new_tag = await Tag.get(tagname, ctx.guild.id)
             await MessageTemplates.tag_message(
-                ctx,
-                f"Tag '{tagname}' edited.",
-               tag=new_tag.get_dict(),
-                ephemeral=True
+                ctx, f"Tag '{tagname}' edited.", tag=new_tag.get_dict(), ephemeral=True
             )
         else:
             await MessageTemplates.tag_message(
                 ctx,
                 f"You don't have permission to edit this tag.",
                 title="Tag edit error.",
-                ephemeral=True
+                ephemeral=True,
             )
 
     @tags.command(name="list", description="list all tags")
     async def listtags(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
-        taglist = await Tag.list_all(ctx.guild.id)
-        if taglist:
-            embed_list, e = [], 0
-            for t in taglist:
-                key, val = t, await Tag.get(t, ctx.guild.id)
-                if val:
-                    value = val.text
-                    if not embed_list or len(embed_list[-1].fields) == 4:
+        tagdict = await Tag.list_all_cat(ctx.guild.id)
+        if not tagdict:
+            await MessageTemplates.tag_message(ctx, f"No tags found", ephemeral=True)
+            return
+        embed_list, e = [], 0
+        for cat, taglist in tagdict.items():
+            e = 0
+            embed = discord.Embed(
+                title=f"Tags: {cat}, {e+1}", color=discord.Color(0x00787F)
+            )
+            for name, text in taglist:
+                if text:
+                    value = text
+                    if len(embed_list[-1].fields) == 10:
+                        e += 1
+                        embed_list.append(embed)
                         embed = discord.Embed(
                             title=f"Tags: {e+1}", color=discord.Color(0x00787F)
                         )
-                        if len(value) > 1010:
-                            value = value[:1010]
-                            value += "..."
-                        embed.add_field(name=key, value=value, inline=False)
-                        embed_list.append(embed)
-                        e += 1
-                    else:
-                        embed_list[-1].add_field(name=key, value=value, inline=False)
-
+                    if len(value) > 256:
+                        value = value[:256]
+                        value += "..."
+                    embed.add_field(name=name, value=value, inline=False)
+            embed_list.append(embed)
             await utility.pages_of_embeds(ctx, embed_list)
-        else:
-            await MessageTemplates.tag_message(ctx, f"No tags found")
 
     @tags.command(name="get", description="get a tag by name")
     @app_commands.autocomplete(tagname=tag_autocomplete)
@@ -537,7 +534,7 @@ class Tags(commands.Cog):
         tag = await Tag.get(tagname, ctx.guild.id)
         if tag:
             text = tag.text
-            inc=await Tag.increment(tagname,ctx.guild.id)
+            inc = await Tag.increment(tagname, ctx.guild.id)
             im = None
             if tag.image:
                 im = await binaryToFile(tag.image, tag.imfilename)
@@ -576,16 +573,12 @@ class Tags(commands.Cog):
         tag = await Tag.get(tagname, ctx.guild.id)
         if tag:
             await MessageTemplates.tag_message(
-                ctx,
-                f"Tag '{tagname}' info.",
-               tag=tag.get_dict(),
-                ephemeral=True
+                ctx, f"Tag '{tagname}' info.", tag=tag.get_dict(), ephemeral=True
             )
         else:
             await MessageTemplates.tag_message(
                 ctx, f"Tag '{tagname}' not found", title="Tag get error", ephemeral=True
             )
-
 
 
 async def setup(bot):

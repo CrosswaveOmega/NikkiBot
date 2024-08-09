@@ -3,7 +3,12 @@ from typing import Union
 import discord
 from discord.ext import commands, tasks
 from database import DatabaseSingleton
-from cogs.dat_Starboard import Starboard, StarboardEmojis, StarboardEntryTable, StarboardEntryGivers
+from cogs.dat_Starboard import (
+    Starboard,
+    StarboardEmojis,
+    StarboardEntryTable,
+    StarboardEntryGivers,
+)
 from utility import (
     urltomessage,
 )
@@ -19,7 +24,7 @@ class StarboardCog(commands.Cog):
         self.to_be_edited = {}
         self.lock = asyncio.Lock()
         self.emojilist = ["\N{Honeybee}", "<:2diverHeart:1221738356950564926>"]
-        self.server_emoji_caches={}
+        self.server_emoji_caches = {}
 
         self.timerloop.start()  # type: ignore
 
@@ -32,7 +37,9 @@ class StarboardCog(commands.Cog):
         try:
             print(str(payload.emoji))
             if payload.guild_id not in self.server_emoji_caches:
-                self.server_emoji_caches[payload.guild_id]=await StarboardEmojis.get_emojis(payload.guild_id,25)
+                self.server_emoji_caches[payload.guild_id] = (
+                    await StarboardEmojis.get_emojis(payload.guild_id, 25)
+                )
             if str(payload.emoji) not in self.server_emoji_caches[payload.guild_id]:
                 return
 
@@ -92,7 +99,7 @@ class StarboardCog(commands.Cog):
                         print("unstarring message", old_entry, message.id, guild.id)
                         if old_entry:
 
-                            if old_entry.emoji==str(payload.emoji):
+                            if old_entry.emoji == str(payload.emoji):
                                 print("Same emoji...")
                                 await session.delete(old_entry)
                                 await session.commit()
@@ -175,7 +182,9 @@ class StarboardCog(commands.Cog):
             starboard = await Starboard.get_starboard(mess.guild.id)
             if entry and starboard:
                 if entry.total < starboard.threshold:
-                    print(f"...entry deleted bc {entry.total} is less than {starboard.threshold}")
+                    print(
+                        f"...entry deleted bc {entry.total} is less than {starboard.threshold}"
+                    )
                     await StarboardEntryTable.delete_entry_by_bot_message_url(
                         bot_message
                     )
@@ -268,32 +277,39 @@ class StarboardCog(commands.Cog):
             await ctx.send("No starboard found for this server.")
 
     @starboard.command()
-    async def add_emoji(self, ctx, emoji: Union[str,discord.PartialEmoji,discord.Emoji]):
+    async def add_emoji(
+        self, ctx, emoji: Union[str, discord.PartialEmoji, discord.Emoji]
+    ):
         """Add an emoji to this server's starboard settings."""
         existing = await Starboard.get_starboard(ctx.guild.id)
         if not existing:
             await ctx.send("No starboard found for this server.")
-        get= await StarboardEmojis.get_emoji(ctx.guild.id, emoji)
+        get = await StarboardEmojis.get_emoji(ctx.guild.id, emoji)
         if get:
             await ctx.send(f"Valid emoji {emoji} is alrady in starboard config.")
         updated = await StarboardEmojis.add_emoji(ctx.guild.id, emoji)
         if updated:
-            self.server_emoji_caches[ctx.guild.id]=await StarboardEmojis.get_emojis(ctx.guild.id,25)
+            self.server_emoji_caches[ctx.guild.id] = await StarboardEmojis.get_emojis(
+                ctx.guild.id, 25
+            )
             await ctx.send(f"Valid emoji {emoji} added to starboard config.")
 
     @starboard.command()
-    async def remove_emoji(self, ctx, emoji: Union[str,discord.PartialEmoji,discord.Emoji]):
+    async def remove_emoji(
+        self, ctx, emoji: Union[str, discord.PartialEmoji, discord.Emoji]
+    ):
         """Remove an emoji to this server's starboard settings."""
         existing = await Starboard.get_starboard(ctx.guild.id)
         if not existing:
             await ctx.send("No starboard found for this server.")
         updated = await StarboardEmojis.remove_emoji(ctx.guild.id, emoji)
         if updated:
-            self.server_emoji_caches[ctx.guild.id]=await StarboardEmojis.get_emojis(ctx.guild.id,25)
+            self.server_emoji_caches[ctx.guild.id] = await StarboardEmojis.get_emojis(
+                ctx.guild.id, 25
+            )
             await ctx.send(f"Valid emoji {emoji} removed from starboard config.")
         else:
             await ctx.send(f"Emoji {emoji} is not being tracked.")
-
 
     @starboard.command()
     async def migrate(self, ctx):
@@ -405,11 +421,15 @@ class StarboardCog(commands.Cog):
             tuple[str, discord.Embed]: The message content and the embed.
         """
         assert isinstance(message.channel, (discord.abc.GuildChannel, discord.Thread))
-        emlist=await StarboardEntryGivers.list_starrer_emojis(stars.guild_id,stars.message_id)
+        emlist = await StarboardEntryGivers.list_starrer_emojis(
+            stars.guild_id, stars.message_id
+        )
         emoji = ",".join(emlist)
 
         if stars.total > 1:
-            content = f"{emoji} **{stars.total}** {message.channel.mention} ID: {message.id}"
+            content = (
+                f"{emoji} **{stars.total}** {message.channel.mention} ID: {message.id}"
+            )
         else:
             content = f"{emoji} {message.channel.mention} ID: {message.id}"
 
