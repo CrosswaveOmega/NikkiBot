@@ -301,21 +301,41 @@ class Tags(commands.Cog):
         for v in items:
             if len(results) >= 25:
                 break
-
             results.append(app_commands.Choice(name=v.tagname, value=v.tagname))
         return results
+    
+    tag_maintenance = app_commands.Group(name="tag_maintenance", description="For tag moderation", 
+                                         default_permissions=discord.Permissions(
+            manage_channels=True, manage_messages=True
+        ),
+                                         guild_only=True)
+    
+    @tag_maintenance.command(name="modremove", description="Remove innapropiatte tags")
+    @app_commands.autocomplete(tagname=tag_autocomplete)
+    async def modremove(self, interaction: discord.Interaction, tagname:str):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+
+        tag=await Tag.delete_without_user(tagname)
+        if not tag:
+            await ctx.send("This tag doesn't exist.",ephemeral=True)
+            return
+        await ctx.send(f"Tag ",ephemeral=True)
+
+
+
+    
     tags = app_commands.Group(name="tags", description="Tag commands", guild_only=True)
     @tags.command(name="create", description="create a tag")
     @app_commands.describe(tagname="tagname to add")
     @app_commands.describe(
-        text="text of the tag.", guild_only="If this tag should only work in this guild"
+        text="text of the tag."
     )
     async def create(
         self,
         interaction: discord.Interaction,
         tagname: app_commands.Range[str, 2, 128],
         text: app_commands.Range[str, 5, 2000],
-        guild_only: bool = True,
+        #guild_only: bool = True,
         image: Optional[discord.Attachment] = None,
     ):
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -355,6 +375,7 @@ class Tags(commands.Cog):
             key=tagname,
             topic='No Topic',
             has_image=True if image is not None else False,
+            guild_only=True,
             timeout=10 * 60,
         )
         emb = view.make_embed()
@@ -391,7 +412,7 @@ class Tags(commands.Cog):
                 c,
                 discord.utils.utcnow(),
                 ctx.guild.id,
-                guild_only,
+                guildonly=True,
                 tag_category=t,
                 imb=bytesv,
                 imname=fname,
@@ -451,7 +472,6 @@ class Tags(commands.Cog):
         interaction: discord.Interaction,
         tagname: str,
         newtext: Optional[app_commands.Range[str, 5, 2000]] = None,
-        guild_only: Optional[bool] = None,
     ):
         ctx: commands.Context = await self.bot.get_context(interaction)
         cycle_check, steps = await is_cyclic_mod(tagname, newtext, ctx.guild.id)
@@ -464,7 +484,7 @@ class Tags(commands.Cog):
             )
             return
 
-        edited_tag = await Tag.edit(tagname, interaction.user.id, newtext, guild_only)
+        edited_tag = await Tag.edit(tagname, interaction.user.id, newtext)
         if edited_tag:
             new_tag = await Tag.get(tagname, ctx.guild.id)
             await MessageTemplates.tag_message(

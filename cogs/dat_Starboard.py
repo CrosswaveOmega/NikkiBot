@@ -435,6 +435,17 @@ class Tag(Base):
             return None
 
     @staticmethod
+    async def delete_without_user(tagname: str):
+        async with DatabaseSingleton.get_async_session() as session:
+            tag = await session.execute(select(Tag).where(Tag.tagname == tagname))
+            tag = tag.scalars().first()
+            if tag:
+                await session.delete(tag)
+                await session.commit()
+                return tag
+            return None
+        
+    @staticmethod
     async def edit(
         tagname: str,
         user: int,
