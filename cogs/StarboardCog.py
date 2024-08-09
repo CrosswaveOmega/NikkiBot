@@ -273,10 +273,13 @@ class StarboardCog(commands.Cog):
         existing = await Starboard.get_starboard(ctx.guild.id)
         if not existing:
             await ctx.send("No starboard found for this server.")
+        get= await StarboardEmojis.get_emoji(ctx.guild.id, emoji)
+        if get:
+            await ctx.send(f"Valid emoji {emoji} is alrady in starboard config.")
         updated = await StarboardEmojis.add_emoji(ctx.guild.id, emoji)
         if updated:
             self.server_emoji_caches[ctx.guild.id]=await StarboardEmojis.get_emojis(ctx.guild.id,25)
-            await ctx.send(f"Valid emoji {emoji} added to starboard.")
+            await ctx.send(f"Valid emoji {emoji} added to starboard config.")
 
     @starboard.command()
     async def remove_emoji(self, ctx, emoji: Union[str,discord.PartialEmoji,discord.Emoji]):
@@ -287,7 +290,7 @@ class StarboardCog(commands.Cog):
         updated = await StarboardEmojis.remove_emoji(ctx.guild.id, emoji)
         if updated:
             self.server_emoji_caches[ctx.guild.id]=await StarboardEmojis.get_emojis(ctx.guild.id,25)
-            await ctx.send(f"Valid emoji {emoji} removed from starboard.")
+            await ctx.send(f"Valid emoji {emoji} removed from starboard config.")
         else:
             await ctx.send(f"Emoji {emoji} is not being tracked.")
 
