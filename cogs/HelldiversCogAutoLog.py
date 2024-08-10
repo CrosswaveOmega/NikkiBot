@@ -356,7 +356,8 @@ class Batch:
                 combinations.append("planet flip")
 
         if "planets_change" in trig_list:
-            combinations.append("pcheck")
+            pass
+            #combinations.append("pcheck")
 
         if any(
             value in trig_list for value in ["planetInfo_change"]

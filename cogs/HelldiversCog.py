@@ -544,12 +544,22 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         self.bot.get_cog("HelldiversAutoLog").loghook=lg
 
 
-        
+    
 
 
         
 
     pc = app_commands.Group(name="hd2", description="Commands for Helldivers 2.")
+    @pc.command(
+        name="help", description="Learn how to use the helldivers commands"
+    )
+    async def getmanual(self, interaction: discord.Interaction) -> None:
+        """Return a manual about the Helldivers features"""
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        pages = await MessageTemplates.get_manual_list(
+            ctx, "nikki_helldivers_manual.json"
+        )
+        await pages_of_embeds(ctx, pages, ephemeral=True)
 
     @pc.command(name="war", description="get war state.")
     async def warstat(self, interaction: discord.Interaction):

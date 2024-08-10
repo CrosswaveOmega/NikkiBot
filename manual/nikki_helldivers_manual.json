@@ -2,8 +2,7 @@
   "embeds": [
     {
       "title": "About the Helldivers Status Features",
-      "description": "The Galactic War Dashboard is a constantly updating message featuring the current state of all our active liberation campaigns and defense missions.\n\nThe dashboard will tell you:\n* Planets with active campaign\n* Player count per planet and front.\n* Planetary HP.\n* Decay rate.\n* Predicted influence per second vs actual influence per second.\n* Estimated liberation time.\n* The playerbase's combined total visible impact across the past 15mins.
-      ",
+      "description": "The Galactic War Dashboard is a constantly updating message featuring the current state of all our active liberation campaigns and defense missions.\n\nThe dashboard will tell you:\n* Planets with active campaign\n* Player count per planet and front.\n* Planetary HP.\n* Decay rate.\n* Predicted influence per second vs actual influence per second.\n* Estimated liberation time.\n* The playerbase's combined total visible impact across the past 15mins.",
       "color": null,
       "fields": [
         {
