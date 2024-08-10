@@ -9,6 +9,7 @@ from discord.ext import commands, tasks
 import os
 import re
 import cogs.HD2 as hd2
+from cogs.HD2.db import ServerHDProfile
 from cogs.HD2.helldive.models.ABC.model import BaseApiModel
 from assetloader import AssetLookup
 
@@ -270,19 +271,21 @@ class Batch:
 
         for planet_data in self.planets.values():
             trig_list: List[str] = planet_data.trig
-            combos.append(str(planet_data.planet.name) + ":" + ",".join(trig_list))
+            combos.append(str(planet_data.planet.name) + ": `" + ",".join(trig_list)+"`")
             combo: Optional[List[str]] = self.check_trig_combinations(
                 trig_list, planet_data
             )
             if combo:
                 for c in combo:
-                    combos.append(str(c))
+                    
                     if c in self.hd2:
                         text: List[str] = self.format_combo_text(
                             c, planet_data, self.hd2[c]
                         )
                         print(text)
                         combos.extend(text)
+                    else:
+                        combos.append(str(c))
         for sector_data in self.sector.values():
             trig_list: List[str] = sector_data.trig
             combos.append(str(sector_data.planet.name) + ":" + ",".join(trig_list))
@@ -292,13 +295,15 @@ class Batch:
             )
             if combo:
                 for c in combo:
-                    combos.append(str(c))
                     if c in self.hd2:
                         text: List[str] = self.format_combo_text(
                             c, sector_data, self.hd2[c]
                         )
                         print(text)
                         combos.extend(text)
+                    else:
+                        combos.append(str(c))
+                        
         return combos
 
     def contains_all_values(
@@ -565,7 +570,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
     def __init__(self, bot):
         self.bot: TCBot = bot
-        self.loghook = AssetLookup.get_asset("loghook", "urls")
+        self.loghook = []
         self.get_running = False
         self.event_log = []
         self.spot = 1
@@ -630,12 +635,13 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
             texts = self.batches[batch_id].combo_checker()
             for t in texts:
-                await web.postMessageAsWebhookWithURL(
-                    self.loghook,
-                    message_content=t,
-                    display_username="SUPER EVENT",
-                    avatar_url=self.bot.user.avatar.url,
-                )
+                for hook in self.loghook:
+                    await web.postMessageAsWebhookWithURL(
+                        hook,
+                        message_content=t,
+                        display_username="SUPER EVENT",
+                        avatar_url=self.bot.user.avatar.url,
+                    )
             self.batches.pop(batch_id)
 
         return self.batches
@@ -719,13 +725,15 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
         if embed:
             # print(embed.description)
-            await web.postMessageAsWebhookWithURL(
-                self.loghook,
+            for hook in self.loghook:
+                await web.postMessageAsWebhookWithURL(
+                hook,
                 message_content="",
                 display_username="Super Earth Event Log",
                 avatar_url=self.bot.user.avatar.url,
                 embed=[embed],
-            )
+                   )
+
 
     @run2.error
     async def logerror(self, ex):
@@ -752,6 +760,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         """
         Load results from api.
         """
+        if not self.loghook:
+            hooks=ServerHDProfile.get_entries_with_webhook()
+            lg=[AssetLookup.get_asset("loghook", "urls")]
+            for h in hooks:
+                lg.append(h)
+            self.loghook=lg
         self.get_running = True
         if self.test_with:
             if self.spot >= len(self.test_with):

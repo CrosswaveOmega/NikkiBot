@@ -35,6 +35,7 @@ import re
 import cogs.HD2 as hd2
 from utility.embed_paginator import pages_of_embeds, pages_of_embeds_2
 from utility import load_json_with_substitutions
+from utility import WebhookMessageWrapper as web
 from bot.Tasks import TCTask, TCTaskManager
 
 
@@ -518,6 +519,35 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             self.bot.database.commit()
             result = f"Changed the regular update channel to <#{autochannel.id}>"
             await ctx.send(result)
+
+    @pcs.command(
+        name="real_time_log_subscribe", description="Subscribe to the real time log."
+    )
+    @app_commands.describe(channel="Channel to add the real time log webhook to")
+    async def real_time_log_subscribe(self, interaction: discord.Interaction, channel:discord.TextChannel):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+
+        profile = ServerHDProfile.get_or_new(ctx.guild.id)
+        guild = ctx.guild
+        #task_name = "WARSTATUS"
+        permissions = channel.permissions_for(channel.guild.me)
+        if not permissions.manage_webhooks:
+            await ctx.send("Cannot make webhook in this channel",ephemeral=True)
+            return
+        webhook, thread=await web.getWebhookInChannel(channel)
+        profile.update(webhook_url=webhook.url)
+        await ctx.send("Real Time log webhook subscription created.",ephemeral=True)
+        hooks=ServerHDProfile.get_entries_with_webhook()
+        lg=[AssetLookup.get_asset("loghook", "urls")]
+        for h in hooks:
+            lg.append(h)
+        self.bot.get_cog("HelldiversAutoLog").loghook=lg
+
+
+        
+
+
+        
 
     pc = app_commands.Group(name="hd2", description="Commands for Helldivers 2.")
 

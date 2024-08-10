@@ -30,6 +30,7 @@ class ServerHDProfile(SuperEarthBase):
     overview_message_url = Column(String, nullable=True, default=None)
     update_channel = Column(Integer, nullable=True, default=None)
     last_global_briefing = Column(String, nullable=True, default=None)
+    webhook_url = Column(String, nullable=True, default=None)
 
     @classmethod
     def get(cls, server_id):
@@ -65,6 +66,19 @@ class ServerHDProfile(SuperEarthBase):
             .all()
         )
 
+    @staticmethod
+    def get_entries_with_webhook():
+        """
+        Returns a list of all distinct webhook_url values
+        """
+        session = DatabaseSingleton.get_session()
+        query = (
+            session.query(ServerHDProfile.webhook_url)
+            .filter(ServerHDProfile.webhook_url.isnot(None))
+            .distinct()
+            .all()
+        )
+        return [row.webhook_url for row in query]
     def update(self, **kwargs):
         session = DatabaseSingleton.get_session()
         for key, value in kwargs.items():

@@ -1,0 +1,37 @@
+{
+  "embeds": [
+    {
+      "title": "About the Helldivers Status Features",
+      "description": "The Galactic War Dashboard is a constantly updating message featuring the current state of all our active liberation campaigns and defense missions.\n\nThe dashboard will tell you:\n* Planets with active campaign\n* Player count per planet and front.\n* Planetary HP.\n* Decay rate.\n* Predicted influence per second vs actual influence per second.\n* Estimated liberation time.\n* The playerbase's combined total visible impact across the past 15mins.
+      ",
+      "color": null,
+      "fields": [
+        {
+          "name": "Technical Details",
+          "value": "* Nikki refreshes her galactic war data every `15 minutes` on the dot.\n  * The dashboard in this server updates 2 minutes after refreshing the galactic war data.\n  * In most cases, the change in each variable from the previous update to the last update will be displayed in parenthesis.\n* The planetary HP is **opposite** to how it's displayed in game.  100% is fully enemy controlled, 0% is liberated.  \n* The dashboard displays `damage per second` (as used internally), not `liberation per hour` (what's displayed on apps like helldiverscompanion).  Use `/hd2_calc dps_to_lph` to convert this to lph.\n* The buttons underneath the message will give you;\n  1. More detailed views for the **overall galactic war** with `War Status`, \n  2. Detailed info on **each planet with a campaign** with `Planets`,\n  3. A forecast of the **future galactic war events** with `Estimate` \n  4. A link to helldiverscompanion with `View App`"
+        },
+        {
+          "name": "Setup",
+          "value": "A server moderator with the manage messages and the manage channels permissions must use `/hd2setup make_overview` in an empty channel to set up the dashboard."
+        },
+        {"name": "Commands",
+      "value":"* Use `/hd2` and Nikki will display all the available Helldivers 2 status commands.  \n* Most of the messages returned by these commands are displayed or retrievable on the dashboard, except for `planet` and `map`.\n* `planet` will return the API status for any planet in the game.\n* `map`, will return a simple map of the galaxy respectively."}
+      ]
+    },
+    {
+      "title": "Mathdiving Commands",
+      "description": "For the mathdivers out there, Nikki has some ever growing utilities to help",
+      "color": null,
+      "fields": [
+        {
+          "name": "The Calculator",
+          "value": "Nikki has a calculator accessible through `/calc`.  It's capable of rolling dice, advanced expression parcing expressions, and some special sequence based operations.\n\n* Use `/calculatorhelp` to get the full list of possible actions, as it's a very complicated command."
+        },
+        {
+          "name": "Current dedicated HD2_Calc commands",
+          "value": "Nikki has a small collection of Mathdiving specific calculation commands, at `/hd2_calc`:\n1. `Damage per second` to `liberation per hour`\n2. `Influence per second` to `damage per second`\n3. Players needed for a target `damage per second` considering decay rate for a ***specific planet***\n4. Players needed for a target `liberation per hour` considering decay rate for a ***specific planet***"
+        }
+      ]
+    }
+  ]
+}
