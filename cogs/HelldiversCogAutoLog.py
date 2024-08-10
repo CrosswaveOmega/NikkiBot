@@ -636,13 +636,21 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
             texts = self.batches[batch_id].combo_checker()
             for t in texts:
-                for hook in self.loghook:
-                    await web.postMessageAsWebhookWithURL(
-                        hook,
-                        message_content=t,
-                        display_username="SUPER EVENT",
-                        avatar_url=self.bot.user.avatar.url,
-                    )
+                for hook in list(self.loghook):
+                    
+                    try:
+                        await web.postMessageAsWebhookWithURL(
+                            hook,
+                            message_content=t,
+                            display_username="SUPER EVENT",
+                            avatar_url=self.bot.user.avatar.url,
+                        )
+                    except Exception as e:
+                        await self.bot.send_error(e,"Webhook error")
+                        if hook!=AssetLookup.get_asset("loghook", "urls"):
+                            self.loghook.remove(hook)
+                            #ServerHDProfile.set_all_matching_webhook_to_none(hook)
+
             self.batches.pop(batch_id)
 
         return self.batches
@@ -726,14 +734,20 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
         if embed:
             # print(embed.description)
-            for hook in self.loghook:
-                await web.postMessageAsWebhookWithURL(
-                hook,
-                message_content="",
-                display_username="Super Earth Event Log",
-                avatar_url=self.bot.user.avatar.url,
-                embed=[embed],
-                   )
+            for hook in list(self.loghook):
+                try:
+                    await web.postMessageAsWebhookWithURL(
+                    hook,
+                    message_content="",
+                    display_username="Super Earth Event Log",
+                    avatar_url=self.bot.user.avatar.url,
+                    embed=[embed],
+                    )
+                except Exception as e:
+                    await self.bot.send_error(e,"Webhook error")
+                    if hook!=AssetLookup.get_asset("loghook", "urls"):
+                        self.loghook.remove(hook)
+                        #ServerHDProfile.set_all_matching_webhook_to_none(hook)
 
 
     @run2.error

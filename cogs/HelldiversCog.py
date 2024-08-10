@@ -543,11 +543,29 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             lg.append(h)
         self.bot.get_cog("HelldiversAutoLog").loghook=lg
 
+    @pcs.command(
+        name="real_time_log_unsubscribe", description="Unsubscribe to the real time log."
+    )
+    @app_commands.describe()
+    async def real_time_log_unsubscribe(self, interaction: discord.Interaction):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+
+        profile = ServerHDProfile.get_or_new(ctx.guild.id)
+        guild = ctx.guild
+        #task_name = "WARSTATUS"
+
+        profile.update(webhook_url=None)
+        await ctx.send("Real Time log webhook subscription cancelled.",ephemeral=True)
+        hooks=ServerHDProfile.get_entries_with_webhook()
+        lg=[AssetLookup.get_asset("loghook", "urls")]
+        for h in hooks:
+            lg.append(h)
+        self.bot.get_cog("HelldiversAutoLog").loghook=lg
+
 
     
+    
 
-
-        
 
     pc = app_commands.Group(name="hd2", description="Commands for Helldivers 2.")
     @pc.command(
