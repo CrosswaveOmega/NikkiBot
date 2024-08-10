@@ -90,7 +90,13 @@ async def get_differing_fields(
                             if v is not None
                         }
                         if target:
-                            list_diffs[i] = target
+                            nt={}
+                            for m,n in target.items():
+                                if isinstance(n, BaseApiModel):
+                                    nt[m]=n.model_dump(exclude="retrieved_at")
+                                else:
+                                    nt[m]=n
+                            list_diffs[i] = nt
             else:
                 for i, (v1, v2) in enumerate(zip(val1, val2)):
                     if isinstance(v1, BaseApiModel) and isinstance(v2, BaseApiModel):
