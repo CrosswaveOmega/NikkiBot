@@ -307,6 +307,7 @@ class StarboardCog(commands.Cog):
             await ctx.send(f"{emoji} emoji {upd}")
             get = await StarboardEmojis.get_emoji(ctx.guild.id, str(emoji))
             if get:
+                await ctx.send(f"{emoji} emoji {str(get)}")
                 pass
             else:
                 updated = await StarboardEmojis.add_emoji(ctx.guild.id, str(emoji))
