@@ -88,7 +88,7 @@ class StarboardEmojis(Base):
         async with DatabaseSingleton.get_async_session() as session:
             query = select(cls).where(cls.guild_id == starboard_id, cls.emoji == emoji)
             result = await session.execute(query)
-            return result
+            return result.scalar()
 
     @classmethod
     async def remove_emoji(cls, starboard_id: int, emoji: str):
