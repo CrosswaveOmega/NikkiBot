@@ -38,7 +38,7 @@ class StarboardCog(commands.Cog):
             print(str(payload.emoji))
             if payload.guild_id not in self.server_emoji_caches:
                 self.server_emoji_caches[payload.guild_id] = (
-                    await StarboardEmojis.get_emojis(payload.guild_id, 25)
+                    await StarboardEmojis.get_emojis(payload.guild_id, 100)
                 )
             if str(payload.emoji) not in self.server_emoji_caches[payload.guild_id]:
                 return
@@ -290,9 +290,31 @@ class StarboardCog(commands.Cog):
         updated = await StarboardEmojis.add_emoji(ctx.guild.id, emoji)
         if updated:
             self.server_emoji_caches[ctx.guild.id] = await StarboardEmojis.get_emojis(
-                ctx.guild.id, 25
+                ctx.guild.id, 100
             )
             await ctx.send(f"Valid emoji {emoji} added to starboard config.")
+
+    @starboard.command()
+    async def add_server_emoji(
+        self, ctx:commands.Context, emoji: Union[str, discord.PartialEmoji, discord.Emoji]
+    ):
+        """Add an emoji to this server's starboard settings."""
+        existing = await Starboard.get_starboard(ctx.guild.id)
+        if not existing:
+            await ctx.send("No starboard found for this server.")
+        for emoji in ctx.guild.emojis:
+            get = await StarboardEmojis.get_emoji(ctx.guild.id, emoji)
+            if get:
+                pass
+            else:
+                updated = await StarboardEmojis.add_emoji(ctx.guild.id, emoji)
+                
+        if updated:
+            self.server_emoji_caches[ctx.guild.id] = await StarboardEmojis.get_emojis(
+                ctx.guild.id, 100
+            )
+            await ctx.send(f"Al emoji {emoji} added to starboard config.")
+
 
     @starboard.command()
     async def remove_emoji(
@@ -305,7 +327,7 @@ class StarboardCog(commands.Cog):
         updated = await StarboardEmojis.remove_emoji(ctx.guild.id, emoji)
         if updated:
             self.server_emoji_caches[ctx.guild.id] = await StarboardEmojis.get_emojis(
-                ctx.guild.id, 25
+                ctx.guild.id, 100
             )
             await ctx.send(f"Valid emoji {emoji} removed from starboard config.")
         else:
