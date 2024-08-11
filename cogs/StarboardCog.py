@@ -312,7 +312,7 @@ class StarboardCog(commands.Cog):
                 if updated:
                     upd=True
                 
-        if updated:
+        if upd:
             self.server_emoji_caches[ctx.guild.id] = await StarboardEmojis.get_emojis(
                 ctx.guild.id, 100
             )
