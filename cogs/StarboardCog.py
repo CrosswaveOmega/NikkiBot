@@ -316,7 +316,7 @@ class StarboardCog(commands.Cog):
             self.server_emoji_caches[ctx.guild.id] = await StarboardEmojis.get_emojis(
                 ctx.guild.id, 100
             )
-            await ctx.send(f"Al emoji {emoji} added to starboard config.")
+            await ctx.send(f"Al emoji added to starboard config.")
 
 
     @starboard.command()
