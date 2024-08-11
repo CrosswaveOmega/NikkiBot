@@ -304,7 +304,7 @@ class StarboardCog(commands.Cog):
         if not existing:
             await ctx.send("No starboard found for this server.")
         for emoji in ctx.guild.emojis:
-            print(emoji, str(emoji))
+            ctx.send(f"{emoji} emoji {upd}")
             get = await StarboardEmojis.get_emoji(ctx.guild.id, str(emoji))
             if get:
                 pass
