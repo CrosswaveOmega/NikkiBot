@@ -37,6 +37,7 @@ from cogs.HD2.helldive import (
     SectorStates,
     PlanetAttack,
     SimplePlanet,
+    PlanetActiveEffects,
 )
 from utility.manual_load import load_json_with_substitutions
 
@@ -478,7 +479,7 @@ class Embeds:
 
     @staticmethod
     def planeteffectsEmbed(
-        campaign: BaseApiModel, planet: Optional[Planet], mode="started"
+        campaign: PlanetActiveEffects, planet: Optional[Planet], mode="started"
     ) -> discord.Embed:
         name, sector = campaign.index, None
         if planet:
@@ -854,6 +855,14 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
     @commands.command(name="now_test")
     async def load_test_now(self, ctx: commands.Context):
         await self.load_log()
+        await ctx.send("Done testing now.")
+
+    @commands.is_owner()
+    @commands.command(name="planeteffectget")
+    async def peffect(self, ctx: commands.Context):
+        events, warstat = await self.apistatus.get_now(
+                self.apistatus.warall, self.QueueAll, None
+            )
         await ctx.send("Done testing now.")
 
     @property
