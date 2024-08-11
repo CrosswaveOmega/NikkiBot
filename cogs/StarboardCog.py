@@ -304,6 +304,7 @@ class StarboardCog(commands.Cog):
         if not existing:
             await ctx.send("No starboard found for this server.")
         for emoji in ctx.guild.emojis:
+            print(emoji, str(emoji))
             get = await StarboardEmojis.get_emoji(ctx.guild.id, str(emoji))
             if get:
                 pass
@@ -320,6 +321,19 @@ class StarboardCog(commands.Cog):
         else:
             await ctx.send(f"{upd} emoji added to starboard config.")
 
+
+    @starboard.command()
+    async def display_emoji_message(self, ctx):
+        """Display a message with all joined emoji."""
+        existing = await Starboard.get_starboard(ctx.guild.id)
+        if not existing:
+            await ctx.send("No starboard found for this server.")
+        emoji_list = await StarboardEmojis.get_emojis(ctx.guild.id, 100)
+        joined_emoji = " ".join(emoji_list)
+        if joined_emoji:
+            await ctx.send(f"Emojis in starboard config: {joined_emoji}")
+        else:
+            await ctx.send("No emojis found in starboard config.")
 
     @starboard.command()
     async def remove_emoji(
