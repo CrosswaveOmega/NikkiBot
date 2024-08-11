@@ -280,6 +280,14 @@ async def detect_loggable_changes(
         QueueAll,
         batch,
     )
+    superlist += await process_planet_attacks(
+        new.status.planetActiveEffects,
+        old.status.planetActiveEffects,
+        "planetEffects",
+        ["index", "galacticEffectId"],
+        QueueAll,
+        batch,
+    )
 
     infoout = await get_differing_fields(
         old.war_info, new.war_info, to_ignore=["planetInfos"]
