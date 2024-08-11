@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta, timezone
+import datetime
+import re
 
 
 status_emoji = {
@@ -53,8 +54,8 @@ def extract_timestamp(timestamp):
             timestamp_adjusted += "Z"
         # timestamp_adjusted=timestamp_adjusted
     # Convert the adjusted timestamp string to a datetime object
-    datetime_obj = datetime.strptime(timestamp_adjusted, format_string).replace(
-        tzinfo=timezone.utc
+    datetime_obj = datetime.datetime.strptime(timestamp_adjusted, format_string).replace(
+        tzinfo=datetime.timezone.utc
     )
     return datetime_obj
 
@@ -82,3 +83,11 @@ def select_emoji(key):
     if key in status_emoji:
         return status_emoji.get(key)
     return status_emoji["emptyc"]
+
+
+pattern = r"<i=1>(.*?)<\/i>"
+pattern3 = r"<i=3>(.*?)<\/i>"
+def hdml_parse(input_str):
+    mes = re.sub(pattern, r"**\1**", input_str)
+    mes = re.sub(pattern3, r"***\1***", mes)
+    return mes

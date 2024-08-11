@@ -13,12 +13,11 @@ from .ABC.utils import (
     select_emoji as emj,
     changeformatif as cfi,
     extract_timestamp as et,
+    hdml_parse
 )
 from discord.utils import format_dt as fdt
 
-# Define the regex pattern to match <i=1>...</i> tags
-pattern = r"<i=1>(.*?)<\/i>"
-pattern3 = r"<i=3>(.*?)<\/i>"
+
 
 
 class Dispatch(BaseApiModel):
@@ -38,8 +37,7 @@ class Dispatch(BaseApiModel):
 
     def to_embed(self):
         # message=self.# Replace the matched patterns with markdown bold syntax
-        converted_text = re.sub(pattern, r"**\1**", self.message)
-        converted_text = re.sub(pattern3, r"***\1***", converted_text)
+        converted_text = hdml_parse(self.message)
         extract_time = et(self.published)
         return discord.Embed(
             title=f"Dispatch {self.id}, type {self.type}",

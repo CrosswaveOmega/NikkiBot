@@ -79,6 +79,17 @@ class ServerHDProfile(SuperEarthBase):
             .all()
         )
         return [row.webhook_url for row in query]
+
+    @staticmethod
+    def set_all_matching_webhook_to_none(webhook_url):
+        """
+        Sets all matching webhook_url values to None
+        """
+        session = DatabaseSingleton.get_session()
+        session.query(ServerHDProfile).filter_by(webhook_url=webhook_url).update({ServerHDProfile.webhook_url: None})
+        session.commit()
+    
+    
     def update(self, **kwargs):
         session = DatabaseSingleton.get_session()
         for key, value in kwargs.items():

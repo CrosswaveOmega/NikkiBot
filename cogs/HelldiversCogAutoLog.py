@@ -18,6 +18,7 @@ from bot import (
     TC_Cog_Mixin,
     TCBot,
 )
+from cogs.HD2.helldive.models.ABC.utils import hdml_parse
 from utility import WebhookMessageWrapper as web
 from bot.Tasks import TCTask, TCTaskManager
 
@@ -416,10 +417,29 @@ def custom_strftime(t):
     return out
 
 
-pattern = r"<i=1>(.*?)<\/i>"
-pattern3 = r"<i=3>(.*?)<\/i>"
 
+def getColor(owner):
+    if owner == 2:
+        return 0xEF8E20
+    elif owner == 3:
+        return 0xEF2020
+    elif owner == 1:
+        return 0x79E0FF
+    return 0x960096
 
+colors = {
+    "automaton": 0xfe6d72,  # Red
+    "terminids": 0xffc100,  # Yellow
+    "humans": 0x009696,  # Cyan-like color
+    "illuminate": 0x960096
+}
+
+colors2 = {
+    "automaton": 0xEF2020,  # Red
+    "terminids": 0xEF8E20,  # Yellow
+    "humans": 0x79E0FF,  # Cyan-like color
+    "illuminate": 0x960096
+}
 class Embeds:
     @staticmethod
     def campaignLogEmbed(
@@ -427,12 +447,16 @@ class Embeds:
     ) -> discord.Embed:
         strc = hd2.embeds.create_campaign_str(campaign)
         name, sector = campaign.planetIndex, None
+        color=0x009696
         if planet:
             name, sector = planet.get_name(False), planet.sector
+            color= colors.get(planet.currentOwner.lower(),0x009696)
+
         emb = discord.Embed(
-            title=f"Campaign Detected",
+            title=f"{name} Campaign {mode}",
             description=f"A campaign has {mode} for {name}, in sector {sector}.  \nTimestamp:{fdt(campaign.retrieved_at,'F')}",
             timestamp=campaign.retrieved_at,
+            color=color
         )
         emb.set_author(name=f"Campaign {mode}.")
         emb.set_footer(text=f"{strc},{custom_strftime(campaign.retrieved_at)}")
@@ -454,6 +478,7 @@ class Embeds:
             title=f"Planet Attack Detected",
             description=f"An attack has {mode} from {source_name} to {target_name}.   \nTimestamp:{fdt(atk.retrieved_at,'F')}",
             timestamp=atk.retrieved_at,
+            color=0x707cc8 if mode == "started" else 0xc08888
         )
         emb.set_author(name=f"Planet Attack {mode}.")
         emb.set_footer(text=f"{custom_strftime(atk.retrieved_at)}")
@@ -464,12 +489,14 @@ class Embeds:
         campaign: PlanetEvent, planet: Optional[Planet], mode="started"
     ) -> discord.Embed:
         name, sector = campaign.planetIndex, None
+        color=0x009696
         if planet:
             name, sector = planet.get_name(False), planet.sector
         emb = discord.Embed(
-            title=f"Planet Event Detected",
+            title=f"Planet {name} Event Detected",
             description=f"A new event has {mode} for {name}, in sector {sector}.   \nTimestamp:{fdt(campaign.retrieved_at,'F')}",
             timestamp=campaign.retrieved_at,
+            color=color
         )
         emb.add_field(name="Event Details", value=campaign.long_event_details())
         emb.set_author(name=f"Planet Event {mode}.")
@@ -483,12 +510,15 @@ class Embeds:
         campaign: PlanetActiveEffects, planet: Optional[Planet], mode="started"
     ) -> discord.Embed:
         name, sector = campaign.index, None
+        color=0x009696
         if planet:
             name, sector = planet.get_name(False), planet.sector
+            color= colors2.get(planet.currentOwner.lower(),0x009696)
         emb = discord.Embed(
-            title=f"Planet Effect Detected",
+            title=f"Planet {name} Effect Detected",
             description=f"An Effect has {mode} for {name}, in sector {sector}.\n\n Timestamp:{fdt(campaign.retrieved_at,'F')}",
             timestamp=campaign.retrieved_at,
+            color=color
         )
         emb.add_field(name="Galactic Effect ID", value=f"{campaign.galacticEffectId}")
         emb.set_author(name=f"Planet Effect {mode}.")
@@ -502,17 +532,16 @@ class Embeds:
         globtex = ""
         title = ""
         if evt.title:
-            mes = re.sub(pattern, r"**\1**", evt.title)
-            mes = re.sub(pattern3, r"***\1***", mes)
+            mes=hdml_parse(evt.title)
             globtex += f"### {mes}\n"
         if evt.message:
-            mes = re.sub(pattern, r"**\1**", evt.message)
-            mes = re.sub(pattern3, r"***\1***", mes)
+            mes=hdml_parse(evt.message)
             globtex += f"{mes}\n\n"
         emb = discord.Embed(
             title=f"Global Event Detected",
             description=f"A global event has {mode}.\n{globtex}",
             timestamp=evt.retrieved_at,
+            color=0x709c68
         )
         emb.add_field(name="Event Details", value=evt.strout())
         emb.add_field(name="Timestamp", value=f"Timestamp:{fdt(evt.retrieved_at,'F')}")
@@ -527,14 +556,20 @@ class Embeds:
         planet: Optional[Planet],
         mode="started",
     ) -> discord.Embed:
-        name, sector = "?", None
+        name, sector = "PLANET", None
+        color=0x8c90b0
         if planet:
             name, sector = planet.get_name(False), planet.sector
+            color= colors2.get(planet.currentOwner.lower(),0x8c90b0)
         globtex = json.dumps(dump, default=str)
+        if 'owner' in dump:
+            color=getColor(campaign.owner)
+
         emb = discord.Embed(
-            title=f"Planet Field Change",
+            title=f"{name} Field Change",
             description=f"Stats changed for {name}, in sector {sector}.\n```{globtex[:4000]}```",
             timestamp=campaign.retrieved_at,
+            color=color
         )
         emb.add_field(
             name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at,'F')}"
@@ -552,6 +587,7 @@ class Embeds:
             title=f"API Change",
             description=f"Field changed for {name}\n```{globtex[:4000]}```",
             timestamp=campaign.retrieved_at,
+            color=0x000054
         )
         emb.add_field(
             name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at,'F')}"
@@ -567,6 +603,7 @@ class Embeds:
             title=f"{title}",
             description=desc,
             timestamp=newsfeed.retrieved_at,
+            color=0x222222
         )
         emb.add_field(
             name="Timestamp", value=f"Timestamp:{fdt(newsfeed.retrieved_at,'F')}"

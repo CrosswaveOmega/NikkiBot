@@ -14,14 +14,13 @@ import re
 
 from discord.utils import format_dt as fdt
 
-from .helldive.models.ABC.utils import extract_timestamp as et
+from .helldive.models.ABC.utils import extract_timestamp as et, hdml_parse
 
 import random
 from .GameStatus import ApiStatus, get_feature_dictionary
 from .predict import make_prediction_for_eps, predict_needed_players
 
-pattern = r"<i=1>(.*?)<\/i>"
-pattern3 = r"<i=3>(.*?)<\/i>"
+
 
 
 def create_war_embed(stat: ApiStatus):
@@ -34,8 +33,7 @@ def create_war_embed(stat: ApiStatus):
     if stat.warall:
         for evt in stat.warall.status.globalEvents:
             if evt.title and evt.message:
-                mes = re.sub(pattern, r"**\1**", evt.message)
-                mes = re.sub(pattern3, r"***\1***", mes)
+                mes = hdml_parse(evt.message)
                 globtex += f"### {evt.title}\n{mes}\n\n"
     embed = discord.Embed(
         title="War", description=f"{globtex}\n{stat_str}"[:4096], color=0xFF0000

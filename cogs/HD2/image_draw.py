@@ -18,8 +18,6 @@ from utility.image_functions import draw_arrow, draw_dot
 SCALE = 1.2
 CELL_SIZE = 200
 GRIDDRAW = False
-pattern = r"<i=1>(.*?)<\/i>"
-pattern3 = r"<i=3>(.*?)<\/i>"
 
 
 def update_lastval_file(lastplanets):
