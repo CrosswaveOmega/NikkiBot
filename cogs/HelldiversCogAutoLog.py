@@ -493,7 +493,7 @@ class Embeds:
         emb.add_field(name="Galactic Effect ID", value=f"{campaign.galacticEffectId}")
         emb.set_author(name=f"Planet Effect {mode}.")
         emb.set_footer(
-            text=f"EID:{campaign.id}, {custom_strftime(campaign.retrieved_at)}"
+            text=f"{custom_strftime(campaign.retrieved_at)}"
         )
         return emb
 
