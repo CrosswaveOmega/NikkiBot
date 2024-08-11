@@ -467,7 +467,11 @@ class StarboardCog(commands.Cog):
         emlist = await StarboardEntryGivers.list_starrer_emojis(
             stars.guild_id, stars.message_id
         )
-        emoji = ",".join(emlist)
+        unique=[]
+        for e in emlist:
+            if not e in unique:
+                unique.append(e)
+        emoji = ",".join(unique)
 
         if stars.total > 1:
             content = (
