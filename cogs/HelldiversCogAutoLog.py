@@ -38,6 +38,7 @@ from cogs.HD2.helldive import (
     PlanetAttack,
     SimplePlanet,
     PlanetActiveEffects,
+    process_planet_attacks
 )
 from utility.manual_load import load_json_with_substitutions
 
@@ -860,9 +861,14 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
     @commands.is_owner()
     @commands.command(name="planeteffectget")
     async def peffect(self, ctx: commands.Context):
-        events, warstat = await self.apistatus.get_now(
-                self.apistatus.warall, self.QueueAll, None
-            )
+        await process_planet_attacks(
+            self.apistatus.warall.status.planetActiveEffects,
+            [],
+            "planetEffects",
+            ["index", "galacticEffectId"],
+            self.QueueAll,
+            1234567890,
+        )
         await ctx.send("Done testing now.")
 
     @property
