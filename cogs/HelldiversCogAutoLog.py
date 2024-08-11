@@ -477,6 +477,25 @@ class Embeds:
         return emb
 
     @staticmethod
+    def planeteffectsEmbed(
+        campaign: BaseApiModel, planet: Optional[Planet], mode="started"
+    ) -> discord.Embed:
+        name, sector = campaign.index, None
+        if planet:
+            name, sector = planet.get_name(False), planet.sector
+        emb = discord.Embed(
+            title=f"Planet Effect Detected",
+            description=f"An Effect has {mode} for {name}, in sector {sector}.\n\n effectId=**{campaign.galacticEffectId}**  \nTimestamp:{fdt(campaign.retrieved_at,'F')}",
+            timestamp=campaign.retrieved_at,
+        )
+        emb.add_field(name="Galactic Effect ID", value=f"{campaign.galacticEffectId}")
+        emb.set_author(name=f"Planet Effect {mode}.")
+        emb.set_footer(
+            text=f"EID:{campaign.id}, {custom_strftime(campaign.retrieved_at)}"
+        )
+        return emb
+
+    @staticmethod
     def globalEventEmbed(evt: GlobalEvent, mode="started") -> discord.Embed:
         globtex = ""
         title = ""
@@ -693,6 +712,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     self.apistatus.planets.get(int(value.planetIndex), None),
                     "started",
                 )
+            elif place == "planetEffects":
+                embed = Embeds.planeteffectsEmbed(
+                    value,
+                    self.apistatus.planets.get(int(value.index), None),
+                    "added",
+                )
             elif place == "globalEvents":
                 embed = Embeds.globalEventEmbed(value, "started")
             elif place == "news":
@@ -711,6 +736,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     value,
                     self.apistatus.planets.get(int(value.planetIndex), None),
                     "ended",
+                )
+            elif place == "planetEffects":
+                embed = Embeds.planeteffectsEmbed(
+                    value,
+                    self.apistatus.planets.get(int(value.index), None),
+                    "removed",
                 )
             elif place == "globalEvents":
                 embed = Embeds.globalEventEmbed(value, "ended")
