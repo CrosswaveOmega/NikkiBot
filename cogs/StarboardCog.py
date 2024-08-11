@@ -296,7 +296,7 @@ class StarboardCog(commands.Cog):
 
     @starboard.command()
     async def add_server_emoji(
-        self, ctx:commands.Context, emoji: Union[str, discord.PartialEmoji, discord.Emoji]
+        self, ctx:commands.Context
     ):
         """Add an emoji to this server's starboard settings."""
         existing = await Starboard.get_starboard(ctx.guild.id)
