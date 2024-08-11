@@ -487,7 +487,7 @@ class Embeds:
             name, sector = planet.get_name(False), planet.sector
         emb = discord.Embed(
             title=f"Planet Effect Detected",
-            description=f"An Effect has {mode} for {name}, in sector {sector}.\n\n effectId=**{campaign.galacticEffectId}**  \nTimestamp:{fdt(campaign.retrieved_at,'F')}",
+            description=f"An Effect has {mode} for {name}, in sector {sector}.\n\n Timestamp:{fdt(campaign.retrieved_at,'F')}",
             timestamp=campaign.retrieved_at,
         )
         emb.add_field(name="Galactic Effect ID", value=f"{campaign.galacticEffectId}")
