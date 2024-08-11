@@ -300,7 +300,7 @@ class StarboardCog(commands.Cog):
     ):
         """Add an emoji to this server's starboard settings."""
         existing = await Starboard.get_starboard(ctx.guild.id)
-        upd=False
+        upd=0
         if not existing:
             await ctx.send("No starboard found for this server.")
         for emoji in ctx.guild.emojis:
@@ -308,15 +308,17 @@ class StarboardCog(commands.Cog):
             if get:
                 pass
             else:
-                updated = await StarboardEmojis.add_emoji(ctx.guild.id, emoji)
+                updated = await StarboardEmojis.add_emoji(ctx.guild.id, str(emoji))
                 if updated:
-                    upd=True
+                    upd+=1
                 
         if upd:
             self.server_emoji_caches[ctx.guild.id] = await StarboardEmojis.get_emojis(
                 ctx.guild.id, 100
             )
-            await ctx.send(f"Al emoji added to starboard config.")
+            await ctx.send(f"{upd} emoji added to starboard config.")
+        else:
+            await ctx.send(f"{upd} emoji added to starboard config.")
 
 
     @starboard.command()
