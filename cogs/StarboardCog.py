@@ -35,7 +35,7 @@ class StarboardCog(commands.Cog):
         self, fmt: str, payload: discord.RawReactionActionEvent
     ) -> None:
         try:
-            print(str(payload.emoji))
+            self.bot.logs.info(str(payload.emoji))
             if payload.guild_id not in self.server_emoji_caches:
                 self.server_emoji_caches[payload.guild_id] = (
                     await StarboardEmojis.get_emojis(payload.guild_id, 100)
@@ -60,6 +60,7 @@ class StarboardCog(commands.Cog):
                 discord.utils.utcnow()
                 - discord.utils.snowflake_time(payload.message_id)
             ) > datetime.timedelta(days=30):
+                self.bot.logs.info("Too big.")
                 return
             async with self.lock:
                 message = await channel.fetch_message(payload.message_id)
@@ -70,7 +71,7 @@ class StarboardCog(commands.Cog):
                     return
 
                 if fmt == "star":
-                    print("adding starrer message", message.id, guild.id, starrer.id)
+                    self.bot.logs.info(f"adding starrer message {message.id} {guild.id} {starrer.id}")
                     await StarboardEntryGivers.add_starrer(
                         message.id,
                         guild.id,
@@ -96,15 +97,15 @@ class StarboardCog(commands.Cog):
                             guild.id, message.id, starrer.id
                         )
 
-                        print("unstarring message", old_entry, message.id, guild.id)
+                        self.bot.logs.info(f"unstarring message {message.id} {guild.id} {starrer.id}")
                         if old_entry:
 
                             if old_entry.emoji == str(payload.emoji):
-                                print("Same emoji...")
+                                self.bot.logs.info("Same emoji...")
                                 await session.delete(old_entry)
                                 await session.commit()
                             else:
-                                print("Different emoji...")
+                                self.bot.logs.info("Different emoji...")
                     await StarboardEntryTable.add_or_update_entry(
                         guild.id,
                         message.id,
@@ -177,12 +178,12 @@ class StarboardCog(commands.Cog):
         self.to_be_edited.pop(bot_message)
         mess = await urltomessage(bot_message, self.bot)
         if mess:
-            print("Editing random Starboard Emoji")
+            self.bot.logs.info("Editing random Starboard Emoji")
             entry = await StarboardEntryTable.get_with_url(bot_message)
             starboard = await Starboard.get_starboard(mess.guild.id)
             if entry and starboard:
                 if entry.total < starboard.threshold:
-                    print(
+                    self.bot.logs.info(
                         f"...entry deleted bc {entry.total} is less than {starboard.threshold}"
                     )
                     await StarboardEntryTable.delete_entry_by_bot_message_url(
@@ -190,11 +191,11 @@ class StarboardCog(commands.Cog):
                     )
                     await mess.delete()
                 else:
-                    print("...entry edited")
+                    self.bot.logs.info("...entry edited")
                     content, embed = await self.get_emoji_message(message, entry)
                     await mess.edit(content=content, embed=embed)
             else:
-                print("...entry edited")
+                self.bot.logs.info("...entry edited")
                 await StarboardEntryTable.delete_entry_by_bot_message_url(bot_message)
         else:
             starboard = await Starboard.get_starboard(mess.guild.id)
@@ -202,19 +203,19 @@ class StarboardCog(commands.Cog):
             entry = await StarboardEntryTable.get_entry(message.guild.id, message.id)
             if entry and starboard and starboard_channel:
                 if entry.total >= starboard.threshold:
-                    print("...Resending Message")
+                    self.bot.logs.info("...Resending Message")
                     content, embed = await self.get_emoji_message(message, entry)
                     bm = await starboard_channel.send(content, embed=embed)
                     entry = await StarboardEntryTable.add_or_update_bot_message(
                         message.guild.id, message.id, bm.id, bm.jump_url
                     )
                 else:
-                    print("Purging Message due to lack of stars")
+                    self.bot.logs.info("Purging Message due to lack of stars")
                     await StarboardEntryTable.delete_entry_by_bot_message_url(
                         bot_message
                     )
             else:
-                print("Purging Message due to lack of starboard")
+                self.bot.logs.info("Purging Message due to lack of starboard")
                 await StarboardEntryTable.delete_entry_by_bot_message_url(bot_message)
 
     @tasks.loop(seconds=15)
@@ -365,7 +366,7 @@ class StarboardCog(commands.Cog):
                 ctx.guild.id, session=session
             )
             for i, e in enumerate(all_entries):
-                print("checking entry ", i)
+                self.bot.logs.info("checking entry {i}")
                 starrers = []
                 message = await urltomessage(e.message_url, ctx.bot)
                 if not message:
@@ -436,7 +437,7 @@ class StarboardCog(commands.Cog):
         starboard = await Starboard.get_starboard(guild.id)
         if not starboard:
             return
-        print(bot_message, message)
+        self.bot.logs.info(bot_message, message)
         starboard_channel = self.bot.get_channel(starboard.channel_id)
         entry = await StarboardEntryTable.get_entry(guild.id, message.id)
         if not bot_message:
