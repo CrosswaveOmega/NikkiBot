@@ -859,9 +859,11 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             for e, l in random_choices:
                 sload+=f"{e}{l}\n"
                 known+=e
-            desc+=known+"`   `"
+            desc+=known
             if (((r+1) %3) == 0):
                 desc+="\n## "
+            else:
+                desc+="`   `"
             embed.add_field(name=f"Roll {r+1}",value=sload)
         embed.description=desc
         embed.set_author(name=f"Stratagem Roulette with {rolls} roll{'s' if rolls>1 else ''}")
