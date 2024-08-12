@@ -853,7 +853,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         random_choices = random.sample(stratagems, 4)
         sload=""
         for e in random_choices:
-            sload+=f"### {e}\n"
+            sload+=f"## {e}\n"
         embed=discord.Embed(title="Your Random Stratagem Loadout",description=sload)
         embed.set_author(name="Stratagem Roulette")
         await ctx.send(embed=embed)
