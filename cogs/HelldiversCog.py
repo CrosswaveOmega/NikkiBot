@@ -851,7 +851,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             ("<:EmancipatorExosuit:1272565280991875238>","[EXO-49 Emancipator Exosuit](https://helldivers.wiki.gg/wiki/EXO-49_Emancipator_Exosuit)")
         ]
         embed=discord.Embed(title=f"Your Random Stratagem Loadout{'s' if rolls>1 else ''}",)
-        desc="## "
+        desc="# "
         for r in range(0,rolls):
             random_choices = random.sample(stratagems, 4)
             sload=""
@@ -861,9 +861,9 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 known+=e
             desc+=known
             if (((r+1) %3) == 0):
-                desc+="\n## "
+                desc+="\n# "
             else:
-                desc+="  "
+                desc+="`   `"
             embed.add_field(name=f"Roll {r+1}",value=sload)
         embed.description=desc
         embed.set_author(name=f"Stratagem Roulette with {rolls} roll{'s' if rolls>1 else ''}")
