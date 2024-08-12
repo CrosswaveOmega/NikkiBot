@@ -5,7 +5,7 @@ from typing import Literal, Dict, List
 from assetloader import AssetLookup
 import gui
 import discord
-
+import random
 from datetime import datetime, timedelta, timezone
 from discord import app_commands
 import importlib
@@ -524,27 +524,30 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         name="real_time_log_subscribe", description="Subscribe to the real time log."
     )
     @app_commands.describe(channel="Channel to add the real time log webhook to")
-    async def real_time_log_subscribe(self, interaction: discord.Interaction, channel:discord.TextChannel):
+    async def real_time_log_subscribe(
+        self, interaction: discord.Interaction, channel: discord.TextChannel
+    ):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
         profile = ServerHDProfile.get_or_new(ctx.guild.id)
         guild = ctx.guild
-        #task_name = "WARSTATUS"
+        # task_name = "WARSTATUS"
         permissions = channel.permissions_for(channel.guild.me)
         if not permissions.manage_webhooks:
-            await ctx.send("Cannot make webhook in this channel",ephemeral=True)
+            await ctx.send("Cannot make webhook in this channel", ephemeral=True)
             return
-        webhook, thread=await web.getWebhookInChannel(channel)
+        webhook, thread = await web.getWebhookInChannel(channel)
         profile.update(webhook_url=webhook.url)
-        await ctx.send("Real Time log webhook subscription created.",ephemeral=True)
-        hooks=ServerHDProfile.get_entries_with_webhook()
-        lg=[AssetLookup.get_asset("loghook", "urls")]
+        await ctx.send("Real Time log webhook subscription created.", ephemeral=True)
+        hooks = ServerHDProfile.get_entries_with_webhook()
+        lg = [AssetLookup.get_asset("loghook", "urls")]
         for h in hooks:
             lg.append(h)
-        self.bot.get_cog("HelldiversAutoLog").loghook=lg
+        self.bot.get_cog("HelldiversAutoLog").loghook = lg
 
     @pcs.command(
-        name="real_time_log_unsubscribe", description="Unsubscribe to the real time log."
+        name="real_time_log_unsubscribe",
+        description="Unsubscribe to the real time log.",
     )
     @app_commands.describe()
     async def real_time_log_unsubscribe(self, interaction: discord.Interaction):
@@ -552,25 +555,19 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         profile = ServerHDProfile.get_or_new(ctx.guild.id)
         guild = ctx.guild
-        #task_name = "WARSTATUS"
+        # task_name = "WARSTATUS"
 
         profile.update(webhook_url=None)
-        await ctx.send("Real Time log webhook subscription cancelled.",ephemeral=True)
-        hooks=ServerHDProfile.get_entries_with_webhook()
-        lg=[AssetLookup.get_asset("loghook", "urls")]
+        await ctx.send("Real Time log webhook subscription cancelled.", ephemeral=True)
+        hooks = ServerHDProfile.get_entries_with_webhook()
+        lg = [AssetLookup.get_asset("loghook", "urls")]
         for h in hooks:
             lg.append(h)
-        self.bot.get_cog("HelldiversAutoLog").loghook=lg
-
-
-    
-    
-
+        self.bot.get_cog("HelldiversAutoLog").loghook = lg
 
     pc = app_commands.Group(name="hd2", description="Commands for Helldivers 2.")
-    @pc.command(
-        name="help", description="Learn how to use the helldivers commands"
-    )
+
+    @pc.command(name="help", description="Learn how to use the helldivers commands")
     async def getmanual(self, interaction: discord.Interaction) -> None:
         """Return a manual about the Helldivers features"""
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -791,6 +788,71 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         )
         emb, file = view.make_embed()
         await mes.edit(content="done", attachments=[file], embed=emb, view=view)
+
+    @app_commands.command(
+        name="stratagem_roulette", description="Get a random stratagem loadout."
+    )
+    async def stratagem_roulette(self, interaction: discord.Interaction):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        stratagems = [
+            ":MachineGun:[MG-43 Machine Gun](https://helldivers.wiki.gg/wiki/MG-43_Machine_Gun)",
+            ":AntiMaterielRifle:[APW-1 Anti-Materiel Rifle](https://helldivers.wiki.gg/wiki/APW-1_Anti-Materiel_Rifle)",
+            ":Stalwart:[M-105 Stalwart](https://helldivers.wiki.gg/wiki/M-105_Stalwart)",
+            ":ExpendableAntiTank:[EAT-17 Expendable Anti-Tank](https://helldivers.wiki.gg/wiki/EAT-17_Expendable_Anti-Tank)",
+            ":RecoillessRifle:[GR-8 Recoilless Rifle](https://helldivers.wiki.gg/wiki/GR-8_Recoilless_Rifle)",
+            ":Flamethrower:[FLAM-40 Flamethrower](https://helldivers.wiki.gg/wiki/FLAM-40_Flamethrower)",
+            ":Autocannon:[AC-8 Autocannon](https://helldivers.wiki.gg/wiki/AC-8_Autocannon)",
+            ":HeavyMachineGun:[MG-206 Heavy Machine Gun](https://helldivers.wiki.gg/wiki/MG-206_Heavy_Machine_Gun)",
+            ":AirburstRocketLauncher:[RL-77 Airburst Rocket Launcher](https://helldivers.wiki.gg/wiki/RL-77_Airburst_Rocket_Launcher)",
+            ":Commando:[MLS-4X Commando](https://helldivers.wiki.gg/wiki/MLS-4X_Commando)",
+            ":Railgun:[RS-422 Railgun](https://helldivers.wiki.gg/wiki/RS-422_Railgun)",
+            ":Spear:[FAF-14 Spear](https://helldivers.wiki.gg/wiki/FAF-14_Spear)",
+            ":OrbitalGatlingBarrage:[Orbital Gatling Barrage](https://helldivers.wiki.gg/wiki/Orbital_Gatling_Barrage)",
+            ":OrbitalAirburstStrike:[Orbital Airburst Strike](https://helldivers.wiki.gg/wiki/Orbital_Airburst_Strike)",
+            ":Orbital120mmHEBarrage:[Orbital 120mm HE Barrage](https://helldivers.wiki.gg/wiki/Orbital_120mm_HE_Barrage)",
+            ":Orbital380mmHEBarrage:[Orbital 380mm HE Barrage](https://helldivers.wiki.gg/wiki/Orbital_380mm_HE_Barrage)",
+            ":OrbitalWalkingBarrage:[Orbital Walking Barrage](https://helldivers.wiki.gg/wiki/Orbital_Walking_Barrage)",
+            ":OrbitalLaser:[Orbital Laser](https://helldivers.wiki.gg/wiki/Orbital_Laser)",
+            ":OrbitalRailcannonStrike:[Orbital Railcannon Strike](https://helldivers.wiki.gg/wiki/Orbital_Railcannon_Strike)",
+            ":EagleStrafingRun:[Eagle Strafing Run](https://helldivers.wiki.gg/wiki/Eagle_Strafing_Run)",
+            ":EagleAirstrike:[Eagle Airstrike](https://helldivers.wiki.gg/wiki/Eagle_Airstrike)",
+            ":EagleClusterBomb:[Eagle Cluster Bomb](https://helldivers.wiki.gg/wiki/Eagle_Cluster_Bomb)",
+            ":EagleNapalmAirstrike:[Eagle Napalm Airstrike](https://helldivers.wiki.gg/wiki/Eagle_Napalm_Airstrike)",
+            ":JumpPack:[LIFT-850 Jump Pack](https://helldivers.wiki.gg/wiki/LIFT-850_Jump_Pack)",
+            ":EagleSmokeStrike:[Eagle Smoke Strike](https://helldivers.wiki.gg/wiki/Eagle_Smoke_Strike)",
+            ":Eagle110mmRocketPods:[Eagle 110mm Rocket Pods](https://helldivers.wiki.gg/wiki/Eagle_110mm_Rocket_Pods)",
+            ":Eagle500kgBomb:[Eagle 500kg Bomb](https://helldivers.wiki.gg/wiki/Eagle_500kg_Bomb)",
+            ":OrbitalPrecisionStrike:[Orbital Precision Strike](https://helldivers.wiki.gg/wiki/Orbital_Precision_Strike)",
+            ":OrbitalGasStrike:[Orbital Gas Strike](https://helldivers.wiki.gg/wiki/Orbital_Gas_Strike)",
+            ":OrbitalEMSStrike:[Orbital EMS Strike](https://helldivers.wiki.gg/wiki/Orbital_EMS_Strike)",
+            ":OrbitalSmokeStrike:[Orbital Smoke Strike](https://helldivers.wiki.gg/wiki/Orbital_Smoke_Strike)",
+            ":HMGEmplacement:[E/MG-101 HMG Emplacement](https://helldivers.wiki.gg/wiki/E/MG-101_HMG_Emplacement)",
+            ":ShieldGeneratorRelay:[FX-12 Shield Generator Relay](https://helldivers.wiki.gg/wiki/FX-12_Shield_Generator_Relay)",
+            ":TeslaTower:[A/ARC-3 Tesla Tower](https://helldivers.wiki.gg/wiki/A/ARC-3_Tesla_Tower)",
+            ":AntiPersonnelMinefield:[MD-6 Anti-Personnel Minefield](https://helldivers.wiki.gg/wiki/MD-6_Anti-Personnel_Minefield)",
+            ":SupplyPack:[B-1 Supply Pack](https://helldivers.wiki.gg/wiki/B-1_Supply_Pack)",
+            ":GrenadeLauncher:[GL-21 Grenade Launcher](https://helldivers.wiki.gg/wiki/GL-21_Grenade_Launcher)",
+            ":LaserCannon:[LAS-98 Laser Cannon](https://helldivers.wiki.gg/wiki/LAS-98_Laser_Cannon)",
+            ":IncendiaryMines:[MD-I4 Incendiary Mines](https://helldivers.wiki.gg/wiki/MD-I4_Incendiary_Mines)",
+            ':GuardDogLaserRover:[AX/LAS-5 "Guard Dog" Rover](https://helldivers.wiki.gg/wiki/AX/LAS-5_%22Guard_Dog%22_Rover)',
+            ":BallisticShieldBackpack:[SH-20 Ballistic Shield Backpack](https://helldivers.wiki.gg/wiki/SH-20_Ballistic_Shield_Backpack)",
+            ":ArcThrower:[ARC-3 Arc Thrower](https://helldivers.wiki.gg/wiki/ARC-3_Arc_Thrower)",
+            ":AntiTankMines:[MD-17 Anti-Tank Mines](https://helldivers.wiki.gg/wiki/MD-17_Anti-Tank_Mines)",
+            ":QuasarCannon:[LAS-99 Quasar Cannon](https://helldivers.wiki.gg/wiki/LAS-99_Quasar_Cannon)",
+            ":ShieldGeneratorPack:[SH-32 Shield Generator Pack](https://helldivers.wiki.gg/wiki/SH-32_Shield_Generator_Pack)",
+            ":MachineGunSentry:[A/MG-43 Machine Gun Sentry](https://helldivers.wiki.gg/wiki/A/MG-43_Machine_Gun_Sentry)",
+            ":GatlingSentry:[A/G-16 Gatling Sentry](https://helldivers.wiki.gg/wiki/A/G-16_Gatling_Sentry)",
+            ":MortarSentry:[A/M-12 Mortar Sentry](https://helldivers.wiki.gg/wiki/A/M-12_Mortar_Sentry)",
+            ':GuardDogBulletRover:[AX/AR-23 "Guard Dog"](https://helldivers.wiki.gg/wiki/AX/AR-23_%22Guard_Dog%22)',
+            ":AutocannonSentry:[A/AC-8 Autocannon Sentry](https://helldivers.wiki.gg/wiki/A/AC-8_Autocannon_Sentry)",
+            ":RocketSentry:[A/MLS-4X Rocket Sentry](https://helldivers.wiki.gg/wiki/A/MLS-4X_Rocket_Sentry)",
+            ":EMSMortarSentry:[A/M-23 EMS Mortar Sentry](https://helldivers.wiki.gg/wiki/A/M-23_EMS_Mortar_Sentry)",
+            ":PatriotExosuit:[EXO-45 Patriot Exosuit](https://helldivers.wiki.gg/wiki/EXO-45_Patriot_Exosuit)",
+            ":EmancipatorExosuit:[EXO-49 Emancipator Exosuit](https://helldivers.wiki.gg/wiki/EXO-49_Emancipator_Exosuit)",
+        ]
+
+        random_choices = random.sample(stratagems, 4)
+        await ctx.send(",".join(random_choices))
 
 
 async def setup(bot):

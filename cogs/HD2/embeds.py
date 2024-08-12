@@ -21,8 +21,6 @@ from .GameStatus import ApiStatus, get_feature_dictionary
 from .predict import make_prediction_for_eps, predict_needed_players
 
 
-
-
 def create_war_embed(stat: ApiStatus):
     data, last = stat.war.get_first_change()
     stats = data["statistics"]

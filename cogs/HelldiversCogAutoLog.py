@@ -39,7 +39,7 @@ from cogs.HD2.helldive import (
     PlanetAttack,
     SimplePlanet,
     PlanetActiveEffects,
-    process_planet_attacks
+    process_planet_attacks,
 )
 from utility.manual_load import load_json_with_substitutions
 
@@ -274,13 +274,15 @@ class Batch:
 
         for planet_data in self.planets.values():
             trig_list: List[str] = planet_data.trig
-            combos.append(str(planet_data.planet.name) + ": `" + ",".join(trig_list)+"`")
+            combos.append(
+                str(planet_data.planet.name) + ": `" + ",".join(trig_list) + "`"
+            )
             combo: Optional[List[str]] = self.check_trig_combinations(
                 trig_list, planet_data
             )
             if combo:
                 for c in combo:
-                    
+
                     if c in self.hd2:
                         text: List[str] = self.format_combo_text(
                             c, planet_data, self.hd2[c]
@@ -306,7 +308,7 @@ class Batch:
                         combos.extend(text)
                     else:
                         combos.append(str(c))
-                        
+
         return combos
 
     def contains_all_values(
@@ -360,7 +362,7 @@ class Batch:
 
         if "planets_change" in trig_list:
             pass
-            #combinations.append("pcheck")
+            # combinations.append("pcheck")
 
         if any(
             value in trig_list for value in ["planetInfo_change"]
@@ -417,7 +419,6 @@ def custom_strftime(t):
     return out
 
 
-
 def getColor(owner):
     if owner == 2:
         return 0xEF8E20
@@ -427,19 +428,22 @@ def getColor(owner):
         return 0x79E0FF
     return 0x960096
 
+
 colors = {
-    "automaton": 0xfe6d72,  # Red
-    "terminids": 0xffc100,  # Yellow
+    "automaton": 0xFE6D72,  # Red
+    "terminids": 0xFFC100,  # Yellow
     "humans": 0x009696,  # Cyan-like color
-    "illuminate": 0x960096
+    "illuminate": 0x960096,
 }
 
 colors2 = {
     "automaton": 0xEF2020,  # Red
     "terminids": 0xEF8E20,  # Yellow
     "humans": 0x79E0FF,  # Cyan-like color
-    "illuminate": 0x960096
+    "illuminate": 0x960096,
 }
+
+
 class Embeds:
     @staticmethod
     def campaignLogEmbed(
@@ -447,16 +451,16 @@ class Embeds:
     ) -> discord.Embed:
         strc = hd2.embeds.create_campaign_str(campaign)
         name, sector = campaign.planetIndex, None
-        color=0x009696
+        color = 0x009696
         if planet:
             name, sector = planet.get_name(False), planet.sector
-            color= colors.get(planet.currentOwner.lower(),0x009696)
+            color = colors.get(planet.currentOwner.lower(), 0x009696)
 
         emb = discord.Embed(
             title=f"{name} Campaign {mode}",
             description=f"A campaign has {mode} for {name}, in sector {sector}.  \nTimestamp:{fdt(campaign.retrieved_at,'F')}",
             timestamp=campaign.retrieved_at,
-            color=color
+            color=color,
         )
         emb.set_author(name=f"Campaign {mode}.")
         emb.set_footer(text=f"{strc},{custom_strftime(campaign.retrieved_at)}")
@@ -478,7 +482,7 @@ class Embeds:
             title=f"Planet Attack Detected",
             description=f"An attack has {mode} from {source_name} to {target_name}.   \nTimestamp:{fdt(atk.retrieved_at,'F')}",
             timestamp=atk.retrieved_at,
-            color=0x707cc8 if mode == "started" else 0xc08888
+            color=0x707CC8 if mode == "started" else 0xC08888,
         )
         emb.set_author(name=f"Planet Attack {mode}.")
         emb.set_footer(text=f"{custom_strftime(atk.retrieved_at)}")
@@ -489,14 +493,14 @@ class Embeds:
         campaign: PlanetEvent, planet: Optional[Planet], mode="started"
     ) -> discord.Embed:
         name, sector = campaign.planetIndex, None
-        color=0x009696
+        color = 0x009696
         if planet:
             name, sector = planet.get_name(False), planet.sector
         emb = discord.Embed(
             title=f"Planet {name} Event Detected",
             description=f"A new event has {mode} for {name}, in sector {sector}.   \nTimestamp:{fdt(campaign.retrieved_at,'F')}",
             timestamp=campaign.retrieved_at,
-            color=color
+            color=color,
         )
         emb.add_field(name="Event Details", value=campaign.long_event_details())
         emb.set_author(name=f"Planet Event {mode}.")
@@ -510,21 +514,19 @@ class Embeds:
         campaign: PlanetActiveEffects, planet: Optional[Planet], mode="started"
     ) -> discord.Embed:
         name, sector = campaign.index, None
-        color=0x009696
+        color = 0x009696
         if planet:
             name, sector = planet.get_name(False), planet.sector
-            color= colors2.get(planet.currentOwner.lower(),0x009696)
+            color = colors2.get(planet.currentOwner.lower(), 0x009696)
         emb = discord.Embed(
             title=f"Planet {name} Effect Detected",
             description=f"An Effect has {mode} for {name}, in sector {sector}.\n\n Timestamp:{fdt(campaign.retrieved_at,'F')}",
             timestamp=campaign.retrieved_at,
-            color=color
+            color=color,
         )
         emb.add_field(name="Galactic Effect ID", value=f"{campaign.galacticEffectId}")
         emb.set_author(name=f"Planet Effect {mode}.")
-        emb.set_footer(
-            text=f"{custom_strftime(campaign.retrieved_at)}"
-        )
+        emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
         return emb
 
     @staticmethod
@@ -532,16 +534,16 @@ class Embeds:
         globtex = ""
         title = ""
         if evt.title:
-            mes=hdml_parse(evt.title)
+            mes = hdml_parse(evt.title)
             globtex += f"### {mes}\n"
         if evt.message:
-            mes=hdml_parse(evt.message)
+            mes = hdml_parse(evt.message)
             globtex += f"{mes}\n\n"
         emb = discord.Embed(
             title=f"Global Event Detected",
             description=f"A global event has {mode}.\n{globtex}",
             timestamp=evt.retrieved_at,
-            color=0x709c68
+            color=0x709C68,
         )
         emb.add_field(name="Event Details", value=evt.strout())
         emb.add_field(name="Timestamp", value=f"Timestamp:{fdt(evt.retrieved_at,'F')}")
@@ -557,19 +559,19 @@ class Embeds:
         mode="started",
     ) -> discord.Embed:
         name, sector = "PLANET", None
-        color=0x8c90b0
+        color = 0x8C90B0
         if planet:
             name, sector = planet.get_name(False), planet.sector
-            color= colors2.get(planet.currentOwner.lower(),0x8c90b0)
+            color = colors2.get(planet.currentOwner.lower(), 0x8C90B0)
         globtex = json.dumps(dump, default=str)
-        if 'owner' in dump:
-            color=getColor(campaign.owner)
+        if "owner" in dump:
+            color = getColor(campaign.owner)
 
         emb = discord.Embed(
             title=f"{name} Field Change",
             description=f"Stats changed for {name}, in sector {sector}.\n```{globtex[:4000]}```",
             timestamp=campaign.retrieved_at,
-            color=color
+            color=color,
         )
         emb.add_field(
             name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at,'F')}"
@@ -587,7 +589,7 @@ class Embeds:
             title=f"API Change",
             description=f"Field changed for {name}\n```{globtex[:4000]}```",
             timestamp=campaign.retrieved_at,
-            color=0x000054
+            color=0x000054,
         )
         emb.add_field(
             name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at,'F')}"
@@ -603,7 +605,7 @@ class Embeds:
             title=f"{title}",
             description=desc,
             timestamp=newsfeed.retrieved_at,
-            color=0x222222
+            color=0x222222,
         )
         emb.add_field(
             name="Timestamp", value=f"Timestamp:{fdt(newsfeed.retrieved_at,'F')}"
@@ -695,7 +697,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             texts = self.batches[batch_id].combo_checker()
             for t in texts:
                 for hook in list(self.loghook):
-                    
+
                     try:
                         await web.postMessageAsWebhookWithURL(
                             hook,
@@ -704,10 +706,10 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                             avatar_url=self.bot.user.avatar.url,
                         )
                     except Exception as e:
-                        await self.bot.send_error(e,"Webhook error")
-                        if hook!=AssetLookup.get_asset("loghook", "urls"):
+                        await self.bot.send_error(e, "Webhook error")
+                        if hook != AssetLookup.get_asset("loghook", "urls"):
                             self.loghook.remove(hook)
-                            #ServerHDProfile.set_all_matching_webhook_to_none(hook)
+                            # ServerHDProfile.set_all_matching_webhook_to_none(hook)
 
             self.batches.pop(batch_id)
 
@@ -807,18 +809,17 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             for hook in list(self.loghook):
                 try:
                     await web.postMessageAsWebhookWithURL(
-                    hook,
-                    message_content="",
-                    display_username="Super Earth Event Log",
-                    avatar_url=self.bot.user.avatar.url,
-                    embed=[embed],
+                        hook,
+                        message_content="",
+                        display_username="Super Earth Event Log",
+                        avatar_url=self.bot.user.avatar.url,
+                        embed=[embed],
                     )
                 except Exception as e:
-                    await self.bot.send_error(e,"Webhook error")
-                    if hook!=AssetLookup.get_asset("loghook", "urls"):
+                    await self.bot.send_error(e, "Webhook error")
+                    if hook != AssetLookup.get_asset("loghook", "urls"):
                         self.loghook.remove(hook)
-                        #ServerHDProfile.set_all_matching_webhook_to_none(hook)
-
+                        # ServerHDProfile.set_all_matching_webhook_to_none(hook)
 
     @run2.error
     async def logerror(self, ex):
@@ -846,11 +847,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         Load results from api.
         """
         if not self.loghook:
-            hooks=ServerHDProfile.get_entries_with_webhook()
-            lg=[AssetLookup.get_asset("loghook", "urls")]
+            hooks = ServerHDProfile.get_entries_with_webhook()
+            lg = [AssetLookup.get_asset("loghook", "urls")]
             for h in hooks:
                 lg.append(h)
-            self.loghook=lg
+            self.loghook = lg
         self.get_running = True
         if self.test_with:
             if self.spot >= len(self.test_with):

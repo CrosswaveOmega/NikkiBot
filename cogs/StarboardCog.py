@@ -71,7 +71,9 @@ class StarboardCog(commands.Cog):
                     return
 
                 if fmt == "star":
-                    self.bot.logs.info(f"adding starrer message {message.id} {guild.id} {starrer.id}")
+                    self.bot.logs.info(
+                        f"adding starrer message {message.id} {guild.id} {starrer.id}"
+                    )
                     await StarboardEntryGivers.add_starrer(
                         message.id,
                         guild.id,
@@ -97,7 +99,9 @@ class StarboardCog(commands.Cog):
                             guild.id, message.id, starrer.id
                         )
 
-                        self.bot.logs.info(f"unstarring message {message.id} {guild.id} {starrer.id}")
+                        self.bot.logs.info(
+                            f"unstarring message {message.id} {guild.id} {starrer.id}"
+                        )
                         if old_entry:
 
                             if old_entry.emoji == str(payload.emoji):
@@ -296,12 +300,10 @@ class StarboardCog(commands.Cog):
             await ctx.send(f"Valid emoji {emoji} added to starboard config.")
 
     @starboard.command()
-    async def add_server_emoji(
-        self, ctx:commands.Context
-    ):
+    async def add_server_emoji(self, ctx: commands.Context):
         """Add an emoji to this server's starboard settings."""
         existing = await Starboard.get_starboard(ctx.guild.id)
-        upd=0
+        upd = 0
         if not existing:
             await ctx.send("No starboard found for this server.")
         for emoji in ctx.guild.emojis:
@@ -313,8 +315,8 @@ class StarboardCog(commands.Cog):
             else:
                 updated = await StarboardEmojis.add_emoji(ctx.guild.id, str(emoji))
                 if updated:
-                    upd+=1
-                
+                    upd += 1
+
         if upd:
             self.server_emoji_caches[ctx.guild.id] = await StarboardEmojis.get_emojis(
                 ctx.guild.id, 100
@@ -322,7 +324,6 @@ class StarboardCog(commands.Cog):
             await ctx.send(f"{upd} emoji added to starboard config.")
         else:
             await ctx.send(f"{upd} emoji added to starboard config.")
-
 
     @starboard.command()
     async def display_emoji_message(self, ctx):
@@ -467,7 +468,7 @@ class StarboardCog(commands.Cog):
         emlist = await StarboardEntryGivers.list_starrer_emojis(
             stars.guild_id, stars.message_id
         )
-        unique=[]
+        unique = []
         for e in emlist:
             if not e in unique:
                 unique.append(e)
