@@ -792,7 +792,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     @app_commands.command(
         name="stratagem_roulette", description="Get a random stratagem loadout."
     )
-    async def stratagem_roulette(self, interaction: discord.Interaction):
+    async def stratagem_roulette(self, interaction: discord.Interaction, rolls:app_commands.Range[int, 1, 9]):
         ctx: commands.Context = await self.bot.get_context(interaction)
         stratagems = [
             "<:MachineGun:1272565567710036031>[MG-43 Machine Gun](https://helldivers.wiki.gg/wiki/MG-43_Machine_Gun)",
@@ -850,12 +850,15 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             "<:PatriotExosuit:1272565903724253224>[EXO-45 Patriot Exosuit](https://helldivers.wiki.gg/wiki/EXO-45_Patriot_Exosuit)",
             "<:EmancipatorExosuit:1272565280991875238>[EXO-49 Emancipator Exosuit](https://helldivers.wiki.gg/wiki/EXO-49_Emancipator_Exosuit)",
         ]
-        random_choices = random.sample(stratagems, 4)
-        sload=""
-        for e in random_choices:
-            sload+=f"## {e}\n"
-        embed=discord.Embed(title="Your Random Stratagem Loadout",description=sload)
-        embed.set_author(name="Stratagem Roulette")
+        embed=discord.Embed(title=f"Your Random Stratagem Loadout{'s' if rolls>1 else ''}",)
+        for r in range(0,rolls):
+            random_choices = random.sample(stratagems, 4)
+            sload=""
+            for e in random_choices:
+                sload+=f"## {e}\n"
+            embed.add_field(name=f"Roll {r+1}",value=sload)
+            
+        embed.set_author(name=f"Stratagem Roulette with {rolls} roll{'s' if rolls>1 else ''}")
         await ctx.send(embed=embed)
 
 
