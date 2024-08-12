@@ -851,7 +851,12 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             "<:EmancipatorExosuit:1272565280991875238>[EXO-49 Emancipator Exosuit](https://helldivers.wiki.gg/wiki/EXO-49_Emancipator_Exosuit)",
         ]
         random_choices = random.sample(stratagems, 4)
-        await ctx.send(",\n".join(random_choices))
+        sload=""
+        for e in random_choices:
+            sload+=f"### {e}\n"
+        embed=discord.Embed(title="Your Random Stratagem Loadout",description=sload)
+        embed.set_author(name="Stratagem Roulette")
+        await ctx.send(embed=embed)
 
 
 async def setup(bot):
