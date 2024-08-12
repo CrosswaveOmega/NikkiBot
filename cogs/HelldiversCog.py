@@ -851,15 +851,17 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             ("<:EmancipatorExosuit:1272565280991875238>","[EXO-49 Emancipator Exosuit](https://helldivers.wiki.gg/wiki/EXO-49_Emancipator_Exosuit)")
         ]
         embed=discord.Embed(title=f"Your Random Stratagem Loadout{'s' if rolls>1 else ''}",)
-        desc=""
+        desc="## "
         for r in range(0,rolls):
             random_choices = random.sample(stratagems, 4)
             sload=""
-            known=f"## R{r+1}"
+            known=f"R{r+1}"
             for e, l in random_choices:
                 sload+=f"{e}{l}\n"
                 known+=e
-            desc+=known+"\n"
+            desc+=known+"  "
+            if (r+1) %3==0
+            desc+="\n## "
             embed.add_field(name=f"Roll {r+1}",value=sload)
         embed.description=desc
         embed.set_author(name=f"Stratagem Roulette with {rolls} roll{'s' if rolls>1 else ''}")
