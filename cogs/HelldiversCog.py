@@ -863,7 +863,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             if (((r+1) %3) == 0):
                 desc+="\n## "
             else:
-                desc+="`   `"
+                desc+="  "
             embed.add_field(name=f"Roll {r+1}",value=sload)
         embed.description=desc
         embed.set_author(name=f"Stratagem Roulette with {rolls} roll{'s' if rolls>1 else ''}")
