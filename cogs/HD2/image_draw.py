@@ -220,7 +220,7 @@ def create_gif(filepath, apistat: ApiStatus):
         gpos = planet.position
         x = gpos.x
         y = gpos.y
-        hper = str(planet.health_percent())
+        hper = str(planet.sector)
         hp = (math.ceil(planet.health_percent()) // 10) * 10
         name = str(planet.index)+":"+str(planet.name).replace(" ", "\n")
         if apistat and apistat.warall:
