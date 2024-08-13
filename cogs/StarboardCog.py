@@ -66,16 +66,17 @@ class StarboardCog(commands.Cog):
             
             async with self.lock:
                 message = await channel.fetch_message(payload.message_id)
-                blacklist_words = self.blacklist
-                if any(word in message.content.lower() for word in blacklist_words):
-                    self.bot.logs.info("blacklist detected")
-                    return
+
                 url = message.jump_url
                 starrer = payload.member or (await guild.fetch_member(payload.user_id))
                 if starrer is None or starrer.bot:
                     return
 
                 if fmt == "star":
+                    blacklist_words = self.blacklist
+                    if any(word in message.content.lower() for word in blacklist_words):
+                        self.bot.logs.info("blacklist detected")
+                        return
                     self.bot.logs.info(
                         f"adding starrer message {message.id} {guild.id} {starrer.id}"
                     )
