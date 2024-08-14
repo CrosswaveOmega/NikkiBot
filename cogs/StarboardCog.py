@@ -71,6 +71,9 @@ class StarboardCog(commands.Cog):
                 starrer = payload.member or (await guild.fetch_member(payload.user_id))
                 if starrer is None or starrer.bot:
                     return
+                
+                if message.author.bot:
+                    return
 
                 if fmt == "star":
                     blacklist_words = self.blacklist
