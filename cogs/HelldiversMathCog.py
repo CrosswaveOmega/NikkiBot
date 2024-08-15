@@ -7,13 +7,21 @@ from discord.ext import commands
 
 import cogs.HD2 as hd2
 
+from discord.app_commands import Choice
 # import datetime
 from bot import (
     TC_Cog_Mixin,
     TCBot,
 )
+from typing import *
 from utility import load_json_with_substitutions
 
+mode=Literal['health','lib']
+
+calculation_modes=[  # param name
+    Choice(name="Raw Planetary Health/damage per second", value="health"),
+    Choice(name="Planetary Liberation/liberation per hour", value="lib"),
+]
 
 class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
     """Cog for helldivers 2.  Consider it my embedded automaton spy."""
@@ -140,6 +148,31 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
             f"`{eps}` dps is about `{dps}` dps per second, and `{lps}` liberation per hour.",
             ephemeral=True,
         )
+
+    @calc.command(
+        name="estimate_target_dps",
+        description="Estimate the target dps(or lph) given the target hp, seconds/hours, and decay",
+    )
+    @app_commands.describe(hp="target planetary hp")
+    @app_commands.describe(timev="target planetary hp")
+    @app_commands.describe(regenrate="Decay rate in dps or lph")
+    @app_commands.choices(
+        filter=calculation_modes
+    )
+    async def estimate_target_dps(self, interaction: discord.Interaction, hp:float, timev:float, regenrate:float,mode:mode):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        dps = hd2.maths.dps_for_time(hp, timev, regenrate)
+        if mode=='health':
+            await ctx.send(
+                f"For hp`{hp}` in `{timev}` seconds, the target dps must be `{dps}`.",
+                ephemeral=True,
+            )
+        else:
+            await ctx.send(
+                f"For lib `{hp}` in `{timev}` hours, the target capture rate must be `{dps}`.",
+                ephemeral=True,
+            )
+
 
     @calc.command(
         name="impactdatacollection",

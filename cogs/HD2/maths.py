@@ -21,3 +21,9 @@ class maths:
     def dps_to_eps(dps: float, regenRate: float, impactMultiplier: float):
         eps = (dps + regenRate) / impactMultiplier
         return eps
+    
+
+    @staticmethod
+    def dps_for_time( hp:float, timev:float, regenrate:float):
+        dps = (hp + timev*regenrate) / regenrate
+        return dps
