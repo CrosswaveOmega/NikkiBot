@@ -157,7 +157,8 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
     @app_commands.describe(timev="target planetary hp")
     @app_commands.describe(regenrate="Decay rate in dps or lph")
     @app_commands.choices(
-        filter=calculation_modes
+        filter=   [Choice(name="Raw Planetary Health/damage per second", value="health"),
+    Choice(name="Planetary Liberation/liberation per hour", value="lib"),]
     )
     async def estimate_target_dps(self, interaction: discord.Interaction, hp:float, timev:float, regenrate:float,mode:mode):
         ctx: commands.Context = await self.bot.get_context(interaction)
