@@ -28,7 +28,7 @@
         },
         {
           "name": "Current dedicated HD2_Calc commands",
-          "value": "Nikki has a small collection of Mathdiving specific calculation commands, at `/hd2_calc`:\n1. `Damage per second` to `liberation per hour`\n2. `Influence per second` to `damage per second`\n3. Players needed for a target `damage per second` considering decay rate for a ***specific planet***\n4. Players needed for a target `liberation per hour` considering decay rate for a ***specific planet***"
+          "value": "Nikki has a small collection of Mathdiving specific calculation commands, at `/hd2_calc`:\n1. `Damage per second` to `liberation per hour`\n2. `Influence per second` to `damage per second`\n3. Players needed for a target `damage per second` considering decay rate for a ***specific planet***\n4. Players needed for a target `liberation per hour` considering decay rate for a ***specific planet***, and for getting required damage for liberating a select planet in x time."
         }
       ]
     }
