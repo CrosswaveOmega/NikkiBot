@@ -38,7 +38,10 @@ faction_names = {
     5: "ERR",
     15: "ERR",
 }
-
+samples={
+    3992382197:'Common',
+    2985106497:'Rare',
+}
 
 from .ABC.utils import changeformatif as cfi
 from .ABC.utils import extract_timestamp as et
@@ -105,6 +108,7 @@ class Task2(BaseApiModel):
             if self["type"] == 13:
                 mode = "Control"
                 taskstr = f"{e}. Control {planet_name}. Status:`{'ok' if curr==1 else f'{health},{curr}'}`"
+        elif self['type']==2:
 
         elif self["type"] == 12:
             planet_name = taskdata["planet_index"]

@@ -6,7 +6,7 @@ import numpy as np
 
 from .helldive import *
 from .utils import prioritized_string_split
-from hd2json.jsonutils import load_planets_from_directory
+from hd2json.jsonutils import load_and_merge_json_files
 
 
 class LimitedSizeList(list):
@@ -82,7 +82,7 @@ class ApiStatus:
         self.last_planet_get: datetime.datetime = datetime.datetime(2024, 1, 1, 0, 0, 0)
         self.warall: DiveharderAll = None
         self.nowval = DiveharderAll(status=WarStatus(), war_info=WarInfo())
-        self.planetdata: Dict[str, Any] = load_planets_from_directory(
+        self.planetdata: Dict[str, Any] = load_and_merge_json_files(
             "./hd2json/planets"
         )
 
