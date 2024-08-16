@@ -127,7 +127,7 @@ class Task2(BaseApiModel):
                 rare=taskdata['rarity'][0]
                 rarity=samples.get(rare,"")+" "
 
-            taskstr += f"/{hf(goal)} {rarity}samples ({(int(curr)/int(goal))*100.0}) {faction_name}"
+            taskstr += f"/{hf(goal)} {rarity}samples ({round((int(curr)/int(goal))*100.0,3)}) {faction_name}"
             
             if onplanet is not None and lc is not None:
                 if lc[0]:
