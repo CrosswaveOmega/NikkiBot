@@ -109,7 +109,8 @@ class Task2(BaseApiModel):
                 mode = "Control"
                 taskstr = f"{e}. Control {planet_name}. Status:`{'ok' if curr==1 else f'{health},{curr}'}`"
         elif self['type']==2:
-
+            dump = json.dumps(taskdata, default=str)[:108]
+            taskstr += f"{dump}"
         elif self["type"] == 12:
             planet_name = taskdata["planet_index"]
             if self.values:
