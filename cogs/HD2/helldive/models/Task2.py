@@ -109,20 +109,20 @@ class Task2(BaseApiModel):
                 mode = "Control"
                 taskstr = f"{e}. Control {planet_name}. Status:`{'ok' if curr==1 else f'{health},{curr}'}`"
         elif self['type']==2:
-            if not all(key in taskdata for key in ["goal", "race"]):
+            if not all(key in taskdata for key in ["goal"]):
                 dump = json.dumps(taskdata, default=str)[:258]
                 taskstr += f"{dump}"
                 return
-            faction_name = faction_names.get(
-                taskdata["race"][0], f"Unknown Faction {taskdata['race'][0]}"
-            )
+            faction_name=""
+            if  "race" in taskdata:
+                faction_name = "("+faction_names.get(
+                    taskdata["race"][0], f"Unknown Faction {taskdata['race'][0]}"
+                )+ ' type)'
             goal = taskdata["goal"][0]
             rarity=''
             lc = taskdata.get("liberate", None)
             onplanet = taskdata.get("planet_index", None)
-            faction_name = faction_names.get(
-                taskdata["race"][0], f"Unknown Faction {taskdata['race'][0]}"
-            )
+
             if 'rarity' in taskdata:
                 rare=taskdata['rarity'][0]
                 rarity=samples.get(rare,"")+" "
