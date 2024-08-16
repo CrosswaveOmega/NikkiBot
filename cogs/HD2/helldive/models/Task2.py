@@ -109,17 +109,17 @@ class Task2(BaseApiModel):
                 mode = "Control"
                 taskstr = f"{e}. Control {planet_name}. Status:`{'ok' if curr==1 else f'{health},{curr}'}`"
         elif self['type']==2:
-            dump = json.dumps(taskdata, default=str)[:108]
+            dump = json.dumps(taskdata, default=str)[:258]
             taskstr += f"{dump}"
         elif self["type"] == 12:
             planet_name = taskdata["planet_index"]
             if self.values:
-                taskstr += json.dumps(taskdata, default=str)[:108]
+                taskstr += json.dumps(taskdata, default=str)[:258]
             else:
                 taskstr += "Defend planets?"
         elif self["type"] == 3:
             if not all(key in taskdata for key in ["goal", "race"]):
-                dump = json.dumps(taskdata, default=str)[:108]
+                dump = json.dumps(taskdata, default=str)[:258]
                 taskstr += f"{dump}"
                 return
             faction_name = faction_names.get(
@@ -138,6 +138,6 @@ class Task2(BaseApiModel):
                             planet_name = planet.get_name()
                             taskstr += f", On {planet_name}"
         else:
-            dump = json.dumps(taskdata, default=str)[:108]
+            dump = json.dumps(taskdata, default=str)[:258]
             taskstr += f"{dump}"
         return taskstr
