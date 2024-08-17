@@ -11,7 +11,10 @@ from .ABC.utils import (
 from discord.utils import format_dt as fdt
 
 
-    
+rewards={
+    897894480:1,
+    3608481516:2
+} 
 class Reward(BaseApiModel):
     """
     None model
@@ -27,6 +30,12 @@ class Reward(BaseApiModel):
     
     def format(self):
         """Return the string representation of any reward."""
-        if self.type == 1:
+        type=self.type
+        if self.id32 in rewards:
+           type=rewards[self.id32] 
+        if type == 1:
             return f"{emj('medal')} × {self.amount}"
+        if type ==2:
+            return f"{emj('req')} × {self.amount}"
+        
         return f"Unknown type:{self.type} × {self.amount}"
