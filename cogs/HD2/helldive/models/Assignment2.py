@@ -6,6 +6,7 @@ from .ABC.model import BaseApiModel
 from .Reward2 import Reward2
 from .Task2 import Task2
 from .Planet import Planet
+from .Reward import Reward
 from PIL import Image, ImageDraw, ImageFont
 from discord.utils import format_dt as fdt
 from .ABC.utils import changeformatif as cfi
@@ -55,7 +56,7 @@ class Assignment2(BaseApiModel):
             description=self.description,
             tasks=self.tasks,
             reward=self.reward,
-            self.rewards=self.rewards,
+            rewards=self.rewards,
             expiration=self.expiration,
         )
 
