@@ -40,6 +40,9 @@ class Assignment2(BaseApiModel):
 
     reward: Optional[Reward2] = Field(alias="reward", default=None)
 
+    rewards: Optional[List[Optional[Reward]]]=Field(alias="rewards", default=None)
+
+
     expiration: Optional[str] = Field(alias="expiration", default=None)
 
     def __sub__(self, other):
@@ -52,6 +55,7 @@ class Assignment2(BaseApiModel):
             description=self.description,
             tasks=self.tasks,
             reward=self.reward,
+            self.rewards=self.rewards,
             expiration=self.expiration,
         )
 
