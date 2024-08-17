@@ -188,9 +188,15 @@ class ApiStatus:
 
             while attempt_count < 3:
                 try:
-                    assignments = await GetApiV1AssignmentsAll(
+                    as1 = await GetApiV1AssignmentsAll(
                         api_config_override=self.client
                     )
+                    assignments=[]
+                    for a in as1:
+                        for m in self.warall.major_order:
+                            if m.id32==a.id:
+                                a.rewards=a.rewards
+                    
                     break
                 except Exception as e:
                     attempt_count += 1
