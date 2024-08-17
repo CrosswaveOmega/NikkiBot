@@ -196,7 +196,7 @@ class ApiStatus:
                         for m in self.warall.major_order:
                             print(m.id32)
                             if m.id32==a.id:
-                                a.rewards=m.rewards
+                                a.rewards=m.setting.rewards
                         assignments.append(a)
                     break
                 except Exception as e:
