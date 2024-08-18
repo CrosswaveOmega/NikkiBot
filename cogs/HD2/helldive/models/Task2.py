@@ -120,7 +120,7 @@ class Task2(BaseApiModel):
                     health = planet.health_percent()
                 if self["type"] == 11:
                     mode = "Liberate"
-                   taskstr = f"{e}. Liberate {planet_name}. Status: `{'ok' if curr==1 else f'{health},{curr}'}`"
+                    taskstr = f"{e}. Liberate {planet_name}. Status: `{'ok' if curr==1 else f'{health},{curr}'}`"
                 if self["type"] == 13:
                     mode = "Control"
                     taskstr = f"{e}. Control {planet_name}. Status:`{'ok' if curr==1 else f'{health},{curr}'}`"
