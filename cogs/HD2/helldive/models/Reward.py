@@ -13,7 +13,8 @@ from discord.utils import format_dt as fdt
 
 rewards={
     897894480:1,
-    3608481516:2
+    3608481516:2,
+    3481751602:3
 } 
 class Reward(BaseApiModel):
     """
@@ -37,5 +38,7 @@ class Reward(BaseApiModel):
             return f"{emj('medal')} × {self.amount}"
         if type ==2:
             return f"{emj('req')} × {self.amount}"
-        
+        if type ==3:
+            return f"{emj('supercredits')} × {self.amount}"
+
         return f"Unknown type:{self.type} × {self.amount}"
