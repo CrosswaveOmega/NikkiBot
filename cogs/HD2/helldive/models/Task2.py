@@ -109,7 +109,7 @@ class Task2(BaseApiModel):
                 if not all(key in taskdata for key in ["planet"]):
                     dump = json.dumps(taskdata, default=str)[:108]
                     taskstr += f"{dump}"
-                    return
+                    return taskstr
                 planet_id = taskdata["planet"][0]
                 planet_name = "ERR"
                 health = "?"
@@ -128,7 +128,7 @@ class Task2(BaseApiModel):
                 if not all(key in taskdata for key in ["goal"]):
                     dump = json.dumps(taskdata, default=str)[:258]
                     taskstr += f"{dump}"
-                    return
+                    return taskstr
                 faction_name=""
                 if  "faction" in taskdata:
                     faction_name = "("+faction_names.get(
@@ -156,7 +156,7 @@ class Task2(BaseApiModel):
                 if not all(key in taskdata for key in ["goal", "hasCount"]):
                     dump = json.dumps(taskdata, default=str)[:258]
                     taskstr += f"{dump}"
-                    return
+                    return taskstr
                 faction_name=""
                 if  "faction" in taskdata:
                     faction_name = "from "+faction_names.get(
@@ -179,7 +179,7 @@ class Task2(BaseApiModel):
                 if not all(key in taskdata for key in ["goal", "faction"]):
                     dump = json.dumps(taskdata, default=str)[:258]
                     taskstr += f"{dump}"
-                    return
+                    return taskstr
                 faction_name = faction_names.get(
                     taskdata["faction"][0], f"Unknown Faction {taskdata['faction'][0]}"
                 )
