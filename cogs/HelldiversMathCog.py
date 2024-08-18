@@ -8,6 +8,7 @@ from discord.ext import commands
 import cogs.HD2 as hd2
 
 from discord.app_commands import Choice
+
 # import datetime
 from bot import (
     TC_Cog_Mixin,
@@ -16,12 +17,13 @@ from bot import (
 from typing import *
 from utility import load_json_with_substitutions
 
-mode=Literal['health','lib']
+mode = Literal["health", "lib"]
 
-calculation_modes=[  # param name
+calculation_modes = [  # param name
     Choice(name="Raw Planetary Health/damage per second", value="health"),
     Choice(name="Planetary Liberation/liberation per hour", value="lib"),
 ]
+
 
 class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
     """Cog for helldivers 2.  Consider it my embedded automaton spy."""
@@ -157,13 +159,22 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
     @app_commands.describe(timev="target planetary hp")
     @app_commands.describe(regenrate="Decay rate in dps or lph")
     @app_commands.choices(
-        mode=   [Choice(name="Raw Planetary Health/damage per second", value="health"),
-    Choice(name="Planetary Liberation/liberation per hour", value="lib"),]
+        mode=[
+            Choice(name="Raw Planetary Health/damage per second", value="health"),
+            Choice(name="Planetary Liberation/liberation per hour", value="lib"),
+        ]
     )
-    async def estimate_target_dps(self, interaction: discord.Interaction, hp:float, timev:float, regenrate:float,mode:mode):
+    async def estimate_target_dps(
+        self,
+        interaction: discord.Interaction,
+        hp: float,
+        timev: float,
+        regenrate: float,
+        mode: mode,
+    ):
         ctx: commands.Context = await self.bot.get_context(interaction)
         dps = hd2.maths.dps_for_time(hp, timev, regenrate)
-        if mode=='health':
+        if mode == "health":
             await ctx.send(
                 f"For hp`{hp}` in `{timev}` seconds, the target dps must be `{dps}`.",
                 ephemeral=True,
@@ -173,7 +184,6 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
                 f"For lib `{hp}` in `{timev}` hours, the target capture rate must be `{dps}`.",
                 ephemeral=True,
             )
-
 
     @calc.command(
         name="impactdatacollection",

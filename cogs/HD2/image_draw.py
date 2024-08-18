@@ -222,11 +222,11 @@ def create_gif(filepath, apistat: ApiStatus):
         y = gpos.y
         hper = str(planet.sector)
         hp = (math.ceil(planet.health_percent()) // 10) * 10
-        name = str(planet.index)+":"+str(planet.name).replace(" ", "\n")
+        name = str(planet.index) + ":" + str(planet.name).replace(" ", "\n")
         if apistat and apistat.warall:
             for pf in apistat.warall.war_info.planetInfos:
                 if pf.index == planet.index:
-                    name = str(planet.index)+":"+str(planet.name).replace(" ", "\n")
+                    name = str(planet.index) + ":" + str(planet.name).replace(" ", "\n")
                     hper = str(planet.sector)
                     break
         event = True if planet.event is not None else False

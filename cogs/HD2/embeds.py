@@ -105,9 +105,8 @@ def create_assignment_embed(
 
     embed.add_field(name="Tasks", value=tasks, inline=False)
 
-    
     if data.rewards:
-        for e,d in enumerate(data.rewards):
+        for e, d in enumerate(data.rewards):
             embed.add_field(name=f"Reward {e}", value=d.format(), inline=True)
     else:
         embed.add_field(name="Reward", value=data.reward.format(), inline=True)
@@ -278,7 +277,7 @@ def campaign_view(stat: ApiStatus, hdtext: Optional[Dict[str, str]] = None):
     change_war = all_players - last
     total_contrib = [0, 0.0, 0.0, 0.0]
     total = 0
-    el=0
+    el = 0
     prop = defaultdict(int)
     for k, list in stat.campaigns.items():
         camp, last = list.get_first_change()
@@ -320,10 +319,12 @@ def campaign_view(stat: ApiStatus, hdtext: Optional[Dict[str, str]] = None):
         eps_estimated = round(pred, 3)
         eps_real = round(features["eps"], 3)
         desc += f"\nExp/s:`{eps_estimated},c{eps_real}`"
-        if el>=25:
-            emb=discord.Embed()
-            embs.append[emb]
+        if el >= 24:
+            emb = discord.Embed()
+            embs.append(emb)
+            el = 0
         emb.add_field(name=name, value=desc, inline=True)
+        el += 1
     emb0.description += f"???:{all_players.statistics.playerCount-total}," + ",".join(
         [f"{k}:{v}" for k, v in prop.items()]
     )

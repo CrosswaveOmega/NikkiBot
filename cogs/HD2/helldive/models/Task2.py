@@ -31,18 +31,18 @@ value_types_old = {
 }
 
 value_types = {
-  1: 'faction',
-  2: 'hasCount',
-  3: 'goal',
-  4: 'enemyID',
-  5: 'itemID',
-  6: 'hasItem',
-  7: 'objective',
-  8: "unknown5",
+    1: "faction",
+    2: "hasCount",
+    3: "goal",
+    4: "enemyID",
+    5: "itemID",
+    6: "hasItem",
+    7: "objective",
+    8: "unknown5",
     9: "unknown6",
     10: "unknown7",
-  11: 'hasPlanet',
-  12: 'planet'
+    11: "hasPlanet",
+    12: "planet",
 }
 faction_names = {
     0: "Anything",
@@ -53,9 +53,9 @@ faction_names = {
     5: "ERR",
     15: "ERR",
 }
-samples={
-    3992382197:'Common',
-    2985106497:'Rare',
+samples = {
+    3992382197: "Common",
+    2985106497: "Rare",
 }
 
 from .ABC.utils import changeformatif as cfi
@@ -124,27 +124,32 @@ class Task2(BaseApiModel):
                 if self["type"] == 13:
                     mode = "Control"
                     taskstr = f"{e}. Control {planet_name}. Status:`{'ok' if curr==1 else f'{health},{curr}'}`"
-            elif self['type']==2:
+            elif self["type"] == 2:
                 if not all(key in taskdata for key in ["goal"]):
                     dump = json.dumps(taskdata, default=str)[:258]
                     taskstr += f"{dump}"
                     return taskstr
-                faction_name=""
-                if  "faction" in taskdata:
-                    faction_name = "("+faction_names.get(
-                        taskdata["faction"][0], f"Unknown Faction {taskdata['faction'][0]}"
-                    )+ ' type)'
+                faction_name = ""
+                if "faction" in taskdata:
+                    faction_name = (
+                        "("
+                        + faction_names.get(
+                            taskdata["faction"][0],
+                            f"Unknown Faction {taskdata['faction'][0]}",
+                        )
+                        + " type)"
+                    )
                 goal = taskdata["goal"][0]
-                rarity=''
+                rarity = ""
                 lc = taskdata.get("hasPlanet", None)
                 onplanet = taskdata.get("planet", None)
-    
-                if 'itemId' in taskdata:
-                    rare=taskdata['itemId'][0]
-                    rarity=samples.get(rare,rare)+" "
-    
+
+                if "itemId" in taskdata:
+                    rare = taskdata["itemId"][0]
+                    rarity = samples.get(rare, rare) + " "
+
                 taskstr += f"/{hf(goal)} {rarity}samples ({round((int(curr)/int(goal))*100.0,3)}) {faction_name}"
-                
+
                 if onplanet is not None and lc is not None:
                     if lc[0]:
                         for ind in onplanet:
@@ -157,11 +162,16 @@ class Task2(BaseApiModel):
                     dump = json.dumps(taskdata, default=str)[:258]
                     taskstr += f"{dump}"
                     return taskstr
-                faction_name=""
-                if  "faction" in taskdata:
-                    faction_name = " from "+faction_names.get(
-                        taskdata["faction"][0], f"Unknown Faction {taskdata['faction'][0]}"
-                    )+ ''
+                faction_name = ""
+                if "faction" in taskdata:
+                    faction_name = (
+                        " from "
+                        + faction_names.get(
+                            taskdata["faction"][0],
+                            f"Unknown Faction {taskdata['faction'][0]}",
+                        )
+                        + ""
+                    )
                 goal = taskdata["goal"][0]
                 planet_name = taskdata["planet"]
                 taskstr = f"{e}. Defend {hf(curr)}/{hf(goal)} planets{faction_name}"
@@ -184,7 +194,7 @@ class Task2(BaseApiModel):
                     taskdata["faction"][0], f"Unknown Faction {taskdata['faction'][0]}"
                 )
                 goal = taskdata["goal"][0]
-    
+
                 taskstr += f"/{hf(goal)} ({(int(curr)/int(goal))*100.0}) {faction_name}"
                 lc = taskdata.get("hasPlanet", None)
                 onplanet = taskdata.get("planet", None)
@@ -198,5 +208,5 @@ class Task2(BaseApiModel):
             else:
                 dump = json.dumps(taskdata, default=str)[:258]
                 taskstr += f"{dump}"
-        
+
         return taskstr

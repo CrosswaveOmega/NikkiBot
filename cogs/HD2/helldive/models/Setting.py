@@ -25,7 +25,7 @@ class Setting(BaseApiModel):
     tasks: Optional[List[Optional[Task]]] = Field(alias="tasks", default=None)
 
     reward: Optional[Reward] = Field(alias="reward", default=None)
-    
+
     rewards: Optional[List[Optional[Reward]]] = Field(alias="rewards", default=None)
-    
+
     flags: Optional[int] = Field(alias="flags", default=None)

@@ -8,6 +8,8 @@ from .helldive import *
 from .utils import prioritized_string_split
 from hd2json.jsonutils import load_and_merge_json_files
 
+MAX_ATTEMPT = 3
+
 
 class LimitedSizeList(list):
     """A list that can only have a fixed amount of elements."""
@@ -82,9 +84,7 @@ class ApiStatus:
         self.last_planet_get: datetime.datetime = datetime.datetime(2024, 1, 1, 0, 0, 0)
         self.warall: DiveharderAll = None
         self.nowval = DiveharderAll(status=WarStatus(), war_info=WarInfo())
-        self.planetdata: Dict[str, Any] = load_and_merge_json_files(
-            "./hd2json/planets"
-        )
+        self.planetdata: Dict[str, Any] = load_and_merge_json_files("./hd2json/planets")
 
     def to_dict(self):
         return {
@@ -154,6 +154,7 @@ class ApiStatus:
     async def get_now(
         self, current, Queue: asyncio.Queue, nowval=None
     ) -> Tuple[Dict[str, Dict[str, Union[List, Dict[str, Any]]]], DiveharderAll]:
+
         if nowval:
             nowv = nowval
         else:
@@ -175,36 +176,38 @@ class ApiStatus:
         campaigns = None
         assignments = None
         dispatches = None
+        maxattempt = 3
         try:
             attempt_count = 0
-            while attempt_count < 3:
+            while attempt_count < maxattempt:
                 try:
                     war = await GetApiV1War(api_config_override=self.client)
                     break
                 except Exception as e:
                     attempt_count += 1
-                    if attempt_count >= 3:
+                    await asyncio.sleep(2)
+                    if attempt_count >= maxattempt:
                         raise e
-
-            while attempt_count < 3:
+            attempt_count = 0
+            while attempt_count < maxattempt:
                 try:
-                    as1 = await GetApiV1AssignmentsAll(
-                        api_config_override=self.client
-                    )
-                    assignments=[]
+                    as1 = await GetApiV1AssignmentsAll(api_config_override=self.client)
+                    assignments = []
                     for a in as1:
                         for m in self.warall.major_order:
                             print(m.id32)
-                            if m.id32==a.id:
-                                a.rewards=m.setting.rewards
+                            if m.id32 == a.id:
+                                a.rewards = m.setting.rewards
                         assignments.append(a)
                     break
                 except Exception as e:
                     attempt_count += 1
-                    if attempt_count >= 3:
-                        raise e
 
-            while attempt_count < 3:
+                    await asyncio.sleep(2)
+                    if attempt_count >= maxattempt:
+                        raise e
+            attempt_count = 0
+            while attempt_count < maxattempt:
                 try:
                     campaigns = await GetApiV1CampaignsAll(
                         api_config_override=self.client
@@ -212,7 +215,9 @@ class ApiStatus:
                     break
                 except Exception as e:
                     attempt_count += 1
-                    if attempt_count >= 3:
+
+                    await asyncio.sleep(2)
+                    if attempt_count >= maxattempt:
                         raise e
 
         except Exception as e:

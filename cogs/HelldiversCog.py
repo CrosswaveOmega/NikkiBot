@@ -338,6 +338,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     @commands.is_owner()
     @commands.command(name="load_now")
     async def load_now(self, ctx: commands.Context):
+
         await self.update_data()
         await ctx.send("force loaded api data now.")
 
@@ -736,6 +737,32 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         else:
             await ctx.send("Planet not found.", ephemeral=True)
 
+    @commands.command()
+    @commands.is_owner()
+    async def illuminate_test(self, ctx: commands.Context):
+        data = self.apistatus.planets
+        if not data:
+            return await ctx.send("No result")
+
+        planets = random.sample(list(self.apistatus.planets.values()), 25)
+        campaigns = []
+        for c in self.apistatus.campaigns.values():
+            campaigns.append(c.get_first())
+        for planet in planets:
+            planet.currentOwner = "Illuminate"
+            campaigns.append(
+                hd2.Campaign2(
+                    id=random.randint(10000000, 999999999),
+                    planet=planet,
+                    type=3,
+                    count=29,
+                )
+            )
+
+        self.apistatus.handle_data(campaigns, self.apistatus.campaigns, "assignment")
+
+        await ctx.send("Spoofed!", ephemeral=True)
+
     @pc.command(name="dispatches", description="get a list of all dispatches.")
     async def dispatch(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -792,81 +819,249 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     @app_commands.command(
         name="stratagem_roulette", description="Get a random stratagem loadout."
     )
-    async def stratagem_roulette(self, interaction: discord.Interaction, rolls:app_commands.Range[int, 1, 9]):
+    async def stratagem_roulette(
+        self, interaction: discord.Interaction, rolls: app_commands.Range[int, 1, 9]
+    ):
         ctx: commands.Context = await self.bot.get_context(interaction)
         stratagems = [
-            ("<:MachineGun:1272565567710036031>","[MG-43 Machine Gun](https://helldivers.wiki.gg/wiki/MG-43_Machine_Gun)"),
-            ("<:AntiMaterielRifle:1272564847078277161>","[APW-1 Anti-Materiel Rifle](https://helldivers.wiki.gg/wiki/APW-1_Anti-Materiel_Rifle)"),
-            ("<:Stalwart:1272566085924683786>","[M-105 Stalwart](https://helldivers.wiki.gg/wiki/M-105_Stalwart)"),
-            ("<:ExpendableAntiTank:1272565302517043210>","[EAT-17 Expendable Anti-Tank](https://helldivers.wiki.gg/wiki/EAT-17_Expendable_Anti-Tank)"),
-            ("<:RecoillessRifle:1272565933277188126>","[GR-8 Recoilless Rifle](https://helldivers.wiki.gg/wiki/GR-8_Recoilless_Rifle)"),
-            ("<:Flamethrower:1272565313858437221>","[FLAM-40 Flamethrower](https://helldivers.wiki.gg/wiki/FLAM-40_Flamethrower)"),
-            ("<:Autocannon:1272564962572767232>","[AC-8 Autocannon](https://helldivers.wiki.gg/wiki/AC-8_Autocannon)"),
-            ("<:HeavyMachineGun:1272565463108550709>","[MG-206 Heavy Machine Gun](https://helldivers.wiki.gg/wiki/MG-206_Heavy_Machine_Gun)"),
-            ("<:AirburstRocketLauncher:1272564831819530360>","[RL-77 Airburst Rocket Launcher](https://helldivers.wiki.gg/wiki/RL-77_Airburst_Rocket_Launcher)"),
-            ("<:Commando:1272565055753293876>","[MLS-4X Commando](https://helldivers.wiki.gg/wiki/MLS-4X_Commando)"),
-            ("<:Railgun:1272565923462643814>","[RS-422 Railgun](https://helldivers.wiki.gg/wiki/RS-422_Railgun)"),
-            ("<:Spear:1272566074352861224>","[FAF-14 Spear](https://helldivers.wiki.gg/wiki/FAF-14_Spear)"),
-            ("<:OrbitalGatlingBarrage:1272565731426570434>","[Orbital Gatling Barrage](https://helldivers.wiki.gg/wiki/Orbital_Gatling_Barrage)"),
-            ("<:OrbitalAirburstStrike:1272565671879905423>","[Orbital Airburst Strike](https://helldivers.wiki.gg/wiki/Orbital_Airburst_Strike)"),
-            ("<:Orbital120mmHEBarrage:1272565596499738624>","[Orbital 120mm HE Barrage](https://helldivers.wiki.gg/wiki/Orbital_120mm_HE_Barrage)"),
-            ("<:Orbital380mmHEBarrage:1272565611498569809>","[Orbital 380mm HE Barrage](https://helldivers.wiki.gg/wiki/Orbital_380mm_HE_Barrage)"),
-            ("<:OrbitalWalkingBarrage:1272565880747982908>","[Orbital Walking Barrage](https://helldivers.wiki.gg/wiki/Orbital_Walking_Barrage)"),
-            ("<:OrbitalLaser:1272565771788091453>","[Orbital Laser](https://helldivers.wiki.gg/wiki/Orbital_Laser)"),
-            ("<:OrbitalRailcannonStrike:1272565831519436801>","[Orbital Railcannon Strike](https://helldivers.wiki.gg/wiki/Orbital_Railcannon_Strike)"),
-            ("<:EagleStrafingRun:1272565269230911498>","[Eagle Strafing Run](https://helldivers.wiki.gg/wiki/Eagle_Strafing_Run)"),
-            ("<:EagleAirstrike:1272565196421992448>","[Eagle Airstrike](https://helldivers.wiki.gg/wiki/Eagle_Airstrike)"),
-            ("<:EagleClusterBomb:1272565210959314956>","[Eagle Cluster Bomb](https://helldivers.wiki.gg/wiki/Eagle_Cluster_Bomb)"),
-            ("<:EagleNapalmAirstrike:1272565232673361920>","[Eagle Napalm Airstrike](https://helldivers.wiki.gg/wiki/Eagle_Napalm_Airstrike)"),
-            ("<:JumpPack:1272565538757021726>","[LIFT-850 Jump Pack](https://helldivers.wiki.gg/wiki/LIFT-850_Jump_Pack)"),
-            ("<:EagleSmokeStrike:1272565252415819837>","[Eagle Smoke Strike](https://helldivers.wiki.gg/wiki/Eagle_Smoke_Strike)"),
-            ("<:Eagle110mmRocketPods:1272565087495786620>","[Eagle 110mm Rocket Pods](https://helldivers.wiki.gg/wiki/Eagle_110mm_Rocket_Pods)"),
-            ("<:Eagle500kgBomb:1272565103384068206>","[Eagle 500kg Bomb](https://helldivers.wiki.gg/wiki/Eagle_500kg_Bomb)"),
-            ("<:OrbitalPrecisionStrike:1272565792424071250>","[Orbital Precision Strike](https://helldivers.wiki.gg/wiki/Orbital_Precision_Strike)"),
-            ("<:OrbitalGasStrike:1272565716826062980>","[Orbital Gas Strike](https://helldivers.wiki.gg/wiki/Orbital_Gas_Strike)"),
-            ("<:OrbitalEMSStrike:1272565701953060968>","[Orbital EMS Strike](https://helldivers.wiki.gg/wiki/Orbital_EMS_Strike)"),
-            ("<:OrbitalSmokeStrike:1272565865358819378>","[Orbital Smoke Strike](https://helldivers.wiki.gg/wiki/Orbital_Smoke_Strike)"),
-            ("<:HMGEmplacement:1272565474290438218>","[E/MG-101 HMG Emplacement](https://helldivers.wiki.gg/wiki/E/MG-101_HMG_Emplacement)"),
-            ("<:ShieldGeneratorRelay:1272566063623573545>","[FX-12 Shield Generator Relay](https://helldivers.wiki.gg/wiki/FX-12_Shield_Generator_Relay)"),
-            ("<:TeslaTower:1272566110432002149>","[A/ARC-3 Tesla Tower](https://helldivers.wiki.gg/wiki/A/ARC-3_Tesla_Tower)"),
-            ("<:AntiPersonnelMinefield:1272564857648058369>","[MD-6 Anti-Personnel Minefield](https://helldivers.wiki.gg/wiki/MD-6_Anti-Personnel_Minefield)"),
-            ("<:SupplyPack:1272566095710257162>","[B-1 Supply Pack](https://helldivers.wiki.gg/wiki/B-1_Supply_Pack)"),
-            ("<:GrenadeLauncher:1272565339250622575>","[GL-21 Grenade Launcher](https://helldivers.wiki.gg/wiki/GL-21_Grenade_Launcher)"),
-            ("<:LaserCannon:1272565553306927256>","[LAS-98 Laser Cannon](https://helldivers.wiki.gg/wiki/LAS-98_Laser_Cannon)"),
-            ("<:IncendiaryMines:1272565486651052032>","[MD-I4 Incendiary Mines](https://helldivers.wiki.gg/wiki/MD-I4_Incendiary_Mines)"),
-            ("<:GuardDogLaserRover:1272565449183461436>",'[AX/LAS-5 "Guard Dog" Rover](https://helldivers.wiki.gg/wiki/AX/LAS-5_%22Guard_Dog%22_Rover)'),
-            ("<:BallisticShieldBackpack:1272565009855025164>","[SH-20 Ballistic Shield Backpack](https://helldivers.wiki.gg/wiki/SH-20_Ballistic_Shield_Backpack)"),
-            ("<:ArcThrower:1272564945418190859>","[ARC-3 Arc Thrower](https://helldivers.wiki.gg/wiki/ARC-3_Arc_Thrower)"),
-            ("<:AntiTankMines:1272564932826632273>","[MD-17 Anti-Tank Mines](https://helldivers.wiki.gg/wiki/MD-17_Anti-Tank_Mines)"),
-            ("<:QuasarCannon:1272565914537300018>","[LAS-99 Quasar Cannon](https://helldivers.wiki.gg/wiki/LAS-99_Quasar_Cannon)"),
-            ("<:ShieldGeneratorPack:1272566052341026909>","[SH-32 Shield Generator Pack](https://helldivers.wiki.gg/wiki/SH-32_Shield_Generator_Pack)"),
-            ("<:MachineGunSentry:1272565584164552776>","[A/MG-43 Machine Gun Sentry](https://helldivers.wiki.gg/wiki/A/MG-43_Machine_Gun_Sentry)"),
-            ("<:GatlingSentry:1272565324000137311>","[A/G-16 Gatling Sentry](https://helldivers.wiki.gg/wiki/A/G-16_Gatling_Sentry)"),
-            ("<:MortarSentry:1272565643039735993>","[A/M-12 Mortar Sentry](https://helldivers.wiki.gg/wiki/A/M-12_Mortar_Sentry)"),
-            ("<:GuardDogBulletRover:1272565434578767934>",'[AX/AR-23 "Guard Dog"](https://helldivers.wiki.gg/wiki/AX/AR-23_%22Guard_Dog%22)'),
-            ("<:AutocannonSentry:1272564978368380960>","[A/AC-8 Autocannon Sentry](https://helldivers.wiki.gg/wiki/A/AC-8_Autocannon_Sentry)"),
-            ("<:RocketSentry:1272565970413551672>","[A/MLS-4X Rocket Sentry](https://helldivers.wiki.gg/wiki/A/MLS-4X_Rocket_Sentry)"),
-            ("<:EMSMortarSentry:1272565290890170379>","[A/M-23 EMS Mortar Sentry](https://helldivers.wiki.gg/wiki/A/M-23_EMS_Mortar_Sentry)"),
-            ("<:PatriotExosuit:1272565903724253224>","[EXO-45 Patriot Exosuit](https://helldivers.wiki.gg/wiki/EXO-45_Patriot_Exosuit)"),
-            ("<:EmancipatorExosuit:1272565280991875238>","[EXO-49 Emancipator Exosuit](https://helldivers.wiki.gg/wiki/EXO-49_Emancipator_Exosuit)")
+            (
+                "<:MachineGun:1272565567710036031>",
+                "[MG-43 Machine Gun](https://helldivers.wiki.gg/wiki/MG-43_Machine_Gun)",
+            ),
+            (
+                "<:AntiMaterielRifle:1272564847078277161>",
+                "[APW-1 Anti-Materiel Rifle](https://helldivers.wiki.gg/wiki/APW-1_Anti-Materiel_Rifle)",
+            ),
+            (
+                "<:Stalwart:1272566085924683786>",
+                "[M-105 Stalwart](https://helldivers.wiki.gg/wiki/M-105_Stalwart)",
+            ),
+            (
+                "<:ExpendableAntiTank:1272565302517043210>",
+                "[EAT-17 Expendable Anti-Tank](https://helldivers.wiki.gg/wiki/EAT-17_Expendable_Anti-Tank)",
+            ),
+            (
+                "<:RecoillessRifle:1272565933277188126>",
+                "[GR-8 Recoilless Rifle](https://helldivers.wiki.gg/wiki/GR-8_Recoilless_Rifle)",
+            ),
+            (
+                "<:Flamethrower:1272565313858437221>",
+                "[FLAM-40 Flamethrower](https://helldivers.wiki.gg/wiki/FLAM-40_Flamethrower)",
+            ),
+            (
+                "<:Autocannon:1272564962572767232>",
+                "[AC-8 Autocannon](https://helldivers.wiki.gg/wiki/AC-8_Autocannon)",
+            ),
+            (
+                "<:HeavyMachineGun:1272565463108550709>",
+                "[MG-206 Heavy Machine Gun](https://helldivers.wiki.gg/wiki/MG-206_Heavy_Machine_Gun)",
+            ),
+            (
+                "<:AirburstRocketLauncher:1272564831819530360>",
+                "[RL-77 Airburst Rocket Launcher](https://helldivers.wiki.gg/wiki/RL-77_Airburst_Rocket_Launcher)",
+            ),
+            (
+                "<:Commando:1272565055753293876>",
+                "[MLS-4X Commando](https://helldivers.wiki.gg/wiki/MLS-4X_Commando)",
+            ),
+            (
+                "<:Railgun:1272565923462643814>",
+                "[RS-422 Railgun](https://helldivers.wiki.gg/wiki/RS-422_Railgun)",
+            ),
+            (
+                "<:Spear:1272566074352861224>",
+                "[FAF-14 Spear](https://helldivers.wiki.gg/wiki/FAF-14_Spear)",
+            ),
+            (
+                "<:OrbitalGatlingBarrage:1272565731426570434>",
+                "[Orbital Gatling Barrage](https://helldivers.wiki.gg/wiki/Orbital_Gatling_Barrage)",
+            ),
+            (
+                "<:OrbitalAirburstStrike:1272565671879905423>",
+                "[Orbital Airburst Strike](https://helldivers.wiki.gg/wiki/Orbital_Airburst_Strike)",
+            ),
+            (
+                "<:Orbital120mmHEBarrage:1272565596499738624>",
+                "[Orbital 120mm HE Barrage](https://helldivers.wiki.gg/wiki/Orbital_120mm_HE_Barrage)",
+            ),
+            (
+                "<:Orbital380mmHEBarrage:1272565611498569809>",
+                "[Orbital 380mm HE Barrage](https://helldivers.wiki.gg/wiki/Orbital_380mm_HE_Barrage)",
+            ),
+            (
+                "<:OrbitalWalkingBarrage:1272565880747982908>",
+                "[Orbital Walking Barrage](https://helldivers.wiki.gg/wiki/Orbital_Walking_Barrage)",
+            ),
+            (
+                "<:OrbitalLaser:1272565771788091453>",
+                "[Orbital Laser](https://helldivers.wiki.gg/wiki/Orbital_Laser)",
+            ),
+            (
+                "<:OrbitalRailcannonStrike:1272565831519436801>",
+                "[Orbital Railcannon Strike](https://helldivers.wiki.gg/wiki/Orbital_Railcannon_Strike)",
+            ),
+            (
+                "<:EagleStrafingRun:1272565269230911498>",
+                "[Eagle Strafing Run](https://helldivers.wiki.gg/wiki/Eagle_Strafing_Run)",
+            ),
+            (
+                "<:EagleAirstrike:1272565196421992448>",
+                "[Eagle Airstrike](https://helldivers.wiki.gg/wiki/Eagle_Airstrike)",
+            ),
+            (
+                "<:EagleClusterBomb:1272565210959314956>",
+                "[Eagle Cluster Bomb](https://helldivers.wiki.gg/wiki/Eagle_Cluster_Bomb)",
+            ),
+            (
+                "<:EagleNapalmAirstrike:1272565232673361920>",
+                "[Eagle Napalm Airstrike](https://helldivers.wiki.gg/wiki/Eagle_Napalm_Airstrike)",
+            ),
+            (
+                "<:JumpPack:1272565538757021726>",
+                "[LIFT-850 Jump Pack](https://helldivers.wiki.gg/wiki/LIFT-850_Jump_Pack)",
+            ),
+            (
+                "<:EagleSmokeStrike:1272565252415819837>",
+                "[Eagle Smoke Strike](https://helldivers.wiki.gg/wiki/Eagle_Smoke_Strike)",
+            ),
+            (
+                "<:Eagle110mmRocketPods:1272565087495786620>",
+                "[Eagle 110mm Rocket Pods](https://helldivers.wiki.gg/wiki/Eagle_110mm_Rocket_Pods)",
+            ),
+            (
+                "<:Eagle500kgBomb:1272565103384068206>",
+                "[Eagle 500kg Bomb](https://helldivers.wiki.gg/wiki/Eagle_500kg_Bomb)",
+            ),
+            (
+                "<:OrbitalPrecisionStrike:1272565792424071250>",
+                "[Orbital Precision Strike](https://helldivers.wiki.gg/wiki/Orbital_Precision_Strike)",
+            ),
+            (
+                "<:OrbitalGasStrike:1272565716826062980>",
+                "[Orbital Gas Strike](https://helldivers.wiki.gg/wiki/Orbital_Gas_Strike)",
+            ),
+            (
+                "<:OrbitalEMSStrike:1272565701953060968>",
+                "[Orbital EMS Strike](https://helldivers.wiki.gg/wiki/Orbital_EMS_Strike)",
+            ),
+            (
+                "<:OrbitalSmokeStrike:1272565865358819378>",
+                "[Orbital Smoke Strike](https://helldivers.wiki.gg/wiki/Orbital_Smoke_Strike)",
+            ),
+            (
+                "<:HMGEmplacement:1272565474290438218>",
+                "[E/MG-101 HMG Emplacement](https://helldivers.wiki.gg/wiki/E/MG-101_HMG_Emplacement)",
+            ),
+            (
+                "<:ShieldGeneratorRelay:1272566063623573545>",
+                "[FX-12 Shield Generator Relay](https://helldivers.wiki.gg/wiki/FX-12_Shield_Generator_Relay)",
+            ),
+            (
+                "<:TeslaTower:1272566110432002149>",
+                "[A/ARC-3 Tesla Tower](https://helldivers.wiki.gg/wiki/A/ARC-3_Tesla_Tower)",
+            ),
+            (
+                "<:AntiPersonnelMinefield:1272564857648058369>",
+                "[MD-6 Anti-Personnel Minefield](https://helldivers.wiki.gg/wiki/MD-6_Anti-Personnel_Minefield)",
+            ),
+            (
+                "<:SupplyPack:1272566095710257162>",
+                "[B-1 Supply Pack](https://helldivers.wiki.gg/wiki/B-1_Supply_Pack)",
+            ),
+            (
+                "<:GrenadeLauncher:1272565339250622575>",
+                "[GL-21 Grenade Launcher](https://helldivers.wiki.gg/wiki/GL-21_Grenade_Launcher)",
+            ),
+            (
+                "<:LaserCannon:1272565553306927256>",
+                "[LAS-98 Laser Cannon](https://helldivers.wiki.gg/wiki/LAS-98_Laser_Cannon)",
+            ),
+            (
+                "<:IncendiaryMines:1272565486651052032>",
+                "[MD-I4 Incendiary Mines](https://helldivers.wiki.gg/wiki/MD-I4_Incendiary_Mines)",
+            ),
+            (
+                "<:GuardDogLaserRover:1272565449183461436>",
+                '[AX/LAS-5 "Guard Dog" Rover](https://helldivers.wiki.gg/wiki/AX/LAS-5_%22Guard_Dog%22_Rover)',
+            ),
+            (
+                "<:BallisticShieldBackpack:1272565009855025164>",
+                "[SH-20 Ballistic Shield Backpack](https://helldivers.wiki.gg/wiki/SH-20_Ballistic_Shield_Backpack)",
+            ),
+            (
+                "<:ArcThrower:1272564945418190859>",
+                "[ARC-3 Arc Thrower](https://helldivers.wiki.gg/wiki/ARC-3_Arc_Thrower)",
+            ),
+            (
+                "<:AntiTankMines:1272564932826632273>",
+                "[MD-17 Anti-Tank Mines](https://helldivers.wiki.gg/wiki/MD-17_Anti-Tank_Mines)",
+            ),
+            (
+                "<:QuasarCannon:1272565914537300018>",
+                "[LAS-99 Quasar Cannon](https://helldivers.wiki.gg/wiki/LAS-99_Quasar_Cannon)",
+            ),
+            (
+                "<:ShieldGeneratorPack:1272566052341026909>",
+                "[SH-32 Shield Generator Pack](https://helldivers.wiki.gg/wiki/SH-32_Shield_Generator_Pack)",
+            ),
+            (
+                "<:MachineGunSentry:1272565584164552776>",
+                "[A/MG-43 Machine Gun Sentry](https://helldivers.wiki.gg/wiki/A/MG-43_Machine_Gun_Sentry)",
+            ),
+            (
+                "<:GatlingSentry:1272565324000137311>",
+                "[A/G-16 Gatling Sentry](https://helldivers.wiki.gg/wiki/A/G-16_Gatling_Sentry)",
+            ),
+            (
+                "<:MortarSentry:1272565643039735993>",
+                "[A/M-12 Mortar Sentry](https://helldivers.wiki.gg/wiki/A/M-12_Mortar_Sentry)",
+            ),
+            (
+                "<:GuardDogBulletRover:1272565434578767934>",
+                '[AX/AR-23 "Guard Dog"](https://helldivers.wiki.gg/wiki/AX/AR-23_%22Guard_Dog%22)',
+            ),
+            (
+                "<:AutocannonSentry:1272564978368380960>",
+                "[A/AC-8 Autocannon Sentry](https://helldivers.wiki.gg/wiki/A/AC-8_Autocannon_Sentry)",
+            ),
+            (
+                "<:RocketSentry:1272565970413551672>",
+                "[A/MLS-4X Rocket Sentry](https://helldivers.wiki.gg/wiki/A/MLS-4X_Rocket_Sentry)",
+            ),
+            (
+                "<:EMSMortarSentry:1272565290890170379>",
+                "[A/M-23 EMS Mortar Sentry](https://helldivers.wiki.gg/wiki/A/M-23_EMS_Mortar_Sentry)",
+            ),
+            (
+                "<:PatriotExosuit:1272565903724253224>",
+                "[EXO-45 Patriot Exosuit](https://helldivers.wiki.gg/wiki/EXO-45_Patriot_Exosuit)",
+            ),
+            (
+                "<:EmancipatorExosuit:1272565280991875238>",
+                "[EXO-49 Emancipator Exosuit](https://helldivers.wiki.gg/wiki/EXO-49_Emancipator_Exosuit)",
+            ),
         ]
-        embed=discord.Embed(title=f"Your Random Stratagem Loadout{'s' if rolls>1 else ''}",)
-        desc="# "
-        for r in range(0,rolls):
+        embed = discord.Embed(
+            title=f"Your Random Stratagem Loadout{'s' if rolls>1 else ''}",
+        )
+        desc = "# "
+        for r in range(0, rolls):
             random_choices = random.sample(stratagems, 4)
-            sload=""
-            known=f"R{r+1}"
+            sload = ""
+            known = f"R{r+1}"
             for e, l in random_choices:
-                sload+=f"{e}{l}\n"
-                known+=e
-            desc+=known
-            if (((r+1) %3) == 0):
-                desc+="\n# "
+                sload += f"{e}{l}\n"
+                known += e
+            desc += known
+            if ((r + 1) % 3) == 0:
+                desc += "\n# "
             else:
-                desc+="`   `"
-            embed.add_field(name=f"Roll {r+1}",value=sload)
-        embed.description=desc
-        embed.set_author(name=f"Stratagem Roulette with {rolls} roll{'s' if rolls>1 else ''}")
+                desc += "`   `"
+            embed.add_field(name=f"Roll {r+1}", value=sload)
+        embed.description = desc
+        embed.set_author(
+            name=f"Stratagem Roulette with {rolls} roll{'s' if rolls>1 else ''}"
+        )
         await ctx.send(embed=embed)
 
 
