@@ -104,7 +104,7 @@ class Task2(BaseApiModel):
     ):
         curr = curr_progress
         taskstr = f"{e}. {task_type}: {hf(curr)}"
-        try:
+        if True:
             if self["type"] in (11, 13):
                 if not all(key in taskdata for key in ["planet"]):
                     dump = json.dumps(taskdata, default=str)[:108]
@@ -174,7 +174,7 @@ class Task2(BaseApiModel):
                                 planet = planets[int(ind)]
                                 planet_name = planet.get_name()
                                 taskstr += f", On {planet_name}"
-                
+                return tasksrr
             elif self["type"] == 3:
                 if not all(key in taskdata for key in ["goal", "faction"]):
                     dump = json.dumps(taskdata, default=str)[:258]
@@ -198,7 +198,5 @@ class Task2(BaseApiModel):
             else:
                 dump = json.dumps(taskdata, default=str)[:258]
                 taskstr += f"{dump}"
-        except Exception as e:
-            dump = json.dumps(taskdata, default=str)[:258]
-            taskstr += f"{dump}"
+        
         return taskstr
