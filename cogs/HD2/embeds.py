@@ -105,10 +105,12 @@ def create_assignment_embed(
 
     embed.add_field(name="Tasks", value=tasks, inline=False)
 
-    embed.add_field(name="Reward", value=data.reward.format(), inline=True)
+    
     if data.rewards:
         for e,d in enumerate(data.rewards):
             embed.add_field(name=f"Reward {e}", value=d.format(), inline=True)
+    else:
+        embed.add_field(name="Reward", value=data.reward.format(), inline=True)
     exptime = et(data["expiration"])
     embed.add_field(name="Expiration", value=fdt(exptime, "f"), inline=True)
 
