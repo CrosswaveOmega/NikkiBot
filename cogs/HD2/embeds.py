@@ -271,12 +271,14 @@ def campaign_view(stat: ApiStatus, hdtext: Optional[Dict[str, str]] = None):
     if hdtext:
         if "galactic_overview" in hdtext:
             flav = random.choice(hdtext["galactic_overview"]["value"])
-    emb = discord.Embed(title="Galactic War Overview", description=f"{flav}\n")
+    emb0 = discord.Embed(title="Galactic War Overview", description=f"{flav}\n")
+    emb = emb0
+    embs = [emb]
     all_players, last = stat.war.get_first_change()
     change_war = all_players - last
     total_contrib = [0, 0.0, 0.0, 0.0]
     total = 0
-
+    el=0
     prop = defaultdict(int)
     for k, list in stat.campaigns.items():
         camp, last = list.get_first_change()
@@ -318,10 +320,13 @@ def campaign_view(stat: ApiStatus, hdtext: Optional[Dict[str, str]] = None):
         eps_estimated = round(pred, 3)
         eps_real = round(features["eps"], 3)
         desc += f"\nExp/s:`{eps_estimated},c{eps_real}`"
+        if el>=25:
+            emb=discord.Embed()
+            embs.append[emb]
         emb.add_field(name=name, value=desc, inline=True)
-    emb.description += f"???:{all_players.statistics.playerCount-total}," + ",".join(
+    emb0.description += f"???:{all_players.statistics.playerCount-total}," + ",".join(
         [f"{k}:{v}" for k, v in prop.items()]
     )
-    emb.description += f"\n`{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}%` divers contributed `{round(total_contrib[1], 4)}` visible Impact, so about `({round(total_contrib[2],5)}%, {round(total_contrib[3],5)}% per hour)` lib."
-    emb.timestamp = discord.utils.utcnow()
-    return emb
+    emb0.description += f"\n`{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}%` divers contributed `{round(total_contrib[1], 4)}` visible Impact, so about `({round(total_contrib[2],5)}%, {round(total_contrib[3],5)}% per hour)` lib."
+    emb0.timestamp = discord.utils.utcnow()
+    return embs
