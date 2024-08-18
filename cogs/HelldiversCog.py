@@ -295,7 +295,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                     return
                 emb = hd2.campaign_view(self.apistatus, self.hd2)
 
-                embs = [emb]
+                embs = [].extend(emb)
                 if self.apistatus.assignments:
                     for i, assignment in self.apistatus.assignments.items():
                         b, a = assignment.get_first_change()
@@ -759,7 +759,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if not data:
             return await ctx.send("No result")
         emb = hd2.campaign_view(self.apistatus, self.hd2)
-        await ctx.send(embed=emb)
+        await ctx.send(embeds=emb)
 
     @pc.command(name="map", description="get a scrollable galactic map.")
     @app_commands.describe(planet="Focus map on this planet.")
