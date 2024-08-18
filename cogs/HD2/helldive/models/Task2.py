@@ -15,7 +15,7 @@ task_types = {
     13: "Control",
 }
 
-value_types = {
+value_types_old = {
     1: "race",
     2: "unknown",
     3: "goal",
@@ -28,6 +28,21 @@ value_types = {
     10: "unknown7",
     11: "liberate",
     12: "planet_index",
+}
+
+value_types = {
+  1: 'faction',
+  2: 'hasCount',
+  3: 'goal',
+  4: 'enemyID',
+  5: 'itemID',
+  6: 'hasItem',
+  7: 'objective',
+  8: "unknown5",
+    9: "unknown6",
+    10: "unknown7",
+  11: 'hasPlanet',
+  12: 'planet'
 }
 faction_names = {
     0: "Anything",
@@ -89,80 +104,84 @@ class Task2(BaseApiModel):
     ):
         curr = curr_progress
         taskstr = f"{e}. {task_type}: {hf(curr)}"
-        if self["type"] in (11, 13):
-            if not all(key in taskdata for key in ["planet_index"]):
-                dump = json.dumps(taskdata, default=str)[:108]
-                taskstr += f"{dump}"
-                return
-            planet_id = taskdata["planet_index"][0]
-            planet_name = "ERR"
-            health = "?"
-            mode = ""
-            if int(planet_id) in planets:
-                planet = planets[int(planet_id)]
-                planet_name = planet.get_name()
-                health = planet.health_percent()
-            if self["type"] == 11:
-                mode = "Liberate"
-                taskstr = f"{e}. Liberate {planet_name}. Status: `{'ok' if curr==1 else f'{health},{curr}'}`"
-            if self["type"] == 13:
-                mode = "Control"
-                taskstr = f"{e}. Control {planet_name}. Status:`{'ok' if curr==1 else f'{health},{curr}'}`"
-        elif self['type']==2:
-            if not all(key in taskdata for key in ["goal"]):
-                dump = json.dumps(taskdata, default=str)[:258]
-                taskstr += f"{dump}"
-                return
-            faction_name=""
-            if  "race" in taskdata:
-                faction_name = "("+faction_names.get(
-                    taskdata["race"][0], f"Unknown Faction {taskdata['race'][0]}"
-                )+ ' type)'
-            goal = taskdata["goal"][0]
-            rarity=''
-            lc = taskdata.get("liberate", None)
-            onplanet = taskdata.get("planet_index", None)
-
-            if 'rarity' in taskdata:
-                rare=taskdata['rarity'][0]
-                rarity=samples.get(rare,"")+" "
-
-            taskstr += f"/{hf(goal)} {rarity}samples ({round((int(curr)/int(goal))*100.0,3)}) {faction_name}"
-            
-            if onplanet is not None and lc is not None:
-                if lc[0]:
-                    for ind in onplanet:
-                        if int(ind) in planets:
-                            planet = planets[int(ind)]
-                            planet_name = planet.get_name()
-                            taskstr += f", On {planet_name}"
-        elif self["type"] == 12:
-            planet_name = taskdata["planet_index"]
-            if self.values:
-                taskstr += json.dumps(taskdata, default=str)[:258]
+        try:
+            if self["type"] in (11, 13):
+                if not all(key in taskdata for key in ["planet"]):
+                    dump = json.dumps(taskdata, default=str)[:108]
+                    taskstr += f"{dump}"
+                    return
+                planet_id = taskdata["planet"][0]
+                planet_name = "ERR"
+                health = "?"
+                mode = ""
+                if int(planet_id) in planets:
+                    planet = planets[int(planet_id)]
+                    planet_name = planet.get_name()
+                    health = planet.health_percent()
+                if self["type"] == 11:
+                    mode = "Liberate"
+                    taskstr = f"{e}. Liberate {planet_name}. Status: `{'ok' if curr==1 else f'{health},{curr}'}`"
+                if self["type"] == 13:
+                    mode = "Control"
+                    taskstr = f"{e}. Control {planet_name}. Status:`{'ok' if curr==1 else f'{health},{curr}'}`"
+            elif self['type']==2:
+                if not all(key in taskdata for key in ["goal"]):
+                    dump = json.dumps(taskdata, default=str)[:258]
+                    taskstr += f"{dump}"
+                    return
+                faction_name=""
+                if  "faction" in taskdata:
+                    faction_name = "("+faction_names.get(
+                        taskdata["faction"][0], f"Unknown Faction {taskdata['faction'][0]}"
+                    )+ ' type)'
+                goal = taskdata["goal"][0]
+                rarity=''
+                lc = taskdata.get("hasPlanet", None)
+                onplanet = taskdata.get("planet", None)
+    
+                if 'itemId' in taskdata:
+                    rare=taskdata['itemId'][0]
+                    rarity=samples.get(rare,rare)+" "
+    
+                taskstr += f"/{hf(goal)} {rarity}samples ({round((int(curr)/int(goal))*100.0,3)}) {faction_name}"
+                
+                if onplanet is not None and lc is not None:
+                    if lc[0]:
+                        for ind in onplanet:
+                            if int(ind) in planets:
+                                planet = planets[int(ind)]
+                                planet_name = planet.get_name()
+                                taskstr += f", On {planet_name}"
+            elif self["type"] == 12:
+                planet_name = taskdata["planet"]
+                if self.values:
+                    taskstr += json.dumps(taskdata, default=str)[:258]
+                else:
+                    taskstr += "Defend planets?"
+            elif self["type"] == 3:
+                if not all(key in taskdata for key in ["goal", "faction"]):
+                    dump = json.dumps(taskdata, default=str)[:258]
+                    taskstr += f"{dump}"
+                    return
+                faction_name = faction_names.get(
+                    taskdata["faction"][0], f"Unknown Faction {taskdata['faction'][0]}"
+                )
+                goal = taskdata["goal"][0]
+    
+                taskstr += f"/{hf(goal)} ({(int(curr)/int(goal))*100.0}) {faction_name}"
+                lc = taskdata.get("hasPlanet", None)
+                onplanet = taskdata.get("planet", None)
+                if onplanet is not None and lc is not None:
+                    if lc[0]:
+                        for ind in onplanet:
+                            if int(ind) in planets:
+                                planet = planets[int(ind)]
+                                planet_name = planet.get_name()
+                                taskstr += f", On {planet_name}"
             else:
-                taskstr += "Defend planets?"
-        elif self["type"] == 3:
-            if not all(key in taskdata for key in ["goal", "race"]):
                 dump = json.dumps(taskdata, default=str)[:258]
                 taskstr += f"{dump}"
-                return
-            faction_name = faction_names.get(
-                taskdata["race"][0], f"Unknown Faction {taskdata['race'][0]}"
-            )
-            goal = taskdata["goal"][0]
-
-            taskstr += f"/{hf(goal)} ({(int(curr)/int(goal))*100.0}) {faction_name}"
-            lc = taskdata.get("liberate", None)
-            onplanet = taskdata.get("planet_index", None)
-            if onplanet is not None and lc is not None:
-                if lc[0]:
-                    for ind in onplanet:
-                        if int(ind) in planets:
-                            planet = planets[int(ind)]
-                            planet_name = planet.get_name()
-                            taskstr += f", On {planet_name}"
-        else:
+        except Exception as e:
             dump = json.dumps(taskdata, default=str)[:258]
             taskstr += f"{dump}"
         return taskstr
