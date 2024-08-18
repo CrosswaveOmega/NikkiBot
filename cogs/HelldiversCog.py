@@ -295,7 +295,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                     return
                 emb = hd2.campaign_view(self.apistatus, self.hd2)
 
-                embs = [].extend(emb)
+                embs = emb
                 if self.apistatus.assignments:
                     for i, assignment in self.apistatus.assignments.items():
                         b, a = assignment.get_first_change()
