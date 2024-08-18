@@ -120,7 +120,7 @@ class Task2(BaseApiModel):
                     health = planet.health_percent()
                 if self["type"] == 11:
                     mode = "Liberate"
-                    taskstr = f"{e}. Liberate {planet_name}. Status: `{'ok' if curr==1 else f'{health},{curr}'}`"
+                   taskstr = f"{e}. Liberate {planet_name}. Status: `{'ok' if curr==1 else f'{health},{curr}'}`"
                 if self["type"] == 13:
                     mode = "Control"
                     taskstr = f"{e}. Control {planet_name}. Status:`{'ok' if curr==1 else f'{health},{curr}'}`"
@@ -153,11 +153,28 @@ class Task2(BaseApiModel):
                                 planet_name = planet.get_name()
                                 taskstr += f", On {planet_name}"
             elif self["type"] == 12:
+                if not all(key in taskdata for key in ["goal", "hasCount"]):
+                    dump = json.dumps(taskdata, default=str)[:258]
+                    taskstr += f"{dump}"
+                    return
+                faction_name=""
+                if  "faction" in taskdata:
+                    faction_name = "from "+faction_names.get(
+                        taskdata["faction"][0], f"Unknown Faction {taskdata['faction'][0]}"
+                    )+ ''
+                goal = taskdata["goal"][0]
                 planet_name = taskdata["planet"]
-                if self.values:
-                    taskstr += json.dumps(taskdata, default=str)[:258]
-                else:
-                    taskstr += "Defend planets?"
+                taskstr = f"{e}. Defend {hf(curr)}/{hf(goal)} planets from {faction_name}"
+                lc = taskdata.get("hasPlanet", None)
+                onplanet = taskdata.get("planet", None)
+                if onplanet is not None and lc is not None:
+                    if lc[0]:
+                        for ind in onplanet:
+                            if int(ind) in planets:
+                                planet = planets[int(ind)]
+                                planet_name = planet.get_name()
+                                taskstr += f", On {planet_name}"
+                
             elif self["type"] == 3:
                 if not all(key in taskdata for key in ["goal", "faction"]):
                     dump = json.dumps(taskdata, default=str)[:258]
