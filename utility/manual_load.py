@@ -15,7 +15,7 @@ def load_json_with_substitutions(directory: str, filename: str, substitutions: d
     Args:
         directory (str): The directory where the JSON file is located.
         filename (str): The name of the JSON file.
-        substitutions (dict): A dictionary containing the substitutions to be applied.
+        substitutions (dict): A dictionary containing any substitutions to be applied.
 
     Returns:
         dict: The parsed JSON data with substitutions applied.
