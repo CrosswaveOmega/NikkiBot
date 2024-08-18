@@ -39,6 +39,6 @@ class Reward(BaseApiModel):
         if type ==2:
             return f"{emj('req')} × {self.amount}"
         if type ==3:
-            return f"{emj('supercredits')} × {self.amount}"
+            return f"{emj('credits')} × {self.amount}"
 
         return f"Unknown type:{self.type} × {self.amount}"
