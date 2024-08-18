@@ -159,12 +159,12 @@ class Task2(BaseApiModel):
                     return taskstr
                 faction_name=""
                 if  "faction" in taskdata:
-                    faction_name = "from "+faction_names.get(
+                    faction_name = " from "+faction_names.get(
                         taskdata["faction"][0], f"Unknown Faction {taskdata['faction'][0]}"
                     )+ ''
                 goal = taskdata["goal"][0]
                 planet_name = taskdata["planet"]
-                taskstr = f"{e}. Defend {hf(curr)}/{hf(goal)} planets from {faction_name}"
+                taskstr = f"{e}. Defend {hf(curr)}/{hf(goal)} planets{faction_name}"
                 lc = taskdata.get("hasPlanet", None)
                 onplanet = taskdata.get("planet", None)
                 if onplanet is not None and lc is not None:
