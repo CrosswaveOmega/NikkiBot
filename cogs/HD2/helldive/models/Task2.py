@@ -174,7 +174,7 @@ class Task2(BaseApiModel):
                                 planet = planets[int(ind)]
                                 planet_name = planet.get_name()
                                 taskstr += f", On {planet_name}"
-                return tasksrr
+                return taskstr
             elif self["type"] == 3:
                 if not all(key in taskdata for key in ["goal", "faction"]):
                     dump = json.dumps(taskdata, default=str)[:258]
