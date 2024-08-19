@@ -15,7 +15,7 @@ def read_article_sync(url):
     let result=await read_webpage_plain(`{url}`,readability,jsdom);
     return [result[0],result[1]];
     """
-    myjs = assets.JavascriptLookup.find_javascript_file("readwebpage.js", out)
+    myjs = assetloader.JavascriptLookup.find_javascript_file("readwebpage.js", out)
     # myjs=myjs.replace("URL",url)
     gui.dprint(myjs)
     rsult = eval_js(myjs)

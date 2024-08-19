@@ -76,7 +76,7 @@ def oai_check():
 
 
 async def read_article_async(jsctx: JSContext, url, clearout=True):
-    myfile = await assets.JavascriptLookup.get_full_pathas(
+    myfile = await assetloader.JavascriptLookup.get_full_pathas(
         "readwebpage.js", "WEBJS", jsctx
     )
     gui.dprint(url)

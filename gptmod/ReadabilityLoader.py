@@ -31,7 +31,7 @@ def remove_links(markdown_text):
 
 
 async def check_readability(jsenv, html, url):
-    myfile = await assets.JavascriptLookup.get_full_pathas(
+    myfile = await assetloader.JavascriptLookup.get_full_pathas(
         "readwebpage.js", "WEBJS", jsenv
     )
     htmls: str = str(html)
@@ -40,7 +40,7 @@ async def check_readability(jsenv, html, url):
 
 
 async def read_article_direct(jsenv, html, url):
-    myfile = await assets.JavascriptLookup.get_full_pathas(
+    myfile = await assetloader.JavascriptLookup.get_full_pathas(
         "readwebpage.js", "WEBJS", jsenv
     )
     timeout = 30
