@@ -1,9 +1,8 @@
 import asyncio
 from javascriptasync import require, eval_js
-import assets
 import re
 import gui
-
+import assetloader
 
 def read_article_sync(url):
     readability = require("@mozilla/readability")

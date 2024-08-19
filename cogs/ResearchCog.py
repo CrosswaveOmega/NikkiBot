@@ -12,10 +12,10 @@ from gptfunctionutil import (
 )
 from javascriptasync import JSContext
 
-import assets
 import cogs.ResearchAgent as ra
 import gptmod
 import gui
+import assetloader
 from assetloader import AssetLookup
 from bot import StatusEditMessage, TC_Cog_Mixin, TCBot, super_context_menu
 from database.database_ai import AuditProfile

@@ -10,7 +10,7 @@ from typing import Any, AsyncGenerator, Dict, Iterator, List, Tuple, Union
 import discord
 import gui
 from htmldate import find_date
-import assetloader as assets
+import assetloader
 from .metadataenums import MetadataDocType
 from bs4 import BeautifulSoup
 
