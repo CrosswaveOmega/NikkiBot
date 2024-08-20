@@ -39,8 +39,9 @@ from cogs.HD2.helldive import (
     PlanetAttack,
     SimplePlanet,
     PlanetActiveEffects,
-    process_planet_attacks,
 )
+
+from cogs.HD2.diff_util import process_planet_attacks
 from utility.manual_load import load_json_with_substitutions
 
 

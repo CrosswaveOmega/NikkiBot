@@ -406,4 +406,4 @@ def get_planet(ind, biome_name):
     return None
 
 
-get_planet(64, "blackhole")
+# get_planet(64, "blackhole")

@@ -1,12 +1,15 @@
+import asyncio
 import csv
 import datetime
 import json
 
 import numpy as np
 
+from hd2json.jsonutils import load_and_merge_json_files
+
+from .diff_util import detect_loggable_changes
 from .helldive import *
 from .utils import prioritized_string_split
-from hd2json.jsonutils import load_and_merge_json_files
 
 MAX_ATTEMPT = 3
 
@@ -84,7 +87,8 @@ class ApiStatus:
         self.last_planet_get: datetime.datetime = datetime.datetime(2024, 1, 1, 0, 0, 0)
         self.warall: DiveharderAll = None
         self.nowval = DiveharderAll(status=WarStatus(), war_info=WarInfo())
-        self.planetdata: Dict[str, Any] = load_and_merge_json_files("./hd2json/planets")
+        planetjson = load_and_merge_json_files("./hd2json/planets")
+        self.planetdata: Dict[str, Any] = GalaxyStatic(**planetjson)
 
     def to_dict(self):
         return {

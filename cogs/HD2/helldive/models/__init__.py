@@ -32,3 +32,5 @@ from .Setting import *
 from .Task import *
 from .WarId import *
 from .WarSummary import *
+
+from .GalaxyStatic import *

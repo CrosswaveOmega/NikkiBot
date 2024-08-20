@@ -4,6 +4,7 @@ import re
 import gui
 import assetloader
 
+
 def read_article_sync(url):
     readability = require("@mozilla/readability")
     jsdom = require("jsdom")

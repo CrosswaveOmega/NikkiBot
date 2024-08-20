@@ -186,6 +186,20 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
             )
 
     @calc.command(
+        name="gametime",
+        description="get the current game time",
+    )
+    async def get_startTime(
+        self,
+        interaction: discord.Interaction,
+    ):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        current_date_time = hd2.helldive.builders.get_time(self.apistatus.warall)
+        await ctx.send(
+            f"{discord.utils.format_dt(current_date_time,'F')}, in iso={current_date_time.isoformat()}"
+        )
+
+    @calc.command(
         name="impactdatacollection",
         description="Convert experience per second to damage per second.",
     )
