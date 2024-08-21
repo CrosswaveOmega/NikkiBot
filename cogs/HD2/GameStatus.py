@@ -7,7 +7,7 @@ import numpy as np
 
 from hd2json.jsonutils import load_and_merge_json_files
 
-from .diff_util import detect_loggable_changes
+from .diff_util import detect_loggable_changes, detect_loggable_changes_planet
 from .helldive import *
 from .utils import prioritized_string_split
 
@@ -156,7 +156,11 @@ class ApiStatus:
         return war
 
     async def get_now(
-        self, current, Queue: asyncio.Queue, nowval=None
+        self,
+        current,
+        Queue: asyncio.Queue,
+        nowval=None,
+        PlanetQueue: asyncio.Queue = None,
     ) -> Tuple[Dict[str, Dict[str, Union[List, Dict[str, Any]]]], DiveharderAll]:
 
         if nowval:
@@ -167,6 +171,8 @@ class ApiStatus:
         if nowv:
             if current:
                 diff = await detect_loggable_changes(current, nowv, Queue)
+                if PlanetQueue:
+                    await detect_loggable_changes_planet(current, nowv, PlanetQueue)
                 return diff, nowv
 
         return None, nowv

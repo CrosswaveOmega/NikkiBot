@@ -250,6 +250,12 @@ async def detect_loggable_changes(
     }
     batch = (int(new.retrieved_at.timestamp()) >> 4) | (random.randint(0, 15))
     superlist = []
+    if old.status.time==new.status.time:
+        newitem = GameEvent(
+            mode="deadzone", place='deadzone', batch=batch, value=new.status
+        )
+        
+        await QueueAll.put([newitem])
 
     rawout = await get_differing_fields(
         old.status,
@@ -363,5 +369,67 @@ async def detect_loggable_changes(
         batch,
         ["planetStatus"],
     )
+    logs.info("Done detection, stand by...")
+    return superlist
+
+
+async def detect_loggable_changes_planet(
+    old: BaseApiModel, new: BaseApiModel, QueueAll: asyncio.Queue
+) -> Tuple[dict, list]:
+
+    batch = int(new.retrieved_at.timestamp())
+    superlist = []
+
+    if old.status.time == new.status.time:
+        
+        return None
+
+    logs.info("campaigns detection, stand by...")
+
+    planetindexes = []
+    for c in new.status.campaigns:
+        if not c.planetIndex in planetindexes:
+            planetindexes.append(c.planetIndex)
+
+    output = {
+        "timestamp": batch,
+        "time": new.status.time,
+        "imp": new.status.impactMultiplier,
+        "gstate": {},
+    }
+    events={}
+    for evt in new.status.planetEvents:
+        events[evt.planetIndex]=evt
+    for planet in new.status.planetStatus:
+        if planet.index in planetindexes:
+            output["gstate"][planet.index] = planet.model_dump()
+            if planet.index in events:
+                output['gstate'][planet.index]['health']=events[planet.index].health
+            output["gstate"][planet.index].pop("retrieved_at")
+
+    output['gstate']=[j for j in output['gstate'].values()]
+    await QueueAll.put(
+        GameEvent(mode="data", place="planets", batch=batch, value=output)
+    )
+    # logs.info("planet events detection, stand by...")
+    # superlist += await process_planet_events(
+    #     new.status.planetEvents,
+    #     old.status.planetEvents,
+    #     "planetevents",
+    #     "id",
+    #     QueueAll,
+    #     batch,
+    #     [],
+    # )
+    # logs.info("planet status detection, stand by...")
+    # superlist += await process_planet_events(
+    #     new.status.planetStatus,
+    #     old.status.planetStatus,
+    #     "planets",
+    #     "index",
+    #     QueueAll,
+    #     batch,
+    #     [],
+    # )
     logs.info("Done detection, stand by...")
     return superlist

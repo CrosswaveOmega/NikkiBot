@@ -466,7 +466,21 @@ class Embeds:
         emb.set_author(name=f"Campaign {mode}.")
         emb.set_footer(text=f"{strc},{custom_strftime(campaign.retrieved_at)}")
         return emb
-
+    
+    @staticmethod
+    def deadzoneWarningEmbed(
+        campaign: BaseApiModel, mode="started"
+    ) -> discord.Embed:
+        emb = discord.Embed(
+            title=f"DEADZONE DETECTED",
+            description=f"A likely deadzone was detected!\nTimestamp:{fdt(campaign.retrieved_at,'F')}",
+            timestamp=campaign.retrieved_at,
+            color=0xff0000
+        )
+        emb.set_author(name=f"DEADZONE WARNING.")
+        emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
+        return emb
+    
     @staticmethod
     def planetAttackEmbed(
         atk: PlanetAttack, planets: Dict[int, Planet], mode="started"
@@ -680,6 +694,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         robj2 = rrule(freq=MINUTELY, interval=1, dtstart=st)
         self.QueueAll = asyncio.Queue()
         self.EventQueue = asyncio.Queue()
+        self.PlanetQueue = asyncio.Queue()
         if not TCTaskManager.does_task_exist("UpdateLog"):
             self.tc_task2 = TCTask("UpdateLog", robj2, robj2.after(st))
             self.tc_task2.assign_wrapper(self.updatelog)
@@ -753,6 +768,15 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             await asyncio.sleep(0.02)
         except asyncio.QueueEmpty:
             pass
+        try:
+            item = self.PlanetQueue.get_nowait()
+            if item:
+                dv = json.dumps(item.value, default=str)
+                with open("./saveData/outs.jsonl", "a+") as file:
+                    file.write(f"{dv}\n")
+            await asyncio.sleep(0.02)
+        except asyncio.QueueEmpty:
+            pass
 
     async def send_event_list(self, item_list):
         embeds: List[discord.Embed] = []
@@ -814,7 +838,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     item, self.apistatus.planets, item.mode
                 )
                 return embed
-
+        if event_type =='deadzone':
+            embed = Embeds.deadzoneWarningEmbed(
+                    value,
+                    "started",
+                )
         if event_type == "new":
             if place == "campaign":
                 embed = Embeds.campaignLogEmbed(
@@ -939,7 +967,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             self.apistatus.warall = warstat
         else:
             events, warstat = await self.apistatus.get_now(
-                self.apistatus.warall, self.QueueAll, None
+                self.apistatus.warall, self.QueueAll, None, self.PlanetQueue
             )
             if events:
                 item = GameEvent(

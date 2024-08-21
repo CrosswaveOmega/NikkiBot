@@ -1,5 +1,6 @@
 import csv
 import datetime
+import os
 
 import discord
 from discord import app_commands
@@ -210,6 +211,27 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         await interaction.response.send_message(
             file=discord.File("saveData/graph1.png"), ephemeral=True
         )
+
+    
+    @calc.command(
+        name="get_planet_liberation",
+        description="get the planet liberation data gathered from the past 48 hours"
+    )
+    async def get_lib(
+        self,
+        interaction: discord.Interaction,
+    ):
+        file_path = "saveData/outs.jsonl"
+        file_size = os.path.getsize(file_path)
+        if file_size < 25 * 1024 * 1024:
+            await interaction.response.send_message(
+                file=discord.File(file_path), ephemeral=True
+            )
+        else:
+            await interaction.response.send_message(
+                "The file is too large to be sent.", ephemeral=True
+            )
+
 
     @calc.command(
         name="impactdatacollection",
