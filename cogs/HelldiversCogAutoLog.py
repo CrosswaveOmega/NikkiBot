@@ -779,7 +779,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             except asyncio.QueueEmpty:
                 pass
         except Exception as ex:
-                await self.bot.send_error(ex, "LOG ERROR", True)
+            await self.bot.send_error(ex, "LOG ERROR", True)
 
     async def send_event_list(self, item_list):
         embeds: List[discord.Embed] = []
