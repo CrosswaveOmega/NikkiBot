@@ -41,7 +41,7 @@ from cogs.HD2.helldive import (
     PlanetActiveEffects,
 )
 
-from cogs.HD2.diff_util import process_planet_attacks
+from cogs.HD2.diff_util import process_planet_attacks, GameEvent
 from utility.manual_load import load_json_with_substitutions
 
 
@@ -490,6 +490,35 @@ class Embeds:
         return emb
 
     @staticmethod
+    def planetAttacksEmbed(
+        atks: List[GameEvent], planets: Dict[int, Planet], mode="started"
+    ):
+        strings=[]
+        timestamp=discord.utils.utcnow()
+        for atkv in atks.value:
+            atk=atkv.value
+            source = planets.get(atk.source, None)
+            target = planets.get(atk.target, None)
+            source_name = atk.source
+            target_name = atk.target
+            if source:
+                source_name = source.get_name(False)
+            if target:
+                target_name = target.get_name(False)
+            string=f"Attack {mode}: {source_name} to {target_name}."
+            strings.append(string)
+            timestamp=atk.retrieved_at
+        emb = discord.Embed(
+            title=f"Planet Attacks",
+            description='\n'.join([f"* {s}" for s in strings]),
+            timestamp=timestamp,
+            color=0x707CC8 if mode == "added" else 0xC08888,
+        )
+        emb.set_author(name=f"Planet Attack {mode}.")
+        emb.set_footer(text=f"{custom_strftime(timestamp)}")
+        return emb
+
+    @staticmethod
     def planeteventsEmbed(
         campaign: PlanetEvent, planet: Optional[Planet], mode="started"
     ) -> discord.Embed:
@@ -521,7 +550,7 @@ class Embeds:
             color = colors2.get(planet.currentOwner.lower(), 0x009696)
         emb = discord.Embed(
             title=f"Planet {name} Effect Detected",
-            description=f"An Effect has {mode} for {name}, in sector {sector}.\n\n Timestamp:{fdt(campaign.retrieved_at,'F')}",
+            description=f"An Effect was {mode} for {name}, in sector {sector}.\n\n Timestamp:{fdt(campaign.retrieved_at,'F')}",
             timestamp=campaign.retrieved_at,
             color=color,
         )
@@ -677,16 +706,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
                         self.test_with.append(add)
 
-    @tasks.loop(seconds=2)
-    async def run2(self):
-        try:
-            item = self.QueueAll.get_nowait()
-            await self.run(item)
-            await asyncio.sleep(0.02)
-        except asyncio.QueueEmpty:
-            pass
+
 
     async def batch_events(self, events):
+        '''Stitch multiple events together into one.'''
+
         for event in events:
             batch_id = event["batch"]
             if batch_id not in self.batches:
@@ -723,19 +747,71 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             except Exception as ex:
                 await self.bot.send_error(ex, "LOG ERROR", True)
 
-    async def run(self, item):
+    @tasks.loop(seconds=2)
+    async def run2(self):
+        try:
+            item = self.QueueAll.get_nowait()
+            await self.send_event_list(item)
+            await asyncio.sleep(0.02)
+        except asyncio.QueueEmpty:
+            pass
+
+    async def send_event_list(self,item_list):
+        embeds:List[discord.Embed]=[]
+        for item in item_list:
+            embed=await self.build_embed(item)
+            if embed:
+                embeds.append(embed)
+
+        if not embeds:
+            return
+        
+        val_batches = []
+        batch = []
+        for e in embeds:
+            val = json.dumps(e.to_dict())
+            size = len(val)
+            if sum(len(json.dumps(b.to_dict())) for b in batch) + size > 6000 or len(batch)>=10:
+                val_batches.append(batch)
+                batch = [e]
+            else:
+                batch.append(e)
+        if batch:
+            val_batches.append(batch)
+        for embeds in val_batches:
+            for hook in list(self.loghook):
+                try:
+                    await web.postMessageAsWebhookWithURL(
+                        hook,
+                        message_content="",
+                        display_username="Super Earth Event Log",
+                        avatar_url=self.bot.user.avatar.url,
+                        embed=embeds,
+                    )
+                except Exception as e:
+                    await self.bot.send_error(e, "Webhook error")
+                    if hook != AssetLookup.get_asset("loghook", "urls"):
+                        self.loghook.remove(hook)
+                        # ServerHDProfile.set_all_matching_webhook_to_none(hook)
+
+    
+    async def build_embed(self, item:GameEvent):
 
         event_type = item["mode"]
         print(item)
         if event_type == "group":
             print("group", len(item["value"]))
             task = asyncio.create_task(self.batch_events_2(item["value"]))
-            return
+            return None
 
         batch = item["batch"]
         place = item["place"]
         value = item["value"]
         embed = None
+        if item['cluster']:
+            if place == "planetAttacks":
+                embed = Embeds.planetAttacksEmbed(item, self.apistatus.planets, item.mode)
+                return embed
 
         if event_type == "new":
             if place == "campaign":
@@ -805,23 +881,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             elif place == "globalEvents":
                 embed = Embeds.globalEventEmbed(info, "changed")
 
-        if embed:
-            # print(embed.description)
-            for hook in list(self.loghook):
-                try:
-                    await web.postMessageAsWebhookWithURL(
-                        hook,
-                        message_content="",
-                        display_username="Super Earth Event Log",
-                        avatar_url=self.bot.user.avatar.url,
-                        embed=[embed],
-                    )
-                except Exception as e:
-                    await self.bot.send_error(e, "Webhook error")
-                    if hook != AssetLookup.get_asset("loghook", "urls"):
-                        self.loghook.remove(hook)
-                        # ServerHDProfile.set_all_matching_webhook_to_none(hook)
-
+        return embed
+    
     @run2.error
     async def logerror(self, ex):
         await self.bot.send_error(ex, "LOG ERROR", True)
@@ -864,14 +925,14 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
             self.spot += 1
             if events:
-                item = {
-                    "mode": "group",
-                    "place": "GROUP",
-                    "batch": 501,
-                    "value": events,
-                }
+                item = GameEvent(
+                    mode="group",
+                    place="GROUP",
+                    batch=501,
+                    value=events,
+                )
 
-                await self.QueueAll.put(item)
+                await self.QueueAll.put([item])
 
             self.apistatus.warall = warstat
         else:
@@ -879,15 +940,15 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 self.apistatus.warall, self.QueueAll, None
             )
             if events:
-                item = {
-                    "mode": "group",
-                    "place": "GROUP",
-                    "batch": 501,
-                    "value": events,
-                }
+                item = GameEvent(
+                    mode="group",
+                    place="GROUP",
+                    batch=501,
+                    value=events,
+                )
                 print(item)
 
-                await self.QueueAll.put(item)
+                await self.QueueAll.put([item])
 
         self.get_running = False
 

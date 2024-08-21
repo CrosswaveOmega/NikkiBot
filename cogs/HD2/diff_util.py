@@ -6,9 +6,26 @@ logs = logging.getLogger("TCLogger")
 from .helldive.models.ABC.model import BaseApiModel
 
 
+from pydantic import Field
 import discord
 import asyncio
 import random
+
+
+class GameEvent(BaseApiModel):
+    """
+    Pydantic model for game events.
+
+    """
+
+    mode: Optional[str] = Field(alias="mode", default=None)
+
+    place: Optional[str] = Field(alias="place", default=None)
+
+    batch: Optional[int] = Field(alias="batch", default=None)
+
+    value: Optional[Union[Any,Tuple[Any,Dict[str,Any]]]] = Field(alias="value", default=None)
+    cluster: Optional[bool] = Field(alias='cluster',default=False)
 
 
 async def compare_value_with_timeout(model1, field):
@@ -125,40 +142,51 @@ async def process_planet_events(
     source, target, place, key, QueueAll, batch, exclude=[]
 ):
     pushed_items = []
+    new,old,change=[],[],[]
     for event in source:
         oc = await check_compare_value(key, event[key], target)
         if not oc:
-            item = {
-                "mode": "new",
-                "place": place,
-                "batch": batch,
-                "value": event,
-            }
+            item=GameEvent(
+                mode='new',
+                place=place,
+                batch=batch,
+                value=event
+            )
             pushed_items.append(item)
-            await QueueAll.put(item)
+            new.append(item)
+            #await QueueAll.put(item)
         else:
             differ = await get_differing_fields(oc, event, to_ignore=exclude)
             if differ:
-                item = {
-                    "mode": "change",
-                    "place": place,
-                    "batch": batch,
-                    "value": (event, differ),
-                }
+                item = GameEvent(
+                    mode="change",
+                    place=place,
+                    batch=batch,
+                    value=(event, differ),
+                )
                 pushed_items.append(item)
-                await QueueAll.put(item)
+                change.append(item)
+                #await QueueAll.put(item)
 
     for event in target:
         if not await check_compare_value(key, event[key], source):
-            item = {
-                "mode": "remove",
-                "place": place,
-                "batch": batch,
-                "value": event,
-            }
+            item = GameEvent(
+                mode="remove",
+                place=place,
+                batch=batch,
+                value=event,
+            )
             pushed_items.append(item)
-            await QueueAll.put(item)
+            old.append(item)
+            #await QueueAll.put(item)
+    if new:
+        await QueueAll.put(new)
 
+    if change:
+        await QueueAll.put(change)
+
+    if old:
+        await QueueAll.put(old)
     return pushed_items
 
 
@@ -166,32 +194,58 @@ async def process_planet_attacks(
     source, target, place, keys, QueueAll, batch, exclude=[]
 ):
     pushed_items = []
+    newlist=[]
+    oldlist=[]
     for event in source:
         oc = await check_compare_value_list(keys, [event[key] for key in keys], target)
         if not oc:
             print(place, "new", event)
-            item = {
-                "mode": "new",
-                "place": place,
-                "batch": batch,
-                "value": event,
-            }
+            item = GameEvent(
+                mode="new",
+                place=place,
+                batch=batch,
+                value=event
+            )
+            newlist.append(item)
             pushed_items.append(item)
-            await QueueAll.put(item)
+            #await QueueAll.put(item)
 
     for event in target:
         if not await check_compare_value_list(
             keys, [event[key] for key in keys], source
         ):
-            item = {
-                "mode": "remove",
-                "place": place,
-                "batch": batch,
-                "value": event,
-            }
+            item = GameEvent(
+                mode="remove",
+                place=place,
+                batch=batch,
+                value=event,
+            )
             pushed_items.append(item)
-            await QueueAll.put(item)
-
+            oldlist.append(item)
+            #await QueueAll.put(item)
+    
+    if place=='planetAttacks':
+        if newlist:
+            newitem=GameEvent(
+                mode='added',
+                place=place,
+                batch=batch,
+                value=newlist,
+                cluster=True
+            )
+            await QueueAll.put([newitem])
+        if oldlist:
+            olditem=GameEvent(
+                mode='removed',
+                place=place,
+                batch=batch,
+                value=oldlist,
+                cluster=True
+            )
+            await QueueAll.put([olditem])
+    else:
+        combined_list = oldlist + newlist
+        await QueueAll.put(combined_list)
     return pushed_items
 
 
@@ -229,14 +283,14 @@ async def detect_loggable_changes(
         ],
     )
     if rawout:
-        item = {
-            "mode": "change",
-            "place": "stats_raw",
-            "batch": batch,
-            "value": (new.status, rawout),
-        }
+        item = GameEvent(
+            mode="change",
+            place="stats_raw",
+            batch=batch,
+            value=(new.status, rawout),
+        )
         superlist.append(item)
-        await QueueAll.put(item)
+        await QueueAll.put([item])
     out["stats_raw"]["changes"] = rawout
     logs.info("Starting loggable detection, stand by...")
     superlist += await process_planet_attacks(
@@ -260,14 +314,14 @@ async def detect_loggable_changes(
         old.war_info, new.war_info, to_ignore=["planetInfos"]
     )
     if infoout:
-        item = {
-            "mode": "change",
-            "place": "info_raw",
-            "batch": batch,
-            "value": (new.war_info, infoout),
-        }
+        item = GameEvent(
+            mode = "change",
+            place = "info_raw",
+            batch = batch,
+            value = (new.war_info, infoout),
+        )
         superlist.append(item)
-        await QueueAll.put(item)
+        await QueueAll.put([item])
     logs.info("News feed loggable detection, stand by...")
     superlist += await process_planet_events(
         new.news_feed, old.news_feed, "news", "id", QueueAll, batch
