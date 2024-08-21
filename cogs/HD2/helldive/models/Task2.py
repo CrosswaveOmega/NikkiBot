@@ -10,7 +10,7 @@ from .ABC.utils import extract_timestamp as et
 from .ABC.utils import human_format as hf
 from .ABC.utils import select_emoji as emj
 
-from ..constants import task_types, value_types, faction_names, samples
+from ..constants import task_types, value_types, faction_names, samples, enemies
 
 
 class Task2(BaseApiModel):
@@ -143,8 +143,17 @@ class Task2(BaseApiModel):
                     taskdata["faction"][0], f"Unknown Faction {taskdata['faction'][0]}"
                 )
                 goal = taskdata["goal"][0]
+                enemy_id=taskdata.get('enemyID',None)
+                enemy=""
+                if enemy_id is not None:
+                    eid=enemy_id[0]
+                    if eid:
+                        enemy=enemies.get(eid, f"UNKNOWN {eid}")
 
-                taskstr += f"/{hf(goal)} ({(int(curr)/int(goal))*100.0}) {faction_name}"
+                taskstr += f"/{hf(goal)} ({(int(curr)/int(goal))*100.0}) {enemy} {faction_name}"
+
+                
+
                 lc = taskdata.get("hasPlanet", None)
                 onplanet = taskdata.get("planet", None)
                 if onplanet is not None and lc is not None:

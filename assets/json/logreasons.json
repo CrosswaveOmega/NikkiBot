@@ -61,7 +61,7 @@
         [
             "defense is won"
         ]
-        ,"if campaign_remove and planetEvent_remove"
+        ,"if campaign_remove and planetEvent_remove and planet.owner==1"
     ],
     "full_lib": [
         "\u21b3 Orion sector is fully liberated",
