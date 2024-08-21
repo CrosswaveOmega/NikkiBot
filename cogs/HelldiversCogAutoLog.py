@@ -763,20 +763,23 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
     @tasks.loop(seconds=2)
     async def run2(self):
         try:
-            item = self.QueueAll.get_nowait()
-            await self.send_event_list(item)
-            await asyncio.sleep(0.02)
-        except asyncio.QueueEmpty:
-            pass
-        try:
-            item = self.PlanetQueue.get_nowait()
-            if item:
-                dv = json.dumps(item.value, default=str)
-                with open("./saveData/outs.jsonl", "a+") as file:
-                    file.write(f"{dv}\n")
-            await asyncio.sleep(0.02)
-        except asyncio.QueueEmpty:
-            pass
+            try:
+                item = self.QueueAll.get_nowait()
+                await self.send_event_list(item)
+                await asyncio.sleep(0.02)
+            except asyncio.QueueEmpty:
+                pass
+            try:
+                item = self.PlanetQueue.get_nowait()
+                if item:
+                    dv = json.dumps(item.value, default=str)
+                    with open("./saveData/outs.jsonl", "a+") as file:
+                        file.write(f"{dv}\n")
+                await asyncio.sleep(0.02)
+            except asyncio.QueueEmpty:
+                pass
+        except Exception as ex:
+                await self.bot.send_error(ex, "LOG ERROR", True)
 
     async def send_event_list(self, item_list):
         embeds: List[discord.Embed] = []
