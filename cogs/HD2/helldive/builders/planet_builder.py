@@ -20,8 +20,8 @@ def check_compare_value(key, value, target: List[Dict[str, Any]]):
 def get_time(diveharder: DiveharderAll) -> dt.datetime:
     status = diveharder.status
     info = diveharder.war_info
-    
-    #Get datetime diveharder object was retrieved at
+
+    # Get datetime diveharder object was retrieved at
     now = diveharder.retrieved_at
     gametime = dt.datetime.fromtimestamp(
         info.startDate, tz=dt.timezone.utc

@@ -23,6 +23,7 @@ from .buttons import ListButtons
 from .makeplanets import get_planet
 from .diff_util import GameEvent
 
+
 async def setup(bot):
     print(f"loading in child module {__name__}")
 

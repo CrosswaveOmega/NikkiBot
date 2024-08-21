@@ -493,10 +493,10 @@ class Embeds:
     def planetAttacksEmbed(
         atks: List[GameEvent], planets: Dict[int, Planet], mode="started"
     ):
-        strings=[]
-        timestamp=discord.utils.utcnow()
+        strings = []
+        timestamp = discord.utils.utcnow()
         for atkv in atks.value:
-            atk=atkv.value
+            atk = atkv.value
             source = planets.get(atk.source, None)
             target = planets.get(atk.target, None)
             source_name = atk.source
@@ -505,12 +505,12 @@ class Embeds:
                 source_name = source.get_name(False)
             if target:
                 target_name = target.get_name(False)
-            string=f"Attack {mode}: {source_name} to {target_name}."
+            string = f"Attack {mode}: {source_name} to {target_name}."
             strings.append(string)
-            timestamp=atk.retrieved_at
+            timestamp = atk.retrieved_at
         emb = discord.Embed(
             title=f"Planet Attacks",
-            description='\n'.join([f"* {s}" for s in strings]),
+            description="\n".join([f"* {s}" for s in strings]),
             timestamp=timestamp,
             color=0x707CC8 if mode == "added" else 0xC08888,
         )
@@ -706,10 +706,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
                         self.test_with.append(add)
 
-
-
     async def batch_events(self, events):
-        '''Stitch multiple events together into one.'''
+        """Stitch multiple events together into one."""
 
         for event in events:
             batch_id = event["batch"]
@@ -756,22 +754,25 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         except asyncio.QueueEmpty:
             pass
 
-    async def send_event_list(self,item_list):
-        embeds:List[discord.Embed]=[]
+    async def send_event_list(self, item_list):
+        embeds: List[discord.Embed] = []
         for item in item_list:
-            embed=await self.build_embed(item)
+            embed = await self.build_embed(item)
             if embed:
                 embeds.append(embed)
 
         if not embeds:
             return
-        
+
         val_batches = []
         batch = []
         for e in embeds:
             val = json.dumps(e.to_dict())
             size = len(val)
-            if sum(len(json.dumps(b.to_dict())) for b in batch) + size > 6000 or len(batch)>=10:
+            if (
+                sum(len(json.dumps(b.to_dict())) for b in batch) + size > 6000
+                or len(batch) >= 10
+            ):
                 val_batches.append(batch)
                 batch = [e]
             else:
@@ -794,8 +795,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         self.loghook.remove(hook)
                         # ServerHDProfile.set_all_matching_webhook_to_none(hook)
 
-    
-    async def build_embed(self, item:GameEvent):
+    async def build_embed(self, item: GameEvent):
 
         event_type = item["mode"]
         print(item)
@@ -808,9 +808,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         place = item["place"]
         value = item["value"]
         embed = None
-        if item['cluster']:
+        if item["cluster"]:
             if place == "planetAttacks":
-                embed = Embeds.planetAttacksEmbed(item, self.apistatus.planets, item.mode)
+                embed = Embeds.planetAttacksEmbed(
+                    item, self.apistatus.planets, item.mode
+                )
                 return embed
 
         if event_type == "new":
@@ -882,7 +884,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.globalEventEmbed(info, "changed")
 
         return embed
-    
+
     @run2.error
     async def logerror(self, ex):
         await self.bot.send_error(ex, "LOG ERROR", True)

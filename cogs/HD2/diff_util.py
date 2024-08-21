@@ -24,8 +24,10 @@ class GameEvent(BaseApiModel):
 
     batch: Optional[int] = Field(alias="batch", default=None)
 
-    value: Optional[Union[Any,Tuple[Any,Dict[str,Any]]]] = Field(alias="value", default=None)
-    cluster: Optional[bool] = Field(alias='cluster',default=False)
+    value: Optional[Union[Any, Tuple[Any, Dict[str, Any]]]] = Field(
+        alias="value", default=None
+    )
+    cluster: Optional[bool] = Field(alias="cluster", default=False)
 
 
 async def compare_value_with_timeout(model1, field):
@@ -142,19 +144,14 @@ async def process_planet_events(
     source, target, place, key, QueueAll, batch, exclude=[]
 ):
     pushed_items = []
-    new,old,change=[],[],[]
+    new, old, change = [], [], []
     for event in source:
         oc = await check_compare_value(key, event[key], target)
         if not oc:
-            item=GameEvent(
-                mode='new',
-                place=place,
-                batch=batch,
-                value=event
-            )
+            item = GameEvent(mode="new", place=place, batch=batch, value=event)
             pushed_items.append(item)
             new.append(item)
-            #await QueueAll.put(item)
+            # await QueueAll.put(item)
         else:
             differ = await get_differing_fields(oc, event, to_ignore=exclude)
             if differ:
@@ -166,7 +163,7 @@ async def process_planet_events(
                 )
                 pushed_items.append(item)
                 change.append(item)
-                #await QueueAll.put(item)
+                # await QueueAll.put(item)
 
     for event in target:
         if not await check_compare_value(key, event[key], source):
@@ -178,7 +175,7 @@ async def process_planet_events(
             )
             pushed_items.append(item)
             old.append(item)
-            #await QueueAll.put(item)
+            # await QueueAll.put(item)
     if new:
         await QueueAll.put(new)
 
@@ -194,21 +191,16 @@ async def process_planet_attacks(
     source, target, place, keys, QueueAll, batch, exclude=[]
 ):
     pushed_items = []
-    newlist=[]
-    oldlist=[]
+    newlist = []
+    oldlist = []
     for event in source:
         oc = await check_compare_value_list(keys, [event[key] for key in keys], target)
         if not oc:
             print(place, "new", event)
-            item = GameEvent(
-                mode="new",
-                place=place,
-                batch=batch,
-                value=event
-            )
+            item = GameEvent(mode="new", place=place, batch=batch, value=event)
             newlist.append(item)
             pushed_items.append(item)
-            #await QueueAll.put(item)
+            # await QueueAll.put(item)
 
     for event in target:
         if not await check_compare_value_list(
@@ -222,25 +214,17 @@ async def process_planet_attacks(
             )
             pushed_items.append(item)
             oldlist.append(item)
-            #await QueueAll.put(item)
-    
-    if place=='planetAttacks':
+            # await QueueAll.put(item)
+
+    if place == "planetAttacks":
         if newlist:
-            newitem=GameEvent(
-                mode='added',
-                place=place,
-                batch=batch,
-                value=newlist,
-                cluster=True
+            newitem = GameEvent(
+                mode="added", place=place, batch=batch, value=newlist, cluster=True
             )
             await QueueAll.put([newitem])
         if oldlist:
-            olditem=GameEvent(
-                mode='removed',
-                place=place,
-                batch=batch,
-                value=oldlist,
-                cluster=True
+            olditem = GameEvent(
+                mode="removed", place=place, batch=batch, value=oldlist, cluster=True
             )
             await QueueAll.put([olditem])
     else:
@@ -315,10 +299,10 @@ async def detect_loggable_changes(
     )
     if infoout:
         item = GameEvent(
-            mode = "change",
-            place = "info_raw",
-            batch = batch,
-            value = (new.war_info, infoout),
+            mode="change",
+            place="info_raw",
+            batch=batch,
+            value=(new.war_info, infoout),
         )
         superlist.append(item)
         await QueueAll.put([item])

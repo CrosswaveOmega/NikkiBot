@@ -199,18 +199,18 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
             f"{discord.utils.format_dt(current_date_time,'F')}, in iso={current_date_time.isoformat()}"
         )
 
-
     @calc.command(
-            name="get_graph",
-            description="get the estimated influence to players graph",
-        )
+        name="get_graph",
+        description="get the estimated influence to players graph",
+    )
     async def get_graph(
         self,
         interaction: discord.Interaction,
     ):
-        await interaction.response.send_message(file=discord.File("saveData/graph1.png"),ephemeral=True)
-    
-    
+        await interaction.response.send_message(
+            file=discord.File("saveData/graph1.png"), ephemeral=True
+        )
+
     @calc.command(
         name="impactdatacollection",
         description="Convert experience per second to damage per second.",

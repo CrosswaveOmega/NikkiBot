@@ -143,16 +143,14 @@ class Task2(BaseApiModel):
                     taskdata["faction"][0], f"Unknown Faction {taskdata['faction'][0]}"
                 )
                 goal = taskdata["goal"][0]
-                enemy_id=taskdata.get('enemyID',None)
-                enemy=""
+                enemy_id = taskdata.get("enemyID", None)
+                enemy = ""
                 if enemy_id is not None:
-                    eid=enemy_id[0]
+                    eid = enemy_id[0]
                     if eid:
-                        enemy=enemies.get(eid, f"UNKNOWN {eid}")
+                        enemy = enemies.get(eid, f"UNKNOWN {eid}")
 
                 taskstr += f"/{hf(goal)} ({(int(curr)/int(goal))*100.0}) {enemy} {faction_name}"
-
-                
 
                 lc = taskdata.get("hasPlanet", None)
                 onplanet = taskdata.get("planet", None)
