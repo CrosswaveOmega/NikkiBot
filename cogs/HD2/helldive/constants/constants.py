@@ -53,9 +53,22 @@ samples = {
     2985106497: "Rare",
 }
 
-enemies = {2514244534: "Bile Titan"}
+enemies = {
+20706814: "Scout Strider",
+  2664856027: "Shredder Tank",
+  471929602: "Hulk",
+  4276710272: "Devastator",
+  878778730: "Trooper",
 
-stratagems: {
+  3330362068: "Hunter",
+  2058088313: "Warrior",
+  717622970: "Bile Spewer",
+  2387277009: "Stalker",
+  2651633799: "Charger",
+  2514244534: "Bile Titan",
+}
+
+stratagems= {
     1078307866: "ORBITAL GATLING BARRAGE",
     2928105092: "ORBITAL 120MM HE BARRAGE",
     2831720448: "ORBITAL AIRBURST STRIKE",
