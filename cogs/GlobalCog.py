@@ -888,7 +888,8 @@ class Global(commands.Cog, TC_Cog_Mixin):
                 guild, icon=None,None
                 if message.guild:
                     guild=message.guild.name
-                    icon=message.guild.icon.url
+                    if message.guild.icon:
+                        icon=message.guild.icon.url
                 for e in message.embeds:
                     if e.type=='rich':
                         embs.append(e)
