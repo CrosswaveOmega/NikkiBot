@@ -885,6 +885,11 @@ class Global(commands.Cog, TC_Cog_Mixin):
                 embed=discord.Embed()
                 embed.set_author(name=str(message.author.name),icon_url=message.author.avatar.url, url=message.jump_url)
                 embs=[]
+                files = []
+                for a in message.attachments:
+                    this_file = await a.to_file()
+                    files.append(this_file)
+
                 guild, icon=None,None
                 if message.guild:
                     guild=message.guild.name
@@ -902,7 +907,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
                 await web.postMessageWithWebhook(
                     webh,
                     thread,
-                    message_content=message.content,
+                    message_content='',
                     display_username=message.author.name,
                     avatar_url=message.author.avatar,
                     embed=[embed],
