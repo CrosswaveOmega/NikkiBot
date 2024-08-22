@@ -56,7 +56,7 @@ class PlanetEvents:
         self.trig: List[str] = []
         self.ret = None
 
-    def add_event(self, event: Dict[str, Any], key: str) -> None:
+    def add_event(self, event: GameEvent, key: str) -> None:
         self.evt.append(event)
         if event["mode"] in ["new", "remove"]:
             self.ret = event["value"].retrieved_at
@@ -104,12 +104,12 @@ class SectorEvents:
         self.trig: List[str] = []
         self.ret = None
 
-    def add_event(self, event: Dict[str, Any], key: str) -> None:
+    def add_event(self, event: GameEvent, key: str) -> None:
         self.evt.append(event)
-        if event["mode"] in ["new", "remove"]:
-            self.ret = event["value"].retrieved_at
-        elif event["mode"] == "change":
-            self.ret = event["value"][0].retrieved_at
+        if event.mode in ["new", "remove"]:
+            self.ret = event.value.retrieved_at
+        elif event.mode== "change":
+            self.ret = event.value[0].retrieved_at
         if key not in self.trig:
             self.trig.append(key)
 
@@ -120,12 +120,12 @@ class GeneralEvents:
         self.trig: List[str] = []
         self.ret = None
 
-    def add_event(self, event: Dict[str, Any], key: str) -> None:
+    def add_event(self, event: GameEvent, key: str) -> None:
         self.evt.append(event)
-        if event["mode"] in ["new", "remove"]:
-            self.ret = event["value"].retrieved_at
-        elif event["mode"] == "change":
-            self.ret = event["value"][0].retrieved_at
+        if event.mode in ["new", "remove"]:
+            self.ret = event.value.retrieved_at
+        elif event.mode == "change":
+            self.ret = event.value[0].retrieved_at
 
         if key not in self.trig:
             self.trig.append(key)
@@ -148,7 +148,7 @@ class Batch:
 
     def add_event(
         self,
-        event: Dict[str, Any],
+        event: GameEvent,
         planet_name: Optional[str],
         key: str,
         planet: Optional[Planet],
@@ -172,10 +172,10 @@ class Batch:
         if planet_name in self.planets:
             self.planets[planet_name].update_planet(value, place)
 
-    def process_event(self, event: Dict[str, Any], apistatus: Any) -> None:
-        mode: str = event["mode"]
-        place: str = event["place"]
-        value: Any = event["value"]
+    def process_event(self, event: GameEvent, apistatus: Any) -> None:
+        mode: str = event.mode
+        place: str = event.place
+        value: Any = event.value
         planet_name_source: Optional[str] = None
         sector_name: Optional[str] = None
         planet: Optional[Planet] = None
@@ -683,6 +683,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         self.test_with = []
         self.titleids = {}
         self.messageids = {}
+        snap = hd2.load_from_json("./saveData/mt_pairs.json")
+        if snap:
+            self.titleids=snap['titles']
+            self.messageids=snap['messages']
+            
         self.lock = asyncio.Lock()
         self.load_test_files()
         nowd = datetime.datetime.now()
@@ -705,6 +710,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
     def cog_unload(self):
         TCTaskManager.remove_task("UpdateLog")
         self.run2.cancel()
+        hold={'titles':self.titleids,'messages':self.messageids}
+        hd2.save_to_json(hold, "./saveData/mt_pairs.json")
 
     def load_test_files(self):
         now = datetime.datetime.now(tz=datetime.timezone.utc)
@@ -783,7 +790,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         except Exception as ex:
             await self.bot.send_error(ex, "LOG ERROR", True)
 
-    async def send_event_list(self, item_list):
+    async def send_event_list(self, item_list:List[GameEvent]):
         embeds: List[discord.Embed] = []
         for item in item_list:
             embed = await self.build_embed(item)
@@ -872,6 +879,17 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     "added",
                 )
             elif place == "globalEvents":
+                ti=value.titleId32
+                mi=value.messageId32
+                tc,mc=False,False
+                if value.title and ti!=None:
+                    if self.titleids.get(ti,None)!=value.title:
+                        self.titleids[ti]=value.title
+                        tc=True
+                if value.message and mi!=None:
+                    if self.messageids.get(mi,None)!=value.message:
+                        self.messageids[mi]=value.message
+                        mc=True
                 embed = Embeds.globalEventEmbed(value, "started")
             elif place == "news":
                 embed = Embeds.NewsFeedEmbed(value, "started")
@@ -897,6 +915,17 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     "removed",
                 )
             elif place == "globalEvents":
+                ti=value.titleId32
+                mi=value.messageId32
+                tc,mc=False,False
+                if value.title and ti!=None:
+                    if self.titleids.get(ti,None)!=value.title:
+                        self.titleids[ti]=value.title
+                        tc=True
+                if value.message and mi!=None:
+                    if self.messageids.get(mi,None)!=value.message:
+                        self.messageids[mi]=value.message
+                        mc=True
                 embed = Embeds.globalEventEmbed(value, "ended")
             elif place == "news":
                 embed = Embeds.NewsFeedEmbed(value, "ended")
@@ -914,14 +943,26 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             elif place == "info_raw":
                 embed = Embeds.dumpEmbed(info, dump, "info", "changed")
             elif place == "globalEvents":
+                listv=[k for k in dump.keys()]
+                
+                
                 ti=info.titleId32
                 mi=info.messageId32
+                tc,mc=False,False
                 if info.title:
-                    self.titleids[ti]=info.title
+                    if self.titleids.get(ti,None)!=info.title:
+                        self.titleids[ti]=info.title
+                        tc=True
                 if info.message:
-                    self.messageids[mi]=info.message
-                if self.titleids.get(ti,None)==info.title and self.messageids.get(mi,None)==info.message:
-                   embed = Embeds.globalEventEmbed(info, "changed")
+                    if self.messageids.get(mi,None)!=info.message:
+                        self.messageids[mi]=info.message
+                        mc=True
+                if all(key in ['title', 'message'] for key in listv):
+                    
+                    if tc or mc:  
+                        embed = Embeds.globalEventEmbed(info, "changed")
+                else:
+                    embed = Embeds.globalEventEmbed(info, "changed")
 
         return embed
 

@@ -214,7 +214,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     async def update_data(self):
         if self.api_up:
             await self.apistatus.update_data()
-            hd2.save_to_json(self.apistatus, "./saveData/hd2_snapshot.json")
+            hd2.save_to_json(self.apistatus.to_dict(), "./saveData/hd2_snapshot.json")
             print(self.apistatus.war)
             hd2.add_to_csv(self.apistatus)
         return

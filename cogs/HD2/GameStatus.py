@@ -413,7 +413,7 @@ def save_to_json(api_status: "ApiStatus", filepath: str) -> None:
         filepath (str): The path to the file where data should be saved.
     """
     with open(filepath, "w", encoding="utf8") as file:
-        json.dump(api_status.to_dict(), file, default=str, indent=4)
+        json.dump(api_status, file, default=str, indent=4)
 
 
 def load_from_json(filepath: str) -> "ApiStatus":
