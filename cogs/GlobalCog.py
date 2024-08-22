@@ -880,7 +880,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
                     thread=ctx.message.thread
 
                 await web.postMessageWithWebhook(
-                    webh[0],
+                    webh,
                     thread,
                     message_content=message.content,
                     display_username=message.author.name,
