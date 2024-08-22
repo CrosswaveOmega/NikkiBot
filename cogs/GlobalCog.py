@@ -877,9 +877,6 @@ class Global(commands.Cog, TC_Cog_Mixin):
         try:
             webh,thread=await web.getWebhookInChannel(ctx.channel)
             if webh:
-                thread=None
-                if ctx.message.thread:
-                    thread=ctx.message.thread
 
                     
                 embed=discord.Embed()
