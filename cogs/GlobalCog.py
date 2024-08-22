@@ -863,6 +863,8 @@ class Global(commands.Cog, TC_Cog_Mixin):
                 embs.append(e)
         if embs:
             embed.add_field(name="embeds",value=f" {len(embs)} embeds")
+        embed.add_field(name='URL',value=f"[original]({message.jump_url})")
+        embed.timestamp=message.created_at
         await ctx.send(embed=embed,files=files,ephemeral=True)
         cont, mess = await MessageTemplates.confirm(
             ctx,
@@ -878,16 +880,43 @@ class Global(commands.Cog, TC_Cog_Mixin):
                 thread=None
                 if ctx.message.thread:
                     thread=ctx.message.thread
-
-                await web.postMessageWithWebhook(
-                    webh,
-                    thread,
-                    message_content=message.content,
-                    display_username=message.author.name,
-                    avatar_url=message.author.avatar,
-                    embed=embs,
-                    file=files,
-                )
+                if len(message.content)>1800:
+                    await web.postMessageWithWebhook(
+                        webh,
+                        thread,
+                        message_content="",
+                        display_username=message.author.name,
+                        avatar_url=message.author.avatar,
+                        embed=[embed],
+                        file=files,
+                    )
+                else:
+                    
+                    embed=discord.Embed()
+                    embed.set_author(name=str(message.author.name),icon_url=message.author.avatar.url, url=message.jump_url)
+                    embs=[]
+                    guild, icon=None,None
+                    if message.guild:
+                        guild=message.guild.name
+                        icon=message.guild.icon.url
+                    for e in message.embeds:
+                        if e.type=='rich':
+                            embs.append(e)
+                    if embs:
+                        embed.add_field(name="embeds",value=f" {len(embs)} embeds")
+                    embed.add_field(name='URL',value=f"[original]({message.jump_url})")
+                    if guild:
+                        embed.set_footer(text=f"From {guild}",icon_url=guild)
+                    embed.timestamp=message.created_at
+                    await web.postMessageWithWebhook(
+                        webh,
+                        thread,
+                        message_content=message.content,
+                        display_username=message.author.name,
+                        avatar_url=message.author.avatar,
+                        embed=embs,
+                        file=files,
+                    )
         except Exception as e:
             await ctx.send(f"{e}",ephemeral=True)
 
