@@ -879,7 +879,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
             if webh:
 
                     
-                embed=discord.Embed()
+                embed=discord.Embed(description=message.content[:4000])
                 embed.set_author(name=str(message.author.name),icon_url=message.author.avatar.url, url=message.jump_url)
                 embs=[]
                 files = []
