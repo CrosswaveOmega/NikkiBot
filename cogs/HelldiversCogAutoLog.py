@@ -950,7 +950,6 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 mi=info.messageId32
                 tc,mc=False,False
                 if info.title:
-                    if info.title!=None
                     if self.titleids.get(ti,None)!=info.title:
                         self.titleids[ti]=info.title
                         tc=True
