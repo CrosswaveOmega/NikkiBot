@@ -685,8 +685,10 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         self.messageids = {}
         snap = hd2.load_from_json("./saveData/mt_pairs.json")
         if snap:
-            self.titleids=snap['titles']
-            self.messageids=snap['messages']
+            for i, v in snap['titles']:
+                self.titleids[int(i)]=v
+            for i, v in snap['messages']:
+                self.messageids[int(i)]=v
             
         self.lock = asyncio.Lock()
         self.load_test_files()
