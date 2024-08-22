@@ -20,7 +20,7 @@ from discord import app_commands
 from discord.app_commands import Choice
 from pathlib import Path
 from database.database_singleton import DatabaseSingleton
-from utility import serverAdmin, serverOwner, load_manual, MessageTemplates
+from utility import serverAdmin, serverOwner, load_manual, MessageTemplates, urltomessage
 from utility.embed_paginator import pages_of_embeds
 
 from assetloader import AssetLookup
@@ -272,6 +272,54 @@ class Setup(commands.Cog, TC_Cog_Mixin):
         await ctx.send("Syncing...")
         await ctx.bot.all_guild_startup(True)
         await ctx.send("DONE.")
+
+
+    @commands.command()
+    @commands.is_owner()
+    async def purge_messages(self, ctx:commands.Context, afterurl:str, beforeurl:str):
+        m1=await urltomessage(afterurl,ctx.bot)
+        m2=await urltomessage(beforeurl,ctx.bot)
+
+        if not m1:
+            await ctx.send("Invalid after message link.")
+            return
+        if not m2:
+            await ctx.send("Invalid before message link.")
+            return
+
+        if m1.channel!=m2.channel:
+            await ctx.send("Messages must be in the same channel")
+            return
+
+        # Ensure messages are no older than 2 weeks
+        if (discord.utils.utcnow() - m1.created_at).days > 14 or (discord.utils.utcnow() - m2.created_at).days > 14:
+            await ctx.send("Messages must be sent within the last 2 weeks")
+            return
+        
+        channel=m1.channel
+        if not channel.permissions_for(ctx.guild.me).manage_messages:
+            await ctx.send("I do not have manage_messages permission in this channel.")
+            return
+
+        cont, mess = await MessageTemplates.confirm(
+            ctx,
+            "Initiate purge\nAfter message timestamp: {m1.created_at}\nBefore message timestamp: {m2.created_at}\nAre you sure you want to continue?",
+            False,
+        )
+        
+        await mess.delete()
+        if not cont:
+            await ctx.send("Purge Operation aborted.")
+            return
+
+
+        deleted = await channel.purge(before=discord.Object(
+            m2.id
+        ),after=discord.Object(
+            m1.id
+        ),oldest_first=False, limit=1000)
+        await ctx.channel.send(f'Purged {len(deleted)} message(s)')
+
 
     @commands.hybrid_command(
         name="getapps",
