@@ -681,6 +681,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         self.spot = 1
         self.batches: dict[int, Batch] = {}
         self.test_with = []
+        self.titleids = {}
+        self.messageids = {}
         self.lock = asyncio.Lock()
         self.load_test_files()
         nowd = datetime.datetime.now()
@@ -912,7 +914,14 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             elif place == "info_raw":
                 embed = Embeds.dumpEmbed(info, dump, "info", "changed")
             elif place == "globalEvents":
-                embed = Embeds.globalEventEmbed(info, "changed")
+                ti=info.titleId32
+                mi=info.messageId32
+                if info.title:
+                    self.titleids[ti]=info.title
+                if info.message:
+                    self.messageids[mi]=info.message
+                if self.titleids.get(ti,None)==info.title and self.messageids.get(mi,None)==info.message:
+                   embed = Embeds.globalEventEmbed(info, "changed")
 
         return embed
 
