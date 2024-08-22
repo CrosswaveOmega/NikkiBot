@@ -574,7 +574,7 @@ class Embeds:
         return emb
 
     @staticmethod
-    def globalEventEmbed(evt: GlobalEvent, mode="started") -> discord.Embed:
+    def globalEventEmbed(evt: GlobalEvent, mode="started",footerchanges="") -> discord.Embed:
         globtex = ""
         title = ""
         if evt.title:
@@ -592,7 +592,7 @@ class Embeds:
         emb.add_field(name="Event Details", value=evt.strout())
         emb.add_field(name="Timestamp", value=f"Timestamp:{fdt(evt.retrieved_at,'F')}")
         emb.set_author(name=f"Global Event {mode}.")
-        emb.set_footer(text=f"EID:{evt.eventId}, {custom_strftime(evt.retrieved_at)}")
+        emb.set_footer(text=f"{footerchanges},EID:{evt.eventId}, {custom_strftime(evt.retrieved_at)}")
         return emb
 
     @staticmethod
@@ -950,6 +950,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 mi=info.messageId32
                 tc,mc=False,False
                 if info.title:
+                    if info.title!=None
                     if self.titleids.get(ti,None)!=info.title:
                         self.titleids[ti]=info.title
                         tc=True
@@ -960,9 +961,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 if all(key in ['title', 'message'] for key in listv):
                     
                     if tc or mc:  
-                        embed = Embeds.globalEventEmbed(info, "changed")
+                        embed = Embeds.globalEventEmbed(info, f"changed_{tc},{mc}",','.join(listv))
                 else:
-                    embed = Embeds.globalEventEmbed(info, "changed")
+                    embed = Embeds.globalEventEmbed(info, "changed",','.join(listv))
 
         return embed
 

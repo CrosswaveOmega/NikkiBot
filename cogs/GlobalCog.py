@@ -899,43 +899,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
             embed.timestamp=message.created_at
             await ctx.send(embed=embed,files=files,ephemeral=False)
             return
-            webh,thread=await web.getWebhookInChannel(ctx.channel)
-            if webh:
-
-                    
-                embed=discord.Embed(description=message.content[:4000])
-                embed.set_author(name=str(message.author.name),icon_url=message.author.avatar.url, url=message.jump_url)
-                embs=[]
-                files = []
-                for a in message.attachments:
-                    this_file = await a.to_file()
-                    files.append(this_file)
-
-                guild, icon=None,None
-                if message.guild:
-                    guild=message.guild.name
-                    if message.guild.icon:
-                        icon=message.guild.icon.url
-                for e in message.embeds:
-                    if e.type=='rich':
-                        embs.append(e)
-                if embs:
-                    embed.add_field(name="embeds",value=f" {len(embs)} embeds")
-                embed.add_field(name='URL',value=f"[original]({message.jump_url})")
-                if guild:
-                    embed.set_footer(text=f"From {guild}",icon_url=icon)
-                embed.timestamp=message.created_at
-                await ctx.send(embed=embed,files=files,ephemeral=False)
-                return
-                await web.postMessageWithWebhook(
-                    webh,
-                    thread,
-                    message_content='',
-                    display_username=message.author.name,
-                    avatar_url=message.author.avatar,
-                    embed=[embed],
-                    file=files,
-                )
+            
         except Exception as e:
             await ctx.send(f"{e}",ephemeral=True)
 
