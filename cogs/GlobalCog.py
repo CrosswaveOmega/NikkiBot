@@ -3,7 +3,7 @@ import datetime
 import io
 from collections import defaultdict
 from io import BytesIO
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import discord
 from discord import app_commands
@@ -753,6 +753,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
         self.globalonly = True
         self.memehook = AssetLookup.get_asset("memehook", "urls")
         self.usertopics = {}
+        self.copies:Dict[int,discord.Message]={}
         self.init_context_menus()
 
     @super_context_menu(name="Extracool", flags="user")
@@ -784,7 +785,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
             embed=embed,
         )
 
-    @super_context_menu(name="Repost That Meme", flags="user")
+    @super_context_menu(name="CopyMessage", flags="user")
     async def memethief(
         self, interaction: discord.Interaction, message: discord.Message
     ) -> None:
@@ -793,21 +794,34 @@ class Global(commands.Cog, TC_Cog_Mixin):
         content = message.content
         embeds = message.embeds
 
-        files = []
-        for a in message.attachments:
-            this_file = await a.to_file()
-            files.append(this_file)
-        await web.postMessageAsWebhookWithURL(
-            self.memehook,
-            message_content=content,
-            display_username=username,
-            avatar_url=avatar,
-            embed=embeds,
-            file=files,
-        )
+        
+        userid=interaction.user.id
+        self.copies[userid]=message
+
+
+        cont = message.content
+        guild = message.guild
+        embed = discord.Embed(description=f"It says *{message.content}")
+        if hasattr(message, "author"):
+            embed.add_field(
+                name="Author", value=f"* {str(message.author)}{type(message.author)}, "
+            )
+
+        if hasattr(message, "jump_url"):
+            embed.add_field(name="url", value=f"* {str(message.jump_url)}, ")
+        if hasattr(message, "channel"):
+            embed.add_field(name="channel", value=f"* {str(message.channel)}, ")
+            if hasattr(message.channel, "parent"):
+                embed.add_field(
+                    name="parent", value=f"* {str(message.channel.parent)}, "
+                )
+        if interaction.guild_id:
+            embed.add_field(name="guildid", value=interaction.guild_id)
+
         await interaction.response.send_message(
-            content="Reposted yer meme!",
+            content="Message copied.",
             ephemeral=True,
+            embed=embed,
         )
 
     @super_context_menu(name="usercool", flags="user")
@@ -823,6 +837,60 @@ class Global(commands.Cog, TC_Cog_Mixin):
             ephemeral=True,
             embed=embed,
         )
+
+    @app_commands.command(name="paste", description="paste_message")
+    @app_commands.allowed_installs(users=True)
+    async def paste_message(self, interaction: discord.Interaction) -> None:
+        """Do a web search"""
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        if ctx.author.id not in self.copies:
+            await ctx.send("You did not copy any messages",ephemeral=True)
+            return
+        message=self.copies[ctx.author.id]
+        message.author.name
+        files = []
+        for a in message.attachments:
+            this_file = await a.to_file()
+            files.append(this_file)
+
+        embed=discord.Embed(
+            description=message.content[:4000]
+        )
+        embed.set_author(name=str(message.author.name),icon_url=message.author.avatar.url)
+        embs=[]
+        for e in message.embeds:
+            if e.type=='rich':
+                embs.append(e)
+        if embs:
+            embed.add_field(name="embeds",value=f" {len(embs)} embeds")
+        await ctx.send(embed=embed,files=files,ephemeral=True)
+        cont, mess = await MessageTemplates.confirm(
+            ctx,
+            "Repost?",
+            True,
+        )
+        await mess.delete()
+        if not cont:
+            return
+        try:
+            webh=await web.getWebhookInChannel(ctx.channel)
+            if webh:
+
+                await web.postMessageWithWebhook(
+                    webh,
+                    thread=ctx.message.thread if ctx.message.thread else None,
+                    message_content=message.content,
+                    display_username=message.author.name,
+                    avatar_url=message.author.avatar,
+                    embed=embs,
+                    file=files,
+                )
+        except Exception as e:
+            await ctx.send(f"{e}",ephemeral=True)
+
+        
+
+
 
     @app_commands.command(name="search", description="search the interwebs.")
     @app_commands.describe(query="Query to search google with.")
