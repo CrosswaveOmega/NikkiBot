@@ -873,12 +873,15 @@ class Global(commands.Cog, TC_Cog_Mixin):
         if not cont:
             return
         try:
-            webh=await web.getWebhookInChannel(ctx.channel)
+            webh,thread=await web.getWebhookInChannel(ctx.channel)
             if webh:
+                thread=None
+                if ctx.message.thread:
+                    thread=ctx.message.thread
 
                 await web.postMessageWithWebhook(
-                    webh,
-                    thread=ctx.message.thread if ctx.message.thread else None,
+                    webh[0],
+                    thread,
                     message_content=message.content,
                     display_username=message.author.name,
                     avatar_url=message.author.avatar,
