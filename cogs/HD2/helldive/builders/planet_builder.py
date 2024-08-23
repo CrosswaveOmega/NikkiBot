@@ -53,22 +53,24 @@ def build_planet_2(
     status = diveharder.status
     info = diveharder.war_info
     stat = diveharder.planet_stats.planets_stats
-    print('index is', planetIndex)
+    #print('index is', planetIndex)
     planetStatus = check_compare_value("index", planetIndex, status.planetStatus)
     planetInfo = check_compare_value("index", planetIndex, info.planetInfos)
     planetStat = check_compare_value("planetIndex", planetIndex, stat)
     if not planetStat:
         planetStat=PlanetStats(planetIndex=planetIndex)
     planet = statics.galaxystatic.build_planet(planetIndex, planetStatus, planetInfo, planetStat)
-    planet_effects = check_compare_value_list(['index'],[planetIndex],status.planetActiveEffects)
-    planets_attacking = check_compare_value_list(['source'],[planetIndex],status.planetAttacks)
-    
+   
     planet_effect_list=[]
     planet_attack_list=[]
-    for effect in planet_effects:
-        planet_effect_list.append(build_planet_effect(statics.effectstatic, effect.galacticEffectId))
-    for attack in planets_attacking:
-        planet_attack_list.append(attack.target)
+    for effect in status.planetActiveEffects:
+        if effect.index==planetIndex:
+            effects=build_planet_effect(statics.effectstatic, effect.galacticEffectId)
+            #print(effect,effects)
+            planet_effect_list.append(effects)
+    for attack in status.planetAttacks:
+        if attack.source==planetIndex:
+            planet_attack_list.append(attack.target)
 
 
     event:PlanetEvent = check_compare_value("planetIndex", planetIndex, status.planetEvents)
