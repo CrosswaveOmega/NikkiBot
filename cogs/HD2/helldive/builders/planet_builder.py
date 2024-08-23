@@ -16,6 +16,14 @@ def check_compare_value(key, value, target: List[Dict[str, Any]]):
             return s
     return None
 
+async def check_compare_value_list(
+    keys: List[str], values: List[Any], target: List[Dict[str, Any]]
+):
+    for s in target:
+        if all(s[key] == value for key, value in zip(keys, values)):
+            return s
+    return None
+
 
 def get_time(diveharder: DiveharderAll) -> dt.datetime:
     status = diveharder.status
@@ -44,7 +52,7 @@ async def build_planet_2(
     planetStatus = check_compare_value("index", planetIndex, status.planetStatus)
     planetInfo = check_compare_value("index", planetIndex, info.planetInfos)
     planetStat = check_compare_value("planetIndex", planetIndex, stat)
-
+    
     planet = planetdata.build_planet(planetIndex, planetStatus, planetInfo, planetStat)
 
     event = check_compare_value("planetIndex", planetIndex, status.planetEvents)
