@@ -106,7 +106,7 @@ class SectorStates(BaseApiModel):
 class PlanetActiveEffects(BaseApiModel):
     """
     None model
-        Represents a snapshot of the current status of the galactic war.
+        Active Planet Effects, with the index and galacticEffectId
 
     """
 
