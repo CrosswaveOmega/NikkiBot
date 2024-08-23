@@ -247,6 +247,8 @@ def draw_arrow(
     dx = b[0] - a[0]
     dy = b[1] - a[1]
     length = (dx**2 + dy**2) ** 0.5
+    if length<=0:
+        length=0.1
     direction = (dx / length, dy / length)
 
     # Calculate the points to draw two lines out of the target
