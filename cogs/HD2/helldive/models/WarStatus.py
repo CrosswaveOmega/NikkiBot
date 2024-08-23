@@ -11,6 +11,7 @@ from .PlanetEvent import PlanetEvent
 from .PlanetStatus import PlanetStatus
 from .GlobalEvent import GlobalEvent
 from .Position import Position
+from .Effects import PlanetActiveEffects
 
 
 class SimplePlanet(BaseApiModel):
@@ -101,18 +102,6 @@ class SectorStates(BaseApiModel):
             self.owner = owners.pop()
         else:
             self.owner = None
-
-
-class PlanetActiveEffects(BaseApiModel):
-    """
-    None model
-        Active Planet Effects, with the index and galacticEffectId
-
-    """
-
-    index: Optional[int] = Field(alias="index", default=None)
-
-    galacticEffectId: Optional[int] = Field(alias="galacticEffectId", default=None)
 
 
 class WarStatus(BaseApiModel):

@@ -212,10 +212,9 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
             file=discord.File("saveData/graph1.png"), ephemeral=True
         )
 
-    
     @calc.command(
         name="get_planet_liberation",
-        description="get the planet liberation data gathered from the past 48 hours"
+        description="get the planet liberation data gathered from the past 48 hours",
     )
     async def get_lib(
         self,
@@ -231,7 +230,6 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
             await interaction.response.send_message(
                 "The file is too large to be sent.", ephemeral=True
             )
-
 
     @calc.command(
         name="impactdatacollection",

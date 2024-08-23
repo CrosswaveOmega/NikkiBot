@@ -19,6 +19,7 @@ from bot import (
     TCBot,
 )
 from cogs.HD2.helldive.models.ABC.utils import hdml_parse
+
 from utility import WebhookMessageWrapper as web
 from bot.Tasks import TCTask, TCTaskManager
 
@@ -39,8 +40,12 @@ from cogs.HD2.helldive import (
     PlanetAttack,
     SimplePlanet,
     PlanetActiveEffects,
+    KnownPlanetEffect,
+    build_planet_effect
 )
 
+from cogs.HD2.helldive.constants import faction_names
+from cogs.HD2.maths import maths
 from cogs.HD2.diff_util import process_planet_attacks, GameEvent
 from utility.manual_load import load_json_with_substitutions
 
@@ -108,7 +113,7 @@ class SectorEvents:
         self.evt.append(event)
         if event.mode in ["new", "remove"]:
             self.ret = event.value.retrieved_at
-        elif event.mode== "change":
+        elif event.mode == "change":
             self.ret = event.value[0].retrieved_at
         if key not in self.trig:
             self.trig.append(key)
@@ -466,21 +471,19 @@ class Embeds:
         emb.set_author(name=f"Campaign {mode}.")
         emb.set_footer(text=f"{strc},{custom_strftime(campaign.retrieved_at)}")
         return emb
-    
+
     @staticmethod
-    def deadzoneWarningEmbed(
-        campaign: BaseApiModel, mode="started"
-    ) -> discord.Embed:
+    def deadzoneWarningEmbed(campaign: BaseApiModel, mode="started") -> discord.Embed:
         emb = discord.Embed(
             title=f"DEADZONE DETECTED",
             description=f"A likely deadzone was detected!\nTimestamp:{fdt(campaign.retrieved_at,'F')}",
             timestamp=campaign.retrieved_at,
-            color=0xff0000
+            color=0xFF0000,
         )
         emb.set_author(name=f"DEADZONE WARNING.")
         emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
         return emb
-    
+
     @staticmethod
     def planetAttackEmbed(
         atk: PlanetAttack, planets: Dict[int, Planet], mode="started"
@@ -494,7 +497,7 @@ class Embeds:
         if target:
             target_name = target.get_name(False)
         emb = discord.Embed(
-            title=f"Planet Attack Detected",
+            title=f"Planet Attack {mode}",
             description=f"An attack has {mode} from {source_name} to {target_name}.   \nTimestamp:{fdt(atk.retrieved_at,'F')}",
             timestamp=atk.retrieved_at,
             color=0x707CC8 if mode == "started" else 0xC08888,
@@ -541,7 +544,7 @@ class Embeds:
         if planet:
             name, sector = planet.get_name(False), planet.sector
         emb = discord.Embed(
-            title=f"Planet {name} Event Detected",
+            title=f"Planet {name} Event {mode}",
             description=f"A new event has {mode} for {name}, in sector {sector}.   \nTimestamp:{fdt(campaign.retrieved_at,'F')}",
             timestamp=campaign.retrieved_at,
             color=color,
@@ -555,7 +558,7 @@ class Embeds:
 
     @staticmethod
     def planeteffectsEmbed(
-        campaign: PlanetActiveEffects, planet: Optional[Planet], mode="started"
+        campaign: PlanetActiveEffects, planet: Optional[Planet], effectid:Optional[KnownPlanetEffect],mode="started"
     ) -> discord.Embed:
         name, sector = campaign.index, None
         color = 0x009696
@@ -563,18 +566,23 @@ class Embeds:
             name, sector = planet.get_name(False), planet.sector
             color = colors2.get(planet.currentOwner.lower(), 0x009696)
         emb = discord.Embed(
-            title=f"Planet {name} Effect Detected",
+            title=f"Planet {name} Effect {mode}",
             description=f"An Effect was {mode} for {name}, in sector {sector}.\n\n Timestamp:{fdt(campaign.retrieved_at,'F')}",
             timestamp=campaign.retrieved_at,
             color=color,
         )
+        
         emb.add_field(name="Galactic Effect ID", value=f"{campaign.galacticEffectId}")
+        if effectid:
+            emb.add_field(name=f"{effectid.name}",value=f"{effectid.description[:100]}")
         emb.set_author(name=f"Planet Effect {mode}.")
         emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
         return emb
 
     @staticmethod
-    def globalEventEmbed(evt: GlobalEvent, mode="started",footerchanges="") -> discord.Embed:
+    def globalEventEmbed(
+        evt: GlobalEvent, mode="started", footerchanges=""
+    ) -> discord.Embed:
         globtex = ""
         title = ""
         if evt.title:
@@ -584,7 +592,7 @@ class Embeds:
             mes = hdml_parse(evt.message)
             globtex += f"{mes}\n\n"
         emb = discord.Embed(
-            title=f"Global Event Detected",
+            title=f"Global Event {mode}",
             description=f"A global event has {mode}.\n{globtex}",
             timestamp=evt.retrieved_at,
             color=0x709C68,
@@ -592,7 +600,9 @@ class Embeds:
         emb.add_field(name="Event Details", value=evt.strout())
         emb.add_field(name="Timestamp", value=f"Timestamp:{fdt(evt.retrieved_at,'F')}")
         emb.set_author(name=f"Global Event {mode}.")
-        emb.set_footer(text=f"{footerchanges},EID:{evt.eventId}, {custom_strftime(evt.retrieved_at)}")
+        emb.set_footer(
+            text=f"{footerchanges},EID:{evt.eventId}, {custom_strftime(evt.retrieved_at)}"
+        )
         return emb
 
     @staticmethod
@@ -603,6 +613,7 @@ class Embeds:
         mode="started",
     ) -> discord.Embed:
         name, sector = "PLANET", None
+        specialtext=""
         color = 0x8C90B0
         if planet:
             name, sector = planet.get_name(False), planet.sector
@@ -610,10 +621,20 @@ class Embeds:
         globtex = json.dumps(dump, default=str)
         if "owner" in dump:
             color = getColor(campaign.owner)
+            old_owner=dump['owner'].get('old',5)
+            new_owner=dump['owner'].get('new',5)
+            specialtext+=f"\n* Owner:{faction_names.get(old_owner,'er')}->{faction_names.get(new_owner,'er')}"
+        if "regenPerSecond" in dump:
+            old_decay=dump['regenPerSecond'].get('old',99999)
+            new_decay=dump['regenPerSecond'].get('new',99999)
+            old_decay=round(maths.dps_to_lph(old_decay),3)
+            new_decay=round(maths.dps_to_lph(new_decay),3)
+            specialtext+=f"\n* Regen Rate:{old_decay}->{new_decay}"
+
 
         emb = discord.Embed(
             title=f"{name} Field Change",
-            description=f"Stats changed for {name}, in sector {sector}.\n```{globtex[:4000]}```",
+            description=f"Stats changed for {name}, in sector {sector}.\n{specialtext}\n```{globtex[:3500]}```",
             timestamp=campaign.retrieved_at,
             color=color,
         )
@@ -630,7 +651,7 @@ class Embeds:
     ) -> discord.Embed:
         globtex = json.dumps(dump, default=str)
         emb = discord.Embed(
-            title=f"API Change",
+            title=f"UNSEEN API Change",
             description=f"Field changed for {name}\n```{globtex[:4000]}```",
             timestamp=campaign.retrieved_at,
             color=0x000054,
@@ -685,11 +706,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         self.messageids = {}
         snap = hd2.load_from_json("./saveData/mt_pairs.json")
         if snap:
-            for i, v in snap['titles'].items():
-                self.titleids[int(i)]=v
-            for i, v in snap['messages'].items():
-                self.messageids[int(i)]=v
-            
+            for i, v in snap["titles"].items():
+                self.titleids[int(i)] = v
+            for i, v in snap["messages"].items():
+                self.messageids[int(i)] = v
+
         self.lock = asyncio.Lock()
         self.load_test_files()
         nowd = datetime.datetime.now()
@@ -712,7 +733,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
     def cog_unload(self):
         TCTaskManager.remove_task("UpdateLog")
         self.run2.cancel()
-        hold={'titles':self.titleids,'messages':self.messageids}
+        hold = {"titles": self.titleids, "messages": self.messageids}
         hd2.save_to_json(hold, "./saveData/mt_pairs.json")
 
     def load_test_files(self):
@@ -792,7 +813,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         except Exception as ex:
             await self.bot.send_error(ex, "LOG ERROR", True)
 
-    async def send_event_list(self, item_list:List[GameEvent]):
+    async def send_event_list(self, item_list: List[GameEvent]):
         embeds: List[discord.Embed] = []
         for item in item_list:
             embed = await self.build_embed(item)
@@ -852,11 +873,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     item, self.apistatus.planets, item.mode
                 )
                 return embed
-        if event_type =='deadzone':
+        if event_type == "deadzone":
             embed = Embeds.deadzoneWarningEmbed(
-                    value,
-                    "started",
-                )
+                value,
+                "started",
+            )
         if event_type == "new":
             if place == "campaign":
                 embed = Embeds.campaignLogEmbed(
@@ -878,20 +899,21 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.planeteffectsEmbed(
                     value,
                     self.apistatus.planets.get(int(value.index), None),
+                    build_planet_effect(self.apistatus.statics.effectstatic,value.galacticEffectId),
                     "added",
                 )
             elif place == "globalEvents":
-                ti=value.titleId32
-                mi=value.messageId32
-                tc,mc=False,False
-                if value.title and ti!=None:
-                    if self.titleids.get(ti,None)!=value.title:
-                        self.titleids[ti]=value.title
-                        tc=True
-                if value.message and mi!=None:
-                    if self.messageids.get(mi,None)!=value.message:
-                        self.messageids[mi]=value.message
-                        mc=True
+                ti = value.titleId32
+                mi = value.messageId32
+                tc, mc = False, False
+                if value.title and ti != None:
+                    if self.titleids.get(ti, None) != value.title:
+                        self.titleids[ti] = value.title
+                        tc = True
+                if value.message and mi != None:
+                    if self.messageids.get(mi, None) != value.message:
+                        self.messageids[mi] = value.message
+                        mc = True
                 embed = Embeds.globalEventEmbed(value, "started")
             elif place == "news":
                 embed = Embeds.NewsFeedEmbed(value, "started")
@@ -914,20 +936,21 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.planeteffectsEmbed(
                     value,
                     self.apistatus.planets.get(int(value.index), None),
+                    build_planet_effect(self.apistatus.statics.effectstatic,value.galacticEffectId),
                     "removed",
                 )
             elif place == "globalEvents":
-                ti=value.titleId32
-                mi=value.messageId32
-                tc,mc=False,False
-                if value.title and ti!=None:
-                    if self.titleids.get(ti,None)!=value.title:
-                        self.titleids[ti]=value.title
-                        tc=True
-                if value.message and mi!=None:
-                    if self.messageids.get(mi,None)!=value.message:
-                        self.messageids[mi]=value.message
-                        mc=True
+                ti = value.titleId32
+                mi = value.messageId32
+                tc, mc = False, False
+                if value.title and ti != None:
+                    if self.titleids.get(ti, None) != value.title:
+                        self.titleids[ti] = value.title
+                        tc = True
+                if value.message and mi != None:
+                    if self.messageids.get(mi, None) != value.message:
+                        self.messageids[mi] = value.message
+                        mc = True
                 embed = Embeds.globalEventEmbed(value, "ended")
             elif place == "news":
                 embed = Embeds.NewsFeedEmbed(value, "ended")
@@ -945,26 +968,27 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             elif place == "info_raw":
                 embed = Embeds.dumpEmbed(info, dump, "info", "changed")
             elif place == "globalEvents":
-                listv=[k for k in dump.keys()]
-                
-                
-                ti=info.titleId32
-                mi=info.messageId32
-                tc,mc=False,False
+                listv = [k for k in dump.keys()]
+
+                ti = info.titleId32
+                mi = info.messageId32
+                tc, mc = False, False
                 if info.title:
-                    if self.titleids.get(ti,None)!=info.title:
-                        self.titleids[ti]=info.title
-                        tc=True
+                    if self.titleids.get(ti, None) != info.title:
+                        self.titleids[ti] = info.title
+                        tc = True
                 if info.message:
-                    if self.messageids.get(mi,None)!=info.message:
-                        self.messageids[mi]=info.message
-                        mc=True
-                if all(key in ['title', 'message'] for key in listv):
-                    
-                    if tc or mc:  
-                        embed = Embeds.globalEventEmbed(info, f"changed_{tc},{mc}",','.join(listv))
+                    if self.messageids.get(mi, None) != info.message:
+                        self.messageids[mi] = info.message
+                        mc = True
+                if all(key in ["title", "message"] for key in listv):
+
+                    if tc or mc:
+                        embed = Embeds.globalEventEmbed(
+                            info, f"changed_{tc},{mc}", ",".join(listv)
+                        )
                 else:
-                    embed = Embeds.globalEventEmbed(info, "changed",','.join(listv))
+                    embed = Embeds.globalEventEmbed(info, "changed", ",".join(listv))
 
         return embed
 

@@ -753,7 +753,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
         self.globalonly = True
         self.memehook = AssetLookup.get_asset("memehook", "urls")
         self.usertopics = {}
-        self.copies:Dict[int,discord.Message]={}
+        self.copies: Dict[int, discord.Message] = {}
         self.init_context_menus()
 
     @super_context_menu(name="Extracool", flags="user")
@@ -794,10 +794,8 @@ class Global(commands.Cog, TC_Cog_Mixin):
         content = message.content
         embeds = message.embeds
 
-        
-        userid=interaction.user.id
-        self.copies[userid]=message
-
+        userid = interaction.user.id
+        self.copies[userid] = message
 
         cont = message.content
         guild = message.guild
@@ -844,28 +842,28 @@ class Global(commands.Cog, TC_Cog_Mixin):
         """Do a web search"""
         ctx: commands.Context = await self.bot.get_context(interaction)
         if ctx.author.id not in self.copies:
-            await ctx.send("You did not copy any messages",ephemeral=True)
+            await ctx.send("You did not copy any messages", ephemeral=True)
             return
-        message=self.copies[ctx.author.id]
+        message = self.copies[ctx.author.id]
         message.author.name
         files = []
         for a in message.attachments:
             this_file = await a.to_file()
             files.append(this_file)
 
-        embed=discord.Embed(
-            description=message.content[:4000]
+        embed = discord.Embed(description=message.content[:4000])
+        embed.set_author(
+            name=str(message.author.name), icon_url=message.author.avatar.url
         )
-        embed.set_author(name=str(message.author.name),icon_url=message.author.avatar.url)
-        embs=[]
+        embs = []
         for e in message.embeds:
-            if e.type=='rich':
+            if e.type == "rich":
                 embs.append(e)
         if embs:
-            embed.add_field(name="embeds",value=f" {len(embs)} embeds")
-        embed.add_field(name='URL',value=f"[original]({message.jump_url})")
-        embed.timestamp=message.created_at
-        await ctx.send(embed=embed,files=files,ephemeral=True)
+            embed.add_field(name="embeds", value=f" {len(embs)} embeds")
+        embed.add_field(name="URL", value=f"[original]({message.jump_url})")
+        embed.timestamp = message.created_at
+        await ctx.send(embed=embed, files=files, ephemeral=True)
         cont, mess = await MessageTemplates.confirm(
             ctx,
             "Repost?",
@@ -875,37 +873,37 @@ class Global(commands.Cog, TC_Cog_Mixin):
         if not cont:
             return
         try:
-            embed=discord.Embed(description=message.content[:4000])
-            embed.set_author(name=str(message.author.name),icon_url=message.author.avatar.url, url=message.jump_url)
-            embs=[]
+            embed = discord.Embed(description=message.content[:4000])
+            embed.set_author(
+                name=str(message.author.name),
+                icon_url=message.author.avatar.url,
+                url=message.jump_url,
+            )
+            embs = []
             files = []
             for a in message.attachments:
                 this_file = await a.to_file()
                 files.append(this_file)
 
-            guild, icon=None,None
+            guild, icon = None, None
             if message.guild:
-                guild=message.guild.name
+                guild = message.guild.name
                 if message.guild.icon:
-                    icon=message.guild.icon.url
+                    icon = message.guild.icon.url
             for e in message.embeds:
-                if e.type=='rich':
+                if e.type == "rich":
                     embs.append(e)
             if embs:
-                embed.add_field(name="embeds",value=f" {len(embs)} embeds")
-            embed.add_field(name='URL',value=f"[original]({message.jump_url})")
+                embed.add_field(name="embeds", value=f" {len(embs)} embeds")
+            embed.add_field(name="URL", value=f"[original]({message.jump_url})")
             if guild:
-                embed.set_footer(text=f"From {guild}",icon_url=icon)
-            embed.timestamp=message.created_at
-            await ctx.send(embed=embed,files=files,ephemeral=False)
+                embed.set_footer(text=f"From {guild}", icon_url=icon)
+            embed.timestamp = message.created_at
+            await ctx.send(embed=embed, files=files, ephemeral=False)
             return
-            
+
         except Exception as e:
-            await ctx.send(f"{e}",ephemeral=True)
-
-        
-
-
+            await ctx.send(f"{e}", ephemeral=True)
 
     @app_commands.command(name="search", description="search the interwebs.")
     @app_commands.describe(query="Query to search google with.")

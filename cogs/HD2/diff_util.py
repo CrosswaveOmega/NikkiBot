@@ -250,11 +250,11 @@ async def detect_loggable_changes(
     }
     batch = (int(new.retrieved_at.timestamp()) >> 4) | (random.randint(0, 15))
     superlist = []
-    if old.status.time==new.status.time:
+    if old.status.time == new.status.time:
         newitem = GameEvent(
-            mode="deadzone", place='deadzone', batch=batch, value=new.status
+            mode="deadzone", place="deadzone", batch=batch, value=new.status
         )
-        
+
         await QueueAll.put([newitem])
 
     rawout = await get_differing_fields(
@@ -381,7 +381,7 @@ async def detect_loggable_changes_planet(
     superlist = []
 
     if old.status.time == new.status.time:
-        
+
         return None
 
     logs.info("campaigns detection, stand by...")
@@ -397,17 +397,17 @@ async def detect_loggable_changes_planet(
         "imp": new.status.impactMultiplier,
         "gstate": {},
     }
-    events={}
+    events = {}
     for evt in new.status.planetEvents:
-        events[evt.planetIndex]=evt
+        events[evt.planetIndex] = evt
     for planet in new.status.planetStatus:
         if planet.index in planetindexes:
             output["gstate"][planet.index] = planet.model_dump()
             if planet.index in events:
-                output['gstate'][planet.index]['health']=events[planet.index].health
+                output["gstate"][planet.index]["health"] = events[planet.index].health
             output["gstate"][planet.index].pop("retrieved_at")
 
-    output['gstate']=[j for j in output['gstate'].values()]
+    output["gstate"] = [j for j in output["gstate"].values()]
     await QueueAll.put(
         GameEvent(mode="data", place="planets", batch=batch, value=output)
     )

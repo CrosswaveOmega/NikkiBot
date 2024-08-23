@@ -9,7 +9,7 @@ from .Event import Event
 from .Hazard import Hazard
 from .Position import Position
 from .Statistics import Statistics
-
+from .Effects import KnownPlanetEffect
 from .ABC.utils import (
     human_format as hf,
     select_emoji as emj,
@@ -55,6 +55,10 @@ class Planet(BaseApiModel, HealthMixin):
     currentOwner: Optional[str] = Field(alias="currentOwner", default=None)
 
     regenPerSecond: Optional[float] = Field(alias="regenPerSecond", default=None)
+
+    activePlanetEffects: Optional[List[KnownPlanetEffect]] = Field(
+        alias="activePlanetEffects", default=None
+    )
 
     event: Optional[Event] = Field(alias="event", default=None)
 

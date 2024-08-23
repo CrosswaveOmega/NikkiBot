@@ -223,8 +223,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         print("Updating planets.")
 
         async def update_planet(planet, ctx):
-            planetbiome = self.apistatus.planetdata["planets"].get(
-                str(planet.index), None
+            planetbiome = self.apistatus.statics.galaxystatic["planets"].get(
+                planet.index, None
             )
 
             if planetbiome:
@@ -239,8 +239,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         ttasks = []
         for _, planet in self.apistatus.planets.items():
-            planetbiome = self.apistatus.planetdata["planets"].get(
-                str(planet.index), None
+            planetbiome = self.apistatus.statics.galaxystatic["planets"].get(
+                planet.index, None
             )
 
             if planetbiome:

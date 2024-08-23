@@ -152,34 +152,20 @@ def create_planet_embed(
     )
     embed.set_footer(text=cstri)
     embed.set_author(name=f"Planet Index {planet_index}")
-    central = stat.planetdata["planets"].get(str(planet_index), None)
-    if central:
-        bname = central["biome"]
-        bhazard = central["environmentals"]
-        planet_biome = stat.planetdata["biomes"].get(bname, None)
-        planet_hazards = [
-            stat.planetdata["environmentals"].get(h, None) for h in bhazard
-        ]
-        if planet_biome:
-            biome_name = planet_biome.get("name", "[GWW SEARCH ERROR]")
-            biome_description = planet_biome.get(
-                "description", "No description available"
-            )
-            embed.add_field(
-                name=f"Biome:{biome_name}",
-                value=f"{biome_description}",
-                inline=False,
-            )
+    if data.biome:
+        embed.add_field(
+            name=f"Biome:{data.biome.name}",
+            value=f"{data.biome.description}",
+            inline=False,
+        )
 
-        if planet_hazards:
-            hazards_str = ""
-            for hazard in planet_hazards:
-                hazard_name = hazard.get("name", "Unknown Hazard")
-                hazard_description = hazard.get(
-                    "description", "No description available"
-                )
-                hazards_str += f"**{hazard_name}:** {hazard_description}\n"
-            embed.add_field(name="Hazards", value=hazards_str, inline=False)
+    if data.hazards:
+        hazards_str = ""
+        for hazard in data.hazards:
+            hazard_name = hazard.name
+            hazard_description = hazard.description
+            hazards_str += f"**{hazard_name}:** {hazard_description}\n"
+        embed.add_field(name="Hazards", value=hazards_str, inline=False)
 
     max_health = data.get("maxHealth", 0)
     health = data.get("health", 0)
@@ -261,6 +247,14 @@ def create_planet_embed(
                 value="Planet appears to be unconnected.",
                 inline=True,
             )
+
+    if data.activePlanetEffects:
+        effect_str = ""
+        for effect in data.activePlanetEffects:
+            effect_name = effect.name
+            effect_description = effect.description
+            effect_str += f"**{effect_name}:** {effect_description}\n"
+        embed.add_field(name="Effects", value=effect_str[:1020], inline=False)
 
     return embed
 
