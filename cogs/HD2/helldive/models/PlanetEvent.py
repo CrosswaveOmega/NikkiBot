@@ -47,6 +47,6 @@ class PlanetEvent(BaseApiModel):
             f"ID: {self.id}, Type: {self.eventType}, Faction: {factions.get(self.race,'UNKNOWN')}\n"
             f"Event Health: `{(self.health)}/{(self.maxHealth)}`\n"
             f"Start Time: {self.startTime}, End Time: {self.expireTime}\n"
-            f"Campaign ID: {hf(self.campaignId)}, Joint Operation IDs: {', '.join(map(str, self.jointOperationIds))}"
+            f"Campaign ID: C{self.campaignId}, Joint Operation IDs: {', '.join(map(str, self.jointOperationIds))}"
         )
         return event_details

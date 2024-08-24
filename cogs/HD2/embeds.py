@@ -1,8 +1,10 @@
 import json
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import os
 import discord
+
+from cogs.HD2.helldive.models import Campaign
 
 from .helldive import Assignment2, Campaign2, Planet, War, GlobalEvent, PlanetAttack
 
@@ -116,7 +118,7 @@ def create_assignment_embed(
     return embed
 
 
-def create_campaign_str(data) -> str:
+def create_campaign_str(data:Union[Campaign2,Campaign]) -> str:
     cid = data["id"]
     campaign_type = campaign_types.get(data["type"], "Unknown type")
     count = data["count"]

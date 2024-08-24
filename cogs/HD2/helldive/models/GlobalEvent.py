@@ -29,7 +29,7 @@ class GlobalEvent(BaseApiModel):
 
     def strout(self) -> str:
         formatv = {
-            k: v for k, v in self.model_dump().items() if k not in ["message", "title"]
+            k: v for k, v in self.model_dump().items() if k not in ["message", "title",'retrieved_at']
         }
 
-        return ", ".join([f"{k}:{v}" for k, v in formatv.items()])
+        return ", ".join([f"{k}:`{v}`" for k, v in formatv.items()])

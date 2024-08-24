@@ -464,14 +464,35 @@ class Embeds:
 
         emb = discord.Embed(
             title=f"{name} Campaign {mode}",
-            description=f"A campaign has {mode} for {name}, in sector {sector}.  \nTimestamp:{fdt(campaign.retrieved_at,'F')}",
+            description=f"A campaign has {mode} for {name}, in sector {sector}.\n{strc}\nTimestamp:{fdt(campaign.retrieved_at,'F')}",
             timestamp=campaign.retrieved_at,
             color=color,
         )
         emb.set_author(name=f"Campaign {mode}.")
         emb.set_footer(text=f"{strc},{custom_strftime(campaign.retrieved_at)}")
         return emb
+    
+    @staticmethod
+    def campaignsLogEmbed(
+        campaign: Campaign, planet: Optional[Planet], mode="started"
+    ) -> discord.Embed:
+        strc = hd2.embeds.create_campaign_str(campaign)
+        name, sector = campaign.planetIndex, None
+        color = 0x009696
+        if planet:
+            name, sector = planet.get_name(False), planet.sector
+            color = colors.get(planet.currentOwner.lower(), 0x009696)
 
+        emb = discord.Embed(
+            title=f"{name} Campaign {mode}",
+            description=f"A campaign has {mode} for {name}, in sector {sector}.\n{strc}\nTimestamp:{fdt(campaign.retrieved_at,'F')}",
+            timestamp=campaign.retrieved_at,
+            color=color,
+        )
+        emb.set_author(name=f"Campaign {mode}.")
+        emb.set_footer(text=f"{strc},{custom_strftime(campaign.retrieved_at)}")
+        return emb
+    
     @staticmethod
     def deadzoneWarningEmbed(campaign: BaseApiModel, mode="started") -> discord.Embed:
         emb = discord.Embed(
@@ -623,13 +644,13 @@ class Embeds:
             color = getColor(campaign.owner)
             old_owner=dump['owner'].get('old',5)
             new_owner=dump['owner'].get('new',5)
-            specialtext+=f"\n* Owner:{faction_names.get(old_owner,'er')}->{faction_names.get(new_owner,'er')}"
+            specialtext+=f"\n* Owner: `{faction_names.get(old_owner,'er')}`->`{faction_names.get(new_owner,'er')}`"
         if "regenPerSecond" in dump:
             old_decay=dump['regenPerSecond'].get('old',99999)
             new_decay=dump['regenPerSecond'].get('new',99999)
             old_decay=round(maths.dps_to_lph(old_decay),3)
             new_decay=round(maths.dps_to_lph(new_decay),3)
-            specialtext+=f"\n* Regen Rate:{old_decay}->{new_decay}"
+            specialtext+=f"\n* Regen Rate: `{old_decay}`->`{new_decay}`"
 
 
         emb = discord.Embed(

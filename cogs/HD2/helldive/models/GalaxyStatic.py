@@ -100,10 +100,13 @@ class GalaxyStatic(BaseApiModel):
         )
         pos = planetInfo.position
         #print(index,planetStatus.retrieved_at)
+        name=planet_base.name
+        if 'en-US' in planet_base.names:
+            name=planet_base.names.get('en-US',planet_base.name)
         planet = Planet(
             retrieved_at=planetStatus.retrieved_at,
             index=index,
-            name=planet_base.name,
+            name=name,
             sector=planet_base.sector,
             biome=biome,
             hazards=env,

@@ -86,7 +86,7 @@ def build_planet_2(
             health=event.health,
             maxHealth=event.maxHealth,
             startTime=starttime + (dt.timedelta(seconds=event.startTime)),
-            endTime=starttime + (dt.timedelta(seconds=event.endTime)),
+            endTime=starttime + (dt.timedelta(seconds=event.expireTime)),
             campaignId=event.campaignId,
             jointOperationIds=event.jointOperationIds,
         )
