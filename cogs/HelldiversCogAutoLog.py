@@ -464,7 +464,7 @@ class Embeds:
 
         emb = discord.Embed(
             title=f"{name} Campaign {mode}",
-            description=f"A campaign has {mode} for {name}, in sector {sector}.\n{strc}\nTimestamp:{fdt(campaign.retrieved_at,'F')}",
+            description=f"A campaign has {mode} for **{name}**, in sector **{sector}**.\n{strc}\nTimestamp:{fdt(campaign.retrieved_at,'F')}",
             timestamp=campaign.retrieved_at,
             color=color,
         )
