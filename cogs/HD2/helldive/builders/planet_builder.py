@@ -85,8 +85,8 @@ def build_planet_2(
             faction=faction_names.get(event.race, "???"),
             health=event.health,
             maxHealth=event.maxHealth,
-            startTime=starttime + (dt.timedelta(seconds=event.startTime)),
-            endTime=starttime + (dt.timedelta(seconds=event.expireTime)),
+            startTime=(starttime + (dt.timedelta(seconds=event.startTime))).isoformat(),
+            endTime=(starttime + (dt.timedelta(seconds=event.expireTime))).isoformat(),
             campaignId=event.campaignId,
             jointOperationIds=event.jointOperationIds,
         )
