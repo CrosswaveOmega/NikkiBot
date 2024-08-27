@@ -1,6 +1,8 @@
 import json
 from typing import Dict, List, Optional, Tuple, Union
 
+
+import datetime
 import os
 import discord
 
@@ -13,7 +15,6 @@ Collection of embeds for formatting.
 """
 from collections import defaultdict
 import re
-
 from discord.utils import format_dt as fdt
 
 from .helldive.models.ABC.utils import extract_timestamp as et, hdml_parse
@@ -290,24 +291,26 @@ def campaign_view(stat: ApiStatus, hdtext: Optional[Dict[str, str]] = None):
 
         if planet_difference.event != None:
             p_evt = planet_difference.event
-            total_sec = p_evt.retrieved_at.total_seconds()
-            rate = -1 * (p_evt.health)
-            total_contrib[0] += camp.planet.statistics.playerCount
-            total_contrib[1] += rate
-            thisamt = round((rate / camp.planet.maxHealth) * 100.0, 5)
-            total_contrib[2] += thisamt
-            total_contrib[3] += round((thisamt / max(1, total_sec)) * 60 * 60, 5)
+            if isinstance(p_evt.retrieved_at, datetime.timedelta):
+                total_sec = p_evt.retrieved_at.total_seconds()
+                rate = -1 * (p_evt.health)
+                total_contrib[0] += camp.planet.statistics.playerCount
+                total_contrib[1] += rate
+                thisamt = round((rate / camp.planet.maxHealth) * 100.0, 5)
+                total_contrib[2] += thisamt
+                total_contrib[3] += round((thisamt / max(1, total_sec)) * 60 * 60, 5)
 
         elif planet_difference.health_percent() != 0:
-            total_sec = planet_difference.retrieved_at.total_seconds()
-            rate = (-1 * (planet_difference.health)) + (
-                (camp.planet.regenPerSecond) * total_sec
-            )
-            total_contrib[0] += camp.planet.statistics.playerCount
-            total_contrib[1] += rate
-            thisamt = round((rate / camp.planet.maxHealth) * 100.0, 5)
-            total_contrib[2] += thisamt
-            total_contrib[3] += round((thisamt / total_sec) * 60 * 60, 5)
+            if isinstance(planet_difference.retrieved_at, datetime.timedelta):
+                total_sec = planet_difference.retrieved_at.total_seconds()
+                rate = (-1 * (planet_difference.health)) + (
+                    (camp.planet.regenPerSecond) * total_sec
+                )
+                total_contrib[0] += camp.planet.statistics.playerCount
+                total_contrib[1] += rate
+                thisamt = round((rate / camp.planet.maxHealth) * 100.0, 5)
+                total_contrib[2] += thisamt
+                total_contrib[3] += round((thisamt / total_sec) * 60 * 60, 5)
 
         features = get_feature_dictionary(stat, k)
         pred = make_prediction_for_eps(features)
