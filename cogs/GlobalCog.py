@@ -883,6 +883,9 @@ class Global(commands.Cog, TC_Cog_Mixin):
             files = []
             for a in message.attachments:
                 this_file = await a.to_file()
+                if a.content_type.startswith("image/"):
+                    
+                    embed.set_image(url=f"attachment://{this_file.filename}")
                 files.append(this_file)
 
             guild, icon = None, None
@@ -895,11 +898,23 @@ class Global(commands.Cog, TC_Cog_Mixin):
                     embs.append(e)
             if embs:
                 embed.add_field(name="embeds", value=f" {len(embs)} embeds")
+            ref = message.reference
+            if ref and isinstance(ref.resolved, discord.Message):
+                try:
+                    embed.add_field(
+                        name="Replying to...",
+                        value=f"[{ref.resolved.author}]({ref.resolved.jump_url})",
+                        inline=False,
+                    )
+                except Exception as e:
+                    await ctx.bot.send_error(e,"Paste error",True)
             embed.add_field(name="URL", value=f"[original]({message.jump_url})")
             if guild:
                 embed.set_footer(text=f"From {guild}", icon_url=icon)
             embed.timestamp = message.created_at
-            await ctx.send(embed=embed, files=files, ephemeral=False)
+            
+            embs.insert(0,embed)
+            await ctx.send(embeds=embs, files=files, ephemeral=False)
             return
 
         except Exception as e:
