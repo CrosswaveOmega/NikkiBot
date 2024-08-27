@@ -153,9 +153,11 @@ class Event(BaseApiModel, HealthMixin):
             str: A string representation of the rate of change and the estimated time of loss or gain.
         """
         time_elapsed = diff.retrieved_at
-        if time_elapsed.total_seconds() == 0:
-            return ""
 
+        if not isinstance(time_elapsed, datetime.timedelta):
+            return ""
+        if time_elapsed.total_seconds() == 0:
+            return "?"
         change = self.calculate_change(diff)
         if change == 0:
             return ""
