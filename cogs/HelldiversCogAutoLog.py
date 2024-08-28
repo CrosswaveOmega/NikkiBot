@@ -87,9 +87,9 @@ class PlanetEvents:
     def get_last_planet_owner(self) -> Tuple[int,int]:
         new, old = self.planet.owner,self.planet.owner
         if "owner" in self.lastStatus:
-            if 'old' in self.lastStatus['owner']
+            if 'old' in self.lastStatus['owner']:
                 old=self.lastStatus['owner']['old']
-            if 'new' in self.lastStatus['owner']
+            if 'new' in self.lastStatus['owner']:
                 new=self.lastStatus['owner']['new']
         return new, old
 
