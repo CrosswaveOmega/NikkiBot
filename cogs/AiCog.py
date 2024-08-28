@@ -103,7 +103,8 @@ async def precheck_context(ctx: commands.Context) -> bool:
             return False
         ok, reason = userrep.check_if_ok()
         if not ok:
-            await ctx.channel.send(reasons["user"][reason])
+            if reason!='disable':
+                await ctx.channel.send(reasons["user"][reason])
             return False
         serverrep.modify_status()
         userrep.modify_status()
