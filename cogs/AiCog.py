@@ -58,11 +58,14 @@ reasons = {
         "messagelimit": "This server has reached the daily message limit, please try again tomorrow.",
         "ban": "This server is banned from using my AI due to repeated violations.",
         "cooldown": "There's a one minute delay between messages.",
+        
+        'disable':"The AI is disabled for new servers because of privacy concerns."
     },
     "user": {
         "messagelimit": "You have reached the daily message limit, please try again tomorrow.",
         "ban": "You are forbidden from using my AI due to conduct.",
         "cooldown": "There's a one minute delay between messages, slow down man!",
+        'disable':"The AI is disabled for new users because of privacy concerns."
     },
 }
 

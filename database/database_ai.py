@@ -45,6 +45,8 @@ class AuditProfile(AIBase):
     current = Column(Integer, default=0)
     last_call = Column(DateTime, nullable=True)
     started_dt = Column(DateTime, nullable=True)
+    disabled = Column(Boolean,nullable=True,default=False)
+
 
     def set_rollover(self):
         """Change the internal rollover time."""
@@ -72,7 +74,7 @@ class AuditProfile(AIBase):
         if sa == None:
             sa = AuditProfile.add(server.id, "server")
         if ua == None:
-            ua = AuditProfile.add(user.id, "user")
+            ua = AuditProfile.add(user.id, "user",True)
         return sa, ua
 
     @classmethod
@@ -104,12 +106,12 @@ class AuditProfile(AIBase):
             return None
 
     @classmethod
-    def add(cls, id, type):
+    def add(cls, id, type,disabled=False):
         targetid, num = hash.hash_string(
             str(id), hashlen=16, hashset=hash.Hashsets.base64
         )
         session = DatabaseSingleton.get_session()
-        entry = cls(id=targetid, type=type)
+        entry = cls(id=targetid, type=type,disabled=disabled)
         if type == "server":
             entry.DailyLimit = 50
         session.add(entry)
@@ -124,6 +126,8 @@ class AuditProfile(AIBase):
         if self.last_call is not None:
             if (datetime.now() - self.last_call).total_seconds() < 15:
                 return False, "cooldown"
+        if self.disabled:
+            return False, "disable"
         return True, "ok"
 
     def modify_status(self):
@@ -139,9 +143,11 @@ class ServerAIConfig(AIBase):
     __tablename__ = "ServerAIConfig"
 
     server_id = Column(Integer, primary_key=True, nullable=False, unique=True)
+    restrict = Column(Boolean, nullable=True, default=True)
 
     enabled_channels = relationship("EnabledChannel", back_populates="server_ai_config")
     message_chains = relationship("MessageChain", back_populates="server_ai_config")
+
 
     @classmethod
     def get(cls, server_id):

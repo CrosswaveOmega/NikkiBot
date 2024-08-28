@@ -83,6 +83,16 @@ class PlanetEvents:
                     if t == "old":
                         old.append(ind)
         return new, old
+    
+    def get_last_planet_owner(self) -> Tuple[int,int]:
+        new, old = self.planet.owner,self.planet.owner
+        if "owner" in self.lastStatus:
+            if 'old' in self.lastStatus['owner']
+                old=self.lastStatus['owner']['old']
+            if 'new' in self.lastStatus['owner']
+                new=self.lastStatus['owner']['new']
+        return new, old
+
 
     def update_planet(
         self, value: Tuple[SimplePlanet, Dict[str, Any]], place: str
@@ -276,6 +286,7 @@ class Batch:
         return targets
 
     def combo_checker(self) -> List[str]:
+        '''Check for event combos'''
         combos: List[str] = []
 
         for planet_data in self.planets.values():
@@ -339,13 +350,17 @@ class Batch:
             combinations.append("cend")
 
         if self.contains_all_values(trig_list, ["campaign_remove", "planets_change"]):
+
             if planet and planet.owner == 1:
-                combinations.append("planet won")
+                new,old=planet_data.get_last_planet_owner()
+                if old!=new:
+                    combinations.append("planet won")
 
         if self.contains_all_values(
             trig_list, ["campaign_remove", "planetevents_remove", "planets_change"]
         ):
             if planet and planet.owner != 1:
+
                 combinations.append("defense lost")
 
         if (
@@ -364,7 +379,9 @@ class Batch:
 
         if "planets_change" in trig_list and "campaign_remove" not in trig_list:
             if planet and planet.owner != 1:
-                combinations.append("planet flip")
+                new,old=planet_data.get_last_planet_owner()
+                if old!=new:
+                    combinations.append("planet flip")
 
         if "planets_change" in trig_list:
             pass
