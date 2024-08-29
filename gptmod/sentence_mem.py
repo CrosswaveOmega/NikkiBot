@@ -386,7 +386,7 @@ class SentenceMemory:
             context = ""
 
             docs2 = (d[0] for d in docs)
-            all_neighbors = await self.get_neighbors(docs2)
+            all_neighbors = docs2
 
         checktime = all_timer.get_time()
 

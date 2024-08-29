@@ -499,6 +499,44 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         for e, chunk in enumerate(fil):
             await ctx.send(chunk)
 
+    
+    @commands.command(brief="Dump memory")
+    @commands.is_owner()
+    async def memory_dump(self, ctx):
+        guild, user = ctx.guild, ctx.message.author
+        mem = SentenceMemory(ctx.bot, guild, user)
+        message = ctx.message
+        message.content = prompt
+        docs, str, alltimes = await mem.dump_memory(message)
+        splitorder = [
+            "\n# %s",
+            "\n## %s",
+            "\n### %s",
+            "\n#### %s",
+            "\n##### %s",
+            "\n###### %s",
+            "%s\n",
+            "%s.  ",
+            "%s. ",
+            "%s ",
+        ]
+        alltime, dtime, ltime = alltimes
+        
+        fil = prioritized_string_split(str, splitorder, default_max_len=1980)
+        await ctx.send(f"took about {alltime.get_time()} seconds to gather neighbors.")
+        await ctx.send(
+            f"took about {dtime.get_time()} seconds to load into dictionary."
+        )
+        await ctx.send(
+            f"took about {ltime.get_time()} seconds to sort into new_content"
+        )
+
+        embs=[]
+        for e, chunk in enumerate(fil):
+            embs.append(discord.Embed(title="memory dump",description=chunk))
+
+        mess=await pages_of_embeds(ctx,embs)
+
     @commands.command(brief="Check memory")
     @commands.is_owner()
     async def memory_remove(self, ctx, url: str):
