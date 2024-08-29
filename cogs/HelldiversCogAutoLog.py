@@ -1092,8 +1092,6 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     batch=501,
                     value=events,
                 )
-                print(item)
-
                 await self.QueueAll.put([item])
 
         self.get_running = False
