@@ -506,7 +506,6 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         guild, user = ctx.guild, ctx.message.author
         mem = SentenceMemory(ctx.bot, guild, user)
         message = ctx.message
-        message.content = prompt
         docs, str, alltimes = await mem.dump_memory(message)
         splitorder = [
             "\n# %s",
