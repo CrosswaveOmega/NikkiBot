@@ -277,7 +277,7 @@ async def ai_message_invoke(
     mes = [c.to_dict() for c in chain]
     # create new ChatCreation
     chat = gptmod.ChatCreation(presence_penalty=0.3, messages=[])
-    # ,model="gpt-3.5-turbo-0125"
+    # ,model="gpt-4o-mini"
     np = nikkiprompt
     if JSONMODE:
         np = np.replace("[JSONMODE]", json_prompt)
@@ -508,6 +508,17 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         target = await urltomessage(url, ctx.bot)
         out = await mem.delete_message(url)
         await ctx.send("Removed url.")
+
+    
+    @commands.command(brief="add a sentence to memory")
+    @commands.is_owner()
+    async def memory_add(self, ctx,  *, memory:str):
+        guild, user = ctx.guild, ctx.message.author
+        mem = SentenceMemory(ctx.bot, guild, user)
+        message = ctx.message
+        
+        out = await mem.add_list_to_mem(ctx,message,[memory])
+        await ctx.send("Memory added.")
 
     @commands.command(brief="clear user data")
     @commands.is_owner()

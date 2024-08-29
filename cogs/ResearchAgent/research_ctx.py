@@ -150,7 +150,7 @@ class ResearchContext:
                 lib = Followups()
                 sc = SingleCallAsync(
                     mylib=lib,
-                    model="gpt-3.5-turbo-0125",
+                    model="gpt-4o-mini",
                     client=self.client,
                     timeout=30,
                 )
@@ -356,7 +356,7 @@ class ResearchContext:
                     lib = Followups()
                     sc = SingleCallAsync(
                         mylib=lib,
-                        model="gpt-3.5-turbo-0125",
+                        model="gpt-4o-mini",
                         client=self.client,
                         timeout=30,
                     )

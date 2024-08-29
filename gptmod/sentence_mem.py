@@ -143,6 +143,16 @@ async def try_until_ok(async_func, *args, **kwargs):
 
 
 def split_document(doc: Document, present_mem=""):
+    """
+    Splits a Document object into smaller chunks based on sentences while maintaining metadata.
+
+    Args:
+        doc (Document): The Document object to be split.
+        present_mem (str, optional): Additional memory context (default is "").
+
+    Returns:
+        List[Document]: A list of new Document objects with split content and updated metadata.
+    """
     newdata = []
     metadata = doc.metadata
     add = 0
@@ -174,7 +184,7 @@ async def group_documents(docs: List[Document], max_tokens=3000):
             print(doc.page_content)
             context += doc.page_content + "  "
         tokens = util.num_tokens_from_messages(
-            [{"role": "system", "content": context}], "gpt-3.5-turbo-0125"
+            [{"role": "system", "content": context}], "gpt-4o-mini"
         )
         if tokens >= max_tokens:
             print("token break")
@@ -334,6 +344,43 @@ class SentenceMemory:
             docs = (
                 await self.coll.asimilarity_search_with_relevance_scores_and_embeddings(
                     message.content, k=15, filter=filterwith
+                )
+            )
+            context = ""
+
+            docs2 = (d[0] for d in docs)
+            all_neighbors = await self.get_neighbors(docs2)
+
+        checktime = all_timer.get_time()
+
+        with Timer() as dict_timer:
+            sources = await group_documents(all_neighbors)
+
+        new_output = ""
+        with Timer() as loadtimer:
+            for source in sources:
+                if source.page_content:
+                    content = indent_string(source.page_content.strip(), 1)
+                    output = f"*{content}\n"
+                    new_output += output
+
+        return docs, new_output, (all_timer, dict_timer, loadtimer)
+    
+    async def dump_memory(self, message: discord.Message) -> List[DocumentScoreVector]:
+        persist = "saveData"
+
+        filterwith = {
+            "$and": [
+                {"foruser": message.author.id},
+                {"forguild": message.guild.id},
+            ]
+        }
+        sources: Dict[str : Dict[int, Any]] = {}
+        with Timer() as all_timer:
+            docs = (
+                await self.coll.aget(
+                    where=filterwith,
+                    limit=128
                 )
             )
             context = ""

@@ -1016,7 +1016,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     {"role": "system", "content": prompt},
                     {"role": "user", "content": st},
                 ],
-                "gpt-3.5-turbo-0125",
+                "gpt-4o-mini",
             )
 
         fil = prioritized_string_split(
@@ -1396,7 +1396,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
             if depth < research_context.depth and len(research_context.stack) <= 0:
                 cur = (quest, newcontext, depth, parent)
-                vie = ra.views.sFollowupActionView(
+                vie = ra.views.FollowupActionView(
                     user=ctx.author, timeout=60 * 7, rctx=research_context, current=cur
                 )
                 message = await ctx.send(

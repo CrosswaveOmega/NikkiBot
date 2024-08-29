@@ -31,7 +31,7 @@ class ChatCreation(ApiCore):
         response_format: Optional[Dict[str, str]] = None,
         tools: Optional[List[Dict[str, str]]] = None,
         tool_choice: Optional[Union[Dict[str, str], str]] = None,
-        model="gpt-3.5-turbo",
+        model="gpt-4o-mini",
     ):
         self.messages = []
         if messages is not None:
@@ -59,7 +59,7 @@ class ChatCreation(ApiCore):
 
     def to_dict(self, pro=True):
         data = super().to_dict()
-        data["model"] = "gpt-3.5-turbo-0125"
+        data["model"] = "gpt-4o-mini"
         return data
 
     def summary(self):

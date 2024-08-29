@@ -148,7 +148,7 @@ async def read_and_split_pdf(bot, url: str, extract_meta: bool = False):
             client = openai.AsyncClient()
 
             completion = await client.chat.completions.create(
-                model="gpt-3.5-turbo-0125",
+                model="gpt-4o-mini",
                 messages=[
                     {
                         "role": "system",
@@ -695,7 +695,7 @@ async def get_points(
         **Link:** {doc.metadata['source']}
         **Text:** {doc.page_content}"""
         tokens = gptmod.util.num_tokens_from_messages(
-            [{"role": "system", "content": output}], "gpt-3.5-turbo-0125"
+            [{"role": "system", "content": output}], "gpt-4o-mini"
         )
         tok = set_ranges_based_on_token_size(tokens)
         prompt = generate_prompt(*tok)
@@ -709,7 +709,7 @@ async def get_points(
 
         completion = await try_until_ok(
             client.chat.completions.create,
-            model="gpt-3.5-turbo-0125",
+            model="gpt-4o-mini",
             messages=messages,
             timeout=60,
             # response_format={"type": "json_object"}
@@ -771,7 +771,7 @@ END
 
     total_tokens = gptmod.util.num_tokens_from_messages(
         [{"role": "system", "content": prompt}, {"role": "user", "content": question}],
-        "gpt-3.5-turbo-0125",
+        "gpt-4o-mini",
     )
     for e, tup in enumerate(docs):
         doc, _, emb = tup
@@ -788,7 +788,7 @@ END
         formatted_docs.append(output)
 
         tokens = gptmod.util.num_tokens_from_messages(
-            [{"role": "system", "content": output}], "gpt-3.5-turbo-0125"
+            [{"role": "system", "content": output}], "gpt-4o-mini"
         )
 
         if total_tokens + tokens >= 14000:
@@ -805,7 +805,7 @@ END
     for tries in range(0, 4):
         try:
             completion = await client.chat.completions.create(
-                model="gpt-3.5-turbo-0125", messages=messages, timeout=60
+                model="gpt-4o-mini", messages=messages, timeout=60
             )
             return completion.choices[0].message.content
         except Exception as e:
@@ -843,7 +843,7 @@ async def summarize(
                 {"role": "system", "content": summary_prompt + prompt},
                 {"role": "user", "content": st},
             ],
-            "gpt-3.5-turbo-0125",
+            "gpt-4o-mini",
         )
 
     result: str = ""
@@ -860,7 +860,7 @@ async def summarize(
         ]
         completion = await try_until_ok(
             client.chat.completions.create,
-            model="gpt-3.5-turbo-0125",
+            model="gpt-4o-mini",
             messages=messages,
             timeout=60,
         )
