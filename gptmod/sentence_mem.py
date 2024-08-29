@@ -343,7 +343,7 @@ class SentenceMemory:
         with Timer() as all_timer:
             docs = (
                 await self.coll.asimilarity_search_with_relevance_scores_and_embeddings(
-                    message.content, k=15, filter=filterwith
+                    message.content, k=8, filter=filterwith
                 )
             )
             context = ""
