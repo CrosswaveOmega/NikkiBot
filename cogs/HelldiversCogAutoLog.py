@@ -895,7 +895,6 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
     async def build_embed(self, item: GameEvent):
 
         event_type = item["mode"]
-        print(item)
         if event_type == "group":
             print("group", len(item["value"]))
             task = asyncio.create_task(self.batch_events_2(item["value"]))

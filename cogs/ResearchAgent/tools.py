@@ -847,7 +847,7 @@ async def summarize(
         )
 
     result: str = ""
-    fil = prioritized_string_split(article, splitorder, 10000, length=local_length)
+    fil = prioritized_string_split(article, splitorder, 20000, length=local_length)
     filelength: int = len(fil)
     for num, articlepart in enumerate(fil):
         print("summarize operation", num, filelength)
