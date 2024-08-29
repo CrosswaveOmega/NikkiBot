@@ -384,8 +384,9 @@ class SentenceMemory:
                 )
             )
             context = ""
-
-            docs2 = (d[0] for d in docs)
+            
+            docs2 = results_to_docs(docs)
+            print(docs,docs2)
             all_neighbors = docs2
 
         checktime = all_timer.get_time()
