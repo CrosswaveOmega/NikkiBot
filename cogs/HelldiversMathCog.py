@@ -314,7 +314,7 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
     @AILibFunction(
         name="galactic_war_status",
         description="Get the current state of the galactic war",
-        enabled=False,
+        enabled=True,
         force_words=["galactic war"],
         required=["comment"],
     )
@@ -346,6 +346,7 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         out=""
         for em in embs:
             out+=f"{extract_embed_text(em)}+\n"
+        print(out)
         return out
         
         
