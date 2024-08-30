@@ -350,7 +350,7 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         for em in embs:
             outv=f"{extract_embed_text(em)}+\n"
 
-            outv=re.sub(r'<t:(\d+):[^>]+>', lambda m: seconds_to_time_string((datetime.datetime.utcfromtimestamp(int(m.group(1)))-discord.utils.utcnow()).total_seconds()) + 'Z', outv)
+            outv=re.sub(r'<t:(\d+):[^>]+>', lambda m: seconds_to_time_string((datetime.datetime.fromtimestamp(int(m.group(1)), tz=datetime.timezone.utc)-discord.utils.utcnow()).total_seconds()), outv)
             out+=outv
 
         print(out)
