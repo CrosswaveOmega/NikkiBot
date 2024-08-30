@@ -100,7 +100,6 @@ def create_assignment_embed(
     embed.set_author(name=f"Assignment A#{did}")
     diff=None
     if data and last:
-        diff=data-last
         diff=diff.progress if diff.progress else None
 
 
