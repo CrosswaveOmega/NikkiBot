@@ -98,16 +98,24 @@ def create_assignment_embed(
         color=0x0000FF,
     )
     embed.set_author(name=f"Assignment A#{did}")
+    diff=None
+    if data and last:
+        diff=data-last
+        diff=diff.progress if diff.progress else None
+
 
     progress = data["progress"]
     embed.add_field(name="Objective", value=data["description"], inline=False)
     tasks = ""
     for e, task in enumerate(data.tasks):
         task_type, taskdata = task.taskAdvanced()
-        tasks += task.task_str(progress[e], task_type, taskdata, e, planets) + "\n"
+        chg=None
+        if diff and isinstance(diff, list):
+            if e < len(diff) - 1:
+                chg = diff[e]
+        tasks += task.task_str(progress[e], task_type, taskdata, e, planets,chg) + "\n"
 
     embed.add_field(name="Tasks", value=tasks, inline=False)
-
     if data.rewards:
         for e, d in enumerate(data.rewards):
             embed.add_field(name=f"Reward {e}", value=d.format(), inline=True)
@@ -262,7 +270,7 @@ def create_planet_embed(
     return embed
 
 
-def campaign_view(stat: ApiStatus, hdtext: Optional[Dict[str, str]] = None):
+def campaign_view(stat: ApiStatus, hdtext: Optional[Dict[str, str]] = None,full:bool=False):
     flav = "Galactic Status."
     if hdtext:
         if "galactic_overview" in hdtext:
@@ -287,7 +295,7 @@ def campaign_view(stat: ApiStatus, hdtext: Optional[Dict[str, str]] = None):
         if changes:
             avg = Planet.average([c.planet for c in changes])
         planet_difference: Planet = (camp - last).planet
-        name, desc = camp.planet.simple_planet_view(planet_difference, avg)
+        name, desc = camp.planet.simple_planet_view(planet_difference, avg,full)
 
         if planet_difference.event != None:
             p_evt = planet_difference.event

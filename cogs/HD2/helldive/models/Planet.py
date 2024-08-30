@@ -240,7 +240,7 @@ class Planet(BaseApiModel, HealthMixin):
         return faction
 
     def simple_planet_view(
-        self, prev: Optional["Planet"] = None, avg: Optional["Planet"] = None
+        self, prev: Optional["Planet"] = None, avg: Optional["Planet"] = None, show_hp_without_event:bool=True
     ) -> Tuple[str, str]:
         """Return a string containing the formated state of the planet.
 
@@ -259,8 +259,10 @@ class Planet(BaseApiModel, HealthMixin):
 
         name = f"{faction}P#{self.index}: {self.name}"
         players = f"{emj('hdi')}: `{self.statistics.playerCount} {cfi(diff.statistics.playerCount)}`"
-        out = f"{players}\nHP `{round((self.health/self.maxHealth)*100.0,5)}% {cfi(round((diff.health/self.maxHealth)*100.0,5))}`"
-        out += f"\nDecay:`{round((100*(self.regenPerSecond/self.maxHealth))*60*60,2)}`"
+        out = f"{players}\n"
+        if (not self.event) or show_hp_without_event: 
+            out += f"HP `{round((self.health/self.maxHealth)*100.0,5)}% {cfi(round((diff.health/self.maxHealth)*100.0,5))}`"
+            out += f"\nDecay:`{round((100*(self.regenPerSecond/self.maxHealth))*60*60,2)}`"
         if avg:
             remaining_time = self.estimate_remaining_lib_time(avg)
             out += "\n" + remaining_time

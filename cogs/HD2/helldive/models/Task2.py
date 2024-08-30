@@ -49,6 +49,7 @@ class Task2(BaseApiModel):
         taskdata: Dict[str, Any],
         e=0,
         planets: Dict[int, Planet] = {},
+        last_progess=None,
         show_faction=False,
     ):
         curr = curr_progress
@@ -133,7 +134,6 @@ class Task2(BaseApiModel):
                                 planet = planets[int(ind)]
                                 planet_name = planet.get_name()
                                 taskstr += f", On {planet_name}"
-                return taskstr
             elif self["type"] == 3:
                 if not all(key in taskdata for key in ["goal", "faction"]):
                     dump = json.dumps(taskdata, default=str)[:258]
@@ -164,5 +164,6 @@ class Task2(BaseApiModel):
             else:
                 dump = json.dumps(taskdata, default=str)[:258]
                 taskstr += f"{dump}"
-
+        if last_progess:
+            taskstr+=f"`[change {last_progess}]`"
         return taskstr
