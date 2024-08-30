@@ -317,7 +317,7 @@ def campaign_view(stat: ApiStatus, hdtext: Optional[Dict[str, str]] = None):
         # print(features["eps"], pred)
         eps_estimated = round(pred, 3)
         eps_real = round(features["eps"], 3)
-        desc += f"\nExp/s:`{eps_estimated},c{eps_real}`"
+        desc += f"\ninfl/s:`{eps_estimated},c{eps_real}`"
         if el >= 24:
             emb = discord.Embed()
             embs.append(emb)

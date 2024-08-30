@@ -5,7 +5,10 @@ import os
 import discord
 from discord import app_commands
 from discord.ext import commands
-
+from gptfunctionutil import (
+    AILibFunction,
+    LibParam,
+)
 import cogs.HD2 as hd2
 
 from discord.app_commands import Choice
@@ -26,11 +29,42 @@ calculation_modes = [  # param name
 ]
 
 
+
+def extract_embed_text(embed):
+    """
+    Extracts the text from an embed object and formats it as a bullet list.
+
+    Args:
+        embed (Embed): The embed object to extract text from.
+
+    Returns:
+        str: A string containing the title, description, and fields of the embed, formatted as a bullet list.
+    """
+    bullet_list = []
+
+    # Extract title, description, and fields from the Embed
+    if embed.title:
+        bullet_list.append(f"{embed.title}")
+
+    if embed.description:
+        bullet_list.append(f"{embed.description}")
+
+    for field in embed.fields:
+        bullet_list.append(f"**{field.name}**: {field.value}")
+
+    # Join the extracted text with bullet points
+    bullet_string = "\n".join([f"• {line}" for line in bullet_list])
+    return bullet_string
+
+
 class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
     """Cog for helldivers 2.  Consider it my embedded automaton spy."""
 
     def __init__(self, bot):
         self.bot: TCBot = bot
+        self.hd2 = load_json_with_substitutions("./assets/json", "flavor.json", {}).get(
+            "hd2", {}
+        )
 
     def cog_unload(self):
         pass
@@ -276,6 +310,47 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
                 writer.writeheader()
 
             writer.writerow(row)
+
+    @AILibFunction(
+        name="galactic_war_status",
+        description="Get the current state of the galactic war",
+        enabled=False,
+        force_words=["galactic war"],
+        required=["comment"],
+    )
+    @LibParam(
+        comment="An interesting, amusing remark.",
+    )
+    @commands.command(
+        name="galactic_war_status",
+        description="Get the current state of the galactic war",
+        extras={},
+    )
+    async def get_gwar_state(
+        self,
+        ctx: commands.Context,
+        comment:str="Ok",
+    ):
+        emb = hd2.campaign_view(self.apistatus, self.hd2)
+
+        embs = emb
+        if self.apistatus.assignments:
+            for i, assignment in self.apistatus.assignments.items():
+                b, a = assignment.get_first_change()
+                embs.insert(
+                    0,
+                    hd2.create_assignment_embed(
+                        b, b - a, planets=self.apistatus.planets
+                    ),
+                )
+        out=""
+        for em in embs:
+            out+=f"{extract_embed_text(em)}+\n"
+        return out
+        
+        
+
+        
 
 
 @app_commands.allowed_installs(guilds=False, users=True)
