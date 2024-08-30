@@ -21,6 +21,7 @@ from bot import (
 )
 from typing import *
 from utility import load_json_with_substitutions
+from utility.globalfunctions import seconds_to_time_string
 
 mode = Literal["health", "lib"]
 
@@ -344,11 +345,12 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
                         b, b - a, planets=self.apistatus.planets
                     ),
                 )
-        out=""
+        now=discord.utils.utcnow()
+        out=f"Current Date: {discord.utils.utcnow().isoformat()}"
         for em in embs:
             outv=f"{extract_embed_text(em)}+\n"
 
-            outv=re.sub(r'<t:(\d+):[^>]+>', lambda m: datetime.datetime.utcfromtimestamp(int(m.group(1))).isoformat() + 'Z', outv)
+            outv=re.sub(r'<t:(\d+):[^>]+>', lambda m: seconds_to_time_string((datetime.datetime.utcfromtimestamp(int(m.group(1)))-discord.utils.utcnow()).total_seconds()) + 'Z', outv)
             out+=outv
 
         print(out)
