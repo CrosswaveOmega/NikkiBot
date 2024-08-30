@@ -1,6 +1,7 @@
 import csv
 import datetime
 import os
+import re
 
 import discord
 from discord import app_commands
@@ -345,7 +346,11 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
                 )
         out=""
         for em in embs:
-            out+=f"{extract_embed_text(em)}+\n"
+            outv=f"{extract_embed_text(em)}+\n"
+
+            outv=re.sub(r'<t:(\d+):[^>]+>', lambda m: datetime.datetime.utcfromtimestamp(int(m.group(1))).isoformat() + 'Z', outv)
+            out+=outv
+
         print(out)
         return out
         
