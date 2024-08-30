@@ -98,9 +98,14 @@ def create_assignment_embed(
         color=0x0000FF,
     )
     embed.set_author(name=f"Assignment A#{did}")
-    diff=None
+    diff, rates=None, None
+    exptime = et(data["expiration"])
+    time_remaining=(exptime-data.retrieved_at).total_seconds()
     if data and last:
-        diff=last.progress if last.progress else None
+        diff=last.progress if last.progress else []
+        seconds=last.retrieved_at.total_seconds()
+        rates=[i/seconds for i in diff]
+
 
 
     progress = data["progress"]
@@ -108,11 +113,13 @@ def create_assignment_embed(
     tasks = ""
     for e, task in enumerate(data.tasks):
         task_type, taskdata = task.taskAdvanced()
-        chg=None
+        chg,projected=None,None
+        prog=""
         if diff and isinstance(diff, list):
             if e < len(diff) - 1:
                 chg = diff[e]
-        tasks += task.task_str(progress[e], task_type, taskdata, e, planets,chg) + "\n"
+                projected = progress[e]+(rates[e]*time_remaining)
+        tasks += task.task_str(progress[e], task_type, taskdata, e, planets, chg,projected) + "\n"
 
     embed.add_field(name="Tasks", value=tasks, inline=False)
     if data.rewards:
@@ -120,7 +127,7 @@ def create_assignment_embed(
             embed.add_field(name=f"Reward {e}", value=d.format(), inline=True)
     else:
         embed.add_field(name="Reward", value=data.reward.format(), inline=True)
-    exptime = et(data["expiration"])
+    
     embed.add_field(name="Expiration", value=fdt(exptime, "f"), inline=True)
 
     return embed
