@@ -2,13 +2,13 @@ from typing import *
 
 # pylint: disable=no-name-in-module
 from pydantic import BaseModel
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 
 class BaseApiModel(BaseModel):
     """Base extended model class"""
 
-    retrieved_at: Optional[datetime] = None
+    retrieved_at: Optional[Union[datetime,timedelta]] = None
 
     def __init__(self, **data):
         super().__init__(**data)
