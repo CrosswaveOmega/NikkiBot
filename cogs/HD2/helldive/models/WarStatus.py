@@ -138,7 +138,7 @@ class WarStatus(BaseApiModel):
     )
 
     communityTargets: Optional[List[Any]] = Field(alias="communityTargets", default=[])
-
+    activeElectionPolicyEffects: Optional[List[Any]] = Field(alias="activeElectionPolicyEffects", default=[])
     planetActiveEffects: Optional[List[PlanetActiveEffects]] = Field(
         alias="planetActiveEffects", default=[]
     )
@@ -148,6 +148,8 @@ class WarStatus(BaseApiModel):
     superEarthWarResults: Optional[List[Any]] = Field(
         alias="superEarthWarResults", default=[]
     )
+
+    layoutVersion: Optional[int] = Field(alias="layoutVersion", default=None)
 
     def sector_states(self):
         data_path: str = "./hd2json/planets/planets.json"
