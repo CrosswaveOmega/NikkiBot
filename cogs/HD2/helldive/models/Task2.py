@@ -50,6 +50,7 @@ class Task2(BaseApiModel):
         e=0,
         planets: Dict[int, Planet] = {},
         last_progess=None,
+        projected=None,
         show_faction=False,
     ):
         curr = curr_progress
@@ -135,6 +136,7 @@ class Task2(BaseApiModel):
                                 planet_name = planet.get_name()
                                 taskstr += f", On {planet_name}"
             elif self["type"] == 3:
+                ##Exterminate.
                 if not all(key in taskdata for key in ["goal", "faction"]):
                     dump = json.dumps(taskdata, default=str)[:258]
                     taskstr += f"{dump}"
@@ -151,7 +153,7 @@ class Task2(BaseApiModel):
                         enemy = enemies.get(eid, f"UNKNOWN {eid}")
 
                 taskstr += f"/{hf(goal)} ({(int(curr)/int(goal))*100.0}) {enemy} {faction_name}"
-
+                
                 lc = taskdata.get("hasPlanet", None)
                 onplanet = taskdata.get("planet", None)
                 if onplanet is not None and lc is not None:
@@ -161,6 +163,15 @@ class Task2(BaseApiModel):
                                 planet = planets[int(ind)]
                                 planet_name = planet.get_name()
                                 taskstr += f", On {planet_name}"
+                if projected:
+                    status="UNKNOWN"
+                    if curr>goal:
+                        status="VICTORY!"
+                    elif projected>goal:
+                        status="ABOVE QUOTA!"
+                    elif projected<goal:
+                        status="WARNING, UNDER QUOTA!"
+                    taskstr+=f"\n  * Projected Result:`{projected}`, **{status}**  "
             else:
                 dump = json.dumps(taskdata, default=str)[:258]
                 taskstr += f"{dump}"
