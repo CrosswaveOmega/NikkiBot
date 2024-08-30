@@ -347,10 +347,30 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
                 )
         now=discord.utils.utcnow()
         out=f"Current Date: {discord.utils.utcnow().isoformat()}"
+        
+        status_emoji = {
+            "<:checkboxon:1199756987471241346>": "onc",
+            "<:checkboxoff:1199756988410777610>": "noc",
+            "<:checkboxempty:1199756989887172639>": "emptyc",
+            "<:edit:1199769314929164319>": "edit",
+            "<:add:1199770854112890890>": "add",
+            "<:bots:1241748819620659332>": "automaton",
+            "<:bugs:1241748834632208395>": "terminids",
+            "<:superearth:1275126046869557361>": "humans",
+            "<:squid:1274752443246448702>": "illuminate",
+            "<:hdi:1240695940965339136>": "players",
+            "<:Medal:1241748215087235143>": "medal",
+            "<:rec:1274481505611288639>": "req",
+            "<:supercredit:1274728715175067681>": "credits",
+        }
+
         for em in embs:
             outv=f"{extract_embed_text(em)}+\n"
 
             outv=re.sub(r'<t:(\d+):[^>]+>', lambda m: seconds_to_time_string((datetime.datetime.fromtimestamp(int(m.group(1)), tz=datetime.timezone.utc)-discord.utils.utcnow()).total_seconds()), outv)
+            for e, m in status_emoji.items():
+                if e in outv:
+                    outv=outv.replace(e,m)
             out+=outv
 
         print(out)
