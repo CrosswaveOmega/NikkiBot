@@ -219,6 +219,7 @@ class TCBot(
         self.check_tc_tasks.cancel()
         self.status_ticker.cancel()
         del self.jsenv
+        # close the gui
         if self.gui:
             await self.gui.kill()
         if self.playapi:
