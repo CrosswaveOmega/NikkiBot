@@ -231,34 +231,44 @@ async def GetApiRawStatus(api_config_override: Optional[APIConfig] = None) -> Wa
     )
 
 
-async def GetApiRawAll(
-    api_config_override: Optional[APIConfig] = None,
+async def GetApiDirectAll(
+    api_config_override: Optional[APIConfig] = None, direct=False
 ) -> DiveharderAll:
+    warstatus= await make_direct_api_request(
+        "WarSeason/801/Status", WarStatus, api_config_override=api_config_override, path2=True
+    )
+    warinfo= await make_direct_api_request(
+        "WWarSeason/801/WarInfo", WarInfo, api_config_override=api_config_override, path2=True
+    )
+    summary= await make_direct_api_request(
+        "Stats/War/801/Summary", WarSummary, api_config_override=api_config_override, path2=True
+    )
+    
+    assign= await make_direct_api_request(
+        "v2/Assignment/War/801", Assignment, api_config_override=api_config_override, path2=True
+    )
+    news= await make_direct_api_request(
+        "NewsFeed/801", NewsFeedItem, api_config_override=api_config_override, path2=True
+    )
+    newdive=DiveharderAll(status=warstatus,war_info=warinfo,planet_stats=summary,major_order=assign,news_feed=news)
+    return newdive
+
+
+
+async def GetApiRawAll(
+    api_config_override: Optional[APIConfig] = None, direct=False
+) -> DiveharderAll:
+    if direct:
+        return await GetApiDirectAll(api_config_override=api_config_override)
     try:
         return await make_raw_api_request(
             "all", DiveharderAll, api_config_override=api_config_override, path2=True
         )
-    except httpx.TimeoutException as e:
+    except Exception as e:
         logslogger.error(str(e),exc_info=e)
+        return await GetApiDirectAll(api_config_override=api_config_override)
 
-        warstatus= await make_direct_api_request(
-            "WarSeason/801/Status", WarStatus, api_config_override=api_config_override, path2=True
-        )
-        warinfo= await make_direct_api_request(
-            "WWarSeason/801/WarInfo", WarInfo, api_config_override=api_config_override, path2=True
-        )
-        summary= await make_direct_api_request(
-            "Stats/War/801/Summary", WarSummary, api_config_override=api_config_override, path2=True
-        )
         
-        assign= await make_direct_api_request(
-            "v2/Assignment/War/801", Assignment, api_config_override=api_config_override, path2=True
-        )
-        news= await make_direct_api_request(
-            "NewsFeed/801", NewsFeedItem, api_config_override=api_config_override, path2=True
-        )
-        newdive=DiveharderAll(status=warstatus,war_info=warinfo,planet_stats=summary,major_order=assign,news_feed=news)
-        return newdive
 
 
 
