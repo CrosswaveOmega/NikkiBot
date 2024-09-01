@@ -183,7 +183,7 @@ class TCBot(
 
             # Sync to all needed servers.
             await self.all_guild_startup()
-            gui.gprint("BOT SYNCED!")
+            gui.gprint("BOT SYNC complete!")
             self.delete_queue_message.start()  # pylint:ignore
             self.post_queue_message.start()  # pylint:ignore
             self.status_ticker.start()  # pylint:ignore

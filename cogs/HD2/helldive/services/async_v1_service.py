@@ -119,7 +119,7 @@ async def make_raw_api_request(
         # "Authorization": f"Bearer {api_config.get_access_token()}",
     }
     async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify, timeout=5.0
+        base_url=base_path, verify=api_config.verify, timeout=8.0
     ) as client:
         response = await client.get(path, headers=headers)
 
@@ -180,10 +180,14 @@ async def make_direct_api_request(
         "X-Super-Client": f"{api_config.get_client_name()}",
         # "Authorization": f"Bearer {api_config.get_access_token()}",
     }
-    async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify, timeout=20.0
-    ) as client:
-        response = await client.get(path, headers=headers)
+    try:
+        async with httpx.AsyncClient(
+            base_url=base_path, verify=api_config.verify, timeout=8.0
+        ) as client:
+            response = await client.get(path, headers=headers)
+    except Exception as e:
+        logslogger.error(str(e),exc_info=e)
+        return None
 
     if response.status_code != 200:
         raise HTTPException(

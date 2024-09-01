@@ -249,6 +249,10 @@ async def detect_loggable_changes(
         "info_raw": {"changes": {}},
     }
     batch = (int(new.retrieved_at.timestamp()) >> 4) | (random.randint(0, 15))
+    if new.status is None:
+        if old.status:
+            new.status=old.status.model_copy(deep=True)
+
     superlist = []
     if old.status.time == new.status.time:
         newitem = GameEvent(
@@ -300,22 +304,11 @@ async def detect_loggable_changes(
         batch,
     )
 
-    infoout = await get_differing_fields(
-        old.war_info, new.war_info, to_ignore=["planetInfos"]
-    )
-    if infoout:
-        item = GameEvent(
-            mode="change",
-            place="info_raw",
-            batch=batch,
-            value=(new.war_info, infoout),
+    if new.news_feed:
+        logs.info("News feed loggable detection, stand by...")
+        superlist += await process_planet_events(
+            new.news_feed, old.news_feed, "news", "id", QueueAll, batch
         )
-        superlist.append(item)
-        await QueueAll.put([item])
-    logs.info("News feed loggable detection, stand by...")
-    superlist += await process_planet_events(
-        new.news_feed, old.news_feed, "news", "id", QueueAll, batch
-    )
 
     logs.info("campaigns detection, stand by...")
     superlist += await process_planet_events(
@@ -350,6 +343,23 @@ async def detect_loggable_changes(
         QueueAll,
         batch,
     )
+
+
+    if new.war_info is None:
+        if old.war_info:
+            new.war_info=old.war_info.model_copy(deep=True)
+    infoout = await get_differing_fields(
+        old.war_info, new.war_info, to_ignore=["planetInfos"]
+    )
+    if infoout:
+        item = GameEvent(
+            mode="change",
+            place="info_raw",
+            batch=batch,
+            value=(new.war_info, infoout),
+        )
+        superlist.append(item)
+        await QueueAll.put([item])
     logs.info("planet info detection, stand by...")
     superlist += await process_planet_events(
         new.war_info.planetInfos,
@@ -370,6 +380,13 @@ async def detect_loggable_changes(
         ["planetStatus"],
     )
     logs.info("Done detection, stand by...")
+    if new.major_order is None:
+        if old.major_order:
+            new.major_order=old.major_order
+    if new.planet_stats is None:
+        if old.planet_stats:
+            new.planet_stats=old.planet_stats
+    
     return superlist
 
 
