@@ -238,7 +238,7 @@ async def GetApiDirectAll(
         "WarSeason/801/Status", WarStatus, api_config_override=api_config_override, path2=True
     )
     warinfo= await make_direct_api_request(
-        "WWarSeason/801/WarInfo", WarInfo, api_config_override=api_config_override, path2=True
+        "WarSeason/801/WarInfo", WarInfo, api_config_override=api_config_override, path2=True
     )
     summary= await make_direct_api_request(
         "Stats/War/801/Summary", WarSummary, api_config_override=api_config_override, path2=True
