@@ -9,6 +9,8 @@ class APIConfig(BaseModel):
     base_path: str = "https://api.helldivers2.dev"
 
     base_path_2: str = "https://api.diveharder.com"
+
+    base_path_3: str = "https://api.live.prod.thehelldiversgame.com"
     verify: Union[bool, str] = True
     client_name: str = "DefaultClientName"
 
