@@ -14,18 +14,22 @@ from logging.handlers import RotatingFileHandler
 # Create a rotating file handler
 log_handler = RotatingFileHandler('./logs/logslogger.log', maxBytes=5*1024*1024, backupCount=5)
 log_handler.setLevel(logging.WARNING)
-
-# Create a logger and set its level
-logslogger = logging.getLogger("logslogger")
-logslogger.setLevel(logging.WARNING)
-
-# Create a log format and add it to the handler
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 log_handler.setFormatter(formatter)
+
+
+log_handler2 = RotatingFileHandler('./logs/logsloggerinfo.log', maxBytes=5*1024*1024, backupCount=5)
+log_handler2.setLevel(logging.INFO)
+# Create a logger and set its level
+logslogger = logging.getLogger("logslogger")
+logslogger.setLevel(logging.INFO)
+
+log_handler2.setFormatter(formatter)
 
 # Set the handler to the logger
 logslogger.addHandler(log_handler)
 
+logslogger.addHandler(log_handler2)
 
 async def make_api_request(
     endpoint: str,
@@ -176,6 +180,7 @@ async def make_direct_api_request(
         "Content-Type": "application/json",
         "Accept": "application/json",
         "X-Super-Client": f"{api_config.get_client_name()}",
+        "Accept-Language":	'en-US'
         # "Authorization": f"Bearer {api_config.get_access_token()}",
     }
     try:
@@ -197,6 +202,7 @@ async def make_direct_api_request(
         )
     now = datetime.datetime.now(tz=datetime.timezone.utc)
     data = response.json()
+    logslogger.info("%s",json.dumps(data))
     if index is not None:
         if isinstance(data, dict):
             if data:
