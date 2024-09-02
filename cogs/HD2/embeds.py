@@ -104,7 +104,8 @@ def create_assignment_embed(
     if data and last:
         diff=last.progress if last.progress else []
         seconds=last.retrieved_at.total_seconds()
-        rates=[i/seconds for i in diff]
+        if seconds>0:
+            rates=[i/seconds for i in diff]
 
 
 
