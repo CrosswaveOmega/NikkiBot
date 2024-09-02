@@ -304,7 +304,7 @@ async def detect_loggable_changes(
         batch,
     )
 
-    if new.news_feed:
+    if new.news_feed is not None:
         logs.info("News feed loggable detection, stand by...")
         superlist += await process_planet_events(
             new.news_feed, old.news_feed, "news", "id", QueueAll, batch
