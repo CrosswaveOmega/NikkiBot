@@ -19,13 +19,12 @@ log_handler.setLevel(logging.WARNING)
 logslogger = logging.getLogger("logslogger")
 logslogger.setLevel(logging.WARNING)
 
+# Create a log format and add it to the handler
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+log_handler.setFormatter(formatter)
+
 # Set the handler to the logger
 logslogger.addHandler(log_handler)
-
-dt_fmt = "%Y-%m-%d %H:%M:%S"
-# Create a log format and add it to the handler
-formatter = logging.Formatter( "[LINE] [{asctime}] [{levelname:<8}] {name}: {message}", dt_fmt, style="{")
-log_handler.setFormatter(formatter)
 
 
 async def make_api_request(
@@ -183,8 +182,12 @@ async def make_direct_api_request(
         async with httpx.AsyncClient(
             base_url=base_path, verify=api_config.verify, timeout=8.0
         ) as client:
-            response = await client.get(path, headers=headers)  # Added params to the request
+            if params:
+               response = await client.get(path, headers=headers,params=params)  # Added params to the request
+            else:
+               response = await client.get(path, headers=headers)  # Added params to the request
     except Exception as e:
+        print(e)
         logslogger.error(str(e),exc_info=e)
         return None
 
@@ -252,7 +255,7 @@ async def GetApiDirectAll(
     )
     news= await make_direct_api_request(
         "NewsFeed/801", NewsFeedItem, api_config_override=api_config_override, path2=True, params={
-            'maxEntries':1024,
+            'maxEntries':1024
         }
     )
     newdive=DiveharderAll(status=warstatus,war_info=warinfo,planet_stats=summary,major_order=assign,news_feed=news)

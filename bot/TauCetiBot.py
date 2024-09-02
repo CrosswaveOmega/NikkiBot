@@ -239,7 +239,7 @@ class TCBot(
         await super().close()
 
     def loggersetup(self):
-        """Setup the loggers."""
+        """Setup the loggers for the bot."""
         if not os.path.exists("./logs/"):
             os.makedirs("./logs/")
         handler2 = logging.handlers.RotatingFileHandler(

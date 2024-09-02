@@ -249,9 +249,6 @@ async def detect_loggable_changes(
         "info_raw": {"changes": {}},
     }
     batch = (int(new.retrieved_at.timestamp()) >> 4) | (random.randint(0, 15))
-    if new.status is None:
-        if old.status:
-            new.status=old.status.model_copy(deep=True)
 
     superlist = []
     if old.status.time == new.status.time:
