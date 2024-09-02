@@ -183,7 +183,7 @@ async def make_direct_api_request(
         async with httpx.AsyncClient(
             base_url=base_path, verify=api_config.verify, timeout=8.0
         ) as client:
-            response = await client.get(path, headers=headers, params=params)  # Added params to the request
+            response = await client.get(path, headers=headers)  # Added params to the request
     except Exception as e:
         logslogger.error(str(e),exc_info=e)
         return None

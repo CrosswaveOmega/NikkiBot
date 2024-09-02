@@ -172,7 +172,7 @@ class ApiStatus:
             if nowval:
                 nowv = nowval
             else:
-                nowv = await GetApiRawAll(api_config_override=self.client,direct=False)
+                nowv = await GetApiRawAll(api_config_override=self.client,direct=True)
             self.warall = nowv
         if nowv:
             if current:
