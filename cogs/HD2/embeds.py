@@ -98,7 +98,7 @@ def create_assignment_embed(
         color=0x0000FF,
     )
     embed.set_author(name=f"Assignment A#{did}")
-    diff, rates=None, None
+    diff, rates=None, []
     exptime = et(data["expiration"])
     time_remaining=(exptime-data.retrieved_at).total_seconds()
     if data and last:
