@@ -106,6 +106,8 @@ def create_assignment_embed(
         seconds=last.retrieved_at.total_seconds()
         if seconds>0:
             rates=[i/seconds for i in diff]
+        else:
+            rates=[i/seconds for i in diff]
 
 
 
