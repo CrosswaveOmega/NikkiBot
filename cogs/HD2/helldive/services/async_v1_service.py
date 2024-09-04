@@ -103,7 +103,7 @@ async def make_api_request(
             response.status_code, f"Failed with status code: {response.status_code}"
         )
     data = response.json()
-    make_output(data, model, index)
+    return make_output(data, model, index)
 
 
 async def make_raw_api_request(
@@ -143,7 +143,7 @@ async def make_raw_api_request(
         )
     now = datetime.datetime.now(tz=datetime.timezone.utc)
     data = response.json()
-    make_output(data, model, index)
+    return make_output(data, model, index)
 
 
 async def make_direct_api_request(
