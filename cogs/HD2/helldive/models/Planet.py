@@ -33,6 +33,7 @@ class Planet(BaseApiModel, HealthMixin):
     owner: Optional[int] = Field(alias="owner", default=0)
 
     sector: Optional[str] = Field(alias="sector", default=None)
+    sector_id: Optional[str] = Field(alias="sector_id", default=None)
 
     biome: Optional[Biome] = Field(alias="biome", default=None)
 

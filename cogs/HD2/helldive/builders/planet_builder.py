@@ -65,6 +65,7 @@ def build_planet_2(planetIndex, diveharder: DiveharderAll, statics: StaticAll):
     planet = statics.galaxystatic.build_planet(
         planetIndex, planetStatus, planetInfo, planetStat
     )
+    planet.sector_id = planetInfo.sector
 
     planet_effect_list = []
     planet_attack_list = []
