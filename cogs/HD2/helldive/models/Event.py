@@ -74,7 +74,8 @@ class Event(BaseApiModel, HealthMixin):
             sum(
                 event.retrieved_at.total_seconds()
                 for event in events_list
-                if event.retrieved_at is not None and isinstance(event.retrieved_at, datetime.timedelta)
+                if event.retrieved_at is not None
+                and isinstance(event.retrieved_at, datetime.timedelta)
             )
             // count
         )

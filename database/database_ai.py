@@ -45,8 +45,7 @@ class AuditProfile(AIBase):
     current = Column(Integer, default=0)
     last_call = Column(DateTime, nullable=True)
     started_dt = Column(DateTime, nullable=True)
-    disabled = Column(Boolean,nullable=True,default=False)
-
+    disabled = Column(Boolean, nullable=True, default=False)
 
     def set_rollover(self):
         """Change the internal rollover time."""
@@ -74,7 +73,7 @@ class AuditProfile(AIBase):
         if sa == None:
             sa = AuditProfile.add(server.id, "server")
         if ua == None:
-            ua = AuditProfile.add(user.id, "user",True)
+            ua = AuditProfile.add(user.id, "user", True)
         return sa, ua
 
     @classmethod
@@ -106,12 +105,12 @@ class AuditProfile(AIBase):
             return None
 
     @classmethod
-    def add(cls, id, type,disabled=False):
+    def add(cls, id, type, disabled=False):
         targetid, num = hash.hash_string(
             str(id), hashlen=16, hashset=hash.Hashsets.base64
         )
         session = DatabaseSingleton.get_session()
-        entry = cls(id=targetid, type=type,disabled=disabled)
+        entry = cls(id=targetid, type=type, disabled=disabled)
         if type == "server":
             entry.DailyLimit = 50
         session.add(entry)
@@ -147,7 +146,6 @@ class ServerAIConfig(AIBase):
 
     enabled_channels = relationship("EnabledChannel", back_populates="server_ai_config")
     message_chains = relationship("MessageChain", back_populates="server_ai_config")
-
 
     @classmethod
     def get(cls, server_id):

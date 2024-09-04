@@ -58,14 +58,13 @@ reasons = {
         "messagelimit": "This server has reached the daily message limit, please try again tomorrow.",
         "ban": "This server is banned from using my AI due to repeated violations.",
         "cooldown": "There's a one minute delay between messages.",
-        
-        'disable':"The AI is disabled for new servers because of privacy concerns."
+        "disable": "The AI is disabled for new servers because of privacy concerns.",
     },
     "user": {
         "messagelimit": "You have reached the daily message limit, please try again tomorrow.",
         "ban": "You are forbidden from using my AI due to conduct.",
         "cooldown": "There's a one minute delay between messages, slow down man!",
-        'disable':"The AI is disabled for new users because of privacy concerns."
+        "disable": "The AI is disabled for new users because of privacy concerns.",
     },
 }
 
@@ -103,7 +102,7 @@ async def precheck_context(ctx: commands.Context) -> bool:
             return False
         ok, reason = userrep.check_if_ok()
         if not ok:
-            if reason!='disable':
+            if reason != "disable":
                 await ctx.channel.send(reasons["user"][reason])
             return False
         serverrep.modify_status()
@@ -499,7 +498,6 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         for e, chunk in enumerate(fil):
             await ctx.send(chunk)
 
-    
     @commands.command(brief="Dump memory")
     @commands.is_owner()
     async def memory_dump(self, ctx):
@@ -520,7 +518,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             "%s ",
         ]
         alltime, dtime, ltime = alltimes
-        
+
         fil = prioritized_string_split(str, splitorder, default_max_len=1980)
         await ctx.send(f"took about {alltime.get_time()} seconds to gather neighbors.")
         await ctx.send(
@@ -530,11 +528,11 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             f"took about {ltime.get_time()} seconds to sort into new_content"
         )
 
-        embs=[]
+        embs = []
         for e, chunk in enumerate(fil):
-            embs.append(discord.Embed(title="memory dump",description=chunk))
+            embs.append(discord.Embed(title="memory dump", description=chunk))
 
-        mess=await pages_of_embeds(ctx,embs)
+        mess = await pages_of_embeds(ctx, embs)
 
     @commands.command(brief="Check memory")
     @commands.is_owner()
@@ -546,15 +544,14 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         out = await mem.delete_message(url)
         await ctx.send("Removed url.")
 
-    
     @commands.command(brief="add a sentence to memory")
     @commands.is_owner()
-    async def memory_add(self, ctx,  *, memory:str):
+    async def memory_add(self, ctx, *, memory: str):
         guild, user = ctx.guild, ctx.message.author
         mem = SentenceMemory(ctx.bot, guild, user)
         message = ctx.message
-        
-        out = await mem.add_list_to_mem(ctx,message,[memory])
+
+        out = await mem.add_list_to_mem(ctx, message, [memory])
         await ctx.send("Memory added.")
 
     @commands.command(brief="clear user data")

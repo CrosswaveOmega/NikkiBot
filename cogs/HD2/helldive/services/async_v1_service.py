@@ -12,13 +12,17 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 # Create a rotating file handler
-log_handler = RotatingFileHandler('./logs/logslogger.log', maxBytes=5*1024*1024, backupCount=5)
+log_handler = RotatingFileHandler(
+    "./logs/logslogger.log", maxBytes=5 * 1024 * 1024, backupCount=5
+)
 log_handler.setLevel(logging.WARNING)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 log_handler.setFormatter(formatter)
 
 
-log_handler2 = RotatingFileHandler('./logs/logsloggerinfo.log', maxBytes=5*1024*1024, backupCount=5)
+log_handler2 = RotatingFileHandler(
+    "./logs/logsloggerinfo.log", maxBytes=5 * 1024 * 1024, backupCount=5
+)
 log_handler2.setLevel(logging.INFO)
 # Create a logger and set its level
 logslogger = logging.getLogger("logslogger")
@@ -30,6 +34,39 @@ log_handler2.setFormatter(formatter)
 logslogger.addHandler(log_handler)
 
 logslogger.addHandler(log_handler2)
+
+
+def make_output(
+    data: Any, model: Type[T], index: Optional[int] = None
+) -> Union[Any, List[Any]]:
+    """
+    Process the API response data based on the model type and index.
+
+    Args:
+        data (Any): The raw API response data.
+        model (Type[T]): The model class to instantiate.
+        index (Optional[int]): An optional index for single-item responses.
+
+    Returns:
+        Union[Any, List[Any]]: The processed model instance(s).
+    """
+
+    now = datetime.datetime.now(tz=datetime.timezone.utc)
+    if index is not None:
+        if isinstance(data, dict) and data or isinstance(data, list) and data:
+            mod = model(**(data if isinstance(data, dict) else data[0]))
+            mod.retrieved_at = now
+            return mod
+        return model()
+    else:
+        if isinstance(data, list):
+            return [model(**item, retrieved_at=now) for item in data] if data else []
+        elif isinstance(data, dict) and data:
+            mod = model(**data)
+            mod.retrieved_at = now
+            return mod
+        return {}
+
 
 async def make_api_request(
     endpoint: str,
@@ -65,35 +102,8 @@ async def make_api_request(
         raise HTTPException(
             response.status_code, f"Failed with status code: {response.status_code}"
         )
-    now = datetime.datetime.now(tz=datetime.timezone.utc)
     data = response.json()
-    if index is not None:
-        if isinstance(data, dict):
-            if data:
-                mod = model(**data)
-                mod.retrieved_at = now
-                return mod
-            return model()
-        elif isinstance(data, list):
-            if data:
-                mod = model(**data[0])
-                mod.retrieved_at = now
-                return mod
-            return model()
-    else:
-        if isinstance(data, list):
-            models = []
-            for item in data:
-                mod = model(**item)
-                mod.retrieved_at = now
-                models.append(mod)
-            return models
-        elif isinstance(data, dict):
-            if data:
-                mod = model(**data)
-                mod.retrieved_at = now
-                return mod
-            return {}
+    make_output(data, model, index)
 
 
 async def make_raw_api_request(
@@ -133,33 +143,8 @@ async def make_raw_api_request(
         )
     now = datetime.datetime.now(tz=datetime.timezone.utc)
     data = response.json()
-    if index is not None:
-        if isinstance(data, dict):
-            if data:
-                mod = model(**data)
-                mod.retrieved_at = now
-                return mod
-            return model()
-        elif isinstance(data, list):
-            if data:
-                mod = model(**data[0])
-                mod.retrieved_at = now
-                return mod
-            return model()
-    else:
-        if isinstance(data, list):
-            models = []
-            for item in data:
-                mod = model(**item)
-                mod.retrieved_at = now
-                models.append(mod)
-            return models
-        elif isinstance(data, dict):
-            if data:
-                mod = model(**data)
-                mod.retrieved_at = now
-                return mod
-            return {}
+    make_output(data, model, index)
+
 
 async def make_direct_api_request(
     endpoint: str,
@@ -180,7 +165,7 @@ async def make_direct_api_request(
         "Content-Type": "application/json",
         "Accept": "application/json",
         "X-Super-Client": f"{api_config.get_client_name()}",
-        "Accept-Language":	'en-US'
+        "Accept-Language": api_config.language,
         # "Authorization": f"Bearer {api_config.get_access_token()}",
     }
     try:
@@ -188,12 +173,20 @@ async def make_direct_api_request(
             base_url=base_path, verify=api_config.verify, timeout=8.0
         ) as client:
             if params:
-               response = await client.get(path, headers=headers,params=params)  # Added params to the request
+                response = await client.get(
+                    path, headers=headers, params=params
+                )  # Added params to the request
             else:
-               response = await client.get(path, headers=headers)  # Added params to the request
+                response = await client.get(
+                    path, headers=headers
+                )  # Added params to the request
+    except httpx.ConnectError as e:
+        print(e)
+        logslogger.error(str(e), exc_info=e)
+        raise e
     except Exception as e:
         print(e)
-        logslogger.error(str(e),exc_info=e)
+        logslogger.error(str(e), exc_info=e)
         return None
 
     if response.status_code != 200:
@@ -202,35 +195,8 @@ async def make_direct_api_request(
         )
     now = datetime.datetime.now(tz=datetime.timezone.utc)
     data = response.json()
-    logslogger.info("%s",json.dumps(data))
-    if index is not None:
-        if isinstance(data, dict):
-            if data:
-                mod = model(**data)
-                mod.retrieved_at = now
-                return mod
-            return model()
-        elif isinstance(data, list):
-            if data:
-                mod = model(**data[0])
-                mod.retrieved_at = now
-                return mod
-            return model()
-    else:
-        if isinstance(data, list):
-            models = []
-            for item in data:
-                mod = model(**item)
-                mod.retrieved_at = now
-                models.append(mod)
-            return models
-        elif isinstance(data, dict):
-            if data:
-                mod = model(**data)
-                mod.retrieved_at = now
-                return mod
-            return {}
-        
+    logslogger.info("%s", ",".join(f"{k}:{len(json.dumps(v,default=str))}" for k, v in data.items()))
+    return make_output(data, model, index)
 
 
 async def GetApiV1War(api_config_override: Optional[APIConfig] = None) -> War:
@@ -246,27 +212,46 @@ async def GetApiRawStatus(api_config_override: Optional[APIConfig] = None) -> Wa
 async def GetApiDirectAll(
     api_config_override: Optional[APIConfig] = None, direct=False
 ) -> DiveharderAll:
-    warstatus= await make_direct_api_request(
-        "WarSeason/801/Status", WarStatus, api_config_override=api_config_override, path2=True
+    warstatus = await make_direct_api_request(
+        "WarSeason/801/Status",
+        WarStatus,
+        api_config_override=api_config_override,
+        path2=True,
     )
-    warinfo= await make_direct_api_request(
-        "WarSeason/801/WarInfo", WarInfo, api_config_override=api_config_override, path2=True
+    warinfo = await make_direct_api_request(
+        "WarSeason/801/WarInfo",
+        WarInfo,
+        api_config_override=api_config_override,
+        path2=True,
     )
-    summary= await make_direct_api_request(
-        "Stats/War/801/Summary", WarSummary, api_config_override=api_config_override, path2=True
+    summary = await make_direct_api_request(
+        "Stats/War/801/Summary",
+        WarSummary,
+        api_config_override=api_config_override,
+        path2=True,
     )
-    
-    assign= await make_direct_api_request(
-        "v2/Assignment/War/801", Assignment, api_config_override=api_config_override, path2=True
-    )
-    news= await make_direct_api_request(
-        "NewsFeed/801", NewsFeedItem, api_config_override=api_config_override, path2=True, params={
-            'maxEntries':1024
-        }
-    )
-    newdive=DiveharderAll(status=warstatus,war_info=warinfo,planet_stats=summary,major_order=assign,news_feed=news)
-    return newdive
 
+    assign = await make_direct_api_request(
+        "v2/Assignment/War/801",
+        Assignment,
+        api_config_override=api_config_override,
+        path2=True,
+    )
+    news = await make_direct_api_request(
+        "NewsFeed/801",
+        NewsFeedItem,
+        api_config_override=api_config_override,
+        path2=True,
+        params={"maxEntries": 1024},
+    )
+    newdive = DiveharderAll(
+        status=warstatus,
+        war_info=warinfo,
+        planet_stats=summary,
+        major_order=assign,
+        news_feed=news,
+    )
+    return newdive
 
 
 async def GetApiRawAll(
@@ -279,12 +264,8 @@ async def GetApiRawAll(
             "all", DiveharderAll, api_config_override=api_config_override, path2=True
         )
     except Exception as e:
-        logslogger.error(str(e),exc_info=e)
+        logslogger.error(str(e), exc_info=e)
         return await GetApiDirectAll(api_config_override=api_config_override)
-
-        
-
-
 
 
 async def GetApiV1AssignmentsAll(

@@ -11,9 +11,13 @@ from hd2json.jsonutils import load_and_merge_json_files
 from ..constants import task_types, value_types, faction_names, samples
 
 
-def build_planet_effect(self:EffectStatic, idv):
+def build_planet_effect(self: EffectStatic, idv):
     if self.planetEffects is not None:
-        peffect: Dict[int, KnownPlanetEffect] = cast(dict,self.planetEffects)
+        peffect: Dict[int, KnownPlanetEffect] = cast(dict, self.planetEffects)
         if idv in peffect:
             return peffect[idv]
-        return KnownPlanetEffect(galacticEffectId=idv, name=f"Effect {idv}", description="Mysterious signature...")
+        return KnownPlanetEffect(
+            galacticEffectId=idv,
+            name=f"Effect {idv}",
+            description="Mysterious signature...",
+        )

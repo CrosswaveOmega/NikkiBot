@@ -341,10 +341,9 @@ async def detect_loggable_changes(
         batch,
     )
 
-
     if new.war_info is None:
         if old.war_info:
-            new.war_info=old.war_info.model_copy(deep=True)
+            new.war_info = old.war_info.model_copy(deep=True)
     infoout = await get_differing_fields(
         old.war_info, new.war_info, to_ignore=["planetInfos"]
     )
@@ -379,11 +378,11 @@ async def detect_loggable_changes(
     logs.info("Done detection, stand by...")
     if new.major_order is None:
         if old.major_order:
-            new.major_order=old.major_order
+            new.major_order = old.major_order
     if new.planet_stats is None:
-        if old.planet_stats:
-            new.planet_stats=old.planet_stats
-    
+        if old.planet_stats is not None:
+            new.planet_stats = old.planet_stats.model_copy(deep=True)
+
     return superlist
 
 

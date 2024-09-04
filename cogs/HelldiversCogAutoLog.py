@@ -41,7 +41,7 @@ from cogs.HD2.helldive import (
     SimplePlanet,
     PlanetActiveEffects,
     KnownPlanetEffect,
-    build_planet_effect
+    build_planet_effect,
 )
 
 from cogs.HD2.helldive.constants import faction_names
@@ -83,16 +83,15 @@ class PlanetEvents:
                     if t == "old":
                         old.append(ind)
         return new, old
-    
-    def get_last_planet_owner(self) -> Tuple[int,int]:
-        new, old = self.planet.owner,self.planet.owner
-        if "owner" in self.lastStatus:
-            if 'old' in self.lastStatus['owner']:
-                old=self.lastStatus['owner']['old']
-            if 'new' in self.lastStatus['owner']:
-                new=self.lastStatus['owner']['new']
-        return new, old
 
+    def get_last_planet_owner(self) -> Tuple[int, int]:
+        new, old = self.planet.owner, self.planet.owner
+        if "owner" in self.lastStatus:
+            if "old" in self.lastStatus["owner"]:
+                old = self.lastStatus["owner"]["old"]
+            if "new" in self.lastStatus["owner"]:
+                new = self.lastStatus["owner"]["new"]
+        return new, old
 
     def update_planet(
         self, value: Tuple[SimplePlanet, Dict[str, Any]], place: str
@@ -286,7 +285,7 @@ class Batch:
         return targets
 
     def combo_checker(self) -> List[str]:
-        '''Check for event combos'''
+        """Check for event combos"""
         combos: List[str] = []
 
         for planet_data in self.planets.values():
@@ -352,8 +351,8 @@ class Batch:
         if self.contains_all_values(trig_list, ["campaign_remove", "planets_change"]):
 
             if planet and planet.owner == 1:
-                new,old=planet_data.get_last_planet_owner()
-                if old!=new:
+                new, old = planet_data.get_last_planet_owner()
+                if old != new:
                     combinations.append("planet won")
 
         if self.contains_all_values(
@@ -379,8 +378,8 @@ class Batch:
 
         if "planets_change" in trig_list and "campaign_remove" not in trig_list:
             if planet and planet.owner != 1:
-                new,old=planet_data.get_last_planet_owner()
-                if old!=new:
+                new, old = planet_data.get_last_planet_owner()
+                if old != new:
                     combinations.append("planet flip")
 
         if "planets_change" in trig_list:
@@ -488,7 +487,7 @@ class Embeds:
         emb.set_author(name=f"Campaign {mode}.")
         emb.set_footer(text=f"{strc},{custom_strftime(campaign.retrieved_at)}")
         return emb
-    
+
     @staticmethod
     def campaignsLogEmbed(
         campaign: Campaign, planet: Optional[Planet], mode="started"
@@ -509,7 +508,7 @@ class Embeds:
         emb.set_author(name=f"Campaign {mode}.")
         emb.set_footer(text=f"{strc},{custom_strftime(campaign.retrieved_at)}")
         return emb
-    
+
     @staticmethod
     def deadzoneWarningEmbed(campaign: BaseApiModel, mode="started") -> discord.Embed:
         emb = discord.Embed(
@@ -596,7 +595,10 @@ class Embeds:
 
     @staticmethod
     def planeteffectsEmbed(
-        campaign: PlanetActiveEffects, planet: Optional[Planet], effectid:Optional[KnownPlanetEffect],mode="started"
+        campaign: PlanetActiveEffects,
+        planet: Optional[Planet],
+        effectid: Optional[KnownPlanetEffect],
+        mode="started",
     ) -> discord.Embed:
         name, sector = campaign.index, None
         color = 0x009696
@@ -609,10 +611,12 @@ class Embeds:
             timestamp=campaign.retrieved_at,
             color=color,
         )
-        
+
         emb.add_field(name="Galactic Effect ID", value=f"{campaign.galacticEffectId}")
         if effectid:
-            emb.add_field(name=f"{effectid.name}",value=f"{effectid.description[:100]}")
+            emb.add_field(
+                name=f"{effectid.name}", value=f"{effectid.description[:100]}"
+            )
         emb.set_author(name=f"Planet Effect {mode}.")
         emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
         return emb
@@ -651,7 +655,7 @@ class Embeds:
         mode="started",
     ) -> discord.Embed:
         name, sector = "PLANET", None
-        specialtext=""
+        specialtext = ""
         color = 0x8C90B0
         if planet:
             name, sector = planet.get_name(False), planet.sector
@@ -659,16 +663,15 @@ class Embeds:
         globtex = json.dumps(dump, default=str)
         if "owner" in dump:
             color = getColor(campaign.owner)
-            old_owner=dump['owner'].get('old',5)
-            new_owner=dump['owner'].get('new',5)
-            specialtext+=f"\n* Owner: `{faction_names.get(old_owner,'er')}`->`{faction_names.get(new_owner,'er')}`"
+            old_owner = dump["owner"].get("old", 5)
+            new_owner = dump["owner"].get("new", 5)
+            specialtext += f"\n* Owner: `{faction_names.get(old_owner,'er')}`->`{faction_names.get(new_owner,'er')}`"
         if "regenPerSecond" in dump:
-            old_decay=dump['regenPerSecond'].get('old',99999)
-            new_decay=dump['regenPerSecond'].get('new',99999)
-            old_decay=round(maths.dps_to_lph(old_decay),3)
-            new_decay=round(maths.dps_to_lph(new_decay),3)
-            specialtext+=f"\n* Regen Rate: `{old_decay}`->`{new_decay}`"
-
+            old_decay = dump["regenPerSecond"].get("old", 99999)
+            new_decay = dump["regenPerSecond"].get("new", 99999)
+            old_decay = round(maths.dps_to_lph(old_decay), 3)
+            new_decay = round(maths.dps_to_lph(new_decay), 3)
+            specialtext += f"\n* Regen Rate: `{old_decay}`->`{new_decay}`"
 
         emb = discord.Embed(
             title=f"{name} Field Change",
@@ -936,7 +939,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.planeteffectsEmbed(
                     value,
                     self.apistatus.planets.get(int(value.index), None),
-                    build_planet_effect(self.apistatus.statics.effectstatic,value.galacticEffectId),
+                    build_planet_effect(
+                        self.apistatus.statics.effectstatic, value.galacticEffectId
+                    ),
                     "added",
                 )
             elif place == "globalEvents":
@@ -973,7 +978,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.planeteffectsEmbed(
                     value,
                     self.apistatus.planets.get(int(value.index), None),
-                    build_planet_effect(self.apistatus.statics.effectstatic,value.galacticEffectId),
+                    build_planet_effect(
+                        self.apistatus.statics.effectstatic, value.galacticEffectId
+                    ),
                     "removed",
                 )
             elif place == "globalEvents":
@@ -1061,6 +1068,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 lg.append(h)
             self.loghook = lg
         self.get_running = True
+        raise Exception("ASFT")
         if self.test_with:
             if self.spot >= len(self.test_with):
                 return

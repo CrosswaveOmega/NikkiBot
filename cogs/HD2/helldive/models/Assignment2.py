@@ -45,7 +45,7 @@ class Assignment2(BaseApiModel):
 
     expiration: Optional[str] = Field(alias="expiration", default=None)
 
-    def __sub__(self, other:'Assignment2'):
+    def __sub__(self, other: "Assignment2"):
         new_progress = [s - o for s, o in zip(self.progress, other.progress)]
         return Assignment2(
             id=self.id,
@@ -57,7 +57,7 @@ class Assignment2(BaseApiModel):
             reward=self.reward,
             rewards=self.rewards,
             expiration=self.expiration,
-            retrieved_at=self.retrieved_at-other.retrieved_at
+            retrieved_at=self.retrieved_at - other.retrieved_at,
         )
 
     def get_task_planets(self) -> List[int]:

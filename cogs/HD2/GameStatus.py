@@ -74,7 +74,7 @@ class ApiStatus:
         "statics",
         "warall",
         "nowval",
-        "getlock"
+        "getlock",
     ]
 
     def __init__(self, client: APIConfig = APIConfig(), max_list_size=8):
@@ -90,10 +90,11 @@ class ApiStatus:
         self.nowval = DiveharderAll(status=WarStatus(), war_info=WarInfo())
         planetjson = load_and_merge_json_files("./hd2json/planets")
         effectjson = load_and_merge_json_files("./hd2json/effects")
-        self.statics=StaticAll(
-            galaxystatic= GalaxyStatic(**planetjson),
-            effectstatic= EffectStatic(**effectjson))
-        self.getlock=asyncio.Lock()
+        self.statics = StaticAll(
+            galaxystatic=GalaxyStatic(**planetjson),
+            effectstatic=EffectStatic(**effectjson),
+        )
+        self.getlock = asyncio.Lock()
 
     def to_dict(self):
         return {
@@ -167,12 +168,12 @@ class ApiStatus:
         nowval=None,
         PlanetQueue: asyncio.Queue = None,
     ) -> Tuple[Dict[str, Dict[str, Union[List, Dict[str, Any]]]], DiveharderAll]:
-        nowv=None
+        nowv = None
         async with self.getlock:
             if nowval:
                 nowv = nowval
             else:
-                nowv = await GetApiRawAll(api_config_override=self.client,direct=True)
+                nowv = await GetApiRawAll(api_config_override=self.client, direct=True)
             self.warall = nowv
         if nowv:
             if current:
@@ -227,14 +228,14 @@ class ApiStatus:
                     if attempt_count >= maxattempt:
                         raise e
             attempt_count = 0
-            
+
             while attempt_count < maxattempt:
                 try:
                     campaigns = await GetApiV1CampaignsAll(
                         api_config_override=self.client
                     )
                     for c in campaigns:
-                        c.planet=self.planets.get(c.planet.index,c.planet)
+                        c.planet = self.planets.get(c.planet.index, c.planet)
                     break
                 except Exception as e:
                     attempt_count += 1
@@ -266,7 +267,7 @@ class ApiStatus:
         planet_data = {}
         print(self.statics.galaxystatic.planets.keys())
         for i, v in self.statics.galaxystatic.planets.items():
-            planet=build_planet_2(i,self.warall,self.statics)
+            planet = build_planet_2(i, self.warall, self.statics)
             planet_data[i] = planet
         self.planets = planet_data
 
@@ -502,15 +503,15 @@ def add_to_csv(stat: ApiStatus):
             continue
 
         camp, last = campaign_list.get_first_change()
-        #print(camp,last)
+        # print(camp,last)
         players = camp.planet.statistics.playerCount
         lastplayers = last.planet.statistics.playerCount
         avg_players = (players + lastplayers) / 2
 
         change = camp - last
         decay = camp.planet.regenPerSecond
-        #total_sec = change.planet
-        total_sec=change.retrieved_at.total_seconds()
+        # total_sec = change.planet
+        total_sec = change.retrieved_at.total_seconds()
         damage = (change.planet.health / total_sec) * -1
         evt_damage = None
         mode = 1
@@ -729,7 +730,8 @@ def write_statistics_to_csv(stats: ApiStatus):
                 bhazard = central["environmentals"]
                 planet_biome = stats.statics.galaxystatic["biomes"].get(bname, None)
                 planet_hazards = [
-                    stats.statics.galaxystatic["environmentals"].get(h, None) for h in bhazard
+                    stats.statics.galaxystatic["environmentals"].get(h, None)
+                    for h in bhazard
                 ]
                 if planet_biome:
                     biome_name = planet_biome.get("name", "[GWW SEARCH ERROR]")

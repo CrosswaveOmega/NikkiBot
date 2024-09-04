@@ -13,6 +13,7 @@ class APIConfig(BaseModel):
     base_path_3: str = "https://api.live.prod.thehelldiversgame.com"
     verify: Union[bool, str] = True
     client_name: str = "DefaultClientName"
+    language: str = "en-US"
 
     def get_access_token(self) -> Optional[str]:
         try:

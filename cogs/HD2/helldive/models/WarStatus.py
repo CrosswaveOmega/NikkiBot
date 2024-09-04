@@ -138,7 +138,9 @@ class WarStatus(BaseApiModel):
     )
 
     communityTargets: Optional[List[Any]] = Field(alias="communityTargets", default=[])
-    activeElectionPolicyEffects: Optional[List[Any]] = Field(alias="activeElectionPolicyEffects", default=[])
+    activeElectionPolicyEffects: Optional[List[Any]] = Field(
+        alias="activeElectionPolicyEffects", default=[]
+    )
     planetActiveEffects: Optional[List[PlanetActiveEffects]] = Field(
         alias="planetActiveEffects", default=[]
     )

@@ -19,10 +19,11 @@ def check_compare_value(key, value, target: List[Dict[str, Any]]):
             return s
     return None
 
+
 def check_compare_value_list(
     keys: List[str], values: List[Any], target: List[Dict[str, Any]]
 ):
-    values=[]
+    values = []
     for s in target:
         if all(s[key] == value for key, value in zip(keys, values)):
             values.append(s)
@@ -47,35 +48,40 @@ def get_time(diveharder: DiveharderAll) -> dt.datetime:
     return relative_game_start
 
 
-def build_planet_2(
-    planetIndex, diveharder: DiveharderAll, statics: StaticAll
-):
+def build_planet_2(planetIndex, diveharder: DiveharderAll, statics: StaticAll):
     status = diveharder.status
     info = diveharder.war_info
-    stat = diveharder.planet_stats.planets_stats
-    #print('index is', planetIndex)
+    if diveharder.planet_stats is not None:
+        stat = diveharder.planet_stats.planets_stats
+    # print('index is', planetIndex)
     planetStatus = check_compare_value("index", planetIndex, status.planetStatus)
     planetInfo = check_compare_value("index", planetIndex, info.planetInfos)
-    planetStat = check_compare_value("planetIndex", planetIndex, stat)
-    if not planetStat:
-        planetStat=PlanetStats(planetIndex=planetIndex)
-    planet = statics.galaxystatic.build_planet(planetIndex, planetStatus, planetInfo, planetStat)
-   
-    planet_effect_list=[]
-    planet_attack_list=[]
+    if stat is not None:
+        planetStat = check_compare_value("planetIndex", planetIndex, stat)
+        if not planetStat:
+            planetStat = PlanetStats(planetIndex=planetIndex)
+    else:
+        planetStat = PlanetStats(planetIndex=planetIndex)
+    planet = statics.galaxystatic.build_planet(
+        planetIndex, planetStatus, planetInfo, planetStat
+    )
+
+    planet_effect_list = []
+    planet_attack_list = []
     for effect in status.planetActiveEffects:
-        if effect.index==planetIndex:
-            effects=build_planet_effect(statics.effectstatic, effect.galacticEffectId)
-            #print(effect,effects)
+        if effect.index == planetIndex:
+            effects = build_planet_effect(statics.effectstatic, effect.galacticEffectId)
+            # print(effect,effects)
             planet_effect_list.append(effects)
     for attack in status.planetAttacks:
-        if attack.source==planetIndex:
+        if attack.source == planetIndex:
             planet_attack_list.append(attack.target)
 
-
-    event:PlanetEvent = check_compare_value("planetIndex", planetIndex, status.planetEvents)
-    planet.activePlanetEffects=planet_effect_list
-    planet.attacking=planet_attack_list
+    event: PlanetEvent = check_compare_value(
+        "planetIndex", planetIndex, status.planetEvents
+    )
+    planet.activePlanetEffects = planet_effect_list
+    planet.attacking = planet_attack_list
     starttime = get_time(diveharder)
     if event:
         newevent = Event(

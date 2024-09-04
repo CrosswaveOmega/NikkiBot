@@ -257,7 +257,7 @@ class TCBot(
         discord.utils.setup_logging(level=logging.DEBUG, handler=handler2, root=False)
 
         self.logs = logging.getLogger("TCLogger")
-        self.logs.setLevel(logging.ERROR)
+        self.logs.setLevel(logging.WARNING)
         handlerTC = logging.handlers.RotatingFileHandler(
             filename="./logs/tauceti__log.log",
             encoding="utf-8",

@@ -13,6 +13,8 @@ CoroutineWrap = TypeVar("CoroutineWrap", bound=_coro)
 Statuses = Literal["created", "standby", "running"]
 
 
+logs = logging.getLogger("TCLogger")
+
 class AutoRebalancePriorityQueue(PriorityQueue):
     """This is a special PriorityQueque that rebalances itself on new items."""
 
@@ -197,6 +199,7 @@ class TCTask:
             # Check if it's time to run the function
             if dt.now() >= self.to_run_next:
                 # Update last_run time and run the function as a coroutine
+                
                 TCTaskManager.set_running(self.name)
                 self.last_run = dt.now()
                 self.is_running = True
@@ -372,7 +375,7 @@ class TCTaskManager:
             task (TCTask): The TCTask object to add to the list of tasks.
 
         """
-        gui.gprint(f"added task {task.name}")
+        logs.warning(f"added task %s ",task.name)
         manager = cls.get_instance()
         manager.tasks[task.name] = task
         TCTaskManager.set_standby(task.name)
@@ -389,7 +392,7 @@ class TCTaskManager:
         """
         manager = cls.get_instance()
         if name in manager.tasks:
-            gui.gprint(f"removing task {name}")
+            logs.warning(f"removing task",name)
             manager.tasks.pop(name)
             return True
         return False
@@ -411,8 +414,8 @@ class TCTaskManager:
         Args:
             name (str): The name of the task to be ran.
         """
-        manager = cls.get_instance()
-        gui.gprint(name, " is running")
+        manager = cls.get_instance()        
+        logs.warning(f"%s is running",name)
         manager.tasks[name].status = "running"
         # manager.to_delete.append(name)
 
@@ -424,7 +427,8 @@ class TCTaskManager:
             name (str): The name of the task to standby
         """
         manager = cls.get_instance()
-        gui.gprint(name, " is standby")
+        
+        logs.warning(f"%s is standby",name)
         to_add = manager.tasks[name]
         if ((to_add.status != "standby")) and (not (name in manager.to_delete)):
             manager.myqueue.put(to_add.get_ref())

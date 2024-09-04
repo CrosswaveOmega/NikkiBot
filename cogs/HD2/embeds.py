@@ -98,31 +98,32 @@ def create_assignment_embed(
         color=0x0000FF,
     )
     embed.set_author(name=f"Assignment A#{did}")
-    diff, rates=None, []
+    diff, rates = None, []
     exptime = et(data["expiration"])
-    time_remaining=(exptime-data.retrieved_at).total_seconds()
+    time_remaining = (exptime - data.retrieved_at).total_seconds()
     if data and last:
-        diff=last.progress if last.progress else []
-        seconds=last.retrieved_at.total_seconds()
-        if seconds>0:
-            rates=[i/seconds for i in diff]
+        diff = last.progress if last.progress else []
+        seconds = last.retrieved_at.total_seconds()
+        if seconds > 0:
+            rates = [i / seconds for i in diff]
         else:
-            rates=[i/seconds for i in diff]
-
-
+            rates = [i / seconds for i in diff]
 
     progress = data["progress"]
     embed.add_field(name="Objective", value=data["description"], inline=False)
     tasks = ""
     for e, task in enumerate(data.tasks):
         task_type, taskdata = task.taskAdvanced()
-        chg,projected=None,None
-        prog=""
+        chg, projected = None, None
+        prog = ""
         if diff and isinstance(diff, list):
             if e < len(diff) - 1:
                 chg = diff[e]
-                projected = progress[e]+(rates[e]*time_remaining)
-        tasks += task.task_str(progress[e], task_type, taskdata, e, planets, chg,projected) + "\n"
+                projected = progress[e] + (rates[e] * time_remaining)
+        tasks += (
+            task.task_str(progress[e], task_type, taskdata, e, planets, chg, projected)
+            + "\n"
+        )
 
     embed.add_field(name="Tasks", value=tasks, inline=False)
     if data.rewards:
@@ -130,13 +131,13 @@ def create_assignment_embed(
             embed.add_field(name=f"Reward {e}", value=d.format(), inline=True)
     else:
         embed.add_field(name="Reward", value=data.reward.format(), inline=True)
-    
+
     embed.add_field(name="Expiration", value=fdt(exptime, "f"), inline=True)
 
     return embed
 
 
-def create_campaign_str(data:Union[Campaign2,Campaign]) -> str:
+def create_campaign_str(data: Union[Campaign2, Campaign]) -> str:
     cid = data["id"]
     campaign_type = campaign_types.get(data["type"], "Unknown type")
     count = data["count"]
@@ -279,7 +280,9 @@ def create_planet_embed(
     return embed
 
 
-def campaign_view(stat: ApiStatus, hdtext: Optional[Dict[str, str]] = None,full:bool=False):
+def campaign_view(
+    stat: ApiStatus, hdtext: Optional[Dict[str, str]] = None, full: bool = False
+):
     flav = "Galactic Status."
     if hdtext:
         if "galactic_overview" in hdtext:
@@ -304,7 +307,7 @@ def campaign_view(stat: ApiStatus, hdtext: Optional[Dict[str, str]] = None,full:
         if changes:
             avg = Planet.average([c.planet for c in changes])
         planet_difference: Planet = (camp - last).planet
-        name, desc = camp.planet.simple_planet_view(planet_difference, avg,full)
+        name, desc = camp.planet.simple_planet_view(planet_difference, avg, full)
 
         if planet_difference.event != None:
             p_evt = planet_difference.event

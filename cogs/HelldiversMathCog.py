@@ -31,7 +31,6 @@ calculation_modes = [  # param name
 ]
 
 
-
 def extract_embed_text(embed):
     """
     Extracts the text from an embed object and formats it as a bullet list.
@@ -331,7 +330,7 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
     async def get_gwar_state(
         self,
         ctx: commands.Context,
-        comment:str="Ok",
+        comment: str = "Ok",
     ):
         emb = hd2.campaign_view(self.apistatus, self.hd2)
 
@@ -345,9 +344,9 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
                         b, b - a, planets=self.apistatus.planets
                     ),
                 )
-        now=discord.utils.utcnow()
-        out=f"Current Date: {discord.utils.utcnow().isoformat()}"
-        
+        now = discord.utils.utcnow()
+        out = f"Current Date: {discord.utils.utcnow().isoformat()}"
+
         status_emoji = {
             "<:checkboxon:1199756987471241346>": "onc",
             "<:checkboxoff:1199756988410777610>": "noc",
@@ -365,20 +364,27 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         }
 
         for em in embs:
-            outv=f"{extract_embed_text(em)}+\n"
+            outv = f"{extract_embed_text(em)}+\n"
 
-            outv=re.sub(r'<t:(\d+):[^>]+>', lambda m: seconds_to_time_string((datetime.datetime.fromtimestamp(int(m.group(1)), tz=datetime.timezone.utc)-discord.utils.utcnow()).total_seconds()), outv)
+            outv = re.sub(
+                r"<t:(\d+):[^>]+>",
+                lambda m: seconds_to_time_string(
+                    (
+                        datetime.datetime.fromtimestamp(
+                            int(m.group(1)), tz=datetime.timezone.utc
+                        )
+                        - discord.utils.utcnow()
+                    ).total_seconds()
+                ),
+                outv,
+            )
             for e, m in status_emoji.items():
                 if e in outv:
-                    outv=outv.replace(e,m)
-            out+=outv
+                    outv = outv.replace(e, m)
+            out += outv
 
         print(out)
         return out
-        
-        
-
-        
 
 
 @app_commands.allowed_installs(guilds=False, users=True)

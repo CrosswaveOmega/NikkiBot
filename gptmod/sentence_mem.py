@@ -365,7 +365,7 @@ class SentenceMemory:
                     new_output += output
 
         return docs, new_output, (all_timer, dict_timer, loadtimer)
-    
+
     async def dump_memory(self, message: discord.Message) -> List[DocumentScoreVector]:
         persist = "saveData"
 
@@ -377,16 +377,11 @@ class SentenceMemory:
         }
         sources: Dict[str : Dict[int, Any]] = {}
         with Timer() as all_timer:
-            docs = (
-                await self.coll.aget(
-                    where=filterwith,
-                    limit=128
-                )
-            )
+            docs = await self.coll.aget(where=filterwith, limit=128)
             context = ""
-            
+
             docs2 = results_to_docs(docs)
-            print(docs,docs2)
+            print(docs, docs2)
             all_neighbors = docs2
 
         checktime = all_timer.get_time()

@@ -19,8 +19,12 @@ class GlobalEvent(BaseApiModel):
     titleId32: Optional[int] = Field(alias="titleId32", default=None)
     message: Optional[str] = Field(alias="message", default=None)
     messageId32: Optional[int] = Field(alias="messageId32", default=None)
-    introMediaId32: Optional[int] = Field(alias="introMediaId32", default=None, description="Use currently unknown.")
-    outroMediaId32: Optional[int] = Field(alias="outroMediaId32", default=None, description="Use currently unknown.")
+    introMediaId32: Optional[int] = Field(
+        alias="introMediaId32", default=None, description="Use currently unknown."
+    )
+    outroMediaId32: Optional[int] = Field(
+        alias="outroMediaId32", default=None, description="Use currently unknown."
+    )
     race: Optional[int] = Field(alias="race", default=None)
     flag: Optional[int] = Field(alias="flag", default=None)
     assignmentId32: Optional[int] = Field(alias="assignmentId32", default=None)
@@ -31,7 +35,9 @@ class GlobalEvent(BaseApiModel):
 
     def strout(self) -> str:
         formatv = {
-            k: v for k, v in self.model_dump().items() if k not in ["message", "title",'retrieved_at']
+            k: v
+            for k, v in self.model_dump().items()
+            if k not in ["message", "title", "retrieved_at"]
         }
 
         return ", ".join([f"{k}:`{v}`" for k, v in formatv.items()])

@@ -8,7 +8,7 @@ from datetime import datetime, timezone, timedelta
 class BaseApiModel(BaseModel):
     """Base extended model class"""
 
-    retrieved_at: Optional[Union[datetime,timedelta]] = None
+    retrieved_at: Optional[Union[datetime, timedelta]] = None
 
     def __init__(self, **data):
         super().__init__(**data)

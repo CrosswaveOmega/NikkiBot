@@ -153,7 +153,7 @@ class Task2(BaseApiModel):
                         enemy = enemies.get(eid, f"UNKNOWN {eid}")
 
                 taskstr += f"/{hf(goal)} ({(int(curr)/int(goal))*100.0}) {enemy} {faction_name}"
-                
+
                 lc = taskdata.get("hasPlanet", None)
                 onplanet = taskdata.get("planet", None)
                 if onplanet is not None and lc is not None:
@@ -164,17 +164,17 @@ class Task2(BaseApiModel):
                                 planet_name = planet.get_name()
                                 taskstr += f", On {planet_name}"
                 if projected:
-                    status="UNKNOWN"
-                    if curr>goal:
-                        status="VICTORY!"
-                    elif projected>goal:
-                        status="ABOVE QUOTA!"
-                    elif projected<goal:
-                        status="WARNING, UNDER QUOTA!"
-                    taskstr+=f"\n  * Projected Result:`{projected}`, **{status}**  "
+                    status = "UNKNOWN"
+                    if curr > goal:
+                        status = "VICTORY!"
+                    elif projected > goal:
+                        status = "ABOVE QUOTA!"
+                    elif projected < goal:
+                        status = "WARNING, UNDER QUOTA!"
+                    taskstr += f"\n  * Projected Result:`{projected}`, **{status}**  "
             else:
                 dump = json.dumps(taskdata, default=str)[:258]
                 taskstr += f"{dump}"
         if last_progess:
-            taskstr+=f"`[change {last_progess}]`"
+            taskstr += f"`[change {last_progess}]`"
         return taskstr
