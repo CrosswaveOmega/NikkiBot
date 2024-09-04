@@ -1068,7 +1068,6 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 lg.append(h)
             self.loghook = lg
         self.get_running = True
-        raise Exception("ASFT")
         if self.test_with:
             if self.spot >= len(self.test_with):
                 return
