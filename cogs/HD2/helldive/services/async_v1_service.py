@@ -195,7 +195,11 @@ async def make_direct_api_request(
         )
     now = datetime.datetime.now(tz=datetime.timezone.utc)
     data = response.json()
-    logslogger.info("%s", ",".join(f"{k}:{len(json.dumps(v,default=str))}" for k, v in data.items()))
+    if isinstance(data,dict):
+        logslogger.info("%s", ",".join(f"{k}:{len(json.dumps(v,default=str))}" for k, v in data.items()))
+    else:
+        #logslogger.info("%s", ",".join(f"{k}:{len(json.dumps(v,default=str))}" for v in data))
+
     return make_output(data, model, index)
 
 
