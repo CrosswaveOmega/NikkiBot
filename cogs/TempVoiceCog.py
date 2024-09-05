@@ -40,8 +40,11 @@ class TempVC(commands.Cog):
     @serverconfig.command(name='set',description="Command to set the configuration for temporary VCs (category, max users, max channels, and name).")
     async def set_vc_config(self, interaction, category: discord.CategoryChannel, max_users: int = 10, max_channels: int = 5,default_name:str="temp_vc"):
         """"""
-        
         ctx: commands.Context = await self.bot.get_context(interaction)
+        config = await TempVCConfig.get_temp_vc_config(ctx.guild.id)
+        if config:
+            await ctx.send("Temporary VC configuration is set already.")
+            return
         if category is None:
             await ctx.send("Category not found.")
             return
