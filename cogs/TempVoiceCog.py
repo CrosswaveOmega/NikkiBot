@@ -33,7 +33,7 @@ class TempVC(commands.Cog):
             await ctx.send("No configuration found for this guild. Use `>serverconfig set` first.")
 
     @serverconfig.command(name='set')
-    async def set_vc_config(self, ctx, category: discord.CategoryChannel, max_users: int = 10, max_channels: int = 5):
+    async def set_vc_config(self, ctx, category: discord.CategoryChannel, max_users: int = 10, max_channels: int = 5,default_name:str="temp_vc"):
         """Command to set the configuration for temporary VCs (category, max users, and max channels)."""
         if category is None:
             await ctx.send("Category not found.")
@@ -46,7 +46,7 @@ class TempVC(commands.Cog):
             return
         
         # Store the configuration in the database for this guild
-        await TempVCConfig.add_temp_vc_config(ctx.guild.id, category.id, max_users, max_channels)
+        await TempVCConfig.add_temp_vc_config(ctx.guild.id, category.id, max_users, max_channels,default_name)
         await ctx.send(f"Set the temporary VC config: category = {category.name}, max users = {max_users}, max channels = {max_channels}.")
 
     @serverconfig.command(name='update_max_users')
