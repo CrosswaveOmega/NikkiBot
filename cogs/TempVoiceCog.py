@@ -8,6 +8,7 @@ from cogs.dat_Starboard import (
 
 from discord import app_commands
 
+
 class VC_Dispatcher(discord.ui.View):
     def __init__(self, cog):
         super().__init__(timeout=None)
@@ -32,8 +33,6 @@ class VC_Dispatcher(discord.ui.View):
             f"Oops! Something went wrong, {str(error)}", ephemeral=True
         )
 
-
-
     @discord.ui.button(
         label="Make New Temp VC",
         style=discord.ButtonStyle.grey,
@@ -41,21 +40,23 @@ class VC_Dispatcher(discord.ui.View):
         custom_id="MakeNewTempVC:grey",
     )
     async def new_vc(self, interaction: discord.Interaction, button: discord.ui.Button):
-        
-        #ctx: commands.Context = await self.bot.get_context(interaction)
+
+        # ctx: commands.Context = await self.bot.get_context(interaction)
         if interaction.guild:
-            output=await self.cog.create_temp_vc_2(interaction,interaction.guild)
-            await interaction.response.send_message(output,ephemeral=True)
+            output = await self.cog.create_temp_vc_2(interaction, interaction.guild)
+            await interaction.response.send_message(output, ephemeral=True)
 
         # await self.callback(interaction, button)
+
 
 class TempVC(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.temporary_vc_list = {}  # Dictionary to track guild's temporary VCs
         self.check_empty_vc.start()  # Start the task to check empty voice channels
-        
+
         self.bot.add_view(VC_Dispatcher(self))
+
     def cog_unload(self):
         self.check_empty_vc.cancel()
 
@@ -194,16 +195,19 @@ class TempVC(commands.Cog):
         """Base command for managing temporary voice channels."""
         await ctx.send("Use `!vc <subcommand>` for voice channel management.")
 
-
     @vc.command(name="dispatch")
     async def make_dispatch(self, ctx: commands.Context):
         """Command to display the dispatcher view that allows users to create temporary VCs."""
-        await ctx.send("Click the button below to create a temporary voice channel.\n\nTemporary channels will be deleted if no one joins it in 5 minutes, or if everyone leaves.", view=VC_Dispatcher(self))
+        await ctx.send(
+            "Click the button below to create a temporary voice channel.\n\nTemporary channels will be deleted if no one joins it in 5 minutes, or if everyone leaves.",
+            view=VC_Dispatcher(self),
+        )
 
-    async def create_temp_vc_2(self, interaction: discord.Interaction,guild:discord.Guild)->str:
+    async def create_temp_vc_2(
+        self, interaction: discord.Interaction, guild: discord.Guild
+    ) -> str:
         """Command to create a temporary voice channel in the stored category with stored max users."""
         # Fetch the category and configuration from the database
-
 
         config = await TempVCConfig.get_temp_vc_config(guild.id)
         if not config:
@@ -211,7 +215,7 @@ class TempVC(commands.Cog):
 
         # Check if the guild has already reached the max channel limit
         if len(self.temporary_vc_list.get(guild.id, [])) >= config.max_channels:
-  
+
             return f"Cannot create more than {config.max_channels} temporary voice channels."
 
         category = discord.utils.get(guild.categories, id=config.category_id)
@@ -233,14 +237,13 @@ class TempVC(commands.Cog):
 
         self.temporary_vc_list[guild.id].append(temp_vc.id)
 
-        return (f"Created temporary voice channel: {vc_name}")
-
+        return f"Created temporary voice channel: {vc_name}"
 
     @vc.command(name="create")
     async def create_temp_vc(self, ctx: commands.Context):
         """Command to create a temporary voice channel in the stored category with stored max users."""
         # Fetch the category and configuration from the database
-        guild=ctx.guild
+        guild = ctx.guild
 
         config = await TempVCConfig.get_temp_vc_config(guild.id)
         if not config:
