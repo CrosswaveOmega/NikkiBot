@@ -129,7 +129,7 @@ class TempVC(commands.Cog):
 
 
         # Create the voice channel with the stored max users
-        vc_name = f"temporary-hellpod-{config.max_users}"
+        vc_name = f"{config.target_name}-{config.max_users}"
         temp_vc = await ctx.guild.create_voice_channel(vc_name, category=category, user_limit=config.max_users)
 
         # Add the new VC to the temporary list for this guild
