@@ -17,7 +17,9 @@ class TempVC(commands.Cog):
         self.check_empty_vc.cancel()
 
     # Group: Server Configuration
-    @commands.hybrid_group(name='serverconfig', invoke_without_command=True)
+    @commands.hybrid_group(name='serverconfig', invoke_without_command=True,default_permissions=discord.Permissions(
+            manage_messages=True, manage_channels=True
+        ))
     @commands.has_permissions(manage_channels=True)
     async def serverconfig(self, ctx):
         """Base command for server configuration."""
