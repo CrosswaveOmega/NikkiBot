@@ -19,8 +19,8 @@ class TempVC(commands.Cog):
     # Group: Server Configuration
     
     serverconfig = app_commands.Group(
-        name="hd2setup",
-        description="Commands for Helldivers 2 setup.",
+        name="temp_vc_config",
+        description="Commands to configure the temporary VC settings.",
         guild_only=True,
         default_permissions=discord.Permissions(
             manage_messages=True, manage_channels=True
