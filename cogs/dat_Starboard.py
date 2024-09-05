@@ -569,7 +569,102 @@ class Tag(Base):
             "uses": self.taguses,
         }
         return tag
+    
+
+class TempVCConfig(Base):
+    __tablename__ = "temp_vc_config"
+
+    guild_id = Column(BigInteger, primary_key=True)  # Using guild_id as the primary key
+    category_id = Column(BigInteger, nullable=False)  # Storing the target category ID
+
+    max_users = Column(Integer, nullable=False, default=10)
+    max_channels = Column(Integer, nullable=False, default=5)
+
+    @classmethod
+    async def get_temp_vc_config(cls, guild_id: int):
+        """Fetches the configuration for a specific guild."""
+        async with DatabaseSingleton.get_async_session() as session:
+            query = select(cls).where(cls.guild_id == guild_id)
+            result = await session.execute(query)
+            return result.scalar()
+
+    @classmethod
+    async def add_temp_vc_config(cls, guild_id: int, category_id: int, max_users:int=10,max_channels:int=5):
+        """Adds a new configuration entry for the guild."""
+        async with DatabaseSingleton.get_async_session() as session:
+            config = cls(guild_id=guild_id, category_id=category_id, max_users=max_users, max_channels=max_channels)
+            session.add(config)
+            await session.commit()
+            return config
+
+    @classmethod
+    async def remove_temp_vc_config(cls, guild_id: int):
+        """Removes the configuration entry for the guild."""
+        async with DatabaseSingleton.get_async_session() as session:
+            query = select(cls).where(cls.guild_id == guild_id)
+            result = await session.execute(query)
+            config = result.scalar()
+            if config:
+                await session.delete(config)
+                await session.commit()
+                return True
+            return False
+
+    @classmethod
+    async def update_category(cls, guild_id: int, new_category_id: int):
+        """Updates the category ID for the guild's temporary VC configuration."""
+        async with DatabaseSingleton.get_async_session() as session:
+            query = select(cls).where(cls.guild_id == guild_id)
+            result = await session.execute(query)
+            config = result.scalar()
+            if config:
+                config.category_id = new_category_id
+                await session.commit()
+                return config
+            return None
+
+    @classmethod
+    async def update_max_users(cls, guild_id: int, new_max_users: int):
+        """Updates the max users for the guild's temporary VC configuration."""
+        async with DatabaseSingleton.get_async_session() as session:
+            query = select(cls).where(cls.guild_id == guild_id)
+            result = await session.execute(query)
+            config = result.scalar()
+            if config:
+                config.max_users = new_max_users
+                await session.commit()
+                return config
+            return None
+
+    @classmethod
+    async def update_max_channels(cls, guild_id: int, new_max_channels: int):
+        """Updates the max channels for the guild's temporary VC configuration."""
+        async with DatabaseSingleton.get_async_session() as session:
+            query = select(cls).where(cls.guild_id == guild_id)
+            result = await session.execute(query)
+            config = result.scalar()
+            if config:
+                config.max_channels = new_max_channels
+                await session.commit()
+                return config
+            return None
+        
+    @classmethod
+    async def delete(cls, guild_id:int):
+        async with DatabaseSingleton.get_async_session() as session:
+            query = select(cls).where(cls.guild_id == guild_id)
+            result = await session.execute(query)
+            value = query.scalars().first()
+            if value:
+                await session.delete(value)
+                await session.commit()
+                return True
+            return False
+        
+        
 
 
+        
+        
 async def setup(bot):
     DatabaseSingleton("mainsetup").load_base(Base)

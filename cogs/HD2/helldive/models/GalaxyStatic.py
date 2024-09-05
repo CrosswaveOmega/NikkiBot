@@ -47,6 +47,7 @@ class EffectStatic(BaseApiModel):
 
 
 class PlanetStatic(BaseApiModel):
+    """All static data reguarding each planet"""
     name: Optional[str] = Field(alias="name", default=None)
     sector: Optional[str] = Field(alias="sector", default=None)
     biome: Optional[str] = Field(alias="biome", default=None)
