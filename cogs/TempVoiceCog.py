@@ -198,7 +198,7 @@ class TempVC(commands.Cog):
     @vc.command(name="dispatch")
     async def make_dispatch(self, ctx: commands.Context):
         """Command to display the dispatcher view that allows users to create temporary VCs."""
-        await ctx.send("Click the button below to create a temporary voice channel.\n\nTemporary channels will be deleted if no one joins it in 5 minutes.", view=VC_Dispatcher(self))
+        await ctx.send("Click the button below to create a temporary voice channel.\n\nTemporary channels will be deleted if no one joins it in 5 minutes, or if everyone leaves.", view=VC_Dispatcher(self))
 
     async def create_temp_vc_2(self, interaction: discord.Interaction,guild:discord.Guild)->str:
         """Command to create a temporary voice channel in the stored category with stored max users."""
