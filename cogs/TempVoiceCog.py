@@ -44,9 +44,9 @@ class TempVC(commands.Cog):
                 permissions.deafen_members and permissions.move_members and permissions.view_channel):
             await ctx.send("The bot does not have all necessary permissions for this category.")
             return
-
+        
         # Store the configuration in the database for this guild
-        await TempVCConfig.add_temp_vc_config(ctx.guild.id, category.category_id, max_users, max_channels)
+        await TempVCConfig.add_temp_vc_config(ctx.guild.id, category.id, max_users, max_channels)
         await ctx.send(f"Set the temporary VC config: category = {category.name}, max users = {max_users}, max channels = {max_channels}.")
 
     @serverconfig.command(name='update_max_users')
