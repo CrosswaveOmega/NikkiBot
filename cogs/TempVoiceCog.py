@@ -95,7 +95,7 @@ class TempVC(commands.Cog):
         category: discord.CategoryChannel,
         max_users: int = 10,
         max_channels: int = 5,
-        default_name: str = "temp_vc",
+        default_name: app_commands.Range[str, 3, 100] = "temp_vc",
     ):
         """"""
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -120,7 +120,18 @@ class TempVC(commands.Cog):
                 "The bot does not have all necessary permissions for this category."
             )
             return
-
+        if max_channels > 25:
+            await ctx.send("The maximum allowed number of channels is 25.")
+            return
+        if max_channels <= 0:
+            await ctx.send("...no you can't have zero or fewer max_channels.")
+            return
+        if max_users > 99:
+            await ctx.send("The maximum allowed number of channels is 99.")
+            return
+        if max_users <= 0:
+            await ctx.send("...no you can't have zero max users.")
+            return
         # Store the configuration in the database for this guild
         await TempVCConfig.add_temp_vc_config(
             ctx.guild.id, category.id, max_users, max_channels, default_name
