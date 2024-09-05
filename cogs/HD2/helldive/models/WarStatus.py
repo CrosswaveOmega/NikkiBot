@@ -14,9 +14,6 @@ from .Position import Position
 from .Effects import PlanetActiveEffects
 
 
-
-
-
 class SectorStates(BaseApiModel):
     name: Optional[str] = Field(alias="name", default=None)
     planetStatus: Optional[List[Optional[PlanetStatus]]] = Field(

@@ -569,7 +569,7 @@ class Tag(Base):
             "uses": self.taguses,
         }
         return tag
-    
+
 
 class TempVCConfig(Base):
     __tablename__ = "temp_vc_config"
@@ -590,10 +590,23 @@ class TempVCConfig(Base):
             return result.scalar()
 
     @classmethod
-    async def add_temp_vc_config(cls, guild_id: int, category_id: int, max_users:int=10,max_channels:int=5, target_name:str="Temp-Voice"):
+    async def add_temp_vc_config(
+        cls,
+        guild_id: int,
+        category_id: int,
+        max_users: int = 10,
+        max_channels: int = 5,
+        target_name: str = "Temp-Voice",
+    ):
         """Adds a new configuration entry for the guild."""
         async with DatabaseSingleton.get_async_session() as session:
-            config = cls(guild_id=guild_id, category_id=category_id, max_users=max_users, max_channels=max_channels, target_name=target_name)
+            config = cls(
+                guild_id=guild_id,
+                category_id=category_id,
+                max_users=max_users,
+                max_channels=max_channels,
+                target_name=target_name,
+            )
             session.add(config)
             await session.commit()
             return config
@@ -623,7 +636,6 @@ class TempVCConfig(Base):
                 await session.commit()
                 return config
             return None
-        
 
     @classmethod
     async def update_name(cls, guild_id: int, new_name: str):
@@ -637,8 +649,6 @@ class TempVCConfig(Base):
                 await session.commit()
                 return config
             return None
-
-    
 
     @classmethod
     async def update_max_users(cls, guild_id: int, new_max_users: int):
@@ -665,9 +675,9 @@ class TempVCConfig(Base):
                 await session.commit()
                 return config
             return None
-        
+
     @classmethod
-    async def delete(cls, guild_id:int):
+    async def delete(cls, guild_id: int):
         async with DatabaseSingleton.get_async_session() as session:
             query = select(cls).where(cls.guild_id == guild_id)
             result = await session.execute(query)
@@ -677,11 +687,7 @@ class TempVCConfig(Base):
                 await session.commit()
                 return True
             return False
-        
-        
 
 
-        
-        
 async def setup(bot):
     DatabaseSingleton("mainsetup").load_base(Base)

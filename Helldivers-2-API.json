@@ -1,0 +1,1852 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Helldivers 2 Known Public endpoints.",
+    "description": "Known OpenAPI schema for the known endpoints from the Helldivers 2 Official API for reference.  Based on the community api's mappings.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/WarSeason/current/WarID": {
+      "servers": [
+        {
+          "url": "https://api.live.prod.thehelldiversgame.com/",
+          "description": "The official helldivers 2 api endpoint"
+        }
+      ],
+      "get": {
+        "tags": [
+          "direct"
+        ],
+        "summary": "Returns the currently active war season ID.",
+        "operationId": "GetDirectApiWarSeasonCurrentWarID",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WarId"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/WarSeason/801/Status": {
+      "servers": [
+        {
+          "url": "https://api.live.prod.thehelldiversgame.com/",
+          "description": "The official helldivers 2 api endpoint"
+        }
+      ],
+      "get": {
+        "tags": [
+          "direct"
+        ],
+        "summary": "Get a snapshot of the current war status.",
+        "operationId": "GetDirectApiWarSeason801Status",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WarStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/WarSeason/801/WarInfo": {
+      "servers": [
+        {
+          "url": "https://api.live.prod.thehelldiversgame.com/",
+          "description": "The official helldivers 2 api endpoint"
+        }
+      ],
+      "get": {
+        "tags": [
+          "direct"
+        ],
+        "summary": "Gets the current war info.",
+        "operationId": "GetDirectApiWarSeason801WarInfo",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WarInfo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Stats/war/801/summary": {
+      "servers": [
+        {
+          "url": "https://api.live.prod.thehelldiversgame.com/",
+          "description": "The official helldivers 2 api endpoint"
+        }
+      ],
+      "get": {
+        "tags": [
+          "direct"
+        ],
+        "summary": "Gets the current war info.",
+        "operationId": "GetDirectApiStatsWar801Summary",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WarSummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/NewsFeed/801": {
+      "servers": [
+        {
+          "url": "https://api.live.prod.thehelldiversgame.com/",
+          "description": "The official helldivers 2 api endpoint"
+        }
+      ],
+      "get": {
+        "tags": [
+          "direct"
+        ],
+        "summary": "Retrieves a list of news messages from Super Earth.",
+        "operationId": "GetDirectApiNewsFeed801",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NewsFeedItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/Assignment/War/801": {
+      "servers": [
+        {
+          "url": "https://api.live.prod.thehelldiversgame.com/",
+          "description": "The official helldivers 2 api endpoint"
+        }
+      ],
+      "get": {
+        "tags": [
+          "direct"
+        ],
+        "summary": "Retrieves a list of currently active assignments (like Major Orders).",
+        "operationId": "GetDirectApiV2AssignmentWar801",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Assignment"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": ""
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "WarId": {
+        "type": "object",
+        "description": "Represents the ID returned from the WarID endpoint.",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      
+      "WarStatus": {
+        "type": "object",
+        "description": "Represents a snapshot of the current status of the galactic war.",
+        "additionalProperties": false,
+        "properties": {
+          "warId": {
+            "type": "integer",
+            "description": "The war season this snapshot refers to.",
+            "format": "int32"
+          },
+          "time": {
+            "type": "integer",
+            "description": "The time this snapshot was taken.",
+            "format": "int64"
+          },
+          "impactMultiplier": {
+            "type": "number",
+            "description": "This is the factor by which influence at the end of a mission is multiplied to calculate the impact on liberation",
+            "format": "double"
+          },
+          "storyBeatId32": {
+            "type": "integer",
+            "description": "Internal identifier, purpose unknown.",
+            "format": "int64"
+          },
+          "planetStatus": {
+            "type": "array",
+            "description": "A list of statuses for planets.",
+            "items": {
+              "$ref": "#/components/schemas/PlanetStatus"
+            }
+          },
+          "planetAttacks": {
+            "type": "array",
+            "description": "A list of attacks currently ongoing.",
+            "items": {
+              "$ref": "#/components/schemas/PlanetAttack"
+            }
+          },
+          "campaigns": {
+            "type": "array",
+            "description": "A list of ongoing campaigns in the galactic war.",
+            "items": {
+              "$ref": "#/components/schemas/Campaign"
+            }
+          },
+          "jointOperations": {
+            "type": "array",
+            "description": "A list of JointOperations.",
+            "items": {
+              "$ref": "#/components/schemas/JointOperation"
+            }
+          },
+          "planetEvents": {
+            "type": "array",
+            "description": "A list of ongoing PlanetEvents.",
+            "items": {
+              "$ref": "#/components/schemas/PlanetEvent"
+            }
+          },
+          "communityTargets": {
+            "type": "array",
+            "description": "A list of community targets.",
+            "items": {
+              "$ref": "#/components/schemas/CommunityTarget"
+            }
+          },
+          "activeElectionPolicyEffects": {
+            "type": "array",
+            "description": "Use currently unknown.",
+            "items": {
+              "$ref": "#/components/schemas/CommunityTarget"
+            }
+          },
+          "planetActiveEffects": {
+            "type": "array",
+            "description": "A list of planet effects ",
+            "items": {
+              "$ref": "#/components/schemas/PlanetActiveEffect"
+            }
+          },
+          "globalEvents": {
+            "type": "array",
+            "description": "All current global events: including major orders",
+            "items": {
+              "$ref": "#/components/schemas/GlobalEvent"
+            }
+          },
+          "layoutVersion": {
+            "type": "integer",
+            "description": "Overall api version."
+            
+          },
+          "superEarthWarResults":{
+            "type": "array",
+            "description": "Results of Super Earth's engagements during the war.",
+            "items": {
+              "$ref": "#/components/schemas/CommunityTarget"
+            }
+          }
+        }
+      },
+      "PlanetStatus": {
+        "type": "object",
+        "description": "Represents the 'current' status of a planet in the galactic war.",
+        "additionalProperties": false,
+        "properties": {
+          "index": {
+            "type": "integer",
+            "description": "The identifier of the PlanetInfo this status refers to.",
+            "format": "int32"
+          },
+          "owner": {
+            "type": "integer",
+            "description": "The faction currently owning the planet.",
+            "format": "int32"
+          },
+          "health": {
+            "type": "integer",
+            "description": "The current health / liberation of a planet.",
+            "format": "int64"
+          },
+          "regenPerSecond": {
+            "type": "number",
+            "description": "If left alone, how much the health of the planet would regenerate.",
+            "format": "double"
+          },
+          "players": {
+            "type": "integer",
+            "description": "The amount of helldivers currently active on this planet.",
+            "format": "uint64"
+          }
+        }
+      },
+      "PlanetAttack": {
+        "type": "object",
+        "description": "Represents an attack on a PlanetInfo.",
+        "additionalProperties": false,
+        "properties": {
+          "source": {
+            "type": "integer",
+            "description": "Where the attack originates from.",
+            "format": "int32"
+          },
+          "target": {
+            "type": "integer",
+            "description": "The planet under attack.",
+            "format": "int32"
+          }
+        }
+      },
+      "PlanetActiveEffect": {
+        "type": "object",
+        "description": "represents a planet effect applied to a specific world.",
+        "additionalProperties": false,
+        "properties": {
+          "index": {
+            "type": "integer",
+            "description": "The planet index this effect is applied to",
+            "format": "int32"
+          },
+          "galacticEffectId": {
+            "type": "integer",
+            "description": "The effect id of the effect in question.",
+            "format": "int32"
+          }
+        }
+      },
+      "Campaign": {
+        "type": "object",
+        "description": "Contains information of ongoing campaigns.",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "The identifier of this campaign.",
+            "format": "int32"
+          },
+          "planetIndex": {
+            "type": "integer",
+            "description": "The Index of the planet this campaign refers to.",
+            "format": "int32"
+          },
+          "type": {
+            "type": "integer",
+            "description": "A numerical type, indicates the type of campaign (see helldivers-2/json).",
+            "format": "int32"
+          },
+          "count": {
+            "type": "integer",
+            "description": "A numerical count, the amount of campaigns the planet has seen.",
+            "format": "uint64"
+          }
+        }
+      },
+      "JointOperation": {
+        "type": "object",
+        "description": "Represents a joint operation.",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "planetIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hqNodeIndex": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PlanetEvent": {
+        "type": "object",
+        "description": "An ongoing event on a planet.",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "The unique identifier of this event.",
+            "format": "int32"
+          },
+          "planetIndex": {
+            "type": "integer",
+            "description": "The index of the planet.",
+            "format": "int32"
+          },
+          "eventType": {
+            "type": "integer",
+            "description": "A numerical identifier that indicates what type of event this is.",
+            "format": "int32"
+          },
+          "race": {
+            "type": "integer",
+            "description": "The identifier of the faction that owns the planet currently.",
+            "format": "int32"
+          },
+          "health": {
+            "type": "integer",
+            "description": "The current health of the event.",
+            "format": "int64"
+          },
+          "maxHealth": {
+            "type": "integer",
+            "description": "The current maximum health of the event.",
+            "format": "int64"
+          },
+          "startTime": {
+            "type": "integer",
+            "description": "When this event started.",
+            "format": "int64"
+          },
+          "expireTime": {
+            "type": "integer",
+            "description": "When the event will end.",
+            "format": "int64"
+          },
+          "campaignId": {
+            "type": "integer",
+            "description": "The unique identifier of a related campaign.",
+            "format": "int32"
+          },
+          "jointOperationIds": {
+            "type": "array",
+            "description": "A list of identifiers of related joint operations.",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        }
+      },
+      "GlobalEvent": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The ID of the event."
+          },
+          "id32": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The 32-bit ID."
+          },
+          "portraitId32": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The 32-bit ID of the portrait."
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "The title of the event."
+          },
+          "titleId32": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The 32-bit ID for this event's title."
+          },
+          "message": {
+            "type": "string",
+            "nullable": true,
+            "description": "The message of the event."
+          },
+          "messageId32": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "The 32-bit ID for this event's message."
+          },
+          "introMediaId32": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "Use currently unknown."
+          },
+          "outroMediaId32": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "Use currently unknown."
+          },
+          "race": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The race ID."
+          },
+          "flag": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The flag associated with the event."
+          },
+          "assignmentId32": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The 32-bit ID of the assignment associated with this global event, if applicable."
+          },
+          "effectIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true,
+            "description": "List of effect IDs."
+          },
+          "planetIndices": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true,
+            "description": "List of planet indices."
+          }
+        },
+        "additionalProperties": false
+      },
+      "CommunityTarget":{
+        "oneOf": [
+          {
+            "type": "object"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "integer"
+          },
+          {
+            "type": "array",
+            "items": {}
+          }
+        ],
+        "description": "For community targets field.  Currently unused."
+      },
+      "WarInfo": {
+        "type": "object",
+        "description": "Represents mostly static information of the current galactic war.",
+        "additionalProperties": false,
+        "properties": {
+          "warId": {
+            "type": "integer",
+            "description": "The identifier of the war season this WarInfo represents.",
+            "format": "int32"
+          },
+          "startDate": {
+            "type": "integer",
+            "description": "A unix timestamp (in seconds) when this season started.",
+            "format": "int64"
+          },
+          "endDate": {
+            "type": "integer",
+            "description": "A unix timestamp (in seconds) when this season will end.",
+            "format": "int64"
+          },
+          "layoutVersion": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Version of the api layout."
+        },
+          "minimumClientVersion": {
+            "type": "string",
+            "description": "A version string indicating the minimum game client version the API supports."
+          },
+          "planetInfos": {
+            "type": "array",
+            "description": "A list of planets involved in this season's war.",
+            "items": {
+              "$ref": "#/components/schemas/PlanetInfo"
+            }
+          },
+          "homeWorlds": {
+            "type": "array",
+            "description": "A list of homeworlds for the races (factions) involved in this war.",
+            "items": {
+              "$ref": "#/components/schemas/HomeWorld"
+            }
+          },
+          "capitalInfos": {
+            "type": "array",
+            "items": { "type": "object" },
+            "description": "Capital information related to the war."
+          },
+          "planetPermanentEffects": {
+              "type": "array",
+              "items": { "type": "object" },
+              "description": "List of permanent effects on planets."
+          }
+        }
+      },
+      "PlanetInfo": {
+        "type": "object",
+        "description": "Represents information of a planet from the 'WarInfo' endpoint returned by ArrowHead's API.",
+        "additionalProperties": false,
+        "properties": {
+          "index": {
+            "type": "integer",
+            "description": "The numerical identifier for this planet, used as reference by other properties throughout the API (like Waypoints).",
+            "format": "int32"
+          },
+          "settingsHash": {
+            "type": "integer",
+            "description": "Purpose unknown at this time.",
+            "format": "int64"
+          },
+          "position": {
+            "description": "A set of X/Y coordinates specifying the position of this planet on the galaxy map.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/PlanetCoordinates"
+              }
+            ]
+          },
+          "waypoints": {
+            "type": "array",
+            "description": "A list of links to other planets (supply lines).",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "sector": {
+            "type": "integer",
+            "description": "The identifier of the sector this planet is located in.",
+            "format": "int32"
+          },
+          "maxHealth": {
+            "type": "integer",
+            "description": "The 'health' of this planet, indicates how much liberation it needs to switch sides.",
+            "format": "int64"
+          },
+          "disabled": {
+            "type": "boolean",
+            "description": "Whether this planet is currently considered active in the galactic war."
+          },
+          "initialOwner": {
+            "type": "integer",
+            "description": "The identifier of the faction that initially owned this planet.",
+            "format": "int32"
+          }
+        }
+      },
+      "PlanetCoordinates": {
+        "type": "object",
+        "description": "Represents a set of coordinates returned by ArrowHead's API.",
+        "additionalProperties": false,
+        "properties": {
+          "x": {
+            "type": "number",
+            "description": "The X coordinate",
+            "format": "double"
+          },
+          "y": {
+            "type": "number",
+            "description": "The Y coordinate",
+            "format": "double"
+          }
+        }
+      },
+      "HomeWorld": {
+        "type": "object",
+        "description": "Represents information about the homeworld(s) of a given race.",
+        "additionalProperties": false,
+        "properties": {
+          "race": {
+            "type": "integer",
+            "description": "The identifier of the race (faction) this describes the homeworld of.",
+            "format": "int32"
+          },
+          "planetIndices": {
+            "type": "array",
+            "description": "A list of Index identifiers.",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        }
+      },
+      "WarSummary": {
+        "type": "object",
+        "description": "Gets general statistics about the galaxy and specific planets.",
+        "additionalProperties": false,
+        "properties": {
+          "galaxy_stats": {
+            "description": "Contains galaxy wide statistics aggregated from all planets.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/GalaxyStats"
+              }
+            ]
+          },
+          "planets_stats": {
+            "type": "array",
+            "description": "Contains statistics for specific planets.",
+            "items": {
+              "$ref": "#/components/schemas/PlanetStats"
+            }
+          }
+        }
+      },
+      "GalaxyStats": {
+        "type": "object",
+        "description": "Represents galaxy wide statistics.",
+        "additionalProperties": false,
+        "properties": {
+          "missionsWon": {
+            "type": "integer",
+            "description": "The amount of missions won.",
+            "format": "uint64"
+          },
+          "missionsLost": {
+            "type": "integer",
+            "description": "The amount of missions lost.",
+            "format": "uint64"
+          },
+          "missionTime": {
+            "type": "integer",
+            "description": "The total amount of time spent planetside (in seconds).",
+            "format": "uint64"
+          },
+          "bugKills": {
+            "type": "integer",
+            "description": "The total amount of bugs killed since start of the season.",
+            "format": "uint64"
+          },
+          "automatonKills": {
+            "type": "integer",
+            "description": "The total amount of automatons killed since start of the season.",
+            "format": "uint64"
+          },
+          "illuminateKills": {
+            "type": "integer",
+            "description": "The total amount of Illuminate killed since start of the season.",
+            "format": "uint64"
+          },
+          "bulletsFired": {
+            "type": "integer",
+            "description": "The total amount of bullets fired",
+            "format": "uint64"
+          },
+          "bulletsHit": {
+            "type": "integer",
+            "description": "The total amount of bullets hit",
+            "format": "uint64"
+          },
+          "timePlayed": {
+            "type": "integer",
+            "description": "The total amount of time played (including off-planet) in seconds.",
+            "format": "uint64"
+          },
+          "deaths": {
+            "type": "integer",
+            "description": "The amount of casualties on the side of humanity.",
+            "format": "uint64"
+          },
+          "revives": {
+            "type": "integer",
+            "description": "The amount of revives(?).",
+            "format": "uint64"
+          },
+          "friendlies": {
+            "type": "integer",
+            "description": "The amount of friendly fire casualties.",
+            "format": "uint64"
+          },
+          "missionSuccessRate": {
+            "type": "integer",
+            "description": "A percentage indicating how many started missions end in success.",
+            "format": "uint64"
+          },
+          "accurracy": {
+            "type": "integer",
+            "description": "A percentage indicating average accuracy of Helldivers.",
+            "format": "uint64"
+          }
+        }
+      },
+      "PlanetStats": {
+        "type": "object",
+        "description": "Similar to GalaxyStats, but scoped to a specific planet.",
+        "additionalProperties": false,
+        "properties": {
+          "planetIndex": {
+            "type": "integer",
+            "description": "The Index for which planet these stats are.",
+            "format": "int32"
+          },
+          "missionsWon": {
+            "type": "integer",
+            "description": "The amount of missions won.",
+            "format": "uint64"
+          },
+          "missionsLost": {
+            "type": "integer",
+            "description": "The amount of missions lost.",
+            "format": "uint64"
+          },
+          "missionTime": {
+            "type": "integer",
+            "description": "The total amount of time spent planetside (in seconds).",
+            "format": "uint64"
+          },
+          "bugKills": {
+            "type": "integer",
+            "description": "The total amount of bugs killed since start of the season.",
+            "format": "uint64"
+          },
+          "automatonKills": {
+            "type": "integer",
+            "description": "The total amount of automatons killed since start of the season.",
+            "format": "uint64"
+          },
+          "illuminateKills": {
+            "type": "integer",
+            "description": "The total amount of Illuminate killed since start of the season.",
+            "format": "uint64"
+          },
+          "bulletsFired": {
+            "type": "integer",
+            "description": "The total amount of bullets fired",
+            "format": "uint64"
+          },
+          "bulletsHit": {
+            "type": "integer",
+            "description": "The total amount of bullets hit",
+            "format": "uint64"
+          },
+          "timePlayed": {
+            "type": "integer",
+            "description": "The total amount of time played (including off-planet) in seconds.",
+            "format": "uint64"
+          },
+          "deaths": {
+            "type": "integer",
+            "description": "The amount of casualties on the side of humanity.",
+            "format": "uint64"
+          },
+          "revives": {
+            "type": "integer",
+            "description": "The amount of revives(?).",
+            "format": "uint64"
+          },
+          "friendlies": {
+            "type": "integer",
+            "description": "The amount of friendly fire casualties.",
+            "format": "uint64"
+          },
+          "missionSuccessRate": {
+            "type": "integer",
+            "description": "A percentage indicating how many started missions end in success.",
+            "format": "uint64"
+          },
+          "accurracy": {
+            "type": "integer",
+            "description": "A percentage indicating average accuracy of Helldivers.",
+            "format": "uint64"
+          }
+        }
+      },
+      "NewsFeedItem": {
+        "type": "object",
+        "description": "Represents an item in the newsfeed of Super Earth.",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "The identifier of this newsfeed item.",
+            "format": "int32"
+          },
+          "published": {
+            "type": "integer",
+            "description": "A unix timestamp (in seconds) when this item was published.",
+            "format": "int64"
+          },
+          "type": {
+            "type": "integer",
+            "description": "A numerical type, purpose unknown.",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string",
+            "description": "The message containing a human readable text."
+          }
+        }
+      },
+      "Assignment": {
+        "type": "object",
+        "description": "Represents an assignment given from Super Earth to the Helldivers.",
+        "additionalProperties": false,
+        "properties": {
+          "id32": {
+            "type": "integer",
+            "description": "Internal identifier of this assignment.",
+            "format": "int64"
+          },
+          "progress": {
+            "type": "array",
+            "description": "A list of numbers representing progress in the assignment.",
+            "items": {
+              "type": "integer",
+              "format": "uint64"
+            }
+          },
+          "expiresIn": {
+            "type": "integer",
+            "description": "The amount of seconds until this assignment expires.",
+            "format": "int64"
+          },
+          "setting": {
+            "description": "Contains detailed information on this assignment like briefing, rewards, ...",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Setting"
+              }
+            ]
+          }
+        }
+      },
+      "Setting": {
+        "type": "object",
+        "description": "Contains the details of an Assignment like reward and requirements.",
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "integer",
+            "description": "The type of assignment, values unknown at the moment.",
+            "format": "int32"
+          },
+          "overrideTitle": {
+            "type": "string",
+            "description": "The title of this assignment."
+          },
+          "overrideBrief": {
+            "type": "string",
+            "description": "The briefing (description) of this assignment."
+          },
+          "taskDescription": {
+            "type": "string",
+            "description": "A description of what is expected of Helldivers to complete the assignment."
+          },
+          "tasks": {
+            "type": "array",
+            "description": "A list of Tasks describing the assignment requirements.",
+            "items": {
+              "$ref": "#/components/schemas/Task"
+            }
+          },
+          "reward": {
+            "description": "Contains information on the first reward players will receive upon completion.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Reward"
+              }
+            ]
+          },
+          "rewards":{
+            "type": "array",
+            "description": "A list of rewards for the assignment upon completion.",
+            "items": {
+              "$ref": "#/components/schemas/Reward"
+            }
+                      
+          },
+          "flags": {
+            "type": "integer",
+            "description": "Flags, suspected to be a binary OR'd value, purpose unknown.",
+            "format": "int32"
+          }
+        }
+      },
+      "Task": {
+        "type": "object",
+        "description": "Represents a task in an Assignment.\nIt's exact values are not known, therefore little of it's purpose is clear.",
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "integer",
+            "description": "A numerical value, purpose unknown.",
+            "format": "int32"
+          },
+          "values": {
+            "type": "array",
+            "description": "A list of numerical values, purpose unknown.",
+            "items": {
+              "type": "integer",
+              "format": "uint64"
+            }
+          },
+          "valueTypes": {
+            "type": "array",
+            "description": "A list of numerical values, purpose unknown.",
+            "items": {
+              "type": "integer",
+              "format": "uint64"
+            }
+          }
+        }
+      },
+      "Reward": {
+        "type": "object",
+        "description": "Represents the reward of an Assignment.",
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "integer",
+            "description": "The type of reward.  Initally thought to be 1 for medals, recent mos have made this unlikely",
+            "format": "int32"
+          },
+          "id32": {
+            "type": "integer",
+            "description": "Internal identifier of this Reward. 897894480 is medals",
+            "format": "uint64"
+          },
+          "amount": {
+            "type": "integer",
+            "description": "The amount of Type the players will receive upon completion.",
+            "format": "uint64"
+          }
+        }
+      },
+      "War": {
+        "type": "object",
+        "description": "Global information of the ongoing war.",
+        "additionalProperties": false,
+        "properties": {
+          "started": {
+            "type": "string",
+            "description": "When this war was started.",
+            "format": "date-time"
+          },
+          "ended": {
+            "type": "string",
+            "description": "When this war will end (or has ended).",
+            "format": "date-time"
+          },
+          "now": {
+            "type": "string",
+            "description": "The time the snapshot of the war was taken, also doubles as the timestamp of which all other data dates from.",
+            "format": "date-time"
+          },
+          "clientVersion": {
+            "type": "string",
+            "description": "The minimum game client version required to play in this war."
+          },
+          "factions": {
+            "type": "array",
+            "description": "A list of factions currently involved in the war.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "impactMultiplier": {
+            "type": "number",
+            "description": "A fraction used to calculate the impact of a mission on the war effort.",
+            "format": "double"
+          },
+          "statistics": {
+            "description": "The statistics available for the galaxy wide war effort.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Statistics"
+              }
+            ]
+          }
+        }
+      },
+      "Statistics": {
+        "type": "object",
+        "description": "Contains statistics of missions, kills, success rate etc.",
+        "additionalProperties": false,
+        "properties": {
+          "missionsWon": {
+            "type": "integer",
+            "description": "The amount of missions won.",
+            "format": "uint64"
+          },
+          "missionsLost": {
+            "type": "integer",
+            "description": "The amount of missions lost.",
+            "format": "uint64"
+          },
+          "missionTime": {
+            "type": "integer",
+            "description": "The total amount of time spent planetside (in seconds).",
+            "format": "uint64"
+          },
+          "terminidKills": {
+            "type": "integer",
+            "description": "The total amount of bugs killed since start of the season.",
+            "format": "uint64"
+          },
+          "automatonKills": {
+            "type": "integer",
+            "description": "The total amount of automatons killed since start of the season.",
+            "format": "uint64"
+          },
+          "illuminateKills": {
+            "type": "integer",
+            "description": "The total amount of Illuminate killed since start of the season.",
+            "format": "uint64"
+          },
+          "bulletsFired": {
+            "type": "integer",
+            "description": "The total amount of bullets fired",
+            "format": "uint64"
+          },
+          "bulletsHit": {
+            "type": "integer",
+            "description": "The total amount of bullets hit",
+            "format": "uint64"
+          },
+          "timePlayed": {
+            "type": "integer",
+            "description": "The total amount of time played (including off-planet) in seconds.",
+            "format": "uint64"
+          },
+          "deaths": {
+            "type": "integer",
+            "description": "The amount of casualties on the side of humanity.",
+            "format": "uint64"
+          },
+          "revives": {
+            "type": "integer",
+            "description": "The amount of revives(?).",
+            "format": "uint64"
+          },
+          "friendlies": {
+            "type": "integer",
+            "description": "The amount of friendly fire casualties.",
+            "format": "uint64"
+          },
+          "missionSuccessRate": {
+            "type": "integer",
+            "description": "A percentage indicating how many started missions end in success.",
+            "format": "uint64"
+          },
+          "accuracy": {
+            "type": "integer",
+            "description": "A percentage indicating average accuracy of Helldivers.",
+            "format": "uint64"
+          },
+          "playerCount": {
+            "type": "integer",
+            "description": "The total amount of players present (at the time of the snapshot).",
+            "format": "uint64"
+          }
+        }
+      },
+      "Assignment2": {
+        "type": "object",
+        "description": "Represents an assignment given by Super Earth to the community.\nThis is also known as 'Major Order's in the game.",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "The unique identifier of this assignment.",
+            "format": "int64"
+          },
+          "progress": {
+            "type": "array",
+            "description": "A list of numbers, how they represent progress is unknown.",
+            "items": {
+              "type": "integer",
+              "format": "uint64"
+            }
+          },
+          "title": {
+            "description": "The title of the assignment.",
+            "oneOf": [
+              {
+                "title": "String",
+                "type": "string"
+              },
+              {
+                "title": "LocalizedMessage",
+                "type": "object",
+                "description": "When passing in ivl-IV as Accept-Language, all available languages are returned",
+                "properties": {
+                  "en-US": {
+                    "type": "string",
+                    "description": "The message in en-US"
+                  },
+                  "de-DE": {
+                    "type": "string",
+                    "description": "The message in de-DE"
+                  },
+                  "es-ES": {
+                    "type": "string",
+                    "description": "The message in es-ES"
+                  },
+                  "ru-RU": {
+                    "type": "string",
+                    "description": "The message in ru-RU"
+                  },
+                  "fr-FR": {
+                    "type": "string",
+                    "description": "The message in fr-FR"
+                  },
+                  "it-IT": {
+                    "type": "string",
+                    "description": "The message in it-IT"
+                  },
+                  "pl-PL": {
+                    "type": "string",
+                    "description": "The message in pl-PL"
+                  },
+                  "zh-Hans": {
+                    "type": "string",
+                    "description": "The message in zh-Hans"
+                  },
+                  "zh-Hant": {
+                    "type": "string",
+                    "description": "The message in zh-Hant"
+                  }
+                }
+              }
+            ]
+          },
+          "briefing": {
+            "description": "A long form description of the assignment, usually contains context.",
+            "oneOf": [
+              {
+                "title": "String",
+                "type": "string"
+              },
+              {
+                "title": "LocalizedMessage",
+                "type": "object",
+                "description": "When passing in ivl-IV as Accept-Language, all available languages are returned",
+                "properties": {
+                  "en-US": {
+                    "type": "string",
+                    "description": "The message in en-US"
+                  },
+                  "de-DE": {
+                    "type": "string",
+                    "description": "The message in de-DE"
+                  },
+                  "es-ES": {
+                    "type": "string",
+                    "description": "The message in es-ES"
+                  },
+                  "ru-RU": {
+                    "type": "string",
+                    "description": "The message in ru-RU"
+                  },
+                  "fr-FR": {
+                    "type": "string",
+                    "description": "The message in fr-FR"
+                  },
+                  "it-IT": {
+                    "type": "string",
+                    "description": "The message in it-IT"
+                  },
+                  "pl-PL": {
+                    "type": "string",
+                    "description": "The message in pl-PL"
+                  },
+                  "zh-Hans": {
+                    "type": "string",
+                    "description": "The message in zh-Hans"
+                  },
+                  "zh-Hant": {
+                    "type": "string",
+                    "description": "The message in zh-Hant"
+                  }
+                }
+              }
+            ]
+          },
+          "description": {
+            "description": "A very short summary of the description.",
+            "oneOf": [
+              {
+                "title": "String",
+                "type": "string"
+              },
+              {
+                "title": "LocalizedMessage",
+                "type": "object",
+                "description": "When passing in ivl-IV as Accept-Language, all available languages are returned",
+                "properties": {
+                  "en-US": {
+                    "type": "string",
+                    "description": "The message in en-US"
+                  },
+                  "de-DE": {
+                    "type": "string",
+                    "description": "The message in de-DE"
+                  },
+                  "es-ES": {
+                    "type": "string",
+                    "description": "The message in es-ES"
+                  },
+                  "ru-RU": {
+                    "type": "string",
+                    "description": "The message in ru-RU"
+                  },
+                  "fr-FR": {
+                    "type": "string",
+                    "description": "The message in fr-FR"
+                  },
+                  "it-IT": {
+                    "type": "string",
+                    "description": "The message in it-IT"
+                  },
+                  "pl-PL": {
+                    "type": "string",
+                    "description": "The message in pl-PL"
+                  },
+                  "zh-Hans": {
+                    "type": "string",
+                    "description": "The message in zh-Hans"
+                  },
+                  "zh-Hant": {
+                    "type": "string",
+                    "description": "The message in zh-Hant"
+                  }
+                }
+              }
+            ]
+          },
+          "tasks": {
+            "type": "array",
+            "description": "A list of tasks that need to be completed for this assignment.",
+            "items": {
+              "$ref": "#/components/schemas/Task2"
+            }
+          },
+          "reward": {
+            "description": "The reward for completing the assignment.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Reward2"
+              }
+            ]
+          },
+          "expiration": {
+            "type": "string",
+            "description": "The date when the assignment will expire.",
+            "format": "date-time"
+          }
+        }
+      },
+      "Task2": {
+        "type": "object",
+        "description": "Represents a task in an Assignment that needs to be completed\nto finish the assignment. ",
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "integer",
+            "description": "The type of task this represents.",
+            "format": "int32"
+          },
+          "values": {
+            "type": "array",
+            "description": "A list of numbers, purpose unknown.",
+            "items": {
+              "type": "integer",
+              "format": "uint64"
+            }
+          },
+          "valueTypes": {
+            "type": "array",
+            "description": "A list of numbers, purpose unknown",
+            "items": {
+              "type": "integer",
+              "format": "uint64"
+            }
+          }
+        }
+      },
+      "Reward2": {
+        "type": "object",
+        "description": "The reward for completing an Assignment.",
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "integer",
+            "description": "The type of reward (medals, super credits, ...).",
+            "format": "int32"
+          },
+          "amount": {
+            "type": "integer",
+            "description": "The amount of Type that will be awarded.",
+            "format": "uint64"
+          }
+        }
+      },
+      "Campaign2": {
+        "type": "object",
+        "description": "Represents an ongoing campaign on a planet.",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "The unique identifier of this Campaign.",
+            "format": "int32"
+          },
+          "planet": {
+            "description": "The planet on which this campaign is being fought.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Planet"
+              }
+            ]
+          },
+          "type": {
+            "type": "integer",
+            "description": "The type of campaign, this should be mapped onto an enum.",
+            "format": "int32"
+          },
+          "count": {
+            "type": "integer",
+            "description": "Indicates how many campaigns have already been fought on this Planet.",
+            "format": "uint64"
+          }
+        }
+      },
+      "Planet": {
+        "type": "object",
+        "description": "Contains all aggregated information AH has about a planet.",
+        "additionalProperties": false,
+        "properties": {
+          "index": {
+            "type": "integer",
+            "description": "The unique identifier ArrowHead assigned to this planet.",
+            "format": "int32"
+          },
+          "name": {
+            "description": "The name of the planet, as shown in game.",
+            "oneOf": [
+              {
+                "title": "String",
+                "type": "string"
+              },
+              {
+                "title": "LocalizedMessage",
+                "type": "object",
+                "description": "When passing in ivl-IV as Accept-Language, all available languages are returned",
+                "properties": {
+                  "en-US": {
+                    "type": "string",
+                    "description": "The message in en-US"
+                  },
+                  "de-DE": {
+                    "type": "string",
+                    "description": "The message in de-DE"
+                  },
+                  "es-ES": {
+                    "type": "string",
+                    "description": "The message in es-ES"
+                  },
+                  "ru-RU": {
+                    "type": "string",
+                    "description": "The message in ru-RU"
+                  },
+                  "fr-FR": {
+                    "type": "string",
+                    "description": "The message in fr-FR"
+                  },
+                  "it-IT": {
+                    "type": "string",
+                    "description": "The message in it-IT"
+                  },
+                  "pl-PL": {
+                    "type": "string",
+                    "description": "The message in pl-PL"
+                  },
+                  "zh-Hans": {
+                    "type": "string",
+                    "description": "The message in zh-Hans"
+                  },
+                  "zh-Hant": {
+                    "type": "string",
+                    "description": "The message in zh-Hant"
+                  }
+                }
+              }
+            ]
+          },
+          "sector": {
+            "type": "string",
+            "description": "The name of the sector the planet is in, as shown in game."
+          },
+          "biome": {
+            "description": "The biome this planet has.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Biome"
+              }
+            ]
+          },
+          "hazards": {
+            "type": "array",
+            "description": "All Hazards that are applicable to this planet.",
+            "items": {
+              "$ref": "#/components/schemas/Hazard"
+            }
+          },
+          "hash": {
+            "type": "integer",
+            "description": "A hash assigned to the planet by ArrowHead, purpose unknown.",
+            "format": "int64"
+          },
+          "position": {
+            "description": "The coordinates of this planet on the galactic war map.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Position"
+              }
+            ]
+          },
+          "waypoints": {
+            "type": "array",
+            "description": "A list of Index of all the planets to which this planet is connected.",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "maxHealth": {
+            "type": "integer",
+            "description": "The maximum health pool of this planet.",
+            "format": "int64"
+          },
+          "health": {
+            "type": "integer",
+            "description": "The current planet this planet has.",
+            "format": "int64"
+          },
+          "disabled": {
+            "type": "boolean",
+            "description": "Whether or not this planet is disabled, as assigned by ArrowHead."
+          },
+          "initialOwner": {
+            "type": "string",
+            "description": "The faction that originally owned the planet."
+          },
+          "currentOwner": {
+            "type": "string",
+            "description": "The faction that currently controls the planet."
+          },
+          "regenPerSecond": {
+            "type": "number",
+            "description": "How much the planet regenerates per second if left alone.",
+            "format": "double"
+          },
+          "event": {
+            "description": "Information on the active event ongoing on this planet, if one is active.",
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Event"
+              }
+            ]
+          },
+          "statistics": {
+            "description": "A set of statistics scoped to this planet.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Statistics"
+              }
+            ]
+          },
+          "attacking": {
+            "type": "array",
+            "description": "A list of Index integers that this planet is currently attacking.",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        }
+      },
+      "Biome": {
+        "type": "object",
+        "description": "Represents information about a biome of a planet.",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of this biome."
+          },
+          "description": {
+            "type": "string",
+            "description": "A human-readable description of the biome."
+          }
+        }
+      },
+      "Hazard": {
+        "type": "object",
+        "description": "Describes an environmental hazard that can be present on a Planet.",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of this environmental hazard."
+          },
+          "description": {
+            "type": "string",
+            "description": "The description of the environmental hazard."
+          }
+        }
+      },
+      
+      "KnownPlanetEffect":{
+        "description": "A known planet effects, with a name and description.",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+            "galacticEffectId": {
+                "title": "GalacticEffectId",
+                "type": "integer"
+            },
+            "name": {
+                "title": "Name",
+                "type": "string"
+            },
+            "description": {
+                "title": "Description",
+                "type": "string"
+            }
+        }
+    },
+      "Position": {
+        "type": "object",
+        "description": "Represents a position on the galactic war map.",
+        "additionalProperties": false,
+        "properties": {
+          "x": {
+            "type": "number",
+            "description": "The X coordinate.",
+            "format": "double"
+          },
+          "y": {
+            "type": "number",
+            "description": "The Y coordinate.",
+            "format": "double"
+          }
+        }
+      },
+      "Event": {
+        "type": "object",
+        "description": "An ongoing event on a Planet.",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "The unique identifier of this event.",
+            "format": "int32"
+          },
+          "eventType": {
+            "type": "integer",
+            "description": "The type of event.",
+            "format": "int32"
+          },
+          "faction": {
+            "type": "string",
+            "description": "The faction that initiated the event."
+          },
+          "health": {
+            "type": "integer",
+            "description": "The health of the Event at the time of snapshot.",
+            "format": "int64"
+          },
+          "maxHealth": {
+            "type": "integer",
+            "description": "The maximum health of the Event at the time of snapshot.",
+            "format": "int64"
+          },
+          "startTime": {
+            "type": "string",
+            "description": "When the event started.",
+            "format": "date-time"
+          },
+          "endTime": {
+            "type": "string",
+            "description": "When the event will end.",
+            "format": "date-time"
+          },
+          "campaignId": {
+            "type": "integer",
+            "description": "The identifier of the Campaign linked to this event.",
+            "format": "int32"
+          },
+          "jointOperationIds": {
+            "type": "array",
+            "description": "A list of joint operation identifier linked to this event.",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        }
+      },
+      "Dispatch": {
+        "type": "object",
+        "description": "A message from high command to the players, usually updates on the status of the war effort.",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "The unique identifier of this dispatch.",
+            "format": "int32"
+          },
+          "published": {
+            "type": "string",
+            "description": "When the dispatch was published.",
+            "format": "date-time"
+          },
+          "type": {
+            "type": "integer",
+            "description": "The type of dispatch, purpose unknown.",
+            "format": "int32"
+          },
+          "message": {
+            "description": "The message this dispatch represents.",
+            "oneOf": [
+              {
+                "title": "String",
+                "type": "string"
+              },
+              {
+                "title": "LocalizedMessage",
+                "type": "object",
+                "description": "When passing in ivl-IV as Accept-Language, all available languages are returned",
+                "properties": {
+                  "en-US": {
+                    "type": "string",
+                    "description": "The message in en-US"
+                  },
+                  "de-DE": {
+                    "type": "string",
+                    "description": "The message in de-DE"
+                  },
+                  "es-ES": {
+                    "type": "string",
+                    "description": "The message in es-ES"
+                  },
+                  "ru-RU": {
+                    "type": "string",
+                    "description": "The message in ru-RU"
+                  },
+                  "fr-FR": {
+                    "type": "string",
+                    "description": "The message in fr-FR"
+                  },
+                  "it-IT": {
+                    "type": "string",
+                    "description": "The message in it-IT"
+                  },
+                  "pl-PL": {
+                    "type": "string",
+                    "description": "The message in pl-PL"
+                  },
+                  "zh-Hans": {
+                    "type": "string",
+                    "description": "The message in zh-Hans"
+                  },
+                  "zh-Hant": {
+                    "type": "string",
+                    "description": "The message in zh-Hant"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      
+      "SteamNews": {
+        "type": "object",
+        "description": "Represents a new article from Steam's news feed.",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The identifier assigned by Steam to this news item."
+          },
+          "title": {
+            "type": "string",
+            "description": "The title of the Steam news item."
+          },
+          "url": {
+            "type": "string",
+            "description": "The URL to Steam where this news item was posted."
+          },
+          "author": {
+            "type": "string",
+            "description": "The author who posted this message on Steam."
+          },
+          "content": {
+            "type": "string",
+            "description": "The message posted by Steam, currently in Steam's weird markdown format."
+          },
+          "publishedAt": {
+            "type": "string",
+            "description": "When this message was posted.",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  }
+}
