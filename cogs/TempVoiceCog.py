@@ -37,7 +37,7 @@ class VC_Dispatcher(discord.ui.View):
     @discord.ui.button(
         label="Make New Temp VC",
         style=discord.ButtonStyle.grey,
-        emoji="<:divericon:1270027381154910322>",
+        emoji="<:add:1199770854112890890>",
         custom_id="MakeNewTempVC:grey",
     )
     async def new_vc(self, interaction: discord.Interaction, button: discord.ui.Button):
