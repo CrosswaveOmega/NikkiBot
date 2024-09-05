@@ -17,7 +17,8 @@ class TempVC(commands.Cog):
         self.check_empty_vc.cancel()
 
     # Group: Server Configuration
-    @commands.group(name='serverconfig', invoke_without_command=True)
+    @commands.hybrid_group(name='serverconfig', invoke_without_command=True)
+    @commands.has_permissions(manage_channels=True)
     async def serverconfig(self, ctx):
         """Base command for server configuration."""
         await ctx.send("Use `>serverconfig <subcommand>` for configuration commands.")
@@ -39,7 +40,7 @@ class TempVC(commands.Cog):
             return
 
         permissions = category.permissions_for(ctx.guild.me)
-        if not (permissions.manage_channels and permissions.create_instant_invite and permissions.mute_members and 
+        if not (permissions.manage_channels and permissions.create_instant_invite and permissions.mute_members and
                 permissions.deafen_members and permissions.move_members and permissions.view_channel):
             await ctx.send("The bot does not have all necessary permissions for this category.")
             return
@@ -94,15 +95,15 @@ class TempVC(commands.Cog):
         if len(self.temporary_vc_list.get(ctx.guild.id, [])) >= config.max_channels:
             await ctx.send(f"Cannot create more than {config.max_channels} temporary voice channels.")
             return
-        
-        
+
+
 
         category = discord.utils.get(ctx.guild.categories, id=config.category_id)
         if category is None:
             await ctx.send("Category not found.")
             return
-        
-        
+
+
 
         # Create the voice channel with the stored max users
         vc_name = f"temporary-hellpod-{config.max_users}"
