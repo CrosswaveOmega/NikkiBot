@@ -26,7 +26,7 @@ class TempVC(commands.Cog):
     @serverconfig.command(name='remove_vc')
     async def remove_vc(self, ctx):
         """Command to remove a vc config for thsi server"""
-        config = await TempVCConfig.delete(ctx.guild.id)
+        config = await TempVCConfig.remove_temp_vc_config(ctx.guild.id)
         if config:
             await ctx.send(f"Removed temp vc config.")
         else:

@@ -671,7 +671,7 @@ class TempVCConfig(Base):
         async with DatabaseSingleton.get_async_session() as session:
             query = select(cls).where(cls.guild_id == guild_id)
             result = await session.execute(query)
-            value = query.scalars().first()
+            value = result.scalars().first()
             if value:
                 await session.delete(value)
                 await session.commit()
