@@ -107,7 +107,7 @@ def create_assignment_embed(
         if seconds > 0:
             rates = [i / seconds for i in diff]
         else:
-            rates = [i / seconds for i in diff]
+            rates = [i / 1 for i in diff]
 
     progress = data["progress"]
     embed.add_field(name="Objective", value=data["description"], inline=False)
