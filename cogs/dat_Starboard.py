@@ -579,6 +579,7 @@ class TempVCConfig(Base):
 
     max_users = Column(Integer, nullable=False, default=10)
     max_channels = Column(Integer, nullable=False, default=5)
+    target_name = Column(String, nullable=True, default="Temp-Voice")
 
     @classmethod
     async def get_temp_vc_config(cls, guild_id: int):
@@ -589,10 +590,10 @@ class TempVCConfig(Base):
             return result.scalar()
 
     @classmethod
-    async def add_temp_vc_config(cls, guild_id: int, category_id: int, max_users:int=10,max_channels:int=5):
+    async def add_temp_vc_config(cls, guild_id: int, category_id: int, max_users:int=10,max_channels:int=5, target_name:str="Temp-Voice"):
         """Adds a new configuration entry for the guild."""
         async with DatabaseSingleton.get_async_session() as session:
-            config = cls(guild_id=guild_id, category_id=category_id, max_users=max_users, max_channels=max_channels)
+            config = cls(guild_id=guild_id, category_id=category_id, max_users=max_users, max_channels=max_channels, target_name=target_name)
             session.add(config)
             await session.commit()
             return config
@@ -622,6 +623,22 @@ class TempVCConfig(Base):
                 await session.commit()
                 return config
             return None
+        
+
+    @classmethod
+    async def update_name(cls, guild_id: int, new_name: str):
+        """Updates the name for the guild's temporary VC configuration."""
+        async with DatabaseSingleton.get_async_session() as session:
+            query = select(cls).where(cls.guild_id == guild_id)
+            result = await session.execute(query)
+            config = result.scalar()
+            if config:
+                config.target_name = new_name
+                await session.commit()
+                return config
+            return None
+
+    
 
     @classmethod
     async def update_max_users(cls, guild_id: int, new_max_users: int):

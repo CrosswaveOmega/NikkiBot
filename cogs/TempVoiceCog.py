@@ -58,6 +58,16 @@ class TempVC(commands.Cog):
             await ctx.send(f"Updated max users for temporary VCs to {new_max_users}.")
         else:
             await ctx.send("No configuration found for this guild. Use `>serverconfig set` first.")
+    
+    @serverconfig.command(name='update_name')
+    async def update_vc_name(self, ctx, new_name: str):
+        """Command to update the name format of temporary VCs."""
+
+        config = await TempVCConfig.update_name(ctx.guild.id, new_name)
+        if config:
+            await ctx.send(f"Updated temporary VC name format to {new_name}.")
+        else:
+            await ctx.send("No configuration found for this guild. Use `>serverconfig set` first.")
 
     @serverconfig.command(name='update_max_channels')
     async def update_max_channels(self, ctx, new_max_channels: int):
@@ -134,10 +144,23 @@ class TempVC(commands.Cog):
             if not self.temporary_vc_list[guild_id]:
                 del self.temporary_vc_list[guild_id]
 
-    @commands.Cog.listener()
-    async def on_voice_state_update(self, member, before, after):
-        """Handles events when members join or leave voice channels."""
-        # No additional logic is needed here since we are already checking empty VCs in the task.
 
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member:discord.Member, before:discord.VoiceState, after:discord.VoiceState):
+        """Task that checks if the temporary VCs are empty and deletes them if they are."""
+        for guild_id, vc_ids in list(self.temporary_vc_list.items()):
+            guild = self.bot.get_guild(guild_id)
+            if guild:
+                for vc_id in vc_ids:
+                    vc = guild.get_channel(vc_id)
+                    if vc and isinstance(vc, discord.VoiceChannel):
+                        # Check if the channel is empty
+                        if len(vc.members) == 0:
+                            await vc.delete(reason="Temporary VC is empty.")
+                            self.temporary_vc_list[guild_id].remove(vc_id)
+
+            # If no more VCs exist for the guild, remove the guild entry
+            if not self.temporary_vc_list[guild_id]:
+                del self.temporary_vc_list[guild_id]
 async def setup(bot):
     await bot.add_cog(TempVC(bot))
