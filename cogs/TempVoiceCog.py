@@ -6,7 +6,7 @@ from cogs.dat_Starboard import (
     TempVCConfig,
 )
 
-
+from discord import app_commands
 class TempVC(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -17,26 +17,31 @@ class TempVC(commands.Cog):
         self.check_empty_vc.cancel()
 
     # Group: Server Configuration
-    @commands.hybrid_group(name='serverconfig', invoke_without_command=True,default_permissions=discord.Permissions(
+    
+    serverconfig = app_commands.Group(
+        name="hd2setup",
+        description="Commands for Helldivers 2 setup.",
+        guild_only=True,
+        default_permissions=discord.Permissions(
             manage_messages=True, manage_channels=True
-        ))
-    @commands.has_permissions(manage_channels=True)
-    async def serverconfig(self, ctx):
-        """Base command for server configuration."""
-        await ctx.send("Use `>serverconfig <subcommand>` for configuration commands.")
-
-    @serverconfig.command(name='remove_vc')
-    async def remove_vc(self, ctx):
+        ),
+    )
+    @serverconfig.command(name='remove_vc', description="Remove the temp vc settings from this server.")
+    async def remove_vc(self, interaction):
         """Command to remove a vc config for thsi server"""
+        
+        ctx: commands.Context = await self.bot.get_context(interaction)
         config = await TempVCConfig.remove_temp_vc_config(ctx.guild.id)
         if config:
             await ctx.send(f"Removed temp vc config.")
         else:
             await ctx.send("No configuration found for this guild. Use `>serverconfig set` first.")
 
-    @serverconfig.command(name='set')
-    async def set_vc_config(self, ctx, category: discord.CategoryChannel, max_users: int = 10, max_channels: int = 5,default_name:str="temp_vc"):
-        """Command to set the configuration for temporary VCs (category, max users, and max channels)."""
+    @serverconfig.command(name='set',description="Command to set the configuration for temporary VCs (category, max users, max channels, and name).")
+    async def set_vc_config(self, interaction, category: discord.CategoryChannel, max_users: int = 10, max_channels: int = 5,default_name:str="temp_vc"):
+        """"""
+        
+        ctx: commands.Context = await self.bot.get_context(interaction)
         if category is None:
             await ctx.send("Category not found.")
             return
@@ -52,9 +57,10 @@ class TempVC(commands.Cog):
         await ctx.send(f"Set the temporary VC config: category = {category.name}, max users = {max_users}, max channels = {max_channels}.")
 
     @serverconfig.command(name='update_max_users')
-    async def update_max_users(self, ctx, new_max_users: int):
+    async def update_max_users(self, interaction, new_max_users: int):
         """Command to update the max users allowed in temporary VCs."""
-
+        
+        ctx: commands.Context = await self.bot.get_context(interaction)
         config = await TempVCConfig.update_max_users(ctx.guild.id, new_max_users)
         if config:
             await ctx.send(f"Updated max users for temporary VCs to {new_max_users}.")
@@ -62,9 +68,10 @@ class TempVC(commands.Cog):
             await ctx.send("No configuration found for this guild. Use `>serverconfig set` first.")
     
     @serverconfig.command(name='update_name')
-    async def update_vc_name(self, ctx, new_name: str):
+    async def update_vc_name(self, interaction, new_name: str):
         """Command to update the name format of temporary VCs."""
-
+        
+        ctx: commands.Context = await self.bot.get_context(interaction)
         config = await TempVCConfig.update_name(ctx.guild.id, new_name)
         if config:
             await ctx.send(f"Updated temporary VC name format to {new_name}.")
@@ -72,9 +79,10 @@ class TempVC(commands.Cog):
             await ctx.send("No configuration found for this guild. Use `>serverconfig set` first.")
 
     @serverconfig.command(name='update_max_channels')
-    async def update_max_channels(self, ctx, new_max_channels: int):
+    async def update_max_channels(self, interaction, new_max_channels: int):
         """Command to update the max number of temporary VCs allowed."""
-
+        
+        ctx: commands.Context = await self.bot.get_context(interaction)
         if new_max_channels > 25:
             await ctx.send("The maximum allowed number of channels is 25.")
             return
