@@ -44,7 +44,8 @@ class VC_Dispatcher(discord.ui.View):
         
         #ctx: commands.Context = await self.bot.get_context(interaction)
         if interaction.guild:
-            await self.cog.create_temp_vc_2(interaction,interaction.guild)
+            output=await self.cog.create_temp_vc_2(interaction,interaction.guild)
+            await interaction.response.send_message(output,ephemeral=True)
 
         # await self.callback(interaction, button)
 
@@ -188,29 +189,23 @@ class TempVC(commands.Cog):
         """Command to display the dispatcher view that allows users to create temporary VCs."""
         await ctx.send("Click the button below to create a temporary voice channel.\n\nTemporary channels will be deleted after 5 minutes or everyone leaves.", view=VC_Dispatcher(self))
 
-    async def create_temp_vc_2(self, interaction: discord.Interaction,guild:discord.Guild):
+    async def create_temp_vc_2(self, interaction: discord.Interaction,guild:discord.Guild)->str:
         """Command to create a temporary voice channel in the stored category with stored max users."""
         # Fetch the category and configuration from the database
 
 
         config = await TempVCConfig.get_temp_vc_config(guild.id)
         if not config:
-            await interaction.response.send_message(
-                "Temporary VC configuration is not set. Use `>serverconfig set` to set it."
-            )
-            return
+            return "Temporary VC configuration is not set. Use `>serverconfig set` to set it."
 
         # Check if the guild has already reached the max channel limit
         if len(self.temporary_vc_list.get(guild.id, [])) >= config.max_channels:
-            await interaction.response.send_message(
-                f"Cannot create more than {config.max_channels} temporary voice channels."
-            )
-            return
+  
+            return f"Cannot create more than {config.max_channels} temporary voice channels."
 
         category = discord.utils.get(guild.categories, id=config.category_id)
         if category is None:
-            await interaction.response.send_message("Category not found.")
-            return
+            return "Category not found."
 
         # Create the voice channel with the stored max users
         if guild.id not in self.temporary_vc_list:
@@ -227,7 +222,7 @@ class TempVC(commands.Cog):
 
         self.temporary_vc_list[guild.id].append(temp_vc.id)
 
-        await interaction.response.send_message(f"Created temporary voice channel: {vc_name}")
+        return (f"Created temporary voice channel: {vc_name}")
 
 
     @vc.command(name="create")
