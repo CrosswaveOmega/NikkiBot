@@ -213,7 +213,9 @@ class TempVC(commands.Cog):
             return
 
         # Create the voice channel with the stored max users
-        vc_name = f"{config.target_name}-{config.max_users}"
+        if guild.id not in self.temporary_vc_list:
+            self.temporary_vc_list[guild.id] = []
+        vc_name = f"{config.target_name}-{len(self.temporary_vc_list[guild.id])+1}"
         temp_vc = await guild.create_voice_channel(
             vc_name,
             category=category,
@@ -222,8 +224,7 @@ class TempVC(commands.Cog):
         )
 
         # Add the new VC to the temporary list for this guild
-        if guild.id not in self.temporary_vc_list:
-            self.temporary_vc_list[guild.id] = []
+
         self.temporary_vc_list[guild.id].append(temp_vc.id)
 
         await interaction.response.send_message(f"Created temporary voice channel: {vc_name}")
