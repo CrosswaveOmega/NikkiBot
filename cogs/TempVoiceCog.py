@@ -321,6 +321,9 @@ class TempVC(commands.Cog):
         after: discord.VoiceState,
     ):
         """Task that checks if the temporary VCs are empty and deletes them if they are."""
+        self.bot.logs.info(
+                    f"Check Results: {str(member)}"
+                )
         if not member.guild:
             return
         guild = member.guild
