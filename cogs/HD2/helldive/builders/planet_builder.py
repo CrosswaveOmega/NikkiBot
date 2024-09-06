@@ -132,7 +132,7 @@ def build_planet_2(planetIndex, diveharder: DiveharderAll, statics: StaticAll):
     else:
         planetStat = PlanetStats(planetIndex=planetIndex)
     planet = build_planet(
-        statics,planetIndex, planetStatus, planetInfo, planetStat
+        statics,planetIndex, planetStatus, planetInfo, planetStat.galaxystatic
     )
     planet.sector_id = planetInfo.sector
 
