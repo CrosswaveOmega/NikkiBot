@@ -327,14 +327,19 @@ class TempVC(commands.Cog):
         if guild.id not in self.temporary_vc_list:
             return
         vc_ids = self.temporary_vc_list[guild.id][1]
-
+        self.bot.logs.info(
+                            f"Check Results: {str(vc_ids)}"
+                        )
         if guild:
             for vc_id in vc_ids[1]:
-                vc = guild.get_channel(vc_id)
+                vc = await guild.fetch_channel(vc_id)
                 if vc and isinstance(vc, discord.VoiceChannel):
                     # Check if the planet is more than 2 minutes old
-                    if (discord.utils.utcnow() - vc.created_at) > timedelta(minutes=1):
-
+                    timeval=(discord.utils.utcnow() - vc.created_at) 
+                    if timeval > timedelta(minutes=1):
+                        self.bot.logs.info(
+                            f"Check Results: {str(timeval)}"
+                        )
                         if len(vc.members) == 0:
                             await vc.delete(reason="Temporary VC is empty.")
                             self.temporary_vc_list[guild.id][1].remove(vc_id)
