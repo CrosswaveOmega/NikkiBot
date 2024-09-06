@@ -17,7 +17,10 @@ def sector_states(war_status: WarStatus, statics: StaticAll) -> List[SectorState
     sect = {}
     if war_status.planetStatus:
         for s in war_status.planetStatus:
-            sector = planets[str(s.index)].sector
+            planet=planets.get(int(s.index),None)
+            if not planet:
+                continue
+            sector = planet.sector
             if not sector in sect:
                 sect[sector] = SectorStates(
                     retrieved_at=war_status.retrieved_at, name=sector, sector=sector
