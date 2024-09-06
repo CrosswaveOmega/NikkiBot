@@ -279,8 +279,8 @@ class TempVC(commands.Cog):
         # Iterate through all voice channels in the category
         for vc in category.voice_channels:
             # If the channel has members, add it to the vc_list and skip deletion
-            if config.name not in vc.name:
-                await ctx.send(f"Skipping {vc.name} because it doesn't match {config.name}")
+            if config.target_name not in vc.name:
+                await ctx.send(f"Skipping {vc.name} because it doesn't match {config.target_name}")
                 continue
             if len(vc.members) > 0:
                 if vc.id not in self.temporary_vc_list[guild.id][1]:
