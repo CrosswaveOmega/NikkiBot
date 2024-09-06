@@ -304,12 +304,10 @@ class TempVC(commands.Cog):
                     vc = guild.get_channel(vc_id)
                     if vc and isinstance(vc, discord.VoiceChannel):
                         # Check if the planet is more than 2 minutes old
-                        if (discord.utils.utcnow() - vc.created_at) < timedelta(minutes=2):
-                            continue
-                        # Check if the channel is empty
-                        if len(vc.members) == 0:
-                            await vc.delete(reason="Temporary VC is empty.")
-                            self.temporary_vc_list[guild_id][1].remove(vc_id)
+                        if (discord.utils.utcnow() - vc.created_at) > timedelta(minutes=1):
+                            if len(vc.members) == 0:
+                                await vc.delete(reason="Temporary VC is empty.")
+                                self.temporary_vc_list[guild_id][1].remove(vc_id)
 
             # If no more VCs exist for the guild, remove the guild entry
             if not self.temporary_vc_list[guild_id][1]:
@@ -335,12 +333,11 @@ class TempVC(commands.Cog):
                 vc = guild.get_channel(vc_id)
                 if vc and isinstance(vc, discord.VoiceChannel):
                     # Check if the planet is more than 2 minutes old
-                    if (discord.utils.utcnow() - vc.created_at) < timedelta(minutes=2):
-                        continue
-                    # Check if the channel is empty
-                    if len(vc.members) == 0:
-                        await vc.delete(reason="Temporary VC is empty.")
-                        self.temporary_vc_list[guild.id][1].remove(vc_id)
+                    if (discord.utils.utcnow() - vc.created_at) > timedelta(minutes=1):
+
+                        if len(vc.members) == 0:
+                            await vc.delete(reason="Temporary VC is empty.")
+                            self.temporary_vc_list[guild.id][1].remove(vc_id)
 
         # If no more VCs exist for the guild, remove the guild entry
         if not self.temporary_vc_list[guild.id][1]:
