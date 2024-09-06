@@ -9,10 +9,10 @@ from .Event import Event
 from .Hazard import Hazard
 from .Position import Position
 from .Statistics import Statistics
-from .PlanetStatus import PlanetStatus
-from .PlanetInfo import PlanetInfo
+from .Base.PlanetStatus import PlanetStatus
+from .Base.PlanetInfo import PlanetInfo
 from .Planet import Planet
-from .PlanetStats import PlanetStats
+from .Base.PlanetStats import PlanetStats
 from .Effects import KnownPlanetEffect
 
 from ..constants import task_types, value_types, faction_names, samples
@@ -69,62 +69,10 @@ class GalaxyStatic(BaseApiModel):
 
     planets: Optional[Dict[int, PlanetStatic]] = Field(alias="planets", default=None)
 
-    def build_planet(
-        self,
-        index: int,
-        planetStatus: PlanetStatus,
-        planetInfo: PlanetInfo,
-        stats: PlanetStats,
-    ) -> Planet:
-        planet_base = self.planets.get(index, None)
-        if not planet_base:
-            return None
-        biome = self.biomes.get(planet_base.biome, None)
-        env = [self.environmentals.get(e, None) for e in planet_base.environmentals]
-        stats = Statistics(
-            retrieved_at=planetStatus.retrieved_at,
-            playerCount=planetStatus.players,
-            missionsWon=stats.missionsWon,
-            missionsLost=stats.missionsLost,
-            missionTime=stats.missionTime,
-            terminidKills=stats.bugKills,
-            automatonKills=stats.automatonKills,
-            illuminateKills=stats.illuminateKills,
-            bulletsFired=stats.bulletsFired,
-            bulletsHit=stats.bulletsHit,
-            timePlayed=stats.timePlayed,
-            deaths=stats.deaths,
-            revives=stats.revives,
-            friendlies=stats.friendlies,
-            missionSuccessRate=stats.missionSuccessRate,
-            accuracy=stats.accurracy,
-        )
-        pos = planetInfo.position
-        # print(index,planetStatus.retrieved_at)
-        name = planet_base.name
-        if "en-US" in planet_base.names:
-            name = planet_base.names.get("en-US", planet_base.name)
-        planet = Planet(
-            retrieved_at=planetStatus.retrieved_at,
-            index=index,
-            name=name,
-            sector=planet_base.sector,
-            biome=biome,
-            hazards=env,
-            position=Position(x=pos.x, y=pos.y),
-            waypoints=planetInfo.waypoints,
-            maxHealth=planetInfo.maxHealth,
-            health=planetStatus.health,
-            disabled=planetInfo.disabled,
-            initialOwner=faction_names.get(planetInfo.initialOwner, "???"),
-            currentOwner=faction_names.get(planetStatus.owner, "???"),
-            regenPerSecond=planetStatus.regenPerSecond,
-            statistics=stats,
-        )
-        return planet
 
 
 class StaticAll(BaseApiModel):
+    '''All the static models in one package.'''
     galaxystatic: Optional[GalaxyStatic] = Field(alias="galaxystatic", default=None)
 
     effectstatic: Optional[EffectStatic] = Field(alias="effectstatic", default=None)

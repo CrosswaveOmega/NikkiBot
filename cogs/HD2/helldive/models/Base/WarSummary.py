@@ -1,7 +1,7 @@
 from typing import *
 
 from pydantic import Field
-from .ABC.model import BaseApiModel
+from ..ABC.model import BaseApiModel
 
 from .GalaxyStats import GalaxyStats
 from .PlanetStats import PlanetStats

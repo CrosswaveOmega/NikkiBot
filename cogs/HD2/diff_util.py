@@ -4,6 +4,7 @@ from typing import *
 logs = logging.getLogger("TCLogger")
 
 from .helldive.models.ABC.model import BaseApiModel
+from .helldive.builders import *
 
 
 from pydantic import Field
@@ -234,7 +235,7 @@ async def process_planet_attacks(
 
 
 async def detect_loggable_changes(
-    old: BaseApiModel, new: BaseApiModel, QueueAll: asyncio.Queue
+    old: DiveharderAll, new: DiveharderAll, QueueAll: asyncio.Queue, statics: StaticAll
 ) -> Tuple[dict, list]:
     out = {
         "campaign": {"new": {}, "changes": {}, "old": {}},
@@ -367,8 +368,8 @@ async def detect_loggable_changes(
         ["position"],
     )
     superlist += await process_planet_events(
-        new.status.sector_states(),
-        old.status.sector_states(),
+        sector_states(new.status, statics),
+        sector_states(old.status, statics),
         "sectors",
         "name",
         QueueAll,

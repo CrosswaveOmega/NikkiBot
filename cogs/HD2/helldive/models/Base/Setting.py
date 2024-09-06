@@ -1,7 +1,7 @@
 from typing import *
 
 from pydantic import Field
-from .ABC.model import BaseApiModel
+from ..ABC.model import BaseApiModel
 
 from .Reward import Reward
 from .Task import Task

@@ -1651,7 +1651,7 @@
       },
       
       "KnownPlanetEffect":{
-        "description": "A known planet effects, with a name and description.",
+        "description": "A known planet effect, with a name and description.",
         "type": "object",
         "additionalProperties": false,
         "properties": {

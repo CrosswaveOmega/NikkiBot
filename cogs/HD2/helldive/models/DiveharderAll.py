@@ -5,13 +5,13 @@ from pydantic import Field
 from .ABC.model import BaseApiModel
 
 
-from .WarStatus import WarStatus
-from .WarInfo import WarInfo
-from .WarSummary import WarSummary
-from .Assignment import Assignment
-from .NewsFeedItem import NewsFeedItem
-from .SteamNews import SteamNewsRaw
-from .WarId import WarId
+from .Base.WarStatus import WarStatus
+from .Base.WarInfo import WarInfo
+from .Base.WarSummary import WarSummary
+from .Base.Assignment import Assignment
+from .Base.NewsFeedItem import NewsFeedItem
+from .Base.SteamNewsRaw import SteamNewsRaw
+from .Base.WarId import WarId
 
 
 class DiveharderAll(BaseApiModel):

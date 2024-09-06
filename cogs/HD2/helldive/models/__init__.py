@@ -11,26 +11,11 @@ from .Statistics import *
 from .SteamNews import *
 from .Task2 import *
 from .War import *
-from .GlobalEvent import *
-from .JointOperation import *
-from .Campaign import *
-from .PlanetAttack import *
-from .PlanetEvent import *
-from .PlanetStatus import *
-from .WarStatus import *
-from .HomeWorld import *
-from .PlanetCoordinates import *
-from .PlanetInfo import *
-from .WarInfo import *
-
-from .Assignment import *
-from .DiveharderAll import *
-from .GalaxyStats import *
-from .PlanetStats import *
-from .Reward import *
-from .Setting import *
-from .Task import *
-from .WarId import *
-from .WarSummary import *
 
 from .GalaxyStatic import *
+
+from .DiveharderAll import *
+from .SectorState import *
+
+
+from .Base import *

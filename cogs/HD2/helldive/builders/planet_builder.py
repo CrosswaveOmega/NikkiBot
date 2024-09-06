@@ -12,6 +12,75 @@ from ..constants import task_types, value_types, faction_names, samples
 
 from .effect_builder import build_planet_effect
 
+def build_planet(
+    gstatic: GalaxyStatic,
+    index: int,
+    planetStatus: PlanetStatus,
+    planetInfo: PlanetInfo,
+    stats: PlanetStats,
+) -> Planet:
+    """
+    Builds a new Planet object using the provided GalaxyStatic,
+    PlanetStatus, PlanetInfo, and PlanetStats fields.
+
+    Args:
+        gstatic (GalaxyStatic): Static information about the galaxy.
+        index (int): Index of the planet within the galaxy.
+        planetStatus (PlanetStatus): Current status information of the planet.
+        planetInfo (PlanetInfo): Static information about the planet.
+        stats (PlanetStats): Statistical data related to the planet.
+
+    Returns:
+        Planet: The newly constructed Planet object or None if the planet
+        doesn't exist in the provided galaxy static information.
+    """
+    planet_base = gstatic.planets.get(index, None)
+    if not planet_base:
+        return None
+    biome = gstatic.biomes.get(planet_base.biome, None)
+    env = [gstatic.environmentals.get(e, None) for e in planet_base.environmentals]
+    stats = Statistics(
+        retrieved_at=planetStatus.retrieved_at,
+        playerCount=planetStatus.players,
+        missionsWon=stats.missionsWon,
+        missionsLost=stats.missionsLost,
+        missionTime=stats.missionTime,
+        terminidKills=stats.bugKills,
+        automatonKills=stats.automatonKills,
+        illuminateKills=stats.illuminateKills,
+        bulletsFired=stats.bulletsFired,
+        bulletsHit=stats.bulletsHit,
+        timePlayed=stats.timePlayed,
+        deaths=stats.deaths,
+        revives=stats.revives,
+        friendlies=stats.friendlies,
+        missionSuccessRate=stats.missionSuccessRate,
+        accuracy=stats.accurracy,
+    )
+    pos = planetInfo.position
+    # print(index,planetStatus.retrieved_at)
+    name = planet_base.name
+    if "en-US" in planet_base.names:
+        name = planet_base.names.get("en-US", planet_base.name)
+    planet = Planet(
+        retrieved_at=planetStatus.retrieved_at,
+        index=index,
+        name=name,
+        sector=planet_base.sector,
+        biome=biome,
+        hazards=env,
+        hash=planetInfo.settingsHash,
+        position=Position(x=pos.x, y=pos.y),
+        waypoints=planetInfo.waypoints,
+        maxHealth=planetInfo.maxHealth,
+        health=planetStatus.health,
+        disabled=planetInfo.disabled,
+        initialOwner=faction_names.get(planetInfo.initialOwner, "???"),
+        currentOwner=faction_names.get(planetStatus.owner, "???"),
+        regenPerSecond=planetStatus.regenPerSecond,
+        statistics=stats,
+    )
+    return planet
 
 def check_compare_value(key, value, target: List[Dict[str, Any]]):
     for s in target:

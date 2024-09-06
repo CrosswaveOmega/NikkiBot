@@ -1,7 +1,7 @@
 from typing import *
 import datetime
 from pydantic import Field
-from .ABC.model import BaseApiModel, HealthMixin
+from ..ABC.model import BaseApiModel, HealthMixin
 
 
 class GlobalEvent(BaseApiModel):

@@ -177,9 +177,11 @@ class ApiStatus:
             self.warall = nowv
         if nowv:
             if current:
-                diff = await detect_loggable_changes(current, nowv, Queue)
+                diff = await detect_loggable_changes(current, nowv, Queue, self.statics)
                 if PlanetQueue:
-                    await detect_loggable_changes_planet(current, nowv, PlanetQueue)
+                    await detect_loggable_changes_planet(
+                        current, nowv, PlanetQueue, self.statics
+                    )
                 if diff:
                     self.build_planets()
                 return diff, nowv

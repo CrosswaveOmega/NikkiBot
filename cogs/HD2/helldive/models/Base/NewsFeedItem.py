@@ -1,8 +1,8 @@
 from typing import *
 
 from pydantic import Field
-from .ABC.model import BaseApiModel
-from .ABC.utils import hdml_parse
+from ..ABC.model import BaseApiModel
+from ..ABC.utils import hdml_parse
 import re
 
 
