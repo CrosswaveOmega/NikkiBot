@@ -242,7 +242,7 @@ class TempVC(commands.Cog):
 
         # Add the new VC to the temporary list for this guild
 
-        self.temporary_vc_list[guild.id][1].append((temp_vc.id,discord.utils.utcnow()))
+        self.temporary_vc_list[guild.id][1].append(temp_vc.id)
 
         return f"Created temporary voice channel: {vc_name}"
 
@@ -340,7 +340,7 @@ class TempVC(commands.Cog):
                     # Check if the planet is more than 2 minutes old
                     timeval=(discord.utils.utcnow() - vc.created_at) 
                     if timeval > timedelta(minutes=1):
-                        self.bot.logs.warning(
+                        self.bot.logs.info(
                             f"Check Results: {str(timeval)}"
                         )
                         if len(vc.members) == 0:
