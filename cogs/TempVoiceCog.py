@@ -334,7 +334,7 @@ class TempVC(commands.Cog):
                             f"Check Results: {str(vc_ids)}"
                         )
         if guild:
-            for vc_id in vc_ids[1]:
+            for vc_id in vc_ids:
                 vc = await guild.fetch_channel(vc_id)
                 if vc and isinstance(vc, discord.VoiceChannel):
                     # Check if the planet is more than 2 minutes old
