@@ -321,7 +321,7 @@ class TempVC(commands.Cog):
         after: discord.VoiceState,
     ):
         """Task that checks if the temporary VCs are empty and deletes them if they are."""
-        self.bot.logs.info(
+        self.bot.logs.warning(
                     f"Check Results: {str(member)}"
                 )
         if not member.guild:
@@ -330,7 +330,7 @@ class TempVC(commands.Cog):
         if guild.id not in self.temporary_vc_list:
             return
         vc_ids = self.temporary_vc_list[guild.id][1]
-        self.bot.logs.info(
+        self.bot.logs.warning(
                             f"Check Results: {str(vc_ids)}"
                         )
         if guild:
@@ -340,7 +340,7 @@ class TempVC(commands.Cog):
                     # Check if the planet is more than 2 minutes old
                     timeval=(discord.utils.utcnow() - vc.created_at) 
                     if timeval > timedelta(minutes=1):
-                        self.bot.logs.info(
+                        self.bot.logs.warning(
                             f"Check Results: {str(timeval)}"
                         )
                         if len(vc.members) == 0:
