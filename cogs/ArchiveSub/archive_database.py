@@ -277,7 +277,7 @@ class ChannelSep(ArchiveBase):
         self.message_count = count
 
     @staticmethod
-    def add_channel_sep_if_needed(message, chansepid, no_check=True):
+    def add_channel_sep_if_needed(message, chansepid, no_check=False):
         """if there's a new channel sep id, create a new channel sep.
         otherwise, return the channel sep id passed in."""
         session: Session = DatabaseSingleton.get_session()
