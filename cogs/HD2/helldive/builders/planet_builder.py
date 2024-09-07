@@ -12,6 +12,7 @@ from ..constants import task_types, value_types, faction_names, samples
 
 from .effect_builder import build_planet_effect
 
+
 def build_planet(
     gstatic: GalaxyStatic,
     index: int,
@@ -82,6 +83,7 @@ def build_planet(
     )
     return planet
 
+
 def check_compare_value(key, value, target: List[Dict[str, Any]]):
     for s in target:
         if s[key] == value:
@@ -117,7 +119,19 @@ def get_time(diveharder: DiveharderAll) -> dt.datetime:
     return relative_game_start
 
 
-def build_planet_2(planetIndex, diveharder: DiveharderAll, statics: StaticAll):
+def build_planet_2(planetIndex: int, diveharder: DiveharderAll, statics: StaticAll):
+    """
+    Builds a Planet object for the specified planetIndex using data
+    from the diveharder status and static galaxy information.
+
+    Args:
+        planetIndex (int): The index of the planet to build.
+        diveharder (DiveharderAll): Operational game state and status data.
+        statics (StaticAll): Static information about the game's universe.
+
+    Returns:
+        Planet: The constructed planet for the given index.
+    """
     status = diveharder.status
     info = diveharder.war_info
     if diveharder.planet_stats is not None:
@@ -131,22 +145,27 @@ def build_planet_2(planetIndex, diveharder: DiveharderAll, statics: StaticAll):
             planetStat = PlanetStats(planetIndex=planetIndex)
     else:
         planetStat = PlanetStats(planetIndex=planetIndex)
+
+    # Build Planet.
     planet = build_planet(
-        statics.galaxystatic,planetIndex, planetStatus, planetInfo, planetStat
+        statics.galaxystatic, planetIndex, planetStatus, planetInfo, planetStat
     )
     planet.sector_id = planetInfo.sector
 
     planet_effect_list = []
     planet_attack_list = []
+    # Build Effects
     for effect in status.planetActiveEffects:
         if effect.index == planetIndex:
             effects = build_planet_effect(statics.effectstatic, effect.galacticEffectId)
-            # print(effect,effects)
             planet_effect_list.append(effects)
+
+    # Build Attacks
     for attack in status.planetAttacks:
         if attack.source == planetIndex:
             planet_attack_list.append(attack.target)
 
+    # Build Events
     event: PlanetEvent = check_compare_value(
         "planetIndex", planetIndex, status.planetEvents
     )
@@ -169,3 +188,23 @@ def build_planet_2(planetIndex, diveharder: DiveharderAll, statics: StaticAll):
         planet.event = newevent
     return planet
     pass
+    pass
+
+
+def build_all_planets(warall: DiveharderAll, statics: StaticAll) -> Dict[int, Planet]:
+    """
+    Builds a list of all planets by iterating over the galaxy's static planet data
+    and invoking build_planet_2 for each planet.
+
+    Args:
+        warall (DiveharderAll): Operational game state and status data.
+        statics (StaticAll): Static information about the game's universe.
+
+    Returns:
+        dict: A dictionary mapping planet indices to Planet objects.
+    """
+    planet_data = {}
+    for i, v in statics.galaxystatic.planets.items():
+        planet = build_planet_2(i, warall, statics)
+        planet_data[i] = planet
+    return planet_data

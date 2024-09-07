@@ -11,7 +11,7 @@ from .PlanetEvent import PlanetEvent
 from .PlanetStatus import PlanetStatus
 from .GlobalEvent import GlobalEvent
 from ..Position import Position
-from ..Effects import PlanetActiveEffects
+from .Effects import PlanetActiveEffects
 
 
 class WarStatus(BaseApiModel):

@@ -10,7 +10,6 @@ from .ABC.utils import (
     extract_timestamp as et,
     seconds_to_time_stamp as sts,
 )
-from discord.utils import format_dt as fdt
 
 
 class Statistics(BaseApiModel):

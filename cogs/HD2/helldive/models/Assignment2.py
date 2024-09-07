@@ -23,6 +23,10 @@ class Assignment2(BaseApiModel):
 
     """
 
+    type: Optional[int] = Field(alias="type", default=None)
+
+    flags: Optional[int] = Field(alias="flags", default=None)
+
     id: Optional[int] = Field(alias="id", default=None)
 
     progress: Optional[List[int]] = Field(alias="progress", default=None)
@@ -75,7 +79,7 @@ class Assignment2(BaseApiModel):
         exptime = fdt(et(self.expiration), "f")
         for e, task in enumerate(self.tasks):
             task_type, taskdata = task.taskAdvanced()
-            tasks += task.task_str(progress[e], task_type, taskdata, e, planets) + "\n"
+            tasks += task.task_str(progress[e], e, planets) + "\n"
         tex = f"{self.briefing},by {exptime}\n{tasks}"
 
         return tex

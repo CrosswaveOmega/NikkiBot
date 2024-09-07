@@ -23,7 +23,6 @@ from .ABC.utils import (
     changeformatif as cfi,
     extract_timestamp as et,
 )
-from discord.utils import format_dt as fdt
 
 
 class EffectStatic(BaseApiModel):
@@ -70,9 +69,9 @@ class GalaxyStatic(BaseApiModel):
     planets: Optional[Dict[int, PlanetStatic]] = Field(alias="planets", default=None)
 
 
-
 class StaticAll(BaseApiModel):
-    '''All the static models in one package.'''
+    """All the static models in one package."""
+
     galaxystatic: Optional[GalaxyStatic] = Field(alias="galaxystatic", default=None)
 
     effectstatic: Optional[EffectStatic] = Field(alias="effectstatic", default=None)

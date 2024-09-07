@@ -8,10 +8,7 @@ from ..ABC.utils import (
     changeformatif as cfi,
     extract_timestamp as et,
 )
-from discord.utils import format_dt as fdt
-
-
-rewards = {897894480: 1, 3608481516: 2, 3481751602: 3}
+from ...constants import rewards
 
 
 class Reward(BaseApiModel):

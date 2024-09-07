@@ -28,6 +28,13 @@ class BaseApiModel(BaseModel):
         """
         return getattr(self, attr)
 
+    def set(self, attr, new=None):
+        if not hasattr(self, attr):
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no attribute '{attr}'"
+            )
+        setattr(self, attr, new)
+
     def get(self, attr, default=None):
         if not hasattr(self, attr):
             return default

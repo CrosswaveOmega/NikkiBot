@@ -1,5 +1,6 @@
 from .Assignment import *
 from .Campaign import *
+from .Effects import *
 from .GalaxyStats import *
 from .GlobalEvent import *
 from .HomeWorld import *

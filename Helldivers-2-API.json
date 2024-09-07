@@ -125,6 +125,8 @@
         "tags": [
           "direct"
         ],
+        
+        "parameters": [],
         "summary": "Retrieves a list of news messages from Super Earth.",
         "operationId": "GetDirectApiNewsFeed801",
         "responses": {
@@ -176,6 +178,48 @@
           }
         }
       }
+    },
+    "/api/WarSeason/801/TimeSinceStart": {
+      "get": {
+        "description": "get seconds since the start of the war",
+        "operationId": "GetDirectApiWarSeason801TimeSinceStart",
+        "parameters": [
+          {
+            "name": "maxEntries",
+            "in": "query",
+            "description": "Max entries to get from the API (max 2147483647)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 2147483647
+            }
+          },
+          {
+            "name": "fromTimestamp",
+            "in": "query",
+            "description": "Retrieve entries published after this wartime.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeSinceStart"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -186,6 +230,17 @@
         "additionalProperties": false,
         "properties": {
           "id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "TimeSinceStart": {
+        "type": "object",
+        "description": "The number of seconds since the start of the war",
+        "additionalProperties": false,
+        "properties": {
+          "secondsSinceStart": {
             "type": "integer",
             "format": "int32"
           }

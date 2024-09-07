@@ -22,4 +22,3 @@ class SteamNews(BaseApiModel):
     content: Optional[str] = Field(alias="content", default=None)
 
     publishedAt: Optional[str] = Field(alias="publishedAt", default=None)
-

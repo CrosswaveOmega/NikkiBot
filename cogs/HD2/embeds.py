@@ -113,17 +113,13 @@ def create_assignment_embed(
     embed.add_field(name="Objective", value=data["description"], inline=False)
     tasks = ""
     for e, task in enumerate(data.tasks):
-        task_type, taskdata = task.taskAdvanced()
         chg, projected = None, None
         prog = ""
         if diff and isinstance(diff, list):
             if e < len(diff) - 1:
                 chg = diff[e]
                 projected = progress[e] + (rates[e] * time_remaining)
-        tasks += (
-            task.task_str(progress[e], task_type, taskdata, e, planets, chg, projected)
-            + "\n"
-        )
+        tasks += task.task_str(progress[e], e, planets, chg, projected) + "\n"
 
     embed.add_field(name="Tasks", value=tasks, inline=False)
     if data.rewards:

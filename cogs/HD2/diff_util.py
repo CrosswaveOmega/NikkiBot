@@ -388,7 +388,7 @@ async def detect_loggable_changes(
 
 
 async def detect_loggable_changes_planet(
-    old: BaseApiModel, new: BaseApiModel, QueueAll: asyncio.Queue, statics:StaticAll
+    old: BaseApiModel, new: BaseApiModel, QueueAll: asyncio.Queue, statics: StaticAll
 ) -> Tuple[dict, list]:
 
     batch = int(new.retrieved_at.timestamp())

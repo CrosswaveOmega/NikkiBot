@@ -214,14 +214,10 @@ class ApiStatus:
             attempt_count = 0
             while attempt_count < maxattempt:
                 try:
-                    as1 = await GetApiV1AssignmentsAll(api_config_override=self.client)
-                    assignments = []
-                    for a in as1:
-                        for m in self.warall.major_order:
-                            print(m.id32)
-                            if m.id32 == a.id:
-                                a.rewards = m.setting.rewards
-                        assignments.append(a)
+                    # as1 = await GetApiV1AssignmentsAll(api_config_override=self.client)
+                    assignments = build_all_assignments(
+                        self.warall.major_order, self.warall
+                    )
                     break
                 except Exception as e:
                     attempt_count += 1
@@ -233,11 +229,7 @@ class ApiStatus:
 
             while attempt_count < maxattempt:
                 try:
-                    campaigns = await GetApiV1CampaignsAll(
-                        api_config_override=self.client
-                    )
-                    for c in campaigns:
-                        c.planet = self.planets.get(c.planet.index, c.planet)
+                    campaigns = build_all_campaigns(self.planets, self.warall.status)
                     break
                 except Exception as e:
                     attempt_count += 1
@@ -255,9 +247,9 @@ class ApiStatus:
 
         self.handle_data(assignments, self.assignments, "assignment")
         self.handle_data(campaigns, self.campaigns, "campaign")
-        for l in self.campaigns.values():
-            camp = l.get_first()
-            self.planets[camp.planet.index] = camp.planet
+        # for l in self.campaigns.values():
+        #     camp = l.get_first()
+        #     self.planets[camp.planet.index] = camp.planet
 
         dispatches = await GetApiV1DispatchesAll(api_config_override=self.client)
         if dispatches is not None:
@@ -271,7 +263,7 @@ class ApiStatus:
         for i, v in self.statics.galaxystatic.planets.items():
             planet = build_planet_2(i, self.warall, self.statics)
             planet_data[i] = planet
-        self.planets = planet_data
+        self.planets = build_all_planets(self.warall, self.statics)
 
     def handle_data(
         self,
@@ -473,13 +465,14 @@ biome_map = {
     "tundra": 10,
     "supercolony": 11,
     "blackhole": 12,
-    "swamp": 13,
-    "rainyjungle": 14,
+    "wasteland": 13,
+    "swamp": 14,
     "desolate": 15,
     "crimsonmoor": 16,
     "canyon": 17,
     "mesa": 18,
     "toxic": 19,
+    "haunted_swamp": 20,
 }
 
 
