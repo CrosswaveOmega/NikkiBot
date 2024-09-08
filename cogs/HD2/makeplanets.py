@@ -337,7 +337,7 @@ for image_path in image_paths:
     all_colors[filename_without_extension] = distinct_colors
     has_c.append(filename_without_extension)
 
-all_colors["rainyjungle"] = np.array(
+all_colors["swamp_base"] = np.array(
     [
         [49, 93, 140],
         [89, 139, 169],

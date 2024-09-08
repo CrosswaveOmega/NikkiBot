@@ -171,7 +171,7 @@ def create_planet_embed(
     embed.set_author(name=f"Planet Index {planet_index}")
     if data.biome:
         embed.add_field(
-            name=f"Biome:{data.biome.name}",
+            name=f"Biome: {data.biome.name}",
             value=f"{data.biome.description}",
             inline=False,
         )
