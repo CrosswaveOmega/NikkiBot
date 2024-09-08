@@ -1,3 +1,4 @@
+import json
 from typing import Literal
 import discord
 import asyncio
@@ -50,7 +51,6 @@ class Feedback(discord.ui.Modal, title="Feedback"):
                 icon_url=interaction.user.avatar.url,
             )
             mychannel = self.bot.config.get("optional", "feedback_channel_id")
-            gui.dprint("ok")
             if mychannel:
                 chan = self.bot.get_channel(int(mychannel))
                 await chan.send(embed=embed)

@@ -209,7 +209,7 @@ class TempVC(commands.Cog):
     @commands.group(name="vc", invoke_without_command=True)
     async def vc(self, ctx):
         """Base command for managing temporary voice channels."""
-        await ctx.send("Use `!vc <subcommand>` for voice channel management.")
+        await ctx.send("Use `>vc <subcommand>` for voice channel management.")
 
     @vc.command(name="dispatch")
     async def make_dispatch(self, ctx: commands.Context):
@@ -315,6 +315,7 @@ class TempVC(commands.Cog):
                     self.temporary_vc_list[guild.id][1].append(vc.id)
             # If the channel is empty, delete it and remove it from the temporary list
             else:
+                outval+=f"Removing {vc.name}.\n"
                 await vc.delete(reason="Temporary VC is empty.")
 
                 if vc.id in self.temporary_vc_list[guild.id][1]:
