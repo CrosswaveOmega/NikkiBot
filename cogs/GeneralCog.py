@@ -13,6 +13,59 @@ from utility.embed_paginator import pages_of_embeds
 from bot import TC_Cog_Mixin, super_context_menu
 
 
+
+
+class Feedback(discord.ui.Modal, title="Feedback"):
+    def __init__(self, bot, **kwargs):
+        super().__init__(**kwargs)
+        self.bot = bot
+
+    name = discord.ui.TextInput(
+        label="title",
+        placeholder="Please title your suggestion.",
+        required=True,
+        max_length=256,
+    )
+
+    feedback = discord.ui.TextInput(
+        label="description",
+        style=discord.TextStyle.paragraph,
+        placeholder="Type your feedback here...",
+        required=True,
+        max_length=1024,
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        with open("feedback.txt", "a") as f:
+            feedback_dict = {"name": self.name.value, "feedback": self.feedback.value}
+
+            f.write(json.dumps(feedback_dict) + "\n")
+            embed = discord.Embed(
+                title=self.name.value,
+                description=self.feedback.value,
+                color=discord.Color.random(),
+            )
+            embed.set_author(
+                name=f"Sent by: {interaction.user.name}",
+                icon_url=interaction.user.avatar.url,
+            )
+            mychannel = self.bot.config.get("optional", "feedback_channel_id")
+            gui.dprint("ok")
+            if mychannel:
+                chan = self.bot.get_channel(int(mychannel))
+                await chan.send(embed=embed)
+        await interaction.response.send_message(
+            f"Thanks for your feedback!  I will save it to my feedback file.",
+            ephemeral=True,
+        )
+
+    async def on_error(
+        self, interaction: discord.Interaction, error: Exception
+    ) -> None:
+        await interaction.response.send_message(
+            "Oops! Something went wrong.", ephemeral=True
+        )
+
 class PersistentView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)

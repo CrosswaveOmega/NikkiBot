@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import Optional
 import discord
 from discord.ext import commands, tasks
 import asyncio
@@ -46,6 +47,18 @@ class VC_Dispatcher(discord.ui.View):
         if interaction.guild:
             output = await self.cog.create_temp_vc_2(interaction.guild)
             await interaction.response.send_message(output, ephemeral=True)
+    @discord.ui.button(
+        label="Remove Temp VCs",
+        style=discord.ButtonStyle.grey,
+        emoji="<:trash:1282387274209689731>",
+        custom_id="RemoveTempVCs:grey",
+    )
+    async def clear_vc(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+        # ctx: commands.Context = await self.bot.get_context(interaction)
+        if interaction.guild:
+            output = await self.cog.clear_unused_2(interaction.guild)
+            await interaction.response.send_message(output, ephemeral=True)
 
         # await self.callback(interaction, button)
 
@@ -54,6 +67,7 @@ class TempVC(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.temporary_vc_list = {}  # Dictionary to track guild's temporary VCs
+        self.temp_vc_clear ={}
         self.temp_vc_num = {}
         self.check_empty_vc.start()  # Start the task to check empty voice channels
 
@@ -205,10 +219,11 @@ class TempVC(commands.Cog):
             view=VC_Dispatcher(self),
         )
 
-    async def create_temp_vc_2(self, guild: discord.Guild) -> str:
+    async def create_temp_vc_2(self, guild: discord.Guild,maxval:Optional[int]=None) -> str:
         """Command to create a temporary voice channel in the stored category with stored max users."""
         # Fetch the category and configuration from the database
 
+            
         config = await TempVCConfig.get_temp_vc_config(guild.id)
         if not config:
             return "Temporary VC configuration is not set. Use `>serverconfig set` to set it."
@@ -225,7 +240,9 @@ class TempVC(commands.Cog):
         # Create the voice channel with the stored max users
         if guild.id not in self.temporary_vc_list:
             self.temporary_vc_list[guild.id] = [0, []]
-
+        maxv=config.max_users
+        if maxval is not None:
+            maxv=maxval
         vc_name = f"{config.target_name}-{self.temporary_vc_list[guild.id][0]+1}"
         self.temporary_vc_list[guild.id][0] += 1
         for vc in category.voice_channels:
@@ -234,7 +251,7 @@ class TempVC(commands.Cog):
         temp_vc = await guild.create_voice_channel(
             vc_name,
             category=category,
-            user_limit=config.max_users,
+            user_limit=maxv,
             reason="For the temporary VC Cog.",
         )
 
@@ -257,34 +274,44 @@ class TempVC(commands.Cog):
 
     @vc.command(name="clear")
     async def clear_unused(self, ctx: commands.Context):
-        """Command to create a temporary voice channel in the stored category with stored max users."""
-        # Fetch the category and configuration from the database
+        
+        """Command to clear all temporary voice channel in the stored category with stored max users."""
         guild = ctx.guild
+        out=await self.clear_unused_2(guild)
+        await ctx.send(out)
+
+    
+    async def clear_unused_2(self, guild: discord.Guild):
+        """Command to clear all temporary voice channel in the stored category with stored max users."""
+        # Fetch the category and configuration from the database
+        
+
 
         config = await TempVCConfig.get_temp_vc_config(guild.id)
         if not config:
-            await ctx.send(
-                "Temporary VC configuration is not set. Use `>serverconfig set` to set it."
-            )
-            return
-
+            return "Temporary VC configuration is not set. Use `>serverconfig set` to set it."
+            
+        if guild.id not in self.temp_vc_clear:
+            self.temp_vc_clear[guild.id] = True
+        else:
+            return "It looks like the clear button was pressed already"
+        
         category = discord.utils.get(guild.categories, id=config.category_id)
         if category is None:
-            await ctx.send("Category not found.")
-            return
+            return ("Category not found.")
+        
         if guild.id not in self.temporary_vc_list:
             self.temporary_vc_list[guild.id] = [0, []]
         # Iterate through all voice channels in the category
+        outval=""
         for vc in category.voice_channels:
             # If the channel has members, add it to the vc_list and skip deletion
             if config.target_name not in vc.name:
-                await ctx.send(
-                    f"Skipping {vc.name} because it doesn't match {config.target_name}"
-                )
+                outval+=f"Skipping {vc.name} because it doesn't match {config.target_name} \n"
                 continue
             if len(vc.members) > 0:
                 if vc.id not in self.temporary_vc_list[guild.id][1]:
-
+                    outval+=f"Users are currently in {vc.name}.\n"
                     self.temporary_vc_list[guild.id][1].append(vc.id)
             # If the channel is empty, delete it and remove it from the temporary list
             else:
@@ -292,7 +319,7 @@ class TempVC(commands.Cog):
 
                 if vc.id in self.temporary_vc_list[guild.id][1]:
                     self.temporary_vc_list[guild.id][1].remove(vc.id)
-        await ctx.send("Cleared all unused vcs from target category.")
+        return outval + "Cleared all unused vcs from target category."
 
     @tasks.loop(minutes=5)
     async def check_empty_vc(self):
