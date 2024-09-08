@@ -578,6 +578,7 @@ class TempVCConfig(Base):
     category_id = Column(BigInteger, nullable=False)  # Storing the target category ID
 
     max_users = Column(Integer, nullable=False, default=10)
+    
     max_channels = Column(Integer, nullable=False, default=5)
     target_name = Column(String, nullable=True, default="Temp-Voice")
 
