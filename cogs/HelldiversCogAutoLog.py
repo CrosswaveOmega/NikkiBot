@@ -842,15 +842,15 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 await asyncio.sleep(0.02)
             except asyncio.QueueEmpty:
                 pass
-            try:
-                item = self.PlanetQueue.get_nowait()
-                if item:
-                    dv = json.dumps(item.value, default=str)
-                    with open("./saveData/outs.jsonl", "a+") as file:
-                        file.write(f"{dv}\n")
-                await asyncio.sleep(0.02)
-            except asyncio.QueueEmpty:
-                pass
+            # try:
+            #     item = self.PlanetQueue.get_nowait()
+            #     if item:
+            #         dv = json.dumps(item.value, default=str)
+            #         with open("./saveData/outs.jsonl", "a+") as file:
+            #             file.write(f"{dv}\n")
+            #     await asyncio.sleep(0.02)
+            # except asyncio.QueueEmpty:
+            #     pass
         except Exception as ex:
             await self.bot.send_error(ex, "LOG ERROR", True)
 
@@ -1090,7 +1090,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             self.apistatus.warall = warstat
         else:
             events, warstat = await self.apistatus.get_now(
-                self.apistatus.warall, self.QueueAll, None, self.PlanetQueue
+                self.apistatus.warall, self.QueueAll, None, None
             )
             if events:
                 item = GameEvent(
