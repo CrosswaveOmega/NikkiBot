@@ -2,6 +2,9 @@ from typing import *
 import re
 
 
+from discord.utils import format_dt as fdt
+
+
 def split_and_cluster_strings(
     input_string: str, max_cluster_size: int, split_substring: str, length=len
 ) -> list[str]:
@@ -132,3 +135,14 @@ def prioritized_string_split(
         current_clusters = [cluster.strip() for cluster in current_clusters]
 
     return current_clusters
+
+
+# def replaceTimestamp(timestamp):
+#     isoformat_pattern = r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?Z"
+#     match = re.search(isoformat_pattern, timestamp)
+
+#     if match:
+#         fdt_result = fdt(match.group(0))
+#         return fdt_result
+
+#     return None

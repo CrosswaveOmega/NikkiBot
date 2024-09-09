@@ -277,7 +277,10 @@ def create_planet_embed(
 
 
 def campaign_view(
-    stat: ApiStatus, hdtext: Optional[Dict[str, str]] = None, full: bool = False
+    stat: ApiStatus,
+    hdtext: Optional[Dict[str, str]] = None,
+    full: bool = False,
+    show_stalemate: bool = True,
 ):
     flav = "Galactic Status."
     if hdtext:
@@ -292,6 +295,8 @@ def campaign_view(
     total = 0
     el = 0
     prop = defaultdict(int)
+    stalemated = []
+    players_on_stalemated = 0
     for k, list in stat.campaigns.items():
         camp, last = list.get_first_change()
         changes = list.get_changes()
@@ -304,6 +309,11 @@ def campaign_view(
             avg = Planet.average([c.planet for c in changes])
         planet_difference: Planet = (camp - last).planet
         name, desc = camp.planet.simple_planet_view(planet_difference, avg, full)
+        if not show_stalemate:
+            if "Stalemate" in desc:
+                stalemated.append(name)
+                players_on_stalemated += camp.planet.statistics.playerCount
+                continue
 
         if planet_difference.event != None:
             p_evt = planet_difference.event
@@ -340,9 +350,16 @@ def campaign_view(
             el = 0
         emb.add_field(name=name, value=desc, inline=True)
         el += 1
+
     emb0.description += f"???:{all_players.statistics.playerCount-total}," + ",".join(
         [f"{k}:{v}" for k, v in prop.items()]
     )
+    if stalemated:
+        emb.add_field(
+            name="Planetary Stalemates",
+            value=f"{players_on_stalemated} players are on {len(stalemated)} stalemated worlds.\n"
+            + (f"\n".join([f"* {s}" for s in stalemated]))[:900],
+        )
     emb0.description += f"\n`{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}%` divers contributed `{round(total_contrib[1], 4)}` visible Impact, so about `({round(total_contrib[2],5)}%, {round(total_contrib[3],5)}% per hour)` lib."
     emb0.timestamp = discord.utils.utcnow()
     return embs

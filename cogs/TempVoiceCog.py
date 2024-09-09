@@ -11,6 +11,34 @@ from cogs.dat_Starboard import (
 from discord import app_commands
 
 
+class ChangeLimitModal(discord.ui.Modal, title="Set Temp VC Upper User Limit"):
+    """Modal for setting a limit"""
+
+    def __init__(self, *args, limit_value=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.done = None
+        self.limit_input = discord.ui.TextInput(
+            label="Enter the user limit of the temp VC.",
+            max_length=3,
+            default=limit_value,
+            required=True,
+        )
+        self.add_item(self.limit_input)
+
+    async def on_submit(self, interaction):
+        self.done = self.limit_input.value
+        await interaction.response.defer()
+        self.stop()
+
+    async def on_timeout(self) -> None:
+        self.stop()
+
+    async def on_error(
+        self, interaction: discord.Interaction, error: Exception
+    ) -> None:
+        return await super().on_error(interaction, error)
+
+
 class VC_Dispatcher(discord.ui.View):
     def __init__(self, cog):
         super().__init__(timeout=None)
@@ -47,13 +75,49 @@ class VC_Dispatcher(discord.ui.View):
         if interaction.guild:
             output = await self.cog.create_temp_vc_2(interaction.guild)
             await interaction.response.send_message(output, ephemeral=True)
+
+    @discord.ui.button(
+        label="New Temp VC With Limit",
+        style=discord.ButtonStyle.grey,
+        emoji="<:edit:1199769314929164319>",
+        custom_id="MakeNewTempVC2:grey",
+    )
+    async def new_vc_num(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
+
+        # ctx: commands.Context = await self.bot.get_context(interaction)
+        if interaction.guild:
+            modal = ChangeLimitModal(timeout=5 * 60)
+            await interaction.response.send_modal(modal)
+            await modal.wait()
+            if modal.done:
+                if modal.done:
+                    try:
+                        modal.done = int(modal.done)
+                    except ValueError:
+                        await interaction.followup.send(
+                            "This is not an integer.", ephemeral=True
+                        )
+                        return
+
+                output = await self.cog.create_temp_vc_2(
+                    interaction.guild, int(modal.done)
+                )
+                # await interaction.response.send_message(output, ephemeral=True)
+                await interaction.followup.send(output, ephemeral=True)
+            else:
+                await interaction.followup.send("Cancelled.", ephemeral=True)
+
     @discord.ui.button(
         label="Remove Temp VCs",
         style=discord.ButtonStyle.grey,
         emoji="<:trash:1282387274209689731>",
         custom_id="RemoveTempVCs:grey",
     )
-    async def clear_vc(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def clear_vc(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
 
         # ctx: commands.Context = await self.bot.get_context(interaction)
         if interaction.guild:
@@ -67,7 +131,7 @@ class TempVC(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.temporary_vc_list = {}  # Dictionary to track guild's temporary VCs
-        self.temp_vc_clear ={}
+        self.temp_vc_clear = {}
         self.temp_vc_num = {}
         self.check_empty_vc.start()  # Start the task to check empty voice channels
 
@@ -205,6 +269,30 @@ class TempVC(commands.Cog):
                 "No configuration found for this guild. Use `>serverconfig set` first."
             )
 
+    @serverconfig.command(name="update_user_threshold")
+    async def update_user_threshold(self, interaction, new_user_threshold: int):
+        """Command to update the leeway on the max user limit.  A tempvc can be created to have +/- this threshold."""
+
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        if new_user_threshold > 25:
+            await ctx.send("The maximum allowed user threshold is 25.")
+            return
+        if new_user_threshold < 0:
+            await ctx.send("...no you can't have a negative threshold.")
+            return
+
+        config = await TempVCConfig.update_permitted_threshold(
+            ctx.guild.id, new_user_threshold
+        )
+        if config:
+            await ctx.send(
+                f"Updated upper user theshold for temporary VCs to {new_user_threshold}."
+            )
+        else:
+            await ctx.send(
+                "No configuration found for this guild. Use `>serverconfig set` first."
+            )
+
     # Group: VC Management
     @commands.group(name="vc", invoke_without_command=True)
     async def vc(self, ctx):
@@ -215,15 +303,16 @@ class TempVC(commands.Cog):
     async def make_dispatch(self, ctx: commands.Context):
         """Command to display the dispatcher view that allows users to create temporary VCs."""
         await ctx.send(
-            "Click the button below to create a temporary voice channel.\n\nTemporary channels will be deleted if no one joins it in 5 minutes, or if everyone leaves.",
+            "Click the buttons below to create a temporary voice channel, a temporary vc with an adjustable limit, or to remove any temp vcs that did not get cleaned up on exit.\n\nTemporary channels will be deleted if no one joins it in 5 minutes, or if everyone leaves.",
             view=VC_Dispatcher(self),
         )
 
-    async def create_temp_vc_2(self, guild: discord.Guild,maxval:Optional[int]=None) -> str:
+    async def create_temp_vc_2(
+        self, guild: discord.Guild, maxval: Optional[int] = None
+    ) -> str:
         """Command to create a temporary voice channel in the stored category with stored max users."""
         # Fetch the category and configuration from the database
 
-            
         config = await TempVCConfig.get_temp_vc_config(guild.id)
         if not config:
             return "Temporary VC configuration is not set. Use `>serverconfig set` to set it."
@@ -240,13 +329,31 @@ class TempVC(commands.Cog):
         # Create the voice channel with the stored max users
         if guild.id not in self.temporary_vc_list:
             self.temporary_vc_list[guild.id] = [0, []]
-        maxv=config.max_users
+        maxv = config.max_users
+        threshold = (
+            config.permitted_threshold if config.permitted_threshold is not None else 0
+        )
+        lower = max(maxv - threshold, 2)
+        upper = min(maxv + threshold, 99)
         if maxval is not None:
-            maxv=maxval
+            if maxval < lower:
+                return f"You cannot have less than {lower} users as the limit!\n   Enter a number between {lower} and {upper}."
+                maxval = 0
+            elif maxval > upper:
+                return f"You cannot have more than {upper} users as the limit!\n   Enter a number between {lower} and {upper}."
+                maxval = 99
+            elif abs(maxval - maxv) > threshold:
+
+                return f"{maxval} is outside the permitted threshold!\n  Enter a number between {lower} and {upper}."
+            maxv = maxval
+
         vc_name = f"{config.target_name}-{self.temporary_vc_list[guild.id][0]+1}"
         self.temporary_vc_list[guild.id][0] += 1
         for vc in category.voice_channels:
-            if len(vc.members) == 0:
+            if config.target_name not in vc.name:
+                # outval+=f"Skipping {vc.name} because it doesn't match {config.target_name} \n"
+                continue
+            elif len(vc.members) == 0:
                 return f"There is already an empty VC: {vc.name}"
         temp_vc = await guild.create_voice_channel(
             vc_name,
@@ -274,48 +381,48 @@ class TempVC(commands.Cog):
 
     @vc.command(name="clear")
     async def clear_unused(self, ctx: commands.Context):
-        
         """Command to clear all temporary voice channel in the stored category with stored max users."""
         guild = ctx.guild
-        out=await self.clear_unused_2(guild)
+        out = await self.clear_unused_2(guild)
         await ctx.send(out)
 
-    
     async def clear_unused_2(self, guild: discord.Guild):
         """Command to clear all temporary voice channel in the stored category with stored max users."""
         # Fetch the category and configuration from the database
-        
-
 
         config = await TempVCConfig.get_temp_vc_config(guild.id)
         if not config:
             return "Temporary VC configuration is not set. Use `>serverconfig set` to set it."
-            
+
         if guild.id not in self.temp_vc_clear:
-            self.temp_vc_clear[guild.id] = True
+            self.temp_vc_clear[guild.id] = discord.utils.utcnow()
+        elif self.temp_vc_clear[guild.id] and (
+            discord.utils.utcnow() - self.temp_vc_clear[guild.id]
+        ) > timedelta(minutes=15):
+            self.temp_vc_clear[guild.id] = discord.utils.utcnow()
         else:
             return "It looks like the clear button was pressed already"
-        
+
         category = discord.utils.get(guild.categories, id=config.category_id)
         if category is None:
-            return ("Category not found.")
-        
+            return "Category not found."
+
         if guild.id not in self.temporary_vc_list:
             self.temporary_vc_list[guild.id] = [0, []]
         # Iterate through all voice channels in the category
-        outval=""
+        outval = ""
         for vc in category.voice_channels:
             # If the channel has members, add it to the vc_list and skip deletion
             if config.target_name not in vc.name:
-                outval+=f"Skipping {vc.name} because it doesn't match {config.target_name} \n"
+                outval += f"Skipping {vc.name} because it doesn't match {config.target_name} \n"
                 continue
             if len(vc.members) > 0:
                 if vc.id not in self.temporary_vc_list[guild.id][1]:
-                    outval+=f"Users are currently in {vc.name}.\n"
+                    outval += f"Users are currently in {vc.name}.\n"
                     self.temporary_vc_list[guild.id][1].append(vc.id)
             # If the channel is empty, delete it and remove it from the temporary list
             else:
-                outval+=f"Removing {vc.name}.\n"
+                outval += f"Removing {vc.name}.\n"
                 await vc.delete(reason="Temporary VC is empty.")
 
                 if vc.id in self.temporary_vc_list[guild.id][1]:
@@ -351,7 +458,7 @@ class TempVC(commands.Cog):
         after: discord.VoiceState,
     ):
         """Task that checks if the temporary VCs are empty and deletes them if they are."""
-        
+
         if not member.guild:
             return
         guild = member.guild

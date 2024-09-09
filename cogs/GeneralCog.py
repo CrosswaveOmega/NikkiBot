@@ -14,8 +14,6 @@ from utility.embed_paginator import pages_of_embeds
 from bot import TC_Cog_Mixin, super_context_menu
 
 
-
-
 class Feedback(discord.ui.Modal, title="Feedback"):
     def __init__(self, bot, **kwargs):
         super().__init__(**kwargs)
@@ -65,6 +63,7 @@ class Feedback(discord.ui.Modal, title="Feedback"):
         await interaction.response.send_message(
             "Oops! Something went wrong.", ephemeral=True
         )
+
 
 class PersistentView(discord.ui.View):
     def __init__(self):

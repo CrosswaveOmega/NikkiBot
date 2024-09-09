@@ -332,7 +332,7 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context,
         comment: str = "Ok",
     ):
-        emb = hd2.campaign_view(self.apistatus, self.hd2)
+        emb = hd2.campaign_view(self.apistatus, self.hd2, show_stalemate=False)
 
         embs = emb
         if self.apistatus.assignments:
@@ -353,18 +353,18 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
             "<:checkboxempty:1199756989887172639>": "emptyc",
             "<:edit:1199769314929164319>": "edit",
             "<:add:1199770854112890890>": "add",
-            "<:bots:1241748819620659332>": "automaton",
-            "<:bugs:1241748834632208395>": "terminids",
-            "<:superearth:1275126046869557361>": "humans",
-            "<:squid:1274752443246448702>": "illuminate",
-            "<:hdi:1240695940965339136>": "players",
+            "<:bots:1241748819620659332>": "Automaton control ",
+            "<:bugs:1241748834632208395>": "Terminid control ",
+            "<:superearth:1275126046869557361>": "Human controlled ",
+            "<:squid:1274752443246448702>": "Illuminate controlled ",
+            "<:hdi:1240695940965339136>": "Players on",
             "<:Medal:1241748215087235143>": "medal",
             "<:rec:1274481505611288639>": "req",
             "<:supercredit:1274728715175067681>": "credits",
         }
 
         for em in embs:
-            outv = f"{extract_embed_text(em)}+\n"
+            outv = f"{extract_embed_text(em)}\n"
 
             outv = re.sub(
                 r"<t:(\d+):[^>]+>",
@@ -378,6 +378,7 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
                 ),
                 outv,
             )
+            print(f"EMB={outv}")
             for e, m in status_emoji.items():
                 if e in outv:
                     outv = outv.replace(e, m)
@@ -385,6 +386,19 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
 
         print(out)
         return out
+
+    @commands.command(
+        name="galactic_war_text",
+        description="Get the current state of the galactic war in text format",
+        extras={},
+    )
+    async def get_gwar_state_text(
+        self,
+        ctx: commands.Context,
+    ):
+        text = await self.get_gwar_state(ctx, "OK.")
+        embed = discord.Embed(description=text[:4096])
+        await ctx.send(embed=embed)
 
 
 @app_commands.allowed_installs(guilds=False, users=True)

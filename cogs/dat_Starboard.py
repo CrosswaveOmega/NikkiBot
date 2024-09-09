@@ -578,7 +578,9 @@ class TempVCConfig(Base):
     category_id = Column(BigInteger, nullable=False)  # Storing the target category ID
 
     max_users = Column(Integer, nullable=False, default=10)
-    
+
+    permitted_threshold = Column(Integer, nullable=True, default=4)
+
     max_channels = Column(Integer, nullable=False, default=5)
     target_name = Column(String, nullable=True, default="Temp-Voice")
 
@@ -597,6 +599,7 @@ class TempVCConfig(Base):
         category_id: int,
         max_users: int = 10,
         max_channels: int = 5,
+        permitted_threshold: int = 0,
         target_name: str = "Temp-Voice",
     ):
         """Adds a new configuration entry for the guild."""
@@ -607,6 +610,7 @@ class TempVCConfig(Base):
                 max_users=max_users,
                 max_channels=max_channels,
                 target_name=target_name,
+                permitted_threshold=permitted_threshold,
             )
             session.add(config)
             await session.commit()
@@ -673,6 +677,19 @@ class TempVCConfig(Base):
             config = result.scalar()
             if config:
                 config.max_channels = new_max_channels
+                await session.commit()
+                return config
+            return None
+
+    @classmethod
+    async def update_permitted_threshold(cls, guild_id: int, new_threshold: int):
+        """Updates the permitted threshold for the guild's temporary VC configuration."""
+        async with DatabaseSingleton.get_async_session() as session:
+            query = select(cls).where(cls.guild_id == guild_id)
+            result = await session.execute(query)
+            config = result.scalar()
+            if config:
+                config.permitted_threshold = new_threshold
                 await session.commit()
                 return config
             return None
