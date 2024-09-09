@@ -409,6 +409,7 @@ class ApiStatus:
                             stack.append(planet_ind)
 
         return result
+    
 
 
 def save_to_json(api_status: "ApiStatus", filepath: str) -> None:
