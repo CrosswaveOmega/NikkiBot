@@ -30,6 +30,7 @@ def build_campaign(planets: Dict[int, Planet], campaign: Campaign):
         id=campaign.id,
         planet=planet,
         count=campaign.count,
+        type=campaign.type
     )
     return camp2
 
