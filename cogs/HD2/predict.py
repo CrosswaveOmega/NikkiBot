@@ -137,7 +137,7 @@ def predict_needed_players(target_eps, mp_mult):
 
     prediction_features = {
         "eps": target_eps,
-        # "mp_mult": mp_mult,
+        "mp_mult": mp_mult,
     }
     # Extract features for prediction
     features_for_prediction = pd.DataFrame([prediction_features])
