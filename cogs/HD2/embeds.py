@@ -265,6 +265,19 @@ def create_planet_embed(
                 inline=True,
             )
 
+    planet_connections=[]
+    for i, v in stat.planets.items():
+        for d in v.waypoints:
+            if int(d)==data.index:
+                planet_connections.append(v.get_name())
+
+    if planet_connections:
+        embed.add_field(
+            name="Connected to",
+            value=", ".join(map(str, planet_connections)),
+            inline=True,
+        )
+
     if data.activePlanetEffects:
         effect_str = ""
         for effect in data.activePlanetEffects:
