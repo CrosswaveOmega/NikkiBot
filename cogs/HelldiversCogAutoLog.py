@@ -1048,13 +1048,16 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 print("NOT SCHEDULING.")
 
         except Exception as e:
+            self.get_running = False
             await self.bot.send_error(e, "LOG ERROR", True)
+            self.get_running = False
 
     async def load_log(self):
         try:
             await asyncio.wait_for(self.main_log(), timeout=60)
         except Exception as e:
-            await self.bot.send_error(e, "LOG ERROR", True)
+            self.get_running = False
+            await self.bot.send_error(e, "LOG ERROR OUTER", True)
             self.get_running = False
 
     async def main_log(self):
