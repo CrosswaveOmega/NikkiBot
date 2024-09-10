@@ -38,6 +38,8 @@ from utility import load_json_with_substitutions
 from utility import WebhookMessageWrapper as web
 from bot.Tasks import TCTask, TCTaskManager
 
+from discord.utils import format_dt as fdt
+
 
 class HD2OverviewView(discord.ui.View):
     def __init__(self, cog):
@@ -153,6 +155,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         self.get_running = False
         # self.session=aiohttp.ClientSession()
         hdoverride = hd2.APIConfig()
+        hd2.set_fdt(discord.utils.format_dt)
         self.img = None
         hdoverride.client_name = bot.keys.get("hd2cli")
         self.apistatus = hd2.ApiStatus(client=hdoverride)
@@ -772,7 +775,13 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             return await ctx.send("No result")
         embeds = []
         for s in data:
-            embeds.append(s.to_embed())
+            text, timev = s.get_text_and_time()
+            embeds.append(
+                discord.Embed(
+                    title=f"Dispatch {s.id}, type {s.type}",
+                    description=f"{text}\n{fdt(timev)}",
+                )
+            )
         await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
 
     @pc.command(

@@ -1,3 +1,5 @@
+"""Code for generating gifs of each planet."""
+
 import math
 import os
 import random

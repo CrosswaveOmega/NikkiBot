@@ -430,7 +430,6 @@ class HelldiversGlobalCog(commands.Cog, TC_Cog_Mixin):
         name="get_overview", description="get the current game state from helldivers2"
     )
     async def get_overview(self, interaction: discord.Interaction) -> None:
-        """get bot info for this server"""
         ctx: commands.Context = await self.bot.get_context(interaction)
         here = ""
         if self.apistatus.assignments:
@@ -440,7 +439,7 @@ class HelldiversGlobalCog(commands.Cog, TC_Cog_Mixin):
         use = {"galactic_overview": {"value": [here]}}
 
         emb = hd2.campaign_view(self.apistatus, self.hd2)
-        await ctx.send(embeds=[emb])
+        await ctx.send(embeds=emb, ephemeral=True)
 
 
 async def setup(bot):

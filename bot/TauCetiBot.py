@@ -465,7 +465,7 @@ class TCBot(
                 chan = self.get_channel(self.error_channel)
                 await chan.send(content=content, embed=emb)
             except Exception as e:
-                self.bot.logs.error("could not send %s",str(e))
+                self.bot.logs.error("could not send %s", str(e))
 
     async def send_error(self, error, title="ERROR", uselog=False):
         if uselog:

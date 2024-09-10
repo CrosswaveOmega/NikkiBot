@@ -225,11 +225,28 @@ def create_planet_embed(
             last_evt = last.event
         event_details = event_info.long_event_details(last_evt)
         embed.add_field(name="Event Details", value=event_details, inline=False)
+        if avg:
+            if avg.event:
+                embed.add_field(
+                    name="Event Prediction",
+                    value=data.event.estimate_remaining_lib_time(avg.event),
+                    inline=False,
+                )
 
     # position = data.position
     # if position:
     #     x, y = position.get("x", 0), position.get("y", 0)
     #     embed.add_field(name="Galactic Position", value=f"x:{x},y:{y}", inline=True)
+
+    planet_connections = []
+    under_attack_by = []
+    for i, v in stat.planets.items():
+        for d in v.waypoints:
+            if int(d) == data.index:
+                planet_connections.append(v.get_name())
+        for d in v.attacking:
+            if int(d) == data.index:
+                under_attack_by.append(v.get_name())
 
     if data.attacking:
         att = []
@@ -247,6 +264,13 @@ def create_planet_embed(
                 name="Attacking Planets", value="Not attacking planets.", inline=True
             )
 
+    if under_attack_by:
+        embed.add_field(
+            name="Under Attack From",
+            value=", ".join(map(str, under_attack_by)),
+            inline=True,
+        )
+
     if data.waypoints:
         planet_waypoints = []
         for d in data.waypoints:
@@ -254,26 +278,20 @@ def create_planet_embed(
                 planet_waypoints.append(stat.planets[d].get_name())
         if planet_waypoints:
             embed.add_field(
-                name="Waypoints",
+                name="Waypoints Leading Out",
                 value=", ".join(map(str, planet_waypoints)),
                 inline=True,
             )
         else:
             embed.add_field(
                 name="Waypoints",
-                value="Planet appears to be unconnected.",
+                value="Planet has no waypoints.",
                 inline=True,
             )
 
-    planet_connections=[]
-    for i, v in stat.planets.items():
-        for d in v.waypoints:
-            if int(d)==data.index:
-                planet_connections.append(v.get_name())
-
     if planet_connections:
         embed.add_field(
-            name="Connected to",
+            name="Waypoints Leading In",
             value=", ".join(map(str, planet_connections)),
             inline=True,
         )

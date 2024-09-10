@@ -8,7 +8,6 @@ from .Task2 import Task2
 from .Planet import Planet
 from .Base.Reward import Reward
 from PIL import Image, ImageDraw, ImageFont
-from discord.utils import format_dt as fdt
 from .ABC.utils import changeformatif as cfi
 from .ABC.utils import extract_timestamp as et
 from .ABC.utils import human_format as hf
@@ -76,7 +75,7 @@ class Assignment2(BaseApiModel):
         planets = {}
         progress = self.progress
         tasks = ""
-        exptime = fdt(et(self.expiration), "f")
+        exptime = et(self.expiration).isoformat()
         for e, task in enumerate(self.tasks):
             task_type, taskdata = task.taskAdvanced()
             tasks += task.task_str(progress[e], e, planets) + "\n"

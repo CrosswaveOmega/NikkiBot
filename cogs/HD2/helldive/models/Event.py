@@ -9,8 +9,8 @@ from .ABC.utils import (
     select_emoji as emj,
     changeformatif as cfi,
     extract_timestamp as et,
+    format_datetime as fdt,
 )
-from discord.utils import format_dt as fdt
 
 
 class Event(BaseApiModel, HealthMixin):

@@ -1045,7 +1045,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             if not self.get_running:
                 task = asyncio.create_task(self.load_log())
             else:
-                print("NOT SCHEDULING.")
+                self.bot.logs.warning("LOG UPDATE WARNING: CANNOT SCHEDULING CALL!")
 
         except Exception as e:
             self.get_running = False

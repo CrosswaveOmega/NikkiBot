@@ -409,7 +409,6 @@ class ApiStatus:
                             stack.append(planet_ind)
 
         return result
-    
 
 
 def save_to_json(api_status: "ApiStatus", filepath: str) -> None:
@@ -508,7 +507,7 @@ def add_to_csv(stat: ApiStatus):
         decay = camp.planet.regenPerSecond
         # total_sec = change.planet
         total_sec = change.retrieved_at.total_seconds()
-        if total_sec <=0:
+        if total_sec <= 0:
             continue
         damage = (change.planet.health / total_sec) * -1
         evt_damage = None

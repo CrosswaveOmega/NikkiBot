@@ -17,9 +17,9 @@ from .ABC.utils import (
     select_emoji as emj,
     changeformatif as cfi,
     extract_timestamp as et,
+    format_datetime as fdt,
 )
 from .Base.PlanetStatus import PlanetStatus
-from discord.utils import format_dt as fdt
 
 
 class Planet(BaseApiModel, HealthMixin):
@@ -267,27 +267,35 @@ class Planet(BaseApiModel, HealthMixin):
 
         name = f"{faction}P#{self.index}: {self.name}"
         players = f"{emj('hdi')}: `{self.statistics.playerCount} {cfi(diff.statistics.playerCount)}`"
-        out = f"{players}\n"
+        outlist = [f"{players}"]
         if (not self.event) or show_hp_without_event:
-            out += f"HP `{round((self.health/self.maxHealth)*100.0,5)}% {cfi(round((diff.health/self.maxHealth)*100.0,5))}`"
-            out += (
+            outlist.append(
+                f"HP `{round((self.health/self.maxHealth)*100.0,5)}% {cfi(round((diff.health/self.maxHealth)*100.0,5))}`"
+            )
+            outlist.append(
                 f"\nDecay:`{round((100*(self.regenPerSecond/self.maxHealth))*60*60,2)}`"
             )
         if avg:
             remaining_time = self.estimate_remaining_lib_time(avg)
-            out += "\n" + remaining_time
+            if remaining_time:
+                outlist.append(remaining_time)
         if self.event:
             evt = self.event
             timev = fdt(et(evt.endTime), "R")
             event_fact = emj(self.event.faction.lower())
             # , {evt.health}{cfi(diff.event.health)}/{evt.maxHealth}.
-            out += f"\n Defend from {event_fact} \n Lib {round((evt.health/evt.maxHealth)*100.0, 5)}% {cfi(round((diff.event.health/evt.maxHealth)*100.0, 5))}"
-            out += f"\n Deadline: {timev}"
+            outlist.append(f"Defend from {event_fact}")
+            outlist.append(
+                f"Lib {round((evt.health/evt.maxHealth)*100.0, 5)}% {cfi(round((diff.event.health/evt.maxHealth)*100.0, 5))}"
+            )
+            outlist.append(f"Deadline: [{timev}]")
             if avg:
                 if avg.event:
-                    out += f"\n {self.event.estimate_remaining_lib_time(avg.event)}"
+                    outlist.append(
+                        f"\n {self.event.estimate_remaining_lib_time(avg.event)}"
+                    )
 
-        return name, out
+        return name, "\n".join(outlist)
 
 
 class SimplePlanet(BaseApiModel):

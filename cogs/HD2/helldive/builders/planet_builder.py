@@ -112,7 +112,7 @@ def get_time(diveharder: DiveharderAll) -> dt.datetime:
         info.startDate, tz=dt.timezone.utc
     ) + dt.timedelta(seconds=status.time)
     deviation = now - gametime
-    print(deviation)
+    # print(deviation)
     relative_game_start = (
         dt.datetime.fromtimestamp(info.startDate, tz=dt.timezone.utc) + deviation
     )

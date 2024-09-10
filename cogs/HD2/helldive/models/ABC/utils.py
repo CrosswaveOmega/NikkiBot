@@ -19,6 +19,25 @@ status_emoji = {
 }
 
 
+def default_fdt(dt: datetime.datetime, *args, **kwargs):
+    return dt.isoformat()
+
+
+set_fdt_callable = default_fdt
+
+
+def set_fdt(func: callable):
+    global set_fdt_callable
+    set_fdt_callable = func
+
+
+def format_datetime(*args, **kwargs):
+
+    if set_fdt_callable:
+        return set_fdt_callable(*args, **kwargs)
+    raise RuntimeError("fdt callable is not set")
+
+
 def seconds_to_time_stamp(seconds_init):
     """return string of d:h:m:s"""
     return_string = ""
