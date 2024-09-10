@@ -361,7 +361,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         await ctx.send(file=discord.File("statistics.csv"))
         await ctx.send(file=discord.File("statistics_sub.csv"))
 
-        await ctx.send(file=discord.File("statistics_new.csv"))
+        await ctx.send(file=discord.File("statistics_newer.csv"))
 
     @commands.is_owner()
     @commands.command(name="get_map")
