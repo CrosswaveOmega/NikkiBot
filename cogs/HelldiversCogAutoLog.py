@@ -852,7 +852,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             # except asyncio.QueueEmpty:
             #     pass
         except Exception as ex:
-            await self.bot.send_error(ex, "LOG ERROR", True)
+            await self.bot.send_error(ex, "LOG ERROR FOR POST", True)
 
     async def send_event_list(self, item_list: List[GameEvent]):
         embeds: List[discord.Embed] = []
@@ -1038,7 +1038,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
     @run2.error
     async def logerror(self, ex):
-        await self.bot.send_error(ex, "LOG ERROR", True)
+        await self.bot.send_error(ex, "LOG ERROR FOR POST", True)
 
     async def updatelog(self):
         try:
