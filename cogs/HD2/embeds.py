@@ -205,7 +205,7 @@ def create_planet_embed(
         value=f"`{regen_per_second}` .  \n Need `{round(needed_eps,2)}` eps and `{round(needed_players,2)}` divers ",
         inline=True,
     )
-
+    avg=None
     if cstr:
         lis = stat.campaigns.get(cstr.id)
         changes = lis.get_changes()
