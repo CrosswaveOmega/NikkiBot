@@ -273,7 +273,7 @@ class Planet(BaseApiModel, HealthMixin):
                 f"HP `{round((self.health/self.maxHealth)*100.0,5)}% {cfi(round((diff.health/self.maxHealth)*100.0,5))}`"
             )
             outlist.append(
-                f"\nDecay:`{round((100*(self.regenPerSecond/self.maxHealth))*60*60,2)}`"
+                f"Decay:`{round((100*(self.regenPerSecond/self.maxHealth))*60*60,2)}`"
             )
         if avg:
             remaining_time = self.estimate_remaining_lib_time(avg)
@@ -292,7 +292,7 @@ class Planet(BaseApiModel, HealthMixin):
             if avg:
                 if avg.event:
                     outlist.append(
-                        f"\n {self.event.estimate_remaining_lib_time(avg.event)}"
+                        f"{self.event.estimate_remaining_lib_time(avg.event)}"
                     )
 
         return name, "\n".join(outlist)
