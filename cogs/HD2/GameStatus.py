@@ -508,6 +508,8 @@ def add_to_csv(stat: ApiStatus):
         decay = camp.planet.regenPerSecond
         # total_sec = change.planet
         total_sec = change.retrieved_at.total_seconds()
+        if total_sec <=0:
+            continue
         damage = (change.planet.health / total_sec) * -1
         evt_damage = None
         mode = 1
