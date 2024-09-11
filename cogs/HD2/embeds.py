@@ -205,7 +205,7 @@ def create_planet_embed(
         value=f"`{regen_per_second}` .  \n Need `{round(needed_eps,2)}` eps and `{round(needed_players,2)}` divers ",
         inline=True,
     )
-    avg=None
+    avg = None
     if cstr:
         lis = stat.campaigns.get(cstr.id)
         changes = lis.get_changes()
@@ -340,6 +340,7 @@ def campaign_view(
             avg = Planet.average([c.planet for c in changes])
         planet_difference: Planet = (camp - last).planet
         name, desc = camp.planet.simple_planet_view(planet_difference, avg, full)
+        desc = "\n".join(desc)
         if not show_stalemate:
             if "Stalemate" in desc:
                 stalemated.append(name)
@@ -394,3 +395,100 @@ def campaign_view(
     emb0.description += f"\n`{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}%` divers contributed `{round(total_contrib[1], 4)}` visible Impact, so about `({round(total_contrib[2],5)}%, {round(total_contrib[3],5)}% per hour)` lib."
     emb0.timestamp = discord.utils.utcnow()
     return embs
+
+
+def campaign_text_view(
+    stat: ApiStatus,
+    hdtext: Optional[Dict[str, str]] = None,
+    full: bool = False,
+    show_stalemate: bool = True,
+) -> str:
+    flav = "Galactic Status."
+    if hdtext:
+        if "galactic_overview" in hdtext:
+            flav = random.choice(hdtext["galactic_overview"]["value"])
+
+    out_main = "**Current galactic war overview.**\n\n Objective for Liberation Campaigns is to reduce HP to zero."
+    out_main += "\n A negative DPS is good for us, a positive one means we are losing on that world."
+    out_main += "\n Objective for Defence Campaigns is to reduce EventHP to zero before the deadline.\n"
+
+    all_players, last = stat.war.get_first_change()
+    change_war = all_players - last
+    total_contrib = [0, 0.0, 0.0, 0.0]
+    total = 0
+    el = 0
+    prop = defaultdict(int)
+    stalemated = []
+    players_on_stalemated = 0
+    liberation_campaigns = []
+    defense_campaigns = []
+    for k, list in stat.campaigns.items():
+        camp, last = list.get_first_change()
+        changes = list.get_changes()
+        this_faction = camp.planet.campaign_against()
+        pc = camp.planet.statistics.playerCount
+        prop[this_faction] += pc
+        total += pc
+        avg = None
+        if changes:
+            avg = Planet.average([c.planet for c in changes])
+        planet_difference: Planet = (camp - last).planet
+        name, desc = camp.planet.simple_planet_view(planet_difference, avg, full)
+        desc = "\n".join(f"  * {m}" for m in desc)
+        if not show_stalemate:
+            if "Stalemate" in desc:
+                stalemated.append(name)
+                players_on_stalemated += camp.planet.statistics.playerCount
+                continue
+
+        if planet_difference.event != None:
+            p_evt = planet_difference.event
+            if isinstance(p_evt.retrieved_at, datetime.timedelta):
+                total_sec = p_evt.retrieved_at.total_seconds()
+                rate = -1 * (p_evt.health)
+                total_contrib[0] += camp.planet.statistics.playerCount
+                total_contrib[1] += rate
+                thisamt = round((rate / camp.planet.maxHealth) * 100.0, 5)
+                total_contrib[2] += thisamt
+                total_contrib[3] += round((thisamt / max(1, total_sec)) * 60 * 60, 5)
+
+        elif planet_difference.health_percent() != 0:
+            if isinstance(planet_difference.retrieved_at, datetime.timedelta):
+                total_sec = planet_difference.retrieved_at.total_seconds()
+                rate = (-1 * (planet_difference.health)) + (
+                    (camp.planet.regenPerSecond) * total_sec
+                )
+                total_contrib[0] += camp.planet.statistics.playerCount
+                total_contrib[1] += rate
+                thisamt = round((rate / camp.planet.maxHealth) * 100.0, 5)
+                total_contrib[2] += thisamt
+                total_contrib[3] += round((thisamt / total_sec) * 60 * 60, 5)
+
+        features = get_feature_dictionary(stat, k)
+        pred = make_prediction_for_eps(features)
+        # print(features["eps"], pred)
+        eps_estimated = round(pred, 3)
+        eps_real = round(features["eps"], 3)
+        desc += f"\n  * infl/s:`{eps_estimated},c{eps_real}`"
+        if camp.planet.event:
+            defense_campaigns.append((name, desc))
+        else:
+            liberation_campaigns.append((name, desc))
+
+        el += 1
+    out_main += f"???:{all_players.statistics.playerCount-total}," + ",".join(
+        [f"{k}:{v}" for k, v in prop.items()]
+    )
+
+    out_main += f"\n`{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}%` divers contributed `{round(total_contrib[1], 4)}` visible Impact, so about `({round(total_contrib[2],5)}%, {round(total_contrib[3],5)}% per hour)` lib."
+    lib_join = "\n".join([f"* {c[0]}\n{c[1]}" for c in liberation_campaigns])
+    def_join = "\n".join([f"* {c[0]}\n{c[1]}" for c in defense_campaigns])
+    out_main += f"\n **Liberation Campaigns:**\n{lib_join}\n**Defense Campaigns:**\n{def_join}\n"
+    if stalemated:
+        st = (
+            f"{players_on_stalemated} players are on {len(stalemated)} stalemated worlds.\n"
+            + (f"\n".join([f"* {s}" for s in stalemated]))
+        )
+        out_main += f"**Planetary Stalemates:**\n" + st
+
+    return out_main

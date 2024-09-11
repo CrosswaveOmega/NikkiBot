@@ -138,7 +138,9 @@ class Event(BaseApiModel, HealthMixin):
         """
         change_str = f"{round(change, 5)}"
         timeval_str = (
-            f"Est.Loss {fdt(esttime,'R')}" if change > 0 else f"{fdt(esttime,'R')}"
+            f"Est.Loss {fdt(esttime,'R')}"
+            if change > 0
+            else f"Clear {fdt(esttime,'R')}"
         )
 
         return f"`[{change_str} dps]`, {timeval_str}"

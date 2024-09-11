@@ -4,6 +4,7 @@ from .embeds import (
     create_campaign_str,
     create_planet_embed,
     create_war_embed,
+    campaign_text_view,
 )
 
 from .hdapi import call_api

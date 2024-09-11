@@ -286,7 +286,7 @@ class Planet(BaseApiModel, HealthMixin):
             # , {evt.health}{cfi(diff.event.health)}/{evt.maxHealth}.
             outlist.append(f"Defend from {event_fact}")
             outlist.append(
-                f"Lib {round((evt.health/evt.maxHealth)*100.0, 5)}% {cfi(round((diff.event.health/evt.maxHealth)*100.0, 5))}"
+                f"EventHP:{round((evt.health/evt.maxHealth)*100.0, 5)}% {cfi(round((diff.event.health/evt.maxHealth)*100.0, 5))}"
             )
             outlist.append(f"Deadline: [{timev}]")
             if avg:
@@ -295,7 +295,7 @@ class Planet(BaseApiModel, HealthMixin):
                         f"{self.event.estimate_remaining_lib_time(avg.event)}"
                     )
 
-        return name, "\n".join(outlist)
+        return name, outlist
 
 
 class SimplePlanet(BaseApiModel):

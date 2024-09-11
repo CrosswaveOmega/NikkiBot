@@ -332,17 +332,19 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context,
         comment: str = "Ok",
     ):
-        emb = hd2.campaign_view(self.apistatus, self.hd2, show_stalemate=False)
+        emb = hd2.campaign_text_view(self.apistatus, self.hd2, show_stalemate=False)
 
-        embs = emb
+        embs = []
+        embs.append(emb)
         if self.apistatus.assignments:
             for i, assignment in self.apistatus.assignments.items():
                 b, a = assignment.get_first_change()
+                embed = hd2.create_assignment_embed(
+                    b, b - a, planets=self.apistatus.planets
+                )
                 embs.insert(
                     0,
-                    hd2.create_assignment_embed(
-                        b, b - a, planets=self.apistatus.planets
-                    ),
+                    extract_embed_text(embed),
                 )
         now = discord.utils.utcnow()
         out = f"Current Date: {discord.utils.utcnow().isoformat()}"
@@ -364,7 +366,7 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         }
 
         for em in embs:
-            outv = f"{extract_embed_text(em)}\n"
+            outv = em
 
             outv = re.sub(
                 r"<t:(\d+):[^>]+>",
