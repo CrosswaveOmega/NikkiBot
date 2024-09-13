@@ -50,10 +50,10 @@ enemies = {
     878778730: "Trooper",
     3330362068: "Hunter",
     2058088313: "Warrior",
-    717622970: "Bile Spewer",
     2387277009: "Stalker",
     2651633799: "Charger",
     2514244534: "Bile Titan",
+    1379865898: "Bile Spewer",
 }
 
 stratagems = {
