@@ -45,6 +45,8 @@ def build_assignment_2(assignment: Assignment, diveharder: DiveharderAll):
 
 def build_all_assignments(assignments: List[Assignment], diveharder: DiveharderAll):
     assignment_2 = []
+    if assignments is None:
+        return []
     for a in assignments:
         assignment_2.append(build_assignment_2(a, diveharder))
     return assignment_2
