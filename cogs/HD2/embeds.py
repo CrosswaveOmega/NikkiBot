@@ -116,7 +116,7 @@ def create_assignment_embed(
         chg, projected = None, None
         prog = ""
         if diff and isinstance(diff, list):
-            if e < len(diff) - 1:
+            if e < len(diff):
                 chg = diff[e]
                 projected = progress[e] + (rates[e] * time_remaining)
         tasks += task.task_str(progress[e], e, planets, chg, projected) + "\n"
