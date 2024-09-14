@@ -12,7 +12,7 @@ from .ABC.utils import select_emoji as emj
 
 from ..constants import task_types, value_types, faction_names, samples, enemies
 
-
+'''
 task_types = {
     2: "Get samples",
     3: "Eradicate",
@@ -45,7 +45,7 @@ faction_names = {
     5: "ERR",
     15: "ERR",
 }
-
+'''
 
 class TaskData(BaseApiModel):
     faction: Optional[List[int]] = Field(alias="faction", default=None)
@@ -243,6 +243,22 @@ class Task2(BaseApiModel):
                     planet = planets[int(ind)]
                     taskstr += f", On {planet.get_name()}"
         return taskstr
+        
+    def _task_display_planet(
+        self,
+        taskdata,
+        planets
+    ):
+        taskstr=""
+        if taskdata.hasPlanet and taskdata.planet:
+            if not taskdata.hasPlanet[0]:
+                return ""
+            for ind in taskdata.planet:
+                if int(ind) in planets:
+                    planet = planets[int(ind)]
+                    taskstr += f", On {planet.get_name()}"
+        return taskstr
+        
 
     def _task_exterminate(
         self,
@@ -280,11 +296,7 @@ class Task2(BaseApiModel):
         taskstr += (
             f"/{hf(goal)} ({(int(curr) / int(goal)) * 100.0}) {enemy} {faction_name}"
         )
-        if taskdata.hasPlanet and taskdata.planet:
-            for ind in taskdata.planet:
-                if int(ind) in planets:
-                    planet = planets[int(ind)]
-                    taskstr += f", On {planet.get_name()}"
+        taskstr+=self._task_display_planet(taskdata, planets)
         if projected:
             status = "UNKNOWN"
             if curr > goal:
