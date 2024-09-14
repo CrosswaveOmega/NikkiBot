@@ -199,11 +199,7 @@ class Task2(BaseApiModel):
             rare = taskdata.itemID[0]
             rarity = samples.get(rare, rare) + " "
         taskstr += f"/{hf(goal)} {rarity}samples ({round((int(curr) / int(goal)) * 100.0, 3)}) {faction_name}"
-        if taskdata.hasPlanet and taskdata.planet:
-            for ind in taskdata.planet:
-                if int(ind) in planets:
-                    planet = planets[int(ind)]
-                    taskstr += f", On {planet.get_name()}"
+        taskstr+=self._task_display_planet(taskdata, planets)
         return taskstr
 
     def _task_defend(
@@ -237,11 +233,7 @@ class Task2(BaseApiModel):
             )
         goal = taskdata.goal[0]
         taskstr = f"{e}. Defend {hf(curr)}/{hf(goal)} planets{faction_name}"
-        if taskdata.hasPlanet and taskdata.planet:
-            for ind in taskdata.planet:
-                if int(ind) in planets:
-                    planet = planets[int(ind)]
-                    taskstr += f", On {planet.get_name()}"
+        taskstr+=self._task_display_planet(taskdata, planets)
         return taskstr
         
     def _task_display_planet(
