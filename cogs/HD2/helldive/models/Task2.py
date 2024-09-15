@@ -285,7 +285,7 @@ class Task2(BaseApiModel):
             enemy_id = taskdata.enemyID[0]
             if enemy_id:
                 enemy = enemies.get(enemy_id, f"UNKNOWN {enemy_id}")
-        percent_done='{:.4g}'.format((int(curr) / int(goal)) * 100.0)
+        percent_done=round((int(curr) / int(goal)) * 100.0,4)
         taskstr += (
             f"/{hf(goal)} ({percent_done}) {enemy} {faction_name}"
         )
