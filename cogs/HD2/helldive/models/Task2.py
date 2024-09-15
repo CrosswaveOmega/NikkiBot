@@ -285,8 +285,9 @@ class Task2(BaseApiModel):
             enemy_id = taskdata.enemyID[0]
             if enemy_id:
                 enemy = enemies.get(enemy_id, f"UNKNOWN {enemy_id}")
+        percent_done='{:.4g}'.format((int(curr) / int(goal)) * 100.0)
         taskstr += (
-            f"/{hf(goal)} ({(int(curr) / int(goal)) * 100.0}) {enemy} {faction_name}"
+            f"/{hf(goal)} ({percent_done}) {enemy} {faction_name}"
         )
         taskstr+=self._task_display_planet(taskdata, planets)
         if projected:
@@ -297,5 +298,5 @@ class Task2(BaseApiModel):
                 status = "ABOVE QUOTA!"
             elif projected < goal:
                 status = "WARNING, UNDER QUOTA!"
-            taskstr += f"\n  * Projected Result:`{projected}`, **{status}**  "
+            taskstr += f"\n  * Projected Result:`{hf(projected)}`, **{status}**  "
         return taskstr
