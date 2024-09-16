@@ -410,7 +410,7 @@ def campaign_text_view(
 
     out_main = "**Current galactic war overview.**\n\n Objective for Liberation Campaigns is to reduce HP to zero."
     out_main += "\n A negative DPS is good for us, a positive one means we are losing on that world."
-    out_main += "\n Objective for Defence Campaigns is to reduce EventHP to zero before the deadline.\n"
+    out_main += "\n Objective for Defense Campaigns is to reduce EventHP to zero before the deadline.\n"
 
     all_players, last = stat.war.get_first_change()
     change_war = all_players - last

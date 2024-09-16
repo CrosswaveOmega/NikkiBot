@@ -10,7 +10,7 @@ from ..models import *
 async def Get(api_config_override: Optional[APIConfig] = None) -> str:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
+    base_path = api_config.api_comm
     path = f"/"
     headers = {
         "Content-Type": "application/json",
