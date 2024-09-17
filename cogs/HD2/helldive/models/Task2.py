@@ -126,7 +126,7 @@ class Task2(BaseApiModel):
                 taskstr, taskdata, curr, planets, projected
             )
         elif self.type == 15:
-            taskstr = self._task_librace(taskstr, taskdata, curr, e, planets)
+            taskstr = self._task_conquest(taskstr, taskdata, curr, e, planets)
         else:
             taskstr += json.dumps(taskdata.__dict__, default=str)[:258]
         if last_progess:
