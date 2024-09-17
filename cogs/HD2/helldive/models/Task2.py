@@ -159,11 +159,11 @@ class Task2(BaseApiModel):
             return taskstr
         faction_name = ""
         if taskdata.faction:
-            faction_name = "to " + faction_names.get(
+            faction_name = " to " + faction_names.get(
                 taskdata.faction[0], f"Unknown Faction {taskdata.faction[0]}"
             )
         goal = taskdata.goal[0]
-        taskstr = f"{e}. Conquest.  Liberate more planets than are lost {faction_name} until the order ends. `{curr}/{goal}`"
+        taskstr = f"{e}. Conquest.  Liberate more planets than are lost{faction_name} until the order ends. `{curr}/{goal}`"
         taskstr+=self._task_display_planet(taskdata, planets)
         return taskstr
 
