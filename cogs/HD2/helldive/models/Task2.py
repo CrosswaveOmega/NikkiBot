@@ -125,11 +125,48 @@ class Task2(BaseApiModel):
             taskstr = self._task_exterminate(
                 taskstr, taskdata, curr, planets, projected
             )
+        elif self.type == 15:
+            taskstr = self._task_librace(taskstr, taskdata, curr, e, planets)
         else:
             taskstr += json.dumps(taskdata.__dict__, default=str)[:258]
         if last_progess:
             taskstr += f"`[change {last_progess}]`"
         return taskstr
+
+    def _task_conquest(
+        self,
+        taskstr: str,
+        taskdata: TaskData,
+        curr: int,
+        e: int,
+        planets: Dict[int, Planet],
+    ):
+        """
+        Handle task string formatting for liberate/control tasks.
+
+        Args:
+            taskstr (str): The current task string.
+            taskdata (TaskData): Data containing the details of the task.
+            curr (int): The current progress of the task.
+            e (int): The index or step for this task.
+            planets (Dict[int, Planet]): A dictionary containing planet information.
+
+        Returns:
+            str: Updated task string with liberate/control details.
+        """
+        if not taskdata.goal:
+            taskstr += json.dumps(taskdata.__dict__, default=str)[:258]
+            return taskstr
+        faction_name = ""
+        if taskdata.faction:
+            faction_name = "to " + faction_names.get(
+                taskdata.faction[0], f"Unknown Faction {taskdata.faction[0]}"
+            )
+        goal = taskdata.goal[0]
+        taskstr = f"{e}. Conquest.  Liberate more planets than are lost {faction_name} until the order ends. `{curr}/{goal}`"
+        taskstr+=self._task_display_planet(taskdata, planets)
+        return taskstr
+
 
     def _task_liberate_control(
         self,

@@ -8,6 +8,7 @@ task_types = {
     11: "Liberation",
     12: "Defense",
     13: "Control",
+    15: "Race"
 }
 
 value_types = {

@@ -15,6 +15,10 @@ from sklearn.cluster import KMeans
 CLOUD_ALPHA = 180
 
 
+BIOME_IMAGE_PATH =r"./assets/allimages/*"
+OUTPUT_PATH="./assets/planets/"
+FONT_PATH="./assets/Michroma-Regular.ttf"
+
 def draw_streak(draw, xpix, ypix, lightest_color):
     start_x = random.randint(0, xpix - 1)
     start_y = random.randint(0, ypix - 1)
@@ -255,7 +259,7 @@ def make_new_texture(colors, nme, num_craters, num_clouds, xpix, ypix, biome_nam
     if biome_name == "blackhole" or biome_name == "moon":
         num_clouds = 0
     generate_random_clouds(xpix, ypix, num_clouds, lightest_color, img)
-    img.save(f"./assets/planets/planet_{nme}_texture.png")
+    img.save(f"{OUTPUT_PATH}planet_{nme}_texture.png")
     return img
 
 
@@ -273,7 +277,7 @@ def generate_planet_texture(
         img = make_new_texture(
             colors, nme, num_craters, num_clouds, xpix, ypix, biome_name
         )
-    textureimg = Image.open(f"./assets/planets/planet_{nme}_texture.png")
+    textureimg = Image.open(f"{OUTPUT_PATH}planet_{nme}_texture.png")
     texture = np.array(textureimg)
     sphere_center = (10, 10)
     sphere_radius = 10
@@ -313,7 +317,7 @@ def generate_planet_texture(
 
     texture = np.array(textureimg)
     frames = 30
-    output_path = f"./assets/planets/{nme}_rotate.gif"
+    output_path = f"{OUTPUT_PATH}{nme}_rotate.gif"
     create_gif_with_light_variation(
         texture, sphere_center, sphere_radius, frames, output_path, biome_name
     )
@@ -325,7 +329,7 @@ def threshold_color(color_tuple):
     return thresholded_tuple
 
 
-image_paths = glob.glob(r"./assets/allimages/*")
+image_paths = glob.glob(BIOME_IMAGE_PATH)
 
 all_colors = {}
 has_c = []
@@ -390,22 +394,21 @@ def extract_colors_image(all_colors):
         draw.text(
             (700, j * 100),
             f"{keys[j]}",
-            font=ImageFont.truetype("./assets/Michroma-Regular.ttf", 16),
+            font=ImageFont.truetype(FONT_PATH, 16),
         )
 
     return color_image
 
 
 im = extract_colors_image(all_colors)
-im.save("./assets/planets/colorpallate.png")
+im.save(f"{OUTPUT_PATH}colorpallate.png")
 
 
-def get_planet(ind, biome_name):
+def get_planet(ind: int, biome_name: str):
     labels = []
     use = all_colors.get(biome_name, None)
     if biome_name in has_c:
         return generate_planet_texture(use, 0, 2, f"planet_{ind}", biome_name)
     return None
-
 
 # get_planet(64, "blackhole")
