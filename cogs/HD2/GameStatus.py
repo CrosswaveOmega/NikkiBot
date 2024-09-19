@@ -251,9 +251,12 @@ class ApiStatus:
         #     camp = l.get_first()
         #     self.planets[camp.planet.index] = camp.planet
 
-        dispatches = await GetApiV1DispatchesAll(api_config_override=self.client)
-        if dispatches is not None:
-            self.dispatches = dispatches
+        try:
+            dispatches = await GetApiV1DispatchesAll(api_config_override=self.client)
+            if dispatches is not None:
+                self.dispatches = dispatches
+        except Exception as e:
+            print(e)
 
             # print(self.warstat)
 
