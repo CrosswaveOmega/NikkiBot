@@ -99,7 +99,6 @@ def check_compare_value_list(
         if all(s[key] == value for key, value in zip(keys, values)):
             values.append(s)
     return values
-    return None
 
 
 def get_time(diveharder: DiveharderAll) -> dt.datetime:
@@ -187,8 +186,7 @@ def build_planet_2(planetIndex: int, diveharder: DiveharderAll, statics: StaticA
         )
         planet.event = newevent
     return planet
-    pass
-    pass
+
 
 
 def build_all_planets(warall: DiveharderAll, statics: StaticAll) -> Dict[int, Planet]:

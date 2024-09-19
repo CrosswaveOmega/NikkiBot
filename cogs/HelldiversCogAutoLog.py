@@ -82,6 +82,15 @@ class PlanetEvents:
                         new.append(ind)
                     if t == "old":
                         old.append(ind)
+
+        common = [elem for elem in new if elem in old]
+
+        for c in common:
+            if c in new:
+                new.remove(c)
+            if c in old:
+                old.remove(c)
+        
         return new, old
 
     def get_last_planet_owner(self) -> Tuple[int, int]:

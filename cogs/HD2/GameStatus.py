@@ -204,7 +204,7 @@ class ApiStatus:
             attempt_count = 0
             while attempt_count < maxattempt:
                 try:
-                    war = await GetApiV1War(api_config_override=self.client)
+                    war = build_war(self.warall)
                     break
                 except Exception as e:
                     attempt_count += 1
