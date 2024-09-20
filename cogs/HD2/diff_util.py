@@ -3,8 +3,8 @@ from typing import *
 
 logs = logging.getLogger("TCLogger")
 
-from .helldive.models.ABC.model import BaseApiModel
-from .helldive.builders import *
+from hd2api.models.ABC.model import BaseApiModel
+from hd2api.builders import *
 
 
 from pydantic import Field

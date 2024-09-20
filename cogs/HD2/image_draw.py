@@ -6,7 +6,7 @@ import discord
 from PIL import Image, ImageDraw, ImageFont, ImageSequence
 import numpy as np
 from .GameStatus import ApiStatus
-from .helldive import Planet
+from hd2api import Planet
 from .makeplanets import get_planet
 
 import importlib.util

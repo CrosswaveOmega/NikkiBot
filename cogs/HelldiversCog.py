@@ -33,6 +33,7 @@ from discord.ext import commands
 from .HD2.db import ServerHDProfile
 import re
 import cogs.HD2 as hd2
+import hd2api
 from utility.embed_paginator import pages_of_embeds, pages_of_embeds_2
 from utility import load_json_with_substitutions
 from utility import WebhookMessageWrapper as web
@@ -158,8 +159,9 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         self.bot: TCBot = bot
         self.get_running = False
         # self.session=aiohttp.ClientSession()
-        hdoverride = hd2.APIConfig()
-        hd2.set_fdt(discord.utils.format_dt)
+        hdoverride = hd2api.APIConfig(static_path="./hd2json")
+        hd2api.set_fdt(discord.utils.format_dt)
+        hd2api.logging.logging.setuphd2logging("./logs/")
         self.img = None
         hdoverride.client_name = bot.keys.get("hd2cli")
         self.apistatus = hd2.ApiStatus(client=hdoverride)

@@ -6,9 +6,9 @@ import datetime
 import os
 import discord
 
-from cogs.HD2.helldive.models import Campaign
+from hd2api.models import Campaign
 
-from .helldive import Assignment2, Campaign2, Planet, War, GlobalEvent, PlanetAttack
+from hd2api import Assignment2, Campaign2, Planet, War, GlobalEvent, PlanetAttack
 
 """
 Collection of embeds for formatting.
@@ -17,7 +17,7 @@ from collections import defaultdict
 import re
 from discord.utils import format_dt as fdt
 
-from .helldive.models.ABC.utils import extract_timestamp as et, hdml_parse
+from hd2api.models.ABC.utils import extract_timestamp as et, hdml_parse
 
 import random
 from .GameStatus import ApiStatus, get_feature_dictionary

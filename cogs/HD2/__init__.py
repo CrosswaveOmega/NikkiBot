@@ -7,9 +7,8 @@ from .embeds import (
     campaign_text_view,
 )
 
-from .hdapi import call_api
 from .db import ServerHDProfile
-from .helldive import *
+
 from .GameStatus import (
     ApiStatus,
     add_to_csv,

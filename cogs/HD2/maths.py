@@ -1,6 +1,6 @@
 """Common math expressions used by the module."""
 
-from .helldive import *
+from hd2api import *
 
 
 class maths:

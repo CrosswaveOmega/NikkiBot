@@ -10,7 +10,7 @@ import os
 import re
 import cogs.HD2 as hd2
 from cogs.HD2.db import ServerHDProfile
-from cogs.HD2.helldive.models.ABC.model import BaseApiModel
+from hd2api.models.ABC.model import BaseApiModel
 from assetloader import AssetLookup
 
 # import datetime
@@ -18,16 +18,17 @@ from bot import (
     TC_Cog_Mixin,
     TCBot,
 )
-from cogs.HD2.helldive.models.ABC.utils import hdml_parse
+from hd2api.models.ABC.utils import hdml_parse
 
 from utility import WebhookMessageWrapper as web
 from bot.Tasks import TCTask, TCTaskManager
 
 
+from pydantic import Field
 from discord.utils import format_dt as fdt
 
 
-from cogs.HD2.helldive import (
+from hd2api import (
     DiveharderAll,
     NewsFeedItem,
     PlanetStatus,
@@ -38,16 +39,80 @@ from cogs.HD2.helldive import (
     GlobalEvent,
     SectorStates,
     PlanetAttack,
-    SimplePlanet,
     PlanetActiveEffects,
     KnownPlanetEffect,
     build_planet_effect,
 )
 
-from cogs.HD2.helldive.constants import faction_names
+from hd2api.constants import faction_names
 from cogs.HD2.maths import maths
 from cogs.HD2.diff_util import process_planet_attacks, GameEvent
 from utility.manual_load import load_json_with_substitutions
+
+class SimplePlanet(BaseApiModel):
+    index: Optional[int] = Field(alias="index", default=None)
+
+    name: Optional[Union[str, Dict[str, Any]]] = Field(alias="name", default=None)
+
+    owner: Optional[int] = Field(alias="owner", default=0)
+
+    sector: Optional[str] = Field(alias="sector", default=None)
+
+    waypoints: Optional[List[int]] = Field(alias="waypoints", default=None)
+
+    regenPerSecond: Optional[float] = Field(alias="regenPerSecond", default=None)
+
+    def get_name(self, faction=True) -> str:
+        """Get the name of the planet, along with occupying faction
+        and planet index."""
+        if not faction:
+            return f"P#{self.index}: {self.name}"
+        return f"P#{self.index}: {self.name}"
+
+    @classmethod
+    def from_planet_status(cls, planet_status: PlanetStatus):
+        data_path: str = "./hd2json/planets/planets.json"
+
+        with open(data_path, "r") as file:
+            planets_data_json = json.load(file)
+
+        pval = planets_data_json.get(str(planet_status.index), None)
+        name = sector = "NA"
+        if pval:
+            name = pval["name"]
+            sector = pval["sector"]
+
+        return cls(
+            index=int(planet_status.index),
+            name=name,
+            owner=planet_status.owner,
+            sector=sector,
+            waypoints=[],
+            regenPerSecond=planet_status.regenPerSecond,
+        )
+
+    @classmethod
+    def from_index(cls, index: int):
+        data_path: str = "./hd2json/planets/planets.json"
+
+        with open(data_path, "r") as file:
+            planets_data_json = json.load(file)
+
+        pval = planets_data_json.get(str(index), None)
+        name = sector = "NA"
+        if pval:
+
+            name = pval["name"]
+            sector = pval["sector"]
+
+        return cls(
+            index=int(index),
+            name=name,
+            owner=0,
+            sector=sector,
+            waypoints=[],
+            regenPerSecond=0.0,
+        )
 
 
 class PlanetEvents:

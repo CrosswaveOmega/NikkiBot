@@ -8,7 +8,7 @@ import numpy as np
 from hd2json.jsonutils import load_and_merge_json_files
 
 from .diff_util import detect_loggable_changes, detect_loggable_changes_planet
-from .helldive import *
+from hd2api import *
 from .utils import prioritized_string_split
 
 MAX_ATTEMPT = 3
@@ -509,7 +509,7 @@ def add_to_csv(stat: ApiStatus):
         change = camp - last
         decay = camp.planet.regenPerSecond
         # total_sec = change.planet
-        total_sec = change.retrieved_at.total_seconds()
+        total_sec = change.time_delta.total_seconds()
         if total_sec <= 0:
             continue
         damage = (change.planet.health / total_sec) * -1
@@ -634,7 +634,7 @@ def get_feature_dictionary(
 
     change = camp - last
     decay = camp.planet.regenPerSecond
-    total_sec = change.planet.retrieved_at.total_seconds()
+    total_sec = change.planet.time_delta.total_seconds()
     if total_sec == 0:
         total_sec = 1
     damage = (change.planet.health / total_sec) * -1

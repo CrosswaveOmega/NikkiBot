@@ -18,17 +18,6 @@ from bot import (
 )
 from discord.ext import commands
 
-api = "https://api.helldivers2.dev/api/v1/"
-
-
-async def call_api(endpoint):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{api}{endpoint}") as r:
-            if r.status == 200:
-                js = await r.json()
-                await session.close()
-                return js
-            return {}
 
 
 def human_format(num):
