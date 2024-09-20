@@ -103,7 +103,7 @@ def create_assignment_embed(
     time_remaining = (exptime - data.retrieved_at).total_seconds()
     if data and last:
         diff = last.progress if last.progress else []
-        seconds = last.retrieved_at.total_seconds()
+        seconds = last.time_delta.total_seconds()
         if seconds > 0:
             rates = [i / seconds for i in diff]
         else:
