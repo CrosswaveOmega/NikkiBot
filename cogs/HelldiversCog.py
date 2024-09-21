@@ -380,8 +380,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if self.apistatus.warall:
             for evt in self.apistatus.warall.status.globalEvents:
                 if evt.title and evt.message:
-                    mes = re.sub(hd2.pattern, r"**\1**", evt.message)
-                    mes = re.sub(hd2.pattern3, r"***\1***", mes)
+                    mes = hd2api.hdml_parse(evt.message)
                     globtex += f"### {evt.title}\n{mes}\n\n"
 
         profile = ServerHDProfile.get_or_new(context.guild.id)
