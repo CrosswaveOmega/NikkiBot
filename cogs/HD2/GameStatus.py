@@ -99,19 +99,19 @@ class ApiStatus:
     def to_dict(self):
         return {
             "max_list_size": self.max_list_size,
-            "war": [w.model_dump() for w in self.war.items],
+            "war": [w.model_dump(exclude='time_delta') for w in self.war.items],
             "assignments": {
-                k: [item.model_dump() for item in v.items]
+                k: [item.model_dump(exclude='time_delta') for item in v.items]
                 for k, v in self.assignments.items()
             },
             "campaigns": {
-                k: [item.model_dump() for item in v.items]
+                k: [item.model_dump(exclude='time_delta') for item in v.items]
                 for k, v in self.campaigns.items()
             },
-            "planets": {k: p.model_dump() for k, p in self.planets.items()},
-            "dispatches": [d.model_dump() for d in self.dispatches],
+            "planets": {k: p.model_dump(exclude='time_delta') for k, p in self.planets.items()},
+            "dispatches": [d.model_dump(exclude='time_delta') for d in self.dispatches],
             # "warstat": self.warstat.model_dump(),
-            "warall": self.warall.model_dump(),
+            "warall": self.warall.model_dump(exclude='time_delta'),
         }
 
     @property

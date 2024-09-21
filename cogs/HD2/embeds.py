@@ -17,7 +17,7 @@ from collections import defaultdict
 import re
 from discord.utils import format_dt as fdt
 
-from hd2api.models.ABC.utils import extract_timestamp as et, hdml_parse
+from hd2api.util import extract_timestamp as et, hdml_parse
 
 import random
 from .GameStatus import ApiStatus, get_feature_dictionary
