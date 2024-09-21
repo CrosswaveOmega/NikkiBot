@@ -18,7 +18,7 @@ from bot import (
     TC_Cog_Mixin,
     TCBot,
 )
-from hd2api.util import hdml_parse
+from hd2api import hdml_parse
 
 from utility import WebhookMessageWrapper as web
 from bot.Tasks import TCTask, TCTaskManager
