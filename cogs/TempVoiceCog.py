@@ -412,6 +412,11 @@ class TempVC(commands.Cog):
         # Iterate through all voice channels in the category
         outval = ""
         for vc in category.voice_channels:
+            # Check if the bot has manage_channel permission for vc, otherwise skip
+            bot_permissions = vc.permissions_for(guild.me)
+            if not bot_permissions.manage_channels:
+                outval += f"Skipping {vc.name} because bot lacks manage_channel permission.\n"
+                continue
             # If the channel has members, add it to the vc_list and skip deletion
             if config.target_name not in vc.name:
                 outval += f"Skipping {vc.name} because it doesn't match {config.target_name} \n"
@@ -427,6 +432,7 @@ class TempVC(commands.Cog):
 
                 if vc.id in self.temporary_vc_list[guild.id][1]:
                     self.temporary_vc_list[guild.id][1].remove(vc.id)
+        
         return outval + "Cleared all unused vcs from target category."
 
     @tasks.loop(minutes=5)
