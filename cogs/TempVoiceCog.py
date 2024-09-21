@@ -353,6 +353,10 @@ class TempVC(commands.Cog):
             if config.target_name not in vc.name:
                 # outval+=f"Skipping {vc.name} because it doesn't match {config.target_name} \n"
                 continue
+            bot_permissions = vc.permissions_for(guild.me)
+            if not bot_permissions.manage_channels:
+                #Skip, not needed
+                continue
             elif len(vc.members) == 0:
                 return f"There is already an empty VC: {vc.name}"
         temp_vc = await guild.create_voice_channel(
