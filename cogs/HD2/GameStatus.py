@@ -5,7 +5,7 @@ import json
 
 import numpy as np
 
-from hd2json.jsonutils import load_and_merge_json_files
+from hd2json.jsonutils import load_and_merge_json_files as lmj
 
 from .diff_util import detect_loggable_changes, detect_loggable_changes_planet
 from hd2api import *
@@ -88,8 +88,8 @@ class ApiStatus:
         self.last_planet_get: datetime.datetime = datetime.datetime(2024, 1, 1, 0, 0, 0)
         self.warall: DiveharderAll = None
         self.nowval = DiveharderAll(status=WarStatus(), war_info=WarInfo())
-        planetjson = load_and_merge_json_files("./hd2json/planets")
-        effectjson = load_and_merge_json_files("./hd2json/effects")
+        planetjson = lmj("./hd2json/planets")
+        effectjson = lmj("./hd2json/effects")
         self.statics = StaticAll(
             galaxystatic=GalaxyStatic(**planetjson),
             effectstatic=EffectStatic(**effectjson),

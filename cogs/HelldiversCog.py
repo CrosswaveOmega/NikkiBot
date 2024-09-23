@@ -161,7 +161,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         # self.session=aiohttp.ClientSession()
         hdoverride = hd2api.APIConfig(static_path="./hd2json")
         hd2api.set_fdt(discord.utils.format_dt)
-        hd2api.logging.logging.setuphd2logging("./logs/")
+        hd2api.setuphd2logging("./logs/")
         self.img = None
         hdoverride.client_name = bot.keys.get("hd2cli")
         self.apistatus = hd2.ApiStatus(client=hdoverride)
