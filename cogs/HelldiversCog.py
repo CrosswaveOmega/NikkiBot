@@ -759,7 +759,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         for planet in planets:
             planet.currentOwner = "Illuminate"
             campaigns.append(
-                hd2.Campaign2(
+                hd2api.models.Campaign2(
                     id=random.randint(10000000, 999999999),
                     planet=planet,
                     type=3,
