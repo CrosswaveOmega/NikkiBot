@@ -21,10 +21,10 @@ class AIMessageTemplates(MessageTemplates):
         emb = Embed(title="Audit", description=f"```{message.content}```")
         out, names = chat.summary()
         guild, user = message.guild, message.author
-        emb.add_field(name="chat_summary", value=out[:1020], inline=False)
+        emb.add_field(name="chat_summary", value=out[:1000], inline=False)
         if names:
-            emb.add_field(name="Functions", value=names[:1020], inline=False)
-        emb.add_field(name="chat_summary", value=f"choose: {str(chat.tool_choice)}")
+            emb.add_field(name="Functions", value=names[:1000], inline=False)
+        emb.add_field(name="chat_summary", value=f"choose: {str(chat.tool_choice)}"[:1000])
         emb.add_field(
             name="Server Data",
             value=f"{guild.name}, \nServer ID: {guild.id}",
