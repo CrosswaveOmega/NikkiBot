@@ -410,8 +410,50 @@ class ApiStatus:
                     if planet_ind in p.waypoints:
                         if k not in visited:
                             stack.append(planet_ind)
-
         return result
+    
+    def calculate_total_impact(
+        self
+    ):
+        all_players, last = self.war.get_first_change()
+        total_contrib = [0, 0.0, 0.0, 0.0,0.0]
+        for k, list in self.campaigns.items():
+            camp, last = list.get_first_change()
+            pc = camp.planet.statistics.playerCount
+            planet_difference: Planet = (camp - last).planet
+            if planet_difference.event != None:
+                p_evt = planet_difference.event
+                if isinstance(p_evt.time_delta, datetime.timedelta):
+                    total_sec = p_evt.time_delta.total_seconds()
+                    if total_sec==0:
+                        continue
+                    rate = -1 * (p_evt.health)
+                    total_contrib[0] += camp.planet.statistics.playerCount
+                    total_contrib[1] += rate
+
+                    total_contrib[4] += rate/total_sec
+
+            elif planet_difference.health_percent() != 0:
+                if isinstance(planet_difference.time_delta, datetime.timedelta):
+                    total_sec = planet_difference.time_delta.total_seconds()
+                    if total_sec==0:
+                        continue
+                    rate = (-1 * (planet_difference.health)) + (
+                        (camp.planet.regenPerSecond) * total_sec
+                    )
+                    total_contrib[0] += camp.planet.statistics.playerCount
+                    total_contrib[1] += rate
+
+                    total_contrib[4] += rate/total_sec
+
+        diver_amount=total_contrib[0]
+        total_players=all_players.statistics.playerCount
+        diverpercent=round((total_contrib[0]/total_players)*100.0, 4)
+        total_contrib2=round(total_contrib[1], 4)
+        per_second=round(total_contrib[4],8)
+
+        
+        return diver_amount,total_players,diverpercent,total_contrib2,per_second
 
 
 def save_to_json(api_status: "ApiStatus", filepath: str) -> None:
@@ -593,6 +635,28 @@ def add_to_csv(stat: ApiStatus):
     # Define the CSV file path
     csv_newfile_path = "statistics_newer.csv"
     csv_file_path = "statistics.csv"
+    csv_impact_track = "impact_track.csv"
+
+    diver_amount,total_players,diverpercent,total_contrib,per_second=stat.calculate_total_impact()
+    rows_for_imp=[
+        {'timestamp':timestamp,
+         'players_contriv':diver_amount,
+         'total_players':total_players,
+         'player_percent':diverpercent,
+         'total_contrib':total_contrib,
+         'per_second':per_second}
+    ]
+
+    with open(csv_impact_track, mode="a+", newline="", encoding="utf8") as file:
+        writer = csv.DictWriter(file, fieldnames=rows_for_imp[0].keys())
+
+        # If the file is empty, write the header
+        if file.tell() == 0:
+            writer.writeheader()
+
+        # Write the rows
+        for row in rows_for_imp:
+            writer.writerow(row)
     # Write the rows to the CSV file
     # print(rows)
     if not rows:

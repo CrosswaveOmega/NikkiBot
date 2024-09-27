@@ -2,8 +2,6 @@ from typing import *
 import re
 
 
-from discord.utils import format_dt as fdt
-
 
 def split_and_cluster_strings(
     input_string: str, max_cluster_size: int, split_substring: str, length=len
@@ -146,3 +144,4 @@ def prioritized_string_split(
 #         return fdt_result
 
 #     return None
+
