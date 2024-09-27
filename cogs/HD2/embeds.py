@@ -357,7 +357,7 @@ def campaign_view(
                 thisamt = round((rate / camp.planet.maxHealth) * 100.0, 5)
                 total_contrib[2] += thisamt
                 total_contrib[3] += round((thisamt / max(1, total_sec)) * 60 * 60, 5)
-                total_contrib[4] += rate/p_evt.time_delta.total_seconds()
+                total_contrib[4] += rate/total_sec
 
         elif planet_difference.health_percent() != 0:
             if isinstance(planet_difference.time_delta, datetime.timedelta):
@@ -370,7 +370,7 @@ def campaign_view(
                 thisamt = round((rate / camp.planet.maxHealth) * 100.0, 5)
                 total_contrib[2] += thisamt
                 total_contrib[3] += round((thisamt / total_sec) * 60 * 60, 5)
-                total_contrib[4] += rate/p_evt.time_delta.total_seconds()
+                total_contrib[4] += rate/total_sec
 
         features = get_feature_dictionary(stat, k)
         pred = make_prediction_for_eps(features)
