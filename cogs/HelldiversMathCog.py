@@ -230,7 +230,7 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         interaction: discord.Interaction,
     ):
         ctx: commands.Context = await self.bot.get_context(interaction)
-        current_date_time = hd2api.builders.get_time(self.apistatus.warall)
+        current_date_time = hd2api.builders.get_time_dh(self.apistatus.warall)
         await ctx.send(
             f"{discord.utils.format_dt(current_date_time,'F')}, in iso={current_date_time.isoformat()}"
         )

@@ -216,7 +216,7 @@ class ApiStatus:
                 try:
                     # as1 = await GetApiV1AssignmentsAll(api_config_override=self.client)
                     assignments = build_all_assignments(
-                        self.warall.major_order, self.warall
+                        self.warall.major_order
                     )
                     break
                 except Exception as e:

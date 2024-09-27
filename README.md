@@ -28,7 +28,7 @@ The tasks can be customized by adding coroutines to the Guild_Task_Functions cla
 
 10. **Article Summarizaiton:** Summarize websites using a combination of the JSPyBridge library; as well as the mozilla/readability, jsdom, and turndown npm packages.
 
-11. **Helldivers 2 Feature!**: View the current status of the Galactic War in Helldivers 2 at a high level.
+11. **Helldivers 2 Features!**: View the current status of the Galactic War in Helldivers 2 at a high level.
 
 12. **More veaturs to come!**
 
@@ -47,7 +47,9 @@ Python 3.11 or higher!
 - keyring
 - chromadb
 - google-api-python-client
-please make sure to install the latest node.js runtime on your system to ensure that the Summarizer works.
+- [Helldivers2api.py](https://github.com/CrosswaveOmega/hd2api.py)
+
+Please make sure to install the latest node.js runtime on your system to ensure that the Summarizer works.
 
 ## Technical Features
 - Experimental autosync system which only syncs app command trees if it detects a difference between saved dictionary representations of the App Command Tree.
