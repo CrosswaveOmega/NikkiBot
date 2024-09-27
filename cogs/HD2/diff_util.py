@@ -5,6 +5,7 @@ logs = logging.getLogger("TCLogger")
 
 from hd2api.models.ABC.model import BaseApiModel
 from hd2api.builders import *
+from hd2api.models import DiveharderAll, StaticAll
 
 
 from pydantic import Field
