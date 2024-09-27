@@ -322,7 +322,7 @@ def campaign_view(
     embs = [emb]
     all_players, last = stat.war.get_first_change()
     change_war = all_players - last
-    total_contrib = [0, 0.0, 0.0, 0.0]
+    total_contrib = [0, 0.0, 0.0, 0.0,0.0]
     total = 0
     el = 0
     prop = defaultdict(int)
@@ -357,6 +357,7 @@ def campaign_view(
                 thisamt = round((rate / camp.planet.maxHealth) * 100.0, 5)
                 total_contrib[2] += thisamt
                 total_contrib[3] += round((thisamt / max(1, total_sec)) * 60 * 60, 5)
+                total_contrib[4] += rate/p_evt.time_delta.total_seconds()
 
         elif planet_difference.health_percent() != 0:
             if isinstance(planet_difference.time_delta, datetime.timedelta):
@@ -369,6 +370,7 @@ def campaign_view(
                 thisamt = round((rate / camp.planet.maxHealth) * 100.0, 5)
                 total_contrib[2] += thisamt
                 total_contrib[3] += round((thisamt / total_sec) * 60 * 60, 5)
+                total_contrib[4] += rate/p_evt.time_delta.total_seconds()
 
         features = get_feature_dictionary(stat, k)
         pred = make_prediction_for_eps(features)
@@ -392,7 +394,7 @@ def campaign_view(
             value=f"{players_on_stalemated} players are on {len(stalemated)} stalemated worlds.\n"
             + (f"\n".join([f"* {s}" for s in stalemated]))[:900],
         )
-    emb0.description += f"\n`{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}%` divers contributed `{round(total_contrib[1], 4)}` visible Impact, so about `({round(total_contrib[2],5)}%, {round(total_contrib[3],5)}% per hour)` lib."
+    emb0.description += f"\n`{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}%` divers contributed `{round(total_contrib[1], 4)}` visible Impact, which is `{round(total_contrib[4],8)}` impact per second, so about `({round(total_contrib[2],5)}%, {round(total_contrib[3],5)}% per hour)` lib."
     emb0.timestamp = discord.utils.utcnow()
     return embs
 

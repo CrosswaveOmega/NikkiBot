@@ -981,6 +981,13 @@
           "message": {
             "type": "string",
             "description": "The message containing a human readable text."
+          },
+          "tagIds": {
+            "type": "array",
+            "description": "Use unknown, a list of tags attached to each news_feed item.",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
