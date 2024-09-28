@@ -254,34 +254,34 @@
         "properties": {
           "warId": {
             "type": "integer",
-            "description": "The war season this snapshot refers to.",
+            "description": "The identifier  season this snapshot refers to.",
             "format": "int32"
           },
           "time": {
             "type": "integer",
-            "description": "The time this snapshot was taken.",
+            "description": "The internal 'wartime' this snapshot was taken.  Wartime is not a unix timestamp, but the total number of internal ticks that have occoured on ArrowHead's server.  Prone to a phenomenon called wartime drift.",
             "format": "int64"
           },
           "impactMultiplier": {
             "type": "number",
-            "description": "This is the factor by which influence at the end of a mission is multiplied to calculate the impact on liberation",
+            "description": "This is the factor by which influence at the end of a mission is multiplied to calculate the impact on liberation.  This value is observed to inversely scale with the total number of players online, but the exact means of calculation is unknown.",
             "format": "double"
           },
           "storyBeatId32": {
             "type": "integer",
-            "description": "Internal identifier, purpose unknown.",
+            "description": "Internal identifier possibly pertaining to an automated, storybeat for the galactic war, but is often set to 0.",
             "format": "int64"
           },
           "planetStatus": {
             "type": "array",
-            "description": "A list of statuses for planets.",
+            "description": "List of all states of the Planets in the galactic war at the current time.",
             "items": {
               "$ref": "#/components/schemas/PlanetStatus"
             }
           },
           "planetAttacks": {
             "type": "array",
-            "description": "A list of attacks currently ongoing.",
+            "description": "A list of attacks between currently ongoing at the time of this snapshot.  Planet Attacks are required for Liberation Campaigns (when a Super Earth world attacks an enemy world) and Defense Campaigns (when an enemy world attacks a Super Earth world).",
             "items": {
               "$ref": "#/components/schemas/PlanetAttack"
             }
@@ -309,7 +309,7 @@
           },
           "communityTargets": {
             "type": "array",
-            "description": "A list of community targets.",
+            "description": "A list of 'community targets', which have not been used yet by ArrowHead.",
             "items": {
               "$ref": "#/components/schemas/CommunityTarget"
             }
@@ -323,26 +323,26 @@
           },
           "planetActiveEffects": {
             "type": "array",
-            "description": "A list of planet effects ",
+            "description": "A list of active planet effects.",
             "items": {
               "$ref": "#/components/schemas/PlanetActiveEffect"
             }
           },
           "globalEvents": {
             "type": "array",
-            "description": "All current global events: including major orders",
+            "description": "All current global events, including major orders",
             "items": {
               "$ref": "#/components/schemas/GlobalEvent"
             }
           },
           "layoutVersion": {
             "type": "integer",
-            "description": "Overall api version."
+            "description": "Use unknown.  Value tends to increase whenever the waypoints change."
             
           },
           "superEarthWarResults":{
             "type": "array",
-            "description": "Results of Super Earth's engagements during the war.",
+            "description": "Possibly results of Super Earth's engagements during prior galactic wars.  Use otherwise unknown.",
             "items": {
               "$ref": "#/components/schemas/CommunityTarget"
             }
@@ -351,12 +351,12 @@
       },
       "PlanetStatus": {
         "type": "object",
-        "description": "Represents the 'current' status of a planet in the galactic war.",
+        "description": "Represents the 'current' state of a planet in the galactic war.",
         "additionalProperties": false,
         "properties": {
           "index": {
             "type": "integer",
-            "description": "The identifier of the PlanetInfo this status refers to.",
+            "description": "The planet Index of the planet this status object refers to, based on WarInfo",
             "format": "int32"
           },
           "owner": {
@@ -388,12 +388,12 @@
         "properties": {
           "source": {
             "type": "integer",
-            "description": "Where the attack originates from.",
+            "description": "planetIndex of the planet where the attack originates from.",
             "format": "int32"
           },
           "target": {
             "type": "integer",
-            "description": "The planet under attack.",
+            "description": "planetIndex of the planet that is under attack.",
             "format": "int32"
           }
         }
@@ -473,7 +473,7 @@
           },
           "planetIndex": {
             "type": "integer",
-            "description": "The index of the planet.",
+            "description": "The planetIndex of the planet where this event is.",
             "format": "int32"
           },
           "eventType": {
@@ -690,17 +690,17 @@
       },
       "PlanetInfo": {
         "type": "object",
-        "description": "Represents information of a planet from the 'WarInfo' endpoint returned by ArrowHead's API.",
+        "description": "Represents  information of a planet as retrurned by from the 'WarInfo' endpoint with ArrowHead's API.",
         "additionalProperties": false,
         "properties": {
           "index": {
             "type": "integer",
-            "description": "The numerical identifier for this planet, used as reference by other properties throughout the API (like Waypoints).",
+            "description": "The numerical identifier for this planet, often referred to as the PlanetIndex, used to reference by other properties throughout the API (like Waypoints).",
             "format": "int32"
           },
           "settingsHash": {
             "type": "integer",
-            "description": "Purpose unknown at this time.",
+            "description": "Hash value pointing to the internal planet settings for this world.  This is used in game.",
             "format": "int64"
           },
           "position": {
@@ -883,7 +883,7 @@
         "properties": {
           "planetIndex": {
             "type": "integer",
-            "description": "The Index for which planet these stats are.",
+            "description": "The Index for which planet these stats are scoped to.",
             "format": "int32"
           },
           "missionsWon": {
@@ -1078,17 +1078,17 @@
       },
       "Task": {
         "type": "object",
-        "description": "Represents a task in an Assignment.\nIt's exact values are not known, therefore little of it's purpose is clear.",
+        "description": "Represents a task in an Assignment.\nIt's exact values are not all known at this time.",
         "additionalProperties": false,
         "properties": {
           "type": {
             "type": "integer",
-            "description": "A numerical value, purpose unknown.",
+            "description": "A numerical value pertaining to the type of task to be completed.  .",
             "format": "int32"
           },
           "values": {
             "type": "array",
-            "description": "A list of numerical values, purpose unknown.",
+            "description": "A list of numerical values pertaining to the settings of this task.  ",
             "items": {
               "type": "integer",
               "format": "uint64"
@@ -1096,7 +1096,7 @@
           },
           "valueTypes": {
             "type": "array",
-            "description": "A list of numerical values, purpose unknown.",
+            "description": "A list of numerical values pertaining to what each value in values reprsents.  Entire list of known value types is unknown.",
             "items": {
               "type": "integer",
               "format": "uint64"
@@ -1111,7 +1111,7 @@
         "properties": {
           "type": {
             "type": "integer",
-            "description": "The type of reward.  Initally thought to be 1 for medals, recent mos have made this unlikely",
+            "description": "The type of reward.  Initally thought to be 1 for medals, recent mos have disproven this.  Use is unknown.",
             "format": "int32"
           },
           "id32": {
@@ -1266,14 +1266,14 @@
           },
           "progress": {
             "type": "array",
-            "description": "A list of numbers, how they represent progress is unknown.",
+            "description": "A list of numbers representing progress in the assignment, pertaining to each task.",
             "items": {
               "type": "integer",
               "format": "uint64"
             }
           },
           "title": {
-            "description": "The title of the assignment.",
+            "description": "The title of the assignment.  Usually just 'MAJOR ORDER' in all caps.",
             "oneOf": [
               {
                 "title": "String",
@@ -1591,6 +1591,12 @@
             "type": "string",
             "description": "The name of the sector the planet is in, as shown in game."
           },
+          "sector_id":{
+
+            "type": "integer",
+            "description": "The identifier of the sector this planet is located in as returned from planet info.  For reasons unknown, it does not always match up with the .",
+            "format": "int32"
+          },
           "biome": {
             "description": "The biome this planet has.",
             "oneOf": [
@@ -1608,7 +1614,7 @@
           },
           "hash": {
             "type": "integer",
-            "description": "A hash assigned to the planet by ArrowHead, purpose unknown.",
+            "description": "A hash assigned to the planet pointing to the internal planet settings for this world.",
             "format": "int64"
           },
           "position": {

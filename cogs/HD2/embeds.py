@@ -351,6 +351,8 @@ def campaign_view(
             p_evt = planet_difference.event
             if isinstance(p_evt.time_delta, datetime.timedelta):
                 total_sec = p_evt.time_delta.total_seconds()
+                if total_sec==0:
+                    continue
                 rate = -1 * (p_evt.health)
                 total_contrib[0] += camp.planet.statistics.playerCount
                 total_contrib[1] += rate
@@ -362,6 +364,8 @@ def campaign_view(
         elif planet_difference.health_percent() != 0:
             if isinstance(planet_difference.time_delta, datetime.timedelta):
                 total_sec = planet_difference.time_delta.total_seconds()
+                if total_sec==0:
+                    continue
                 rate = (-1 * (planet_difference.health)) + (
                     (camp.planet.regenPerSecond) * total_sec
                 )
