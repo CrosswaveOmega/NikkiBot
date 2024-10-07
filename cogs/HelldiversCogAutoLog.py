@@ -1092,11 +1092,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 mi = info.messageId32
                 tc, mc = False, False
                 if info.title:
-                    if self.titleids.get(ti, None) != info.title:
+                    if hdml_parse(self.titleids.get(ti, "")) != hdml_parse(info.title):
                         self.titleids[ti] = info.title
                         tc = True
                 if info.message:
-                    if self.messageids.get(mi, None) != info.message:
+                    if hdml_parse(self.messageids.get(mi, "")) != hdml_parse(info.message):
                         self.messageids[mi] = info.message
                         mc = True
                 if all(key in ["title", "message"] for key in listv):
