@@ -34,9 +34,17 @@ class GameEvent(BaseApiModel):
 
 async def compare_value_with_timeout(model1, field):
     try:
-        return await asyncio.wait_for(
+        value = await asyncio.wait_for(
             asyncio.to_thread(model1.get, field, None), timeout=5
         )
+        if isinstance(value, list):
+            #TODO: replace with something less 
+            # hacky later.
+            try:
+                value=sorted(value)
+            except ValueError:
+                print("unsortable")
+        return value
     except asyncio.TimeoutError as e:
         logs.error("Could not get field %s ", field, exc_info=e)
         raise e
@@ -64,6 +72,7 @@ async def get_differing_fields(
             if len(val1) != len(val2):
                 # print(len(val1),len(val2))
                 biggestsize = max(len(val1), len(val2))
+                
                 for i in range(biggestsize):
                     v1 = val1[i] if i < len(val1) else None
                     v2 = val2[i] if i < len(val2) else None
