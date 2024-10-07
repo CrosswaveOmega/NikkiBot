@@ -42,7 +42,7 @@ async def compare_value_with_timeout(model1, field):
             # hacky later.
             try:
                 value=sorted(value)
-            except ValueError:
+            except TypeError:
                 print("unsortable")
         return value
     except asyncio.TimeoutError as e:
