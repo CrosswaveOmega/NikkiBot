@@ -159,7 +159,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         self.bot: TCBot = bot
         self.get_running = False
         # self.session=aiohttp.ClientSession()
-        hdoverride = hd2api.APIConfig(static_path="./hd2json")
+        hdoverride = hd2api.APIConfig(static_path="./hd2json", timeout=15)
         hd2api.set_fdt(discord.utils.format_dt)
         hd2api.setuphd2logging("./logs/")
         self.img = None
