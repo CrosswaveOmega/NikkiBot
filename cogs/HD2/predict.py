@@ -173,7 +173,7 @@ def make_graph():
     from matplotlib.font_manager import FontProperties
 
     terminal_font = FontProperties(
-        fname=r"./assets/Michroma-Regular.ttf"
+        fname=r"./assets/ChakraPetch-SemiBold.ttf"
     )  # Update the path to your font file
 
     # Calculate the confidence intervals
@@ -283,7 +283,7 @@ def make_graph2():
     from matplotlib.font_manager import FontProperties
 
     terminal_font = FontProperties(
-        fname=r"./assets/Michroma-Regular.ttf"
+        fname=r"./assets/ChakraPetch-SemiBold.ttf"
     )  # Update the path to your font file
 
     # Calculate the confidence intervals

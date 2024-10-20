@@ -17,7 +17,7 @@ CLOUD_ALPHA = 180
 
 BIOME_IMAGE_PATH =r"./assets/allimages/*"
 OUTPUT_PATH="./assets/planets/"
-FONT_PATH="./assets/Michroma-Regular.ttf"
+FONT_PATH="./assets/ChakraPetch-SemiBold.ttf"
 
 def draw_streak(draw, xpix, ypix, lightest_color):
     start_x = random.randint(0, xpix - 1)

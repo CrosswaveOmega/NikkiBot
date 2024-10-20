@@ -114,8 +114,8 @@ def highlight(img, index, x, y, name, hper, owner, event, task_planets, health=0
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
 
-    font = ImageFont.truetype("./assets/Michroma-Regular.ttf", 8)
-    font2 = ImageFont.truetype("./assets/Michroma-Regular.ttf", 8)
+    font = ImageFont.truetype("./assets/ChakraPetch-SemiBold.ttf", 8)
+    font2 = ImageFont.truetype("./assets/ChakraPetch-SemiBold.ttf", 8)
     bbox = draw.textbbox((0, 0), name, font=font, align="center", spacing=0)
 
     out = 2
