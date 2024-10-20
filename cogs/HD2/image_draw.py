@@ -15,7 +15,7 @@ import importlib.util
 from utility.views import BaseView
 from utility.image_functions import draw_arrow, draw_dot
 
-SCALE = 1.2
+SCALE = 0.8
 CELL_SIZE = 200
 GRIDDRAW = False
 
@@ -114,8 +114,8 @@ def highlight(img, index, x, y, name, hper, owner, event, task_planets, health=0
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
 
-    font = ImageFont.truetype("./assets/ChakraPetch-SemiBold.ttf", 8)
-    font2 = ImageFont.truetype("./assets/ChakraPetch-SemiBold.ttf", 8)
+    font = ImageFont.truetype("./assets/ChakraPetch-SemiBold.ttf", 12)
+    font2 = ImageFont.truetype("./assets/ChakraPetch-SemiBold.ttf", 12)
     bbox = draw.textbbox((0, 0), name, font=font, align="center", spacing=0)
 
     out = 2
@@ -133,7 +133,7 @@ def highlight(img, index, x, y, name, hper, owner, event, task_planets, health=0
         if event:
             outline = (64, 64, 255)
     bbox2 = draw.textbbox(
-        (0, 0), f"{str(hper)}\n{100-int(health)}", font=font2, align="center", spacing=0
+        (0, 0), f"{str(hper)}", font=font2, align="center", spacing=0
     )
     background_box = [
         coordinate[0] - bbox[2] / 2 - 2,
@@ -166,7 +166,7 @@ def highlight(img, index, x, y, name, hper, owner, event, task_planets, health=0
     )
     draw.text(
         (coordinate[0] - bbox2[2] / 2, background_box[3] + 20),
-        f"{str(hper)}\n{100-int(health)}",
+        f"{str(hper)}",
         fill=(255, 255, 255),
         font=font2,
         align="center",
@@ -226,8 +226,8 @@ def create_gif(filepath, apistat: ApiStatus):
         if apistat and apistat.warall:
             for pf in apistat.warall.war_info.planetInfos:
                 if pf.index == planet.index:
-                    name = str(planet.index) + ":" + str(planet.name).replace(" ", "\n")
-                    hper = str(planet.sector_id) + ":" + str(planet.sector)
+                    name =  str(planet.name).replace(" ", "\n")
+                    hper = str(planet.sector)
                     break
         event = True if planet.event is not None else False
         owner = planet.currentOwner.lower()
