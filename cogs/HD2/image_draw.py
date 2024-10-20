@@ -15,7 +15,7 @@ import importlib.util
 from utility.views import BaseView
 from utility.image_functions import draw_arrow, draw_dot
 
-SCALE = 0.8
+SCALE = 0.9
 CELL_SIZE = 200
 GRIDDRAW = False
 
