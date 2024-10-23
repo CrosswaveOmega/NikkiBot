@@ -109,9 +109,11 @@ def create_assignment_embed(
         else:
             rates = [i / 1 for i in diff]
 
-    progress = data["progress"]
+    progress = data.progress
     embed.add_field(name="Objective", value=data["description"], inline=False)
     tasks = ""
+    if data.flags==2:
+        tasks+="Complete task or the other.\n"
     for e, task in enumerate(data.tasks):
         chg, projected = None, None
         prog = ""
@@ -129,6 +131,7 @@ def create_assignment_embed(
         embed.add_field(name="Reward", value=data.reward.format(), inline=True)
 
     embed.add_field(name="Expiration", value=fdt(exptime, "f"), inline=True)
+    embed.set_footer(text=f"Flags={data.flags}, type={data.type}")
 
     return embed
 
