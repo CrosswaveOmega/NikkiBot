@@ -113,7 +113,7 @@ def create_assignment_embed(
     embed.add_field(name="Objective", value=data["description"], inline=False)
     tasks = ""
     if data.flags==2:
-        tasks+="Complete task or the other.\n"
+        tasks+="Complete any one task to win.\n"
     for e, task in enumerate(data.tasks):
         chg, projected = None, None
         prog = ""
