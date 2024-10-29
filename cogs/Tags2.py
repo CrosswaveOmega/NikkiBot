@@ -490,29 +490,70 @@ class Tags(commands.Cog):
         newtext: Optional[app_commands.Range[str, 5, 2000]] = None,
     ):
         ctx: commands.Context = await self.bot.get_context(interaction)
-        cycle_check, steps = await is_cyclic_mod(tagname, newtext, ctx.guild.id)
-        if cycle_check:
-            await MessageTemplates.tag_message(
-                ctx,
-                f"The text will expand infinitely at keys {str(steps)}.",
-                title="Tag edit error.",
-                ephemeral=False,
-            )
-            return
-
-        edited_tag = await Tag.edit(tagname, interaction.user.id, newtext)
-        if edited_tag:
-            new_tag = await Tag.get(tagname, ctx.guild.id)
-            await MessageTemplates.tag_message(
-                ctx, f"Tag '{tagname}' edited.", tag=new_tag.get_dict(), ephemeral=True
-            )
-        else:
+        new_tag = await Tag.get(tagname, ctx.guild.id)
+        if new_tag.user!=interaction.user.id:
             await MessageTemplates.tag_message(
                 ctx,
                 f"You don't have permission to edit this tag.",
                 title="Tag edit error.",
                 ephemeral=True,
             )
+            return
+        view = TagEditView(
+            user=interaction.user,
+            content=new_tag.text,
+            key=tagname,
+            topic=new_tag.tag_category,
+            has_image=False,
+            guild_only=True,
+            timeout=10 * 60,
+        )
+        emb = view.make_embed()
+        tmes = await ctx.send(
+            "Please apply any edits using the Edit Note button, and press complete when you're satisfied!",
+            embed=emb,
+            view=view,
+            ephemeral=True,
+        )
+
+        await view.wait()
+
+        if view.done:
+            await tmes.edit(view=None, content="View Closed.")
+            if not view.value:
+                return
+
+            c, k, t = view.done
+            cycle_check, steps = await is_cyclic_mod(tagname, newtext, ctx.guild.id)
+            if cycle_check:
+                await MessageTemplates.tag_message(
+                    ctx,
+                    f"The text will expand infinitely at keys {str(steps)}.",
+                    title="Tag edit error.",
+                    ephemeral=False,
+                )
+                return
+
+            edited_tag = await Tag.edit(tagname, interaction.user.id, c)
+            if edited_tag:
+                new_tag = await Tag.get(tagname, ctx.guild.id)
+                await MessageTemplates.tag_message(
+                    ctx, f"Tag '{tagname}' edited.", tag=new_tag.get_dict(), ephemeral=True
+                )
+            else:
+                await MessageTemplates.tag_message(
+                    ctx,
+                    f"You don't have permission to edit this tag.",
+                    title="Tag edit error.",
+                    ephemeral=True,
+                )
+        else:
+            # Handle user cancellation or timeout
+            message = "Cancelled"
+            if view.value == "timeout":
+                message = "You timed out."
+            await tmes.edit(content=message, view=None, embed=view.make_embed())
+
 
     @tags.command(name="list", description="list all tags")
     async def listtags(self, interaction: discord.Interaction):
