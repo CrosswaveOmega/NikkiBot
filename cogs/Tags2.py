@@ -63,6 +63,7 @@ async def is_cyclic_mod(start_key, valuestartmain, guildid):
 
     async def visit(key, steps):
         if key in stack:
+            print("Key in stack.")
             steps.append(key)
             return True, steps
         if key in visited:
@@ -79,7 +80,10 @@ async def is_cyclic_mod(start_key, valuestartmain, guildid):
             text = tag.text
         for word in re.findall(r"\{(.*?)\}", text):
             steps.append(word)
-            if await visit(word, steps):
+            print(key,word,stack,visited,steps)
+            visite,st=await visit(word, steps)
+            if  visite:
+                print(key in stack, key in visited)
                 return True, steps
             steps.pop()
         stack.remove(key)
@@ -499,9 +503,12 @@ class Tags(commands.Cog):
                 ephemeral=True,
             )
             return
+        text=new_tag.text
+        if newtext:
+            text=newtext
         view = TagEditView(
             user=interaction.user,
-            content=new_tag.text,
+            content=text,
             key=tagname,
             topic=new_tag.tag_category,
             has_image=False,
@@ -534,7 +541,7 @@ class Tags(commands.Cog):
                 )
                 return
 
-            edited_tag = await Tag.edit(tagname, interaction.user.id, c)
+            edited_tag = await Tag.edit(tagname, interaction.user.id, newtext=c)
             if edited_tag:
                 new_tag = await Tag.get(tagname, ctx.guild.id)
                 await MessageTemplates.tag_message(
