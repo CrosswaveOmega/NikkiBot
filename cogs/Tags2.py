@@ -291,7 +291,7 @@ class Tags(commands.Cog):
         Autocomplete for tag names
         """
         if interaction.guild:
-            tags = await Tag.get_matching_tags(current, interaction.guild.id)
+            tags = await Tag.get_matching_tags_from_user(current, interaction.guild.id, interaction.user.id)
             choices = self._shared_autocomplete_logic(tags, current)
 
             return choices
@@ -458,6 +458,7 @@ class Tags(commands.Cog):
             await tmes.edit(content=message, view=None, embed=view.make_embed())
 
     @tags.command(name="delete", description="delete a tag")
+    @app_commands.autocomplete(tagname=tag_edit_autocomplete)
     @app_commands.describe(tagname="tagname to delete")
     async def delete(self, interaction: discord.Interaction, tagname: str):
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -477,7 +478,9 @@ class Tags(commands.Cog):
                 title="Tag delete error.",
             )
 
+    
     @tags.command(name="edit", description="edit a tag")
+    @app_commands.autocomplete(tagname=tag_edit_autocomplete)
     @app_commands.describe(tagname="tagname to edit")
     @app_commands.describe(newtext="new text of the tag")
     async def edit(

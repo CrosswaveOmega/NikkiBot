@@ -67,7 +67,10 @@ class MessageTemplates:
         """This is for the tag system."""
         tagres = ""
         if tag != None:
-            to_send = tag["text"]
+            if 'text' in tag:
+                to_send = tag["text"]
+            else:
+                to_send="???"
             if len(to_send) > 2000:
                 to_send = to_send[:1950] + "...tag size limit."
             tagres = f"{tag['tagname']}\n```{to_send}```\n Guild only:{tag.get('guild_only','???')}"
