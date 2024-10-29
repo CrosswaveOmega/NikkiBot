@@ -53,10 +53,13 @@ async def is_cyclic_i(start_key):
     return await visit(start_key)
 
 
-async def is_cyclic_mod(start_key, valuestart, guildid):
+async def is_cyclic_mod(start_key, valuestartmain, guildid):
     visited = set()
     stack = set()
     steps = []
+    valuestart=valuestartmain
+    if not valuestart:
+        valuestart=""
 
     async def visit(key, steps):
         if key in stack:
@@ -512,7 +515,8 @@ class Tags(commands.Cog):
             for name, text in taglist:
                 if text:
                     value = text
-                    if len(embed_list[-1].fields) == 10:
+
+                    if len(embed.fields) == 10:
                         e += 1
                         embed_list.append(embed)
                         embed = discord.Embed(
