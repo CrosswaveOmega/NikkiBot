@@ -521,7 +521,26 @@ class Tag(Base):
             .limit(25)
         )
         return tag.scalars().all()
+    
+    @classmethod
+    @ensure_session
+    async def get_matching_tags_from_user(
+        cls, tagname: str, gid: int, uid:int, session: OptionalSession = None
+    ):
 
+        tag = await session.execute(
+            select(cls)
+            .where(
+                and_(
+                    cls.tagname.like(f"%{tagname}%"),
+                    cls.user==uid,
+                    or_(cls.guild_only == False, cls.guildid == gid),
+                )
+            )
+            .limit(25)
+        )
+        return tag.scalars().all()
+    
     @staticmethod
     async def list_all(gid: int):
         async with DatabaseSingleton.get_async_session() as session:
