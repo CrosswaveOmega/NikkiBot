@@ -487,7 +487,7 @@ class Tags(commands.Cog):
         self,
         interaction: discord.Interaction,
         tagname: str,
-        #newtext: Optional[app_commands.Range[str, 5, 2000]] = None,
+        newtext: Optional[app_commands.Range[str, 5, 2000]] = None,
     ):
         ctx: commands.Context = await self.bot.get_context(interaction)
         new_tag = await Tag.get(tagname, ctx.guild.id)
