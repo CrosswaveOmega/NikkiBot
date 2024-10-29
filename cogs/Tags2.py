@@ -285,6 +285,18 @@ class Tags(commands.Cog):
         )
         self.bot = bot
 
+
+    async def tag_edit_autocomplete(self, interaction: discord.Interaction, current: str):
+        """
+        Autocomplete for tag names
+        """
+        if interaction.guild:
+            tags = await Tag.get_matching_tags(current, interaction.guild.id)
+            choices = self._shared_autocomplete_logic(tags, current)
+
+            return choices
+        return []
+
     async def tag_autocomplete(self, interaction: discord.Interaction, current: str):
         """
         Autocomplete for tag names

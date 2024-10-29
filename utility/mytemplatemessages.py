@@ -72,13 +72,14 @@ class MessageTemplates:
                 to_send = to_send[:1950] + "...tag size limit."
             tagres = f"{tag['tagname']}\n```{to_send}```\n Guild only:{tag.get('guild_only','???')}"
         embed = Embed(title=title, description=tagres, color=Color(color))
-        if "topic" in tag:
-            if tag["topic"]:
-                embed.add_field(name="Category", value=tag["topic"], inline=False)
+        if tag!=None:
+            if "topic" in tag:
+                if tag["topic"]:
+                    embed.add_field(name="Category", value=tag["topic"], inline=False)
 
-        if "filename" in tag:
-            if tag["filename"]:
-                embed.add_field(name="Has file", value=tag["filename"], inline=False)
+            if "filename" in tag:
+                if tag["filename"]:
+                    embed.add_field(name="Has file", value=tag["filename"], inline=False)
         embed.add_field(name="Result", value=description, inline=False)
         embed.set_thumbnail(url=AssetLookup.get_asset("embed_icon"))
         embed.set_author(
