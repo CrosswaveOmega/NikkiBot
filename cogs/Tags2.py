@@ -467,7 +467,7 @@ class Tags(commands.Cog):
             await MessageTemplates.tag_message(
                 ctx,
                 f"Tag {tagname} deleted  successfully.",
-                tag={},
+                tag=None,
                 title="Tag deleted.",
                 ephemeral=False,
             )
