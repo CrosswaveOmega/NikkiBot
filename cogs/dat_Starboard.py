@@ -441,6 +441,7 @@ class Tag(Base):
         tagname: str,
         user: int,
         newtext: Optional[str] = None,
+        newcat: Optional[str] = None,
         guild_only: Optional[bool] = None,
         imb: Optional[ByteString] = None,
     ):
@@ -452,6 +453,8 @@ class Tag(Base):
                     tag.text = newtext
                 if guild_only is not None:
                     tag.guild_only = guild_only
+                if newcat is not None and len(newcat)>5:
+                    tag.tag_category=newcat,
                 tag.lastupdate = discord.utils.utcnow()
                 if imb != None:
                     tag.image = imb
