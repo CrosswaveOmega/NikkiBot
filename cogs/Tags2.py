@@ -524,7 +524,7 @@ class Tags(commands.Cog):
                 return
 
             c, k, t = view.done
-            cycle_check, steps = await is_cyclic_mod(tagname, newtext, ctx.guild.id)
+            cycle_check, steps = await is_cyclic_mod(tagname, c, ctx.guild.id)
             if cycle_check:
                 await MessageTemplates.tag_message(
                     ctx,
