@@ -71,7 +71,7 @@ async def is_cyclic_mod(start_key, valuestartmain, guildid):
         stack.add(key)
 
         tag = await Tag.get(key, guildid)
-        if not tag and key != start_key:
+        if not tag or key != start_key:
             return False, steps
         elif key == start_key:
             text = valuestart
