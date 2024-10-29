@@ -507,6 +507,7 @@ class Tags(commands.Cog):
             await MessageTemplates.tag_message(ctx, f"No tags found", ephemeral=True)
             return
         embed_list, e = [], 0
+        act=False
         for cat, taglist in tagdict.items():
             e = 0
             embed = discord.Embed(
@@ -514,6 +515,7 @@ class Tags(commands.Cog):
             )
             for name, text in taglist:
                 if text:
+                    act=True
                     value = text
 
                     if len(embed.fields) == 10:
@@ -522,11 +524,13 @@ class Tags(commands.Cog):
                         embed = discord.Embed(
                             title=f"Tags: {e+1}", color=discord.Color(0x00787F)
                         )
+                        act=False
                     if len(value) > 256:
                         value = value[:256]
                         value += "..."
                     embed.add_field(name=name, value=value, inline=False)
-            embed_list.append(embed)
+            if act:
+                embed_list.append(embed)
             await utility.pages_of_embeds(ctx, embed_list)
 
     @tags.command(name="get", description="get a tag by name")
