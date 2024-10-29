@@ -596,7 +596,7 @@ class Tags(commands.Cog):
                     embed.add_field(name=name, value=value, inline=False)
             if act:
                 embed_list.append(embed)
-        await utility.pages_of_embeds(ctx, embed_list)
+        await utility.pages_of_embeds(ctx, embed_list,ephemeral=True)
 
     @tags.command(name="get", description="get a tag by name")
     @app_commands.autocomplete(tagname=tag_autocomplete)
