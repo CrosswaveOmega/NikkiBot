@@ -127,7 +127,7 @@ async def dynamic_tag_get(text, guildid, maxsize=2000):
             if tag:
                 result = result.replace(f"{{{match}}}", tag.text)
             else:
-                result = result.replace(f"{{{match}}}", f'`{match}`')
+                result = result.replace(f"{{{match}}}", f'~~`{match}`~~')
             if len(result) > maxsize:
                 result = result[: maxsize - 4] + "..."
                 return result
