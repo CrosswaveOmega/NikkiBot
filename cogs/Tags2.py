@@ -118,7 +118,7 @@ async def execute_javascript(tagtext, browser):
 async def dynamic_tag_get(text, guildid, maxsize=2000):
     result = text
     pattern = re.compile(r"\{(.*?)\}")
-    while True:
+    for i in range(0,10):
         matches = pattern.findall(result)
         if not matches:
             break
