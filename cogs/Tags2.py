@@ -108,8 +108,10 @@ async def execute_javascript(tagtext, browser):
     pattern = r"<js\:\{(.*?)\}>"
     matches = re.finditer(pattern, tagtext)
     for match in reversed(list(matches)):
+        print(match)
         extracted_text = match.group(1)
         processed_text = await process_text(extracted_text, page)
+        print(processed_text)
         result = result.replace(f"{start}{extracted_text}{end}", processed_text, 1)
     await page.close()
     return result
@@ -118,19 +120,25 @@ async def execute_javascript(tagtext, browser):
 async def dynamic_tag_get(text, guildid, maxsize=2000):
     result = text
     pattern = re.compile(r"\{(.*?)\}")
+    ignorethese=[]
     for i in range(0,10):
         matches = pattern.findall(result)
         if not matches:
             break
+        ignorev=False
         for match in matches:
+            if match not in ignorethese:
+                ignorev=True
             tag = await Tag.get(match, guildid)
             if tag:
                 result = result.replace(f"{{{match}}}", tag.text)
             else:
-                result = result.replace(f"{{{match}}}", f'~~`{match}`~~')
+                ignorethese.append(match)
             if len(result) > maxsize:
                 result = result[: maxsize - 4] + "..."
                 return result
+        if not ignorev:
+            break
     return result
 
 
