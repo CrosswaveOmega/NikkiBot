@@ -99,19 +99,21 @@ class ApiStatus:
     def to_dict(self):
         return {
             "max_list_size": self.max_list_size,
-            "war": [w.model_dump(exclude='time_delta') for w in self.war.items],
+            "war": [w.model_dump(exclude="time_delta") for w in self.war.items],
             "assignments": {
-                k: [item.model_dump(exclude='time_delta') for item in v.items]
+                k: [item.model_dump(exclude="time_delta") for item in v.items]
                 for k, v in self.assignments.items()
             },
             "campaigns": {
-                k: [item.model_dump(exclude='time_delta') for item in v.items]
+                k: [item.model_dump(exclude="time_delta") for item in v.items]
                 for k, v in self.campaigns.items()
             },
-            "planets": {k: p.model_dump(exclude='time_delta') for k, p in self.planets.items()},
-            "dispatches": [d.model_dump(exclude='time_delta') for d in self.dispatches],
+            "planets": {
+                k: p.model_dump(exclude="time_delta") for k, p in self.planets.items()
+            },
+            "dispatches": [d.model_dump(exclude="time_delta") for d in self.dispatches],
             # "warstat": self.warstat.model_dump(),
-            "warall": self.warall.model_dump(exclude='time_delta'),
+            "warall": self.warall.model_dump(exclude="time_delta"),
         }
 
     @property
@@ -215,9 +217,7 @@ class ApiStatus:
             while attempt_count < maxattempt:
                 try:
                     # as1 = await GetApiV1AssignmentsAll(api_config_override=self.client)
-                    assignments = build_all_assignments(
-                        self.warall.major_order
-                    )
+                    assignments = build_all_assignments(self.warall.major_order)
                     break
                 except Exception as e:
                     attempt_count += 1
@@ -411,12 +411,10 @@ class ApiStatus:
                         if k not in visited:
                             stack.append(planet_ind)
         return result
-    
-    def calculate_total_impact(
-        self
-    ):
+
+    def calculate_total_impact(self):
         all_players, last = self.war.get_first_change()
-        total_contrib = [0, 0.0, 0.0, 0.0,0.0]
+        total_contrib = [0, 0.0, 0.0, 0.0, 0.0]
         for k, list in self.campaigns.items():
             camp, last = list.get_first_change()
             pc = camp.planet.statistics.playerCount
@@ -425,18 +423,18 @@ class ApiStatus:
                 p_evt = planet_difference.event
                 if isinstance(p_evt.time_delta, datetime.timedelta):
                     total_sec = p_evt.time_delta.total_seconds()
-                    if total_sec==0:
+                    if total_sec == 0:
                         continue
                     rate = -1 * (p_evt.health)
                     total_contrib[0] += camp.planet.statistics.playerCount
                     total_contrib[1] += rate
 
-                    total_contrib[4] += rate/total_sec
+                    total_contrib[4] += rate / total_sec
 
             elif planet_difference.health_percent() != 0:
                 if isinstance(planet_difference.time_delta, datetime.timedelta):
                     total_sec = planet_difference.time_delta.total_seconds()
-                    if total_sec==0:
+                    if total_sec == 0:
                         continue
                     rate = (-1 * (planet_difference.health)) + (
                         (camp.planet.regenPerSecond) * total_sec
@@ -444,16 +442,15 @@ class ApiStatus:
                     total_contrib[0] += camp.planet.statistics.playerCount
                     total_contrib[1] += rate
 
-                    total_contrib[4] += rate/total_sec
+                    total_contrib[4] += rate / total_sec
 
-        diver_amount=total_contrib[0]
-        total_players=all_players.statistics.playerCount
-        diverpercent=round((total_contrib[0]/total_players)*100.0, 4)
-        total_contrib2=round(total_contrib[1], 4)
-        per_second=round(total_contrib[4],8)
+        diver_amount = total_contrib[0]
+        total_players = all_players.statistics.playerCount
+        diverpercent = round((total_contrib[0] / total_players) * 100.0, 4)
+        total_contrib2 = round(total_contrib[1], 4)
+        per_second = round(total_contrib[4], 8)
 
-        
-        return diver_amount,total_players,diverpercent,total_contrib2,per_second
+        return diver_amount, total_players, diverpercent, total_contrib2, per_second
 
 
 def save_to_json(api_status: "ApiStatus", filepath: str) -> None:
@@ -637,14 +634,18 @@ def add_to_csv(stat: ApiStatus):
     csv_file_path = "statistics.csv"
     csv_impact_track = "impact_track.csv"
 
-    diver_amount,total_players,diverpercent,total_contrib,per_second=stat.calculate_total_impact()
-    rows_for_imp=[
-        {'timestamp':timestamp,
-         'players_contriv':diver_amount,
-         'total_players':total_players,
-         'player_percent':diverpercent,
-         'total_contrib':total_contrib,
-         'per_second':per_second}
+    diver_amount, total_players, diverpercent, total_contrib, per_second = (
+        stat.calculate_total_impact()
+    )
+    rows_for_imp = [
+        {
+            "timestamp": timestamp,
+            "players_contriv": diver_amount,
+            "total_players": total_players,
+            "player_percent": diverpercent,
+            "total_contrib": total_contrib,
+            "per_second": per_second,
+        }
     ]
 
     with open(csv_impact_track, mode="a+", newline="", encoding="utf8") as file:

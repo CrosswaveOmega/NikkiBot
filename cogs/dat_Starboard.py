@@ -453,8 +453,8 @@ class Tag(Base):
                     tag.text = newtext
                 if guild_only is not None:
                     tag.guild_only = guild_only
-                if newcat is not None and len(newcat)>5:
-                    tag.tag_category=newcat,
+                if newcat is not None and len(newcat) > 5:
+                    tag.tag_category = (newcat,)
                 tag.lastupdate = discord.utils.utcnow()
                 if imb != None:
                     tag.image = imb
@@ -524,11 +524,11 @@ class Tag(Base):
             .limit(25)
         )
         return tag.scalars().all()
-    
+
     @classmethod
     @ensure_session
     async def get_matching_tags_from_user(
-        cls, tagname: str, gid: int, uid:int, session: OptionalSession = None
+        cls, tagname: str, gid: int, uid: int, session: OptionalSession = None
     ):
 
         tag = await session.execute(
@@ -536,14 +536,14 @@ class Tag(Base):
             .where(
                 and_(
                     cls.tagname.like(f"%{tagname}%"),
-                    cls.user==uid,
+                    cls.user == uid,
                     or_(cls.guild_only == False, cls.guildid == gid),
                 )
             )
             .limit(25)
         )
         return tag.scalars().all()
-    
+
     @staticmethod
     async def list_all(gid: int):
         async with DatabaseSingleton.get_async_session() as session:

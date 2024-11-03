@@ -355,7 +355,7 @@ class TempVC(commands.Cog):
                 continue
             bot_permissions = vc.permissions_for(guild.me)
             if not bot_permissions.manage_channels:
-                #Skip, not needed
+                # Skip, not needed
                 continue
             elif len(vc.members) == 0:
                 return f"There is already an empty VC: {vc.name}"
@@ -419,7 +419,9 @@ class TempVC(commands.Cog):
             # Check if the bot has manage_channel permission for vc, otherwise skip
             bot_permissions = vc.permissions_for(guild.me)
             if not bot_permissions.manage_channels:
-                outval += f"Skipping {vc.name} because bot lacks manage_channel permission.\n"
+                outval += (
+                    f"Skipping {vc.name} because bot lacks manage_channel permission.\n"
+                )
                 continue
             # If the channel has members, add it to the vc_list and skip deletion
             if config.target_name not in vc.name:
@@ -436,7 +438,7 @@ class TempVC(commands.Cog):
 
                 if vc.id in self.temporary_vc_list[guild.id][1]:
                     self.temporary_vc_list[guild.id][1].remove(vc.id)
-        
+
         return outval + "Cleared all unused vcs from target category."
 
     @tasks.loop(minutes=5)

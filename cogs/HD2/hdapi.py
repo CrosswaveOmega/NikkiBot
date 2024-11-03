@@ -19,7 +19,6 @@ from bot import (
 from discord.ext import commands
 
 
-
 def human_format(num):
     num = float("{:.3g}".format(num))
     magnitude = 0

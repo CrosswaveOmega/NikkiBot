@@ -112,8 +112,8 @@ def create_assignment_embed(
     progress = data.progress
     embed.add_field(name="Objective", value=data["description"], inline=False)
     tasks = ""
-    if data.flags==2:
-        tasks+="Complete any one task to win.\n"
+    if data.flags == 2:
+        tasks += "Complete any one task to win.\n"
     for e, task in enumerate(data.tasks):
         chg, projected = None, None
         prog = ""
@@ -325,7 +325,7 @@ def campaign_view(
     embs = [emb]
     all_players, last = stat.war.get_first_change()
     change_war = all_players - last
-    total_contrib = [0, 0.0, 0.0, 0.0,0.0]
+    total_contrib = [0, 0.0, 0.0, 0.0, 0.0]
     total = 0
     el = 0
     prop = defaultdict(int)
@@ -354,7 +354,7 @@ def campaign_view(
             p_evt = planet_difference.event
             if isinstance(p_evt.time_delta, datetime.timedelta):
                 total_sec = p_evt.time_delta.total_seconds()
-                if total_sec==0:
+                if total_sec == 0:
                     continue
                 rate = -1 * (p_evt.health)
                 total_contrib[0] += camp.planet.statistics.playerCount
@@ -362,12 +362,12 @@ def campaign_view(
                 thisamt = round((rate / camp.planet.maxHealth) * 100.0, 5)
                 total_contrib[2] += thisamt
                 total_contrib[3] += round((thisamt / max(1, total_sec)) * 60 * 60, 5)
-                total_contrib[4] += rate/total_sec
+                total_contrib[4] += rate / total_sec
 
         elif planet_difference.health_percent() != 0:
             if isinstance(planet_difference.time_delta, datetime.timedelta):
                 total_sec = planet_difference.time_delta.total_seconds()
-                if total_sec==0:
+                if total_sec == 0:
                     continue
                 rate = (-1 * (planet_difference.health)) + (
                     (camp.planet.regenPerSecond) * total_sec
@@ -377,7 +377,7 @@ def campaign_view(
                 thisamt = round((rate / camp.planet.maxHealth) * 100.0, 5)
                 total_contrib[2] += thisamt
                 total_contrib[3] += round((thisamt / total_sec) * 60 * 60, 5)
-                total_contrib[4] += rate/total_sec
+                total_contrib[4] += rate / total_sec
 
         features = get_feature_dictionary(stat, k)
         pred = make_prediction_for_eps(features)

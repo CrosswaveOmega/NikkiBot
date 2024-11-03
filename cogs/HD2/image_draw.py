@@ -132,9 +132,7 @@ def highlight(img, index, x, y, name, hper, owner, event, task_planets, health=0
         outline = (255, 255, 255)
         if event:
             outline = (64, 64, 255)
-    bbox2 = draw.textbbox(
-        (0, 0), f"{str(hper)}", font=font2, align="center", spacing=0
-    )
+    bbox2 = draw.textbbox((0, 0), f"{str(hper)}", font=font2, align="center", spacing=0)
     background_box = [
         coordinate[0] - bbox[2] / 2 - 2,
         coordinate[1] - bbox[3] - 2 - 10,
@@ -226,7 +224,7 @@ def create_gif(filepath, apistat: ApiStatus):
         if apistat and apistat.warall:
             for pf in apistat.warall.war_info.planetInfos:
                 if pf.index == planet.index:
-                    name =  str(planet.name).replace(" ", "\n")
+                    name = str(planet.name).replace(" ", "\n")
                     hper = str(planet.sector)
                     break
         event = True if planet.event is not None else False

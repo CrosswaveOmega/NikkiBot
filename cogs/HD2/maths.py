@@ -26,4 +26,3 @@ class maths:
     def dps_for_time(hp: float, timev: float, regenrate: float):
         dps = (hp + timev * regenrate) / timev
         return dps
-    

@@ -127,16 +127,14 @@ class HD2OverviewView(discord.ui.View):
                 else:
                     total_size += len(v)
                 embed.add_field(name=name, value=v[:1024], inline=False)
-        if len(embeds)>1:
+        if len(embeds) > 1:
             pcc, _ = await pages_of_embeds_2(True, embeds, show_page_nums=False)
             but = hd2.ListButtons(callbacker=pcc)
             await interaction.response.send_message(
                 embed=pcc.make_embed(), view=but, ephemeral=True
             )
         else:
-            await interaction.response.send_message(
-                embed=embeds[0], ephemeral=True
-            )
+            await interaction.response.send_message(embed=embeds[0], ephemeral=True)
 
     @discord.ui.button(
         label="View App",

@@ -38,10 +38,10 @@ async def compare_value_with_timeout(model1, field):
             asyncio.to_thread(model1.get, field, None), timeout=5
         )
         if isinstance(value, list):
-            #TODO: replace with something less 
+            # TODO: replace with something less
             # hacky later.
             try:
-                value=sorted(value)
+                value = sorted(value)
             except TypeError:
                 print("unsortable")
         return value
@@ -58,7 +58,7 @@ async def get_differing_fields(
 
     differing_fields = {}
     to_ignore.append("retrieved_at")
-    
+
     to_ignore.append("time_delta")
     to_ignore.append("self")
     if lvd > 20:
@@ -72,7 +72,7 @@ async def get_differing_fields(
             if len(val1) != len(val2):
                 # print(len(val1),len(val2))
                 biggestsize = max(len(val1), len(val2))
-                
+
                 for i in range(biggestsize):
                     v1 = val1[i] if i < len(val1) else None
                     v2 = val2[i] if i < len(val2) else None
@@ -91,7 +91,9 @@ async def get_differing_fields(
                             nt = {}
                             for m, n in target.items():
                                 if isinstance(n, BaseApiModel):
-                                    nt[m] = n.model_dump(exclude=["retrieved_at","time_delta"])
+                                    nt[m] = n.model_dump(
+                                        exclude=["retrieved_at", "time_delta"]
+                                    )
                                 else:
                                     nt[m] = n
                             list_diffs[i] = nt
@@ -103,9 +105,9 @@ async def get_differing_fields(
                             list_diffs[i] = differing
                     elif str(v1) != str(v2):
                         if isinstance(v1, BaseApiModel):
-                            v1 = v1.model_dump(exclude=["retrieved_at","time_delta"])
+                            v1 = v1.model_dump(exclude=["retrieved_at", "time_delta"])
                         if isinstance(v2, BaseApiModel):
-                            v2 = v2.model_dump(exclude=["retrieved_at","time_delta"])
+                            v2 = v2.model_dump(exclude=["retrieved_at", "time_delta"])
                         list_diffs[i] = {"old": v1, "new": v2}
 
             return list_diffs if list_diffs else None
@@ -129,9 +131,9 @@ async def get_differing_fields(
                 if value1 == value2:
                     continue
                 if isinstance(value1, BaseApiModel):
-                    value1 = value1.model_dump(exclude=["retrieved_at","time_delta"])
+                    value1 = value1.model_dump(exclude=["retrieved_at", "time_delta"])
                 if isinstance(value2, BaseApiModel):
-                    value2 = value2.model_dump(exclude=["retrieved_at","time_delta"])
+                    value2 = value2.model_dump(exclude=["retrieved_at", "time_delta"])
                 differing_fields[field] = {"old": value1, "new": value2}
 
     return differing_fields

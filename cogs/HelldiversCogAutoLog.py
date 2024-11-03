@@ -49,6 +49,7 @@ from cogs.HD2.maths import maths
 from cogs.HD2.diff_util import process_planet_attacks, GameEvent
 from utility.manual_load import load_json_with_substitutions
 
+
 class SimplePlanet(BaseApiModel):
     index: Optional[int] = Field(alias="index", default=None)
 
@@ -155,7 +156,7 @@ class PlanetEvents:
                 new.remove(c)
             if c in old:
                 old.remove(c)
-        
+
         return new, old
 
     def get_last_planet_owner(self) -> Tuple[int, int]:
@@ -1096,7 +1097,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         self.titleids[ti] = info.title
                         tc = True
                 if info.message:
-                    if hdml_parse(self.messageids.get(mi, "")) != hdml_parse(info.message):
+                    if hdml_parse(self.messageids.get(mi, "")) != hdml_parse(
+                        info.message
+                    ):
                         self.messageids[mi] = info.message
                         mc = True
                 if all(key in ["title", "message"] for key in listv):

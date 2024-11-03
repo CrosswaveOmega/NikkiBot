@@ -15,9 +15,10 @@ from sklearn.cluster import KMeans
 CLOUD_ALPHA = 180
 
 
-BIOME_IMAGE_PATH =r"./assets/allimages/*"
-OUTPUT_PATH="./assets/planets/"
-FONT_PATH="./assets/ChakraPetch-SemiBold.ttf"
+BIOME_IMAGE_PATH = r"./assets/allimages/*"
+OUTPUT_PATH = "./assets/planets/"
+FONT_PATH = "./assets/ChakraPetch-SemiBold.ttf"
+
 
 def draw_streak(draw, xpix, ypix, lightest_color):
     start_x = random.randint(0, xpix - 1)
@@ -410,5 +411,6 @@ def get_planet(ind: int, biome_name: str):
     if biome_name in has_c:
         return generate_planet_texture(use, 0, 2, f"planet_{ind}", biome_name)
     return None
+
 
 # get_planet(64, "blackhole")

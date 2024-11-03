@@ -57,9 +57,9 @@ async def is_cyclic_mod(start_key, valuestartmain, guildid):
     visited = set()
     stack = set()
     steps = []
-    valuestart=valuestartmain
+    valuestart = valuestartmain
     if not valuestart:
-        valuestart=""
+        valuestart = ""
 
     async def visit(key, steps):
         if key in stack:
@@ -80,9 +80,9 @@ async def is_cyclic_mod(start_key, valuestartmain, guildid):
             text = tag.text
         for word in re.findall(r"\{(.*?)\}", text):
             steps.append(word)
-            print(key,word,stack,visited,steps)
-            visite,st=await visit(word, steps)
-            if  visite:
+            print(key, word, stack, visited, steps)
+            visite, st = await visit(word, steps)
+            if visite:
                 print(key in stack, key in visited)
                 return True, steps
             steps.pop()
@@ -120,15 +120,15 @@ async def execute_javascript(tagtext, browser):
 async def dynamic_tag_get(text, guildid, maxsize=2000):
     result = text
     pattern = re.compile(r"\{(.*?)\}")
-    ignorethese=[]
-    for i in range(0,10):
+    ignorethese = []
+    for i in range(0, 10):
         matches = pattern.findall(result)
         if not matches:
             break
-        ignorev=False
+        ignorev = False
         for match in matches:
             if match not in ignorethese:
-                ignorev=True
+                ignorev = True
             tag = await Tag.get(match, guildid)
             if tag:
                 result = result.replace(f"{{{match}}}", tag.text)
@@ -299,13 +299,16 @@ class Tags(commands.Cog):
         )
         self.bot = bot
 
-
-    async def tag_edit_autocomplete(self, interaction: discord.Interaction, current: str):
+    async def tag_edit_autocomplete(
+        self, interaction: discord.Interaction, current: str
+    ):
         """
         Autocomplete for tag names
         """
         if interaction.guild:
-            tags = await Tag.get_matching_tags_from_user(current, interaction.guild.id, interaction.user.id)
+            tags = await Tag.get_matching_tags_from_user(
+                current, interaction.guild.id, interaction.user.id
+            )
             choices = self._shared_autocomplete_logic(tags, current)
 
             return choices
@@ -492,7 +495,6 @@ class Tags(commands.Cog):
                 title="Tag delete error.",
             )
 
-    
     @tags.command(name="edit", description="edit a tag")
     @app_commands.autocomplete(tagname=tag_edit_autocomplete)
     @app_commands.describe(tagname="tagname to edit")
@@ -505,7 +507,7 @@ class Tags(commands.Cog):
     ):
         ctx: commands.Context = await self.bot.get_context(interaction)
         new_tag = await Tag.get(tagname, ctx.guild.id)
-        if new_tag.user!=interaction.user.id:
+        if new_tag.user != interaction.user.id:
             await MessageTemplates.tag_message(
                 ctx,
                 f"You don't have permission to edit this tag.",
@@ -513,9 +515,9 @@ class Tags(commands.Cog):
                 ephemeral=True,
             )
             return
-        text=new_tag.text
+        text = new_tag.text
         if newtext:
-            text=newtext
+            text = newtext
         view = TagEditView(
             user=interaction.user,
             content=text,
@@ -555,7 +557,10 @@ class Tags(commands.Cog):
             if edited_tag:
                 new_tag = await Tag.get(tagname, ctx.guild.id)
                 await MessageTemplates.tag_message(
-                    ctx, f"Tag '{tagname}' edited.", tag=new_tag.get_dict(), ephemeral=True
+                    ctx,
+                    f"Tag '{tagname}' edited.",
+                    tag=new_tag.get_dict(),
+                    ephemeral=True,
                 )
             else:
                 await MessageTemplates.tag_message(
@@ -571,7 +576,6 @@ class Tags(commands.Cog):
                 message = "You timed out."
             await tmes.edit(content=message, view=None, embed=view.make_embed())
 
-
     @tags.command(name="list", description="list all tags")
     async def listtags(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -580,7 +584,7 @@ class Tags(commands.Cog):
             await MessageTemplates.tag_message(ctx, f"No tags found", ephemeral=True)
             return
         embed_list, e = [], 0
-        act=False
+        act = False
         for cat, taglist in tagdict.items():
             e = 0
             embed = discord.Embed(
@@ -588,7 +592,7 @@ class Tags(commands.Cog):
             )
             for name, text in taglist:
                 if text:
-                    act=True
+                    act = True
                     value = text
 
                     if len(embed.fields) == 10:
@@ -597,14 +601,14 @@ class Tags(commands.Cog):
                         embed = discord.Embed(
                             title=f"Tags: {e+1}", color=discord.Color(0x00787F)
                         )
-                        act=False
+                        act = False
                     if len(value) > 256:
                         value = value[:256]
                         value += "..."
                     embed.add_field(name=name, value=value, inline=False)
             if act:
                 embed_list.append(embed)
-        await utility.pages_of_embeds(ctx, embed_list,ephemeral=True)
+        await utility.pages_of_embeds(ctx, embed_list, ephemeral=True)
 
     @tags.command(name="get", description="get a tag by name")
     @app_commands.autocomplete(tagname=tag_autocomplete)
