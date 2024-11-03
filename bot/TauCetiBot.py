@@ -254,7 +254,7 @@ class TCBot(
         )
         handler2.setFormatter(formatter2)
         #handler2.addFilter(IntegrationCreateFilter("logfilter"))
-        discord.utils.setup_logging(level=logging.DEBUG, handler=handler2, root=False)
+        discord.utils.setup_logging(level=logging.INFO, handler=handler2, root=False)
 
         self.logs = logging.getLogger("TCLogger")
         self.logs.setLevel(logging.WARNING)
