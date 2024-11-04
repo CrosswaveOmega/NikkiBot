@@ -65,8 +65,8 @@ class ConfigParserSub(configparser.ConfigParser):
 class TreeOverride(CommandTree):
     # I need to do this just to get a global check on app_commands...
     async def interaction_check(self, interaction: Interaction) -> bool:
-        """Don't fire if the user wants to be ignored, but ensure that the user can
-        unignore themselves later."""
+        """Don't fire if the user wants to be ignored, but ensure that the 
+        user can unignore themselves later."""
         if interaction.command:
             if interaction.command.extras:
                 if "nocheck" in interaction.command.extras:

@@ -294,6 +294,10 @@ class ApiStatus:
                 if k not in data_ids:
                     # print(f"removing {data_type} {k}")
                     storage.pop(k)
+        else:
+            key_list = list(storage.keys())
+            for k in key_list:
+                storage.pop(k)
 
     def estimates(self) -> List[Tuple[str, List[str]]]:
         """Estimate the projected liberation/loss times for each campaign,

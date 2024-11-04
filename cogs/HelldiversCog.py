@@ -186,9 +186,9 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         nowd = datetime.now()
         self.loghook = AssetLookup.get_asset("loghook", "urls")
         st = datetime(
-            nowd.year, nowd.month, nowd.day, nowd.hour, int(nowd.minute / 15) * 15
+            nowd.year, nowd.month, nowd.day, nowd.hour, int(nowd.minute / 5) * 5
         )
-        robj = rrule(freq=MINUTELY, interval=15, dtstart=st)
+        robj = rrule(freq=MINUTELY, interval=5, dtstart=st)
         if not TCTaskManager.does_task_exist("SuperEarthStatus"):
             self.tc_task = TCTask("SuperEarthStatus", robj, robj.after(st))
             self.tc_task.assign_wrapper(self.update_api)

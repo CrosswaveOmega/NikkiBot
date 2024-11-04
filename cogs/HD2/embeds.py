@@ -316,13 +316,17 @@ def campaign_view(
     full: bool = False,
     show_stalemate: bool = True,
 ):
+    # Set default flavor text
     flav = "Galactic Status."
+    # Check if hdtext has a galactic overview and randomize flavor text if present
     if hdtext:
         if "galactic_overview" in hdtext:
             flav = random.choice(hdtext["galactic_overview"]["value"])
+    # Create the initial Discord embed
     emb0 = discord.Embed(title="Galactic War Overview", description=f"{flav}\n")
     emb = emb0
     embs = [emb]
+    # Get player information from the war status
     all_players, last = stat.war.get_first_change()
     change_war = all_players - last
     total_contrib = [0, 0.0, 0.0, 0.0, 0.0]
@@ -331,19 +335,23 @@ def campaign_view(
     prop = defaultdict(int)
     stalemated = []
     players_on_stalemated = 0
+    # Iterate over each campaign in the status
     for k, list in stat.campaigns.items():
         camp, last = list.get_first_change()
         changes = list.get_changes()
-        this_faction = camp.planet.campaign_against()
+        this_faction = camp.planet.campaign_against()  # Determine opposing faction
         pc = camp.planet.statistics.playerCount
         prop[this_faction] += pc
         total += pc
         avg = None
+        # Calculate average planet statistics
         if changes:
             avg = Planet.average([c.planet for c in changes])
+        # Calculate difference in planet statistics
         planet_difference: Planet = (camp - last).planet
         name, desc = camp.planet.simple_planet_view(planet_difference, avg, full)
         desc = "\n".join(desc)
+        # Skip stalemated planets if necessary
         if not show_stalemate:
             if "Stalemate" in desc:
                 stalemated.append(name)
@@ -353,22 +361,30 @@ def campaign_view(
         if planet_difference.event != None:
             p_evt = planet_difference.event
             if isinstance(p_evt.time_delta, datetime.timedelta):
-                total_sec = p_evt.time_delta.total_seconds()
+                total_sec = (
+                    p_evt.time_delta.total_seconds()
+                )  # Convert timedelta to seconds
                 if total_sec == 0:
                     continue
+                # Calculate contribution rates
                 rate = -1 * (p_evt.health)
                 total_contrib[0] += camp.planet.statistics.playerCount
                 total_contrib[1] += rate
                 thisamt = round((rate / camp.planet.maxHealth) * 100.0, 5)
                 total_contrib[2] += thisamt
-                total_contrib[3] += round((thisamt / max(1, total_sec)) * 60 * 60, 5)
-                total_contrib[4] += rate / total_sec
+                total_contrib[3] += round(
+                    (thisamt / max(1, total_sec)) * 60 * 60, 5
+                )  # Contribution per hour
+                total_contrib[4] += rate / total_sec  # Impact per second
 
         elif planet_difference.health_percent() != 0:
             if isinstance(planet_difference.time_delta, datetime.timedelta):
-                total_sec = planet_difference.time_delta.total_seconds()
+                total_sec = (
+                    planet_difference.time_delta.total_seconds()
+                )  # Convert timedelta to seconds
                 if total_sec == 0:
                     continue
+                # Calculate contribution rates
                 rate = (-1 * (planet_difference.health)) + (
                     (camp.planet.regenPerSecond) * total_sec
                 )
@@ -376,19 +392,23 @@ def campaign_view(
                 total_contrib[1] += rate
                 thisamt = round((rate / camp.planet.maxHealth) * 100.0, 5)
                 total_contrib[2] += thisamt
-                total_contrib[3] += round((thisamt / total_sec) * 60 * 60, 5)
-                total_contrib[4] += rate / total_sec
+                total_contrib[3] += round(
+                    (thisamt / total_sec) * 60 * 60, 5
+                )  # Contribution per hour
+                total_contrib[4] += rate / total_sec  # Impact per second
 
+        # Get estimated and real EPS
         features = get_feature_dictionary(stat, k)
         pred = make_prediction_for_eps(features)
-        # print(features["eps"], pred)
         eps_estimated = round(pred, 3)
         eps_real = round(features["eps"], 3)
         desc += f"\ninfl/s:`{eps_estimated},c{eps_real}`"
+        # Manage embed field lengths
         if el >= 24:
             emb = discord.Embed()
             embs.append(emb)
             el = 0
+        # Add fields to embed
         emb.add_field(name=name, value=desc, inline=True)
         el += 1
 
@@ -396,13 +416,20 @@ def campaign_view(
         [f"{k}:{v}" for k, v in prop.items()]
     )
     if stalemated:
+        # Add information about stalemated planets
         emb.add_field(
             name="Planetary Stalemates",
             value=f"{players_on_stalemated} players are on {len(stalemated)} stalemated worlds.\n"
             + (f"\n".join([f"* {s}" for s in stalemated]))[:900],
         )
-    emb0.description += f"\n`{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}%` divers contributed `{round(total_contrib[1], 4)}` visible Impact, which is `{round(total_contrib[4],8)}` impact per second, so about `({round(total_contrib[2],5)}%, {round(total_contrib[3],5)}% per hour)` lib."
-    emb0.timestamp = discord.utils.utcnow()
+    # Add overall contribution stats
+    emb0.description += (
+        f"\n`{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}%` "
+        f"divers contributed `{round(total_contrib[1], 4)}` visible Impact, which is "
+        f"`{round(total_contrib[4],8)}` impact per second, so about "
+        f"`({round(total_contrib[2],5)}%, {round(total_contrib[3],5)}% per hour)` lib."
+    )
+    emb0.timestamp = discord.utils.utcnow()  # Set timestamp
     return embs
 
 
@@ -453,17 +480,30 @@ def campaign_text_view(
         if planet_difference.event != None:
             p_evt = planet_difference.event
             if isinstance(p_evt.retrieved_at, datetime.timedelta):
-                total_sec = p_evt.retrieved_at.total_seconds()
+                total_sec = (
+                    p_evt.time_delta.total_seconds()
+                )  # Convert timedelta to seconds
+                if total_sec == 0:
+                    continue
+                # Calculate contribution rates
                 rate = -1 * (p_evt.health)
                 total_contrib[0] += camp.planet.statistics.playerCount
                 total_contrib[1] += rate
                 thisamt = round((rate / camp.planet.maxHealth) * 100.0, 5)
                 total_contrib[2] += thisamt
-                total_contrib[3] += round((thisamt / max(1, total_sec)) * 60 * 60, 5)
+                total_contrib[3] += round(
+                    (thisamt / max(1, total_sec)) * 60 * 60, 5
+                )  # Contribution per hour
+                total_contrib[4] += rate / total_sec  # Impact per second
 
         elif planet_difference.health_percent() != 0:
             if isinstance(planet_difference.retrieved_at, datetime.timedelta):
-                total_sec = planet_difference.retrieved_at.total_seconds()
+                total_sec = (
+                    planet_difference.time_delta.total_seconds()
+                )  # Convert timedelta to seconds
+                if total_sec == 0:
+                    continue
+                # Calculate contribution rates
                 rate = (-1 * (planet_difference.health)) + (
                     (camp.planet.regenPerSecond) * total_sec
                 )
@@ -471,7 +511,10 @@ def campaign_text_view(
                 total_contrib[1] += rate
                 thisamt = round((rate / camp.planet.maxHealth) * 100.0, 5)
                 total_contrib[2] += thisamt
-                total_contrib[3] += round((thisamt / total_sec) * 60 * 60, 5)
+                total_contrib[3] += round(
+                    (thisamt / total_sec) * 60 * 60, 5
+                )  # Contribution per hour
+                total_contrib[4] += rate / total_sec  # Impact per second
 
         features = get_feature_dictionary(stat, k)
         pred = make_prediction_for_eps(features)
@@ -489,7 +532,12 @@ def campaign_text_view(
         [f"{k}:{v}" for k, v in prop.items()]
     )
 
-    out_main += f"\n`{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}%` divers contributed `{round(total_contrib[1], 4)}` visible Impact, so about `({round(total_contrib[2],5)}%, {round(total_contrib[3],5)}% per hour)` lib."
+    out_main += (
+        f"\n`{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}%` "
+        f"divers contributed `{round(total_contrib[1], 4)}` visible Impact, which is "
+        f"`{round(total_contrib[4],8)}` impact per second, so about "
+        f"`({round(total_contrib[2],5)}%, {round(total_contrib[3],5)}% per hour)` lib."
+    )
     lib_join = "\n".join([f"* {c[0]}\n{c[1]}" for c in liberation_campaigns])
     def_join = "\n".join([f"* {c[0]}\n{c[1]}" for c in defense_campaigns])
     out_main += f"\n **Liberation Campaigns:**\n{lib_join}\n**Defense Campaigns:**\n{def_join}\n"
