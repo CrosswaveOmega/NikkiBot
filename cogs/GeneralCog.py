@@ -77,7 +77,7 @@ class PersistentView(discord.ui.View):
             self.my_count[str(user.id)] = 0
         self.my_count[str(user.id)] += 1
         await interaction.response.send_message(
-            f"You are {user.name}, this is {label}, and you have pressed this button {self.my_count[str(user.id)]} times.",
+            f"You are {user.name}, this is {label}, and you have pressed the buttons {self.my_count[str(user.id)]} times.",
             ephemeral=True,
         )
 
@@ -292,7 +292,7 @@ class General(commands.Cog, TC_Cog_Mixin):
     @commands.hybrid_command(name="persistent_view")
     async def constant_view(self, ctx):
         """This command returns a persistent view, as a test."""
-        await ctx.send("What's your favourite colour?", view=PersistentView())
+        await ctx.send("Here's some buttons.", view=PersistentView())
 
     @app_commands.command(
         name="nikkifeedback",
