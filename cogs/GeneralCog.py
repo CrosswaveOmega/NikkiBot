@@ -124,7 +124,6 @@ class General(commands.Cog, TC_Cog_Mixin):
         self.helptext = "Some assorted testing commands."
         self.bot = bot
         bot.add_view(PersistentView())
-        self.init_context_menus()
 
     @commands.command()
     async def hashtest(self, ctx, string: str, length: int = 5):
@@ -152,22 +151,7 @@ class General(commands.Cog, TC_Cog_Mixin):
             await ctx.send("cancelled")
         await message.delete()
 
-    @super_context_menu(name="Supercool")
-    async def coooler(
-        self, interaction: discord.Interaction, message: discord.Message
-    ) -> None:
-        await interaction.response.send_message(
-            content="This command does nothing, it's to demonstrate context menu commands.",
-            ephemeral=True,
-        )
 
-    @super_context_menu(name="UserName")
-    async def userexample(
-        self, interaction: discord.Interaction, user: discord.Member
-    ) -> None:
-        await interaction.response.send_message(
-            content=f"This user is named {user.display_name}", ephemeral=True
-        )
 
     @app_commands.command(name="server_info", description="view the server data")
     async def info(self, interaction: discord.Interaction) -> None:
