@@ -56,7 +56,7 @@ class LimitedSizeList(list):
             return (self.items[0], self.items[0])
         current_time = self.items[0].retrieved_at
 
-        target_time = current_time - datetime.timedelta(minutes=mins-2)
+        target_time = current_time - datetime.timedelta(minutes=mins)
 
         for item in self.items:
             if hasattr(item, 'retrieved_at') and item.retrieved_at <= target_time:
@@ -559,7 +559,7 @@ def add_to_csv(stat: ApiStatus):
             # print(f"{timestamp} {k} not enough campaigns.")
             continue
 
-        camp, last = campaign_list.get_first_change()
+        camp, last = campaign_list.get_change_from(15)
         # print(camp,last)
         players = camp.planet.statistics.playerCount
         lastplayers = last.planet.statistics.playerCount
