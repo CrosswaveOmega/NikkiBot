@@ -228,12 +228,10 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
     async def make_planets(self, ctx, usebiome=""):
         print("Updating planets.")
-
         async def update_planet(planet, ctx):
             planetbiome = self.apistatus.statics.galaxystatic["planets"].get(
                 planet.index, None
             )
-
             if planetbiome:
                 print(planetbiome["biome"], usebiome)
                 if usebiome:
@@ -439,6 +437,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         await self.overview_make_logic(context, guild, channel, edit=edit)
 
     async def overview_make_logic(self, ctx, guild, autochannel, edit=False):
+        '''This function makes a dashboard message for the bot.'''
         target_message = None
         profile = ServerHDProfile.get_or_new(guild.id)
         if profile.overview_message_url:

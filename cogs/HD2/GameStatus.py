@@ -46,6 +46,22 @@ class LimitedSizeList(list):
         if len(self.items) > 1:
             return (self.items[0], self.items[1])
         return self.items[0], self.items[0]
+    
+
+    def get_change_from(self, mins=15):
+        """Retrieve item from a specified number of minutes ago."""
+        if not self.items or mins <= 0:
+            return None
+        if len(self.items) <= 1:
+            return (self.items[0], self.items[0])
+        current_time = self.items[0].retrieved_at
+
+        target_time = current_time - datetime.timedelta(minutes=mins-2)
+
+        for item in self.items:
+            if hasattr(item, 'retrieved_at') and item.retrieved_at <= target_time:
+                return (self.items[0],item)
+        return (self.items[0], self.items[1])
 
     def get_first(self):
         return self.items[0]

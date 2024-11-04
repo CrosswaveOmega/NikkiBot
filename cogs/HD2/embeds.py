@@ -315,7 +315,7 @@ def campaign_view(
     hdtext: Optional[Dict[str, str]] = None,
     full: bool = False,
     show_stalemate: bool = True,
-):
+)->discord.Embed:
     # Set default flavor text
     flav = "Galactic Status."
     # Check if hdtext has a galactic overview and randomize flavor text if present
@@ -327,8 +327,7 @@ def campaign_view(
     emb = emb0
     embs = [emb]
     # Get player information from the war status
-    all_players, last = stat.war.get_first_change()
-    change_war = all_players - last
+    all_players, _ = stat.war.get_first_change()
     total_contrib = [0, 0.0, 0.0, 0.0, 0.0]
     total = 0
     el = 0
@@ -337,7 +336,7 @@ def campaign_view(
     players_on_stalemated = 0
     # Iterate over each campaign in the status
     for k, list in stat.campaigns.items():
-        camp, last = list.get_first_change()
+        camp, last = list.get_change_from(15)
         changes = list.get_changes()
         this_faction = camp.planet.campaign_against()  # Determine opposing faction
         pc = camp.planet.statistics.playerCount
@@ -346,7 +345,7 @@ def campaign_view(
         avg = None
         # Calculate average planet statistics
         if changes:
-            avg = Planet.average([c.planet for c in changes])
+            avg = Planet.average([c.planet for c in changes[:4]])
         # Calculate difference in planet statistics
         planet_difference: Planet = (camp - last).planet
         name, desc = camp.planet.simple_planet_view(planet_difference, avg, full)
