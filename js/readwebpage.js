@@ -135,8 +135,6 @@ async function read_webpage_plain(targeturl) {
 
       window.document.write(html2)
 
-
-      
       let reader = new Readability(window.document);
       article = reader.parse();
       articleHtml = article.content;
