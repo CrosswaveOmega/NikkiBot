@@ -449,7 +449,7 @@ def campaign_text_view(
 
     all_players, last = stat.war.get_first_change()
     change_war = all_players - last
-    total_contrib = [0, 0.0, 0.0, 0.0]
+    total_contrib = [0, 0.0, 0.0, 0.0,0.0]
     total = 0
     el = 0
     prop = defaultdict(int)
