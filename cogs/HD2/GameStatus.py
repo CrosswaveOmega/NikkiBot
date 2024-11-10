@@ -5,8 +5,6 @@ import json
 
 import numpy as np
 
-from hd2json.jsonutils import load_and_merge_json_files as lmj
-
 from .diff_util import detect_loggable_changes, detect_loggable_changes_planet
 from hd2api import *
 from .utils import prioritized_string_split
