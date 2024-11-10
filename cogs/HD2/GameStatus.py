@@ -12,7 +12,31 @@ from hd2api import *
 from .utils import prioritized_string_split
 
 MAX_ATTEMPT = 3
-
+def lmj(directory_path: str):
+    """
+    Load all JSON files from the specified directory into a single dictionary.
+    Args:
+    - directory_path (str): Path to the directory containing JSON files.
+    Returns:
+    - dict: A dictionary where keys are file names (without extension) and values are loaded JSON data.
+    """
+    planets_data = {}
+    # Validate directory path
+    if not os.path.isdir(directory_path):
+        raise ValueError(f"Directory '{directory_path}' does not exist.")
+    # Load JSON files
+    for filename in os.listdir(directory_path):
+        if filename.endswith(".json"):
+            file_path = os.path.join(directory_path, filename)
+            with open(file_path, "r", encoding="utf8") as f:
+                try:
+                    json_data = json.load(f)
+                    # Remove file extension from filename
+                    file_key = os.path.splitext(filename)[0]
+                    planets_data[file_key] = json_data
+                except json.JSONDecodeError as e:
+                    print(f"Error loading JSON from {filename}: {e}")
+    return planets_data
 
 class LimitedSizeList(list):
     """A list that can only have a fixed amount of elements."""
