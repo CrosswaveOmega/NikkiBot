@@ -229,30 +229,10 @@ class ApiStatus:
                     await asyncio.sleep(2)
                     if attempt_count >= maxattempt:
                         raise e
-            attempt_count = 0
-            while attempt_count < maxattempt:
-                try:
-                    # as1 = await GetApiV1AssignmentsAll(api_config_override=self.client)
-                    assignments = build_all_assignments(self.warall.major_order)
-                    break
-                except Exception as e:
-                    attempt_count += 1
-
-                    await asyncio.sleep(2)
-                    if attempt_count >= maxattempt:
-                        raise e
-            attempt_count = 0
-
-            while attempt_count < maxattempt:
-                try:
-                    campaigns = build_all_campaigns(self.planets, self.warall.status)
-                    break
-                except Exception as e:
-                    attempt_count += 1
-
-                    await asyncio.sleep(2)
-                    if attempt_count >= maxattempt:
-                        raise e
+            
+            # as1 = await GetApiV1AssignmentsAll(api_config_override=self.client)
+            assignments = build_all_assignments(self.warall.major_order)
+            campaigns = build_all_campaigns(self.planets, self.warall.status)
 
         except Exception as e:
             raise e
@@ -260,7 +240,7 @@ class ApiStatus:
         # print(war, campaigns, assignments)
         if war is not None:
             self.war.add(war)
-
+        print(self.assignments,'a2',assignments,'done')
         self.handle_data(assignments, self.assignments, "assignment")
         self.handle_data(campaigns, self.campaigns, "campaign")
         # for l in self.campaigns.values():
@@ -308,12 +288,15 @@ class ApiStatus:
             key_list = list(storage.keys())
             for k in key_list:
                 if k not in data_ids:
-                    # print(f"removing {data_type} {k}")
+                    print(data_type,f"removing {data_type} {k}")
                     storage.pop(k)
         else:
             key_list = list(storage.keys())
             for k in key_list:
+                
+                print(data_type,f"removing {data_type} {k}")
                 storage.pop(k)
+        
 
     def estimates(self) -> List[Tuple[str, List[str]]]:
         """Estimate the projected liberation/loss times for each campaign,
