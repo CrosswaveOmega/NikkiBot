@@ -5,6 +5,8 @@ import json
 
 import numpy as np
 
+from utility.debug import Timer
+
 from .diff_util import detect_loggable_changes, detect_loggable_changes_planet
 from hd2api import *
 from .utils import prioritized_string_split
@@ -217,13 +219,15 @@ class ApiStatus:
             self.warall = nowv
         if nowv:
             if current:
-                diff = await detect_loggable_changes(current, nowv, Queue, self.statics)
-                if PlanetQueue:
-                    await detect_loggable_changes_planet(
-                        current, nowv, PlanetQueue, self.statics
-                    )
-                if diff:
-                    self.build_planets()
+                with Timer() as timer:
+                    diff = await detect_loggable_changes(current, nowv, Queue, self.statics)
+                    if PlanetQueue:
+                        await detect_loggable_changes_planet(
+                            current, nowv, PlanetQueue, self.statics
+                        )
+                    if diff:
+                        self.build_planets()
+                print("Operation took", timer.get_time(),"seconds")
                 return diff, nowv
 
         return None, nowv

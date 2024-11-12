@@ -41,87 +41,92 @@ async def compare_value_with_timeout(model1, field):
             # TODO: replace with something less
             # hacky later.
             try:
-                value = sorted(value)
+                value.sort()
             except TypeError:
-                print("unsortable")
+                print(value, "unsortable")
         return value
     except asyncio.TimeoutError as e:
         logs.error("Could not get field %s ", field, exc_info=e)
         raise e
 
+async def compare_values(val1,val2,lvd,to_ignore:Set[str]):
+    if isinstance(val1, BaseApiModel) and isinstance(val2, BaseApiModel):
+        return await get_differing_fields(val1, val2, lvd + 1,to_ignore)
+    elif isinstance(val1, list) and isinstance(val2, list):
+        list_diffs = {}
+        if len(val1) != len(val2):
+            # print(len(val1),len(val2))
+            biggestsize = max(len(val1), len(val2))
 
+            for i in range(biggestsize):
+                v1 = val1[i] if i < len(val1) else None
+                v2 = val2[i] if i < len(val2) else None
+                if isinstance(v1, BaseApiModel) and isinstance(v2, BaseApiModel):
+                    differing = await get_differing_fields(v1, v2, lvd + 1,to_ignore)
+                    if differing:
+                        list_diffs[i] = differing
+                elif str(v1) != str(v2):
+                    target = {}
+                    target = {
+                        k: v
+                        for k, v in zip(["old", "new"], [v1, v2])
+                        if v is not None
+                    }
+                    if target:
+                        nt = {}
+                        for m, n in target.items():
+                            if isinstance(n, BaseApiModel):
+                                nt[m] = n.model_dump(
+                                    exclude=["retrieved_at", "time_delta"]
+                                )
+                            else:
+                                nt[m] = n
+                        list_diffs[i] = nt
+        else:
+            for i, (v1, v2) in enumerate(zip(val1, val2)):
+                if isinstance(v1, BaseApiModel) and isinstance(v2, BaseApiModel):
+                    differing = await get_differing_fields(v1, v2, lvd + 1,to_ignore)
+                    if differing:
+                        list_diffs[i] = differing
+                elif str(v1) != str(v2):
+                    if isinstance(v1, BaseApiModel):
+                        v1 = v1.model_dump(exclude=["retrieved_at", "time_delta"])
+                    if isinstance(v2, BaseApiModel):
+                        v2 = v2.model_dump(exclude=["retrieved_at", "time_delta"])
+                    list_diffs[i] = {"old": v1, "new": v2}
+
+        return list_diffs if list_diffs else None
+    else:
+        return str(val1) != str(val2)
+    
 async def get_differing_fields(
-    model1: BaseApiModel, model2: BaseApiModel, lvd=0, to_ignore=[]
+    model1: BaseApiModel, model2: BaseApiModel, lvd=0, to_ignore=None
 ) -> dict:
     if type(model1) is not type(model2):
         raise ValueError("Both models must be of the same type")
-
-    differing_fields = {}
-    to_ignore.append("retrieved_at")
-
-    to_ignore.append("time_delta")
-    to_ignore.append("self")
+    
     if lvd > 20:
         return "ERROR"
 
-    async def compare_values(val1, val2):
-        if isinstance(val1, BaseApiModel) and isinstance(val2, BaseApiModel):
-            return await get_differing_fields(val1, val2, lvd + 1)
-        elif isinstance(val1, list) and isinstance(val2, list):
-            list_diffs = {}
-            if len(val1) != len(val2):
-                # print(len(val1),len(val2))
-                biggestsize = max(len(val1), len(val2))
-
-                for i in range(biggestsize):
-                    v1 = val1[i] if i < len(val1) else None
-                    v2 = val2[i] if i < len(val2) else None
-                    if isinstance(v1, BaseApiModel) and isinstance(v2, BaseApiModel):
-                        differing = await get_differing_fields(v1, v2, lvd + 1)
-                        if differing:
-                            list_diffs[i] = differing
-                    elif str(v1) != str(v2):
-                        target = {}
-                        target = {
-                            k: v
-                            for k, v in zip(["old", "new"], [v1, v2])
-                            if v is not None
-                        }
-                        if target:
-                            nt = {}
-                            for m, n in target.items():
-                                if isinstance(n, BaseApiModel):
-                                    nt[m] = n.model_dump(
-                                        exclude=["retrieved_at", "time_delta"]
-                                    )
-                                else:
-                                    nt[m] = n
-                            list_diffs[i] = nt
-            else:
-                for i, (v1, v2) in enumerate(zip(val1, val2)):
-                    if isinstance(v1, BaseApiModel) and isinstance(v2, BaseApiModel):
-                        differing = await get_differing_fields(v1, v2, lvd + 1)
-                        if differing:
-                            list_diffs[i] = differing
-                    elif str(v1) != str(v2):
-                        if isinstance(v1, BaseApiModel):
-                            v1 = v1.model_dump(exclude=["retrieved_at", "time_delta"])
-                        if isinstance(v2, BaseApiModel):
-                            v2 = v2.model_dump(exclude=["retrieved_at", "time_delta"])
-                        list_diffs[i] = {"old": v1, "new": v2}
-
-            return list_diffs if list_diffs else None
-        else:
-
-            return str(val1) != str(val2)
-
+    if to_ignore is None:
+        to_ignore = set()
+        to_ignore.add("retrieved_at")
+        to_ignore.add("time_delta")
+        to_ignore.add("self")
+    elif isinstance(to_ignore,list):
+        to_ignore2 = set()
+        for l in to_ignore:
+            to_ignore2.add(l)
+        to_ignore=to_ignore2
+        
+    differing_fields = {}
     for field in model1.model_fields:
         if field not in to_ignore:
             logs.info("Retrieving field %s ", field)
             value1 = await compare_value_with_timeout(model1, field)
             value2 = await compare_value_with_timeout(model2, field)
 
-            diffs = await compare_values(value1, value2)
+            diffs = await compare_values(value1, value2,lvd,to_ignore)
             if isinstance(diffs, dict):
                 if diffs:
                     differing_fields[field] = diffs
@@ -166,7 +171,6 @@ async def process_planet_events(
             item = GameEvent(mode="new", place=place, batch=batch, value=event)
             pushed_items.append(item)
             new.append(item)
-            # await QueueAll.put(item)
         else:
             differ = await get_differing_fields(oc, event, to_ignore=exclude)
             if differ:
@@ -178,7 +182,6 @@ async def process_planet_events(
                 )
                 pushed_items.append(item)
                 change.append(item)
-                # await QueueAll.put(item)
 
     for event in target:
         if not await check_compare_value(key, event[key], source):
@@ -190,7 +193,6 @@ async def process_planet_events(
             )
             pushed_items.append(item)
             old.append(item)
-            # await QueueAll.put(item)
     if new:
         await QueueAll.put(new)
 
@@ -277,6 +279,9 @@ async def detect_loggable_changes(
         old.status,
         new.status,
         to_ignore=[
+            "retrieved_at",
+            "time_delta",
+            "self",
             "time",
             "planetAttacks",
             "impactMultiplier",
@@ -335,7 +340,9 @@ async def detect_loggable_changes(
         "id",
         QueueAll,
         batch,
-        ["health"],
+        ["health","retrieved_at",
+            "time_delta",
+            "self",],
     )
     logs.info("planet status detection, stand by...")
     superlist += await process_planet_events(
@@ -345,7 +352,9 @@ async def detect_loggable_changes(
         "index",
         QueueAll,
         batch,
-        ["health", "players"],
+        ["health", "players",'position',"retrieved_at",
+            "time_delta",
+            "self"],
     )
     logs.info("global event detection, stand by...")
     superlist += await process_planet_events(
@@ -355,12 +364,17 @@ async def detect_loggable_changes(
         "eventId",
         QueueAll,
         batch,
+        ["retrieved_at",
+            "time_delta",
+            "self"]
     )
 
     if new.war_info is not None and old.war_info is not None:
 
         infoout = await get_differing_fields(
-            old.war_info, new.war_info, to_ignore=["planetInfos"]
+            old.war_info, new.war_info, to_ignore=["planetInfos","retrieved_at",
+            "time_delta",
+            "self"]
         )
         if infoout:
             item = GameEvent(
@@ -379,7 +393,9 @@ async def detect_loggable_changes(
             "index",
             QueueAll,
             batch,
-            ["position"],
+            ["position","retrieved_at",
+            "time_delta",
+            "self"],
         )
     superlist += await process_planet_events(
         sector_states(new.status, statics),
@@ -388,7 +404,9 @@ async def detect_loggable_changes(
         "name",
         QueueAll,
         batch,
-        ["planetStatus"],
+        ["planetStatus","retrieved_at",
+            "time_delta",
+            "self"],
     )
     logs.info("Done detection, stand by...")
     if new.major_order is None:
@@ -409,7 +427,6 @@ async def detect_loggable_changes_planet(
     superlist = []
 
     if old.status.time == new.status.time:
-
         return None
 
     logs.info("campaigns detection, stand by...")
@@ -439,25 +456,6 @@ async def detect_loggable_changes_planet(
     await QueueAll.put(
         GameEvent(mode="data", place="planets", batch=batch, value=output)
     )
-    # logs.info("planet events detection, stand by...")
-    # superlist += await process_planet_events(
-    #     new.status.planetEvents,
-    #     old.status.planetEvents,
-    #     "planetevents",
-    #     "id",
-    #     QueueAll,
-    #     batch,
-    #     [],
-    # )
-    # logs.info("planet status detection, stand by...")
-    # superlist += await process_planet_events(
-    #     new.status.planetStatus,
-    #     old.status.planetStatus,
-    #     "planets",
-    #     "index",
-    #     QueueAll,
-    #     batch,
-    #     [],
-    # )
+    
     logs.info("Done detection, stand by...")
     return superlist
