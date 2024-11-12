@@ -12,6 +12,8 @@ from hd2api import *
 from .utils import prioritized_string_split
 
 MAX_ATTEMPT = 3
+
+
 def lmj(directory_path: str):
     """
     Load all JSON files from the specified directory into a single dictionary.
@@ -37,6 +39,7 @@ def lmj(directory_path: str):
                 except json.JSONDecodeError as e:
                     print(f"Error loading JSON from {filename}: {e}")
     return planets_data
+
 
 class LimitedSizeList(list):
     """A list that can only have a fixed amount of elements."""
@@ -70,7 +73,6 @@ class LimitedSizeList(list):
         if len(self.items) > 1:
             return (self.items[0], self.items[1])
         return self.items[0], self.items[0]
-    
 
     def get_change_from(self, mins=15):
         """Retrieve item from a specified number of minutes ago."""
@@ -83,8 +85,8 @@ class LimitedSizeList(list):
         target_time = current_time - datetime.timedelta(minutes=mins)
 
         for item in self.items:
-            if hasattr(item, 'retrieved_at') and item.retrieved_at <= target_time:
-                return (self.items[0],item)
+            if hasattr(item, "retrieved_at") and item.retrieved_at <= target_time:
+                return (self.items[0], item)
         return (self.items[0], self.items[1])
 
     def get_first(self):
@@ -117,10 +119,10 @@ class ApiStatus:
         "getlock",
     ]
 
-    def __init__(self, client: APIConfig = APIConfig(), max_list_size=8,direct=False):
+    def __init__(self, client: APIConfig = APIConfig(), max_list_size=8, direct=False):
         self.client = client
         self.max_list_size = max_list_size
-        self.direct=direct
+        self.direct = direct
         self.war: LimitedSizeList[War] = LimitedSizeList(self.max_list_size)
         self.assignments: Dict[int, LimitedSizeList[Assignment2]] = {}
         self.campaigns: Dict[int, LimitedSizeList[Campaign2]] = {}
@@ -216,19 +218,23 @@ class ApiStatus:
             if nowval:
                 nowv = nowval
             else:
-                nowv = await GetApiRawAll(api_config_override=self.client,direct=self.direct)
+                nowv = await GetApiRawAll(
+                    api_config_override=self.client, direct=self.direct
+                )
             self.warall = nowv
         if nowv:
             if current:
                 with Timer() as timer:
-                    diff = await detect_loggable_changes(current, nowv, Queue, self.statics)
+                    diff = await detect_loggable_changes(
+                        current, nowv, Queue, self.statics
+                    )
                     if PlanetQueue:
                         await detect_loggable_changes_planet(
                             current, nowv, PlanetQueue, self.statics
                         )
                     if diff:
                         self.build_planets()
-                print("Operation took", timer.get_time(),"seconds")
+                print("Operation took", timer.get_time(), "seconds")
                 return diff, nowv
 
         return None, nowv
@@ -256,7 +262,7 @@ class ApiStatus:
                     await asyncio.sleep(2)
                     if attempt_count >= maxattempt:
                         raise e
-            
+
             # as1 = await GetApiV1AssignmentsAll(api_config_override=self.client)
             assignments = build_all_assignments(self.warall.major_order)
             campaigns = build_all_campaigns(self.planets, self.warall.status)
@@ -267,7 +273,7 @@ class ApiStatus:
         # print(war, campaigns, assignments)
         if war is not None:
             self.war.add(war)
-        print(self.assignments,'a2',assignments,'done')
+        print(self.assignments, "a2", assignments, "done")
         self.handle_data(assignments, self.assignments, "assignment")
         self.handle_data(campaigns, self.campaigns, "campaign")
         # for l in self.campaigns.values():
@@ -315,15 +321,14 @@ class ApiStatus:
             key_list = list(storage.keys())
             for k in key_list:
                 if k not in data_ids:
-                    print(data_type,f"removing {data_type} {k}")
+                    print(data_type, f"removing {data_type} {k}")
                     storage.pop(k)
         else:
             key_list = list(storage.keys())
             for k in key_list:
-                
-                print(data_type,f"removing {data_type} {k}")
+
+                print(data_type, f"removing {data_type} {k}")
                 storage.pop(k)
-        
 
     def estimates(self) -> List[Tuple[str, List[str]]]:
         """Estimate the projected liberation/loss times for each campaign,

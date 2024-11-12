@@ -151,8 +151,6 @@ class General(commands.Cog, TC_Cog_Mixin):
             await ctx.send("cancelled")
         await message.delete()
 
-
-
     @app_commands.command(name="server_info", description="view the server data")
     async def info(self, interaction: discord.Interaction) -> None:
         """get bot info for this server"""

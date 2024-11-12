@@ -65,7 +65,7 @@ class ConfigParserSub(configparser.ConfigParser):
 class TreeOverride(CommandTree):
     # I need to do this just to get a global check on app_commands...
     async def interaction_check(self, interaction: Interaction) -> bool:
-        """Don't fire if the user wants to be ignored, but ensure that the 
+        """Don't fire if the user wants to be ignored, but ensure that the
         user can unignore themselves later."""
         if interaction.command:
             if interaction.command.extras:
@@ -253,7 +253,7 @@ class TCBot(
             "[LINE] [{asctime}] [{levelname:<8}] {name}: {message}", dt_fmt, style="{"
         )
         handler2.setFormatter(formatter2)
-        #handler2.addFilter(IntegrationCreateFilter("logfilter"))
+        # handler2.addFilter(IntegrationCreateFilter("logfilter"))
         discord.utils.setup_logging(level=logging.INFO, handler=handler2, root=False)
 
         self.logs = logging.getLogger("TCLogger")

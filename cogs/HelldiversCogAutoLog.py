@@ -249,7 +249,7 @@ class Batch:
             self.sector[sector_name].add_event(event, key)
         elif planet_name is not None:
             if planet_name not in self.planets:
-                #print("Adding ", planet_name)
+                # print("Adding ", planet_name)
                 self.planets[planet_name] = PlanetEvents(planet)
             self.planets[planet_name].add_event(event, key)
         else:
@@ -270,7 +270,7 @@ class Batch:
         planet: Optional[Planet] = None
 
         key: str = f"{place}_{mode}"
-        #print(key)
+        # print(key)
 
         if place in ["campaign", "planetevents"]:
             va = value
@@ -378,7 +378,7 @@ class Batch:
                         text: List[str] = self.format_combo_text(
                             c, planet_data, self.hd2[c]
                         )
-                        #print(text)
+                        # print(text)
                         combos.extend(text)
                     else:
                         combos.append(str(c))
@@ -395,7 +395,7 @@ class Batch:
                         text: List[str] = self.format_combo_text(
                             c, sector_data, self.hd2[c]
                         )
-                        #print(text)
+                        # print(text)
                         combos.extend(text)
                     else:
                         combos.append(str(c))

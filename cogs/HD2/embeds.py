@@ -315,7 +315,7 @@ def campaign_view(
     hdtext: Optional[Dict[str, str]] = None,
     full: bool = False,
     show_stalemate: bool = True,
-)->discord.Embed:
+) -> discord.Embed:
     # Set default flavor text
     flav = "Galactic Status."
     # Check if hdtext has a galactic overview and randomize flavor text if present
@@ -449,7 +449,7 @@ def campaign_text_view(
 
     all_players, last = stat.war.get_first_change()
     change_war = all_players - last
-    total_contrib = [0, 0.0, 0.0, 0.0,0.0]
+    total_contrib = [0, 0.0, 0.0, 0.0, 0.0]
     total = 0
     el = 0
     prop = defaultdict(int)
