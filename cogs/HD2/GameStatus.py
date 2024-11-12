@@ -117,9 +117,10 @@ class ApiStatus:
         "getlock",
     ]
 
-    def __init__(self, client: APIConfig = APIConfig(), max_list_size=8):
+    def __init__(self, client: APIConfig = APIConfig(), max_list_size=8,direct=False):
         self.client = client
         self.max_list_size = max_list_size
+        self.direct=direct
         self.war: LimitedSizeList[War] = LimitedSizeList(self.max_list_size)
         self.assignments: Dict[int, LimitedSizeList[Assignment2]] = {}
         self.campaigns: Dict[int, LimitedSizeList[Campaign2]] = {}
@@ -215,7 +216,7 @@ class ApiStatus:
             if nowval:
                 nowv = nowval
             else:
-                nowv = await GetApiRawAll(api_config_override=self.client)
+                nowv = await GetApiRawAll(api_config_override=self.client,direct=self.direct)
             self.warall = nowv
         if nowv:
             if current:
