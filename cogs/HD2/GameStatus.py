@@ -115,6 +115,8 @@ class ApiStatus:
         "last_planet_get",
         "statics",
         "warall",
+        "direct",
+        
         "nowval",
         "getlock",
     ]
