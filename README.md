@@ -28,7 +28,7 @@ The tasks can be customized by adding coroutines to the Guild_Task_Functions cla
 
 10. **Article Summarizaiton:** Summarize websites using a combination of the JSPyBridge library; as well as the mozilla/readability, jsdom, and turndown npm packages.
 
-11. **Helldivers 2 Features!**: View the current status of the Galactic War in Helldivers 2 at a high level.
+11. **Helldivers 2 Features!**: View the current status of the Galactic War in Helldivers 2 at a high, technical level.
 
 12. **More veaturs to come!**
 
