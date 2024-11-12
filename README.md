@@ -30,7 +30,7 @@ The tasks can be customized by adding coroutines to the Guild_Task_Functions cla
 
 11. **Helldivers 2 Features!**: View the current status of the Galactic War in Helldivers 2 at a high, technical level.
 
-12. **More veaturs to come!**
+12. **More features to come!**
 
 
 ## Current Requirements

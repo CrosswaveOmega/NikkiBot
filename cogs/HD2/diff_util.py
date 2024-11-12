@@ -311,6 +311,9 @@ async def detect_loggable_changes(
         ["source", "target"],
         QueueAll,
         batch,
+        ["retrieved_at",
+            "time_delta",
+            "self"]
     )
     superlist += await process_planet_attacks(
         new.status.planetActiveEffects,
@@ -319,18 +322,25 @@ async def detect_loggable_changes(
         ["index", "galacticEffectId"],
         QueueAll,
         batch,
+        ["retrieved_at",
+            "time_delta",
+            "self"]
     )
 
     if new.news_feed is not None and old.news_feed is not None:
         logs.info("News feed loggable detection, stand by...")
 
         superlist += await process_planet_events(
-            new.news_feed, old.news_feed, "news", "id", QueueAll, batch
+            new.news_feed, old.news_feed, "news", "id", QueueAll, batch,["retrieved_at",
+            "time_delta",
+            "self",]
         )
 
     logs.info("campaigns detection, stand by...")
     superlist += await process_planet_events(
-        new.status.campaigns, old.status.campaigns, "campaign", "id", QueueAll, batch
+        new.status.campaigns, old.status.campaigns, "campaign", "id", QueueAll, batch,["retrieved_at",
+            "time_delta",
+            "self"]
     )
     logs.info("planet events detection, stand by...")
     superlist += await process_planet_events(
@@ -342,7 +352,7 @@ async def detect_loggable_changes(
         batch,
         ["health","retrieved_at",
             "time_delta",
-            "self",],
+            "self"],
     )
     logs.info("planet status detection, stand by...")
     superlist += await process_planet_events(
