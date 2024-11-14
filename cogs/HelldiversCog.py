@@ -608,6 +608,19 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 )
             )
 
+    @pc.command(name="station", description="get space station embed.")
+    async def stationstate(self, interaction: discord.Interaction):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        print("GETTING STATIONS")
+        stations = await self.apistatus.get_station()
+        for i, v in stations.items():
+            await ctx.send(
+                embed=hd2.station_embed(
+                    self.apistatus,
+                    v,
+                )
+            )
+
     @commands.is_owner()
     @commands.command(name="assigntest")
     async def assigntest(self, context: commands.Context):

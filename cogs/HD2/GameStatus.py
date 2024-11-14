@@ -116,9 +116,10 @@ class ApiStatus:
         "statics",
         "warall",
         "direct",
-        
         "nowval",
         "getlock",
+        "stations",
+        "last_station_time",
     ]
 
     def __init__(self, client: APIConfig = APIConfig(), max_list_size=8, direct=False):
@@ -139,6 +140,8 @@ class ApiStatus:
             galaxystatic=GalaxyStatic(**planetjson),
             effectstatic=EffectStatic(**effectjson),
         )
+        self.stations = {}
+        self.last_station_time = datetime.datetime(2024, 1, 1, 1, 1, 0)
         self.getlock = asyncio.Lock()
 
     def to_dict(self):
@@ -240,6 +243,19 @@ class ApiStatus:
                 return diff, nowv
 
         return None, nowv
+
+    async def get_station(self):
+        print(datetime.datetime.now() - self.last_station_time)
+        if (datetime.datetime.now() - self.last_station_time) > datetime.timedelta(
+            minutes=15
+        ):
+            for s in self.warall.status.spaceStations:
+                print(s)
+                id = s.id32
+                station = await GetApiDirectSpaceStation(id, self.client)
+                self.stations[id] = station
+            self.last_station_time = datetime.datetime.now()
+        return self.stations
 
     async def update_data(self):
         """

@@ -8,7 +8,17 @@ import discord
 
 from hd2api.models import Campaign
 
-from hd2api import Assignment2, Campaign2, Planet, War, GlobalEvent, PlanetAttack
+from hd2api import (
+    Assignment2,
+    Campaign2,
+    Planet,
+    SpaceStation,
+    TacticalAction,
+    War,
+    GlobalEvent,
+    PlanetAttack,
+)
+from hd2api.builders import get_time_dh
 
 """
 Collection of embeds for formatting.
@@ -430,6 +440,80 @@ def campaign_view(
     )
     emb0.timestamp = discord.utils.utcnow()  # Set timestamp
     return embs
+
+
+def generate_tactical_action_summary(stat, action: TacticalAction) -> str:
+    """
+    Returns a string summary for a TacticalAction object.
+    """
+    start = get_time_dh(stat.warall)
+    exp = start + datetime.timedelta(seconds=action.statusExpireAtWarTimeSeconds)
+    summary = []
+
+    # Basic details
+    title = action.name
+    summary.append(f"{action.description or 'No description provided.'}")
+    summary.append(
+        hdml_parse(
+            f"{action.strategicDescription or 'No strategic description provided.'}"
+        )
+    )
+    summary.append(f"Status:{action.status or 'N/A'}")
+
+    # Status expiration
+    if action.statusExpireAtWarTimeSeconds:
+        summary.append("status expires" + fdt(exp, "R"))
+
+    # Cost details
+    if action.cost:
+        for idx, cost in enumerate(action.cost, start=1):
+            cost_summary = (
+                f"Cost {idx}:"
+                f"\nItem Mix ID: `{cost.itemMixId or 'N/A'}`"
+                f"\nTarget: `{cost.currentValue or 'N/A'}/{cost.targetValue or 'N/A'}`"
+                f"\nDonationsPerSecond: `{cost.deltaPerSecond or 'N/A'}`"
+                f"\nMax Donation Amount: `{cost.maxDonationAmount or 'N/A'} per {cost.maxDonationPeriodSeconds or 'N/A'}` sec"
+            )
+            summary.append(cost_summary)
+    else:
+        summary.append("No cost details available.")
+
+    # Effect IDs
+    if action.effectIds:
+        summary.append(f"eids:`{', '.join(map(str, action.effectIds))}`")
+    # Active Effect IDs
+    if action.activeEffectIds:
+        summary.append(f"aeids: `{', '.join(map(str, action.activeEffectIds))}`")
+
+    return title, "\n".join(summary)
+
+
+def station_embed(stat: ApiStatus, station: SpaceStation) -> discord.Embed:
+    # Set default flavor text
+
+    # Create the initial Discord embed
+    voting_exp = get_time_dh(stat.warall) + (
+        datetime.timedelta(seconds=station.currentElectionEndWarTime)
+    )
+    endvote = fdt(voting_exp, "R")
+
+    planet_name = station.planetIndex
+    planet = stat.planets.get(station.planetIndex, None)
+    if planet:
+        planet_name = planet.get_name()
+
+    embed = discord.Embed(
+        title="Station Overview", description=f"Hovering over {planet_name}\n"
+    )
+
+    # Tactical Action Strings
+    strs = []
+    for t in station.tacticalActions:
+        title, stri = generate_tactical_action_summary(stat, t)
+        embed.add_field(name=title, value=stri[:1200], inline=False)
+    embed.add_field(name="Next Voting Period", value=f"{endvote}")
+    embed.set_footer(text=f"Flags={station.flags}")
+    return embed
 
 
 def campaign_text_view(
