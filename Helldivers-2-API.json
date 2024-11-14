@@ -1133,7 +1133,7 @@
         "properties": {
           "started": {
             "type": "string",
-            "description": "When this war was started.",
+            "description": "When this war was started (sorta).",
             "format": "date-time"
           },
           "ended": {

@@ -10,9 +10,25 @@ from utility.debug import Timer
 from .diff_util import detect_loggable_changes, detect_loggable_changes_planet
 from hd2api import *
 from .utils import prioritized_string_split
-
+from hd2api.util.utils import set_status_emoji
 MAX_ATTEMPT = 3
 
+
+status_emoji: Dict[str, str] = {
+    "onc": "<:checkboxon:1199756987471241346>",
+    "noc": "<:checkboxoff:1199756988410777610>",
+    "emptyc": "<:checkboxempty:1199756989887172639>",
+    "edit": "<:edit:1199769314929164319>",
+    "add": "<:add:1199770854112890890>",
+    "automaton": "<:bots:1241748819620659332>",
+    "terminids": "<:bugs:1241748834632208395>",
+    "humans": "<:superearth:1275126046869557361>",
+    "illuminate": "<:squid:1274752443246448702>",
+    "hdi": "<:hdi:1240695940965339136>",
+    "medal": "<:Medal:1241748215087235143>",
+    "req": "<:rec:1274481505611288639>",
+    "credits": "<:supercredit:1274728715175067681>",
+}
 
 def lmj(directory_path: str):
     """
@@ -123,6 +139,8 @@ class ApiStatus:
     ]
 
     def __init__(self, client: APIConfig = APIConfig(), max_list_size=8, direct=False):
+        
+        set_status_emoji(status_emoji)
         self.client = client
         self.max_list_size = max_list_size
         self.direct = direct

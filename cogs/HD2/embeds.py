@@ -19,7 +19,7 @@ from hd2api import (
     PlanetAttack,
 )
 from hd2api.builders import get_time_dh
-
+from hd2api.constants import items
 """
 Collection of embeds for formatting.
 """
@@ -33,6 +33,14 @@ import random
 from .GameStatus import ApiStatus, get_feature_dictionary
 from .predict import make_prediction_for_eps, predict_needed_players
 
+
+item_emojis: Dict[str, str] = {
+    897894480: "<:Medal:1241748215087235143>",
+    3608481516:"<:rec:1274481505611288639>",
+    3481751602:"<:supercredit:1274728715175067681>",
+    2985106497:"<:RareSample:1306726016575607025>",
+    3992382197:"<:CommonSample:1306726063233044591>"
+}
 
 def create_war_embed(stat: ApiStatus):
     data, last = stat.war.get_first_change()
@@ -467,9 +475,11 @@ def generate_tactical_action_summary(stat, action: TacticalAction) -> str:
     # Cost details
     if action.cost:
         for idx, cost in enumerate(action.cost, start=1):
+            item=items.get(cost.itemMixId,cost.itemMixId)
+            emj=item_emojis.get(cost.itemMixId,897894480)
             cost_summary = (
                 f"Cost {idx}:"
-                f"\nItem Mix ID: `{cost.itemMixId or 'N/A'}`"
+                f"\nItem {emj}`:{item}`"
                 f"\nTarget: `{cost.currentValue or 'N/A'}/{cost.targetValue or 'N/A'}`"
                 f"\nDonationsPerSecond: `{cost.deltaPerSecond or 'N/A'}`"
                 f"\nMax Donation Amount: `{cost.maxDonationAmount or 'N/A'} per {cost.maxDonationPeriodSeconds or 'N/A'}` sec"
