@@ -460,17 +460,18 @@ def generate_tactical_action_summary(stat, action: TacticalAction) -> str:
 
     # Basic details
     title = action.name
-    summary.append(f"{action.description or 'No description provided.'}")
-    summary.append(
+    summary.append(f"Description:\n{action.description or 'No description provided.'}")
+    summary.append("\n"+
         hdml_parse(
             f"{action.strategicDescription or 'No strategic description provided.'}"
         )
     )
-    summary.append(f"Status:{action.status or 'N/A'}")
+    sumv=f"Status:{action.status or 'N/A'}"
+
 
     # Status expiration
     if action.statusExpireAtWarTimeSeconds:
-        summary.append("status expires" + fdt(exp, "R"))
+        sumv+=("status expires" + fdt(exp, "R"))
 
     # Cost details
     if action.cost:
@@ -478,11 +479,10 @@ def generate_tactical_action_summary(stat, action: TacticalAction) -> str:
             item=items.get(cost.itemMixId,cost.itemMixId)
             emj=item_emojis.get(cost.itemMixId,897894480)
             cost_summary = (
-                f"Cost {idx}:"
-                f"\nItem {emj}`:{item}`"
-                f"\nTarget: `{cost.currentValue or 'N/A'}/{cost.targetValue or 'N/A'}`"
-                f"\nDonationsPerSecond: `{cost.deltaPerSecond or 'N/A'}`"
-                f"\nMax Donation Amount: `{cost.maxDonationAmount or 'N/A'} per {cost.maxDonationPeriodSeconds or 'N/A'}` sec"
+                f"\nItem {emj}`{item}`"
+                f"\nDonations: `{cost.currentValue or 'N/A'}/{cost.targetValue or 'N/A'}`"
+                f"\nDonations Per Hour: `{cost.deltaPerSecond*3600 or 'N/A'}`"
+                f"\nMax Donation Amount: `{cost.maxDonationAmount or 'N/A'} per {cost.maxDonationPeriodSeconds/3600 or 'N/A'} hours`"
             )
             summary.append(cost_summary)
     else:
@@ -490,10 +490,10 @@ def generate_tactical_action_summary(stat, action: TacticalAction) -> str:
 
     # Effect IDs
     if action.effectIds:
-        summary.append(f"eids:`{', '.join(map(str, action.effectIds))}`")
+        summary.append(f"Effect IDs:`{', '.join(map(str, action.effectIds))}`")
     # Active Effect IDs
     if action.activeEffectIds:
-        summary.append(f"aeids: `{', '.join(map(str, action.activeEffectIds))}`")
+        summary.append(f"Active Effect IDs: `{', '.join(map(str, action.activeEffectIds))}`")
 
     return title, "\n".join(summary)
 
