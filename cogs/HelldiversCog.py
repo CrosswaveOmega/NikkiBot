@@ -619,6 +619,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                     self.apistatus,
                     v,
                 )
+                ,ephemeral=True
             )
 
     @commands.is_owner()

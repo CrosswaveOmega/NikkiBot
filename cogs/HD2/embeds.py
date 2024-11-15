@@ -490,10 +490,10 @@ def generate_tactical_action_summary(stat, action: TacticalAction) -> str:
 
     # Effect IDs
     if action.effectIds:
-        summary.append(f"Effect IDs:`{', '.join(map(str, action.effectIds))}`")
+        summary.append(f"Effect IDs:`[{', '.join(map(str, action.effectIds))}`")
     # Active Effect IDs
     if action.activeEffectIds:
-        summary.append(f"Active Effect IDs: `{', '.join(map(str, action.activeEffectIds))}`")
+        summary.append(f"Active Effect IDs: `[{', '.join(map(str, action.activeEffectIds))}]`")
 
     return title, "\n".join(summary)
 
