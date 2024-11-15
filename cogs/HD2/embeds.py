@@ -473,6 +473,8 @@ def generate_tactical_action_summary(stat, action: TacticalAction) -> str:
     if action.statusExpireAtWarTimeSeconds:
         sumv+=("status expires" + fdt(exp, "R"))
 
+    summary.append(sumv)
+
     # Cost details
     if action.cost:
         for idx, cost in enumerate(action.cost, start=1):
