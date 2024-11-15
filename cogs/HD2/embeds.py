@@ -466,12 +466,12 @@ def generate_tactical_action_summary(stat, action: TacticalAction) -> str:
             f"{action.strategicDescription or 'No strategic description provided.'}"
         )
     )
-    sumv=f"Status:{action.status or 'N/A'}"
+    sumv=f"Status: `{action.status or 'N/A'}`"
 
 
     # Status expiration
     if action.statusExpireAtWarTimeSeconds:
-        sumv+=("status expires" + fdt(exp, "R"))
+        sumv+=(" status expires" + fdt(exp, "R"))
 
     summary.append(sumv)
 
@@ -479,11 +479,26 @@ def generate_tactical_action_summary(stat, action: TacticalAction) -> str:
     if action.cost:
         for idx, cost in enumerate(action.cost, start=1):
             item=items.get(cost.itemMixId,cost.itemMixId)
+
             emj=item_emojis.get(cost.itemMixId,897894480)
-            cost_summary = (
-                f"\nItem {emj}`{item}`"
-                f"\nDonations: `{cost.currentValue or 'N/A'}/{cost.targetValue or 'N/A'}`"
-                f"\nDonations Per Hour: `{cost.deltaPerSecond*3600 or 'N/A'}`"
+            cost_summary=f"\nItem {emj}`{item}`"
+            remaining_sec=None
+            percent=""
+            if cost.currentValue and cost.targetValue and cost.deltaPerSecond:
+                diff=(cost.targetValue-cost.currentValue)/cost.deltaPerSecond
+                remaining_sec=datetime.datetime.now()+datetime.timedelta(seconds=diff)
+
+            if cost.currentValue and cost.targetValue:
+                num=round((cost.currentValue / cost.targetValue) * 100.0, 2)
+                percent=f'{num:.2f}%'
+
+            cost_summary += (
+                f", at `{cost.currentValue}/{cost.targetValue or 'None'}`, {percent}"
+                f" by `{cost.deltaPerSecond*3600 or 'N/A'}` per hour")
+            if remaining_sec:
+                cost_summary+=f"\nComplete in {fdt(remaining_sec,'R')}"
+            cost_summary+=(
+                
                 f"\nMax Donation Amount: `{cost.maxDonationAmount or 'N/A'} per {cost.maxDonationPeriodSeconds/3600 or 'N/A'} hours`"
             )
             summary.append(cost_summary)
@@ -492,7 +507,7 @@ def generate_tactical_action_summary(stat, action: TacticalAction) -> str:
 
     # Effect IDs
     if action.effectIds:
-        summary.append(f"Effect IDs:`[{', '.join(map(str, action.effectIds))}`")
+        summary.append(f"Effect IDs:`[{', '.join(map(str, action.effectIds))}]`")
     # Active Effect IDs
     if action.activeEffectIds:
         summary.append(f"Active Effect IDs: `[{', '.join(map(str, action.activeEffectIds))}]`")
@@ -501,8 +516,6 @@ def generate_tactical_action_summary(stat, action: TacticalAction) -> str:
 
 
 def station_embed(stat: ApiStatus, station: SpaceStation) -> discord.Embed:
-    # Set default flavor text
-
     # Create the initial Discord embed
     voting_exp = get_time_dh(stat.warall) + (
         datetime.timedelta(seconds=station.currentElectionEndWarTime)

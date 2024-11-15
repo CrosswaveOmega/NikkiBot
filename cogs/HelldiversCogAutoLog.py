@@ -9,6 +9,7 @@ from discord.ext import commands, tasks
 import os
 import re
 import cogs.HD2 as hd2
+from cogs.HD2.GameStatus import ApiStatus
 from cogs.HD2.db import ServerHDProfile
 from hd2api.models.ABC.model import BaseApiModel
 from assetloader import AssetLookup
@@ -28,6 +29,7 @@ from pydantic import Field
 from discord.utils import format_dt as fdt
 
 
+from hd2api.builders import get_time_dh
 from hd2api import (
     DiveharderAll,
     NewsFeedItem,
@@ -35,6 +37,7 @@ from hd2api import (
     PlanetInfo,
     PlanetEvent,
     Campaign,
+    SpaceStationStatus,
     Planet,
     GlobalEvent,
     SectorStates,
@@ -721,6 +724,43 @@ class Embeds:
             text=f"{footerchanges},EID:{evt.eventId}, {custom_strftime(evt.retrieved_at)}"
         )
         return emb
+    
+    
+    @staticmethod
+    def spaceStationEmbed(
+        evt: SpaceStationStatus, dump: Dict[str, Any],status:ApiStatus,mode="started"
+    ) -> discord.Embed:
+        name, sector = "Space Station", None
+        specialtext = ""
+        color = 0x02a370
+        emb = discord.Embed(
+            title=f"{name} Field Change",
+            description=f"Updates for Space Station {evt.id32}.\n",
+            timestamp=evt.retrieved_at,
+            color=color,
+        )
+
+        if "currentElectionEndWarTime" in dump:
+            start = get_time_dh(status.warall)
+            exp = start + datetime.timedelta(seconds=evt.currentElectionEndWarTime)
+            emb.add_field(name="New Election Period End Time",value=fdt(exp,'F'))
+        if "planetIndex" in dump:
+            planet=status.planets.get(evt.planetIndex)
+            emb.add_field(name="Planet",value=planet.get_name())
+        if "flags" in dump:
+            emb.add_field(name="Flag",value=evt.flags)
+        if "activeEffectIds" in dump:
+            ids=f"`[{', '.join(map(str, evt.activeEffectIds))}]`"
+            emb.add_field(name='Active Effect IDs',value=ids,inline=False)
+
+        
+        emb.add_field(
+            name="Timestamp", value=f"Timestamp:{fdt(evt.retrieved_at,'F')}"
+        )
+        emb.set_author(name=f"Station {evt.id32}")
+        emb.set_footer(text=f"{custom_strftime(evt.retrieved_at)}")
+        return emb
+
 
     @staticmethod
     def dumpEmbedPlanet(
@@ -1086,6 +1126,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.dumpEmbed(info, dump, "stats", "changed")
             elif place == "info_raw":
                 embed = Embeds.dumpEmbed(info, dump, "info", "changed")
+            elif place=='station':
+                embed=Embeds.spaceStationEmbed(info,dump,self.apistatus,'changed')
             elif place == "globalEvents":
                 listv = [k for k in dump.keys()]
 

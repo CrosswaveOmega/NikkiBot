@@ -339,7 +339,16 @@ async def detect_loggable_changes(
                 "self",
             ],
         )
-
+    logs.info("DSS movement detection, stand by...")
+    superlist += await process_planet_events(
+        new.status.spaceStations,
+        old.status.spaceStations,
+        "station",
+        "id32",
+        QueueAll,
+        batch,
+        ["retrieved_at", "time_delta", "self"],
+    )
     logs.info("campaigns detection, stand by...")
     superlist += await process_planet_events(
         new.status.campaigns,
@@ -382,7 +391,6 @@ async def detect_loggable_changes(
     )
 
     if new.war_info is not None and old.war_info is not None:
-
         infoout = await get_differing_fields(
             old.war_info,
             new.war_info,

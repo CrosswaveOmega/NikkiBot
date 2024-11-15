@@ -137,6 +137,34 @@ class HD2OverviewView(discord.ui.View):
             await interaction.response.send_message(embed=embeds[0], ephemeral=True)
 
     @discord.ui.button(
+        label="Space Stations",
+        style=discord.ButtonStyle.blurple,
+        custom_id="hd_persistent_view:station_blue",
+    )
+    async def show_stations(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
+        stations = await self.cog.apistatus.get_station()
+        print(stations)
+        embeds = []
+        for name, val in stations.items():
+            emb=hd2.station_embed(
+                    self.cog.apistatus,
+                    val,
+                )
+            embeds.append(emb)
+        if not embeds:
+            embeds.append(discord.Embed(title="NO STATION DATA."))
+        if len(embeds) > 1:
+            pcc, _ = await pages_of_embeds_2(True, embeds, show_page_nums=False)
+            but = hd2.ListButtons(callbacker=pcc)
+            await interaction.response.send_message(
+                embed=pcc.make_embed(), view=but, ephemeral=True
+            )
+        else:
+            await interaction.response.send_message(embed=embeds[0], ephemeral=True)
+
+    @discord.ui.button(
         label="View App",
         style=discord.ButtonStyle.grey,
         emoji="<:divericon:1270027381154910322>",

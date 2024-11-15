@@ -177,6 +177,9 @@ class ApiStatus:
             "planets": {
                 k: p.model_dump(exclude="time_delta") for k, p in self.planets.items()
             },
+            "stations":{
+                k: p.model_dump(exclude="time_delta") for k, p in self.stations.items()
+            },
             "dispatches": [d.model_dump(exclude="time_delta") for d in self.dispatches],
             # "warstat": self.warstat.model_dump(),
             "warall": self.warall.model_dump(exclude="time_delta"),
@@ -214,6 +217,8 @@ class ApiStatus:
             newcks.warstat = WarStatus(**data["warstat"])
         if "warall" in data:
             newcks.warall = DiveharderAll(**data["warall"])
+        if "stations" in data:
+            newcks.stations={int(k): SpaceStation(**v) for k, v in data["stations"].items()}
         return newcks
 
     def __repr__(self):
@@ -262,7 +267,18 @@ class ApiStatus:
 
         return None, nowv
 
+    async def update_stations(self):
+        if (datetime.datetime.now() - self.last_station_time) > datetime.timedelta(
+            minutes=15
+        ):
+            for s in self.warall.status.spaceStations:
+                print(s)
+                id = s.id32
+                station = await GetApiDirectSpaceStation(id, self.client)
+                self.stations[id] = station
+            self.last_station_time = datetime.datetime.now()
     async def get_station(self):
+        return self.stations
         print(datetime.datetime.now() - self.last_station_time)
         if (datetime.datetime.now() - self.last_station_time) > datetime.timedelta(
             minutes=15
@@ -317,9 +333,7 @@ class ApiStatus:
         #     self.planets[camp.planet.index] = camp.planet
 
         try:
-            dispatches = await GetApiV1DispatchesAll(api_config_override=self.client)
-            if dispatches is not None:
-                self.dispatches = dispatches
+            await self.update_stations()
         except Exception as e:
             print(e)
 
