@@ -383,8 +383,7 @@ class Batch:
                         )
                         # print(text)
                         combos.extend(text)
-                    else:
-                        combos.append(str(c))
+                    
         for sector_data in self.sector.values():
             trig_list: List[str] = sector_data.trig
             combos.append(str(sector_data.planet.name) + ":" + ",".join(trig_list))
