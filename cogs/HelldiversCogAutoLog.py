@@ -368,9 +368,7 @@ class Batch:
 
         for planet_data in self.planets.values():
             trig_list: List[str] = planet_data.trig
-            combos.append(
-                str(planet_data.planet.name) + ": `" + ",".join(trig_list) + "`"
-            )
+            
             combo: Optional[List[str]] = self.check_trig_combinations(
                 trig_list, planet_data
             )
