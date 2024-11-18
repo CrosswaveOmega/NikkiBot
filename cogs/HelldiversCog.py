@@ -39,6 +39,9 @@ from utility import load_json_with_substitutions
 from utility import WebhookMessageWrapper as web
 from bot.Tasks import TCTask, TCTaskManager
 
+from hd2api.builders import get_time_dh
+
+from hd2api import extract_timestamp as et, hdml_parse
 from discord.utils import format_dt as fdt
 
 
@@ -815,16 +818,19 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     async def dispatch(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
-        data = self.apistatus.dispatches
+        data = self.apistatus.warall.news_feed
         if not data:
             return await ctx.send("No result")
         embeds = []
+        timestart=get_time_dh(self.apistatus.warall) 
         for s in data:
-            text, timev = s.get_text_and_time()
+            timev=timestart+ (
+                timedelta(seconds=s.published)
+            )
             embeds.append(
                 discord.Embed(
                     title=f"Dispatch {s.id}, type {s.type}",
-                    description=f"{text}\n{fdt(timev)}",
+                    description=f"{hdml_parse(s.message)}\n{fdt(timev)}",
                 )
             )
         await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
