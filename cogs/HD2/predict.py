@@ -24,8 +24,12 @@ from PIL import Image
 
 
 data = pd.read_csv("statistics.csv")
+data = data[(data['wins_per_sec'] >= 0) & (data['loss_per_sec'] >= 0)  & (data['kills_per_sec'] >= 0) & (data['deaths_per_sec'] >= 0)]
+
+
 
 # Extract features and target
+T=data['timestamp']
 X = data[
     [
         "player_count",
@@ -45,9 +49,16 @@ XE = data[["eps"]]
 YE = data["player_count"]
 model = LinearRegression()
 model.fit(X, Y)
+
 # Fit the linear regression model
 players_needed_model = LinearRegression()
 players_needed_model.fit(XE[["eps"]], YE)
+
+XE2 = data[["player_count"]]
+YE2 = data["eps"]
+players_to_eps_model= LinearRegression()
+players_to_eps_model.fit(XE2[["player_count"]],YE2)
+
 
 # Predict values
 predicted_eps = players_needed_model.predict(XE[["eps"]])
@@ -134,7 +145,6 @@ def make_prediction_for_eps(data_dict):
 
 
 def predict_needed_players(target_eps, mp_mult):
-
     prediction_features = {
         "eps": target_eps,
         "mp_mult": mp_mult,
@@ -163,9 +173,37 @@ def predict_needed_players(target_eps, mp_mult):
             )
         )
     )
-
     return needed, se_of_prediction
 
+def predict_eps_for_players(players, mp_mult):
+    prediction_features = {
+        "player_count": players,
+        "mp_mult": mp_mult,
+    }
+    # Extract features for prediction
+    features_for_prediction = pd.DataFrame([prediction_features])
+    # X_new = features_for_prediction[["eps", "mp_mult"]]
+    X_new = features_for_prediction[["player_count"]]
+    y_pred = players_to_eps_model.predict(X_new)
+    needed = y_pred[0]
+
+    # Calculate the standard error of the prediction
+    X_with_intercept = np.hstack((np.ones((XE.shape[0], 1)), XE))
+    X_new_with_intercept = np.hstack((np.ones((X_new.shape[0], 1)), X_new))
+    se_of_prediction = np.sqrt(
+        mse
+        * (
+            1
+            + np.dot(
+                np.dot(
+                    X_new_with_intercept,
+                    np.linalg.inv(np.dot(X_with_intercept.T, X_with_intercept)),
+                ),
+                X_new_with_intercept.T,
+            )
+        )
+    )
+    return needed, se_of_prediction
 
 def make_graph():
     se = np.sqrt(mse)
@@ -387,6 +425,93 @@ def make_graph2():
 
     # Return the image
     return image
+
+
+def make_graph3():
+    se = np.sqrt(mse)
+
+    from matplotlib.font_manager import FontProperties
+
+    terminal_font = FontProperties(
+        fname=r"./assets/ChakraPetch-SemiBold.ttf"
+    )  # Update the path to your font file
+
+
+    plt.figure(figsize=(20, 12), facecolor="black")
+    # Create a colormap that transitions from blue to red
+    ax = plt.gca()
+    ax.set_facecolor("black")
+
+    maxy=np.max(T)
+    maxx = max(X["deaths_per_sec"].max(), X["loss_per_sec"].max(), X["wins_per_sec"].max(), X["kills_per_sec"].max())
+    plt.plot(T, X["deaths_per_sec"], label="Deaths per second")
+    
+    plt.plot(T, X["loss_per_sec"], label="loss per second")
+    
+    
+    plt.plot(T, X["wins_per_sec"], label="wins per second")
+    
+    plt.plot(T, X["kills_per_sec"], label="deaths per second") 
+
+    plt.xlim(left=0, right=maxy)  # Lower limit set to 0,0
+    plt.ylim(bottom=0, top=maxx)
+
+    plt.xticks(np.arange(0, maxy, 5000), color="white", fontproperties=terminal_font)
+
+    plt.xticks(
+        np.arange(0, maxy, 1000),
+        minor=True,
+    )
+    plt.yticks(np.arange(0, maxx, 50), color="white", fontproperties=terminal_font)
+
+    plt.yticks(np.arange(0, maxx, 10), minor=True)
+
+    plt.grid(True, which="major", color="white", linestyle="--", linewidth=0.5)
+
+    plt.grid(True, which="minor", color="#323232", linestyle=":", linewidth=0.5)
+
+    # Plot confidenc
+    plt.xlabel("Timestamp", color="white", fontproperties=terminal_font)
+    plt.ylabel("Influence per second", color="white", fontproperties=terminal_font)
+    legend = ax.legend(
+        facecolor="black",
+        edgecolor="white",
+        framealpha=1,
+        loc="upper left",
+        prop=terminal_font,
+    )
+    plt.setp(
+        legend.get_texts(), color="white"
+    )  # Set the color of the legend text to white
+
+    # Customize the spines to be white
+    ax.spines["bottom"].set_color("white")
+    ax.spines["left"].set_color("white")
+    ax.spines["top"].set_color("white")
+    ax.spines["right"].set_color("white")
+
+    plt.title(
+        "Scatter plot of player count vs influence per second with confidence intervals",
+        color="white",
+        fontproperties=terminal_font,
+    )
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format="png")
+    buffer.seek(0)
+
+    # Convert the plot to a PIL image
+    image = Image.open(BytesIO(buffer.read()))
+
+    # Close buffer
+    buffer.close()
+
+    # Save the image
+    image.save("saveData/graph3.png")
+
+    # Return the image
+    return image
+
 
 
 img = make_graph()
