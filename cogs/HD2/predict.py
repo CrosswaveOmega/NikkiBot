@@ -188,7 +188,7 @@ def predict_eps_for_players(players, mp_mult):
     needed = y_pred[0]
 
     # Calculate the standard error of the prediction
-    X_with_intercept = np.hstack((np.ones((XE.shape[0], 1)), XE))
+    X_with_intercept = np.hstack((np.ones((XE2.shape[0], 1)), XE2))
     X_new_with_intercept = np.hstack((np.ones((X_new.shape[0], 1)), X_new))
     se_of_prediction = np.sqrt(
         mse
