@@ -291,6 +291,7 @@ async def detect_loggable_changes(
             "planetEvents",
             "globalEvents",
             "planetActiveEffects",
+            "spaceStations"
         ],
     )
     if rawout:

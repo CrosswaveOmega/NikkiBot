@@ -1,4 +1,15 @@
 {
+    "station move": [
+        "DSS deploys to Vog-Sojoth of the Tanis sector",
+        [
+            "[TYPETEXT] to [PLANET 0] of the [SECTOR 1] sector"
+        ],
+        [
+            "DSS deploys"
+        ],
+        "if station move only"
+
+    ],
     "cstart": [
         "Heeth liberation campaign starts",
         [

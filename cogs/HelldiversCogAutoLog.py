@@ -1,6 +1,7 @@
 import asyncio
 import json
 import datetime
+import difflib
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import discord
@@ -298,6 +299,15 @@ class Batch:
             if planet:
                 sector_name = va.name
 
+        if place in ["station"]:
+            va = value
+            if mode == "change":
+                va, _ = value
+            planet = SimplePlanet.from_index(va.planetIndex)
+            # planet = apistatus.planets.get(int(value.planetIndex), None)
+            if planet:
+                planet_name_source = planet.get_name(False)
+
         if place in ["planetAttacks"]:
             pass
             # planet_source = apistatus.planets.get(int(value.source), None)
@@ -381,6 +391,8 @@ class Batch:
                         )
                         # print(text)
                         combos.extend(text)
+                    else:
+                        combos.append(str(c))
                     
         for sector_data in self.sector.values():
             trig_list: List[str] = sector_data.trig
@@ -415,6 +427,10 @@ class Batch:
     ) -> List[str]:
         planet: Planet = planet_data.planet
         combinations: List[str] = []
+
+        if 'station_change' in trig_list:
+            combinations.append('station move')
+
         if "campaign_new" in trig_list and "planetevents_new" not in trig_list:
             combinations.append("cstart")
 
@@ -1066,6 +1082,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         tc = True
                 if value.message and mi != None:
                     if self.messageids.get(mi, None) != value.message:
+
                         self.messageids[mi] = value.message
                         mc = True
                 embed = Embeds.globalEventEmbed(value, "started")
@@ -1130,20 +1147,25 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
                 ti = info.titleId32
                 mi = info.messageId32
-                tc, mc = False, False
+                tc, mc = False, 0
+                difflib.context_diff
                 if info.title:
-                    if hdml_parse(self.titleids.get(ti, "")) != hdml_parse(info.title):
+                    stored=hdml_parse(self.titleids.get(ti, ""))
+                    new=hdml_parse(info.title)
+                    if  stored != new:
                         self.titleids[ti] = info.title
                         tc = True
                 if info.message:
-                    if hdml_parse(self.messageids.get(mi, "")) != hdml_parse(
-                        info.message
-                    ):
+                    stored=hdml_parse(self.messageids.get(mi, ""))
+                    new=hdml_parse( info.message )
+                    if  stored != new:
+                        diff = difflib.ndiff(stored.splitlines(), new.splitlines())
+                        delta = diff
                         self.messageids[mi] = info.message
-                        mc = True
+                        mc = len(delta)+1
                 if all(key in ["title", "message"] for key in listv):
 
-                    if tc or mc:
+                    if tc or mc>0:
                         embed = Embeds.globalEventEmbed(
                             info, f"changed_{tc},{mc}", ",".join(listv)
                         )

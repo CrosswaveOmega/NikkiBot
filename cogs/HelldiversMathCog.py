@@ -158,6 +158,27 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send("Planet not found.", ephemeral=True)
 
     @calc.command(
+        name="dps_for_players",
+        description="estimate average dps preformed by X players",
+    )
+    @app_commands.describe(players="number of players")
+    async def dps_for_players(
+        self, interaction: discord.Interaction, players: float
+    ):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        mp_mult = self.apistatus.war.get_first().impactMultiplier
+
+        eps, conf = hd2.predict_eps_for_players(players, mp_mult)
+        dps= eps*mp_mult
+
+        await ctx.send(
+            f"`{players}` players can achieve dps of `({dps} dps)` with the current impact multiplier."
+            + f"\n standard error `{conf}`.",
+            ephemeral=True,
+        )
+
+
+    @calc.command(
         name="dps_to_lph",
         description="Convert damage per second to liberation per hour.",
     )
