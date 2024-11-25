@@ -139,7 +139,7 @@ def create_assignment_embed(
             if e < len(diff):
                 chg = diff[e]
                 projected = progress[e] + (rates[e] * time_remaining)
-        tasks += task.task_str(progress[e], e, planets, chg, projected) + "\n"
+        tasks += task.format_task_str(progress[e], e, planets) + "\n"
 
     embed.add_field(name="Tasks", value=tasks, inline=False)
     if data.rewards:

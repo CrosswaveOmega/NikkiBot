@@ -1148,6 +1148,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 ti = info.titleId32
                 mi = info.messageId32
                 tc, mc = False, 0
+                footer_delta=""
                 difflib.context_diff
                 if info.title:
                     stored=hdml_parse(self.titleids.get(ti, ""))
@@ -1161,6 +1162,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     if  stored != new:
                         diff = difflib.ndiff(stored.splitlines(), new.splitlines())
                         delta = list(diff)
+                        print(delta)
+                        self.bot.logs.error(str(delta),"")
                         self.messageids[mi] = info.message
                         mc = len(delta)+1
                 if all(key in ["title", "message"] for key in listv):
