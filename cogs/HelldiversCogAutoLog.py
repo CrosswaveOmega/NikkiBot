@@ -1160,7 +1160,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     new=hdml_parse( info.message )
                     if  stored != new:
                         diff = difflib.ndiff(stored.splitlines(), new.splitlines())
-                        delta = diff
+                        delta = list(diff)
                         self.messageids[mi] = info.message
                         mc = len(delta)+1
                 if all(key in ["title", "message"] for key in listv):
