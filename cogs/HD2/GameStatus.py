@@ -2,7 +2,8 @@ import asyncio
 import csv
 import datetime
 import json
-
+import os
+from typing import *
 import numpy as np
 
 from utility.debug import Timer
@@ -13,7 +14,6 @@ from .utils import prioritized_string_split
 from hd2api.util.utils import set_status_emoji
 MAX_ATTEMPT = 3
 
-from typing import *
 status_emoji: Dict[str, str] = {
     "onc": "<:checkboxon:1199756987471241346>",
     "noc": "<:checkboxoff:1199756988410777610>",
