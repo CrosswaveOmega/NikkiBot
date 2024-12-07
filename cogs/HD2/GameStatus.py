@@ -13,7 +13,7 @@ from .utils import prioritized_string_split
 from hd2api.util.utils import set_status_emoji
 MAX_ATTEMPT = 3
 
-
+from typing import *
 status_emoji: Dict[str, str] = {
     "onc": "<:checkboxon:1199756987471241346>",
     "noc": "<:checkboxoff:1199756988410777610>",
