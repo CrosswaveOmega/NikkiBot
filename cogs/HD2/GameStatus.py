@@ -12,6 +12,7 @@ from .diff_util import detect_loggable_changes, detect_loggable_changes_planet
 from hd2api import *
 from .utils import prioritized_string_split
 from discord.utils import format_dt as fdt
+from hd2api import extract_timestamp as et, hdml_parse
 from hd2api.util.utils import set_status_emoji
 MAX_ATTEMPT = 3
 
