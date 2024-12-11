@@ -114,6 +114,16 @@ class HD2OverviewView(discord.ui.View):
     async def show_estimate(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
+        try:
+            await self.est(interaction, button)
+        except Exception as e:
+            await self.cog.bot.send_error(e,"view_error")
+            
+            
+    
+    async def est(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         est = self.cog.apistatus.estimates()
         print(est)
         title = "Galactic War Forecast"
