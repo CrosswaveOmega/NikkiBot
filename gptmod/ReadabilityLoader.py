@@ -155,6 +155,7 @@ class ReadableLoader(dl.WebBaseLoader):
                         out = (remove_links(result2.text_content), None, header)
                         
                         yield i, urls[i][0], out
+                        continue
                     except Exception as e:
                         yield i, urls[i][0], e
                         continue
