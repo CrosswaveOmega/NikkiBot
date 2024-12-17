@@ -156,7 +156,8 @@ class ReadableLoader(dl.WebBaseLoader):
                         
                         yield i, urls[i][0], out
                     except Exception as e:
-                        yield i, urls[i][0], result
+                        yield i, urls[i][0], e
+                        continue
                 else:
                     yield i, urls[i][0], result
                     continue
