@@ -145,8 +145,9 @@ class ReadableLoader(dl.WebBaseLoader):
                         markdown = MarkItDown()
                         result2 = markdown.convert(url)
                         print(result2.text_content)
-                        header={"title":result2.title or result2.text_content[:100]}
-                        header={"siteName":'Siteunknown'}
+                        header{"title":result2.title or result2.text_content[:100]}
+                        header["siteName"]='Siteunknown'
+                        header["source"]= url
                         header["description"]=result2.text_content[:200]
                         header["dateadded"] = datetime.datetime.utcnow().timestamp()
                         header["date"] = "None"
@@ -274,6 +275,8 @@ class ReadableLoader(dl.WebBaseLoader):
                         
                         if "description" in header:
                             metadata['description']=header['description']
+                        if "source" in header:
+                            metadata["source"]=header["source"]
                             
                         typev = MetadataDocType.readertext
 
