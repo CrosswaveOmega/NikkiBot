@@ -145,7 +145,7 @@ class ReadableLoader(dl.WebBaseLoader):
                         markdown = MarkItDown()
                         result2 = markdown.convert(url)
                         print(result2.text_content)
-                        header{"title":result2.title or result2.text_content[:100]}
+                        header={"title":result2.title or result2.text_content[:100]}
                         header["siteName"]='Siteunknown'
                         header["source"]= url
                         header["description"]=result2.text_content[:200]
