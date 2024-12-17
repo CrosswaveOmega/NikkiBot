@@ -152,6 +152,8 @@ class ReadableLoader(dl.WebBaseLoader):
                     header['byline']='authors unknown'
 
                     out = (remove_links(result.text_content), None, header)
+                    
+                    yield i, urls[i][0], out
                 else:
                     yield i, urls[i][0], result
                     continue
