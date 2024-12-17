@@ -326,7 +326,7 @@ def split_link(doc: Document, chunk_size: int = 1800, prior=[], add=0):
     )
 
     for e, chunk in enumerate(fil):
-        metadatac = copy.copy(metadata)
+        metadatac = copy.deepcopy(metadata)
 
         metadatac["split"] = add
         add += 1

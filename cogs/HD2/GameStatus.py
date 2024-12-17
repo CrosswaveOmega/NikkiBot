@@ -273,9 +273,14 @@ class ApiStatus:
         if (datetime.datetime.now() - self.last_station_time) > datetime.timedelta(
             minutes=15
         ):
+            active_stations=[]
             for s in self.warall.status.spaceStations:
                 print(s)
                 id = s.id32
+                active_stations.append(id)
+                self.stations[id]="READY"
+            for k in self.stations.keys():
+                id=int(k)
                 station = await GetApiDirectSpaceStation(id, self.client)
                 self.stations[id] = station
             self.last_station_time = datetime.datetime.now()

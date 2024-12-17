@@ -151,7 +151,6 @@ class ReadableLoader(dl.WebBaseLoader):
                         header["description"]=result2.text_content[:200]
                         header["dateadded"] = datetime.datetime.utcnow().timestamp()
                         header["date"] = "None"
-                        header['byline']='authors unknown'
                         header['language']='en'
 
                         out = (remove_links(result2.text_content), None, header)
@@ -276,7 +275,7 @@ class ReadableLoader(dl.WebBaseLoader):
                         
                         if "description" in header:
                             metadata['description']=header['description']
-                        if "source" in header:
+                        if "source" in header and "source" not in metadata:
                             metadata["source"]=header["source"]
                         if "language" in header:
                             metadata['language']=header['language']
@@ -286,6 +285,7 @@ class ReadableLoader(dl.WebBaseLoader):
                     metadata["type"] = int(typev)
 
                     metadata["sum"] = "source"
+                    print(metadata)
                     yield Document(page_content=text, metadata=metadata), e, typev
                 except Exception as err:
                     gui.dprint(str(err))
