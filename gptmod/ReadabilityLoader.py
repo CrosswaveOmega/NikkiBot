@@ -141,19 +141,22 @@ class ReadableLoader(dl.WebBaseLoader):
         for i, result in enumerate(results):
             if isinstance(result, Exception):
                 if self.markitdown:
-                    markdown = MarkItDown()
-                    result = markdown.convert(url)
-                    print(result.text_content)
-                    header={"title":result.title or result.text_content[:100]}
-                    header={"siteName":'Siteunknown'}
-                    header["description"]=result.text_content[:200]
-                    header["dateadded"] = datetime.datetime.utcnow().timestamp()
-                    header["date"] = "None"
-                    header['byline']='authors unknown'
+                    try:
+                        markdown = MarkItDown()
+                        result2 = markdown.convert(url)
+                        print(result2.text_content)
+                        header={"title":result2.title or result2.text_content[:100]}
+                        header={"siteName":'Siteunknown'}
+                        header["description"]=result2.text_content[:200]
+                        header["dateadded"] = datetime.datetime.utcnow().timestamp()
+                        header["date"] = "None"
+                        header['byline']='authors unknown'
 
-                    out = (remove_links(result.text_content), None, header)
-                    
-                    yield i, urls[i][0], out
+                        out = (remove_links(result2.text_content), None, header)
+                        
+                        yield i, urls[i][0], out
+                    except Exception as e:
+                        yield i, urls[i][0], result
                 else:
                     yield i, urls[i][0], result
                     continue
