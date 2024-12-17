@@ -152,6 +152,7 @@ class ReadableLoader(dl.WebBaseLoader):
                         header["dateadded"] = datetime.datetime.utcnow().timestamp()
                         header["date"] = "None"
                         header['byline']='authors unknown'
+                        header['language']='en'
 
                         out = (remove_links(result2.text_content), None, header)
                         
@@ -277,6 +278,8 @@ class ReadableLoader(dl.WebBaseLoader):
                             metadata['description']=header['description']
                         if "source" in header:
                             metadata["source"]=header["source"]
+                        if "language" in header:
+                            metadata['language']=header['language']
                             
                         typev = MetadataDocType.readertext
 
