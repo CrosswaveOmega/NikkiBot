@@ -8,12 +8,13 @@ from typing import Any, AsyncGenerator, List, Tuple, Union
 import chromadb
 import discord
 import openai
+import markitdown
 from chromadb.types import Vector
 from googleapiclient.discovery import build  # Import the library
 from gptfunctionutil import AILibFunction, GPTFunctionLibrary, LibParam
 from htmldate import find_date
 from langchain.docstore.document import Document
-from langchain_community.document_loaders import PDFMinerLoader
+from langchain_community.document_loaders import UnstructuredMarkdownLoader
 from langchain_openai import OpenAIEmbeddings
 from tqdm.asyncio import tqdm_asyncio
 
@@ -136,13 +137,13 @@ def google_search(bot, query: str, result_limit: int) -> dict:
 
 async def read_and_split_pdf(bot, url: str, extract_meta: bool = False):
     try:
-        loader = PDFMinerLoader(url)
-
-        data = await asyncio.wait_for(asyncio.to_thread(loader.load), timeout=120)
+        markdown = markitdown.MarkItDown()
+        result = markdown.convert(url)
+        print(result.text_content)
 
         metadata = {}
         new_docs = []
-        title, authors, date, abstract = "Unset", "NotFound", "1-1-2020", "NotFound"
+        title, authors, date, abstract = result.title, "NotFound", "1-1-2020", "NotFound"
         if extract_meta:
             mylib = MyLib()
             client = openai.AsyncClient()
@@ -156,7 +157,7 @@ async def read_and_split_pdf(bot, url: str, extract_meta: bool = False):
                     },
                     {
                         "role": "user",
-                        "content": f"Please extract the data for this pdf: {(data[0].page_content)[:2000]}",
+                        "content": f"Please extract the data for this pdf: {(result.text_content)[:2000]}",
                     },
                 ],
                 tools=mylib.get_tool_schema(),
@@ -179,16 +180,15 @@ async def read_and_split_pdf(bot, url: str, extract_meta: bool = False):
         metadata["sum"] = "source"
         metadata["type"] = typev
         metadata["date"] = date
-        for e, pagedata in enumerate(data):
-            newdata = copy.deepcopy(metadata)
-            newdata["page"] = f"Page {e}"
-            text = pagedata.page_content
-            # dealing with awkward spacing
-            filtered_text = re.sub(r"-\s*\n", "", text)
-            filtered_text = re.sub(r" +", " ", filtered_text)
-            doc = Document(page_content=filtered_text, metadata=newdata)
 
-            new_docs.append(doc)
+        newdata = copy.deepcopy(metadata)
+        text = result.text_content
+        # dealing with awkward spacing
+        filtered_text = re.sub(r"-\s*\n", "", text)
+        filtered_text = re.sub(r" +", " ", filtered_text)
+        doc = Document(page_content=filtered_text, metadata=newdata)
+
+        new_docs.append(doc)
         return new_docs, typev
     except Exception as ex:
         await bot.send_error(ex)

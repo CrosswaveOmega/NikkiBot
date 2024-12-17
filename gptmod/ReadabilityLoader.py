@@ -13,6 +13,7 @@ from htmldate import find_date
 import assetloader
 from .metadataenums import MetadataDocType
 from bs4 import BeautifulSoup
+from markitdown import MarkItDown
 
 """This is a special loader that makes use of Mozilla's readability library."""
 
@@ -111,6 +112,7 @@ class ReadableLoader(dl.WebBaseLoader):
                         f"Error fetching {url}, skipping due to"
                         f" continue_on_failure=True"
                     )
+                    
                     return e
                 self.bot.logs.exception(
                     f"Error fetching {url} and aborting, use continue_on_failure=True "
@@ -128,14 +130,31 @@ class ReadableLoader(dl.WebBaseLoader):
 
         for e, url in urls:
             regular_urls.append(url)
+
         with Timer() as timer:
+            # call fetch with rate limit.
             results = await self.fetch_all(regular_urls)
         elapsed_time = timer.get_time()
         print(f"READ: Took {elapsed_time:.4f} seconds to gather {len(urls)}.")
+
+
         for i, result in enumerate(results):
             if isinstance(result, Exception):
-                yield i, urls[i][0], result
-                continue
+                if self.markitdown:
+                    markdown = MarkItDown()
+                    result = markdown.convert(url)
+                    print(result.text_content)
+                    header={"title":result.title or result.text_content[:100]}
+                    header={"siteName":'Siteunknown'}
+                    header["description"]=result.text_content[:200]
+                    header["dateadded"] = datetime.datetime.utcnow().timestamp()
+                    header["date"] = "None"
+                    header['byline']='authors unknown'
+
+                    out = (remove_links(result.text_content), None, header)
+                else:
+                    yield i, urls[i][0], result
+                    continue
             url = regular_urls[i]
             if parser is None:
                 if url.endswith(".xml"):
@@ -217,6 +236,7 @@ class ReadableLoader(dl.WebBaseLoader):
         self.jsenv = bot.jsenv
         self.bot = bot
         self.continue_on_failure = True
+        self.markitdown=True
         docs, typev = [], -1
         # e is the original fetched url position.
         # i is the position in the self.web_paths list.
@@ -227,8 +247,10 @@ class ReadableLoader(dl.WebBaseLoader):
             else:
                 try:
                     text, soup, header = result
-
-                    metadata = _build_metadata(soup, self.web_paths[i][1])
+                    if soup:
+                        metadata = _build_metadata(soup, self.web_paths[i][1])
+                    else:
+                        metadata={}
                     typev = MetadataDocType.htmltext
 
                     if not "title" in metadata:
@@ -238,6 +260,14 @@ class ReadableLoader(dl.WebBaseLoader):
                             metadata["authors"] = header["byline"]
                         metadata["website"] = header.get("siteName", "siteunknown")
                         metadata["title"] = header.get("title")
+                        if "date" in header:
+                            metadata['date']=header['date']
+                        if "dateadded" in header:
+                            metadata['dateadded']=header['dateadded']
+                        
+                        if "description" in header:
+                            metadata['description']=header['description']
+                            
                         typev = MetadataDocType.readertext
 
                     metadata["type"] = int(typev)
