@@ -404,8 +404,15 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         hd2.write_statistics_to_csv(self.apistatus)
         await ctx.send(file=discord.File("statistics.csv"))
         await ctx.send(file=discord.File("statistics_sub.csv"))
-
         await ctx.send(file=discord.File("statistics_newer.csv"))
+
+    
+    @commands.is_owner()
+    @commands.command(name="direct_mode")
+    async def direct_mode(self, ctx: commands.Context):
+        self.apistatus.direct=not self.apistatus.direct
+        await ctx.send(f"Direct mode set to {self.apistatus.direct}")
+
 
     @commands.is_owner()
     @commands.command(name="get_map")
