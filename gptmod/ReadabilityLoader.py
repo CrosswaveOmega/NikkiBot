@@ -244,7 +244,7 @@ class ReadableLoader(dl.WebBaseLoader):
         self.jsenv = bot.jsenv
         self.bot = bot
         self.continue_on_failure = True
-        self.markitdown=True
+        self.markitdown=False
         docs, typev = [], -1
         # e is the original fetched url position.
         # i is the position in the self.web_paths list.
