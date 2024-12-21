@@ -138,6 +138,7 @@ class ApiStatus:
         "getlock",
         "stations",
         "last_station_time",
+        "deadzone"
     ]
 
     def __init__(self, client: APIConfig = APIConfig(), max_list_size=8, direct=False):
