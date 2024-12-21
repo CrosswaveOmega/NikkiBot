@@ -25,7 +25,7 @@ class MessageTemplatesMusic(MessageTemplates):
             remaining = merge_with["remaining"]
             embed.add_field(
                 name="Song Data",
-                value=f"{title} \n duration:{duration} \ Requested by: "
+                value=f"{title} \n duration:{duration} \\ Requested by: "
                 + merge_with["requested_by"]
                 + "",
             )

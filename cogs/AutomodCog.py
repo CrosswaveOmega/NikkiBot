@@ -78,7 +78,7 @@ class AutomodCog(commands.Cog, TC_Cog_Mixin):
         amtrigger: AutoModTrigger = AutoModTrigger(
             type=AutoModRuleTriggerType.keyword,
             regex_patterns=[
-                "(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?"
+                r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?"
             ],
             keyword_filter=["invite"],
         )

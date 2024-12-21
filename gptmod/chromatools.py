@@ -11,7 +11,7 @@ from chromadb.types import Vector
 from langchain_core.documents import Document
 from langchain_core.utils import xor_args
 from langchain_core.runnables.config import run_in_executor
-from langchain.vectorstores.chroma import Chroma
+from langchain_community.vectorstores.chroma import Chroma
 from chromadb.utils.batch_utils import create_batches
 from chromadb.api.types import ID, OneOrMany, Where, WhereDocument
 from langchain_openai import OpenAIEmbeddings

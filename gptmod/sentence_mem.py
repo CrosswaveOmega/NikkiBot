@@ -72,8 +72,7 @@ print("importing sentence_mem")
 def warmup():
     print("Starting embedding model.")
     with Timer() as timer:
-        from langchain_community.embeddings import HuggingFaceEmbeddings
-
+        from langchain_huggingface import HuggingFaceEmbeddings
         hug_embed = HuggingFaceEmbeddings(model_name="thenlper/gte-small")
         hug_embed.embed_query("The quick brown fox jumped over the lazy frog.")
     print("embedding model loaded in", timer.get_time())

@@ -163,6 +163,7 @@ class ApiStatus:
         self.stations = {}
         self.last_station_time = datetime.datetime(2024, 1, 1, 1, 1, 0)
         self.getlock = asyncio.Lock()
+        self.deadzone=False
 
     def to_dict(self):
         return {
