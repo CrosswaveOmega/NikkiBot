@@ -43,6 +43,37 @@
         
         "if campaign_add and planetEvent_add"
     ],
+    "invasion start": [
+        "Mantes of the Xzar sector is attacked by Automatons",
+        [
+            "[PLANET 0] of the [SECTOR 1] sector [TYPETEXT] [FACTION]s"
+        ],
+        [
+            "is invaded by"
+        ],
+        
+        "if campaign_add and planetEvent_add"
+    ],
+    "invasion won": [
+        "Draupnir invasion is repelled",
+        [
+            "[PLANET 0]'s [TYPETEXT]"
+        ],
+        [
+            "invasion is repelled"
+        ]
+        ,"if campaign_remove and planetEvent_remove and planet_change, and planet.owner!=1"
+    ],
+    "invasion lost": [
+        "Draupnir invasion is sucessful",
+        [
+            "[PLANET 0]'s [TYPETEXT]"
+        ],
+        [
+            "invasion is successful"
+        ]
+        ,"if campaign_remove and planetEvent_remove and planet_change, and planet.owner!=1"
+    ],
     "defense lost": [
         "Draupnir defense is failed",
         [
