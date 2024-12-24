@@ -127,9 +127,15 @@ class PlanetEvents:
         self.planet1: Optional[str] = None
         self.lastInfo: Dict[str, Any] = {}
         self.lastStatus: Dict[str, Any] = {}
-        self.evt: List[Dict[str, Any]] = []
+        self.evt: List[GameEvent] = []
         self.trig: List[str] = []
         self.ret = None
+        
+    def invasion_check(self):
+        if self.planet_event:
+            if self.planet_event.eventType==2:
+                return True
+        return False
 
     def add_event(self, event: GameEvent, key: str) -> None:
         self.evt.append(event)
@@ -359,7 +365,7 @@ class Batch:
                 .replace("[PLANET 0]", planet_data.planet.name)
             )
             target = target.replace("[SECTOR 1]", planet_data.planet.sector)
-            if ctype == "defense start" and planet_data.planet_event:
+            if (ctype == "defense start" or ctype == "invasion start") and planet_data.planet_event:
                 target = target.replace(
                     "[FACTION]",
                     faction_dict.get(planet_data.planet_event.race, "UNKNOWN"),
@@ -435,7 +441,10 @@ class Batch:
             combinations.append("cstart")
 
         if self.contains_all_values(trig_list, ["campaign_new", "planetevents_new"]):
-            combinations.append("defense start")
+            if planet_data.invasion_check():
+                combinations.append("invasion start")
+            else:
+                combinations.append("defense start")
         if "campaign_remove" in trig_list and len(trig_list) == 1:
             combinations.append("cend")
 
@@ -459,7 +468,13 @@ class Batch:
             )
             and "planets_change" not in trig_list
         ):
-            combinations.append("defense won")
+            if planet_data.invasion_check():
+                if (planet_data.planet_event.health/planet_data.planet_event.maxHealth)<=0.05:
+                    combinations.append("invasion won")
+                else:
+                    combinations.append("invasion lost")
+            else:
+                combinations.append("defense won")
 
         if self.contains_all_values(
             trig_list, ["campaign_remove", "planetevents_remove", "planets_change"]
