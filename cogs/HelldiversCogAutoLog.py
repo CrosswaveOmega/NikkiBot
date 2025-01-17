@@ -215,14 +215,19 @@ class SectorEvents:
 
 class GeneralEvents:
     def __init__(self) -> None:
+        self.planet = None
         self.evt: List[Dict[str, Any]] = []
         self.trig: List[str] = []
+        self.hdml=""
         self.ret = None
 
     def add_event(self, event: GameEvent, key: str) -> None:
         self.evt.append(event)
+        print(event)
         if event.mode in ["new", "remove"]:
             self.ret = event.value.retrieved_at
+            if event.place=="news":
+                self.hdml+=hdml_parse(event.value.message).replace("\n"," ")
         elif event.mode == "change":
             self.ret = event.value[0].retrieved_at
 
@@ -309,11 +314,13 @@ class Batch:
             va = value
             if mode == "change":
                 va, _ = value
-            planet = SimplePlanet.from_index(va.planetIndex)
-            # planet = apistatus.planets.get(int(value.planetIndex), None)
-            if planet:
-                planet_name_source = planet.get_name(False)
-
+            if va.planetIndex:
+                planet = SimplePlanet.from_index(va.planetIndex)
+                # planet = apistatus.planets.get(int(value.planetIndex), None)
+                if planet:
+                    planet_name_source = planet.get_name(False)
+        if place in ["news"]:
+            pass
         if place in ["planetAttacks"]:
             pass
             # planet_source = apistatus.planets.get(int(value.source), None)
@@ -358,7 +365,8 @@ class Batch:
                 )
                 target += f" ({custom_strftime(planet_data.ret)})"
                 targets.append(target)
-        else:
+        
+        elif planet_data.planet is not None:
             target = (
                 ctext[1][0]
                 .replace("[TYPETEXT]", ctext[2][0])
@@ -376,6 +384,45 @@ class Batch:
                 )
             target += f" ({custom_strftime(planet_data.ret)})"
             targets.append(target)
+        else:
+            out=ctext[1][0]
+            target = (
+                ctext[1][0]
+                .replace("[TYPETEXT]", ctext[2][0])
+            )
+            if "HDML" in target:
+                 target = target.replace(
+                    "[HDML]",
+                    planet_data.hdml
+                )
+            target += f" ({custom_strftime(planet_data.ret)})"
+            targets.append(target)
+        return targets
+    
+    def format_combo_text_generic(
+        self, ctype: str, planet_data: GeneralEvents, ctext: List[List[str]]
+    ) -> List[str]:
+        targets: List[str] = []
+        data_path: str = "./hd2json/planets/planets.json"
+
+        
+        target = (
+            ctext[1][0]
+            .replace("[TYPETEXT]", ctext[2][0])
+            .replace("[PLANET 0]", planet_data.planet.name)
+        )
+        target = target.replace("[SECTOR 1]", planet_data.planet.sector)
+        if ctype == "defense start" and planet_data.planet_event:
+            target = target.replace(
+                "[FACTION]",
+                faction_dict.get(planet_data.planet_event.race, "UNKNOWN"),
+            )
+        else:
+            target = target.replace(
+                "[FACTION]", faction_dict.get(planet_data.planet.owner, "UNKNOWN")
+            )
+        target += f" ({custom_strftime(planet_data.ret)})"
+        targets.append(target)
         return targets
 
     def combo_checker(self) -> List[str]:
@@ -418,6 +465,25 @@ class Batch:
                     else:
                         combos.append(str(c))
 
+        if self.general.evt:
+            general=self.general
+            print(general)
+            trig=general.trig
+            combo: Optional[List[str]] = self.check_generic_trig_combinations(
+                trig, general
+            )
+            if combo:
+                for c in combo:
+
+                    if c in self.hd2:
+                        text: List[str] = self.format_combo_text(
+                            c, general, self.hd2[c]
+                        )
+                        # print(text)
+                        combos.extend(text)
+                    else:
+                        combos.append(str(c))
+
         return combos
 
     def contains_all_values(
@@ -435,7 +501,11 @@ class Batch:
         combinations: List[str] = []
 
         if 'station_change' in trig_list:
-            combinations.append('station move')
+            for evt in planet_data.evt:
+                if evt.mode=='change' and evt.place=='station':
+                    (info, dump) = evt.value
+                    if 'planetIndex' in dump:
+                        combinations.append('station move')
 
         if "campaign_new" in trig_list and "planetevents_new" not in trig_list:
             combinations.append("cstart")
@@ -510,6 +580,16 @@ class Batch:
         combinations: List[str] = []
         if "sectors_change" in trig_list:
             combinations.append("sector_state")
+
+        return combinations if combinations else None
+    
+    def check_generic_trig_combinations(
+        self, trig_list: List[str], general:GeneralEvents
+    ) -> Optional[List[str]]:
+        combinations: List[str] = []
+        print(trig_list)
+        if "news_new" in trig_list:
+            combinations.append("dispatch new")
 
         return combinations if combinations else None
 

@@ -10,6 +10,17 @@
         "if station move only"
 
     ],
+    "dispatch new": [
+        "DSS deploys to Vog-Sojoth of the Tanis sector",
+        [
+            "[TYPETEXT] [HDML]"
+        ],
+        [
+            "Dispatch: "
+        ],
+        "if station move only"
+
+    ],
     "cstart": [
         "Heeth liberation campaign starts",
         [
