@@ -1233,7 +1233,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         diff = difflib.ndiff(stored.splitlines(), new.splitlines())
                         delta = list(diff)
                         print(delta)
-                        self.bot.logs.error(str(delta), "")
+                        self.bot.logs.error("global event change %s", str(delta))
                         self.messageids[mi] = info.message
                         mc = len(delta) + 1
                 if all(key in ["title", "message"] for key in listv):
