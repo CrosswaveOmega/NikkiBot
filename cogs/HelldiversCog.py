@@ -263,7 +263,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if self.api_up:
             await self.apistatus.update_data()
             hd2.save_to_json(self.apistatus.to_dict(), "./saveData/hd2_snapshot.json")
-            print(self.apistatus.war)
+            #print(self.apistatus.war)
             hd2.add_to_csv(self.apistatus)
         return
 
@@ -275,7 +275,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 planet.index, None
             )
             if planetbiome:
-                print(planetbiome["biome"], usebiome)
                 if usebiome:
                     if planetbiome["biome"] != usebiome:
                         return
@@ -291,7 +290,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             )
 
             if planetbiome:
-                print(planetbiome["biome"])
                 if usebiome:
                     if planetbiome["biome"] != usebiome:
                         continue
