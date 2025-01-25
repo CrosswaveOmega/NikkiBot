@@ -28,16 +28,17 @@ class QuestBoardCog(commands.Cog):
     async def questmanage(self, ctx):
         """Questboard management commands."""
         await ctx.send("Available subcommands: add, remove, ...")
-
     @questmanage.command()
-    async def add(self, ctx, channel: discord.TextChannel, threshold: int):
+    async def add(self, ctx:commands.Context, channel: discord.ForumChannel, threshold: int):
         """Add a quest boardto the server."""
         existing = await Questboard.get_questboard(ctx.guild.id)
         if existing:
             await ctx.send("Questboard already exists for this server.")
             return
+        
 
-        await Questboard.add_starboard(ctx.guild.id, channel.id)
+        mypost=await channel.create_thread("Welcome to the quest board!",content="Welcome to my quest board!")
+        await Questboard.add_questboard(ctx.guild.id, channel.id,mypost.id)
         await ctx.send(
             f"Questboard added to {channel.mention} "
         )
@@ -47,7 +48,7 @@ class QuestBoardCog(commands.Cog):
         name="endquest",
         brief="end this quest now for whatever reason.",
     )
-    async def badquest(self, ctx:commands.Context, reason:str):
+    async def badquest(self, ctx:commands.Context, reason:str="it's expired"):
         """Add a quest boardto the server."""
         if ctx.channel.parent is None:
             await ctx.send("Not a forum channel!")
@@ -61,6 +62,9 @@ class QuestBoardCog(commands.Cog):
         if ctx.channel.parent.id!=existing.channel_id:
             await ctx.send("Not a questboard.")
             return
+        post:discord.Thread=ctx.channel
+        await post.send(f"This quest is being cancelled, as {reason}!")
+        await post.edit(archived=True,locked=True)
 
         
     
