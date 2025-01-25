@@ -29,7 +29,7 @@ class QuestBoardCog(commands.Cog):
         """Questboard management commands."""
         await ctx.send("Available subcommands: add, remove, ...")
 
-    @questmanage.hybrid_command()
+    @questmanage.command()
     async def add(self, ctx, channel: discord.TextChannel, threshold: int):
         """Add a quest boardto the server."""
         existing = await Questboard.get_questboard(ctx.guild.id)
@@ -43,7 +43,7 @@ class QuestBoardCog(commands.Cog):
         )
 
 
-    @questmanage.hybrid_command(
+    @questmanage.command(
         name="endquest",
         brief="end this quest now for whatever reason.",
     )
