@@ -41,11 +41,11 @@ class QuestBoardCog(commands.Cog):
             await ctx.send("Questboard already exists for this server.")
             return
         
-
         mypost=await channel.create_thread(
             name="Welcome to the quest board!",
             content="Welcome to the quest board!",
-            applied_tags=[1332821535198806036])
+            applied_tags=[next((tag for tag in channel.available_tags if tag.name == "Infomation"), None)])
+
         mypost.thread.id
         await Questboard.add_questboard(ctx.guild.id, channel.id,mypost.thread.id)
         await ctx.send(
