@@ -70,6 +70,61 @@ class Questboard(Base):
                 return questboard
             return None
 
+class QuestLeaderboard(Base):
+    __tablename__ = "quest_leaderboard"
+
+    id = Column(BigInteger, primary_key=True)
+    guild_id = Column(BigInteger, nullable=False)  # Guild server ID
+    user_id = Column(BigInteger, nullable=False)  # User ID
+    score = Column(Integer, nullable=False, default=0)  # User's score
+    thank_count = Column(Integer, nullable=False, default=0)  # Number of thank-yous received
+    quests_participated = Column(Integer, nullable=False, default=0)  # Number of quests participated in
+    additional_field_1 = Column(Integer, nullable=True)  # Example of an additional field
+    additional_field_2 = Column(Integer, nullable=True)  # Another additional field (if needed)
+    
+    @classmethod
+    async def get_leaderboard_for_guild(cls, guild_id: int):
+        async with DatabaseSingleton.get_async_session() as session:
+            query = select(cls).where(cls.guild_id == guild_id).order_by(cls.score.desc())
+            result = await session.execute(query)
+            return result.scalars().all()
+
+    @classmethod
+    async def get_user_leaderboard_entry(cls, guild_id: int, user_id: int):
+        async with DatabaseSingleton.get_async_session() as session:
+            query = select(cls).where(
+                and_(cls.guild_id == guild_id, cls.user_id == user_id)
+            )
+            result = await session.execute(query)
+            return result.scalar()
+
+    @classmethod
+    async def update_user_score(cls, guild_id: int, user_id: int, score: int=0, thank_count: int=0, quests_participated: int=0):
+        async with DatabaseSingleton.get_async_session() as session:
+            query = select(cls).where(
+                and_(cls.guild_id == guild_id, cls.user_id == user_id)
+            )
+            result = await session.execute(query)
+            leaderboard_entry = result.scalar()
+
+            if leaderboard_entry:
+                leaderboard_entry.score += score
+                leaderboard_entry.thank_count += thank_count
+                leaderboard_entry.quests_participated += quests_participated
+                await session.commit()
+                return leaderboard_entry
+            else:
+                leaderboard_entry = cls(
+                    guild_id=guild_id,
+                    user_id=user_id,
+                    score=score,
+                    thank_count=thank_count,
+                    quests_participated=quests_participated
+                )
+                session.add(leaderboard_entry)
+                await session.commit()
+                return leaderboard_entry
+
 
 
 async def setup(bot):
