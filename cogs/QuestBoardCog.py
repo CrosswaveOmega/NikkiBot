@@ -74,7 +74,7 @@ class QuestBoardCog(commands.Cog):
 Welcome to the Quest Board!  
 This is the channel where SEF members help out other SEF members py putting in requests!
 
-Please make sure to tag your posts correctly!
+Please make sure to tag your posts correctly!  The most helpful users will be placed on a leaderboard!
 
 Quest Guidelines:
 
@@ -84,9 +84,10 @@ Quest Guidelines:
 
 3. Don't abuse the reward system!  You will be punished.
 
-4. 
+4. Want to thank many people who helped?  Use `/quest kudos` and name them!
 '''
                             )
+        await ctx.send("Done!",ephemeral=True)
 
     @questmanage.command(
         name="endquest",
