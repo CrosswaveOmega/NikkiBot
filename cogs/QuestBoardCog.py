@@ -23,6 +23,7 @@ class QuestBoardCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.to_be_edited = {}
+        self.kudo_limiter={}
         self.lock = asyncio.Lock()
         self.server_emoji_caches = {}
 
@@ -52,6 +53,40 @@ class QuestBoardCog(commands.Cog):
             f"Questboard added to {channel.mention} "
         )
 
+    @questmanage.command(
+        name="edit_about",
+        brief="end the guidelines for whatever reason.",
+    )
+    async def edit_my_post(self, ctx:commands.Context):
+        """Add a quest boardto the server."""
+        if ctx.channel.parent is None:
+            await ctx.send("Not a forum channel!")
+            return
+
+        existing = await Questboard.get_questboard(ctx.guild.id)
+        if not existing:
+            await ctx.send("No questboard exists for this server.")
+            return
+        
+        my_post:discord.Thread = discord.utils.get(ctx.guild.channels, id=existing.my_post)
+        await my_post.starter_message.edit(
+            content='''
+Welcome to the Quest Board!  
+This is the channel where SEF members help out other SEF members py putting in requests!
+
+Please make sure to tag your posts correctly!
+
+Quest Guidelines:
+
+1. Quests posted here are meant to be completable!  Please post clear instructions for what you require others to accomplish!
+
+2. When someone completes the quest, use the `/quest finish_quest` command and provide a reward to the user who solved the problem.
+
+3. Don't abuse the reward system!  You will be punished.
+
+4. 
+'''
+                            )
 
     @questmanage.command(
         name="endquest",
@@ -72,8 +107,12 @@ class QuestBoardCog(commands.Cog):
             await ctx.send("Not a questboard.")
             return
         post:discord.Thread=ctx.channel
-        await post.send(f"This quest is being cancelled, as {reason}!")
+        await post.send(f"### This quest is cancelled, as {reason}!")
         await post.edit(archived=True,locked=True)
+        if ctx.interaction:
+            await ctx.send("Done!",ephemeral=True)
+
+
 
     @commands.hybrid_group(invoke_without_command=True)
     async def quest(self, ctx):
@@ -81,7 +120,7 @@ class QuestBoardCog(commands.Cog):
         await ctx.send("Available subcommands tbd...")
 
     @quest.command(
-        name="finish_quest",
+        name="finish",
         brief="end this quest and reward someone",
     )
     @app_commands.describe(
@@ -123,6 +162,77 @@ class QuestBoardCog(commands.Cog):
         await post.send(f"### Success!  This quest had been transgressed with finesse!")
 
         await post.edit(archived=True,locked=True)
+        if ctx.interaction:
+            await ctx.send("Done!",ephemeral=True)
+
+
+    @quest.command(
+        name="kudos",
+        brief="give kudos to someone in your thread!",
+    )
+    @app_commands.describe(
+        toreward="The user to reward.",
+    )
+    async def end_quest(self, ctx:commands.Context, toreward:discord.Member):
+        """Add a quest boardto the server."""
+        if ctx.channel.parent is None:
+            await ctx.send("Not a forum channel!")
+            return
+
+        existing = await Questboard.get_questboard(ctx.guild.id)
+        if not existing:
+            await ctx.send("No questboard exists for this server.")
+            return
+
+        if ctx.channel.parent.id!=existing.channel_id:
+            await ctx.send("Not in the questboard.")
+            return
+        
+        post:discord.Thread=ctx.channel
+        
+        if ctx.author.id!=post.owner_id:
+            await post.send(f"You are not the post owner.",epheremal=True)
+            return
+        
+        if toreward.id==post.owner_id:
+            await post.send(f"You can't reward yourself.",epheremal=True)
+            return
+        
+        isvalid=False
+        membs=await post.fetch_members()
+        for m in membs:
+            if membs.id==toreward.id:
+                isvalid=True
+        if not isvalid:
+            await post.send(f"You must give kudos to someone responding to the quest!",epheremal=True)
+            return
+
+        if post.owner_id not in self.kudo_limiter:
+            self.kudo_limiter[post.owner_id]={}
+        if toreward.id not in self.kudo_limiter[post.owner_id]:
+            self.kudo_limiter[post.owner_id][toreward.id]=datetime.datetime.now()
+        else:
+
+            now = datetime.datetime.now()
+            diff = now - self.kudo_limiter[post.owner_id][toreward.id]
+            cont= diff.total_seconds() >= 86400
+            if not cont:
+                await post.send(f"You already gave kudos to this person today...",epheremal=True)
+                return
+
+                    
+            
+        await QuestLeaderboard.update_user_score(
+            ctx.guild.id,
+            user_id=toreward.id,
+            score=25,
+            thank_count=0,
+            quests_participated=0 
+            )
+        
+
+        
+        await post.send(f"Kudos have been given to {toreward.name}!")
         if ctx.interaction:
             await ctx.send("Done!",ephemeral=True)
 
