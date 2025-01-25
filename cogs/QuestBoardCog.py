@@ -38,7 +38,8 @@ class QuestBoardCog(commands.Cog):
         
 
         mypost=await channel.create_thread(name="Welcome to the quest board!",content="Welcome to my quest board!")
-        await Questboard.add_questboard(ctx.guild.id, channel.id,mypost.id)
+        mypost.thread.id
+        await Questboard.add_questboard(ctx.guild.id, channel.id,mypost.thread.id)
         await ctx.send(
             f"Questboard added to {channel.mention} "
         )
