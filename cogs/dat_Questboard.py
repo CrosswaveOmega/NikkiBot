@@ -71,9 +71,8 @@ class Questboard(Base):
             return None
 
 class QuestLeaderboard(Base):
-    __tablename__ = "quest_leaderboard"
+    __tablename__ = "quest_leaderboard_table"
 
-    id = Column(BigInteger, primary_key=True)
     guild_id = Column(BigInteger, nullable=False)  # Guild server ID
     user_id = Column(BigInteger, nullable=False)  # User ID
     score = Column(Integer, nullable=False, default=0)  # User's score
