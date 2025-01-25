@@ -77,7 +77,7 @@ class QuestBoardCog(commands.Cog):
         """Quest management commands."""
         await ctx.send("Available subcommands: add, remove, ...")
 
-    @questmanage.command(
+    @quest.command(
         name="finish_quest",
         brief="end this quest and reward someone",
     )
@@ -117,9 +117,11 @@ class QuestBoardCog(commands.Cog):
         
 
         
-        await post.send(f"Success!  This quest had been transgressed with finesse!")
+        await post.send(f"### Success!  This quest had been transgressed with finesse!")
 
         await post.edit(archived=True,locked=True)
+        if ctx.interaction:
+            await ctx.send("Done!",ephemeral=True)
 
         
 
