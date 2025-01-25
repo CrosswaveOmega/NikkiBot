@@ -42,7 +42,10 @@ class QuestBoardCog(commands.Cog):
             return
         
 
-        mypost=await channel.create_thread(name="Welcome to the quest board!",content="Welcome to the quest board!")
+        mypost=await channel.create_thread(
+            name="Welcome to the quest board!",
+            content="Welcome to the quest board!",
+            applied_tags=[1332821535198806036])
         mypost.thread.id
         await Questboard.add_questboard(ctx.guild.id, channel.id,mypost.thread.id)
         await ctx.send(
@@ -75,7 +78,7 @@ class QuestBoardCog(commands.Cog):
     @commands.hybrid_group(invoke_without_command=True)
     async def quest(self, ctx):
         """Quest management commands."""
-        await ctx.send("Available subcommands: add, remove, ...")
+        await ctx.send("Available subcommands tbd...")
 
     @quest.command(
         name="finish_quest",
