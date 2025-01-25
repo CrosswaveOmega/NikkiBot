@@ -67,8 +67,11 @@ class QuestBoardCog(commands.Cog):
         if not existing:
             await ctx.send("No questboard exists for this server.")
             return
-        
-        my_post:discord.Thread = discord.utils.get(ctx.guild.channels, id=existing.my_post)
+        questb:discord.ForumChannel=await ctx.guild.fetch_channel(existing.channel_id)
+        my_post:discord.Thread=questb.get_thread(existing.my_post)
+        if not my_post:
+            await ctx.send("My post isn't found!",ephemeral=True)
+        my_post.mess
         await my_post.starter_message.edit(
             content='''
 Welcome to the Quest Board!  
