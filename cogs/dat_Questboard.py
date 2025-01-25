@@ -73,8 +73,8 @@ class Questboard(Base):
 class QuestLeaderboard(Base):
     __tablename__ = "quest_leaderboard_table"
 
-    guild_id = Column(BigInteger, nullable=False)  # Guild server ID
-    user_id = Column(BigInteger, nullable=False)  # User ID
+    guild_id = Column(BigInteger, nullable=False,primary_key=True)  # Guild server ID
+    user_id = Column(BigInteger, nullable=False,primary_key=True)  # User ID
     score = Column(Integer, nullable=False, default=0)  # User's score
     thank_count = Column(Integer, nullable=False, default=0)  # Number of thank-yous received
     quests_participated = Column(Integer, nullable=False, default=0)  # Number of quests participated in
