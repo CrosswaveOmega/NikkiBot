@@ -38,7 +38,7 @@ class QuestBoardCog(commands.Cog):
         )
         return 8,existing_questboard, questb
     
-    async def questboard_command_checks(self, ctx:commands.Context)->Tuple[Union[Questboard,bool],Union[discord.ForumChanne,bool]]:
+    async def questboard_command_checks(self, ctx:commands.Context)->Tuple[Union[Questboard,bool],Union[discord.ForumChannel,bool]]:
         """
         Performs a series of checks to ensure that the command is being used
         in a valid questboard context.
