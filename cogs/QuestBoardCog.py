@@ -1,4 +1,5 @@
 import datetime
+import re
 from typing import Tuple, Union
 import discord
 from discord.ext import commands, tasks
@@ -14,7 +15,7 @@ from discord.app_commands import Choice
 
 
 class QuestBoardCog(commands.Cog):
-    """Based on the Star cog in RoboDanny."""
+    """for managing a "Quest Board" forum channel."""
 
     def __init__(self, bot):
         self.bot = bot
@@ -184,19 +185,29 @@ Quest Guidelines:
 
     async def archive_quest(self,post:discord.Thread):
         users={}
+        word_pattern = r'\b\w+\b'
+        comp=re.compile(word_pattern)
+        
         async for message in post.history(limit=100, oldest_first=False):
+            if message.author.id==self.bot.user.id:
+                continue
             if message.author.id != post.owner_id:
                 att=0 or len(message.attachments)
-                if not message.author.id in users:
-                    users[message.author.id]={"m":0,"a":0,"q":1}
+                if message.author.id not in users:
+                    users[message.author.id]={"m":0,"w":0,"a":0,"q":1}
+                if message.content:
+                    words = re.findall(word_pattern, message.content)
+                    users[message.author.id]["w"]+=len(words)
                 users[message.author.id]["m"]+=1
                 users[message.author.id]["a"]+=att
 
         for uid,val in users.items():
+            att_score=max(int(min(users[message.author.id]["a"],10)),1)
+            mess_score=int(min(users[message.author.id]["m"]*0.5,8))
             await QuestLeaderboard.update_user_score(
             post.guild.id,
             user_id=uid,
-            score=1,
+            score=1+att_score+mess_score,
             thank_count=0,
             quests_participated=1,
             messages=val["m"],
@@ -213,7 +224,7 @@ Quest Guidelines:
 
     @quest.command(
         name="finish",
-        brief="end this quest and reward someone",
+        brief="end this quest and reward someone.  ",
     )
     @app_commands.describe(
         toreward="The user to reward.",
