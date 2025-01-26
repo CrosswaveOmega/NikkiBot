@@ -206,7 +206,7 @@ Quest Guidelines:
         isvalid=False
         membs=await post.fetch_members()
         for m in membs:
-            if membs.id==toreward.id:
+            if m.id==toreward.id:
                 isvalid=True
         if not isvalid:
             await post.send(f"You must give kudos to someone responding to the quest!",epheremal=True)
