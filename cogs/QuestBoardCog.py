@@ -69,7 +69,7 @@ class QuestBoardCog(commands.Cog):
             return
         questb:discord.ForumChannel=await ctx.guild.fetch_channel(existing.channel_id)
         my_post:discord.Thread=questb.get_thread(existing.my_post)
-        my_post.fe
+
         if not my_post:
             await ctx.send("My post isn't found!",ephemeral=True)
         async for message in my_post.history(limit=10,oldest_first=True):
