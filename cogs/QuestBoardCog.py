@@ -183,7 +183,7 @@ Quest Guidelines:
         await ctx.send(content="\n".join(outs))
 
 
-    async def archive_quest(self,post:discord.Thread):
+    async def archive_quest(self,guild,post:discord.Thread):
         users={}
         word_pattern = r'\b\w+\b'
         comp=re.compile(word_pattern)
@@ -254,7 +254,7 @@ Quest Guidelines:
         await post.send("### Success!  This quest had been transgressed with finesse!")
         if ctx.interaction:
             await ctx.send("Done!", ephemeral=True)
-        await self.archive_quest(post)
+        await self.archive_quest(ctx.guild,post)
         await post.edit(
             archived=True,
             locked=True,
