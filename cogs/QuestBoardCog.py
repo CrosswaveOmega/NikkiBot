@@ -82,19 +82,18 @@ class QuestBoardCog(commands.Cog):
                 await message.edit(
                     content="""
 Welcome to the Quest Board!  
-This is the channel where SEF members help out other SEF members py putting in requests!
+This is the channel where SEF members help out other SEF members by putting in requests!
 
 Please make sure to tag your posts correctly!  The most helpful users will be placed on a leaderboard!
 
 Quest Guidelines:
 
-1. Quests posted here are meant to be completable!  Please post clear instructions for what you require others to accomplish!
-
+1. Quests posted here are meant to be completable!  
+ * **Please post clear instructions for what you require others to accomplish!**
 2. When someone completes the quest, use the `/quest finish_quest` command and provide a reward to the user who solved the problem.
-
 3. Don't abuse the reward system!  You will be punished.
-
 4. Want to thank many people who helped?  Use `/quest kudos` and name them!
+
 """
                 )
         await ctx.send("Done!", ephemeral=True)
