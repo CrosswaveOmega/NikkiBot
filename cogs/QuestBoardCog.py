@@ -29,11 +29,12 @@ class QuestBoardCog(commands.Cog):
 
     @commands.hybrid_group(invoke_without_command=True)
     @commands.has_permissions(manage_guild=True)
+    @app_commands.default_permissions(manage_guild=True)
     async def questmanage(self, ctx):
         """Questboard management commands."""
         await ctx.send("Available subcommands: add, remove, ...")
 
-
+    @commands.has_permissions(manage_guild=True)
     @questmanage.command()
     async def add(self, ctx:commands.Context, channel: discord.ForumChannel, threshold: int):
         """Add a quest boardto the server."""
@@ -93,6 +94,7 @@ Quest Guidelines:
                             )
         await ctx.send("Done!",ephemeral=True)
 
+    @commands.has_permissions(manage_guild=True)
     @questmanage.command(
         name="endquest",
         brief="end this quest now for whatever reason.",
@@ -149,7 +151,7 @@ Quest Guidelines:
         post:discord.Thread=ctx.channel
         
         if ctx.author.id!=post.owner_id:
-            await ctx.send(f"You are not the post owner.",epheremal=True)
+            await ctx.send("You are not the post owner.",epheremal=True)
             return
         
         if toreward.id==post.owner_id:
