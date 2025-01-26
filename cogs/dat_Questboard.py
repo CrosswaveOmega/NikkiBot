@@ -28,7 +28,7 @@ class Questboard(Base):
     threshold = Column(Integer, nullable=False, default=5) 
     locked = Column(Boolean, nullable=False, default=False)
     my_post = Column(BigInteger, nullable=False) #My Post
-    
+
 
     @classmethod
     async def get_questboard(cls, guild_id: int):
@@ -127,6 +127,8 @@ class QuestLeaderboard(Base):
         score: int = 0,
         thank_count: int = 0,
         quests_participated: int = 0,
+        messages:int=0,
+        files:int=0
     ):
         async with DatabaseSingleton.get_async_session() as session:
             query = select(cls).where(
@@ -139,6 +141,11 @@ class QuestLeaderboard(Base):
                 leaderboard_entry.score += score
                 leaderboard_entry.thank_count += thank_count
                 leaderboard_entry.quests_participated += quests_participated
+                if leaderboard_entry.messages_sent==None: leaderboard_entry.messages_sent=0
+                if leaderboard_entry.files_sent==None: leaderboard_entry.files_sent=0
+                leaderboard_entry.messages_sent+=messages
+                leaderboard_entry.files_sent+=files
+                
                 await session.commit()
                 return leaderboard_entry
             else:
