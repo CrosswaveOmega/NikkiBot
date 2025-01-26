@@ -1,5 +1,5 @@
 import datetime
-from typing import Union
+from typing import Tuple, Union
 import discord
 from discord.ext import commands, tasks
 from database import DatabaseSingleton
@@ -22,7 +22,51 @@ class QuestBoardCog(commands.Cog):
         self.kudo_limiter = {}
         self.lock = asyncio.Lock()
         self.server_emoji_caches = {}
+        self.cached={}
+    
 
+    async def checkboard_status(self,ctx):
+        if ctx.channel.parent is None:
+            return 0,False,False
+        existing_questboard = await Questboard.get_questboard(ctx.guild.id)
+        if not existing_questboard:
+            return 1,False,False
+        if ctx.channel.parent.id != existing_questboard.channel_id:
+            return 2,existing_questboard,False
+        questb: discord.ForumChannel = await ctx.guild.fetch_channel(
+            existing_questboard.channel_id
+        )
+        return 8,existing_questboard, questb
+    
+    async def questboard_command_checks(self, ctx:commands.Context)->Tuple[Union[Questboard,bool],Union[discord.ForumChanne,bool]]:
+        """
+        Performs a series of checks to ensure that the command is being used
+        in a valid questboard context.
+
+        Args:
+            ctx (commands.context): The context of the command invocation.
+
+        Returns:
+            Tuple[Union[Questboard, bool], Union[discord.ForumChannel, bool]]:
+                A tuple containing the Questboard object and the associated
+                Discord Forum Channel if all checks pass, otherwise False values.
+        """
+        #Ensure this is in a forum channel.
+        res,questboard,questb=await self.checkboard_status(ctx)
+        if res==0:
+            await ctx.send("Not a forum channel!", ephemeral=True)
+            return False,False
+        if res==1:
+            await ctx.send("No questboard exists for this server.", ephemeral=True)
+            return False,False
+        if res==2:
+            await ctx.send("This command must be used in a questboard.", ephemeral=True)
+            return questboard,False
+
+        return questboard, questb
+
+
+        
     @commands.hybrid_group(invoke_without_command=True)
     @commands.has_permissions(manage_guild=True)
     @app_commands.default_permissions(manage_guild=True)
@@ -36,11 +80,10 @@ class QuestBoardCog(commands.Cog):
         self, ctx: commands.Context, channel: discord.ForumChannel, threshold: int
     ):
         """Add a quest boardto the server."""
-        existing = await Questboard.get_questboard(ctx.guild.id)
-        if existing:
+        existing_questboard = await Questboard.get_questboard(ctx.guild.id)
+        if existing_questboard:
             await ctx.send("Questboard already exists for this server.")
             return
-
         mypost = await channel.create_thread(
             name="Welcome to the quest board!",
             content="Welcome to the quest board!",
@@ -51,7 +94,6 @@ class QuestBoardCog(commands.Cog):
                 )
             ],
         )
-
         mypost.thread.id
         await Questboard.add_questboard(ctx.guild.id, channel.id, mypost.thread.id)
         await ctx.send(f"Questboard added to {channel.mention} ")
@@ -62,18 +104,11 @@ class QuestBoardCog(commands.Cog):
     )
     async def edit_my_post(self, ctx: commands.Context):
         """Add a quest boardto the server."""
-        if ctx.channel.parent is None:
-            await ctx.send("Not a forum channel!")
+        questboard,questchannel=await self.questboard_command_checks(ctx)
+        if not questboard or not questchannel:
             return
-
-        existing = await Questboard.get_questboard(ctx.guild.id)
-        if not existing:
-            await ctx.send("No questboard exists for this server.")
-            return
-        questb: discord.ForumChannel = await ctx.guild.fetch_channel(
-            existing.channel_id
-        )
-        my_post: discord.Thread = questb.get_thread(existing.my_post)
+        
+        my_post: discord.Thread = questchannel.get_thread(questboard.my_post)
 
         if not my_post:
             await ctx.send("My post isn't found!", ephemeral=True)
@@ -105,17 +140,8 @@ Quest Guidelines:
     )
     async def badquest(self, ctx: commands.Context, reason: str = "it's expired"):
         """Add a quest boardto the server."""
-        if ctx.channel.parent is None:
-            await ctx.send("Not a forum channel!", ephemeral=True)
-            return
-
-        existing = await Questboard.get_questboard(ctx.guild.id)
-        if not existing:
-            await ctx.send("No questboard exists for this server.", ephemeral=True)
-            return
-
-        if ctx.channel.parent.id != existing.channel_id:
-            await ctx.send("Not a questboard.", ephemeral=True)
+        questboard,questchannel=await self.questboard_command_checks(ctx)
+        if not questboard or not questchannel:
             return
         post: discord.Thread = ctx.channel
         await post.send(f"### This quest is cancelled, as {reason}!")
@@ -126,8 +152,8 @@ Quest Guidelines:
                 next(
                     (
                         tag
-                        for tag in ctx.channel.parent.available_tags
-                        if tag.name == "complete"
+                        for tag in questchannel.available_tags
+                        if tag.name == "closed"
                     ),
                     None,
                 )
@@ -144,26 +170,42 @@ Quest Guidelines:
     )
     async def showleaderboard(self, ctx: commands.Context):
         """Add a quest boardto the server."""
-        if ctx.channel.parent is None:
-            await ctx.send("Not a forum channel!", ephemeral=True)
+        questboard,questchannel=await self.questboard_command_checks(ctx)
+        if not questboard or not questchannel:
             return
-
-        existing = await Questboard.get_questboard(ctx.guild.id)
-        guild=ctx.guild
-        if not existing:
-            await ctx.send("No questboard exists for this server.", ephemeral=True)
-            return
-    
         leaderboard=await QuestLeaderboard.get_leaderboard_for_guild(ctx.guild.id)
         outs=[]
-        for e in leaderboard:
+        for n, e in enumerate(leaderboard):
             user=ctx.guild.get_member(e.user_id)
-            outv=f"* {user.name}: {e.score}, {e.thank_count}\n"
+            outv=f"{n}. {user.display_name}: {e.score}, {e.thank_count}"
             outs.append(outv)
         await ctx.send(content="\n".join(outs))
 
 
+    async def archive_quest(self,post:discord.Thread):
+        users={}
+        async for message in post.history(limit=100, oldest_first=False):
+            if message.author.id != post.owner_id:
+                att=0 or len(message.attachments)
+                if not message.author.id in users:
+                    users[message.author.id]={"m":0,"a":0,"q":1}
+                users[message.author.id]["m"]+=1
+                users[message.author.id]["a"]+=att
 
+        for uid,val in users.items():
+            await QuestLeaderboard.update_user_score(
+            post.guild.id,
+            user_id=uid,
+            score=1,
+            thank_count=0,
+            quests_participated=1,
+            messages=val["m"],
+            files=val["a"]
+            
+        )
+
+
+                
     @commands.hybrid_group(invoke_without_command=True)
     async def quest(self, ctx):
         """Quest management commands."""
@@ -177,18 +219,9 @@ Quest Guidelines:
         toreward="The user to reward.",
     )
     async def end_quest(self, ctx: commands.Context, toreward: discord.Member):
-        """Add a quest boardto the server."""
-        if ctx.channel.parent is None:
-            await ctx.send("Not a forum channel!")
-            return
-
-        existing = await Questboard.get_questboard(ctx.guild.id)
-        if not existing:
-            await ctx.send("No questboard exists for this server.")
-            return
-
-        if ctx.channel.parent.id != existing.channel_id:
-            await ctx.send("You are not in the questboard.")
+        """End the quest and give a reward."""
+        questboard,questchannel=await self.questboard_command_checks(ctx)
+        if not questboard or not questchannel:
             return
 
         post: discord.Thread = ctx.channel
@@ -196,9 +229,8 @@ Quest Guidelines:
         if ctx.author.id != post.owner_id:
             await ctx.send("You are not the post owner.", ephemeral=True)
             return
-
         if toreward.id == post.owner_id:
-            await ctx.send(f"You can't reward yourself.", ephemeral=True)
+            await ctx.send("You can't reward yourself.", ephemeral=True)
             return
         await QuestLeaderboard.update_user_score(
             ctx.guild.id,
@@ -208,8 +240,10 @@ Quest Guidelines:
             quests_participated=1,
         )
 
-        await post.send(f"### Success!  This quest had been transgressed with finesse!")
-
+        await post.send("### Success!  This quest had been transgressed with finesse!")
+        if ctx.interaction:
+            await ctx.send("Done!", ephemeral=True)
+        await self.archive_quest(post)
         await post.edit(
             archived=True,
             locked=True,
@@ -218,14 +252,13 @@ Quest Guidelines:
                     (
                         tag
                         for tag in ctx.channel.parent.available_tags
-                        if tag.name == "closed"
+                        if tag.name == "complete"
                     ),
                     None,
                 )
             ],
         )
-        if ctx.interaction:
-            await ctx.send("Done!", ephemeral=True)
+        
 
     @quest.command(
         name="kudos",
@@ -234,19 +267,10 @@ Quest Guidelines:
     @app_commands.describe(
         toreward="The user to reward.",
     )
-    async def end_quest(self, ctx: commands.Context, toreward: discord.Member):
-        """Add a quest boardto the server."""
-        if ctx.channel.parent is None:
-            await ctx.send("Not a forum channel!")
-            return
-
-        existing = await Questboard.get_questboard(ctx.guild.id)
-        if not existing:
-            await ctx.send("No questboard exists for this server.")
-            return
-
-        if ctx.channel.parent.id != existing.channel_id:
-            await ctx.send("Not in the questboard.")
+    async def kudos(self, ctx: commands.Context, toreward: discord.Member):
+        """give kudos to a user."""
+        questboard,questchannel=await self.questboard_command_checks(ctx)
+        if not questboard or not questchannel:
             return
 
         post: discord.Thread = ctx.channel
