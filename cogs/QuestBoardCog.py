@@ -69,11 +69,12 @@ class QuestBoardCog(commands.Cog):
             return
         questb:discord.ForumChannel=await ctx.guild.fetch_channel(existing.channel_id)
         my_post:discord.Thread=questb.get_thread(existing.my_post)
+        my_post.fe
         if not my_post:
             await ctx.send("My post isn't found!",ephemeral=True)
-
-        await my_post.starter_message.edit(
-            content='''
+        async for message in my_post.history(limit=10,oldest_first=True):
+            if message.author == ctx.bot.user:
+              await message.edit( content='''
 Welcome to the Quest Board!  
 This is the channel where SEF members help out other SEF members py putting in requests!
 
