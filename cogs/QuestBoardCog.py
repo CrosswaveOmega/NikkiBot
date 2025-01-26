@@ -106,16 +106,16 @@ Quest Guidelines:
     async def badquest(self, ctx: commands.Context, reason: str = "it's expired"):
         """Add a quest boardto the server."""
         if ctx.channel.parent is None:
-            await ctx.send("Not a forum channel!")
+            await ctx.send("Not a forum channel!", ephemeral=True)
             return
 
         existing = await Questboard.get_questboard(ctx.guild.id)
         if not existing:
-            await ctx.send("No questboard exists for this server.")
+            await ctx.send("No questboard exists for this server.", ephemeral=True)
             return
 
         if ctx.channel.parent.id != existing.channel_id:
-            await ctx.send("Not a questboard.")
+            await ctx.send("Not a questboard.", ephemeral=True)
             return
         post: discord.Thread = ctx.channel
         await post.send(f"### This quest is cancelled, as {reason}!")
@@ -135,6 +135,34 @@ Quest Guidelines:
         )
         if ctx.interaction:
             await ctx.send("Done!", ephemeral=True)
+
+
+    @commands.has_permissions(manage_guild=True)
+    @questmanage.command(
+        name="leaderboard",
+        brief="Show the quest leaderboard!",
+    )
+    async def showleaderboard(self, ctx: commands.Context):
+        """Add a quest boardto the server."""
+        if ctx.channel.parent is None:
+            await ctx.send("Not a forum channel!", ephemeral=True)
+            return
+
+        existing = await Questboard.get_questboard(ctx.guild.id)
+        guild=ctx.guild
+        if not existing:
+            await ctx.send("No questboard exists for this server.", ephemeral=True)
+            return
+    
+        leaderboard=await QuestLeaderboard.get_leaderboard_for_guild(ctx.guild.id)
+        outs=[]
+        for e in leaderboard:
+            user=ctx.guild.get_member(e.user_id)
+            outv=f"* {user.name}: {e.score}, {e.thank_count}\n"
+            outs.append(outv)
+        await ctx.send(content="\n".join(outs))
+
+
 
     @commands.hybrid_group(invoke_without_command=True)
     async def quest(self, ctx):

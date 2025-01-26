@@ -84,7 +84,7 @@ class QuestLeaderboard(Base):
     @classmethod
     async def get_leaderboard_for_guild(cls, guild_id: int):
         async with DatabaseSingleton.get_async_session() as session:
-            query = select(cls).where(cls.guild_id == guild_id).order_by(cls.score.desc())
+            query = select(cls).where(cls.guild_id == guild_id).order_by(cls.score.desc()).limit(20)
             result = await session.execute(query)
             return result.scalars().all()
 
