@@ -71,7 +71,7 @@ class QuestBoardCog(commands.Cog):
         my_post:discord.Thread=questb.get_thread(existing.my_post)
         if not my_post:
             await ctx.send("My post isn't found!",ephemeral=True)
-        my_post.mess
+
         await my_post.starter_message.edit(
             content='''
 Welcome to the Quest Board!  
