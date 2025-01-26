@@ -151,11 +151,11 @@ Quest Guidelines:
         post:discord.Thread=ctx.channel
         
         if ctx.author.id!=post.owner_id:
-            await ctx.send("You are not the post owner.",epheremal=True)
+            await ctx.send("You are not the post owner.",ephemeral=True)
             return
         
         if toreward.id==post.owner_id:
-            await ctx.send(f"You can't reward yourself.",epheremal=True)
+            await ctx.send(f"You can't reward yourself.",ephemeral=True)
             return
         await QuestLeaderboard.update_user_score(
             ctx.guild.id,
@@ -198,11 +198,11 @@ Quest Guidelines:
         post:discord.Thread=ctx.channel
         
         if ctx.author.id!=post.owner_id:
-            await ctx.send(f"You are not the post owner.",epheremal=True)
+            await ctx.send(f"You are not the post owner.",ephemeral=True)
             return
         
         if toreward.id==post.owner_id:
-            await ctx.send(f"You can't reward yourself.",epheremal=True)
+            await ctx.send(f"You can't reward yourself.",ephemeral=True)
             return
         
         isvalid=False
@@ -211,7 +211,7 @@ Quest Guidelines:
             if m.id==toreward.id:
                 isvalid=True
         if not isvalid:
-            await ctx.send(f"You must give kudos to someone responding to the quest!",epheremal=True)
+            await ctx.send(f"You must give kudos to someone responding to the quest!",ephemeral=True)
             return
 
         if post.owner_id not in self.kudo_limiter:
@@ -224,7 +224,7 @@ Quest Guidelines:
             diff = now - self.kudo_limiter[post.owner_id][toreward.id]
             cont= diff.total_seconds() >= 86400
             if not cont:
-                await ctx.send(f"You already gave kudos to this person today...",epheremal=True)
+                await ctx.send(f"You already gave kudos to this person today...",ephemeral=True)
                 return
 
                     
