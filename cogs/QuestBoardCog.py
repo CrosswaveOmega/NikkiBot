@@ -193,7 +193,7 @@ Quest Guidelines:
                 continue
             if message.author.id != post.owner_id:
                 att=0 or len(message.attachments)
-                if message.author.id not in users:
+                if not (message.author.id in users):
                     users[message.author.id]={"m":0,"w":0,"a":0,"q":1}
                 if message.content:
                     words = re.findall(word_pattern, message.content)
@@ -202,8 +202,8 @@ Quest Guidelines:
                 users[message.author.id]["a"]+=att
 
         for uid,val in users.items():
-            att_score=max(int(min(users[message.author.id]["a"],10)),1)
-            mess_score=int(min(users[message.author.id]["m"]*0.5,8))
+            att_score=max(int(min(users[uid]["a"],10)),1)
+            mess_score=int(min(users[uid]["m"]*0.5,8))
             await QuestLeaderboard.update_user_score(
             post.guild.id,
             user_id=uid,
