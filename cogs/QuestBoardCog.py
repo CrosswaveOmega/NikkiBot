@@ -135,17 +135,53 @@ This is the channel where SEF members help out other SEF members by putting in r
 
 Please make sure to tag your posts correctly!  The most helpful users will be placed on a leaderboard!
 
+
 Quest Guidelines:
 
 1. Quests posted here are meant to be completable!  
- * **Please post clear instructions for what you require others to accomplish!**
-2. When someone completes the quest, use the `/quest finish_quest` command and provide a reward to the user who solved the problem.
-3. Don't abuse the reward system!  You will be punished.
-4. Want to thank many people who helped?  Use `/quest kudos` and name them!
+2. **Please post clear instructions for what you require others to accomplish!**
+3. When someone completes the quest, use the `/quest finish_quest` command and provide a reward to the user who solved the problem.
+4. Don't abuse the reward system!  You will be punished.
+5. Want to thank many people who helped?  Use `/quest kudos` and name them!
+6. Quests shouldn't last forever!  Ensure your quests have a target expiration date. 
+
+You can set the target expiration date by saying "X days Y hours" in your message when creating the thread.
 
 """
                 )
         await ctx.send("Done!", ephemeral=True)
+
+    
+    @commands.Cog.listener()
+    async def on_thread_create(self,thread:discord.Thread):
+        try:
+            await self.thread_cache_helper(thread)
+        except Exception as e:
+            await self.bot.send_error(e, "Thread create error.")
+
+
+    async def thread_cache_helper(self,thread):
+        if not self.cached:
+            allpairs=await Questboard.get_id_channel_id_pairs()
+            for i, v in allpairs:
+                self.cached[i]=v
+        if thread.guild.id in self.cached:
+            if thread.parent.id ==self.cached[i]:
+                pattern = r"(?:(\d+)\s*d(?:ays?)?)?\s*(?:(\d+)\s*h(?:ours?)?)?"
+                if not thread.starter_message:
+                    print("No message.")
+                match = re.search(pattern, thread.starter_message)
+                if match:
+                    days = match.group(1) or 0
+                    hours = match.group(2) or 0
+                    if days==0 and hours==0:
+                        now = datetime.datetime.now()
+                        future_timestamp = now + datetime.timedelta(days=int(days), hours=int(hours))
+                        await thread.send(f"Quest expires in {discord.utils.format_dt(future_timestamp,'R')}")
+                
+               
+
+
 
     @commands.has_permissions(manage_guild=True)
     @questmanage.command(

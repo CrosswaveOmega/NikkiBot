@@ -29,7 +29,13 @@ class Questboard(Base):
     locked = Column(Boolean, nullable=False, default=False)
     my_post = Column(BigInteger, nullable=False) #My Post
 
-
+    @classmethod
+    async def get_id_channel_id_pairs(cls):
+        async with DatabaseSingleton.get_async_session() as session:
+            query = select(cls.id, cls.channel_id)
+            result = await session.execute(query)
+            return result.all()
+        
     @classmethod
     async def get_questboard(cls, guild_id: int):
         async with DatabaseSingleton.get_async_session() as session:
