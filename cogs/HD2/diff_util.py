@@ -30,7 +30,7 @@ class GameEvent(BaseApiModel):
         alias="value", default=None
     )
     cluster: Optional[bool] = Field(alias="cluster", default=False)
-    game_time:Optional[int]= Field(alias="game_time",default=0)
+    game_time: Optional[int] = Field(alias="game_time", default=0)
 
 
 async def compare_value_with_timeout(model1, field):
@@ -169,8 +169,9 @@ async def process_planet_events(
     for event in source:
         oc = await check_compare_value(key, event[key], target)
         if not oc:
-            item = GameEvent(mode="new", place=place, batch=batch, value=event,
-                game_time=game_time)
+            item = GameEvent(
+                mode="new", place=place, batch=batch, value=event, game_time=game_time
+            )
             pushed_items.append(item)
             new.append(item)
         else:
@@ -181,8 +182,7 @@ async def process_planet_events(
                     place=place,
                     batch=batch,
                     value=(event, differ),
-                    
-                game_time=game_time
+                    game_time=game_time,
                 )
                 pushed_items.append(item)
                 change.append(item)
@@ -194,8 +194,7 @@ async def process_planet_events(
                 place=place,
                 batch=batch,
                 value=event,
-                
-                game_time=game_time
+                game_time=game_time,
             )
             pushed_items.append(item)
             old.append(item)
@@ -211,7 +210,7 @@ async def process_planet_events(
 
 
 async def process_planet_attacks(
-    source, target, place, keys, QueueAll, batch, exclude=[],game_time=0
+    source, target, place, keys, QueueAll, batch, exclude=[], game_time=0
 ):
     pushed_items = []
     newlist = []
@@ -234,7 +233,7 @@ async def process_planet_attacks(
                 place=place,
                 batch=batch,
                 value=event,
-                game_time=game_time
+                game_time=game_time,
             )
             pushed_items.append(item)
             oldlist.append(item)
@@ -243,14 +242,22 @@ async def process_planet_attacks(
     if place == "planetAttacks":
         if newlist:
             newitem = GameEvent(
-                mode="added", place=place, batch=batch, value=newlist, cluster=True,
-                game_time=game_time
+                mode="added",
+                place=place,
+                batch=batch,
+                value=newlist,
+                cluster=True,
+                game_time=game_time,
             )
             await QueueAll.put([newitem])
         if oldlist:
             olditem = GameEvent(
-                mode="removed", place=place, batch=batch, value=oldlist, cluster=True,
-                game_time=game_time
+                mode="removed",
+                place=place,
+                batch=batch,
+                value=oldlist,
+                cluster=True,
+                game_time=game_time,
             )
             await QueueAll.put([olditem])
     else:
@@ -283,7 +290,7 @@ async def detect_loggable_changes(
         )
 
         await QueueAll.put([newitem])
-    gametime=new.status.time
+    gametime = new.status.time
     rawout = await get_differing_fields(
         old.status,
         new.status,
@@ -301,7 +308,7 @@ async def detect_loggable_changes(
             "globalEvents",
             "planetActiveEffects",
             "spaceStations",
-            "globalResources"
+            "globalResources",
         ],
     )
     if rawout:
@@ -310,7 +317,7 @@ async def detect_loggable_changes(
             place="stats_raw",
             batch=batch,
             value=(new.status, rawout),
-            game_time=gametime
+            game_time=gametime,
         )
         superlist.append(item)
         await QueueAll.put([item])
@@ -324,7 +331,7 @@ async def detect_loggable_changes(
         QueueAll,
         batch,
         ["retrieved_at", "time_delta", "self"],
-        game_time=gametime
+        game_time=gametime,
     )
     superlist += await process_planet_attacks(
         new.status.planetActiveEffects,
@@ -334,7 +341,7 @@ async def detect_loggable_changes(
         QueueAll,
         batch,
         ["retrieved_at", "time_delta", "self"],
-        game_time=gametime
+        game_time=gametime,
     )
 
     if new.news_feed is not None and old.news_feed is not None:
@@ -352,8 +359,7 @@ async def detect_loggable_changes(
                 "time_delta",
                 "self",
             ],
-            game_time=gametime
-
+            game_time=gametime,
         )
     logs.info("DSS movement detection, stand by...")
     superlist += await process_planet_events(
@@ -364,7 +370,7 @@ async def detect_loggable_changes(
         QueueAll,
         batch,
         ["retrieved_at", "time_delta", "self"],
-        game_time=gametime
+        game_time=gametime,
     )
     logs.info("campaigns detection, stand by...")
     superlist += await process_planet_events(
@@ -375,7 +381,7 @@ async def detect_loggable_changes(
         QueueAll,
         batch,
         ["retrieved_at", "time_delta", "self"],
-        game_time=gametime
+        game_time=gametime,
     )
     logs.info("planet events detection, stand by...")
     superlist += await process_planet_events(
@@ -386,7 +392,7 @@ async def detect_loggable_changes(
         QueueAll,
         batch,
         ["health", "retrieved_at", "time_delta", "self"],
-        game_time=gametime
+        game_time=gametime,
     )
     logs.info("planet status detection, stand by...")
     superlist += await process_planet_events(
@@ -397,7 +403,7 @@ async def detect_loggable_changes(
         QueueAll,
         batch,
         ["health", "players", "position", "retrieved_at", "time_delta", "self"],
-        game_time=gametime
+        game_time=gametime,
     )
     logs.info("global event detection, stand by...")
     superlist += await process_planet_events(
@@ -408,7 +414,7 @@ async def detect_loggable_changes(
         QueueAll,
         batch,
         ["retrieved_at", "time_delta", "self"],
-        game_time=gametime
+        game_time=gametime,
     )
 
     if new.war_info is not None and old.war_info is not None:
@@ -423,7 +429,7 @@ async def detect_loggable_changes(
                 place="info_raw",
                 batch=batch,
                 value=(new.war_info, infoout),
-                game_time=gametime
+                game_time=gametime,
             )
             superlist.append(item)
             await QueueAll.put([item])
@@ -436,7 +442,7 @@ async def detect_loggable_changes(
             QueueAll,
             batch,
             ["position", "retrieved_at", "time_delta", "self"],
-            game_time=gametime
+            game_time=gametime,
         )
     superlist += await process_planet_events(
         sector_states(new.status, statics),
@@ -446,7 +452,7 @@ async def detect_loggable_changes(
         QueueAll,
         batch,
         ["planetStatus", "retrieved_at", "time_delta", "self"],
-        game_time=gametime
+        game_time=gametime,
     )
     logs.info("Done detection, stand by...")
     if new.major_order is None:
@@ -462,10 +468,9 @@ async def detect_loggable_changes(
 async def detect_loggable_changes_planet(
     old: BaseApiModel, new: BaseApiModel, QueueAll: asyncio.Queue, statics: StaticAll
 ) -> Tuple[dict, list]:
-
     batch = int(new.retrieved_at.timestamp())
     superlist = []
-    gametime=new.status.time
+    gametime = new.status.time
     if old.status.time == new.status.time:
         return None
 
@@ -494,7 +499,9 @@ async def detect_loggable_changes_planet(
 
     output["gstate"] = [j for j in output["gstate"].values()]
     await QueueAll.put(
-        GameEvent(mode="data", place="planets", batch=batch, value=output,game_time=gametime)
+        GameEvent(
+            mode="data", place="planets", batch=batch, value=output, game_time=gametime
+        )
     )
 
     logs.info("Done detection, stand by...")

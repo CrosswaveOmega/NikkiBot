@@ -4,7 +4,7 @@ from typing import Tuple, Union
 import discord
 from discord.ext import commands, tasks
 from database import DatabaseSingleton
-from cogs.dat_Questboard import QuestLeaderboard, Questboard
+from cogs.dat_Questboard import QuestLeaderboard, QuestRoleConfig, Questboard
 from utility import (
     urltomessage,
 )
@@ -21,25 +21,40 @@ class QuestBoardCog(commands.Cog):
         self.bot = bot
         self.to_be_edited = {}
         self.kudo_limiter = {}
+
         self.lock = asyncio.Lock()
         self.server_emoji_caches = {}
-        self.cached={}
-    
+        self.cached = {}
+        self.server_role_score = {}
 
-    async def checkboard_status(self,ctx):
+    async def get_role_score_dict(self, ctx: commands.Context):
+        if ctx.guild.id not in self.server_role_score:
+            self.server_role_score[
+                ctx.guild.id
+            ] = await QuestRoleConfig.get_all_role_specials_for_guild(ctx.guild.id)
+        use = {"score": 1, "kudos": 1}
+        for i, v in self.server_role_score[ctx.guild.id].items():
+            if discord.utils.get(ctx.author.roles, id=i):
+                use["score"] = max(v["score"], use["score"])
+                use["kudos"] = max(v["kudos"], use["kudos"])
+        return use
+
+    async def checkboard_status(self, ctx):
         if ctx.channel.parent is None:
-            return 0,False,False
+            return 0, False, False
         existing_questboard = await Questboard.get_questboard(ctx.guild.id)
         if not existing_questboard:
-            return 1,False,False
+            return 1, False, False
         if ctx.channel.parent.id != existing_questboard.channel_id:
-            return 2,existing_questboard,False
+            return 2, existing_questboard, False
         questb: discord.ForumChannel = await ctx.guild.fetch_channel(
             existing_questboard.channel_id
         )
-        return 8,existing_questboard, questb
-    
-    async def questboard_command_checks(self, ctx:commands.Context)->Tuple[Union[Questboard,bool],Union[discord.ForumChannel,bool]]:
+        return 8, existing_questboard, questb
+
+    async def questboard_command_checks(
+        self, ctx: commands.Context
+    ) -> Tuple[Union[Questboard, bool], Union[discord.ForumChannel, bool]]:
         """
         Performs a series of checks to ensure that the command is being used
         in a valid questboard context.
@@ -52,22 +67,20 @@ class QuestBoardCog(commands.Cog):
                 A tuple containing the Questboard object and the associated
                 Discord Forum Channel if all checks pass, otherwise False values.
         """
-        #Ensure this is in a forum channel.
-        res,questboard,questb=await self.checkboard_status(ctx)
-        if res==0:
+        # Ensure this is in a forum channel.
+        res, questboard, questb = await self.checkboard_status(ctx)
+        if res == 0:
             await ctx.send("Not a forum channel!", ephemeral=True)
-            return False,False
-        if res==1:
+            return False, False
+        if res == 1:
             await ctx.send("No questboard exists for this server.", ephemeral=True)
-            return False,False
-        if res==2:
+            return False, False
+        if res == 2:
             await ctx.send("This command must be used in a questboard.", ephemeral=True)
-            return questboard,False
+            return questboard, False
 
         return questboard, questb
 
-
-        
     @commands.hybrid_group(invoke_without_command=True)
     @commands.has_permissions(manage_guild=True)
     @app_commands.default_permissions(manage_guild=True)
@@ -105,10 +118,10 @@ class QuestBoardCog(commands.Cog):
     )
     async def edit_my_post(self, ctx: commands.Context):
         """Add a quest boardto the server."""
-        questboard,questchannel=await self.questboard_command_checks(ctx)
+        questboard, questchannel = await self.questboard_command_checks(ctx)
         if not questboard or not questchannel:
             return
-        
+
         my_post: discord.Thread = questchannel.get_thread(questboard.my_post)
 
         if not my_post:
@@ -141,7 +154,7 @@ Quest Guidelines:
     )
     async def badquest(self, ctx: commands.Context, reason: str = "it's expired"):
         """Add a quest boardto the server."""
-        questboard,questchannel=await self.questboard_command_checks(ctx)
+        questboard, questchannel = await self.questboard_command_checks(ctx)
         if not questboard or not questchannel:
             return
         post: discord.Thread = ctx.channel
@@ -163,6 +176,41 @@ Quest Guidelines:
         if ctx.interaction:
             await ctx.send("Done!", ephemeral=True)
 
+    @commands.has_permissions(manage_guild=True)
+    @questmanage.command(
+        name="role_score",
+        brief="change the modifier for quests given by those with this role n",
+    )
+    async def role_mod(
+        self,
+        ctx: commands.Context,
+        role: str = "it's expired",
+        finish_mod: float = 1.0,
+        kudos_mod: float = 1.0,
+    ):
+        """Add a quest boardto the server."""
+        questboard, questchannel = await self.questboard_command_checks(ctx)
+        if not questboard or not questchannel:
+            return
+        post: discord.Thread = ctx.channel
+        guild = ctx.guild
+
+        role_obj: discord.Role = discord.utils.get(guild.roles, name=role)
+        if role_obj:
+            # Role found
+            await QuestRoleConfig.update_role_score_mod(
+                guild.id, role_obj.id, score=finish_mod, kudos=kudos_mod
+            )
+            self.server_role_score[
+                guild.id
+            ] = await QuestRoleConfig.get_all_role_specials_for_guild(guild.id)
+
+            await ctx.send("Added modification for role [X]", ephemeral=True)
+            pass
+        else:
+            await ctx.send("No role found with that name!")
+            # Role not found
+            pass
 
     @commands.has_permissions(manage_guild=True)
     @questmanage.command(
@@ -171,52 +219,48 @@ Quest Guidelines:
     )
     async def showleaderboard(self, ctx: commands.Context):
         """Add a quest boardto the server."""
-        questboard,questchannel=await self.questboard_command_checks(ctx)
+        questboard, questchannel = await self.questboard_command_checks(ctx)
         if not questboard or not questchannel:
             return
-        leaderboard=await QuestLeaderboard.get_leaderboard_for_guild(ctx.guild.id)
-        outs=[]
+        leaderboard = await QuestLeaderboard.get_leaderboard_for_guild(ctx.guild.id)
+        outs = []
         for n, e in enumerate(leaderboard):
-            user=ctx.guild.get_member(e.user_id)
-            outv=f"{n}. {user.display_name}: {e.score}, {e.thank_count}"
+            user = ctx.guild.get_member(e.user_id)
+            outv = f"{n}. {user.display_name}: {e.score}, {e.thank_count}"
             outs.append(outv)
         await ctx.send(content="\n".join(outs))
 
+    async def archive_quest(self, guild, post: discord.Thread):
+        users = {}
+        word_pattern = r"\b\w+\b"
+        comp = re.compile(word_pattern)
 
-    async def archive_quest(self,guild,post:discord.Thread):
-        users={}
-        word_pattern = r'\b\w+\b'
-        comp=re.compile(word_pattern)
-        
         async for message in post.history(limit=100, oldest_first=False):
-            if message.author.id==self.bot.user.id:
+            if message.author.id == self.bot.user.id:
                 continue
             if message.author.id != post.owner_id:
-                att=0 or len(message.attachments)
+                att = 0 or len(message.attachments)
                 if not (message.author.id in users):
-                    users[message.author.id]={"m":0,"w":0,"a":0,"q":1}
+                    users[message.author.id] = {"m": 0, "w": 0, "a": 0, "q": 1}
                 if message.content:
                     words = re.findall(word_pattern, message.content)
-                    users[message.author.id]["w"]+=len(words)
-                users[message.author.id]["m"]+=1
-                users[message.author.id]["a"]+=att
+                    users[message.author.id]["w"] += len(words)
+                users[message.author.id]["m"] += 1
+                users[message.author.id]["a"] += att
 
-        for uid,val in users.items():
-            att_score=max(int(min(users[uid]["a"],10)),1)
-            mess_score=int(min(users[uid]["m"]*0.5,8))
+        for uid, val in users.items():
+            att_score = max(int(min(users[uid]["a"], 10)), 1)
+            mess_score = int(min(users[uid]["m"] * 0.5, 8))
             await QuestLeaderboard.update_user_score(
-            post.guild.id,
-            user_id=uid,
-            score=1+att_score+mess_score,
-            thank_count=0,
-            quests_participated=1,
-            messages=val["m"],
-            files=val["a"]
-            
-        )
+                post.guild.id,
+                user_id=uid,
+                score=1 + att_score + mess_score,
+                thank_count=0,
+                quests_participated=1,
+                messages=val["m"],
+                files=val["a"],
+            )
 
-
-                
     @commands.hybrid_group(invoke_without_command=True)
     async def quest(self, ctx):
         """Quest management commands."""
@@ -231,7 +275,7 @@ Quest Guidelines:
     )
     async def end_quest(self, ctx: commands.Context, toreward: discord.Member):
         """End the quest and give a reward."""
-        questboard,questchannel=await self.questboard_command_checks(ctx)
+        questboard, questchannel = await self.questboard_command_checks(ctx)
         if not questboard or not questchannel:
             return
 
@@ -243,10 +287,25 @@ Quest Guidelines:
         if toreward.id == post.owner_id:
             await ctx.send("You can't reward yourself.", ephemeral=True)
             return
+
+        isvalid = False
+        membs = await post.fetch_members()
+        for m in membs:
+            if m.id == toreward.id:
+                isvalid = True
+        if not isvalid:
+            await ctx.send(
+                f"You must give kudos to someone responding to the quest!",
+                ephemeral=True,
+            )
+            return
+
+        scoremod = await self.get_role_score_dict(ctx.guild)
+
         await QuestLeaderboard.update_user_score(
             ctx.guild.id,
             user_id=toreward.id,
-            score=100,
+            score=100 * scoremod["score"],
             thank_count=1,
             quests_participated=1,
         )
@@ -254,7 +313,7 @@ Quest Guidelines:
         await post.send("### Success!  This quest had been transgressed with finesse!")
         if ctx.interaction:
             await ctx.send("Done!", ephemeral=True)
-        await self.archive_quest(ctx.guild,post)
+        await self.archive_quest(ctx.guild, post)
         await post.edit(
             archived=True,
             locked=True,
@@ -269,7 +328,6 @@ Quest Guidelines:
                 )
             ],
         )
-        
 
     @quest.command(
         name="kudos",
@@ -280,7 +338,7 @@ Quest Guidelines:
     )
     async def kudos(self, ctx: commands.Context, toreward: discord.Member):
         """give kudos to a user."""
-        questboard,questchannel=await self.questboard_command_checks(ctx)
+        questboard, questchannel = await self.questboard_command_checks(ctx)
         if not questboard or not questchannel:
             return
 
@@ -320,10 +378,12 @@ Quest Guidelines:
                 )
                 return
 
+        scoremod = await self.get_role_score_dict(ctx.guild)
+
         await QuestLeaderboard.update_user_score(
             ctx.guild.id,
             user_id=toreward.id,
-            score=25,
+            score=25 * scoremod["kudos"],
             thank_count=0,
             quests_participated=0,
         )

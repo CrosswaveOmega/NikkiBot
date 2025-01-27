@@ -1,5 +1,5 @@
 from typing import Optional, ByteString
-from sqlalchemy import Column, Integer, Boolean, BigInteger, String
+from sqlalchemy import Column, Integer, Boolean, BigInteger, String, Float
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, func, insert, and_, or_
 from database.database_singleton import DatabaseSingleton
@@ -70,6 +70,8 @@ class Questboard(Base):
                 await session.commit()
                 return questboard
             return None
+
+
 
 
 class QuestLeaderboard(Base):
@@ -155,11 +157,82 @@ class QuestLeaderboard(Base):
                     score=score,
                     thank_count=thank_count,
                     quests_participated=quests_participated,
+                    messages_sent=messages,
+                    files_sent=files
+
                 )
                 session.add(leaderboard_entry)
                 await session.commit()
                 return leaderboard_entry
 
+class QuestRoleConfig(Base):
+    __tablename__ = "quest_role_config_table"
+
+    guild_id = Column(BigInteger, nullable=False, primary_key=True)  # Guild server ID
+    role_id = Column(BigInteger, nullable=False, primary_key=True)  # Id for Role
+    score_bonus = Column(Float, nullable=False, default=1.0)  # score mod for quests made by this role.
+    kudos_bonus = Column(Float,nullable=False,default=1.0)
+
+
+    @classmethod
+    async def get_all_role_specials_for_guild(cls, guild_id: int):
+        async with DatabaseSingleton.get_async_session() as session:
+            query = (
+                select(cls)
+                .where(cls.guild_id == guild_id)
+            )
+            result = await session.execute(query)
+            rolesp= result.scalars().all()
+            role_dict={}
+            for i in rolesp:
+                outv={}
+                outv['score']=max(i.score_bonus,1)
+                outv['kudos']=max(i.kudos_bonus,1)
+                role_dict[i.role_id]=outv
+            return role_dict
+                
+
+    @classmethod
+    async def get_role_score_entry(cls, guild_id: int, role_id: int):
+        async with DatabaseSingleton.get_async_session() as session:
+            query = select(cls).where(
+                and_(cls.guild_id == guild_id, cls.role_id == role_id)
+            )
+            result = await session.execute(query)
+            return result.scalar()
+
+    @classmethod
+    async def update_role_score_mod(
+        cls,
+        guild_id: int,
+        role_id: int,
+        score: float= 0,
+        kudos:float=0.0
+    ):
+        async with DatabaseSingleton.get_async_session() as session:
+            query = select(cls).where(
+                and_(cls.guild_id == guild_id, cls.role_id == role_id)
+            )
+            result = await session.execute(query)
+            leaderboard_entry = result.scalar()
+
+            if leaderboard_entry:
+
+                leaderboard_entry.score_bonus = score
+                if kudos>0:
+                    leaderboard_entry.kudos_bonus = kudos
+                await session.commit()
+                return leaderboard_entry
+            else:
+                leaderboard_entry = cls(
+                    guild_id=guild_id,
+                    role_id=role_id,
+                    score_bonus=score,
+                    kudos_bonus=kudos
+                )
+                session.add(leaderboard_entry)
+                await session.commit()
+                return leaderboard_entry
 
 async def setup(bot):
     DatabaseSingleton("mainsetup").load_base(Base)
