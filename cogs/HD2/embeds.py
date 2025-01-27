@@ -20,6 +20,7 @@ from hd2api import (
 )
 from hd2api.builders import get_time_dh
 from hd2api.constants import items
+
 """
 Collection of embeds for formatting.
 """
@@ -36,11 +37,12 @@ from .predict import make_prediction_for_eps, predict_needed_players
 
 item_emojis: Dict[str, str] = {
     897894480: "<:Medal:1241748215087235143>",
-    3608481516:"<:rec:1274481505611288639>",
-    3481751602:"<:supercredit:1274728715175067681>",
-    2985106497:"<:RareSample:1306726016575607025>",
-    3992382197:"<:CommonSample:1306726063233044591>"
+    3608481516: "<:rec:1274481505611288639>",
+    3481751602: "<:supercredit:1274728715175067681>",
+    2985106497: "<:RareSample:1306726016575607025>",
+    3992382197: "<:CommonSample:1306726063233044591>",
 }
+
 
 def create_war_embed(stat: ApiStatus):
     data, last = stat.war.get_first_change()
@@ -341,6 +343,7 @@ def campaign_view(
         if "galactic_overview" in hdtext:
             flav = random.choice(hdtext["galactic_overview"]["value"])
     # Create the initial Discord embed
+
     emb0 = discord.Embed(title="Galactic War Overview", description=f"{flav}\n")
     emb = emb0
     embs = [emb]
@@ -439,6 +442,7 @@ def campaign_view(
             value=f"{players_on_stalemated} players are on {len(stalemated)} stalemated worlds.\n"
             + (f"\n".join([f"* {s}" for s in stalemated]))[:900],
         )
+
     # Add overall contribution stats
     emb0.description += (
         f"\n`{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}%` "
@@ -446,6 +450,14 @@ def campaign_view(
         f"`{round(total_contrib[4],8)}` impact per second, so about "
         f"`({round(total_contrib[2],5)}%, {round(total_contrib[3],5)}% per hour)` lib."
     )
+    
+    emb0.description += "\n"
+    for k, list in stat.resources.items():
+        r, c = list.get_change_from(15)
+        cng = r - c
+        outstring = f"{r.id32}:[`{r.currentValue}({cng.currentValue})/{r.maxValue}`,flags=`{r.flags}`]\n"
+        emb0.description += outstring
+
     emb0.timestamp = discord.utils.utcnow()  # Set timestamp
     return embs
 
@@ -461,46 +473,46 @@ def generate_tactical_action_summary(stat, action: TacticalAction) -> str:
     # Basic details
     title = action.name
     summary.append(f"Description:\n{action.description or 'No description provided.'}")
-    summary.append("\n"+
-        hdml_parse(
+    summary.append(
+        "\n"
+        + hdml_parse(
             f"{action.strategicDescription or 'No strategic description provided.'}"
         )
     )
-    sumv=f"Status: `{action.status or 'N/A'}`"
-
+    sumv = f"Status: `{action.status or 'N/A'}`"
 
     # Status expiration
     if action.statusExpireAtWarTimeSeconds:
-        sumv+=(" status expires" + fdt(exp, "R"))
+        sumv += " status expires" + fdt(exp, "R")
 
     summary.append(sumv)
 
     # Cost details
     if action.cost:
         for idx, cost in enumerate(action.cost, start=1):
-            item=items.get(cost.itemMixId,cost.itemMixId)
+            item = items.get(cost.itemMixId, cost.itemMixId)
 
-            emj=item_emojis.get(cost.itemMixId,897894480)
-            cost_summary=f"\nItem {emj}`{item}`"
-            remaining_sec=None
-            percent=""
+            emj = item_emojis.get(cost.itemMixId, 897894480)
+            cost_summary = f"\nItem {emj}`{item}`"
+            remaining_sec = None
+            percent = ""
             if cost.currentValue and cost.targetValue and cost.deltaPerSecond:
-                diff=(cost.targetValue-cost.currentValue)/cost.deltaPerSecond
-                remaining_sec=datetime.datetime.now()+datetime.timedelta(seconds=diff)
+                diff = (cost.targetValue - cost.currentValue) / cost.deltaPerSecond
+                remaining_sec = datetime.datetime.now() + datetime.timedelta(
+                    seconds=diff
+                )
 
             if cost.currentValue and cost.targetValue:
-                num=round((cost.currentValue / cost.targetValue) * 100.0, 2)
-                percent=f'{num:.2f}%'
+                num = round((cost.currentValue / cost.targetValue) * 100.0, 2)
+                percent = f"{num:.2f}%"
 
             cost_summary += (
                 f", at `{cost.currentValue}/{cost.targetValue or 'None'}`, {percent}"
-                f" by `{cost.deltaPerSecond*3600 or 'N/A'}` per hour")
-            if remaining_sec:
-                cost_summary+=f"\nComplete in {fdt(remaining_sec,'R')}"
-            cost_summary+=(
-                
-                f"\nMax Donation Amount: `{cost.maxDonationAmount or 'N/A'} per {cost.maxDonationPeriodSeconds/3600 or 'N/A'} hours`"
+                f" by `{cost.deltaPerSecond*3600 or 'N/A'}` per hour"
             )
+            if remaining_sec:
+                cost_summary += f"\nComplete in {fdt(remaining_sec,'R')}"
+            cost_summary += f"\nMax Donation Amount: `{cost.maxDonationAmount or 'N/A'} per {cost.maxDonationPeriodSeconds/3600 or 'N/A'} hours`"
             summary.append(cost_summary)
     else:
         summary.append("No cost details available.")
@@ -510,7 +522,9 @@ def generate_tactical_action_summary(stat, action: TacticalAction) -> str:
         summary.append(f"Effect IDs:`[{', '.join(map(str, action.effectIds))}]`")
     # Active Effect IDs
     if action.activeEffectIds:
-        summary.append(f"Active Effect IDs: `[{', '.join(map(str, action.activeEffectIds))}]`")
+        summary.append(
+            f"Active Effect IDs: `[{', '.join(map(str, action.activeEffectIds))}]`"
+        )
 
     return title, "\n".join(summary)
 

@@ -143,7 +143,12 @@ async def read_and_split_pdf(bot, url: str, extract_meta: bool = False):
 
         metadata = {}
         new_docs = []
-        title, authors, date, abstract = result.title, "NotFound", "1-1-2020", "NotFound"
+        title, authors, date, abstract = (
+            result.title,
+            "NotFound",
+            "1-1-2020",
+            "NotFound",
+        )
         if extract_meta:
             mylib = MyLib()
             client = openai.AsyncClient()

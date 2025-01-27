@@ -117,13 +117,9 @@ class HD2OverviewView(discord.ui.View):
         try:
             await self.est(interaction, button)
         except Exception as e:
-            await self.cog.bot.send_error(e,"view_error")
-            
-            
-    
-    async def est(
-        self, interaction: discord.Interaction, button: discord.ui.Button
-    ):
+            await self.cog.bot.send_error(e, "view_error")
+
+    async def est(self, interaction: discord.Interaction, button: discord.ui.Button):
         est = self.cog.apistatus.estimates()
         print(est)
         title = "Galactic War Forecast"
@@ -161,10 +157,10 @@ class HD2OverviewView(discord.ui.View):
         print(stations)
         embeds = []
         for name, val in stations.items():
-            emb=hd2.station_embed(
-                    self.cog.apistatus,
-                    val,
-                )
+            emb = hd2.station_embed(
+                self.cog.apistatus,
+                val,
+            )
             embeds.append(emb)
         if not embeds:
             embeds.append(discord.Embed(title="NO STATION DATA."))
@@ -198,7 +194,9 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         self.bot: TCBot = bot
         self.get_running = False
         # self.session=aiohttp.ClientSession()
-        hdoverride = hd2api.APIConfig(static_path="./hd2json", use_raw= "direct",timeout=15)
+        hdoverride = hd2api.APIConfig(
+            static_path="./hd2json", use_raw="direct", timeout=15
+        )
         hd2api.set_fdt(discord.utils.format_dt)
         hd2api.setuphd2logging("./logs/")
         self.img = None
@@ -263,7 +261,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if self.api_up:
             await self.apistatus.update_data()
             hd2.save_to_json(self.apistatus.to_dict(), "./saveData/hd2_snapshot.json")
-            #print(self.apistatus.war)
+            # print(self.apistatus.war)
             hd2.add_to_csv(self.apistatus)
         return
 
@@ -404,13 +402,11 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         await ctx.send(file=discord.File("statistics_sub.csv"))
         await ctx.send(file=discord.File("statistics_newer.csv"))
 
-    
     @commands.is_owner()
     @commands.command(name="direct_mode")
     async def direct_mode(self, ctx: commands.Context):
-        self.apistatus.direct=not self.apistatus.direct
+        self.apistatus.direct = not self.apistatus.direct
         await ctx.send(f"Direct mode set to {self.apistatus.direct}")
-
 
     @commands.is_owner()
     @commands.command(name="get_map")
@@ -591,8 +587,9 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             return
         webhook, thread = await web.getWebhookInChannel(channel)
         profile.update(webhook_url=webhook.url)
-        await ctx.send("Real Time log webhook subscription created.", ephemeral=True)
+        await ctx.send(f"Real Time log webhook subscription created with webhook {webhook.url}", ephemeral=True)
         hooks = ServerHDProfile.get_entries_with_webhook()
+        await ctx.send(f"{hooks}", ephemeral=True)
         lg = [AssetLookup.get_asset("loghook", "urls")]
         for h in hooks:
             lg.append(h)
@@ -664,8 +661,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 embed=hd2.station_embed(
                     self.apistatus,
                     v,
-                )
-                ,ephemeral=True
+                ),
+                ephemeral=True,
             )
 
     @commands.is_owner()
@@ -837,11 +834,9 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if not data:
             return await ctx.send("No result")
         embeds = []
-        timestart=get_time_dh(self.apistatus.warall) 
+        timestart = get_time_dh(self.apistatus.warall)
         for s in data:
-            timev=timestart+ (
-                timedelta(seconds=s.published)
-            )
+            timev = timestart + (timedelta(seconds=s.published))
             embeds.append(
                 discord.Embed(
                     title=f"Dispatch {s.id}, type {s.type}",

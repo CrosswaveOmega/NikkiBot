@@ -112,7 +112,7 @@ class ReadableLoader(dl.WebBaseLoader):
                         f"Error fetching {url}, skipping due to"
                         f" continue_on_failure=True"
                     )
-                    
+
                     return e
                 self.bot.logs.exception(
                     f"Error fetching {url} and aborting, use continue_on_failure=True "
@@ -137,7 +137,6 @@ class ReadableLoader(dl.WebBaseLoader):
         elapsed_time = timer.get_time()
         print(f"READ: Took {elapsed_time:.4f} seconds to gather {len(urls)}.")
 
-
         for i, result in enumerate(results):
             if isinstance(result, Exception):
                 if self.markitdown:
@@ -145,16 +144,16 @@ class ReadableLoader(dl.WebBaseLoader):
                         markdown = MarkItDown()
                         result2 = markdown.convert(url)
                         print(result2.text_content)
-                        header={"title":result2.title or result2.text_content[:100]}
-                        header["siteName"]='Siteunknown'
-                        header["source"]= url
-                        header["description"]=result2.text_content[:200]
+                        header = {"title": result2.title or result2.text_content[:100]}
+                        header["siteName"] = "Siteunknown"
+                        header["source"] = url
+                        header["description"] = result2.text_content[:200]
                         header["dateadded"] = datetime.datetime.utcnow().timestamp()
                         header["date"] = "None"
-                        header['language']='en'
+                        header["language"] = "en"
 
                         out = (remove_links(result2.text_content), None, header)
-                        
+
                         yield i, urls[i][0], out
                         continue
                     except Exception as e:
@@ -244,7 +243,7 @@ class ReadableLoader(dl.WebBaseLoader):
         self.jsenv = bot.jsenv
         self.bot = bot
         self.continue_on_failure = True
-        self.markitdown=False
+        self.markitdown = False
         docs, typev = [], -1
         # e is the original fetched url position.
         # i is the position in the self.web_paths list.
@@ -258,7 +257,7 @@ class ReadableLoader(dl.WebBaseLoader):
                     if soup:
                         metadata = _build_metadata(soup, self.web_paths[i][1])
                     else:
-                        metadata={}
+                        metadata = {}
                     typev = MetadataDocType.htmltext
 
                     if not "title" in metadata:
@@ -269,17 +268,17 @@ class ReadableLoader(dl.WebBaseLoader):
                         metadata["website"] = header.get("siteName", "siteunknown")
                         metadata["title"] = header.get("title")
                         if "date" in header:
-                            metadata['date']=header['date']
+                            metadata["date"] = header["date"]
                         if "dateadded" in header:
-                            metadata['dateadded']=header['dateadded']
-                        
+                            metadata["dateadded"] = header["dateadded"]
+
                         if "description" in header:
-                            metadata['description']=header['description']
+                            metadata["description"] = header["description"]
                         if "source" in header and "source" not in metadata:
-                            metadata["source"]=header["source"]
+                            metadata["source"] = header["source"]
                         if "language" in header:
-                            metadata['language']=header['language']
-                            
+                            metadata["language"] = header["language"]
+
                         typev = MetadataDocType.readertext
 
                     metadata["type"] = int(typev)

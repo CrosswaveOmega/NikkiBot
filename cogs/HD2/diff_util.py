@@ -372,6 +372,18 @@ async def detect_loggable_changes(
         ["retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
+
+    logs.info("Global Resourse detection, stand by...")
+    superlist += await process_planet_events(
+        new.status.globalResources,
+        old.status.globalResources,
+        "resources",
+        "id32",
+        QueueAll,
+        batch,
+        ["retrieved_at", "time_delta", "self"],
+        game_time=gametime,
+    )
     logs.info("campaigns detection, stand by...")
     superlist += await process_planet_events(
         new.status.campaigns,

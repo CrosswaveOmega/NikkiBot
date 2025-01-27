@@ -19,7 +19,11 @@ from .GameStatus import (
 )
 from .image_draw import *
 from .maths import maths
-from .predict import predict_needed_players, make_prediction_for_eps, predict_eps_for_players
+from .predict import (
+    predict_needed_players,
+    make_prediction_for_eps,
+    predict_eps_for_players,
+)
 from .buttons import ListButtons
 from .makeplanets import get_planet
 from .diff_util import GameEvent

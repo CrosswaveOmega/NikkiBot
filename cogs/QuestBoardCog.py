@@ -29,9 +29,9 @@ class QuestBoardCog(commands.Cog):
 
     async def get_role_score_dict(self, ctx: commands.Context):
         if ctx.guild.id not in self.server_role_score:
-            self.server_role_score[
-                ctx.guild.id
-            ] = await QuestRoleConfig.get_all_role_specials_for_guild(ctx.guild.id)
+            self.server_role_score[ctx.guild.id] = (
+                await QuestRoleConfig.get_all_role_specials_for_guild(ctx.guild.id)
+            )
         use = {"score": 1, "kudos": 1}
         for i, v in self.server_role_score[ctx.guild.id].items():
             if discord.utils.get(ctx.author.roles, id=i):
@@ -151,22 +151,20 @@ You can set the target expiration date by saying "X days Y hours" in your messag
                 )
         await ctx.send("Done!", ephemeral=True)
 
-    
     @commands.Cog.listener()
-    async def on_thread_create(self,thread:discord.Thread):
+    async def on_thread_create(self, thread: discord.Thread):
         try:
             await self.thread_cache_helper(thread)
         except Exception as e:
             await self.bot.send_error(e, "Thread create error.")
 
-
-    async def thread_cache_helper(self,thread):
+    async def thread_cache_helper(self, thread):
         if not self.cached:
-            allpairs=await Questboard.get_id_channel_id_pairs()
+            allpairs = await Questboard.get_id_channel_id_pairs()
             for i, v in allpairs:
-                self.cached[i]=v
+                self.cached[i] = v
         if thread.guild.id in self.cached:
-            if thread.parent.id ==self.cached[i]:
+            if thread.parent.id == self.cached[i]:
                 pattern = r"(?:(\d+)\s*d(?:ays?)?)?\s*(?:(\d+)\s*h(?:ours?)?)?"
                 if not thread.starter_message:
                     print("No message.")
@@ -174,14 +172,14 @@ You can set the target expiration date by saying "X days Y hours" in your messag
                 if match:
                     days = match.group(1) or 0
                     hours = match.group(2) or 0
-                    if days==0 and hours==0:
+                    if days == 0 and hours == 0:
                         now = datetime.datetime.now()
-                        future_timestamp = now + datetime.timedelta(days=int(days), hours=int(hours))
-                        await thread.send(f"Quest expires in {discord.utils.format_dt(future_timestamp,'R')}")
-                
-               
-
-
+                        future_timestamp = now + datetime.timedelta(
+                            days=int(days), hours=int(hours)
+                        )
+                        await thread.send(
+                            f"Quest expires in {discord.utils.format_dt(future_timestamp,'R')}"
+                        )
 
     @commands.has_permissions(manage_guild=True)
     @questmanage.command(
@@ -237,9 +235,9 @@ You can set the target expiration date by saying "X days Y hours" in your messag
             await QuestRoleConfig.update_role_score_mod(
                 guild.id, role_obj.id, score=finish_mod, kudos=kudos_mod
             )
-            self.server_role_score[
-                guild.id
-            ] = await QuestRoleConfig.get_all_role_specials_for_guild(guild.id)
+            self.server_role_score[guild.id] = (
+                await QuestRoleConfig.get_all_role_specials_for_guild(guild.id)
+            )
 
             await ctx.send("Added modification for role [X]", ephemeral=True)
             pass
@@ -336,7 +334,7 @@ You can set the target expiration date by saying "X days Y hours" in your messag
             )
             return
 
-        scoremod = await self.get_role_score_dict(ctx.guild)
+        scoremod = await self.get_role_score_dict(ctx)
 
         await QuestLeaderboard.update_user_score(
             ctx.guild.id,
@@ -414,7 +412,7 @@ You can set the target expiration date by saying "X days Y hours" in your messag
                 )
                 return
 
-        scoremod = await self.get_role_score_dict(ctx.guild)
+        scoremod = await self.get_role_score_dict(ctx)
 
         await QuestLeaderboard.update_user_score(
             ctx.guild.id,

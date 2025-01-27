@@ -1,4 +1,4 @@
-print("importing gptmod")
+print("importing gptmod...")
 import gptmod.error
 from .util import *
 from .api import GptmodAPI

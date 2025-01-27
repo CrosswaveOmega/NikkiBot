@@ -24,12 +24,16 @@ from PIL import Image
 
 
 data = pd.read_csv("statistics.csv")
-data = data[(data['wins_per_sec'] >= 0) & (data['loss_per_sec'] >= 0)  & (data['kills_per_sec'] >= 0) & (data['deaths_per_sec'] >= 0)]
-
+data = data[
+    (data["wins_per_sec"] >= 0)
+    & (data["loss_per_sec"] >= 0)
+    & (data["kills_per_sec"] >= 0)
+    & (data["deaths_per_sec"] >= 0)
+]
 
 
 # Extract features and target
-T=data['timestamp']
+T = data["timestamp"]
 X = data[
     [
         "player_count",
@@ -56,8 +60,8 @@ players_needed_model.fit(XE[["eps"]], YE)
 
 XE2 = data[["player_count"]]
 YE2 = data["eps"]
-players_to_eps_model= LinearRegression()
-players_to_eps_model.fit(XE2[["player_count"]],YE2)
+players_to_eps_model = LinearRegression()
+players_to_eps_model.fit(XE2[["player_count"]], YE2)
 
 
 # Predict values
@@ -175,6 +179,7 @@ def predict_needed_players(target_eps, mp_mult):
     )
     return needed, se_of_prediction
 
+
 def predict_eps_for_players(players, mp_mult):
     prediction_features = {
         "player_count": players,
@@ -204,6 +209,7 @@ def predict_eps_for_players(players, mp_mult):
         )
     )
     return needed, se_of_prediction
+
 
 def make_graph():
     se = np.sqrt(mse)
@@ -436,22 +442,25 @@ def make_graph3():
         fname=r"./assets/ChakraPetch-SemiBold.ttf"
     )  # Update the path to your font file
 
-
     plt.figure(figsize=(20, 12), facecolor="black")
     # Create a colormap that transitions from blue to red
     ax = plt.gca()
     ax.set_facecolor("black")
 
-    maxy=np.max(T)
-    maxx = max(X["deaths_per_sec"].max(), X["loss_per_sec"].max(), X["wins_per_sec"].max(), X["kills_per_sec"].max())
+    maxy = np.max(T)
+    maxx = max(
+        X["deaths_per_sec"].max(),
+        X["loss_per_sec"].max(),
+        X["wins_per_sec"].max(),
+        X["kills_per_sec"].max(),
+    )
     plt.plot(T, X["deaths_per_sec"], label="Deaths per second")
-    
+
     plt.plot(T, X["loss_per_sec"], label="loss per second")
-    
-    
+
     plt.plot(T, X["wins_per_sec"], label="wins per second")
-    
-    plt.plot(T, X["kills_per_sec"], label="deaths per second") 
+
+    plt.plot(T, X["kills_per_sec"], label="deaths per second")
 
     plt.xlim(left=0, right=maxy)  # Lower limit set to 0,0
     plt.ylim(bottom=0, top=maxx)
@@ -511,7 +520,6 @@ def make_graph3():
 
     # Return the image
     return image
-
 
 
 img = make_graph()

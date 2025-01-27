@@ -35,6 +35,7 @@ from hd2api import (
     DiveharderAll,
     NewsFeedItem,
     PlanetStatus,
+    GlobalResource,
     PlanetInfo,
     PlanetEvent,
     Campaign,
@@ -818,6 +819,25 @@ class Embeds:
             text=f"{footerchanges},EID:{evt.eventId}, {custom_strftime(evt.retrieved_at)}"
         )
         return emb
+    
+    @staticmethod
+    def resourceEmbed(
+        evt: GlobalResource, mode="started", footerchanges=""
+    ) -> discord.Embed:
+
+        emb = discord.Embed(
+            title=f"Global Resource {mode}",
+            description=f"A global Resource was {mode}.\n It's id32 is **{evt.id32}**\n `{evt.currentValue}/{evt.maxValue}`",
+            timestamp=evt.retrieved_at,
+            color=0xAC50FE,
+        )
+        
+        emb.add_field(name="Timestamp", value=f"Timestamp:{fdt(evt.retrieved_at, 'F')}")
+        emb.set_author(name=f"Global Resource {mode}.")
+        emb.set_footer(
+            text=f"{footerchanges},RID:{evt.id32}, {custom_strftime(evt.retrieved_at)},flags={evt.flags}"
+        )
+        return emb
 
     @staticmethod
     def spaceStationEmbed(
@@ -948,6 +968,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         self.test_with = []
         self.titleids = {}
         self.messageids = {}
+        self.redirect_hook=""
         snap = hd2.load_from_json("./saveData/mt_pairs.json")
         if snap:
             for i, v in snap["titles"].items():
@@ -1042,24 +1063,36 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 await asyncio.sleep(0.02)
             except asyncio.QueueEmpty:
                 pass
-            # try:
-            #     item = self.PlanetQueue.get_nowait()
-            #     if item:
-            #         dv = json.dumps(item.value, default=str)
-            #         with open("./saveData/outs.jsonl", "a+") as file:
-            #             file.write(f"{dv}\n")
-            #     await asyncio.sleep(0.02)
-            # except asyncio.QueueEmpty:
-            #     pass
         except Exception as ex:
             await self.bot.send_error(ex, "LOG ERROR FOR POST", True)
 
     async def send_event_list(self, item_list: List[GameEvent]):
         embeds: List[discord.Embed] = []
+        subthread: List[discord.Embed] = []
+        
         for item in item_list:
+            print(item)
             embed = await self.build_embed(item)
             if embed:
-                embeds.append(embed)
+                if embed.title=="ResourceChange":
+                    subthread.append(embed)
+                else:
+                    embeds.append(embed)
+                    if embed.color==0xAC50FE:
+                        subthread.append(embed)
+        thishook=AssetLookup.get_asset("subhook", "urls")
+        for s in subthread:
+            print(s,thishook)
+            try:
+                await web.postMessageAsWebhookWithURL(
+                    thishook,
+                    message_content="This is a redirect",
+                    display_username="Super Earth Event Log",
+                    avatar_url=self.bot.user.avatar.url,
+                    embed=[s],
+                )
+            except Exception as e:
+                await self.bot.send_error(e, "Webhook error")
 
         if not embeds:
             return
@@ -1093,12 +1126,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     await self.bot.send_error(e, "Webhook error")
                     if hook != AssetLookup.get_asset("loghook", "urls"):
                         self.loghook.remove(hook)
-                        # ServerHDProfile.set_all_matching_webhook_to_none(hook)
+
 
     async def build_embed(self, item: GameEvent):
         event_type = item["mode"]
         if event_type == "group":
-            #print("group", len(item["value"]))
+            # print("group", len(item["value"]))
             task = asyncio.create_task(self.batch_events_2(item["value"]))
             return None
 
@@ -1141,6 +1174,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     build_planet_effect(
                         self.apistatus.statics.effectstatic, value.galacticEffectId
                     ),
+                    "added",
+                )
+            elif place == "resources":
+                embed = Embeds.resourceEmbed(
+                    value,
                     "added",
                 )
             elif place == "globalEvents":
@@ -1197,6 +1235,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.globalEventEmbed(value, "ended")
             elif place == "news":
                 embed = Embeds.NewsFeedEmbed(value, "ended")
+            elif place == "resources":
+                embed = Embeds.resourceEmbed(
+                    value,
+                    "removed",
+                )
         elif event_type == "change":
             (info, dump) = value
             if place == "planets" or place == "planetInfo":
@@ -1214,7 +1257,6 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.spaceStationEmbed(info, dump, self.apistatus, "changed")
             elif place == "globalEvents":
                 listv = [k for k in dump.keys()]
-
                 ti = info.titleId32
                 mi = info.messageId32
                 tc, mc = False, 0
@@ -1243,7 +1285,13 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         )
                 else:
                     embed = Embeds.globalEventEmbed(info, "changed", ",".join(listv))
-
+            elif place=="resources":
+                if 'currentValue' in dump and len(list(dump.keys()))==1:
+                    if info.retrieved_at.minute % 15 != 0:
+                        embed = Embeds.resourceEmbed(info, "changed", "")
+                        embed.title="ResourceChange"
+                        return embed
+                embed = Embeds.resourceEmbed(info, "changed", "")
         return embed
 
     @run2.error
@@ -1279,12 +1327,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             lg = [AssetLookup.get_asset("loghook", "urls")]
             for h in hooks:
                 lg.append(h)
+            self.redirect_hook=AssetLookup.get_asset("subhook", "urls")
             self.loghook = lg
         self.get_running = True
         if self.test_with:
             if self.spot >= len(self.test_with):
                 return
-
             lastwar = self.test_with[self.spot - 1]
             now = self.test_with[self.spot]
             events, warstat = await self.apistatus.get_now(lastwar, self.QueueAll, now)
@@ -1297,7 +1345,6 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     batch=501,
                     value=events,
                 )
-
                 await self.QueueAll.put([item])
 
             self.apistatus.warall = warstat

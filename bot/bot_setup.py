@@ -214,7 +214,7 @@ async def on_ready():
         bot.logs.error(str(e), exc_info=e)
         await bot.close()
         raise e
-    gui.gprint("Setup done.")
+    gui.gprint("Setup is done.")
 
 
 import random

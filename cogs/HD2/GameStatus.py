@@ -14,6 +14,7 @@ from .utils import prioritized_string_split
 from discord.utils import format_dt as fdt
 from hd2api import extract_timestamp as et, hdml_parse
 from hd2api.util.utils import set_status_emoji
+
 MAX_ATTEMPT = 3
 
 status_emoji: Dict[str, str] = {
@@ -31,6 +32,7 @@ status_emoji: Dict[str, str] = {
     "req": "<:rec:1274481505611288639>",
     "credits": "<:supercredit:1274728715175067681>",
 }
+
 
 def lmj(directory_path: str):
     """
@@ -64,7 +66,7 @@ class LimitedSizeList(list):
 
     def __init__(self, max_size):
         self.max_size = max_size
-        self.items: List[Union[War, Assignment2, Campaign2]] = []
+        self.items: List[Union[War, Assignment2, Campaign2, GlobalResource]] = []
 
     def add(self, item):
         if len(self.items) >= self.max_size:
@@ -128,6 +130,7 @@ class ApiStatus:
         "war",
         "campaigns",
         "assignments",
+        "resources",
         "planets",
         "dispatches",
         "last_planet_get",
@@ -138,11 +141,11 @@ class ApiStatus:
         "getlock",
         "stations",
         "last_station_time",
-        "deadzone"
+        "deadzone",
     ]
 
     def __init__(self, client: APIConfig = APIConfig(), max_list_size=8, direct=False):
-        
+
         set_status_emoji(status_emoji)
         self.client = client
         self.max_list_size = max_list_size
@@ -150,6 +153,7 @@ class ApiStatus:
         self.war: LimitedSizeList[War] = LimitedSizeList(self.max_list_size)
         self.assignments: Dict[int, LimitedSizeList[Assignment2]] = {}
         self.campaigns: Dict[int, LimitedSizeList[Campaign2]] = {}
+        self.resources: Dict[int, LimitedSizeList[GlobalResource]] = {}
         self.planets: Dict[int, Planet] = {}
         self.dispatches: List[Dispatch] = []
         self.last_planet_get: datetime.datetime = datetime.datetime(2024, 1, 1, 0, 0, 0)
@@ -164,7 +168,7 @@ class ApiStatus:
         self.stations = {}
         self.last_station_time = datetime.datetime(2024, 1, 1, 1, 1, 0)
         self.getlock = asyncio.Lock()
-        self.deadzone=False
+        self.deadzone = False
 
     def to_dict(self):
         return {
@@ -174,6 +178,10 @@ class ApiStatus:
                 k: [item.model_dump(exclude="time_delta") for item in v.items]
                 for k, v in self.assignments.items()
             },
+            "resources": {
+                k: [item.model_dump(exclude="time_delta") for item in v.items]
+                for k, v in self.resources.items()
+            },
             "campaigns": {
                 k: [item.model_dump(exclude="time_delta") for item in v.items]
                 for k, v in self.campaigns.items()
@@ -181,7 +189,7 @@ class ApiStatus:
             "planets": {
                 k: p.model_dump(exclude="time_delta") for k, p in self.planets.items()
             },
-            "stations":{
+            "stations": {
                 k: p.model_dump(exclude="time_delta") for k, p in self.stations.items()
             },
             "dispatches": [d.model_dump(exclude="time_delta") for d in self.dispatches],
@@ -215,6 +223,14 @@ class ApiStatus:
                 campaign_list.push(Campaign2(**item))
             newcks.campaigns[int(k)] = campaign_list
             # print(newcks.campaigns)
+        if "resources" in data:
+            for k, v in data["resources"].items():
+                resource_list = LimitedSizeList(newcks.max_list_size)
+                for item in v:
+                    resource_list.push(GlobalResource(**item))
+                newcks.resources[int(k)] = resource_list
+        else:
+            newcks.resources = {}
         newcks.planets = {int(k): Planet(**v) for k, v in data["planets"].items()}
         newcks.dispatches = [Dispatch(**d) for d in data["dispatches"]]
         if "warstat" in data:
@@ -222,7 +238,9 @@ class ApiStatus:
         if "warall" in data:
             newcks.warall = DiveharderAll(**data["warall"])
         if "stations" in data:
-            newcks.stations={int(k): SpaceStation(**v) for k, v in data["stations"].items()}
+            newcks.stations = {
+                int(k): SpaceStation(**v) for k, v in data["stations"].items()
+            }
         return newcks
 
     def __repr__(self):
@@ -275,17 +293,18 @@ class ApiStatus:
         if (datetime.datetime.now() - self.last_station_time) > datetime.timedelta(
             minutes=15
         ):
-            active_stations=[]
+            active_stations = []
             for s in self.warall.status.spaceStations:
                 print(s)
                 id = s.id32
                 active_stations.append(id)
-                self.stations[id]="READY"
+                self.stations[id] = "READY"
             for k in self.stations.keys():
-                id=int(k)
+                id = int(k)
                 station = await GetApiDirectSpaceStation(id, self.client)
                 self.stations[id] = station
             self.last_station_time = datetime.datetime.now()
+
     async def get_station(self):
         return self.stations
         print(datetime.datetime.now() - self.last_station_time)
@@ -337,6 +356,9 @@ class ApiStatus:
         print(self.assignments, "a2", assignments, "done")
         self.handle_data(assignments, self.assignments, "assignment")
         self.handle_data(campaigns, self.campaigns, "campaign")
+        self.handle_raw_data(
+            self.warall.status.globalResources, self.resources, "Resource"
+        )
         # for l in self.campaigns.values():
         #     camp = l.get_first()
         #     self.planets[camp.planet.index] = camp.planet
@@ -385,7 +407,38 @@ class ApiStatus:
         else:
             key_list = list(storage.keys())
             for k in key_list:
+                print(data_type, f"removing {data_type} {k}")
+                storage.pop(k)
 
+    def handle_raw_data(
+        self,
+        data: List[Union[GlobalResource]],
+        storage: Dict[int, LimitedSizeList],
+        data_type: str,
+    ) -> None:
+        """
+        Handle and update data storage, removing stale data entries.
+
+        Args:
+            data (List[Union[Campaign2,Assignment2]]): The data to be processed and stored.
+            storage (Dict[int, LimitedSizeList]): The storage dictionary where data is kept.
+            data_type (str): The type of the data being handled.
+        """
+        if data is not None:
+            data_ids: Set[int] = set()
+            for item in data:
+                data_ids.add(item.id32)
+                if item.id32 not in storage:
+                    storage[item.id32] = LimitedSizeList(self.max_list_size)
+                storage[item.id32].add(item)
+            key_list = list(storage.keys())
+            for k in key_list:
+                if k not in data_ids:
+                    print(data_type, f"removing {data_type} {k}")
+                    storage.pop(k)
+        else:
+            key_list = list(storage.keys())
+            for k in key_list:
                 print(data_type, f"removing {data_type} {k}")
                 storage.pop(k)
 
