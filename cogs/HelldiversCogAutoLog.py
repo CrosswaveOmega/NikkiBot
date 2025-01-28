@@ -51,7 +51,7 @@ from hd2api import (
 
 from hd2api.constants import faction_names
 from cogs.HD2.maths import maths
-from cogs.HD2.diff_util import process_planet_attacks, GameEvent,event_modes
+from cogs.HD2.diff_util import process_planet_attacks, GameEvent,EventModes
 from utility.manual_load import load_json_with_substitutions
 
 
@@ -139,11 +139,11 @@ class PlanetEvents:
 
     def add_event(self, event: GameEvent, key: str) -> None:
         self.evt.append(event)
-        if event.mode in [event_modes.NEW, event_modes.REMOVE]:
+        if event.mode in [EventModes.NEW, EventModes.REMOVE]:
             self.ret = event["value"].retrieved_at
             if event["place"] == "planetevents":
                 self.planet_event = event["value"]
-        elif event.mode == event_modes.CHANGE:
+        elif event.mode == EventModes.CHANGE:
             self.ret = event["value"][0].retrieved_at
 
         if key not in self.trig:
@@ -205,9 +205,9 @@ class SectorEvents:
 
     def add_event(self, event: GameEvent, key: str) -> None:
         self.evt.append(event)
-        if event.mode in [event_modes.NEW, event_modes.REMOVE]:
+        if event.mode in [EventModes.NEW, EventModes.REMOVE]:
             self.ret = event.value.retrieved_at
-        elif event.mode == event_modes.CHANGE:
+        elif event.mode == EventModes.CHANGE:
             self.ret = event.value[0].retrieved_at
         if key not in self.trig:
             self.trig.append(key)
@@ -223,11 +223,11 @@ class GeneralEvents:
 
     def add_event(self, event: GameEvent, key: str) -> None:
         self.evt.append(event)
-        if event.mode in [event_modes.NEW, event_modes.REMOVE]:
+        if event.mode in [EventModes.NEW, EventModes.REMOVE]:
             self.ret = event.value.retrieved_at
             if event.place == "news":
                 self.hdml += hdml_parse(event.value.message).replace("\n", " ")
-        elif event.mode == event_modes.CHANGE:
+        elif event.mode == EventModes.CHANGE:
             self.ret = event.value[0].retrieved_at
 
         if key not in self.trig:
@@ -275,7 +275,7 @@ class Batch:
             self.planets[planet_name].update_planet(value, place)
 
     def process_event(self, event: GameEvent, apistatus: Any) -> None:
-        mode: event_modes = event.mode
+        mode: EventModes = event.mode
         place: str = event.place
         value: Any = event.value
         planet_name_source: Optional[str] = None
@@ -287,7 +287,7 @@ class Batch:
 
         if place in ["campaign", "planetevents"]:
             va = value
-            if mode == event_modes.CHANGE:
+            if mode == EventModes.CHANGE:
                 va, _ = value
             planet = SimplePlanet.from_index(va.planetIndex)
             # planet = apistatus.planets.get(int(value.planetIndex), None)
@@ -310,7 +310,7 @@ class Batch:
 
         if place in ["station"]:
             va = value
-            if mode == event_modes.CHANGE:
+            if mode == EventModes.CHANGE:
                 va, _ = value
             if va.planetIndex:
                 planet = SimplePlanet.from_index(va.planetIndex)
@@ -330,9 +330,9 @@ class Batch:
 
         self.add_event(event, planet_name_source, key, planet, sector_name)
 
-        if mode == event_modes.CHANGE and place != "sectors":
+        if mode == EventModes.CHANGE and place != "sectors":
             self.update_planet(planet_name_source, value, place)
-        if mode == event_modes.CHANGE and place == "sectors":
+        if mode == EventModes.CHANGE and place == "sectors":
             pass
 
     def format_combo_text(
@@ -489,41 +489,41 @@ class Batch:
         planet: Planet = planet_data.planet
         combinations: List[str] = []
 
-        if "station_change" in trig_list:
+        if "station_EventModes.CHANGE" in trig_list:
             for evt in planet_data.evt:
-                if evt.mode == event_modes.CHANGE and evt.place == "station":
+                if evt.mode == EventModes.CHANGE and evt.place == "station":
                     (info, dump) = evt.value
                     if "planetIndex" in dump:
                         combinations.append("station move")
 
-        if "campaign_new" in trig_list and "planetevents_new" not in trig_list:
+        if "campaign_EventModes.NEW" in trig_list and "planetevents_EventModes.NEW" not in trig_list:
             combinations.append("cstart")
 
-        if self.contains_all_values(trig_list, ["campaign_new", "planetevents_new"]):
+        if self.contains_all_values(trig_list, ["campaign_EventModes.NEW", "planetevents_EventModes.NEW"]):
             if planet_data.invasion_check():
                 combinations.append("invasion start")
             else:
                 combinations.append("defense start")
-        if "campaign_remove" in trig_list and len(trig_list) == 1:
+        if "campaign_EventModes.REMOVE" in trig_list and len(trig_list) == 1:
             combinations.append("cend")
 
-        if self.contains_all_values(trig_list, ["campaign_remove", "planets_change"]):
+        if self.contains_all_values(trig_list, ["campaign_EventModes.REMOVE", "planets_EventModes.CHANGE"]):
             if planet and planet.owner == 1:
                 new, old = planet_data.get_last_planet_owner()
                 if old != new:
                     combinations.append("planet won")
 
         if self.contains_all_values(
-            trig_list, ["campaign_remove", "planetevents_remove", "planets_change"]
+            trig_list, ["campaign_EventModes.REMOVE", "planetevents_EventModes.REMOVE", "planets_EventModes.CHANGE"]
         ):
             if planet and planet.owner != 1:
                 combinations.append("defense lost")
 
         if (
             self.contains_all_values(
-                trig_list, ["campaign_remove", "planetevents_remove"]
+                trig_list, ["campaign_EventModes.REMOVE", "planetevents_EventModes.REMOVE"]
             )
-            and "planets_change" not in trig_list
+            and "planets_EventModes.CHANGE" not in trig_list
         ):
             if planet_data.invasion_check():
                 if (
@@ -536,28 +536,28 @@ class Batch:
                 combinations.append("defense won")
 
         if self.contains_all_values(
-            trig_list, ["campaign_remove", "planetevents_remove", "planets_change"]
+            trig_list, ["campaign_EventModes.REMOVE", "planetevents_EventModes.REMOVE", "planets_EventModes.CHANGE"]
         ):
             if planet and planet.owner == 1:
                 combinations.append("defense won")
 
-        if "planets_change" in trig_list and "campaign_remove" not in trig_list:
+        if "planets_EventModes.CHANGE" in trig_list and "campaign_EventModes.REMOVE" not in trig_list:
             if planet and planet.owner != 1:
                 new, old = planet_data.get_last_planet_owner()
                 if old != new:
                     combinations.append("planet flip")
 
-        if "planets_change" in trig_list:
+        if "planets_EventModes.CHANGE" in trig_list:
             pass
             # combinations.append("pcheck")
 
         if any(
-            value in trig_list for value in ["planetInfo_change"]
-        ) and self.is_new_link(planet, planet_data):
+            value in trig_list for value in ["planetInfo_EventModes.CHANGE"]
+        ) and self.is_anew_link(planet, planet_data):
             combinations.append("newlink")
 
         if any(
-            value in trig_list for value in ["planetInfo_change"]
+            value in trig_list for value in ["planetInfo_EventModes.CHANGE"]
         ) and self.is_destroyed_link(planet, planet_data):
             combinations.append("destroylink")
 
@@ -567,7 +567,7 @@ class Batch:
         self, trig_list: List[str], planet_data: SectorEvents
     ) -> Optional[List[str]]:
         combinations: List[str] = []
-        if "sectors_change" in trig_list:
+        if "sectors_EventModes.CHANGE" in trig_list:
             combinations.append("sector_state")
 
         return combinations if combinations else None
@@ -576,12 +576,12 @@ class Batch:
         self, trig_list: List[str], general: GeneralEvents
     ) -> Optional[List[str]]:
         combinations: List[str] = []
-        if "news_new" in trig_list:
+        if "news_EventModes.NEW" in trig_list:
             combinations.append("dispatch new")
 
         return combinations if combinations else None
 
-    def is_new_link(self, planet: Planet, target_planet: PlanetEvents) -> bool:
+    def is_anew_link(self, planet: Planet, target_planet: PlanetEvents) -> bool:
         if target_planet:
             new, old = target_planet.get_links()
             if new:
@@ -739,7 +739,7 @@ class Embeds:
             title=f"Planet Attacks",
             description="\n".join([f"* {s}" for s in strings]),
             timestamp=timestamp,
-            color=0x707CC8 if mode == event_modes.ADDED else 0xC08888,
+            color=0x707CC8 if mode == EventModes.ADDED else 0xC08888,
         )
         emb.set_author(name=f"Planet Attack {mode}.")
         emb.set_footer(text=f"{custom_strftime(timestamp)}")
@@ -1022,7 +1022,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         """Stitch multiple events together into one."""
 
         for event in events:
+
             batch_id = event["batch"]
+            print(batch_id)
             if batch_id not in self.batches:
                 self.batches[batch_id] = Batch(batch_id)
             self.batches[batch_id].process_event(event, self.apistatus)
@@ -1131,7 +1133,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
     async def build_embed(self, item: GameEvent):
         event_type = item.mode
-        if event_type == event_modes.GROUP:
+        if event_type == EventModes.GROUP:
             #Schedule a grouping task.
             task = asyncio.create_task(self.batch_events_2(item["value"]))
             return None
@@ -1146,12 +1148,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     item, self.apistatus.planets, item.mode
                 )
                 return embed
-        if event_type == event_modes.DEADZONE:
+        if event_type == EventModes.DEADZONE:
             embed = Embeds.deadzoneWarningEmbed(
                 value,
                 "started",
             )
-        if event_type == event_modes.NEW:
+        if event_type == EventModes.NEW:
             if place == "campaign":
                 embed = Embeds.campaignLogEmbed(
                     value,
@@ -1197,7 +1199,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.globalEventEmbed(value, "started")
             elif place == "news":
                 embed = Embeds.NewsFeedEmbed(value, "started")
-        elif event_type == event_modes.REMOVE:
+        elif event_type == EventModes.REMOVE:
             if place == "campaign":
                 embed = Embeds.campaignLogEmbed(
                     value,
@@ -1241,8 +1243,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     value,
                     "removed",
                 )
-        elif event_type == event_modes.CHANGE:
-            print("IS_CHANGE")
+        elif event_type == EventModes.CHANGE:
+            print("IS_EventModes.CHANGE")
             (info, dump) = value
             if place == "planets" or place == "planetInfo":
                 planet = self.apistatus.planets.get(int(info.index), None)
@@ -1342,7 +1344,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             self.spot += 1
             if events:
                 item = GameEvent(
-                    mode=event_modes.GROUP,
+                    mode=EventModes.GROUP,
                     place="GROUP",
                     batch=501,
                     value=events,
@@ -1356,7 +1358,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             )
             if events:
                 item = GameEvent(
-                    mode=event_modes.GROUP,
+                    mode=EventModes.GROUP,
                     place="GROUP",
                     batch=501,
                     value=events,

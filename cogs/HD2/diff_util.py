@@ -15,7 +15,7 @@ import asyncio
 import random
 
 
-class event_modes(Enum):
+class EventModes(Enum):
     NEW = 1
     CHANGE = 2
     REMOVE = 3
@@ -33,7 +33,7 @@ class GameEvent(BaseApiModel):
 
     """
 
-    mode: Optional[event_modes] = Field(alias="mode", default=None)
+    mode: Optional[EventModes] = Field(alias="mode", default=None)
 
     place: Optional[str] = Field(alias="place", default=None)
 
@@ -183,7 +183,7 @@ async def process_planet_events(
         oc = await check_compare_value(key, event[key], target)
         if not oc:
             item = GameEvent(
-                mode=event_modes.NEW, place=place, batch=batch, value=event, game_time=game_time
+                mode=EventModes.NEW, place=place, batch=batch, value=event, game_time=game_time
             )
             pushed_items.append(item)
             new.append(item)
@@ -191,7 +191,7 @@ async def process_planet_events(
             differ = await get_differing_fields(oc, event, to_ignore=exclude)
             if differ:
                 item = GameEvent(
-                    mode=event_modes.CHANGE,
+                    mode=EventModes.CHANGE,
                     place=place,
                     batch=batch,
                     value=(event, differ),
@@ -203,7 +203,7 @@ async def process_planet_events(
     for event in target:
         if not await check_compare_value(key, event[key], source):
             item = GameEvent(
-                mode=event_modes.REMOVE,
+                mode=EventModes.REMOVE,
                 place=place,
                 batch=batch,
                 value=event,
@@ -231,8 +231,8 @@ async def process_planet_attacks(
     for event in source:
         oc = await check_compare_value_list(keys, [event[key] for key in keys], target)
         if not oc:
-            print(place, event_modes.NEW, event)
-            item = GameEvent(mode=event_modes.NEW, place=place, batch=batch, value=event)
+            print(place, EventModes.NEW, event)
+            item = GameEvent(mode=EventModes.NEW, place=place, batch=batch, value=event)
             newlist.append(item)
             pushed_items.append(item)
             # await QueueAll.put(item)
@@ -242,7 +242,7 @@ async def process_planet_attacks(
             keys, [event[key] for key in keys], source
         ):
             item = GameEvent(
-                mode=event_modes.REMOVE,
+                mode=EventModes.REMOVE,
                 place=place,
                 batch=batch,
                 value=event,
@@ -255,7 +255,7 @@ async def process_planet_attacks(
     if place == "planetAttacks":
         if newlist:
             newitem = GameEvent(
-                mode=event_modes.ADDED,
+                mode=EventModes.ADDED,
                 place=place,
                 batch=batch,
                 value=newlist,
@@ -265,7 +265,7 @@ async def process_planet_attacks(
             await QueueAll.put([newitem])
         if oldlist:
             olditem = GameEvent(
-                mode=event_modes.REMOVED,
+                mode=EventModes.REMOVED,
                 place=place,
                 batch=batch,
                 value=oldlist,
@@ -299,7 +299,7 @@ async def detect_loggable_changes(
     superlist = []
     if old.status.time == new.status.time:
         newitem = GameEvent(
-            mode=event_modes.DEADZONE, place=event_modes.DEADZONE, batch=batch, value=new.status
+            mode=EventModes.DEADZONE, place=EventModes.DEADZONE, batch=batch, value=new.status
         )
 
         await QueueAll.put([newitem])
@@ -326,7 +326,7 @@ async def detect_loggable_changes(
     )
     if rawout:
         item = GameEvent(
-            mode=event_modes.CHANGE,
+            mode=EventModes.CHANGE,
             place="stats_raw",
             batch=batch,
             value=(new.status, rawout),
@@ -450,7 +450,7 @@ async def detect_loggable_changes(
         )
         if infoout:
             item = GameEvent(
-                mode=event_modes.CHANGE,
+                mode=EventModes.CHANGE,
                 place="info_raw",
                 batch=batch,
                 value=(new.war_info, infoout),
@@ -525,7 +525,7 @@ async def detect_loggable_changes_planet(
     output["gstate"] = [j for j in output["gstate"].values()]
     await QueueAll.put(
         GameEvent(
-            mode=event_modes.DATA, place="planets", batch=batch, value=output, game_time=gametime
+            mode=EventModes.DATA, place="planets", batch=batch, value=output, game_time=gametime
         )
     )
 
