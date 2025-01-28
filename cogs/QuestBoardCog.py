@@ -175,6 +175,23 @@ You can set the target expiration date by saying "X days Y hours" in your messag
         except Exception as e:
             await self.bot.send_error(e, "Thread create error.")
 
+    async def create_thread_expire_message(self,string):
+        '''Extract the days and hours from a string, and return a formatted timestamp.'''
+        pattern = r"(?:(\d+)\s*d(?:ays?)?)?\s*(?:(\d+)\s*h(?:ours?)?)?"
+        match = re.search(pattern, string)
+        if match:
+            days = match.group(1) or 0
+            hours = match.group(2) or 0
+            if days == 0 and hours == 0:
+                days=7
+                hours=0
+            now = datetime.datetime.now()
+            future_timestamp = now + datetime.timedelta(
+                days=int(days), hours=int(hours)
+            )
+            return discord.utils.format_dt(future_timestamp,'R')
+        return ""
+
     async def thread_cache_helper(self, thread):
         if not self.cached:
             allpairs = await Questboard.get_id_channel_id_pairs()
@@ -182,25 +199,20 @@ You can set the target expiration date by saying "X days Y hours" in your messag
                 self.cached[i] = v
         if thread.guild.id in self.cached:
             if thread.parent.id == self.cached[i]:
-                pattern = r"(?:(\d+)\s*d(?:ays?)?)?\s*(?:(\d+)\s*h(?:ours?)?)?"
-                starter=thread.starter_message
-                if not thread.starter_message:
-                    print("No message.")
-                    async for message in thread.history(limit=1, oldest_first=True):
-                        starter= message
-                    
-                match = re.search(pattern, starter.content)
-                if match:
-                    days = match.group(1) or 0
-                    hours = match.group(2) or 0
-                    if days == 0 and hours == 0:
-                        now = datetime.datetime.now()
-                        future_timestamp = now + datetime.timedelta(
-                            days=int(days), hours=int(hours)
-                        )
-                        await thread.send(
-                            f"Quest expires in {discord.utils.format_dt(future_timestamp,'R')}"
-                        )
+                
+                async for message in thread.history(limit=1, oldest_first=True):
+                    starter= message
+                
+                dtformat=await self.create_thread_expire_message(starter.content)
+                if not dtformat:
+                    await thread.send(
+                        "Quests are not supposed to last forever!"
+                    )
+                    return
+                   
+                await thread.send(
+                    f"Quest expires in {dtformat}"
+                )
 
     @commands.has_permissions(manage_guild=True)
     @questmanage.command(
@@ -320,6 +332,38 @@ You can set the target expiration date by saying "X days Y hours" in your messag
     async def quest(self, ctx):
         """Quest management commands."""
         await ctx.send("Available subcommands tbd...")
+
+    @quest.command(
+        name="set_deadline",
+        brief="Set the deadline by specifying days and hours in format '[NUM]d[NUM]h'",
+    )
+    @app_commands.describe(
+        duration="How long this quest should last, in format '[NUM]d[NUM]h'",
+    )
+    async def make_expiry(self, ctx: commands.Context, duration: str):
+        """End the quest and give a reward."""
+        questboard, questchannel = await self.questboard_command_checks(ctx)
+        if not questboard or not questchannel:
+            return
+
+        post: discord.Thread = ctx.channel
+
+        if ctx.author.id != post.owner_id:
+            await ctx.send("You are not the post owner.", ephemeral=True)
+            return
+        
+        dtformat=await self.create_thread_expire_message(duration)
+        if not dtformat:
+            await ctx.send(
+                "Quests are not supposed to last forever!"
+            )
+            return
+            
+        await ctx.send(
+            f"Quest expires in {dtformat}")
+
+
+        
 
     @quest.command(
         name="finish",
