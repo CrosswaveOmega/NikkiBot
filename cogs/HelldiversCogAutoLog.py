@@ -51,7 +51,7 @@ from hd2api import (
 
 from hd2api.constants import faction_names
 from cogs.HD2.maths import maths
-from cogs.HD2.diff_util import process_planet_attacks, GameEvent
+from cogs.HD2.diff_util import process_planet_attacks, GameEvent,event_modes
 from utility.manual_load import load_json_with_substitutions
 
 
@@ -139,11 +139,11 @@ class PlanetEvents:
 
     def add_event(self, event: GameEvent, key: str) -> None:
         self.evt.append(event)
-        if event["mode"] in ["new", "remove"]:
+        if event.mode in [event_modes.NEW, event_modes.REMOVE]:
             self.ret = event["value"].retrieved_at
             if event["place"] == "planetevents":
                 self.planet_event = event["value"]
-        elif event["mode"] == "change":
+        elif event.mode == event_modes.CHANGE:
             self.ret = event["value"][0].retrieved_at
 
         if key not in self.trig:
@@ -205,9 +205,9 @@ class SectorEvents:
 
     def add_event(self, event: GameEvent, key: str) -> None:
         self.evt.append(event)
-        if event.mode in ["new", "remove"]:
+        if event.mode in [event_modes.NEW, event_modes.REMOVE]:
             self.ret = event.value.retrieved_at
-        elif event.mode == "change":
+        elif event.mode == event_modes.CHANGE:
             self.ret = event.value[0].retrieved_at
         if key not in self.trig:
             self.trig.append(key)
@@ -223,11 +223,11 @@ class GeneralEvents:
 
     def add_event(self, event: GameEvent, key: str) -> None:
         self.evt.append(event)
-        if event.mode in ["new", "remove"]:
+        if event.mode in [event_modes.NEW, event_modes.REMOVE]:
             self.ret = event.value.retrieved_at
             if event.place == "news":
                 self.hdml += hdml_parse(event.value.message).replace("\n", " ")
-        elif event.mode == "change":
+        elif event.mode == event_modes.CHANGE:
             self.ret = event.value[0].retrieved_at
 
         if key not in self.trig:
@@ -275,7 +275,7 @@ class Batch:
             self.planets[planet_name].update_planet(value, place)
 
     def process_event(self, event: GameEvent, apistatus: Any) -> None:
-        mode: str = event.mode
+        mode: event_modes = event.mode
         place: str = event.place
         value: Any = event.value
         planet_name_source: Optional[str] = None
@@ -287,7 +287,7 @@ class Batch:
 
         if place in ["campaign", "planetevents"]:
             va = value
-            if mode == "change":
+            if mode == event_modes.CHANGE:
                 va, _ = value
             planet = SimplePlanet.from_index(va.planetIndex)
             # planet = apistatus.planets.get(int(value.planetIndex), None)
@@ -310,7 +310,7 @@ class Batch:
 
         if place in ["station"]:
             va = value
-            if mode == "change":
+            if mode == event_modes.CHANGE:
                 va, _ = value
             if va.planetIndex:
                 planet = SimplePlanet.from_index(va.planetIndex)
@@ -330,9 +330,9 @@ class Batch:
 
         self.add_event(event, planet_name_source, key, planet, sector_name)
 
-        if mode == "change" and place != "sectors":
+        if mode == event_modes.CHANGE and place != "sectors":
             self.update_planet(planet_name_source, value, place)
-        if mode == "change" and place == "sectors":
+        if mode == event_modes.CHANGE and place == "sectors":
             pass
 
     def format_combo_text(
@@ -491,7 +491,7 @@ class Batch:
 
         if "station_change" in trig_list:
             for evt in planet_data.evt:
-                if evt.mode == "change" and evt.place == "station":
+                if evt.mode == event_modes.CHANGE and evt.place == "station":
                     (info, dump) = evt.value
                     if "planetIndex" in dump:
                         combinations.append("station move")
@@ -739,7 +739,7 @@ class Embeds:
             title=f"Planet Attacks",
             description="\n".join([f"* {s}" for s in strings]),
             timestamp=timestamp,
-            color=0x707CC8 if mode == "added" else 0xC08888,
+            color=0x707CC8 if mode == event_modes.ADDED else 0xC08888,
         )
         emb.set_author(name=f"Planet Attack {mode}.")
         emb.set_footer(text=f"{custom_strftime(timestamp)}")
@@ -986,6 +986,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             nowd.hour,
             int(nowd.minute // 2) * 2,
         )
+        #Rule for grabbing from api.
         robj2 = rrule(freq=MINUTELY, interval=1, dtstart=st)
         self.QueueAll = asyncio.Queue()
         self.EventQueue = asyncio.Queue()
@@ -1081,18 +1082,18 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     if embed.color==0xAC50FE:
                         subthread.append(embed)
         thishook=AssetLookup.get_asset("subhook", "urls")
-        for s in subthread:
-            print(s,thishook)
-            try:
-                await web.postMessageAsWebhookWithURL(
-                    thishook,
-                    message_content="This is a redirect",
-                    display_username="Super Earth Event Log",
-                    avatar_url=self.bot.user.avatar.url,
-                    embed=[s],
-                )
-            except Exception as e:
-                await self.bot.send_error(e, "Webhook error")
+        if thishook:
+            for s in subthread:
+                try:
+                    await web.postMessageAsWebhookWithURL(
+                        thishook,
+                        message_content="This is a redirect",
+                        display_username="Super Earth Event Log",
+                        avatar_url=self.bot.user.avatar.url,
+                        embed=[s],
+                    )
+                except Exception as e:
+                    await self.bot.send_error(e, "Webhook error")
 
         if not embeds:
             return
@@ -1129,9 +1130,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
 
     async def build_embed(self, item: GameEvent):
-        event_type = item["mode"]
-        if event_type == "group":
-            # print("group", len(item["value"]))
+        event_type = item.mode
+        if event_type == event_modes.GROUP:
+            #Schedule a grouping task.
             task = asyncio.create_task(self.batch_events_2(item["value"]))
             return None
 
@@ -1145,12 +1146,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     item, self.apistatus.planets, item.mode
                 )
                 return embed
-        if event_type == "deadzone":
+        if event_type == event_modes.DEADZONE:
             embed = Embeds.deadzoneWarningEmbed(
                 value,
                 "started",
             )
-        if event_type == "new":
+        if event_type == event_modes.NEW:
             if place == "campaign":
                 embed = Embeds.campaignLogEmbed(
                     value,
@@ -1185,18 +1186,18 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 ti = value.titleId32
                 mi = value.messageId32
                 tc, mc = False, False
-                if value.title and ti != None:
+                if value.title and ti is not None:
                     if self.titleids.get(ti, None) != value.title:
                         self.titleids[ti] = value.title
                         tc = True
-                if value.message and mi != None:
+                if value.message and mi is not None:
                     if self.messageids.get(mi, None) != value.message:
                         self.messageids[mi] = value.message
                         mc = True
                 embed = Embeds.globalEventEmbed(value, "started")
             elif place == "news":
                 embed = Embeds.NewsFeedEmbed(value, "started")
-        elif event_type == "remove":
+        elif event_type == event_modes.REMOVE:
             if place == "campaign":
                 embed = Embeds.campaignLogEmbed(
                     value,
@@ -1240,7 +1241,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     value,
                     "removed",
                 )
-        elif event_type == "change":
+        elif event_type == event_modes.CHANGE:
+            print("IS_CHANGE")
             (info, dump) = value
             if place == "planets" or place == "planetInfo":
                 planet = self.apistatus.planets.get(int(info.index), None)
@@ -1340,7 +1342,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             self.spot += 1
             if events:
                 item = GameEvent(
-                    mode="group",
+                    mode=event_modes.GROUP,
                     place="GROUP",
                     batch=501,
                     value=events,
@@ -1354,7 +1356,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             )
             if events:
                 item = GameEvent(
-                    mode="group",
+                    mode=event_modes.GROUP,
                     place="GROUP",
                     batch=501,
                     value=events,
