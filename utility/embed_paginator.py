@@ -12,7 +12,7 @@ import gui
 
 
 class PageSelect(discord.ui.Select):
-    """Simple Dropdown Menu that"""
+    """Simple Dropdown Menu"""
 
     def __init__(self, option_pass, page):
         options = option_pass

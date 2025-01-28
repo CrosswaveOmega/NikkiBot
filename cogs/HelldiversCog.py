@@ -1,37 +1,28 @@
 import asyncio
 import io
-import json
-from typing import Literal, Dict, List
+from typing import Literal
 from assetloader import AssetLookup
-import gui
 import discord
 import random
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from discord import app_commands
 import importlib
 
-from dateutil.rrule import MINUTELY, DAILY, SU, WEEKLY, rrule
-from discord.ext import commands, tasks
+from dateutil.rrule import MINUTELY, DAILY, rrule
+from discord.ext import commands
 
 from discord.app_commands import Choice
 
-from utility import MessageTemplates, urltomessage, prioritized_string_split
+from utility import MessageTemplates, urltomessage
 from bot import (
     Guild_Task_Functions,
-    StatusEditMessage,
     TC_Cog_Mixin,
     TCBot,
     TCGuildTask,
 )
 
 # import datetime
-from bot import (
-    TCBot,
-    TC_Cog_Mixin,
-)
-from discord.ext import commands
 from .HD2.db import ServerHDProfile
-import re
 import cogs.HD2 as hd2
 import hd2api
 from utility.embed_paginator import pages_of_embeds, pages_of_embeds_2
@@ -41,7 +32,7 @@ from bot.Tasks import TCTask, TCTaskManager
 
 from hd2api.builders import get_time_dh
 
-from hd2api import extract_timestamp as et, hdml_parse
+from hd2api import hdml_parse
 from discord.utils import format_dt as fdt
 
 
@@ -54,7 +45,7 @@ class HD2OverviewView(discord.ui.View):
     async def callback(self, interaction, button):
         user = interaction.user
         label = button.label
-        if not str(user.id) in self.my_count:
+        if str(user.id) not in self.my_count:
             self.my_count[str(user.id)] = 0
         self.my_count[str(user.id)] += 1
         await interaction.response.send_message(
@@ -77,7 +68,7 @@ class HD2OverviewView(discord.ui.View):
     async def red(self, interaction: discord.Interaction, button: discord.ui.Button):
         this, last = self.cog.apistatus.war.get_first_change()
         await interaction.response.send_message(
-            f"Embed",
+            "Embed",
             embed=(hd2.create_war_embed(self.cog.apistatus)),
             ephemeral=True,
         )
@@ -181,7 +172,7 @@ class HD2OverviewView(discord.ui.View):
     )
     async def map(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_message(
-            f"https://helldiverscompanion.com/",
+            "https://helldiverscompanion.com/",
             ephemeral=True,
         )
         # await self.callback(interaction, button)
@@ -318,7 +309,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             await asyncio.gather(asyncio.to_thread(self.draw_img), asyncio.sleep(1))
 
         except Exception as e:
-            await self.bot.send_error(e, f"Message update cleanup error.")
+            await self.bot.send_error(e, "Message update cleanup error.")
             # gui.gprint(str(e))
 
     async def gtask_update(self, source_message: discord.Message = None):
@@ -353,7 +344,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 return "OK"
         except Exception as e:
             er = MessageTemplates.get_error_embed(
-                title=f"Error with AUTO", description=f"{str(e)}"
+                title="Error with AUTO", description=f"{str(e)}"
             )
             await source_message.channel.send(embed=er)
             raise e
@@ -373,7 +364,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 return "OK"
         except Exception as e:
             er = MessageTemplates.get_error_embed(
-                title=f"Error with AUTO", description=f"{str(e)}"
+                title="Error with AUTO", description=f"{str(e)}"
             )
             await source_message.channel.send(embed=er)
             raise e
@@ -511,7 +502,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             )
             new.to_task(ctx.bot)
 
-            result = f"Overview message set.  every 15 minutes, this message will update with the latest galactic status.  Please don't delete it unless you want to stop."
+            result = "Overview message set.  every 15 minutes, this message will update with the latest galactic status.  Please don't delete it unless you want to stop."
             await ctx.send(result)
         else:
             old.target_channel_id = autochannel.id
@@ -558,7 +549,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             )
             new.to_task(ctx.bot)
 
-            result = f"Overview message set.  every DAY, this message will update with the latest galactic status.  Please don't delete it unless you want to stop."
+            result = "Overview message set.  every DAY, this message will update with the latest galactic status.  Please don't delete it unless you want to stop."
             await ctx.send(result)
         else:
             old.target_channel_id = autochannel.id
