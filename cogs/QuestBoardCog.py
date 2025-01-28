@@ -183,9 +183,13 @@ You can set the target expiration date by saying "X days Y hours" in your messag
         if thread.guild.id in self.cached:
             if thread.parent.id == self.cached[i]:
                 pattern = r"(?:(\d+)\s*d(?:ays?)?)?\s*(?:(\d+)\s*h(?:ours?)?)?"
+                starter=thread.starter_message
                 if not thread.starter_message:
                     print("No message.")
-                match = re.search(pattern, thread.starter_message)
+                    async for message in thread.history(limit=1, oldest_first=True):
+                        starter= message
+                    
+                match = re.search(pattern, starter.content)
                 if match:
                     days = match.group(1) or 0
                     hours = match.group(2) or 0
