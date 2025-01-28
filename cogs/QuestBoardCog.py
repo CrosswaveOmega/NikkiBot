@@ -206,13 +206,11 @@ You can set the target expiration date by saying "X days Y hours" in your messag
                 dtformat=await self.create_thread_expire_message(starter.content)
                 if not dtformat:
                     await thread.send(
-                        "Quests are not supposed to last forever!"
+                        "Quests are not supposed to last forever! Please set a deadline with `/quest set_deadline duration: 5d6h`"
                     )
                     return
                    
-                await thread.send(
-                    f"Quest expires in {dtformat}"
-                )
+                await thread.send(f"**This quest will expire {dtformat}!**")
 
     @commands.has_permissions(manage_guild=True)
     @questmanage.command(
@@ -359,8 +357,7 @@ You can set the target expiration date by saying "X days Y hours" in your messag
             )
             return
             
-        await ctx.send(
-            f"Quest expires in {dtformat}")
+        await ctx.send(f"**This quest will expire {dtformat}!**")
 
 
         
