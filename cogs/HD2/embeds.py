@@ -458,7 +458,7 @@ def campaign_view(
         # GET RATE OF CHANGE
         count = max(len(changes),1)
         avg_value = (
-            sum(res.currentValue for res in list if res.currentValue is not None) // count
+            sum(res.currentValue for res in changes if res.currentValue is not None) // count
         )
         avg_time = (
             sum(
