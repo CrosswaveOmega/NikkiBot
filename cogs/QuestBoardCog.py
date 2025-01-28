@@ -356,7 +356,7 @@ You can set the target expiration date by saying "X days Y hours" in your messag
         await QuestLeaderboard.update_user_score(
             ctx.guild.id,
             user_id=toreward.id,
-            score=100 * scoremod["score"],
+            score=int(100 * scoremod["score"]),
             thank_count=1,
             quests_participated=1,
         )
@@ -430,11 +430,12 @@ You can set the target expiration date by saying "X days Y hours" in your messag
                 return
 
         scoremod = await self.get_role_score_dict(ctx)
+        await ctx.send(f"{scoremod}", ephemeral=True)
 
         await QuestLeaderboard.update_user_score(
             ctx.guild.id,
             user_id=toreward.id,
-            score=25 * scoremod["kudos"],
+            score=int(25 * scoremod["kudos"]),
             thank_count=0,
             quests_participated=0,
         )
