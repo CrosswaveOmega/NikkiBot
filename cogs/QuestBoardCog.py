@@ -100,7 +100,8 @@ class QuestBoardCog(commands.Cog):
             return
         outv=await QuestRoleConfig.get_all_role_specials_for_guild(ctx.guild.id)
         for i, v in outv.items():
-            await ctx.send(f"Role id{i}, val:{v}")
+            role=ctx.guild.get_role(i)
+            await ctx.send(f"Role id:{i}, name:{role.name} val:{v}")
 
 
         
