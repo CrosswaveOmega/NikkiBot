@@ -198,7 +198,7 @@ You can set the target expiration date by saying "X days Y hours" in your messag
             for i, v in allpairs:
                 self.cached[i] = v
         if thread.guild.id in self.cached:
-            if thread.parent.id == self.cached[i]:
+            if thread.parent.id == self.cached[thread.guild.id]:
                 
                 async for message in thread.history(limit=1, oldest_first=True):
                     starter= message
