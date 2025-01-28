@@ -454,12 +454,31 @@ def campaign_view(
     emb0.description += "\n"
     for k, list in stat.resources.items():
         r, c = list.get_change_from(15)
+        changes = list.get_changes()
+        # GET RATE OF CHANGE
+        count = max(len(changes),1)
+        avg_value = (
+            sum(res.currentValue for res in list if res.currentValue is not None) // count
+        )
+        avg_time = (
+            sum(
+                res.time_delta.total_seconds()
+                for res in list
+                if res.time_delta is not None
+            )
+            // count
+        )
+        rate=0
+        if avg_time:
+            rate=avg_value/avg_time
         cng = r - c
-        outstring = f"{r.id32}:[`{r.currentValue}({cng.currentValue})/{r.maxValue}`,flags=`{r.flags}`]\n"
+        outstring = f"{r.id32}:[`{r.currentValue}({cng.currentValue})/{r.maxValue}`,flags=`{r.flags}`] `Rate:{rate}`\n"
         emb0.description += outstring
 
     emb0.timestamp = discord.utils.utcnow()  # Set timestamp
     return embs
+
+
 
 
 def generate_tactical_action_summary(stat, action: TacticalAction) -> str:
