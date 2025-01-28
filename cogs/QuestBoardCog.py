@@ -90,6 +90,22 @@ class QuestBoardCog(commands.Cog):
 
     @commands.has_permissions(manage_guild=True)
     @questmanage.command()
+    async def status(
+        self, ctx: commands.Context
+    ):
+        """Add a quest boardto the server."""
+        existing_questboard = await Questboard.get_questboard(ctx.guild.id)
+        if not existing_questboard:
+            await ctx.send("Questboard does not exist for this server.")
+            return
+        outv=await QuestRoleConfig.get_all_role_specials_for_guild(ctx.guild.id)
+        for i, v in outv.items():
+            await ctx.send(f"Role id{i}, val:{v}")
+
+
+        
+    @commands.has_permissions(manage_guild=True)
+    @questmanage.command()
     async def add(
         self, ctx: commands.Context, channel: discord.ForumChannel, threshold: int
     ):
@@ -239,7 +255,7 @@ You can set the target expiration date by saying "X days Y hours" in your messag
                 await QuestRoleConfig.get_all_role_specials_for_guild(guild.id)
             )
 
-            await ctx.send("Added modification for role [X]", ephemeral=True)
+            await ctx.send(f"Added modification for role {role_obj.name}", ephemeral=True)
             pass
         else:
             await ctx.send("No role found with that name!")
