@@ -463,7 +463,7 @@ def campaign_view(
         avg_time = (
             sum(
                 res.time_delta.total_seconds()
-                for res in list
+                for res in changes
                 if res.time_delta is not None
             )
             // count
