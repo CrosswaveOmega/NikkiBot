@@ -430,8 +430,10 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
     )
     async def get_resource_graph(
         self,
-        ctx: commands.Context,
+        interaction: discord.Interaction,
     ):
+    
+        ctx: commands.Context = await self.bot.get_context(interaction)
         df5 = pd.read_csv('funny_number_track.csv')
 
         df_groupeds = df5.groupby('timestamp', group_keys=False).apply(lambda x: x.to_dict(orient='records')[0]).reset_index()
