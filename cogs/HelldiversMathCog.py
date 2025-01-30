@@ -22,6 +22,10 @@ from bot import (
 from typing import *
 from utility import load_json_with_substitutions
 from utility.globalfunctions import seconds_to_time_string
+import pandas as pd
+import numpy as np
+from matplotlib.font_manager import FontProperties
+import matplotlib.pyplot as plt
 
 mode = Literal["health", "lib"]
 
@@ -419,6 +423,49 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         text = await self.get_gwar_state(ctx, "OK.")
         embed = discord.Embed(description=text[:4096])
         await ctx.send(embed=embed)
+
+    @calc.command(
+        name="resource_graph",
+        description="get a graph of each resource over time.",
+    )
+    async def get_resource_graph(
+        self,
+        ctx: commands.Context,
+    ):
+        df5 = pd.read_csv('funny_number_track.csv')
+
+        df_groupeds = df5.groupby('timestamp', group_keys=False).apply(lambda x: x.to_dict(orient='records')[0]).reset_index()
+        df25= df_groupeds[0]
+        df25 = pd.DataFrame(df_groupeds[0].tolist())
+
+        terminal_font = FontProperties(
+            fname=r"./assets/ChakraPetch-SemiBold.ttf"
+        )  
+
+        XE = df25['timestamp'].apply(lambda x: datetime.datetime.fromtimestamp(x))  # Format timestamps to show actual time
+        YE = df25['value']
+        plt.figure(figsize=(50, 12), facecolor="black")
+        plt.xticks(color="white", fontproperties=terminal_font)
+        plt.yticks(color="white", fontproperties=terminal_font)
+        plt.grid(True, color='gray', linestyle='--', linewidth=0.5)  # Added grid ticks
+        ax = plt.gca()
+        ax.set_facecolor("black")
+        plt.plot(XE, YE)
+        plt.ylabel('Current',color="white")
+        plt.xlabel('Time',color="white")
+        plt.title("Tracking the gravity number.",color="white")
+
+
+        # Customize the spines to be white
+        ax.spines["bottom"].set_color("white")
+        ax.spines["left"].set_color("white")
+        ax.spines["top"].set_color("white")
+        ax.spines["right"].set_color("white")
+
+        plt.savefig('saveData/graph1.png')
+        await ctx.send(file=discord.File('saveData/graph1.png'),ephemeral=True)
+
+        
 
 
 @app_commands.allowed_installs(guilds=False, users=True)
