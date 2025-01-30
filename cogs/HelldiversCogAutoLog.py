@@ -1292,9 +1292,10 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             elif place=="resources":
                 if 'currentValue' in dump and len(list(dump.keys()))==1:
                     if info.retrieved_at.minute % 15 != 0:
-                        embed = Embeds.resourceEmbed(info, "changed", "")
-                        embed.title="ResourceChange"
-                        return embed
+                        return None
+                    embed = Embeds.resourceEmbed(info, "changed", "")
+                    embed.title="ResourceChange"
+                    return embed
                 embed = Embeds.resourceEmbed(info, "changed", "")
         return embed
 
