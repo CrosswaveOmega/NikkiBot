@@ -721,6 +721,11 @@ class Embeds:
         atks: List[GameEvent], planets: Dict[int, Planet], mode="started"
     ):
         strings = []
+        if mode==EventModes.ADDED:
+            mode="added"
+        elif mode==EventModes.REMOVED:
+            mode="removed"
+        
         timestamp = discord.utils.utcnow()
         for atkv in atks.value:
             atk = atkv.value
