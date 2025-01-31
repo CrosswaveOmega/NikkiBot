@@ -560,6 +560,28 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             result = f"Changed the regular update channel to <#{autochannel.id}>"
             await ctx.send(result)
 
+    
+    @pcs.command(
+        name="unsubscribe_for_maps", description="Unsubscribe from daily war map gifs."
+    )
+    async def map_unsubscribe(self, interaction: discord.Interaction):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+
+        profile = ServerHDProfile.get_or_new(ctx.guild.id)
+        guild = ctx.guild
+        task_name = "WARSTATUS"
+        old = TCGuildTask.get(guild.id, task_name)
+        if not old:
+            result = "It doesn't look like you're subscribed to the daily galactic war maps."
+            await ctx.send(result)
+        else:
+            TCGuildTask.remove_guild_task(ctx.guild.id,task_name)
+
+            self.bot.database.commit()
+            result = f"Unsubscribed to daily galactic war maps."
+            await ctx.send(result)
+
+
     @pcs.command(
         name="real_time_log_subscribe", description="Subscribe to the real time log."
     )
