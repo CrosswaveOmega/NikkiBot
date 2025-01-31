@@ -500,7 +500,7 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         df25["segment"] = df25["is_transition"].cumsum()  # Group by segments
 
         # Filter out transitions
-        df25_no_transitions = df25[df25["is_transition"] is False]
+        df25_no_transitions = df25[df25["is_transition"] ==False]
 
         # Calculate segment averages
         segment_averages = (
