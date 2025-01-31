@@ -434,6 +434,7 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
     ):
     
         ctx: commands.Context = await self.bot.get_context(interaction)
+        mes=await ctx.send("Graphing...",ephemeral=True)
         df5 = pd.read_csv('funny_number_track.csv')
 
         df_groupeds = df5.groupby('timestamp', group_keys=False).apply(lambda x: x.to_dict(orient='records')[0]).reset_index()
