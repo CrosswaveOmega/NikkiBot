@@ -517,6 +517,34 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(result)
 
     @pcs.command(
+        name="stop_overview", description="stop the galactic war overview dashboard in this server. "
+    )
+    async def overview_stop(self, interaction: discord.Interaction):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+        target_message = None
+        guild=ctx.guild
+        profile = ServerHDProfile.get_or_new(guild.id)
+        if profile.overview_message_url:
+            target_message = await urltomessage(profile.overview_message_url, ctx.bot)
+            if target_message:
+                await target_message.delete()
+                target_message = None
+
+        task_name = "UPDATEOVERVIEW"
+        old = TCGuildTask.get(guild.id, task_name)
+
+        if not old:
+            result = "There's no dashboard"
+            await ctx.send(result)
+        else:
+            TCGuildTask.remove_guild_task(guild.id,task_name)
+
+            self.bot.database.commit()
+            result = f"Dashboard cancelled."
+            await ctx.send(result)
+
+
+    @pcs.command(
         name="make_overview", description="Setup a constantly updating message "
     )
     async def overview_make(self, interaction: discord.Interaction):
