@@ -427,7 +427,7 @@ async def detect_loggable_changes(
         "index",
         QueueAll,
         batch,
-        ["health", "players", "position", "retrieved_at", "time_delta", "self"],
+        ["health", "players", "retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
     logs.info("global event detection, stand by...")
