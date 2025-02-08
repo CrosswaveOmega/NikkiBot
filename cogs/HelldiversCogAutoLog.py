@@ -1255,7 +1255,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 planet = self.apistatus.planets.get(int(info.index), None)
                 if planet:
                     # planets- owner, regenRate
-                    embed = Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
+                    if "position" in dump and len(list(dump.keys()))==1:
+                        if info.retrieved_at.minute % 10 != 0:
+                            return None
+                        embed = Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
+                    else:
+                        embed = Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
                 else:
                     embed = Embeds.dumpEmbed(info, dump, "planet", "changed")
             elif place == "stats_raw":
