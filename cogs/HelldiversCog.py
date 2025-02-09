@@ -198,6 +198,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             "hd2", {}
         )
         self.api_up = True
+        self.outstring=""
         snap = hd2.load_from_json("./saveData/hd2_snapshot.json")
         if snap:
             try:
@@ -212,6 +213,18 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         Guild_Task_Functions.add_task_function("WARSTATUS", self.gtask_map)
 
         self.bot.add_view(HD2OverviewView(self))
+        this_planet = self.apistatus.planets.get(64,None)
+        if not this_planet:
+            print("NOPLANET")
+        else:
+            this=this_planet.position
+            if not this:
+                self.last=hd2api.Position(0,0)
+            else:
+                self.last=this
+        self.last_speed=0.0
+        self.speeds=hd2.GameStatus.LimitedSizeList(8)
+
 
         nowd = datetime.now()
         self.loghook = AssetLookup.get_asset("loghook", "urls")
@@ -248,12 +261,81 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         Guild_Task_Functions.remove_task_function("WARSTATUS")
         Guild_Task_Functions.remove_task_function("UPDATEOVERVIEW")
 
+    async def planet_tracker(self):
+        print(self.apistatus.planets.keys())
+        this_planet = self.apistatus.planets.get(64,None)
+        if not this_planet:
+            print("No planet")
+            self.outstring="No planet"
+            return
+        this=this_planet.position
+        if not this:
+            self.outstring="NO POSITION FOR MERIDIA"
+
+            return "NO POSITION FOR MERIDIA"
+
+        last = self.last
+
+        difference = this - last
+        
+        self.last=this
+        self.speeds.push(difference)
+
+        speed = difference.speed()
+        current_angle = difference.angle()
+        if self.last_speed is not None:
+            acceleration = (
+                speed - self.last_speed
+            ) / difference.time_delta.total_seconds()  # Acceleration in units/sec²
+        else:
+            acceleration = 0.0  # First measurement, no acceleration
+        self.last_speed=speed
+
+        speed_avg=hd2api.Position.average(self.speeds.items)
+
+        speed_changes=self.speeds.get_changes()
+        accel_avg=0.0
+        if speed_changes:
+            accel_avg=hd2api.Position.average(speed_changes).speed()
+
+
+        target_planet = self.apistatus.planets.get(127,None)
+        if not target_planet:
+            
+            self.outstring="NO TARGET PLANET FOR MERIDIA"
+            return
+        target=target_planet.position
+        target_diff = target - this
+        target_mag = target_diff.mag()
+        target_angle = target_diff.angle()
+
+        time_to_target = this.estimate_time_to_target(target, speed, acceleration)
+        
+        time_to_target_avg = this.estimate_time_to_target(target, speed_avg.speed(), accel_avg)
+
+        outstring=(
+            f"New Meridia Position: ({this.x},{this.y})\n"
+            f"Speed: {speed:.10f} units/sec\n"
+            f"Acceleration: {acceleration:.10f} units/sec²\n"
+            f"AverageSpeed: {speed_avg.speed():.10f} units/sec\n"
+            f"AverageAcceleration: {accel_avg:.10f} units/sec²\n"
+            f"Current Trajectory: {current_angle:.2f}° (Clockwise from +Y-axis)\n"
+            f"Distance to target is {target_mag} units.\n"
+            f"Required Trajectory to Reach Target: {target_angle:.2f}° (Clockwise)\n"
+            f"Estimated time to reach target: {time_to_target}\n"
+            f"Estimated time to reach target average: {time_to_target_avg}\n"
+        )
+        self.outstring=outstring
+        print(outstring)
+
     async def update_data(self):
         if self.api_up:
             await self.apistatus.update_data()
             hd2.save_to_json(self.apistatus.to_dict(), "./saveData/hd2_snapshot.json")
             # print(self.apistatus.war)
             hd2.add_to_csv(self.apistatus)
+            
+            await self.planet_tracker()
         return
 
     async def make_planets(self, ctx, usebiome=""):
@@ -333,10 +415,21 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 if self.apistatus.assignments:
                     for i, assignment in self.apistatus.assignments.items():
                         b, a = assignment.get_first_change()
+                        emb3=hd2.create_assignment_embed(
+                                b, b - a, planets=self.apistatus.planets
+                            )
+                        
                         embs.insert(
                             0,
-                            hd2.create_assignment_embed(
-                                b, b - a, planets=self.apistatus.planets
+                            emb3,
+                        )
+                output_string=self.outstring
+                if output_string:
+                    embs.insert(
+                            0,
+                            discord.Embed(
+                                title="Meridia Status.",
+                                description=f"{output_string}"[:4090]
                             ),
                         )
 
@@ -351,7 +444,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
     async def gtask_map(self, source_message: discord.Message = None):
         """
-        Guild task that updates the overview message.
+        Guild task that creates a map.
         """
         if not source_message:
             return "REMOVE"
@@ -403,6 +496,15 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     @commands.command(name="get_map")
     async def mapget(self, context: commands.Context):
         await self.get_map(context)
+
+
+    @commands.is_owner()
+    @commands.command(name="get_avg")
+    async def meridiaget(self, context: commands.Context):
+        if not self.outstring:
+            await self.planet_tracker()
+        await context.send(self.outstring)
+
 
     async def get_map(self, context: commands.Context):
         img = self.img

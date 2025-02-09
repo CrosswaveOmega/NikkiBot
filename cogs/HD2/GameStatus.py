@@ -78,7 +78,7 @@ class LimitedSizeList(list):
             self.items.pop(0)
         self.items.append(item)
 
-    def get_changes(self) -> List[Union[War, Assignment2, Campaign2]]:
+    def get_changes(self) -> List[Union[War, Assignment2, Campaign2,GlobalResource]]:
         """return a list of all differences between items in this limited sized list."""
         curr, this = None, []
         for i in self.items:
@@ -205,6 +205,7 @@ class ApiStatus:
 
     @classmethod
     def from_dict(cls, data, client: APIConfig = APIConfig()):
+        
         newcks = cls(client=client)
         newcks.max_list_size = data["max_list_size"]
         newcks.war = LimitedSizeList(newcks.max_list_size)

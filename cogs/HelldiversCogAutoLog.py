@@ -1029,7 +1029,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         for event in events:
 
             batch_id = event["batch"]
-            print(batch_id)
+            #print(batch_id)
             if batch_id not in self.batches:
                 self.batches[batch_id] = Batch(batch_id)
             self.batches[batch_id].process_event(event, self.apistatus)
@@ -1079,7 +1079,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         subthread: List[discord.Embed] = []
         
         for item in item_list:
-            print(item)
+            #print(item)
             embed = await self.build_embed(item)
             if embed:
                 if embed.title=="ResourceChange":
@@ -1255,8 +1255,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 planet = self.apistatus.planets.get(int(info.index), None)
                 if planet:
                     # planets- owner, regenRate
-                    if "position" in dump and len(list(dump.keys()))==1:
-                        if info.retrieved_at.minute % 10 != 0:
+                    # Every 2 hours
+                    if "position" in dump and len(list(dump.keys()))==1 and info.index==64:
+                        if info.retrieved_at.hour % 2 != 0:
                             return None
                         embed = Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
                     else:
@@ -1288,7 +1289,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     if stored != new:
                         diff = difflib.ndiff(stored.splitlines(), new.splitlines())
                         delta = list(diff)
-                        print(delta)
+                        #print(delta)
                         self.bot.logs.error("global event change %s", str(delta))
                         self.messageids[mi] = info.message
                         mc = len(delta) + 1
