@@ -1279,7 +1279,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         and len(list(dump.keys())) == 1
                         and info.index == 64
                     ):
-                        if info.retrieved_at.hour % 2 != 0:
+                        if info.retrieved_at.hour % 2 != 0 and info.retrieved_at.minute==0:
                             return None
                         embed = Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
                     else:
