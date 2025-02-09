@@ -51,7 +51,7 @@ from hd2api import (
 
 from hd2api.constants import faction_names
 from cogs.HD2.maths import maths
-from cogs.HD2.diff_util import process_planet_attacks, GameEvent,EventModes
+from cogs.HD2.diff_util import process_planet_attacks, GameEvent, EventModes
 from utility.manual_load import load_json_with_substitutions
 
 
@@ -496,10 +496,15 @@ class Batch:
                     if "planetIndex" in dump:
                         combinations.append("station move")
 
-        if "campaign_EventModes.NEW" in trig_list and "planetevents_EventModes.NEW" not in trig_list:
+        if (
+            "campaign_EventModes.NEW" in trig_list
+            and "planetevents_EventModes.NEW" not in trig_list
+        ):
             combinations.append("cstart")
 
-        if self.contains_all_values(trig_list, ["campaign_EventModes.NEW", "planetevents_EventModes.NEW"]):
+        if self.contains_all_values(
+            trig_list, ["campaign_EventModes.NEW", "planetevents_EventModes.NEW"]
+        ):
             if planet_data.invasion_check():
                 combinations.append("invasion start")
             else:
@@ -507,21 +512,29 @@ class Batch:
         if "campaign_EventModes.REMOVE" in trig_list and len(trig_list) == 1:
             combinations.append("cend")
 
-        if self.contains_all_values(trig_list, ["campaign_EventModes.REMOVE", "planets_EventModes.CHANGE"]):
+        if self.contains_all_values(
+            trig_list, ["campaign_EventModes.REMOVE", "planets_EventModes.CHANGE"]
+        ):
             if planet and planet.owner == 1:
                 new, old = planet_data.get_last_planet_owner()
                 if old != new:
                     combinations.append("planet won")
 
         if self.contains_all_values(
-            trig_list, ["campaign_EventModes.REMOVE", "planetevents_EventModes.REMOVE", "planets_EventModes.CHANGE"]
+            trig_list,
+            [
+                "campaign_EventModes.REMOVE",
+                "planetevents_EventModes.REMOVE",
+                "planets_EventModes.CHANGE",
+            ],
         ):
             if planet and planet.owner != 1:
                 combinations.append("defense lost")
 
         if (
             self.contains_all_values(
-                trig_list, ["campaign_EventModes.REMOVE", "planetevents_EventModes.REMOVE"]
+                trig_list,
+                ["campaign_EventModes.REMOVE", "planetevents_EventModes.REMOVE"],
             )
             and "planets_EventModes.CHANGE" not in trig_list
         ):
@@ -536,12 +549,20 @@ class Batch:
                 combinations.append("defense won")
 
         if self.contains_all_values(
-            trig_list, ["campaign_EventModes.REMOVE", "planetevents_EventModes.REMOVE", "planets_EventModes.CHANGE"]
+            trig_list,
+            [
+                "campaign_EventModes.REMOVE",
+                "planetevents_EventModes.REMOVE",
+                "planets_EventModes.CHANGE",
+            ],
         ):
             if planet and planet.owner == 1:
                 combinations.append("defense won")
 
-        if "planets_EventModes.CHANGE" in trig_list and "campaign_EventModes.REMOVE" not in trig_list:
+        if (
+            "planets_EventModes.CHANGE" in trig_list
+            and "campaign_EventModes.REMOVE" not in trig_list
+        ):
             if planet and planet.owner != 1:
                 new, old = planet_data.get_last_planet_owner()
                 if old != new:
@@ -721,11 +742,11 @@ class Embeds:
         atks: List[GameEvent], planets: Dict[int, Planet], mode="started"
     ):
         strings = []
-        if mode==EventModes.ADDED:
-            mode="added"
-        elif mode==EventModes.REMOVED:
-            mode="removed"
-        
+        if mode == EventModes.ADDED:
+            mode = "added"
+        elif mode == EventModes.REMOVED:
+            mode = "removed"
+
         timestamp = discord.utils.utcnow()
         for atkv in atks.value:
             atk = atkv.value
@@ -824,19 +845,18 @@ class Embeds:
             text=f"{footerchanges},EID:{evt.eventId}, {custom_strftime(evt.retrieved_at)}"
         )
         return emb
-    
+
     @staticmethod
     def resourceEmbed(
         evt: GlobalResource, mode="started", footerchanges=""
     ) -> discord.Embed:
-
         emb = discord.Embed(
             title=f"Global Resource {mode}",
             description=f"A global Resource was {mode}.\n It's id32 is **{evt.id32}**\n `{evt.currentValue}/{evt.maxValue}`",
             timestamp=evt.retrieved_at,
             color=0xAC50FE,
         )
-        
+
         emb.add_field(name="Timestamp", value=f"Timestamp:{fdt(evt.retrieved_at, 'F')}")
         emb.set_author(name=f"Global Resource {mode}.")
         emb.set_footer(
@@ -973,7 +993,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         self.test_with = []
         self.titleids = {}
         self.messageids = {}
-        self.redirect_hook=""
+        self.redirect_hook = ""
         snap = hd2.load_from_json("./saveData/mt_pairs.json")
         if snap:
             for i, v in snap["titles"].items():
@@ -991,7 +1011,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             nowd.hour,
             int(nowd.minute // 2) * 2,
         )
-        #Rule for grabbing from api.
+        # Rule for grabbing from api.
         robj2 = rrule(freq=MINUTELY, interval=1, dtstart=st)
         self.QueueAll = asyncio.Queue()
         self.EventQueue = asyncio.Queue()
@@ -1027,9 +1047,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         """Stitch multiple events together into one."""
 
         for event in events:
-
             batch_id = event["batch"]
-            #print(batch_id)
+            # print(batch_id)
             if batch_id not in self.batches:
                 self.batches[batch_id] = Batch(batch_id)
             self.batches[batch_id].process_event(event, self.apistatus)
@@ -1077,18 +1096,18 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
     async def send_event_list(self, item_list: List[GameEvent]):
         embeds: List[discord.Embed] = []
         subthread: List[discord.Embed] = []
-        
+
         for item in item_list:
-            #print(item)
+            # print(item)
             embed = await self.build_embed(item)
             if embed:
-                if embed.title=="ResourceChange":
+                if embed.title == "ResourceChange":
                     subthread.append(embed)
                 else:
                     embeds.append(embed)
-                    if embed.color==0xAC50FE:
+                    if embed.color == 0xAC50FE:
                         subthread.append(embed)
-        thishook=AssetLookup.get_asset("subhook", "urls")
+        thishook = AssetLookup.get_asset("subhook", "urls")
         if thishook:
             for s in subthread:
                 try:
@@ -1135,11 +1154,10 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     if hook != AssetLookup.get_asset("loghook", "urls"):
                         self.loghook.remove(hook)
 
-
     async def build_embed(self, item: GameEvent):
         event_type = item.mode
         if event_type == EventModes.GROUP:
-            #Schedule a grouping task.
+            # Schedule a grouping task.
             task = asyncio.create_task(self.batch_events_2(item["value"]))
             return None
 
@@ -1256,7 +1274,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 if planet:
                     # planets- owner, regenRate
                     # Every 2 hours
-                    if "position" in dump and len(list(dump.keys()))==1 and info.index==64:
+                    if (
+                        "position" in dump
+                        and len(list(dump.keys())) == 1
+                        and info.index == 64
+                    ):
                         if info.retrieved_at.hour % 2 != 0:
                             return None
                         embed = Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
@@ -1289,7 +1311,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     if stored != new:
                         diff = difflib.ndiff(stored.splitlines(), new.splitlines())
                         delta = list(diff)
-                        #print(delta)
+                        # print(delta)
                         self.bot.logs.error("global event change %s", str(delta))
                         self.messageids[mi] = info.message
                         mc = len(delta) + 1
@@ -1300,12 +1322,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         )
                 else:
                     embed = Embeds.globalEventEmbed(info, "changed", ",".join(listv))
-            elif place=="resources":
-                if 'currentValue' in dump and len(list(dump.keys()))==1:
+            elif place == "resources":
+                if "currentValue" in dump and len(list(dump.keys())) == 1:
                     if info.retrieved_at.minute % 15 != 0:
                         return None
                     embed = Embeds.resourceEmbed(info, "changed", "")
-                    embed.title="ResourceChange"
+                    embed.title = "ResourceChange"
                     return embed
                 embed = Embeds.resourceEmbed(info, "changed", "")
         return embed
@@ -1343,7 +1365,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             lg = [AssetLookup.get_asset("loghook", "urls")]
             for h in hooks:
                 lg.append(h)
-            self.redirect_hook=AssetLookup.get_asset("subhook", "urls")
+            self.redirect_hook = AssetLookup.get_asset("subhook", "urls")
             self.loghook = lg
         self.get_running = True
         if self.test_with:

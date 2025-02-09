@@ -198,7 +198,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             "hd2", {}
         )
         self.api_up = True
-        self.outstring=""
+        self.outstring = ""
         snap = hd2.load_from_json("./saveData/hd2_snapshot.json")
         if snap:
             try:
@@ -213,18 +213,17 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         Guild_Task_Functions.add_task_function("WARSTATUS", self.gtask_map)
 
         self.bot.add_view(HD2OverviewView(self))
-        this_planet = self.apistatus.planets.get(64,None)
+        this_planet = self.apistatus.planets.get(64, None)
         if not this_planet:
             print("NOPLANET")
         else:
-            this=this_planet.position
+            this = this_planet.position
             if not this:
-                self.last=hd2api.Position(0,0)
+                self.last = hd2api.Position(0, 0)
             else:
-                self.last=this
-        self.last_speed=0.0
-        self.speeds=hd2.GameStatus.LimitedSizeList(8)
-
+                self.last = this
+        self.last_speed = 0.0
+        self.speeds = hd2.GameStatus.LimitedSizeList(8)
 
         nowd = datetime.now()
         self.loghook = AssetLookup.get_asset("loghook", "urls")
@@ -263,23 +262,23 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
     async def planet_tracker(self):
         print(self.apistatus.planets.keys())
-        this_planet = self.apistatus.planets.get(64,None)
+        this_planet = self.apistatus.planets.get(64, None)
         if not this_planet:
             print("No planet")
-            self.outstring="No planet"
+            self.outstring = "No planet"
             return
-        this=this_planet.position
+        this = this_planet.position
         if not this:
-            self.outstring="NO POSITION FOR MERIDIA"
+            self.outstring = "NO POSITION FOR MERIDIA"
 
             return "NO POSITION FOR MERIDIA"
 
         last = self.last
 
         difference = this - last
-        
-        self.last=this
-        self.speeds.push(difference)
+
+        self.last = this
+        self.speeds.add(difference)
 
         speed = difference.speed()
         current_angle = difference.angle()
@@ -289,31 +288,31 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             ) / difference.time_delta.total_seconds()  # Acceleration in units/sec²
         else:
             acceleration = 0.0  # First measurement, no acceleration
-        self.last_speed=speed
+        self.last_speed = speed
 
-        speed_avg=hd2api.Position.average(self.speeds.items)
+        speed_avg = hd2api.Position.average(self.speeds.items)
 
-        speed_changes=self.speeds.get_changes()
-        accel_avg=0.0
+        speed_changes = self.speeds.get_changes()
+        accel_avg = 0.0
         if speed_changes:
-            accel_avg=hd2api.Position.average(speed_changes).speed()
+            accel_avg = hd2api.Position.average(speed_changes).speed()
 
-
-        target_planet = self.apistatus.planets.get(127,None)
+        target_planet = self.apistatus.planets.get(127, None)
         if not target_planet:
-            
-            self.outstring="NO TARGET PLANET FOR MERIDIA"
+            self.outstring = "NO TARGET PLANET FOR MERIDIA"
             return
-        target=target_planet.position
+        target = target_planet.position
         target_diff = target - this
         target_mag = target_diff.mag()
         target_angle = target_diff.angle()
 
         time_to_target = this.estimate_time_to_target(target, speed, acceleration)
-        
-        time_to_target_avg = this.estimate_time_to_target(target, speed_avg.speed(), accel_avg)
 
-        outstring=(
+        time_to_target_avg = this.estimate_time_to_target(
+            target, speed_avg.speed(), accel_avg
+        )
+
+        outstring = (
             f"New Meridia Position: ({this.x},{this.y})\n"
             f"Speed: {speed:.10f} units/sec\n"
             f"Acceleration: {acceleration:.10f} units/sec²\n"
@@ -325,7 +324,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             f"Estimated time to reach target: {time_to_target}\n"
             f"Estimated time to reach target average: {time_to_target_avg}\n"
         )
-        self.outstring=outstring
+        self.outstring = outstring
         print(outstring)
 
     async def update_data(self):
@@ -334,7 +333,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             hd2.save_to_json(self.apistatus.to_dict(), "./saveData/hd2_snapshot.json")
             # print(self.apistatus.war)
             hd2.add_to_csv(self.apistatus)
-            
+
             await self.planet_tracker()
         return
 
@@ -370,7 +369,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         for e, ttas in enumerate(lst):
             await asyncio.gather(*ttas)
 
-            await ctx.send(f"Done with chunk {e+1}:{allv}.")
+            await ctx.send(f"Done with chunk {e + 1}:{allv}.")
 
     def draw_img(self):
         """Create a GIF map."""
@@ -380,7 +379,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         self.img = img
 
     async def update_api(self):
-
         self.hd2 = load_json_with_substitutions("./assets/json", "flavor.json", {}).get(
             "hd2", {}
         )
@@ -404,7 +402,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         try:
             profile = ServerHDProfile.get(context.guild.id)
             if profile:
-
                 target = await urltomessage(profile.overview_message_url, context.bot)
                 if self.api_up is False:
                     await target.edit(content="**WARNING, COMMS ARE DOWN!**")
@@ -415,23 +412,23 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 if self.apistatus.assignments:
                     for i, assignment in self.apistatus.assignments.items():
                         b, a = assignment.get_first_change()
-                        emb3=hd2.create_assignment_embed(
-                                b, b - a, planets=self.apistatus.planets
-                            )
-                        
+                        emb3 = hd2.create_assignment_embed(
+                            b, b - a, planets=self.apistatus.planets
+                        )
+
                         embs.insert(
                             0,
                             emb3,
                         )
-                output_string=self.outstring
+                output_string = self.outstring
                 if output_string:
                     embs.insert(
-                            0,
-                            discord.Embed(
-                                title="Meridia Status.",
-                                description=f"{output_string}"[:4090]
-                            ),
-                        )
+                        0,
+                        discord.Embed(
+                            title="Meridia Status.",
+                            description=f"{output_string}"[:4090],
+                        ),
+                    )
 
                 await target.edit(content="Current game status.", embeds=embs)
                 return "OK"
@@ -452,7 +449,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         try:
             profile = ServerHDProfile.get(context.guild.id)
             if profile:
-
                 await self.get_map(context)
                 return "OK"
         except Exception as e:
@@ -465,14 +461,12 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     @commands.is_owner()
     @commands.command(name="load_now")
     async def load_now(self, ctx: commands.Context):
-
         await self.update_data()
         await ctx.send("force loaded api data now.")
 
     @commands.is_owner()
     @commands.command(name="make_planets")
     async def planetmaker(self, ctx: commands.Context, usebiome: str = ""):
-
         await ctx.send("Making planets")
         await self.make_planets(ctx, usebiome)
 
@@ -497,14 +491,12 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     async def mapget(self, context: commands.Context):
         await self.get_map(context)
 
-
     @commands.is_owner()
     @commands.command(name="get_avg")
     async def meridiaget(self, context: commands.Context):
         if not self.outstring:
             await self.planet_tracker()
         await context.send(self.outstring)
-
 
     async def get_map(self, context: commands.Context):
         img = self.img
@@ -619,12 +611,13 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(result)
 
     @pcs.command(
-        name="stop_overview", description="stop the galactic war overview dashboard in this server. "
+        name="stop_overview",
+        description="stop the galactic war overview dashboard in this server. ",
     )
     async def overview_stop(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
         target_message = None
-        guild=ctx.guild
+        guild = ctx.guild
         profile = ServerHDProfile.get_or_new(guild.id)
         if profile.overview_message_url:
             target_message = await urltomessage(profile.overview_message_url, ctx.bot)
@@ -639,12 +632,11 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             result = "There's no dashboard"
             await ctx.send(result)
         else:
-            TCGuildTask.remove_guild_task(guild.id,task_name)
+            TCGuildTask.remove_guild_task(guild.id, task_name)
 
             self.bot.database.commit()
             result = f"Dashboard cancelled."
             await ctx.send(result)
-
 
     @pcs.command(
         name="make_overview", description="Setup a constantly updating message "
@@ -690,7 +682,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             result = f"Changed the regular update channel to <#{autochannel.id}>"
             await ctx.send(result)
 
-    
     @pcs.command(
         name="unsubscribe_for_maps", description="Unsubscribe from daily war map gifs."
     )
@@ -702,15 +693,16 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         task_name = "WARSTATUS"
         old = TCGuildTask.get(guild.id, task_name)
         if not old:
-            result = "It doesn't look like you're subscribed to the daily galactic war maps."
+            result = (
+                "It doesn't look like you're subscribed to the daily galactic war maps."
+            )
             await ctx.send(result)
         else:
-            TCGuildTask.remove_guild_task(ctx.guild.id,task_name)
+            TCGuildTask.remove_guild_task(ctx.guild.id, task_name)
 
             self.bot.database.commit()
             result = f"Unsubscribed to daily galactic war maps."
             await ctx.send(result)
-
 
     @pcs.command(
         name="real_time_log_subscribe", description="Subscribe to the real time log."
@@ -730,7 +722,10 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             return
         webhook, thread = await web.getWebhookInChannel(channel)
         profile.update(webhook_url=webhook.url)
-        await ctx.send(f"Real Time log webhook subscription created with webhook {webhook.url}", ephemeral=True)
+        await ctx.send(
+            f"Real Time log webhook subscription created with webhook {webhook.url}",
+            ephemeral=True,
+        )
         hooks = ServerHDProfile.get_entries_with_webhook()
         await ctx.send(f"{hooks}", ephemeral=True)
         lg = [AssetLookup.get_asset("loghook", "urls")]
@@ -885,7 +880,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             diff = camp.planet - last.planet
             if byplanet != 0:
                 if camp.planet.index == byplanet:
-
                     embeds.append(
                         hd2.create_planet_embed(
                             camp.planet, cstr=camp, last=diff, stat=self.apistatus
@@ -1255,13 +1249,13 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             ),
         ]
         embed = discord.Embed(
-            title=f"Your Random Stratagem Loadout{'s' if rolls>1 else ''}",
+            title=f"Your Random Stratagem Loadout{'s' if rolls > 1 else ''}",
         )
         desc = "# "
         for r in range(0, rolls):
             random_choices = random.sample(stratagems, 4)
             sload = ""
-            known = f"R{r+1}"
+            known = f"R{r + 1}"
             for e, l in random_choices:
                 sload += f"{e}{l}\n"
                 known += e
@@ -1270,10 +1264,10 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 desc += "\n# "
             else:
                 desc += "`   `"
-            embed.add_field(name=f"Roll {r+1}", value=sload)
+            embed.add_field(name=f"Roll {r + 1}", value=sload)
         embed.description = desc
         embed.set_author(
-            name=f"Stratagem Roulette with {rolls} roll{'s' if rolls>1 else ''}"
+            name=f"Stratagem Roulette with {rolls} roll{'s' if rolls > 1 else ''}"
         )
         await ctx.send(embed=embed)
 

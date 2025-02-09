@@ -254,7 +254,7 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         current_date_time = hd2api.builders.get_time_dh(self.apistatus.warall)
         await ctx.send(
-            f"{discord.utils.format_dt(current_date_time,'F')}, in iso={current_date_time.isoformat()}"
+            f"{discord.utils.format_dt(current_date_time, 'F')}, in iso={current_date_time.isoformat()}"
         )
 
     @calc.command(
@@ -424,7 +424,6 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         embed = discord.Embed(description=text[:4096])
         await ctx.send(embed=embed)
 
-
     @calc.command(
         name="resource_graph",
         description="get a graph of each resource over time.",
@@ -433,32 +432,34 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         self,
         interaction: discord.Interaction,
     ):
-    
         ctx: commands.Context = await self.bot.get_context(interaction)
-        mes=await ctx.send("Graphing...",ephemeral=True)
-        df5 = pd.read_csv('funny_number_track.csv')
+        mes = await ctx.send("Graphing...", ephemeral=True)
+        df5 = pd.read_csv("funny_number_track.csv")
 
-        df_groupeds = df5.groupby('timestamp', group_keys=False).apply(lambda x: x.to_dict(orient='records')[0]).reset_index()
-        df25= df_groupeds[0]
+        df_groupeds = (
+            df5.groupby("timestamp", group_keys=False)
+            .apply(lambda x: x.to_dict(orient="records")[0])
+            .reset_index()
+        )
+        df25 = df_groupeds[0]
         df25 = pd.DataFrame(df_groupeds[0].tolist())
 
-        terminal_font = FontProperties(
-            fname=r"./assets/ChakraPetch-SemiBold.ttf"
-        )  
+        terminal_font = FontProperties(fname=r"./assets/ChakraPetch-SemiBold.ttf")
 
-        XE = df25['timestamp'].apply(lambda x: datetime.datetime.fromtimestamp(x))  # Format timestamps to show actual time
-        YE = df25['value']
+        XE = df25["timestamp"].apply(
+            lambda x: datetime.datetime.fromtimestamp(x)
+        )  # Format timestamps to show actual time
+        YE = df25["value"]
         plt.figure(figsize=(50, 12), facecolor="black")
         plt.xticks(color="white", fontproperties=terminal_font)
         plt.yticks(color="white", fontproperties=terminal_font)
-        plt.grid(True, color='gray', linestyle='--', linewidth=0.5)  # Added grid ticks
+        plt.grid(True, color="gray", linestyle="--", linewidth=0.5)  # Added grid ticks
         ax = plt.gca()
         ax.set_facecolor("black")
         plt.plot(XE, YE)
-        plt.ylabel('Current',color="white")
-        plt.xlabel('Time',color="white")
-        plt.title("Tracking the gravity number.",color="white")
-
+        plt.ylabel("Current", color="white")
+        plt.xlabel("Time", color="white")
+        plt.title("Tracking the gravity number.", color="white")
 
         # Customize the spines to be white
         ax.spines["bottom"].set_color("white")
@@ -466,11 +467,9 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         ax.spines["top"].set_color("white")
         ax.spines["right"].set_color("white")
 
-        plt.savefig('saveData/graph1.png')
-        await ctx.send(file=discord.File('saveData/graph1.png'),ephemeral=True)
+        plt.savefig("saveData/graph1.png")
+        await ctx.send(file=discord.File("saveData/graph1.png"), ephemeral=True)
 
-
-    
     @calc.command(
         name="rateofchange",
         description="get a graph of each resource over time.",
@@ -479,20 +478,29 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         self,
         interaction: discord.Interaction,
     ):
-    
         ctx: commands.Context = await self.bot.get_context(interaction)
-        mes=await ctx.send("Graphing...",ephemeral=True)
-        df5 = pd.read_csv('funny_number_track.csv')
+        mes = await ctx.send("Graphing...", ephemeral=True)
+        df5 = pd.read_csv("funny_number_track.csv")
 
-        df_groupeds = df5.groupby('timestamp', group_keys=False).apply(lambda x: x.to_dict(orient='records')[0]).reset_index()
-        df25= df_groupeds[0]
+        df_groupeds = (
+            df5.groupby("timestamp", group_keys=False)
+            .apply(lambda x: x.to_dict(orient="records")[0])
+            .reset_index()
+        )
+        df25 = df_groupeds[0]
         df25 = pd.DataFrame(df_groupeds[0].tolist())
 
-        terminal_font = FontProperties(fname=r"./assets/ChakraPetch-SemiBold.ttf")  # Update path as needed
+        terminal_font = FontProperties(
+            fname=r"./assets/ChakraPetch-SemiBold.ttf"
+        )  # Update path as needed
 
         # Convert timestamp to datetime and calculate rate of change
-        df25["timestamp"] = df25["timestamp"].apply(lambda x: datetime.datetime.fromtimestamp(x))  # Format timestamps
-        df25["rate_of_change"] = df25["value"].diff() / 5  # Calculate the rate of change
+        df25["timestamp"] = df25["timestamp"].apply(
+            lambda x: datetime.datetime.fromtimestamp(x)
+        )  # Format timestamps
+        df25["rate_of_change"] = (
+            df25["value"].diff() / 5
+        )  # Calculate the rate of change
         df25 = df25[df25["rate_of_change"] != 0]  # Remove zero rate of change entries
 
         threshold = 25  # Threshold for detecting transitions
@@ -500,7 +508,7 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         df25["segment"] = df25["is_transition"].cumsum()  # Group by segments
 
         # Filter out transitions
-        df25_no_transitions = df25[df25["is_transition"] ==False]
+        df25_no_transitions = df25[df25["is_transition"] == False]
 
         # Calculate segment averages
         segment_averages = (
@@ -547,7 +555,9 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
             elif abs(rate["r"] - current_cluster["avg"]) <= clustering_threshold:
                 # Add to current cluster if within threshold
                 current_cluster["vals"].append(rate)
-                current_cluster["avg"] = sum(r["r"] for r in current_cluster["vals"]) / len(current_cluster["vals"])
+                current_cluster["avg"] = sum(
+                    r["r"] for r in current_cluster["vals"]
+                ) / len(current_cluster["vals"])
                 current_cluster["first"] = min(current_cluster["first"], rate["st"])
                 current_cluster["c"] += rate["count"]
                 current_cluster["max_count_rate"] = max(
@@ -589,7 +599,9 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
 
         # Add horizontal lines for clusters
         for row in clusters:
-            weighted_avg = sum(rate["r"] * rate["count"] for rate in row["vals"]) / row["c"]
+            weighted_avg = (
+                sum(rate["r"] * rate["count"] for rate in row["vals"]) / row["c"]
+            )
             plt.axhline(y=weighted_avg, color="red", linestyle="--", alpha=0.5)
             plt.text(
                 row["first"],
@@ -601,16 +613,18 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
 
         plt.ylabel("Rate of Change", color="white", fontproperties=terminal_font)
         plt.xlabel("Time", color="white", fontproperties=terminal_font)
-        plt.title("Rate of Change in Value over Time", color="white", fontproperties=terminal_font)
+        plt.title(
+            "Rate of Change in Value over Time",
+            color="white",
+            fontproperties=terminal_font,
+        )
 
         # Customize plot spines
         for spine in ax.spines.values():
             spine.set_color("white")
 
-        plt.savefig('saveData/graph2.png')
-        await ctx.send(file=discord.File('saveData/graph2.png'),ephemeral=True)
-
-        
+        plt.savefig("saveData/graph2.png")
+        await ctx.send(file=discord.File("saveData/graph2.png"), ephemeral=True)
 
 
 @app_commands.allowed_installs(guilds=False, users=True)
