@@ -40,6 +40,7 @@ from hd2api import (
     PlanetEvent,
     Campaign,
     SpaceStationStatus,
+    PlanetCoordinates,
     Planet,
     GlobalEvent,
     SectorStates,
@@ -921,6 +922,10 @@ class Embeds:
             old_decay = round(maths.dps_to_lph(old_decay), 3)
             new_decay = round(maths.dps_to_lph(new_decay), 3)
             specialtext += f"\n* Regen Rate: `{old_decay}`->`{new_decay}`"
+        if "position" in dump:
+            new_posx = dump["position"]['x'].get("new", 0)
+            new_posy = dump["position"]['y'].get("new", 0)
+            specialtext += f"\n*{name} moves to X {new_posx} Y {new_posy}`"
 
         emb = discord.Embed(
             title=f"{name} Field Change",
@@ -1280,6 +1285,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         and info.index == 64
                     ):
                         if info.retrieved_at.minute % 30 != 0:
+                            return None
+                        elif info.retrieved_at.minute == 30:
+                            #Workaround for once every hour
                             return None
                         embed = Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
                     else:
