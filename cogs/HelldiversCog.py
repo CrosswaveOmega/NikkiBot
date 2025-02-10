@@ -322,6 +322,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             f"LastSpeed: {lastspeed:.10f} units/sec\n"
             f"Acceleration: {acceleration:.10f} units/sec²\n"
             f"AverageSpeed: {speed_avg.mag():.10f} units/sec\n"
+            f"Average Time Delta: {speed_avg.time_delta} \n"
             f"AverageAcceleration: {accel_avg:.10f} units/sec²\n"
             f"Current Trajectory: {current_angle:.2f}° (Clockwise from +Y-axis)\n"
             f"Distance to target is {target_mag} units.\n"
