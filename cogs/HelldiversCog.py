@@ -282,6 +282,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         speed = difference.speed()
         current_angle = difference.angle()
+        lastspeed=self.last_speed or 0.0
         if self.last_speed is not None:
             acceleration = (
                 speed - self.last_speed
@@ -309,14 +310,18 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         time_to_target = this.estimate_time_to_target(target, speed, acceleration)
 
         time_to_target_avg = this.estimate_time_to_target(
-            target, speed_avg.speed(), accel_avg
+            target, speed_avg.mag(), accel_avg
         )
 
         outstring = (
+            f"Previous Meridia Position: ({last.x},{last.y})\n"
             f"New Meridia Position: ({this.x},{this.y})\n"
+            f"Position Delta: ({difference.x},{difference.y})"
+            f"Duration for Difference: {difference.time_delta}\n"
             f"Speed: {speed:.10f} units/sec\n"
+            f"LastSpeed: {lastspeed:.10f} units/sec\n"
             f"Acceleration: {acceleration:.10f} units/sec²\n"
-            f"AverageSpeed: {speed_avg.speed():.10f} units/sec\n"
+            f"AverageSpeed: {speed_avg.mag():.10f} units/sec\n"
             f"AverageAcceleration: {accel_avg:.10f} units/sec²\n"
             f"Current Trajectory: {current_angle:.2f}° (Clockwise from +Y-axis)\n"
             f"Distance to target is {target_mag} units.\n"
