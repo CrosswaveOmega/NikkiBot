@@ -316,7 +316,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         outstring = (
             f"Previous Meridia Position: ({last.x},{last.y})\n"
             f"New Meridia Position: ({this.x},{this.y})\n"
-            f"Position Delta: ({difference.x},{difference.y})"
+            f"Position Delta: ({difference.x:.10f},{difference.y:.10f})\n"
             f"Duration for Difference: {difference.time_delta}\n"
             f"Speed: {speed:.10f} units/sec\n"
             f"LastSpeed: {lastspeed:.10f} units/sec\n"
