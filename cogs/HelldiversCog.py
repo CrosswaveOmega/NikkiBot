@@ -283,7 +283,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         speed = difference.speed()
         current_angle = difference.angle()
         lastspeed=self.last_speed or 0.0
-        if self.last_speed is not None:
+        if self.last_speed is not None and abs(difference.time_delta.total_seconds())>0:
             acceleration = (
                 speed - self.last_speed
             ) / difference.time_delta.total_seconds()  # Acceleration in units/sec²
@@ -308,9 +308,13 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         target_angle = target_diff.angle()
 
         time_to_target = this.estimate_time_to_target(target, speed, acceleration)
+        speed_only_time=this.estimate_time_to_target(target, speed, 0.0)
 
         time_to_target_avg = this.estimate_time_to_target(
-            target, speed_avg.mag(), accel_avg
+            target, speed_avg.speed(), accel_avg
+        )
+        avg_speed_only_time=this.estimate_time_to_target(
+            target, speed_avg.speed(), 0.0
         )
 
         outstring = (
@@ -321,7 +325,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             f"Speed: {speed:.10f} units/sec\n"
             f"LastSpeed: {lastspeed:.10f} units/sec\n"
             f"Acceleration: {acceleration:.10f} units/sec²\n"
-            f"AverageSpeed: {speed_avg.mag():.10f} units/sec\n"
+            f"AverageSpeed: {speed_avg.speed():.10f} units/sec\n"
             f"Average Time Delta: {speed_avg.time_delta} \n"
             f"AverageAcceleration: {accel_avg:.10f} units/sec²\n"
             f"Current Trajectory: {current_angle:.2f}° (Clockwise from +Y-axis)\n"
@@ -329,6 +333,9 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             f"Required Trajectory to Reach Target: {target_angle:.2f}° (Clockwise)\n"
             f"Estimated time to reach target: {time_to_target}\n"
             f"Estimated time to reach target average: {time_to_target_avg}\n"
+            f"Estimated time to reach target without accel: {speed_only_time}\n"
+            f"Estimated time to reach target average without accel: {avg_speed_only_time}\n"
+            
         )
         self.outstring = outstring
         print(outstring)
