@@ -222,7 +222,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 self.last = hd2api.Position(0, 0)
             else:
                 self.last = this
-        self.last_speed = 0.0
+        self.last_speed = None
         self.speeds = hd2.GameStatus.LimitedSizeList(8)
 
         nowd = datetime.now()
@@ -282,7 +282,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         speed = difference.speed()
         current_angle = difference.angle()
-        lastspeed=self.last_speed or 0.0
+        lastspeed=self.last_speed
         if self.last_speed is not None and abs(difference.time_delta.total_seconds())>0:
             acceleration = (
                 speed - self.last_speed
@@ -325,9 +325,9 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             f"Speed: {speed:.10f} units/sec\n"
             f"LastSpeed: {lastspeed:.10f} units/sec\n"
             f"Acceleration: {acceleration:.10f} units/sec²\n"
-            f"AverageSpeed: {speed_avg.speed():.10f} units/sec\n"
+            f"AverageSpeed: {speed_avg.speed():.10f} units/sec from {len(self.speeds.items)} entries\n"
             f"Average Time Delta: {speed_avg.time_delta} \n"
-            f"AverageAcceleration: {accel_avg:.10f} units/sec²\n"
+            f"AverageAcceleration: {accel_avg:.10f} units/sec² from {len(speed_changes)} differences \n"
             f"Current Trajectory: {current_angle:.2f}° (Clockwise from +Y-axis)\n"
             f"Distance to target is {target_mag} units.\n"
             f"Required Trajectory to Reach Target: {target_angle:.2f}° (Clockwise)\n"
