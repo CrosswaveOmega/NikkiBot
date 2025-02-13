@@ -347,7 +347,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             # print(self.apistatus.war)
             hd2.add_to_csv(self.apistatus)
 
-            await self.planet_tracker()
+            #await self.planet_tracker()
         return
 
     async def make_planets(self, ctx, usebiome=""):
