@@ -1288,7 +1288,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         if int(info.index) not in self.last_move:
                             self.last_move[int(info.index)]=info.retrieved_at
                             return Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
-                        elif (info.retrieved_at-self.last_move[int(info.index)]).total_seconds()>3600:
+                        elif (info.retrieved_at-self.last_move[int(info.index)]).total_seconds()>3600*2:
                             self.last_move[int(info.index)]=info.retrieved_at
                             return Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
 
