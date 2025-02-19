@@ -998,6 +998,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         self.test_with = []
         self.titleids = {}
         self.messageids = {}
+        self.last_move={}
         self.redirect_hook = ""
         snap = hd2.load_from_json("./saveData/mt_pairs.json")
         if snap:
@@ -1282,11 +1283,19 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     if (
                         "position" in dump
                         and len(list(dump.keys())) == 1
-                        and info.index == 64
                     ):
-                        if info.retrieved_at.minute % 30 != 0:
+
+                        if int(info.index) not in self.last_move:
+                            self.last_move[int(info.index)]=info.retrieved_at
+                            return Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
+                        elif (info.retrieved_at-self.last_move[int(info.index)]).total_seconds()>3600:
+                            self.last_move[int(info.index)]=info.retrieved_at
+                            return Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
+                            
+                        self.last_move[int(info.index)]=info.retrieved_at
+                        if info.retrieved_at.minute % 15 != 0:
                             return None
-                        elif info.retrieved_at.minute == 30:
+                        elif info.retrieved_at.minute == 15:
                             #Workaround for once every hour
                             return None
                         
