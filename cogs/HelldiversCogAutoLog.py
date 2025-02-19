@@ -1296,7 +1296,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         if info.retrieved_at.minute % 15 != 0:
                             return None
                         embed = Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
-                        if info.retrieved_at.hour%2==0 and info.retrieved_at.minute!=0:
+                        if info.retrieved_at.hour%2==0 or info.retrieved_at.minute!=0:
                             embed.title = "ResourceChange"
                     else:
                         embed = Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
