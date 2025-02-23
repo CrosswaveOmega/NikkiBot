@@ -484,6 +484,8 @@ class Batch:
     def check_trig_combinations(
         self, trig_list: List[str], planet_data: PlanetEvents
     ) -> List[str]:
+        '''Get a list of valid "combos", game events that happen when certain status elements
+        are added/removed/changed at the same time.'''
         planet: Planet = planet_data.planet
         combinations: List[str] = []
 

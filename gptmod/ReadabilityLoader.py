@@ -139,29 +139,29 @@ class ReadableLoader(dl.WebBaseLoader):
 
         for i, result in enumerate(results):
             if isinstance(result, Exception):
-                if self.markitdown:
-                    try:
-                        markdown = MarkItDown()
-                        result2 = markdown.convert(url)
-                        print(result2.text_content)
-                        header = {"title": result2.title or result2.text_content[:100]}
-                        header["siteName"] = "Siteunknown"
-                        header["source"] = url
-                        header["description"] = result2.text_content[:200]
-                        header["dateadded"] = datetime.datetime.utcnow().timestamp()
-                        header["date"] = "None"
-                        header["language"] = "en"
+                # if self.markitdown:
+                #     try:
+                #         markdown = MarkItDown()
+                #         result2 = markdown.convert(url)
+                #         print(result2.text_content)
+                #         header = {"title": result2.title or result2.text_content[:100]}
+                #         header["siteName"] = "Siteunknown"
+                #         header["source"] = url
+                #         header["description"] = result2.text_content[:200]
+                #         header["dateadded"] = datetime.datetime.utcnow().timestamp()
+                #         header["date"] = "None"
+                #         header["language"] = "en"
 
-                        out = (remove_links(result2.text_content), None, header)
+                #         out = (remove_links(result2.text_content), None, header)
 
-                        yield i, urls[i][0], out
-                        continue
-                    except Exception as e:
-                        yield i, urls[i][0], e
-                        continue
-                else:
-                    yield i, urls[i][0], result
-                    continue
+                #         yield i, urls[i][0], out
+                #         continue
+                #     except Exception as e:
+                #         yield i, urls[i][0], e
+                #         continue
+                # else:
+                yield i, urls[i][0], result
+                continue
             url = regular_urls[i]
             if parser is None:
                 if url.endswith(".xml"):
@@ -176,9 +176,8 @@ class ReadableLoader(dl.WebBaseLoader):
                 r"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>", "", result
             )
             print("attempting read of ", urls[i][0], "length is", len(clean_html))
-            readable = await check_readability(self.jsenv, clean_html, url)
-            if not readable:
-                gui.dprint("Not readable link.")
+            #readable = await check_readability(self.jsenv, clean_html, url)
+            #if not readable:  gui.dprint("Not readable link.")
             try:
                 with Timer() as timer:
                     text, header = await read_article_aw(self.jsenv, clean_html, url)

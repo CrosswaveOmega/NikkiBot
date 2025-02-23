@@ -1,5 +1,7 @@
 import asyncio
 import copy
+
+from concurrent.futures import ThreadPoolExecutor
 import datetime
 import re
 import uuid
@@ -134,13 +136,15 @@ def google_search(bot, query: str, result_limit: int) -> dict:
     print(query_results)
     return query_results
 
+async def async_markdown_convert(url, timeout=30):
+    markdown = markitdown.MarkItDown()
+    result = await asyncio.wait_for(asyncio.to_thread(markdown.convert, url), timeout)
+    return result
 
-async def read_and_split_pdf(bot, url: str, extract_meta: bool = False):
+
+async def read_and_split_pdf(bot, url: str, chunk_size,extract_meta: bool = False):
     try:
-        markdown = markitdown.MarkItDown()
-        result = markdown.convert(url)
-        print(result.text_content)
-
+        result=await async_markdown_convert(url)
         metadata = {}
         new_docs = []
         title, authors, date, abstract = (
