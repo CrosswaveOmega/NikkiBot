@@ -8,7 +8,6 @@ import discord
 from dateutil.rrule import MINUTELY, rrule
 from discord.ext import commands, tasks
 import os
-import re
 import cogs.HD2 as hd2
 from cogs.HD2.GameStatus import ApiStatus
 from cogs.HD2.db import ServerHDProfile
@@ -40,7 +39,6 @@ from hd2api import (
     PlanetEvent,
     Campaign,
     SpaceStationStatus,
-    PlanetCoordinates,
     Planet,
     GlobalEvent,
     SectorStates,
@@ -397,7 +395,6 @@ class Batch:
         self, ctype: str, planet_data: GeneralEvents, ctext: List[List[str]]
     ) -> List[str]:
         targets: List[str] = []
-        data_path: str = "./hd2json/planets/planets.json"
 
         target = (
             ctext[1][0]
@@ -923,8 +920,8 @@ class Embeds:
             new_decay = round(maths.dps_to_lph(new_decay), 3)
             specialtext += f"\n* Regen Rate: `{old_decay}`->`{new_decay}`"
         if "position" in dump:
-            new_posx = dump["position"]['x'].get("new", 0)
-            new_posy = dump["position"]['y'].get("new", 0)
+            new_posx = dump["position"]["x"].get("new", 0)
+            new_posy = dump["position"]["y"].get("new", 0)
             specialtext += f"\n*{name} moves to X {new_posx} Y {new_posy}`"
 
         emb = discord.Embed(
@@ -998,7 +995,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         self.test_with = []
         self.titleids = {}
         self.messageids = {}
-        self.last_move={}
+        self.last_move = {}
         self.redirect_hook = ""
         snap = hd2.load_from_json("./saveData/mt_pairs.json")
         if snap:
@@ -1019,17 +1016,17 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         )
         # Rule for grabbing from api.
         robj2 = rrule(freq=MINUTELY, interval=1, dtstart=st)
-        self.QueueAll = asyncio.Queue()
+        self.QueueAll: asyncio.Queue[List[GameEvent]] = asyncio.Queue()
         self.EventQueue = asyncio.Queue()
         self.PlanetQueue = asyncio.Queue()
         if not TCTaskManager.does_task_exist("UpdateLog"):
             self.tc_task2 = TCTask("UpdateLog", robj2, robj2.after(st))
             self.tc_task2.assign_wrapper(self.updatelog)
-        self.run2.start()
+        self.process_game_events.start()
 
     def cog_unload(self):
         TCTaskManager.remove_task("UpdateLog")
-        self.run2.cancel()
+        self.process_game_events.cancel()
         hold = {"titles": self.titleids, "messages": self.messageids}
         hd2.save_to_json(hold, "./saveData/mt_pairs.json")
 
@@ -1088,7 +1085,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 await self.bot.send_error(ex, "LOG ERROR", True)
 
     @tasks.loop(seconds=2)
-    async def run2(self):
+    async def process_game_events(self):
         try:
             try:
                 item = self.QueueAll.get_nowait()
@@ -1104,7 +1101,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         subthread: List[discord.Embed] = []
 
         for item in item_list:
-            # print(item)
+            # Go through each game event, build embeds.
             embed = await self.build_embed(item)
             if embed:
                 if embed.title == "ResourceChange":
@@ -1113,8 +1110,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     embeds.append(embed)
                     if embed.color == 0xAC50FE:
                         subthread.append(embed)
+
+        #Position's switch
         thishook = AssetLookup.get_asset("subhook", "urls")
         if thishook:
+            # Redirection code.
             for s in subthread:
                 try:
                     await web.postMessageAsWebhookWithURL(
@@ -1129,7 +1129,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
         if not embeds:
             return
-
+        
+        val_batches=self.group_embeds(embeds)
+        await self.send_embeds_through_webhook(val_batches)
+        
+    def group_embeds(self,embeds:List[discord.Embed]):
+        '''Group Embeds Together.'''
         val_batches = []
         batch = []
         for e in embeds:
@@ -1145,7 +1150,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 batch.append(e)
         if batch:
             val_batches.append(batch)
-        for embeds in val_batches:
+        return val_batches
+
+
+    async def send_embeds_through_webhook(self,batches:List[discord.Embed]):
+        for embeds in batches:
             for hook in list(self.loghook):
                 try:
                     await web.postMessageAsWebhookWithURL(
@@ -1159,6 +1168,17 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     await self.bot.send_error(e, "Webhook error")
                     if hook != AssetLookup.get_asset("loghook", "urls"):
                         self.loghook.remove(hook)
+
+    async def send_last_planet_positions(self):
+        now=discord.utils.utcnow()
+        embs=[]
+        for ind, lis in self.last_move.items():
+            embs.append(Embeds.dumpEmbedPlanet(lis[1],lis[2], lis[0], "changed"))
+        if not embs:
+            return
+        batches=self.group_embeds(embs)
+        await self.send_embeds_through_webhook(batches)
+
 
     async def build_embed(self, item: GameEvent):
         event_type = item.mode
@@ -1279,24 +1299,24 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 planet = self.apistatus.planets.get(int(info.index), None)
                 if planet:
                     # planets- owner, regenRate
-                    # Every 2 hours
-                    if (
-                        "position" in dump
-                        and len(list(dump.keys())) == 1
-                    ):
-
+                    # Every 15 minutes
+                    if "position" in dump and len(list(dump.keys())) == 1:
                         if int(info.index) not in self.last_move:
-                            self.last_move[int(info.index)]=info.retrieved_at
+                            self.last_move[int(info.index)] = [planet,info,dump]
                             return Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
-                        elif (info.retrieved_at-self.last_move[int(info.index)]).total_seconds()>3600*2:
-                            self.last_move[int(info.index)]=info.retrieved_at
+                        elif (
+                            info.retrieved_at - self.last_move[int(info.index)][1].retrieved_at
+                        ).total_seconds() > 3600:
+                            self.last_move[int(info.index)] = [planet,info,dump]
                             return Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
-
-                        self.last_move[int(info.index)]=info.retrieved_at
+                        self.last_move[int(info.index)] = [planet,info,dump]
                         if info.retrieved_at.minute % 15 != 0:
                             return None
                         embed = Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
-                        if info.retrieved_at.hour%2==0 or info.retrieved_at.minute!=0:
+                        if (
+                            info.retrieved_at.hour % 2 == 0
+                            or info.retrieved_at.minute != 0
+                        ):
                             embed.title = "ResourceChange"
                     else:
                         embed = Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
@@ -1348,7 +1368,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.resourceEmbed(info, "changed", "")
         return embed
 
-    @run2.error
+    @process_game_events.error
     async def logerror(self, ex):
         await self.bot.send_error(ex, "LOG ERROR FOR POST", True)
 
@@ -1357,7 +1377,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             if not self.get_running:
                 task = asyncio.create_task(self.load_log())
             else:
-                self.bot.logs.warning("LOG UPDATE WARNING: CANNOT SCHEDULING CALL!")
+                self.bot.logs.warning("LOG UPDATE WARNING: CANNOT SCHEDULE CALL!")
 
         except Exception as e:
             self.get_running = False
@@ -1385,6 +1405,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             self.loghook = lg
         self.get_running = True
         if self.test_with:
+            # Code for testing the auto log.
             if self.spot >= len(self.test_with):
                 return
             lastwar = self.test_with[self.spot - 1]
@@ -1422,6 +1443,13 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
     async def load_test_now(self, ctx: commands.Context):
         await self.load_log()
         await ctx.send("Done testing now.")
+
+    @commands.is_owner()
+    @commands.command(name="get_last_recorded_positions")
+    async def get_last_recorded_positions(self, ctx: commands.Context):
+        await self.send_last_planet_positions()
+        await ctx.send("Last Planet Positions sent through Auto Log Embeds.")
+
 
     @commands.is_owner()
     @commands.command(name="planeteffectget")
