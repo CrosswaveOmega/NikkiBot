@@ -244,7 +244,7 @@ You can set the target expiration date by saying "X days Y hours" in your messag
     
     @commands.has_permissions(manage_guild=True)
     @questmanage.command(
-        name="expire quests",
+        name="expirequests",
         brief="Check for all expired quests.",
     )
     async def expire_quests(self, ctx: commands.Context, reason: str = "it's expired"):
