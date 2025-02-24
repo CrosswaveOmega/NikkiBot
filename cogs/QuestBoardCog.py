@@ -266,11 +266,11 @@ You can set the target expiration date by saying "X days Y hours" in your messag
                         print(f"Message ID: {message.id} contains timestamp: {dt_object}")
             if dt_object:
                 if dt_object<datetime.datetime.now():
-                   await post.send(f"This quest is past due!")
+                   await post.send(f"This quest is past due!  Please wrap it up.")
             else:
                 dt=await self.create_thread_expire_message("7d0h")
                 
-                await ctx.send(f"**This quest will expire {dt}!**")
+                await post.send(f"**This quest will expire {dt}!**")
 
 
             # await post.send(f"### This quest is cancelled, as {reason}!")
