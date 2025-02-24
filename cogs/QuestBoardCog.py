@@ -253,11 +253,11 @@ You can set the target expiration date by saying "X days Y hours" in your messag
             return
         timestamp_pattern = re.compile(r'<t:(\d+):([a-zA-Z])>')
         for post in questchannel.threads:
-            if post.owner_id==ctx.bot.id:
+            if post.owner_id==ctx.bot.user.id:
                 continue
             dt_object=None
             async for message in post.history(limit=300):
-                if message.author.id == ctx.bot.id:
+                if message.author.id == ctx.bot.user.id:
                     match = timestamp_pattern.search(message.content)
                     if match:
                         unix_timestamp = int(match.group(1))
