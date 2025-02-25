@@ -180,9 +180,9 @@
         "if campaign_remove but Planet 0 is a source in planetAttacks and targeting PLANET 1"
     ],
     "newlink": [
-        "Troost - Vandalon IV supply line is added",
+        "Troost - Vandalon IV warp link is added",
         [
-            "[PLANET 0] - [PLANET 1] supply line [TYPETEXT]"
+            "[PLANET 0] - [PLANET 1] warp link [TYPETEXT]"
         ],
         [
             "is added"
@@ -190,9 +190,9 @@
         "if planetInfo_change and new Planet 0.waypoints has index of Planet 1"
     ],
     "destroylink": [
-        "Maia - Vandalon IV supply line is removed",
+        "Maia - Vandalon IV warp link is removed",
         [
-            "[PLANET 0] - [PLANET 1] supply line [TYPETEXT]"
+            "[PLANET 0] - [PLANET 1] warp link [TYPETEXT]"
         ],
         [
             "is removed"
@@ -200,9 +200,9 @@
         "if planetInfo_change and Planet 0.waypoints no longer index of Planet 1"
     ],
     "clearlinks": [
-        "Meridia of the Umlaut sector's supply lines are obliterated",
+        "Meridia of the Umlaut sector's warp links are obliterated",
         [
-            "[PLANET 0] of the [SECTOR 1] sector's supply lines [TYPETEXT]"
+            "[PLANET 0] of the [SECTOR 1] sector's warp links [TYPETEXT]"
         ],
         [
             "are obliterated"
