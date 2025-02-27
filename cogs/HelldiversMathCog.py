@@ -467,8 +467,8 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         ax.spines["top"].set_color("white")
         ax.spines["right"].set_color("white")
 
-        plt.savefig("saveData/graph1.png")
-        await ctx.send(file=discord.File("saveData/graph1.png"), ephemeral=True)
+        plt.savefig("saveData/graph5.png")
+        await ctx.send(file=discord.File("saveData/graph5.png"), ephemeral=True)
 
     @calc.command(
         name="rateofchange",
