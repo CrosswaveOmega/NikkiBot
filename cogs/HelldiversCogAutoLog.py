@@ -707,7 +707,7 @@ class Embeds:
     def deadzoneWarningEmbed(campaign: BaseApiModel, mode="started") -> discord.Embed:
         emb = discord.Embed(
             title=f"DEADZONE DETECTED",
-            description=f"A likely deadzone was detected!\nTimestamp:{fdt(campaign.retrieved_at, 'F')}",
+            description=f"A likely deadzone was {mode}!\nTimestamp:{fdt(campaign.retrieved_at, 'F')}",
             timestamp=campaign.retrieved_at,
             color=0xFF0000,
         )
@@ -1203,6 +1203,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             embed = Embeds.deadzoneWarningEmbed(
                 value,
                 "started",
+            )
+        if event_type == EventModes.DEADZONE_END:
+            embed = Embeds.deadzoneWarningEmbed(
+                value,
+                "ended",
             )
         if event_type == EventModes.NEW:
             if place == "campaign":

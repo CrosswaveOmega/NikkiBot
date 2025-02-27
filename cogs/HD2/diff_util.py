@@ -24,6 +24,7 @@ class EventModes(Enum):
     REMOVED = 6
     GROUP = 7
     DATA = 8
+    DEADZONE_END = 9
 
 
 
@@ -278,10 +279,12 @@ async def process_planet_attacks(
         await QueueAll.put(combined_list)
     return pushed_items
 
+DEADZONE=False
 
 async def detect_loggable_changes(
     old: DiveharderAll, new: DiveharderAll, QueueAll: asyncio.Queue, statics: StaticAll
 ) -> Tuple[dict, list]:
+    global DEADZONE
     out = {
         "campaign": {"new": {}, "changes": {}, "old": {}},
         "planetevents": {"new": {}, "changes": {}, "old": {}},
@@ -298,11 +301,18 @@ async def detect_loggable_changes(
 
     superlist = []
     if old.status.time == new.status.time:
-        newitem = GameEvent(
-            mode=EventModes.DEADZONE, place=EventModes.DEADZONE, batch=batch, value=new.status
-        )
+        if not DEADZONE:
+            newitem = GameEvent(
+                mode=EventModes.DEADZONE, place=EventModes.DEADZONE, batch=batch, value=new.status
+            )
+            DEADZONE=True
 
-        await QueueAll.put([newitem])
+            await QueueAll.put([newitem])
+    else:
+        newitem = GameEvent(
+            mode=EventModes.DEADZONE_END, place=EventModes.DEADZONE_END, batch=batch, value=new.status
+        )
+        DEADZONE=False
     gametime = new.status.time
     rawout = await get_differing_fields(
         old.status,
