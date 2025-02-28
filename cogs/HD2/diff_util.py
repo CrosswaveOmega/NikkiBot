@@ -309,10 +309,13 @@ async def detect_loggable_changes(
 
             await QueueAll.put([newitem])
     else:
-        newitem = GameEvent(
-            mode=EventModes.DEADZONE_END, place=EventModes.DEADZONE_END, batch=batch, value=new.status
-        )
-        DEADZONE=False
+        if DEADZONE:
+            newitem = GameEvent(
+                mode=EventModes.DEADZONE_END, place=EventModes.DEADZONE_END, batch=batch, value=new.status
+            )
+            DEADZONE=False
+            
+            await QueueAll.put([newitem])
     gametime = new.status.time
     rawout = await get_differing_fields(
         old.status,
