@@ -1,4 +1,4 @@
-from cogs.ArchiveSub.historycollect import should_archive_channel
+
 import gui
 from typing import Literal
 import discord
@@ -127,9 +127,7 @@ class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
         mode=profile.get_ignore_mode()
         for tup, chan in chantups:
             doarchive=should_archive_channel(mode,chan,profile,guild)
-            if doarchive:
-                await ctx.send(f"Can archive {chan.name}")
-
+            await ctx.send(f"Can archive {chan.name} {doarchive}")
 
 
 
