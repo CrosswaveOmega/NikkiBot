@@ -141,6 +141,7 @@ class ServerArchiveProfile(Main_DB_Base):
     status = Column(Text)
     archive_scope = Column(Text, default="ws")
     archive_dynamic = Column(Boolean, default=False)
+    ignore_mode = Column(Integer, default=0)
 
     channellist = relationship(
         "IgnoredChannel", back_populates="server_archive_profile"
@@ -248,6 +249,11 @@ class ServerArchiveProfile(Main_DB_Base):
             return True
         return False
 
+    def get_ignore_mode(self):
+        if self.ignore_mode != None:
+            return self.ignore_mode
+        return 0
+
     def has_channel(self, channel_id):
         """make sure this channel is not in the ignore list, or is the history channel."""
         if self.history_channel_id == channel_id:
@@ -327,7 +333,17 @@ class ServerArchiveProfile(Main_DB_Base):
             "user": "User Messages Only",
             "both": "Will archive everything.",
         }
-        string = f"**Archive Scope:**{scopes.get(self.archive_scope)}\n**Active Collect:**{self.archive_dynamic}"
+        modes = {
+            0: "Ignore Specified Channels",
+            1: "Only Archive Specified Channels",
+            2: "Only Archive Specified Categories, Ignore Specified Channels",
+        }
+        string = (
+            f"**Archive Scope:**{scopes.get(self.archive_scope)}\n"
+            + f"**Active Collect:**{self.archive_dynamic}\n"
+            + f"**Ignore Setting:**{modes.get(self.get_ignore_mode())}\n"
+        )
+
         return string
 
     def __repr__(self):

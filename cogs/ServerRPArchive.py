@@ -793,6 +793,66 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await ctx.send("guild only.")
 
     @archive_setup.command(
+        name="set_ignore_mode",
+        description="Configure the ignore mode, which determines how specified channels are handled.",
+    )
+    @app_commands.choices(
+        mode=[  # param name
+            Choice(name="Ignore Specified Channels", value=0),
+            Choice(name="Only Archive Specified Channels", value=1),
+            Choice(name="Only Archive Specified Categories", value=1),
+        ]
+    )
+    async def set_ignore_mode(self, ctx, mode: int):
+        if ctx.guild:
+            modes = {
+                0: "Ignore Specified Channels",
+                1: "Only Archive Specified Channels",
+                2: "Only Archive Specified Categories, Ignore Specified Channels",
+            }
+            gui.dprint(mode)
+            if not (serverOwner(ctx) or serverAdmin(ctx)):
+                await MessageTemplates.server_archive_message(
+                    ctx, "Only the server owner may use this command."
+                )
+                return False
+
+            profile = ServerArchiveProfile.get_or_new(ctx.guild.id)
+            old_mode = profile.ignore_mode if profile.ignore_mode is not None else 0
+            gui.dprint(old_mode)
+
+            if mode not in [0, 1, 2]:
+                await ctx.send(f"The specified mode {mode} is invalid.")
+                return
+
+            steps = [
+                "# Warning! \n Changing the ignore mode can affect existing archive behavior!"
+                "\nAre you sure about this?",
+                f"You are? Alright, so just to be clear, you want me \n"
+                f"to switch to **{modes[mode]}** instead of **{modes[old_mode]}**.\nIs that correct?",
+                "I need one final confirmation before I change the setting."
+                "\nAre you absolutely sure?",
+            ]
+
+            for r in steps:
+                confirm, mes = await MessageTemplates.confirm(ctx, r, ephemeral=False)
+
+                if not confirm:
+                    await MessageTemplates.server_archive_message(
+                        ctx, "Very well, mode change aborted.", ephemeral=True
+                    )
+                    return
+                await mes.delete()
+
+            profile.update(ignore_mode=mode)
+            self.guild_db_cache[str(ctx.guild.id)] = profile
+            await MessageTemplates.server_archive_message(
+                ctx, "Ok then, I've changed the ignore mode.", ephemeral=True
+            )
+        else:
+            await ctx.send("Guild only.")
+
+    @archive_setup.command(
         name="set_active_collect",
         description="Nikki can store rp messages in her database when they are sent, use this to enable that setting.",
     )
@@ -1126,8 +1186,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         session = DatabaseSingleton.get_session()
         waittime = 0
         for sep in myseps:
-            iN, iL = sep.get_neighbor(False, True, False), sep.get_neighbor(
-                False, False, False
+            iN, iL = (
+                sep.get_neighbor(False, True, False),
+                sep.get_neighbor(False, False, False),
             )
             messages = sep.get_messages()
             less = len(messages)

@@ -326,6 +326,20 @@ async def collect_server_history_lazy(ctx: commands.Context, statmess=None, **kw
     # await statmess.delete()
     return grabstat, statmess
 
+def should_archive_channel(mode: int, chan:discord.Channel, profile, guild:discord.Guild):
+    chan_ignore=profile.has_channel(chan.id)
+    cat_ignore=chan.category and profile.has_channel(chan.category.id)
+    if chan.permissions_for(guild.me).view_channel and chan.permissions_for(guild.me).read_message_history:
+        return False
+
+    if mode == 0:
+        return not chan_ignore and not cat_ignore
+    elif mode == 1:
+        return chan_ignore
+    elif mode == 2:
+        return cat_ignore and not bool(chan_ignore)
+
+    return False
 
 async def setup_lazy_grab(ctx, **kwargs):
     # Collect from desired channels to a point.
@@ -431,18 +445,13 @@ async def collect_server_history(ctx, **kwargs):
     current_channel_count = 0
     current_channel_every = 50
     totalcharlen = 0
+    mode=profile.get_ignore_mode()
     await arch_ctx.edit_mess(seconds=0)
     for tup, chan in chantups:
         arch_ctx.channel_spot += 1
+        doarchive=should_archive_channel(mode,chan,profile,guild)
 
-        if (
-            profile.has_channel(chan.id) == False
-            and chan.permissions_for(guild.me).view_channel == True
-            and chan.permissions_for(guild.me).read_message_history == True
-        ):
-            if chan.category:
-                if profile.has_channel(chan.category.id) == True:
-                    continue
+        if doarchive:
             threads = chan.threads
 
             lastmessage_str = f"{tup}, {chan.name}: {chan.last_message_id}"
