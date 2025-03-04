@@ -114,7 +114,6 @@ class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
         )
     
     @commands.command()
-    @commands.is_owner()
     async def check_message_archive(self,ctx):
         chantups = []
         guild=ctx.guild
