@@ -64,7 +64,7 @@ class ToChoice(commands.Converter):
 def should_archive_channel(mode: int, chan:discord.TextChannel, profile, guild:discord.Guild):
     chan_ignore=profile.has_channel(chan.id)
     cat_ignore=chan.category and profile.has_channel(chan.category.id)
-    if chan.permissions_for(guild.me).view_channel and chan.permissions_for(guild.me).read_message_history:
+    if not (chan.permissions_for(guild.me).view_channel and chan.permissions_for(guild.me).read_message_history):
         return False, "NO PERMS"
 
     if mode == 0:
