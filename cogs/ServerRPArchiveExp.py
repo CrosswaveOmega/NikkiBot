@@ -65,16 +65,16 @@ def should_archive_channel(mode: int, chan:discord.TextChannel, profile, guild:d
     chan_ignore=profile.has_channel(chan.id)
     cat_ignore=chan.category and profile.has_channel(chan.category.id)
     if chan.permissions_for(guild.me).view_channel and chan.permissions_for(guild.me).read_message_history:
-        return False
+        return False, "NO PERMS"
 
     if mode == 0:
-        return not chan_ignore and not cat_ignore
+        return not chan_ignore and not cat_ignore, f"Mode {chan_ignore},{cat_ignore}"
     elif mode == 1:
-        return chan_ignore
+        return chan_ignore, f"Mode {chan_ignore},{cat_ignore}"
     elif mode == 2:
-        return cat_ignore and not bool(chan_ignore)
+        return cat_ignore and not bool(chan_ignore), f"Mode {chan_ignore},{cat_ignore}"
 
-    return False
+    return False, f"No mode at all..."
 
 class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
     """This class is intended for Discord RP servers that use Tupperbox or another proxy application.."""
@@ -125,6 +125,7 @@ class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
         
         profile = ServerArchiveProfile.get_or_new(guild.id)
         mode=profile.get_ignore_mode()
+        await ctx.send(f"Archive mode  {mode}")
         for tup, chan in chantups:
             doarchive=should_archive_channel(mode,chan,profile,guild)
             await ctx.send(f"Can archive {chan.name} {doarchive}")
