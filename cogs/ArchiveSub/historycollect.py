@@ -111,13 +111,14 @@ class ArchiveContext:
         if chan.type in [ct.public_thread, ct.private_thread, ct.news_thread]:
             chan = chan.parent
         gui.gprint(chan.id, self.profile.has_channel(chan.id))
-        if (
-            self.profile.has_channel(chan.id) == False
-            and chan.permissions_for(guild.me).view_channel == True
-            and chan.permissions_for(guild.me).read_message_history == True
-        ):
-            return True
-        return False
+        should=should_archive_channel(self.profile.get_ignore_mode(),chan,self.profile,guild)
+        # if (
+        #     self.profile.has_channel(chan.id) == False
+        #     and chan.permissions_for(guild.me).view_channel == True
+        #     and chan.permissions_for(guild.me).read_message_history == True
+        # ):
+        #     return True
+        return should
 
     def alter_latest_time(self, new):
         """Updates the latest_time with the maximum of the current latest_time and the new value.
