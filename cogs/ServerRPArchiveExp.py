@@ -1,3 +1,4 @@
+from cogs.ArchiveSub.historycollect import should_archive_channel
 import gui
 from typing import Literal
 import discord
@@ -59,7 +60,21 @@ class ToChoice(commands.Converter):
                 return choice
         else:
             return argument
+        
+def should_archive_channel(mode: int, chan:discord.TextChannel, profile, guild:discord.Guild):
+    chan_ignore=profile.has_channel(chan.id)
+    cat_ignore=chan.category and profile.has_channel(chan.category.id)
+    if chan.permissions_for(guild.me).view_channel and chan.permissions_for(guild.me).read_message_history:
+        return False
 
+    if mode == 0:
+        return not chan_ignore and not cat_ignore
+    elif mode == 1:
+        return chan_ignore
+    elif mode == 2:
+        return cat_ignore and not bool(chan_ignore)
+
+    return False
 
 class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
     """This class is intended for Discord RP servers that use Tupperbox or another proxy application.."""
@@ -97,6 +112,27 @@ class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
         await ctx.send(
             f"Number of messages in the 15-minute interval starting from {timestamp}: {len(messages)}"
         )
+    
+    @commands.command()
+    @commands.is_owner()
+    async def check_message_archive(self,ctx):
+        chantups = []
+        guild=ctx.guild
+        if not guild:
+            await ctx.send("Must be in guild")
+        chantups.extend(("forum", chan) for chan in guild.forums)
+
+        chantups.extend(("textchan", chan) for chan in guild.text_channels)
+        
+        profile = ServerArchiveProfile.get_or_new(guild.id)
+        mode=profile.get_ignore_mode()
+        for tup, chan in chantups:
+            doarchive=should_archive_channel(mode,chan,profile,guild)
+            if doarchive:
+                await ctx.send(f"Can archive {chan.name}")
+
+
+
 
 
 async def setup(bot):
