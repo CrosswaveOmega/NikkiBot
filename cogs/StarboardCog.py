@@ -24,7 +24,7 @@ class StarboardCog(commands.Cog):
         self.blacklist = ["im lost"]
         self.to_be_edited = {}
         self.lock = asyncio.Lock()
-        self.emojilist = ["\N{Honeybee}", "<:2diverHeart:1221738356950564926>"]
+        self.emojilist = ["\N{HONEYBEE}", "<:2diverHeart:1221738356950564926>"]
         self.server_emoji_caches = {}
 
         self.timerloop.start()  # type: ignore
@@ -38,9 +38,9 @@ class StarboardCog(commands.Cog):
         try:
             self.bot.logs.info(str(payload.emoji))
             if payload.guild_id not in self.server_emoji_caches:
-                self.server_emoji_caches[payload.guild_id] = (
-                    await StarboardEmojis.get_emojis(payload.guild_id, 100)
-                )
+                self.server_emoji_caches[
+                    payload.guild_id
+                ] = await StarboardEmojis.get_emojis(payload.guild_id, 100)
             if str(payload.emoji) not in self.server_emoji_caches[payload.guild_id]:
                 return
 
@@ -112,7 +112,6 @@ class StarboardCog(commands.Cog):
                             f"unstarring message {message.id} {guild.id} {starrer.id}"
                         )
                         if old_entry:
-
                             if old_entry.emoji == str(payload.emoji):
                                 self.bot.logs.info("Same emoji...")
                                 await session.delete(old_entry)

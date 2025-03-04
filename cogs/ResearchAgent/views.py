@@ -55,14 +55,14 @@ class Followup(discord.ui.View):
 
         sentence_sum_2 = ", ".join(
             [
-                f"\"{detail[1]}([{','.join(map(str, detail[2]))}],{detail[3]},{detail[4]})\""
+                f'"{detail[1]}([{",".join(map(str, detail[2]))}],{detail[3]},{detail[4]})"'
                 for detail in self.sent_detail
             ]
         )
 
         embed = discord.Embed(title="sauces", description=sentence_sum)
         embed.set_footer(
-            text=f"allloss={round(self.allloss*100,2)},sentence,([souce ids],avg,max)"
+            text=f"allloss={round(self.allloss * 100, 2)},sentence,([souce ids],avg,max)"
         )
         for id, tup in enumerate(self.my_sources):
             doc, score, emb = tup
@@ -74,7 +74,7 @@ class Followup(discord.ui.View):
                 embeds.append(embed)
                 embed = discord.Embed(title="sauces", description=sentence_sum)
                 embed.set_footer(
-                    text=f"allloss={round(self.allloss*100,2)},sentence,([souce ids],avg,max)"
+                    text=f"allloss={round(self.allloss * 100, 2)},sentence,([souce ids],avg,max)"
                 )
 
             meta = doc.metadata
@@ -82,12 +82,12 @@ class Followup(discord.ui.View):
 
             output = (
                 f"**ID**:{id}\n"
-                + f"**Name:** {meta.get('title','TITLE UNAVAILABLE')[:100]}\n"
+                + f"**Name:** {meta.get('title', 'TITLE UNAVAILABLE')[:100]}\n"
                 + f"**Link:** {meta['source']}\n"
                 + f"**Text:** {content}\n"
             )
             embed.add_field(
-                name=f"{id}: (a:{round(avgs*100.0,1)},m:{round(maxs*100.0,1)})",
+                name=f"{id}: (a:{round(avgs * 100.0, 1)},m:{round(maxs * 100.0, 1)})",
                 value=output[:700],
                 inline=False,
             )

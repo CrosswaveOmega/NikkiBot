@@ -253,7 +253,7 @@ class Tags2(commands.Cog):
                 if not embed_list or len(embed_list[-1].fields) == 4:
                     # If so, create a new Embed object
                     embed = discord.Embed(
-                        title=f"Tags: {e+1}", color=discord.Color(0x00787F)
+                        title=f"Tags: {e + 1}", color=discord.Color(0x00787F)
                     )
                     # Add the first field to the new Embed object
                     if len(value) > 1010:

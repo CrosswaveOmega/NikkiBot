@@ -71,14 +71,14 @@ class ArchiveProgress:
     def get_string(self, index=0, ml=0):
         total = f"Currently on group {self.g_arc}/{self.group_total}.\n"
         if index != 0 and ml != 0:
-            total += f"Current group has {int(ml-index)} messages left\n"
+            total += f"Current group has {int(ml - index)} messages left\n"
         total += f"Currently archived {self.m_arc} messages out of {self.message_total} total.\n"
         total += f"This is going to take another... {seconds_to_time_string(int(self.remain_time()))}"
         return total
 
     def get_remaining(self):
-        se = f"{self.group_total-self.g_arc} groups,"
-        se += f" {self.message_total-self.m_arc} messages left."
+        se = f"{self.group_total - self.g_arc} groups,"
+        se += f" {self.message_total - self.m_arc} messages left."
         se += (
             f"\n estimated {seconds_to_time_string(int(self.remain_time()))} remaining."
         )
@@ -412,7 +412,7 @@ class ArchiveCompiler:
                 )
                 self.bot.add_act(
                     str(self.guild.id) + "arch",
-                    f"Currently on {e+1}/{self.sep_total}.\n  This is going to take about...{seconds_to_time_string(int(self.ap.remain_time()))}",
+                    f"Currently on {e + 1}/{self.sep_total}.\n  This is going to take about...{seconds_to_time_string(int(self.ap.remain_time()))}",
                 )
             posttime = finishtime.get_time()
             self.ap.t_sep += pre_time + posttime

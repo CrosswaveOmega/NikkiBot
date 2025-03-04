@@ -1,4 +1,3 @@
-
 import gui
 from typing import Literal
 import discord
@@ -60,11 +59,17 @@ class ToChoice(commands.Converter):
                 return choice
         else:
             return argument
-        
-def should_archive_channel(mode: int, chan:discord.TextChannel, profile, guild:discord.Guild):
-    chan_ignore=profile.has_channel(chan.id)
-    cat_ignore=chan.category and profile.has_channel(chan.category.id)
-    if not (chan.permissions_for(guild.me).view_channel and chan.permissions_for(guild.me).read_message_history):
+
+
+def should_archive_channel(
+    mode: int, chan: discord.TextChannel, profile, guild: discord.Guild
+):
+    chan_ignore = profile.has_channel(chan.id)
+    cat_ignore = chan.category and profile.has_channel(chan.category.id)
+    if not (
+        chan.permissions_for(guild.me).view_channel
+        and chan.permissions_for(guild.me).read_message_history
+    ):
         return False, "NO PERMS"
 
     if mode == 0:
@@ -75,6 +80,7 @@ def should_archive_channel(mode: int, chan:discord.TextChannel, profile, guild:d
         return cat_ignore and not bool(chan_ignore), f"Mode {chan_ignore},{cat_ignore}"
 
     return False, f"No mode at all..."
+
 
 class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
     """This class is intended for Discord RP servers that use Tupperbox or another proxy application.."""
@@ -112,25 +118,23 @@ class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
         await ctx.send(
             f"Number of messages in the 15-minute interval starting from {timestamp}: {len(messages)}"
         )
-    
+
     @commands.command(extras={"guildtask": ["rp_history"]})
-    async def check_message_archive_ignore(self,ctx):
+    async def check_message_archive_ignore(self, ctx):
         chantups = []
-        guild=ctx.guild
+        guild = ctx.guild
         if not guild:
             await ctx.send("Must be in guild")
         chantups.extend(("forum", chan) for chan in guild.forums)
 
         chantups.extend(("textchan", chan) for chan in guild.text_channels)
-        
+
         profile = ServerArchiveProfile.get_or_new(guild.id)
-        mode=profile.get_ignore_mode()
+        mode = profile.get_ignore_mode()
         await ctx.send(f"Archive mode  {mode}")
         for tup, chan in chantups:
-            doarchive=should_archive_channel(mode,chan,profile,guild)
+            doarchive = should_archive_channel(mode, chan, profile, guild)
             await ctx.send(f"Can archive {chan.name} {doarchive}")
-
-
 
 
 async def setup(bot):

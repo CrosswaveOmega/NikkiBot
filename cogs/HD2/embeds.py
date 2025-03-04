@@ -225,7 +225,7 @@ def create_planet_embed(
     needed_players, _ = predict_needed_players(needed_eps, mp_mult)
     embed.add_field(
         name="Regeneration Per Second",
-        value=f"`{regen_per_second}` .  \n Need `{round(needed_eps,2)}` eps and `{round(needed_players,2)}` divers ",
+        value=f"`{regen_per_second}` .  \n Need `{round(needed_eps, 2)}` eps and `{round(needed_players, 2)}` divers ",
         inline=True,
     )
     avg = None
@@ -432,7 +432,7 @@ def campaign_view(
         emb.add_field(name=name, value=desc, inline=True)
         el += 1
 
-    emb0.description += f"???:{all_players.statistics.playerCount-total}," + ",".join(
+    emb0.description += f"???:{all_players.statistics.playerCount - total}," + ",".join(
         [f"{k}:{v}" for k, v in prop.items()]
     )
     if stalemated:
@@ -445,20 +445,21 @@ def campaign_view(
 
     # Add overall contribution stats
     emb0.description += (
-        f"\n`{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}%` "
+        f"\n`{round((total_contrib[0] / all_players.statistics.playerCount) * 100.0, 4)}%` "
         f"divers contributed `{round(total_contrib[1], 4)}` visible Impact, which is "
-        f"`{round(total_contrib[4],8)}` impact per second, so about "
-        f"`({round(total_contrib[2],5)}%, {round(total_contrib[3],5)}% per hour)` lib."
+        f"`{round(total_contrib[4], 8)}` impact per second, so about "
+        f"`({round(total_contrib[2], 5)}%, {round(total_contrib[3], 5)}% per hour)` lib."
     )
-    
+
     emb0.description += "\n"
     for k, list in stat.resources.items():
         r, c = list.get_change_from(15)
         changes = list.get_changes()
         # GET RATE OF CHANGE
-        count = max(len(changes),1)
+        count = max(len(changes), 1)
         avg_value = (
-            sum(res.currentValue for res in changes if res.currentValue is not None) // count
+            sum(res.currentValue for res in changes if res.currentValue is not None)
+            // count
         )
         avg_time = (
             sum(
@@ -468,17 +469,15 @@ def campaign_view(
             )
             // count
         )
-        rate=0
-        if avg_time>0:
-            rate=avg_value/avg_time
+        rate = 0
+        if avg_time > 0:
+            rate = avg_value / avg_time
         cng = r - c
         outstring = f"{r.id32}:[`{r.currentValue}({cng.currentValue})/{r.maxValue}`,flags=`{r.flags}`] `Rate:{rate}`\n"
         emb0.description += outstring
 
     emb0.timestamp = discord.utils.utcnow()  # Set timestamp
     return embs
-
-
 
 
 def generate_tactical_action_summary(stat, action: TacticalAction) -> str:
@@ -527,11 +526,11 @@ def generate_tactical_action_summary(stat, action: TacticalAction) -> str:
 
             cost_summary += (
                 f", at `{cost.currentValue}/{cost.targetValue or 'None'}`, {percent}"
-                f" by `{cost.deltaPerSecond*3600 or 'N/A'}` per hour"
+                f" by `{cost.deltaPerSecond * 3600 or 'N/A'}` per hour"
             )
             if remaining_sec:
-                cost_summary += f"\nComplete in {fdt(remaining_sec,'R')}"
-            cost_summary += f"\nMax Donation Amount: `{cost.maxDonationAmount or 'N/A'} per {cost.maxDonationPeriodSeconds/3600 or 'N/A'} hours`"
+                cost_summary += f"\nComplete in {fdt(remaining_sec, 'R')}"
+            cost_summary += f"\nMax Donation Amount: `{cost.maxDonationAmount or 'N/A'} per {cost.maxDonationPeriodSeconds / 3600 or 'N/A'} hours`"
             summary.append(cost_summary)
     else:
         summary.append("No cost details available.")
@@ -669,15 +668,15 @@ def campaign_text_view(
             liberation_campaigns.append((name, desc))
 
         el += 1
-    out_main += f"???:{all_players.statistics.playerCount-total}," + ",".join(
+    out_main += f"???:{all_players.statistics.playerCount - total}," + ",".join(
         [f"{k}:{v}" for k, v in prop.items()]
     )
 
     out_main += (
-        f"\n`{round((total_contrib[0]/all_players.statistics.playerCount)*100.0, 4)}%` "
+        f"\n`{round((total_contrib[0] / all_players.statistics.playerCount) * 100.0, 4)}%` "
         f"divers contributed `{round(total_contrib[1], 4)}` visible Impact, which is "
-        f"`{round(total_contrib[4],8)}` impact per second, so about "
-        f"`({round(total_contrib[2],5)}%, {round(total_contrib[3],5)}% per hour)` lib."
+        f"`{round(total_contrib[4], 8)}` impact per second, so about "
+        f"`({round(total_contrib[2], 5)}%, {round(total_contrib[3], 5)}% per hour)` lib."
     )
     lib_join = "\n".join([f"* {c[0]}\n{c[1]}" for c in liberation_campaigns])
     def_join = "\n".join([f"* {c[0]}\n{c[1]}" for c in defense_campaigns])

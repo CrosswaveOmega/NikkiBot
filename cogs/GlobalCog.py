@@ -47,7 +47,7 @@ async def file_to_data_uri(file: discord.File) -> str:
     # Base64 encode the bytes
     base64_encoded = base64.b64encode(file_bytes).decode("ascii")
     # Construct the data URI
-    data_uri = f'data:{"image"};base64,{base64_encoded}'
+    data_uri = f"data:{'image'};base64,{base64_encoded}"
     return data_uri
 
 
@@ -137,7 +137,7 @@ class NoteEditView(BaseView):
         if not self.is_finished():
             embed.add_field(
                 name="timeout",
-                value=f"timeout in: {discord.utils.format_dt(self.get_timeout_dt(),'R')}",
+                value=f"timeout in: {discord.utils.format_dt(self.get_timeout_dt(), 'R')}",
                 inline=False,
             )
         if self.has_image:
@@ -590,11 +590,11 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
             return
 
         await mess.edit(
-            content=f"Found {docs} {'notes' if docs>1 else 'note'} in {op_timer.get_time()} seconds"
+            content=f"Found {docs} {'notes' if docs > 1 else 'note'} in {op_timer.get_time()} seconds"
         )
         cont, mess2 = await MessageTemplates.confirm(
             ctx,
-            f"Are you sure you want to delete {'these' if docs>1 else 'this'} {docs} {'notes' if docs>1 else 'note'}?"
+            f"Are you sure you want to delete {'these' if docs > 1 else 'this'} {docs} {'notes' if docs > 1 else 'note'}?"
             + "Deleted notes can not be restored.",
             True,
         )
@@ -673,7 +673,7 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
                     page.add_line(f"* {s}")
                 pages = len(page.pages)
                 for e, p in enumerate(page.pages):
-                    spages = f"{e+1}/{pages}" if pages > 1 else ""
+                    spages = f"{e + 1}/{pages}" if pages > 1 else ""
                     em = discord.Embed(title=f"Topic: `{k}` {spages}", description=p)
                     embs.append(em)
         await pages_of_embeds(ctx, embs, ephemeral=True)
@@ -884,7 +884,6 @@ class Global(commands.Cog, TC_Cog_Mixin):
             for a in message.attachments:
                 this_file = await a.to_file()
                 if a.content_type.startswith("image/"):
-
                     embed.set_image(url=f"attachment://{this_file.filename}")
                 files.append(this_file)
 
@@ -950,7 +949,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
                 value=f"{r['link']}\n{desc}"[:1000],
                 inline=False,
             )
-            outputthis += f"+ **Title: {r['title']}**\n **Link:**{r['link']}\n **Snippit:**\n{indent_string(desc,1)}"
+            outputthis += f"+ **Title: {r['title']}**\n **Link:**{r['link']}\n **Snippit:**\n{indent_string(desc, 1)}"
         await mess.edit(content=None, embed=emb)
 
     @app_commands.command(name="supersearch", description="use db search.")

@@ -634,7 +634,7 @@ class MusicCog(commands.Cog, TC_Cog_Mixin):
 
                 if difference.total_seconds() > 2:
                     await stat.updatew(
-                        f"Time Elapsed={round((tnow-thisTime).total_seconds(),3)}\nMessages iterated:{e}\nTotal URLs found:{total}."
+                        f"Time Elapsed={round((tnow - thisTime).total_seconds(), 3)}\nMessages iterated:{e}\nTotal URLs found:{total}."
                     )
                     lastTime = discord.utils.utcnow()
 

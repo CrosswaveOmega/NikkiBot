@@ -512,7 +512,6 @@ class Tag(Base):
     async def get_matching_tags(
         cls, tagname: str, gid: int, session: OptionalSession = None
     ):
-
         tag = await session.execute(
             select(cls)
             .where(
@@ -530,7 +529,6 @@ class Tag(Base):
     async def get_matching_tags_from_user(
         cls, tagname: str, gid: int, uid: int, session: OptionalSession = None
     ):
-
         tag = await session.execute(
             select(cls)
             .where(

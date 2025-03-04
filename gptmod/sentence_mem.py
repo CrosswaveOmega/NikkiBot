@@ -256,12 +256,14 @@ class SentenceMemory:
         ids = set()
         for d in docs:
             source, split = d.metadata["source"], d.metadata["split"]
-            ids.add(f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,source))}],sid:[{split}]")
             ids.add(
-                f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,source))}],sid:[{split-1}]"
+                f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, source))}],sid:[{split}]"
             )
             ids.add(
-                f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,source))}],sid:[{split+1}]"
+                f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, source))}],sid:[{split - 1}]"
+            )
+            ids.add(
+                f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, source))}],sid:[{split + 1}]"
             )
 
         doc1 = self.coll.get(ids=list(ids), include=["documents", "metadatas"])
@@ -294,7 +296,7 @@ class SentenceMemory:
         doc = Document(page_content=content, metadata=meta)
         docs = split_document(doc, present_mem)
         ids = [
-            f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
+            f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
             for e, doc in enumerate(docs)
         ]
         if docs:
@@ -324,7 +326,7 @@ class SentenceMemory:
             doc = Document(page_content=c, metadata=meta)
             docs.append(doc)
         ids = [
-            f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
+            f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
             for e, doc in enumerate(docs)
         ]
         if docs:

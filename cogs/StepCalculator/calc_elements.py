@@ -454,7 +454,7 @@ class DataBit:
             val = int(start)
         st = str(val)
         if self.fromdie:
-            st = f":game_die:{st}"
+            st = f"🎲{st}"
         return st
 
     def formatValue(self):

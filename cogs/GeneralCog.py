@@ -200,7 +200,7 @@ class General(commands.Cog, TC_Cog_Mixin):
                 blocked += 1
 
         view = f"Categories:{cats}\n Viewable:{can_see} channels.  \nArchivable: {history_view} channels."
-        view2 = f"Messagable: {messagable} channels.  \n Of which, {messagable-c_mess} channels have a restriction."
+        view2 = f"Messagable: {messagable} channels.  \n Of which, {messagable - c_mess} channels have a restriction."
         desc = f"Members: {member_count}\n Channels: {channel_count}\n{view}\n{view2}"
 
         emb = await MessageTemplates.server_profile_message(

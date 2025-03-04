@@ -246,7 +246,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             pages.add_line(l)
         for e, p in enumerate(pages.pages):
             embed = discord.Embed(
-                title=f"Translation" if e == 0 else f"Translation {e+1}", description=p
+                title=f"Translation" if e == 0 else f"Translation {e + 1}",
+                description=p,
             )
             embeds.append(embed)
 
@@ -305,7 +306,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 value=f"{r['link']}\n{desc}"[:1000],
                 inline=False,
             )
-            outputthis += f"+ **Title: {r['title']}**\n **Link:**{r['link']}\n **Snippit:**\n{indent_string(desc,1)}"
+            outputthis += f"+ **Title: {r['title']}**\n **Link:**{r['link']}\n **Snippit:**\n{indent_string(desc, 1)}"
         returnme = await ctx.send(content=comment, embed=emb)
 
         return outputthis
@@ -808,7 +809,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 meta = doc.metadata
                 emb = discord.Embed(title=meta.get("title", "?"), description=content)
                 emb.add_field(name="source", value=meta["source"], inline=False)
-                emb.add_field(name="score", value=f"{score *  100.0:.4f}")
+                emb.add_field(name="score", value=f"{score * 100.0:.4f}")
                 emb.add_field(name="split value", value=f"{meta.get('split', '?')}")
                 emb.add_field(name="source_tokens", value=f"{tokens}")
                 answer.append(doctup)
@@ -877,8 +878,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             # 'metadata',{'title':'UNKNOWN','source':'unknown'})
             meta = doc.metadata
             content = doc.page_content  # ('page_content','Data l
-            output = f"""**Name:** {meta['title'][:100]}
-            **Link:** {meta['source']}
+            output = f"""**Name:** {meta["title"][:100]}
+            **Link:** {meta["source"]}
             **Text:** {content[:512]}..."""
             # await ctx.send(output,suppress_embeds=True)
             embed.add_field(name=f"s: score:{score}", value=output[:1024], inline=False)
@@ -897,8 +898,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             meta = doc.metadata
             content = doc.page_content
             output = f"""**ID**: ?
-        **Name:** {meta['title']}
-        **Link:** {meta['source']}
+        **Name:** {meta["title"]}
+        **Link:** {meta["source"]}
         **Text:** {content}"""
             embed.add_field(name=f"s: score:{score}", value=output[:1020], inline=False)
             field_count += 1
@@ -935,7 +936,8 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             pages.add_line(l)
         for e, p in enumerate(pages.pages):
             embed = discord.Embed(
-                title=f"Translation" if e == 0 else f"Translation {e+1}", description=p
+                title=f"Translation" if e == 0 else f"Translation {e + 1}",
+                description=p,
             )
             embeds.append(embed)
 

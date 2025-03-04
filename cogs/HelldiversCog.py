@@ -282,8 +282,11 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         speed = difference.speed()
         current_angle = difference.angle()
-        lastspeed=self.last_speed
-        if self.last_speed is not None and abs(difference.time_delta.total_seconds())>0:
+        lastspeed = self.last_speed
+        if (
+            self.last_speed is not None
+            and abs(difference.time_delta.total_seconds()) > 0
+        ):
             acceleration = (
                 speed - self.last_speed
             ) / difference.time_delta.total_seconds()  # Acceleration in units/sec²
@@ -308,12 +311,12 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         target_angle = target_diff.angle()
 
         time_to_target = this.estimate_time_to_target(target, speed, acceleration)
-        speed_only_time=this.estimate_time_to_target(target, speed, 0.0)
+        speed_only_time = this.estimate_time_to_target(target, speed, 0.0)
 
         time_to_target_avg = this.estimate_time_to_target(
             target, speed_avg.speed(), accel_avg
         )
-        avg_speed_only_time=this.estimate_time_to_target(
+        avg_speed_only_time = this.estimate_time_to_target(
             target, speed_avg.speed(), 0.0
         )
 
@@ -335,7 +338,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             f"Estimated time to reach target average: {time_to_target_avg}\n"
             f"Estimated time to reach target without accel: {speed_only_time}\n"
             f"Estimated time to reach target average without accel: {avg_speed_only_time}\n"
-            
         )
         self.outstring = outstring
         print(outstring)
@@ -347,7 +349,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             # print(self.apistatus.war)
             hd2.add_to_csv(self.apistatus)
 
-            #await self.planet_tracker()
+            # await self.planet_tracker()
         return
 
     async def make_planets(self, ctx, usebiome=""):

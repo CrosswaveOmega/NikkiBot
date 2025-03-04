@@ -59,9 +59,9 @@ def draw_grid(filepath, cell_size=200):
 
 
 def get_im_coordinates(x, y, scale=1):
-
-    coordinate = int(round(x * 1000.0 * SCALE + 1000 * SCALE, 0)), int(
-        round(1000 * SCALE - y * 1000.0 * SCALE, 1)
+    coordinate = (
+        int(round(x * 1000.0 * SCALE + 1000 * SCALE, 0)),
+        int(round(1000 * SCALE - y * 1000.0 * SCALE, 1)),
     )
     coordinate = coordinate[0] * scale, coordinate[1] * scale
     return coordinate
@@ -96,7 +96,6 @@ def draw_supply_lines(img, color=(0, 255, 0, 255), apistat: ApiStatus = None):
 
 
 def draw_attack_lines(draw, planet, apistat: ApiStatus):
-
     waypoints = planet.attacking
     gpos = planet.position
     x, y = get_im_coordinates(gpos.x, gpos.y, 2)
@@ -175,7 +174,6 @@ def highlight(img, index, x, y, name, hper, owner, event, task_planets, health=0
 
 
 def place_planet(index, frames_dict):
-
     filepath = f"./assets/planets/planet_{index}_rotate.gif"
     if os.path.exists(filepath):
         frames_dict[index] = []

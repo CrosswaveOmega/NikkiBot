@@ -123,7 +123,7 @@ class TCBot(
         self.logs = logging.getLogger("TCLogger")
         self.loggersetup()
         self.embedding = gptmod.GenericThread(gptmod.warmup)
-        #self.embedding.run()
+        # self.embedding.run()
 
         self.extensiondir, self.extension_list = "", []
         self.plugindir, self.plugin_list = "", []

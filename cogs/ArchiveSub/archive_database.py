@@ -726,7 +726,7 @@ class ArchivedRPMessage(ArchiveBase):
             session.query(ArchivedRPMessage)
             .filter(
                 (ArchivedRPMessage.server_id == server_id)
-                & ((ArchivedRPMessage.message_id == message_id))
+                & (ArchivedRPMessage.message_id == message_id)
             )
             .order_by(ArchivedRPMessage.created_at)
             .first()
@@ -766,7 +766,7 @@ class ArchivedRPMessage(ArchiveBase):
             session.query(ArchivedRPMessage)
             .filter(
                 (ArchivedRPMessage.server_id == server_id)
-                & ((ArchivedRPMessage.channel_sep_id == None))
+                & (ArchivedRPMessage.channel_sep_id == None)
             )
             .order_by(ArchivedRPMessage.created_at)
             .limit(upperlim)
@@ -798,7 +798,7 @@ class ArchivedRPMessage(ArchiveBase):
             session.query(ArchivedRPMessage)
             .filter(
                 (ArchivedRPMessage.server_id == server_id)
-                & ((ArchivedRPMessage.channel_sep_id == None))
+                & (ArchivedRPMessage.channel_sep_id == None)
             )
             .order_by(ArchivedRPMessage.created_at)
             .offset(startat)
@@ -890,7 +890,7 @@ class ArchivedRPMessage(ArchiveBase):
             select(ArchivedRPMessage)
             .filter(
                 (ArchivedRPMessage.server_id == server_id)
-                & ((ArchivedRPMessage.channel_sep_id == channel_sep_id))
+                & (ArchivedRPMessage.channel_sep_id == channel_sep_id)
             )
             .order_by(ArchivedRPMessage.created_at)
         )

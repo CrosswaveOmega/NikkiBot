@@ -292,6 +292,5 @@ class DatabaseSingleton:
 
 
 class DSCTX:
-
     def __init__(self):
         self._instance = DatabaseSingleton._DatabaseSingleton("setup")

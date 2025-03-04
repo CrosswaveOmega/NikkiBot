@@ -130,7 +130,7 @@ def progress_bar(current, total, width=5):
     bar = f"{'f' * filled_width}{'h' * half_width}{'e' * empty_width}"
     if len(bar) > 1:
         middle = "".join(bar_emoji[i] for i in bar[1:-1])
-        bar = f"{bar_emoji['1'+bar[0]]}{middle}{bar_emoji['2'+bar[-1]]}"
+        bar = f"{bar_emoji['1' + bar[0]]}{middle}{bar_emoji['2' + bar[-1]]}"
     else:
         bar = f"{bar_emoji['1e']}{bar_emoji['2e']}"
     return bar

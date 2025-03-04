@@ -161,7 +161,7 @@ class TCTask:
             hours = str(int(nextt.seconds // 3600)) + "h,"
         if ((nextt.seconds // 60) % 60) > 0:
             mins = str(int((nextt.seconds // 60) % 60)) + "m"
-        formatted_delta = f"{days}{hours}{mins},{nextt.seconds%60}s"
+        formatted_delta = f"{days}{hours}{mins},{nextt.seconds % 60}s"
         return f"{self.name}: {formatted_delta}\n"
 
     def time_left_shorter(self) -> str:
@@ -177,7 +177,7 @@ class TCTask:
             hours = str(int(nextt.seconds // 3600)) + "h,"
         if ((nextt.seconds // 60) % 60) > 0:
             mins = str(int((nextt.seconds // 60) % 60)) + "m"
-        formatted_delta = f"{days}{hours}{mins},{nextt.seconds%60}s"
+        formatted_delta = f"{days}{hours}{mins},{nextt.seconds % 60}s"
         return f"{formatted_delta}\n"
 
     def assign_wrapper(self, func: CoroutineWrap) -> CoroutineWrap:
@@ -431,7 +431,7 @@ class TCTaskManager:
 
         logs.warning(f"%s is standby", name)
         to_add = manager.tasks[name]
-        if ((to_add.status != "standby")) and (not (name in manager.to_delete)):
+        if (to_add.status != "standby") and (not (name in manager.to_delete)):
             manager.myqueue.put(to_add.get_ref())
             to_add.status = "standby"
         # manager.to_delete.append(name)

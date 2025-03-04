@@ -484,8 +484,8 @@ class Batch:
     def check_trig_combinations(
         self, trig_list: List[str], planet_data: PlanetEvents
     ) -> List[str]:
-        '''Get a list of valid "combos", game events that happen when certain status elements
-        are added/removed/changed at the same time.'''
+        """Get a list of valid "combos", game events that happen when certain status elements
+        are added/removed/changed at the same time."""
         planet: Planet = planet_data.planet
         combinations: List[str] = []
 
@@ -1113,7 +1113,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     if embed.color == 0xAC50FE:
                         subthread.append(embed)
 
-        #Position's switch
+        # Position's switch
         thishook = AssetLookup.get_asset("subhook", "urls")
         if thishook:
             # Redirection code.
@@ -1131,12 +1131,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
         if not embeds:
             return
-        
-        val_batches=self.group_embeds(embeds)
+
+        val_batches = self.group_embeds(embeds)
         await self.send_embeds_through_webhook(val_batches)
-        
-    def group_embeds(self,embeds:List[discord.Embed]):
-        '''Group Embeds Together.'''
+
+    def group_embeds(self, embeds: List[discord.Embed]):
+        """Group Embeds Together."""
         val_batches = []
         batch = []
         for e in embeds:
@@ -1154,8 +1154,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             val_batches.append(batch)
         return val_batches
 
-
-    async def send_embeds_through_webhook(self,batches:List[discord.Embed]):
+    async def send_embeds_through_webhook(self, batches: List[discord.Embed]):
         for embeds in batches:
             for hook in list(self.loghook):
                 try:
@@ -1172,15 +1171,14 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         self.loghook.remove(hook)
 
     async def send_last_planet_positions(self):
-        now=discord.utils.utcnow()
-        embs=[]
+        now = discord.utils.utcnow()
+        embs = []
         for ind, lis in self.last_move.items():
-            embs.append(Embeds.dumpEmbedPlanet(lis[1],lis[2], lis[0], "changed"))
+            embs.append(Embeds.dumpEmbedPlanet(lis[1], lis[2], lis[0], "changed"))
         if not embs:
             return
-        batches=self.group_embeds(embs)
+        batches = self.group_embeds(embs)
         await self.send_embeds_through_webhook(batches)
-
 
     async def build_embed(self, item: GameEvent):
         event_type = item.mode
@@ -1309,14 +1307,15 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     # Every 15 minutes
                     if "position" in dump and len(list(dump.keys())) == 1:
                         if int(info.index) not in self.last_move:
-                            self.last_move[int(info.index)] = [planet,info,dump]
+                            self.last_move[int(info.index)] = [planet, info, dump]
                             return Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
                         elif (
-                            info.retrieved_at - self.last_move[int(info.index)][1].retrieved_at
+                            info.retrieved_at
+                            - self.last_move[int(info.index)][1].retrieved_at
                         ).total_seconds() > 3600:
-                            self.last_move[int(info.index)] = [planet,info,dump]
+                            self.last_move[int(info.index)] = [planet, info, dump]
                             return Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
-                        self.last_move[int(info.index)] = [planet,info,dump]
+                        self.last_move[int(info.index)] = [planet, info, dump]
                         if info.retrieved_at.minute % 15 != 0:
                             return None
                         embed = Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
@@ -1456,7 +1455,6 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
     async def get_last_recorded_positions(self, ctx: commands.Context):
         await self.send_last_planet_positions()
         await ctx.send("Last Planet Positions sent through Auto Log Embeds.")
-
 
     @commands.is_owner()
     @commands.command(name="planeteffectget")

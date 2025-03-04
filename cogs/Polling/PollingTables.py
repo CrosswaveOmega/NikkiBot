@@ -105,8 +105,8 @@ class PollTable(PollingBase):
     def poll_buttons(poll):
         buttons = []
         for i in range(1, poll.choices + 1):
-            button_id = f"{poll.poll_id}:choice_{chr(ord('a')+i-1)}"
-            choice_text = getattr(poll, f"choice_{chr(ord('a')+i-1)}")
+            button_id = f"{poll.poll_id}:choice_{chr(ord('a') + i - 1)}"
+            choice_text = getattr(poll, f"choice_{chr(ord('a') + i - 1)}")
             buttons.append((button_id, choice_text))
         return buttons
 

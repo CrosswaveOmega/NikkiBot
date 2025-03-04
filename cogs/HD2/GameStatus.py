@@ -78,7 +78,7 @@ class LimitedSizeList(list):
             self.items.pop(0)
         self.items.append(item)
 
-    def get_changes(self) -> List[Union[War, Assignment2, Campaign2,GlobalResource]]:
+    def get_changes(self) -> List[Union[War, Assignment2, Campaign2, GlobalResource]]:
         """return a list of all differences between items in this limited sized list."""
         curr, this = None, []
         for i in self.items:
@@ -145,7 +145,6 @@ class ApiStatus:
     ]
 
     def __init__(self, client: APIConfig = APIConfig(), max_list_size=8, direct=False):
-
         set_status_emoji(status_emoji)
         self.client = client
         self.max_list_size = max_list_size
@@ -205,7 +204,6 @@ class ApiStatus:
 
     @classmethod
     def from_dict(cls, data, client: APIConfig = APIConfig()):
-        
         newcks = cls(client=client)
         newcks.max_list_size = data["max_list_size"]
         newcks.war = LimitedSizeList(newcks.max_list_size)
@@ -459,7 +457,7 @@ class ApiStatus:
             # print(camp.title, camp.briefing)
             dates.append(
                 (
-                    f"{camp.title}:End at{fdt(et(camp.expiration),'R')}",
+                    f"{camp.title}:End at{fdt(et(camp.expiration), 'R')}",
                     et(camp.expiration),
                 )
             )
@@ -485,7 +483,7 @@ class ApiStatus:
                 acts.append((camp.planet, dps))
                 dates.append(
                     (
-                        f"{camp.planet.get_name()}:{camp.planet.format_estimated_time_string(dps,proj_date)}",
+                        f"{camp.planet.get_name()}:{camp.planet.format_estimated_time_string(dps, proj_date)}",
                         proj_date,
                     )
                 )
@@ -494,13 +492,13 @@ class ApiStatus:
                 acts.append((camp.planet.event, eps))
                 dates.append(
                     (
-                        f"{camp.planet.get_name()}:{camp.planet.event.format_estimated_time_string(eps,proj_date)}",
+                        f"{camp.planet.get_name()}:{camp.planet.event.format_estimated_time_string(eps, proj_date)}",
                         proj_date,
                     )
                 )
                 dates.append(
                     (
-                        f"{camp.planet.get_name()}:End at{fdt(et(camp.planet.event.endTime),'R')}",
+                        f"{camp.planet.get_name()}:End at{fdt(et(camp.planet.event.endTime), 'R')}",
                         et(camp.planet.event.endTime),
                     )
                 )
@@ -531,7 +529,6 @@ class ApiStatus:
         for index in results:
             planet = self.planets.get(index, None)
             if planet:
-
                 fronts.add(planet.currentOwner.upper())
 
         return list(fronts)
@@ -782,7 +779,7 @@ def add_to_csv(stat: ApiStatus):
     csv_file_path = "statistics.csv"
     csv_impact_track = "impact_track.csv"
 
-    csv_funnynumber= "funny_number_track.csv"
+    csv_funnynumber = "funny_number_track.csv"
 
     diver_amount, total_players, diverpercent, total_contrib, per_second = (
         stat.calculate_total_impact()
@@ -797,14 +794,14 @@ def add_to_csv(stat: ApiStatus):
             "per_second": per_second,
         }
     ]
-    rows_for_number=[]
+    rows_for_number = []
     for i in stat.warall.status.globalResources:
         rows_for_number.append(
             {
                 "timestamp": timestamp,
                 "id": i.id32,
                 "value": i.currentValue,
-                "maxValue":i.maxValue
+                "maxValue": i.maxValue,
             }
         )
 

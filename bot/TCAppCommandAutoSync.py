@@ -303,7 +303,7 @@ class AppGuildTreeSync(Guild_Sync_Base):
             difference, same, total, simscore = dict_diff(oldtree, newtree)
             debug, score = (
                 f"Differences found: {difference}",
-                f"{total-same} keys out of {total} are different, simularity is {round(simscore,2)}%",
+                f"{total - same} keys out of {total} are different, simularity is {round(simscore, 2)}%",
             )
 
             if same == total:

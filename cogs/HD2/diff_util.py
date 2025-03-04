@@ -27,7 +27,6 @@ class EventModes(Enum):
     DEADZONE_END = 9
 
 
-
 class GameEvent(BaseApiModel):
     """
     Pydantic model for game events.
@@ -184,7 +183,11 @@ async def process_planet_events(
         oc = await check_compare_value(key, event[key], target)
         if not oc:
             item = GameEvent(
-                mode=EventModes.NEW, place=place, batch=batch, value=event, game_time=game_time
+                mode=EventModes.NEW,
+                place=place,
+                batch=batch,
+                value=event,
+                game_time=game_time,
             )
             pushed_items.append(item)
             new.append(item)
@@ -279,7 +282,9 @@ async def process_planet_attacks(
         await QueueAll.put(combined_list)
     return pushed_items
 
-DEADZONE=False
+
+DEADZONE = False
+
 
 async def detect_loggable_changes(
     old: DiveharderAll, new: DiveharderAll, QueueAll: asyncio.Queue, statics: StaticAll
@@ -303,18 +308,24 @@ async def detect_loggable_changes(
     if old.status.time == new.status.time:
         if not DEADZONE:
             newitem = GameEvent(
-                mode=EventModes.DEADZONE, place=EventModes.DEADZONE, batch=batch, value=new.status
+                mode=EventModes.DEADZONE,
+                place=EventModes.DEADZONE,
+                batch=batch,
+                value=new.status,
             )
-            DEADZONE=True
+            DEADZONE = True
 
             await QueueAll.put([newitem])
     else:
         if DEADZONE:
             newitem = GameEvent(
-                mode=EventModes.DEADZONE_END, place=EventModes.DEADZONE_END, batch=batch, value=new.status
+                mode=EventModes.DEADZONE_END,
+                place=EventModes.DEADZONE_END,
+                batch=batch,
+                value=new.status,
             )
-            DEADZONE=False
-            
+            DEADZONE = False
+
             await QueueAll.put([newitem])
     gametime = new.status.time
     rawout = await get_differing_fields(
@@ -479,7 +490,7 @@ async def detect_loggable_changes(
             "index",
             QueueAll,
             batch,
-            [ "retrieved_at", "time_delta", "self"],
+            ["retrieved_at", "time_delta", "self"],
             game_time=gametime,
         )
     superlist += await process_planet_events(
@@ -538,7 +549,11 @@ async def detect_loggable_changes_planet(
     output["gstate"] = [j for j in output["gstate"].values()]
     await QueueAll.put(
         GameEvent(
-            mode=EventModes.DATA, place="planets", batch=batch, value=output, game_time=gametime
+            mode=EventModes.DATA,
+            place="planets",
+            batch=batch,
+            value=output,
+            game_time=gametime,
         )
     )
 

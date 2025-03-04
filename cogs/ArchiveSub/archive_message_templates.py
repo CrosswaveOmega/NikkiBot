@@ -94,12 +94,10 @@ class ArchiveMessageTemplate(MessageTemplates):
                 catlist[:upper_cat_limit]
             )  # Combine category mentions up to limit
         if len(mentionlist) > upper_ignore_limit:  # If mention list exceeds limit
-            mentions += (
-                f" and {len(mentionlist)-upper_ignore_limit} more!"  # Add extra number
-            )
+            mentions += f" and {len(mentionlist) - upper_ignore_limit} more!"  # Add extra number
         if len(catlist) > upper_cat_limit:  # If category list exceeds limit
             cattext += (
-                f" and {len(catlist)-upper_ignore_limit} more!"  # Add extra number
+                f" and {len(catlist) - upper_ignore_limit} more!"  # Add extra number
             )
         ments = f"Ignoring {len(mentionlist)} Channels:{mentions}\n"[
             :3000

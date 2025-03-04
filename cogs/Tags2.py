@@ -218,7 +218,7 @@ class TagEditView(BaseView):
         if not self.is_finished():
             embed.add_field(
                 name="timeout",
-                value=f"timeout in: {discord.utils.format_dt(self.get_timeout_dt(),'R')}",
+                value=f"timeout in: {discord.utils.format_dt(self.get_timeout_dt(), 'R')}",
                 inline=False,
             )
         if self.has_image:
@@ -588,7 +588,7 @@ class Tags(commands.Cog):
         for cat, taglist in tagdict.items():
             e = 0
             embed = discord.Embed(
-                title=f"Tags: {cat}, {e+1}", color=discord.Color(0x00787F)
+                title=f"Tags: {cat}, {e + 1}", color=discord.Color(0x00787F)
             )
             for name, text in taglist:
                 if text:
@@ -599,7 +599,7 @@ class Tags(commands.Cog):
                         e += 1
                         embed_list.append(embed)
                         embed = discord.Embed(
-                            title=f"Tags: {e+1}", color=discord.Color(0x00787F)
+                            title=f"Tags: {e + 1}", color=discord.Color(0x00787F)
                         )
                         act = False
                     if len(value) > 256:

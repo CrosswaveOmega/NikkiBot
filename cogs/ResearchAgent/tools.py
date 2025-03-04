@@ -136,15 +136,16 @@ def google_search(bot, query: str, result_limit: int) -> dict:
     print(query_results)
     return query_results
 
+
 async def async_markdown_convert(url, timeout=30):
     markdown = markitdown.MarkItDown()
     result = await asyncio.wait_for(asyncio.to_thread(markdown.convert, url), timeout)
     return result
 
 
-async def read_and_split_pdf(bot, url: str, chunk_size,extract_meta: bool = False):
+async def read_and_split_pdf(bot, url: str, chunk_size, extract_meta: bool = False):
     try:
-        result=await async_markdown_convert(url)
+        result = await async_markdown_convert(url)
         metadata = {}
         new_docs = []
         title, authors, date, abstract = (
@@ -384,7 +385,7 @@ async def add_summary(
     docs = Document(page_content=desc, metadata=metadata)
     newdata = [docs]
     ids = [
-        f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,doc.metadata['source']))}],sum:[{e}]"
+        f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.metadata['source']))}],sum:[{e}]"
         for e, doc in enumerate(newdata)
     ]
     if client == None:
@@ -429,7 +430,7 @@ async def store_many_splits(
     """
     chunk_size = 10
     ids = [
-        f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS,doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
+        f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
         for e, doc in enumerate(splits)
     ]
     chunked = chunk_list(ids, chunk_size)
@@ -562,7 +563,9 @@ async def search_sim(
         )
     else:
         docs = await vs.asimilarity_search_with_relevance_scores_and_embeddings(
-            question, k=k, filter=filterwith  # {'':titleres}}
+            question,
+            k=k,
+            filter=filterwith,  # {'':titleres}}
         )
     return docs
 
@@ -579,12 +582,12 @@ def get_doc_sources(docs: List[Tuple[Document, float]]):
         str: A string formatted to list unique sources and the indices of their appearances in the provided list.
     """
     all_links = [doc.metadata.get("source", "???") for doc, e, i in docs]
-    links = set(doc.metadata.get("source", "???") for doc, e, i, in docs)
+    links = set(doc.metadata.get("source", "???") for doc, e, i in docs)
 
     def ie(all_links: List[str], value: str) -> List[int]:
         return [index for index, link in enumerate(all_links) if link == value]
 
-    used = "\n".join(f"{ie(all_links,l)}{l}" for l in links)
+    used = "\n".join(f"{ie(all_links, l)}{l}" for l in links)
     source_pages = prioritized_string_split(used, ["%s\n"], 4000)
     cont = ""
     if len(source_pages) > 2:
@@ -701,7 +704,7 @@ async def get_points(
         tile = "NOTITLE" if "title" not in doc.metadata else doc.metadata["title"]
         output = f"""**ID**:{e}
         **Name:** {tile}
-        **Link:** {doc.metadata['source']}
+        **Link:** {doc.metadata["source"]}
         **Text:** {doc.page_content}"""
         tokens = gptmod.util.num_tokens_from_messages(
             [{"role": "system", "content": output}], "gpt-4o-mini"
@@ -792,7 +795,7 @@ END
             tile = meta["title"]
         output = f"""**ID**:{e}
         **Name:** {tile}
-        **Link:** {meta['source']}
+        **Link:** {meta["source"]}
         **Text:** {content}"""
         formatted_docs.append(output)
 
@@ -863,7 +866,7 @@ async def summarize(
         messages = [
             {
                 "role": "system",
-                "content": f"{summary_prompt}\n{prompt}\n You are viewing part {num+1}/{filelength} ",
+                "content": f"{summary_prompt}\n{prompt}\n You are viewing part {num + 1}/{filelength} ",
             },
             {"role": "user", "content": f"\n {articlepart}"},
         ]

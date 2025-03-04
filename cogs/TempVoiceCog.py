@@ -70,7 +70,6 @@ class VC_Dispatcher(discord.ui.View):
         custom_id="MakeNewTempVC:grey",
     )
     async def new_vc(self, interaction: discord.Interaction, button: discord.ui.Button):
-
         # ctx: commands.Context = await self.bot.get_context(interaction)
         if interaction.guild:
             output = await self.cog.create_temp_vc_2(interaction.guild)
@@ -85,7 +84,6 @@ class VC_Dispatcher(discord.ui.View):
     async def new_vc_num(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-
         # ctx: commands.Context = await self.bot.get_context(interaction)
         if interaction.guild:
             modal = ChangeLimitModal(timeout=5 * 60)
@@ -118,7 +116,6 @@ class VC_Dispatcher(discord.ui.View):
     async def clear_vc(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-
         # ctx: commands.Context = await self.bot.get_context(interaction)
         if interaction.guild:
             output = await self.cog.clear_unused_2(interaction.guild)
@@ -319,7 +316,6 @@ class TempVC(commands.Cog):
 
         # Check if the guild has already reached the max channel limit
         if len(self.temporary_vc_list.get(guild.id, [])) >= config.max_channels:
-
             return f"Cannot create more than {config.max_channels} temporary voice channels."
 
         category = discord.utils.get(guild.categories, id=config.category_id)
@@ -343,11 +339,10 @@ class TempVC(commands.Cog):
                 return f"You cannot have more than {upper} users as the limit!\n   Enter a number between {lower} and {upper}."
                 maxval = 99
             elif abs(maxval - maxv) > threshold:
-
                 return f"{maxval} is outside the permitted threshold!\n  Enter a number between {lower} and {upper}."
             maxv = maxval
 
-        vc_name = f"{config.target_name}-{self.temporary_vc_list[guild.id][0]+1}"
+        vc_name = f"{config.target_name}-{self.temporary_vc_list[guild.id][0] + 1}"
         self.temporary_vc_list[guild.id][0] += 1
         for vc in category.voice_channels:
             if config.target_name not in vc.name:

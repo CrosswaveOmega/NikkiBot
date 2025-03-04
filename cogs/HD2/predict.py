@@ -111,7 +111,6 @@ def experiment_models():
 
 
 def make_prediction_for_eps(data_dict):
-
     prediction_features = {
         "timestamp": data_dict["timestamp"],
         "player_count": data_dict["player_count"],
@@ -253,14 +252,14 @@ def make_graph():
         XE["eps"],
         color="#706CD6",
         alpha=0.2,
-        label=f"{round(confidence_level*100.0,0)}% Confidence Interval",
+        label=f"{round(confidence_level * 100.0, 0)}% Confidence Interval",
     )
     plt.plot(
         upper_bound,
         XE["eps"],
         color="#706CD6",
         alpha=0.2,
-        label=f"{round(confidence_level*100.0,0)}% Confidence Interval",
+        label=f"{round(confidence_level * 100.0, 0)}% Confidence Interval",
     )
     plt.xlim(left=0, right=maxy)  # Lower limit set to 0,0
     plt.ylim(bottom=0, top=maxx)
@@ -323,7 +322,6 @@ def make_graph():
 
 
 def make_graph2():
-
     from matplotlib.font_manager import FontProperties
 
     terminal_font = FontProperties(

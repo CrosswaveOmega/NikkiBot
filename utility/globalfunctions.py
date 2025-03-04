@@ -264,7 +264,7 @@ def seconds_to_time_stamp(seconds_init):
     if years > 1:
         return_string += f"{years}:"
     if days > 1:
-        return_string += f"{days%365}:"
+        return_string += f"{days % 365}:"
     if hours > 1:
         return_string += "{:02d}:".format(hours)
     return_string += "{:02d}:{:02d}".format(minutes, seconds)

@@ -176,8 +176,8 @@ class ReadableLoader(dl.WebBaseLoader):
                 r"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>", "", result
             )
             print("attempting read of ", urls[i][0], "length is", len(clean_html))
-            #readable = await check_readability(self.jsenv, clean_html, url)
-            #if not readable:  gui.dprint("Not readable link.")
+            # readable = await check_readability(self.jsenv, clean_html, url)
+            # if not readable:  gui.dprint("Not readable link.")
             try:
                 with Timer() as timer:
                     text, header = await read_article_aw(self.jsenv, clean_html, url)

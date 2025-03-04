@@ -4,7 +4,6 @@ from hd2api import *
 
 
 class maths:
-
     @staticmethod
     def dps_to_lph(dps, maxHealth: float = 1000000.0):
         """Damage per second to liberation per hour."""

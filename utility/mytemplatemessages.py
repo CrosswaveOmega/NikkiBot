@@ -25,7 +25,7 @@ class MessageTemplates:
         if clist:
             mentions = ",".join([f"<#{ment}>" for ment in clist[:upper_channel_limit]])
         if len(clist) > upper_channel_limit:
-            mentions += f" and {len(clist)-upper_channel_limit} more!"
+            mentions += f" and {len(clist) - upper_channel_limit} more!"
         embed = Embed(
             title="Server AI Config", description=mentions, color=Color(color)
         )
@@ -73,7 +73,7 @@ class MessageTemplates:
                 to_send = "???"
             if len(to_send) > 2000:
                 to_send = to_send[:1950] + "...tag size limit."
-            tagres = f"{tag['tagname']}\n```{to_send}```\n Guild only:{tag.get('guild_only','???')}"
+            tagres = f"{tag['tagname']}\n```{to_send}```\n Guild only:{tag.get('guild_only', '???')}"
         embed = Embed(title=title, description=tagres, color=Color(color))
         if tag != None:
             if "topic" in tag:

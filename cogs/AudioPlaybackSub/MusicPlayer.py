@@ -505,7 +505,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
         elif self.repeatone:
             plistc = " Repeat One is On."
         if self.processsize > 0:
-            processing = f" Processing { self.processsize} songs."
+            processing = f" Processing {self.processsize} songs."
         embed.set_footer(text=f"{con}{plistc}{processing}")
 
         if self.current != None:
@@ -535,7 +535,7 @@ class MusicPlayer(PlaylistMixin, PlayerMixin):
                 s = f"•[{i.title}]({i.url})-{i.get_timestamp()}"
                 titles.append(s)
             if length > 3:
-                titles.append(f"...and {length-3} more.")
+                titles.append(f"...and {length - 3} more.")
             titles.append(seconds_to_time_string(duration))
             res = "\n".join(titles)
             embed.add_field(name="Playlist View", value=res, inline=True)

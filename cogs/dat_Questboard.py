@@ -104,7 +104,7 @@ class QuestLeaderboard(Base):
     )  # files sent in a quest board.
 
     @classmethod
-    async def get_leaderboard_for_guild(cls, guild_id: int,limit=40):
+    async def get_leaderboard_for_guild(cls, guild_id: int, limit=40):
         async with DatabaseSingleton.get_async_session() as session:
             query = (
                 select(cls)
@@ -215,7 +215,6 @@ class QuestRoleConfig(Base):
             leaderboard_entry = result.scalar()
 
             if leaderboard_entry:
-
                 leaderboard_entry.score_bonus = score
                 if kudos > 0:
                     leaderboard_entry.kudos_bonus = kudos

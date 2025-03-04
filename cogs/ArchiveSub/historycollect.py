@@ -1,13 +1,11 @@
 import gui
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import List, Tuple
 
-from utility.globalfunctions import get_server_icon_color
 from .archive_database import HistoryMakers, ChannelArchiveStatus
 from database import ServerArchiveProfile
 import discord
-from queue import Queue
 from bot import StatusEditMessage
 import utility.formatutil as futil
 from discord import ChannelType as ct
@@ -19,6 +17,27 @@ Collects all messages in non-blacklisted channels, and adds them to the database
 """
 BATCH_SIZE = 50
 LAZYGRAB_LIMIT = 10000
+
+
+def should_archive_channel(
+    mode: int, chan: discord.TextChannel, profile, guild: discord.Guild
+):
+    chan_ignore = profile.has_channel(chan.id)
+    cat_ignore = chan.category and profile.has_channel(chan.category.id)
+    if not (
+        chan.permissions_for(guild.me).view_channel
+        and chan.permissions_for(guild.me).read_message_history
+    ):
+        return False
+
+    if mode == 0:
+        return not chan_ignore and not cat_ignore
+    elif mode == 1:
+        return chan_ignore
+    elif mode == 2:
+        return cat_ignore and not bool(chan_ignore)
+
+    return False
 
 
 class ArchiveContext:
@@ -111,7 +130,9 @@ class ArchiveContext:
         if chan.type in [ct.public_thread, ct.private_thread, ct.news_thread]:
             chan = chan.parent
         gui.gprint(chan.id, self.profile.has_channel(chan.id))
-        should=should_archive_channel(self.profile.get_ignore_mode(),chan,self.profile,guild)
+        should = should_archive_channel(
+            self.profile.get_ignore_mode(), chan, self.profile, guild
+        )
         # if (
         #     self.profile.has_channel(chan.id) == False
         #     and chan.permissions_for(guild.me).view_channel == True
@@ -187,7 +208,7 @@ class ArchiveContext:
                     self.profile.server_id
                 ),
             )
-        await self.status_mess.editw(min_seconds=seconds, content=text, embed=emb),
+        (await self.status_mess.editw(min_seconds=seconds, content=text, embed=emb),)
 
 
 async def iter_hist_messages(
@@ -327,20 +348,6 @@ async def collect_server_history_lazy(ctx: commands.Context, statmess=None, **kw
     # await statmess.delete()
     return grabstat, statmess
 
-def should_archive_channel(mode: int, chan:discord.TextChannel, profile, guild:discord.Guild):
-    chan_ignore=profile.has_channel(chan.id)
-    cat_ignore=chan.category and profile.has_channel(chan.category.id)
-    if chan.permissions_for(guild.me).view_channel and chan.permissions_for(guild.me).read_message_history:
-        return False
-
-    if mode == 0:
-        return not chan_ignore and not cat_ignore
-    elif mode == 1:
-        return chan_ignore
-    elif mode == 2:
-        return cat_ignore and not bool(chan_ignore)
-
-    return False
 
 async def setup_lazy_grab(ctx, **kwargs):
     # Collect from desired channels to a point.
@@ -446,11 +453,11 @@ async def collect_server_history(ctx, **kwargs):
     current_channel_count = 0
     current_channel_every = 50
     totalcharlen = 0
-    mode=profile.get_ignore_mode()
+    mode = profile.get_ignore_mode()
     await arch_ctx.edit_mess(seconds=0)
     for tup, chan in chantups:
         arch_ctx.channel_spot += 1
-        doarchive=should_archive_channel(mode,chan,profile,guild)
+        doarchive = should_archive_channel(mode, chan, profile, guild)
 
         if doarchive:
             threads = chan.threads
@@ -476,7 +483,7 @@ async def collect_server_history(ctx, **kwargs):
                 messages = messages + chanmess
                 current_channel_count += 1
 
-            await arch_ctx.edit_mess(f"", chan.name)
+            await arch_ctx.edit_mess("", chan.name)
             if current_channel_count % current_channel_every == 0:
                 await asyncio.sleep(1)
 

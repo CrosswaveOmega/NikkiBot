@@ -272,7 +272,6 @@ def generate_planet_texture(
     biome_name="Unknown",
     make_a_new_texture=True,
 ):
-
     xpix, ypix = 40, 40
     if make_a_new_texture:
         img = make_new_texture(
@@ -288,7 +287,6 @@ def generate_planet_texture(
     ):
         images = []
         for frame in range(frames):
-
             angle = (frame / frames) * 360
             # print(angle)
             light_dir = np.array([0.8, 0, 1])
@@ -376,7 +374,6 @@ all_colors = {
 
 
 def extract_colors_image(all_colors):
-
     # Create a new image where each row is one of the found colors
     color_image = Image.new(
         "RGB",

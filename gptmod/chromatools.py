@@ -206,8 +206,7 @@ class ChromaBetter(Chroma):
             for _, similarity, _ in docs_and_similarities
         ):
             warnings.warn(
-                "Relevance scores must be between"
-                f" 0 and 1, got {docs_and_similarities}"
+                f"Relevance scores must be between 0 and 1, got {docs_and_similarities}"
             )
 
         if score_threshold is not None:
@@ -343,7 +342,7 @@ class ChromaBetter(Chroma):
         """
         if self._embedding_function is None:
             raise ValueError(
-                "For MMR search, you must specify an embedding function on" "creation."
+                "For MMR search, you must specify an embedding function oncreation."
             )
 
         embedding = self._embedding_function.embed_query(query)
