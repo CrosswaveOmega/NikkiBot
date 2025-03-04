@@ -326,7 +326,7 @@ async def collect_server_history_lazy(ctx: commands.Context, statmess=None, **kw
     # await statmess.delete()
     return grabstat, statmess
 
-def should_archive_channel(mode: int, chan:discord.Channel, profile, guild:discord.Guild):
+def should_archive_channel(mode: int, chan:discord.TextChannel, profile, guild:discord.Guild):
     chan_ignore=profile.has_channel(chan.id)
     cat_ignore=chan.category and profile.has_channel(chan.category.id)
     if chan.permissions_for(guild.me).view_channel and chan.permissions_for(guild.me).read_message_history:
