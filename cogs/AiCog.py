@@ -36,13 +36,12 @@ from database import Users_DoNotTrack
 
 lock = asyncio.Lock()
 JSONMODE = False
-MEMORYMODE = True
+MEMORYMODE = False
 nikkiprompt = """You are Nikki, a energetic, cheerful, and determined female AI ready to help users with whatever they need.
 All your responses must convey a strong personal voice.  
 Be as objective as possible.
 Carefully heed the user's instructions.
 If you do not know how to do something, please note that with your response.
-[MEMORYMODE]
 [JSONMODE]
 Never use emoji.
 Respond using Markdown."""
@@ -160,7 +159,8 @@ async def process_result(
             if isinstance(contents, discord.Message):
                 messageresp = contents
                 contents = messageresp.content
-                await mem.add_to_mem(ctx, messageresp, present_mem=present_mem)
+                if mem:
+                    await mem.add_to_mem(ctx, messageresp, present_mem=present_mem)
 
                 return role, contents, messageresp, function
 
@@ -288,15 +288,22 @@ async def ai_message_invoke(
         np = np.replace("[MEMORYMODE]", "")
 
     chat.add_message("system", nikkiprompt)
-    mem = SentenceMemory(ctx.bot, guild, user)
-    docs, mems, alltime = await mem.search_sim(message)
+    mem=None
     if MEMORYMODE:
+        mem = SentenceMemory(ctx.bot, guild, user)
+        docs, mems, alltime = await mem.search_sim(message)
         chat.add_message("system", name="memory", content=f"### MEMORY:\n{mems}")
-    audit = await AIMessageTemplates.add_resp_audit(
-        ctx,
-        DummyMessage(mems),
-        chat,
-    )
+        audit = await AIMessageTemplates.add_resp_audit(
+            ctx,
+            DummyMessage(mems),
+            chat,
+        )
+    else:
+        audit = await AIMessageTemplates.add_resp_audit(
+            ctx,
+            DummyMessage("."),
+            chat,
+        )
     for f in mes[:5]:  # Load old messags into ChatCreation
         chat.add_message(f["role"], f["content"])
     # Load current message into chat creation.
