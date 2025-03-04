@@ -11,7 +11,7 @@ class MusicPlayers:
 
     def add_player(self, bot, guild: discord.Guild):
         key = str(guild.id)
-        if not key in self.players:
+        if key not in self.players:
             newplayer = MusicPlayer(bot, guild)
             self.players[key] = newplayer
 

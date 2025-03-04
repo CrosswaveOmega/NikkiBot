@@ -3,12 +3,12 @@ import discord
 import json
 import logging
 import traceback
-from typing import Any, Dict, List, Tuple, Union, TYPE_CHECKING
-from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey, DateTime, Double
+from typing import Any, Dict, List, Tuple
+from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey
 from sqlalchemy.orm import relationship, Mapped
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import select, not_, func
+from sqlalchemy import select
 import datetime
 from assetloader import *
 import gui
@@ -623,7 +623,7 @@ class SpecialAppSync:
     async def all_guild_startup(self, force=False, sync_only=False, no_sync=False):
         """fetch all available guilds, and sync the command tree."""
         try:
-            gui.gprint(f"syncing for global")
+            gui.gprint("syncing for global")
             if not sync_only:
                 await self.add_enabled_cogs_into_guild(None, force=force)
             if no_sync == False or sync_only:
@@ -646,7 +646,7 @@ class SpecialAppSync:
 
             if entry:
                 if entry.donotsync:
-                    gui.gprint(f"nosync for global")
+                    gui.gprint("nosync for global")
                     return
 
         except Exception as e:

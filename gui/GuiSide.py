@@ -1,10 +1,7 @@
-import time
 import tkinter as tk
-from tkinter import ttk
 import asyncio
 from queue import Queue
 from .BotEntry import DataStore
-import threading
 from datetime import datetime
 import tkinter.font as font
 

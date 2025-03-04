@@ -1,25 +1,15 @@
 import asyncio
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 import re
 
 from discord import app_commands
 
 from sqlitedict import SqliteDict
 
-from dateutil.relativedelta import relativedelta
-from datetime import datetime, timezone
 import gui
 import utility
 from utility import MessageTemplates
-from bot import (
-    TCBot,
-    TCGuildTask,
-    Guild_Task_Functions,
-    StatusEditMessage,
-    TC_Cog_Mixin,
-)
-import numpy as np
 
 
 def is_cyclic_i(dictionary, start_key):
@@ -199,7 +189,7 @@ class Tags2(commands.Cog):
         else:
             await MessageTemplates.tag_message(
                 ctx,
-                f"You don't have permission to delete this tag.",
+                "You don't have permission to delete this tag.",
                 title="Tag delete error.",
             )
 
@@ -232,12 +222,12 @@ class Tags2(commands.Cog):
             else:
                 await MessageTemplates.tag_message(
                     ctx,
-                    f"You don't have permission to edit this tag.",
+                    "You don't have permission to edit this tag.",
                     title="Tag edit error.",
                 )
         else:
             await MessageTemplates.tag_message(
-                ctx, f"Tag not found", title="Tag edit error."
+                ctx, "Tag not found", title="Tag edit error."
             )
 
     @tags.command(name="list", description="list all tags")
@@ -271,7 +261,7 @@ class Tags2(commands.Cog):
             await utility.pages_of_embeds(ctx, embed_list)
 
         else:
-            await MessageTemplates.tag_message(ctx, f"No tags found")
+            await MessageTemplates.tag_message(ctx, "No tags found")
 
     @tags.command(name="get", description="get a tag")
     @app_commands.describe(tagname="tagname to get")
@@ -305,7 +295,7 @@ class Tags2(commands.Cog):
                     to_send = to_send[:1950] + "tag size limit."
                 await ctx.send(to_send)
         else:
-            await MessageTemplates.tag_message(ctx, f"Tag not found.")
+            await MessageTemplates.tag_message(ctx, "Tag not found.")
 
     @tags.command(name="getraw", description="get a tag's raw text")
     @app_commands.describe(tagname="tagname to get")
@@ -319,11 +309,11 @@ class Tags2(commands.Cog):
             text = tag.get("text")
             output = text
             await MessageTemplates.tag_message(
-                ctx, f"Displaying raw tag text.", tag=tag, title="Raw Tag Text."
+                ctx, "Displaying raw tag text.", tag=tag, title="Raw Tag Text."
             )
 
         else:
-            await MessageTemplates.tag_message(ctx, f"Tag not found.")
+            await MessageTemplates.tag_message(ctx, "Tag not found.")
 
     @commands.command()
     async def tagcycletest(self, ctx):

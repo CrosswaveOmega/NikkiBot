@@ -2,7 +2,7 @@ from database import ServerArchiveProfile
 from discord import Embed, Color, Guild, ChannelType
 from discord.ext import commands
 
-from utility import MessageTemplates, get_server_icon_color
+from utility import MessageTemplates
 from bot import TCGuildTask
 from assetloader import AssetLookup
 
@@ -24,7 +24,7 @@ class ArchiveMessageTemplate(MessageTemplates):
         if not profile:
             embed = Embed(
                 title=guild.name,
-                description=f"Server RP Archive System is unset in this server.",
+                description="Server RP Archive System is unset in this server.",
                 color=Color(color),  # Creating the embed
             )
 

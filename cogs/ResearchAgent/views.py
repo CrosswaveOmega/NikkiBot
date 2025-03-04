@@ -1,7 +1,7 @@
 import discord
-from discord import Interaction, PartialEmoji
+from discord import Interaction
 import gui
-from typing import List, Tuple, Optional, Set, Dict, Any
+from typing import List, Tuple
 from utility import pages_of_embeds_2
 from .actions import sentence_sim_op
 

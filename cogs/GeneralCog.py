@@ -11,7 +11,7 @@ from discord.ext import commands
 from discord import app_commands
 from utility import MessageTemplates, RRuleView, formatutil
 from utility.embed_paginator import pages_of_embeds
-from bot import TC_Cog_Mixin, super_context_menu
+from bot import TC_Cog_Mixin
 
 
 class Feedback(discord.ui.Modal, title="Feedback"):
@@ -53,7 +53,7 @@ class Feedback(discord.ui.Modal, title="Feedback"):
                 chan = self.bot.get_channel(int(mychannel))
                 await chan.send(embed=embed)
         await interaction.response.send_message(
-            f"Thanks for your feedback!  I will save it to my feedback file.",
+            "Thanks for your feedback!  I will save it to my feedback file.",
             ephemeral=True,
         )
 
@@ -73,7 +73,7 @@ class PersistentView(discord.ui.View):
     async def callback(self, interaction, button):
         user = interaction.user
         label = button.label
-        if not str(user.id) in self.my_count:
+        if str(user.id) not in self.my_count:
             self.my_count[str(user.id)] = 0
         self.my_count[str(user.id)] += 1
         await interaction.response.send_message(
@@ -290,7 +290,7 @@ class General(commands.Cog, TC_Cog_Mixin):
             await ctx.send(f"{modal.name.value}", epheremal=True)
             await ctx.send(f"{modal.feedback.value}", epheremal=True)
         else:
-            await ctx.send(f"Timeout...", epheremal=True)
+            await ctx.send("Timeout...", epheremal=True)
 
 
 async def setup(bot):

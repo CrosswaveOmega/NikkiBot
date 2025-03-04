@@ -1,11 +1,8 @@
-from typing import List
 
 
-from random import randint, seed
 
 from .c_util import *
 
-from .calc_elements import DataBit, substitutions
 from .calc_nested import parse_and_calculate_string
 
 

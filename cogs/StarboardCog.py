@@ -478,7 +478,7 @@ class StarboardCog(commands.Cog):
         )
         unique = []
         for e in emlist:
-            if not e in unique:
+            if e not in unique:
                 unique.append(e)
         emoji = ",".join(unique)
 

@@ -1,16 +1,9 @@
-import configparser
 import os
 from pathlib import Path
 import gui
-from .TauCetiBot import TCBot, ConfigParserSub
+from .TauCetiBot import ConfigParserSub
 
 import keyring
-import sys
-import trace
-import nacl.secret
-import nacl.utils
-import nacl.exceptions
-import base64
 
 from .key_vault import keyring_setup, print_package
 

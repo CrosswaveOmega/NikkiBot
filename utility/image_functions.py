@@ -1,22 +1,11 @@
-import os
-import re
-import discord
-from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 
 import math
-from datetime import datetime, timedelta, timezone
 
-from discord.ext import commands, tasks
 
-from discord import Webhook, ui
-import site
 
-from discord.utils import escape_markdown
-import re
 from typing import Union
 import markdown
-from PIL import Image, ImageDraw, ImageFont
 
 
 def wrap_text(draw: ImageDraw, text: str, font: ImageFont, max_width: int) -> list[str]:

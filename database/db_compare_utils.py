@@ -1,8 +1,5 @@
 from sqlalchemy import inspect, MetaData, text
 from sqlalchemy.schema import Column
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.engine import Engine
-from typing import List
 
 
 def generate_column_definition(column, engine):

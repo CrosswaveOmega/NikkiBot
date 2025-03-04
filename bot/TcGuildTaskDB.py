@@ -350,7 +350,7 @@ class TCGuildTask(Guild_Task_Base):
         try:
             to_return = rrulestr(rd_json)
             return to_return
-        except Exception as e:
+        except Exception:
             start_date = datetime(2023, 1, 1, 16, 0)
 
             # Create a rule for weekly recurrence on Sundays

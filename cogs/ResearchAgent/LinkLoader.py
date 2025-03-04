@@ -2,40 +2,26 @@ from typing import List, Optional, Tuple
 import chromadb
 import discord
 import asyncio
-from assetloader import AssetLookup
-import re
 
 # import datetime
 
 
 from discord.ext import commands
 
-from discord import app_commands
-from bot import TC_Cog_Mixin, StatusEditMessage, super_context_menu, TCBot
+from bot import StatusEditMessage
 from .tools import (
     has_url,
-    read_and_split_link,
     read_and_split_links,
-    store_splits,
     store_many_splits,
 )
-import gptmod
-import gptfunctionutil as gptu
-import gptmod.error
-from database.database_ai import AuditProfile
 from langchain.docstore.document import Document
 
 # I need the readability npm package to work, so
-from javascriptasync import require, eval_js
-import assets
-import gui
 
 from gptmod.chromatools import ChromaTools
 
-from googleapiclient.discovery import build  # Import the library
 
-from utility import prioritized_string_split, select_emoji
-from utility.embed_paginator import pages_of_embeds
+from utility import select_emoji
 from utility import Timer
 
 

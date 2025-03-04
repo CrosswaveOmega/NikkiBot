@@ -1,4 +1,3 @@
-import asyncio
 from typing import (
     Literal,
     Tuple,
@@ -8,7 +7,7 @@ from .AudioContainer import AudioContainer
 import random
 import discord
 
-from discord.ext import commands, tasks
+from discord.ext import commands
 
 """
 I'm putting the playback/playlist management functions in these two mixins because MusicPlayer was getting crowded.
@@ -37,11 +36,11 @@ class PlayerMixin:
         if self.repeat == False:
             self.repeat = True
             self.repeatone = False
-            await self.send_message(ctx, "repeat", f"Repeat enabled.", editinter)
+            await self.send_message(ctx, "repeat", "Repeat enabled.", editinter)
         elif self.repeat == True:
             self.repeat = False
             self.repeatone = False
-            await self.send_message(ctx, "repeat", f"Repeat disabled.", editinter)
+            await self.send_message(ctx, "repeat", "Repeat disabled.", editinter)
 
     async def play(self, ctx: commands.Context, editinter: discord.Interaction = None):
         """Start playing or resume playing the AudioContainer at self.current.

@@ -376,12 +376,12 @@ class TCBot(
     async def reload_needed(self, changed_files):
         """idea is to only load/unload changed files."""
         for i, e in self.loaded_extensions.items():
-            if not i in self.extension_list:
+            if i not in self.extension_list:
                 await self.unload_extension(i)
                 self.loaded_extensions[i] = None
 
         for ext in self.extension_list:
-            if not ext in self.loaded_extensions:
+            if ext not in self.loaded_extensions:
                 await self.extension_loader(ext)
             else:
                 val = await self.extension_reload(ext)
@@ -399,7 +399,7 @@ class TCBot(
             self.loaded_extensions[i] = None
 
         for ext in self.extension_list:
-            if not ext in self.loaded_extensions:
+            if ext not in self.loaded_extensions:
                 await self.extension_loader(ext)
             else:
                 val = await self.extension_reload(ext)
@@ -434,7 +434,7 @@ class TCBot(
 
     async def extension_reload(self, extname, plugin=False):
         """reload an extension by EXTNAME."""
-        if not extname in self.pswitchload(plugin):
+        if extname not in self.pswitchload(plugin):
             return "NOTFOUND"
         if extname in self.pswitchload(plugin):
             self.pswitchload(plugin)[extname] = ("settingup", None)
@@ -442,7 +442,7 @@ class TCBot(
                 await self.reload_extension(extname)
                 self.pswitchload(plugin)[extname] = ("running", None)
                 return "RELOADOK"
-            except commands.ExtensionNotLoaded as ex:
+            except commands.ExtensionNotLoaded:
                 return await self.extension_loader(extname)
             except Exception as ex:
                 await self.send_error(ex, "ERROR", True)

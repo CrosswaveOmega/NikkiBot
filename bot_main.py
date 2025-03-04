@@ -10,8 +10,6 @@ def recovery_mode(error):
     """setup and start the recovery mode bot."""
     import traceback
     import configparser
-    import os
-    import keyring
 
     def setup():
         config = configparser.ConfigParser()
@@ -28,7 +26,6 @@ def recovery_mode(error):
         return
     import discord
     from discord.ext import commands
-    import configparser
     import subprocess
     from bot.key_vault import get_token
 

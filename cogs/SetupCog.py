@@ -1,36 +1,21 @@
-from typing import List, Literal
+from typing import Literal
 import discord
-import operator
 import io
 import json
-import aiohttp
-import asyncio
-import csv
 
 # import datetime
-from datetime import datetime, timedelta
 
-from queue import Queue
 
-from discord.ext import commands, tasks
-from discord.utils import find
-from discord import Webhook, ui
-from bot import TC_Cog_Mixin, TCBot, AppGuildTreeSync, GuildCogToggle
+from discord.ext import commands
+from bot import TC_Cog_Mixin, TCBot, GuildCogToggle
 from discord import app_commands
-from discord.app_commands import Choice
-from pathlib import Path
 from database.database_singleton import DatabaseSingleton
 from utility import (
-    serverAdmin,
-    serverOwner,
-    load_manual,
     MessageTemplates,
     urltomessage,
 )
 from utility.embed_paginator import pages_of_embeds
 
-from assetloader import AssetLookup
-from discord.app_commands import AppCommand
 from database import Users_DoNotTrack
 import gui
 
@@ -358,20 +343,20 @@ class Setup(commands.Cog, TC_Cog_Mixin):
                             )
                         else:
                             embed.add_field(
-                                name=f"Channel perm",
+                                name="Channel perm",
                                 value=f"<#{perm.id}>, {perm.permission}",
                             )
                     if type == discord.AppCommandPermissionType.role:
                         embed.add_field(
-                            name=f"Role perm", value=f"<@&{perm.id}>, {perm.permission}"
+                            name="Role perm", value=f"<@&{perm.id}>, {perm.permission}"
                         )
                     if type == discord.AppCommandPermissionType.user:
                         embed.add_field(
-                            name=f"User perm", value=f"<@{perm.id}>, {perm.permission}"
+                            name="User perm", value=f"<@{perm.id}>, {perm.permission}"
                         )
-            except Exception as e:
+            except Exception:
                 embed.add_field(
-                    name=f"NO PERMS SET", value=f"No permissions where set."
+                    name="NO PERMS SET", value="No permissions where set."
                 )
             embed_list.append(embed)
         if ctx.interaction:
@@ -490,7 +475,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
             permissions = role.permissions
             for perm, val in permissions:
                 if val:
-                    if not perm in role_permissions:
+                    if perm not in role_permissions:
                         role_permissions[perm] = []
                     role_permissions[perm].append(role_name)
 

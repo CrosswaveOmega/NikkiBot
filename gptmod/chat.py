@@ -1,13 +1,8 @@
 print("importing chat")
-import asyncio
 import json
-from typing import Any, Dict, List, Optional, Union
-import aiohttp
-from datetime import datetime, timezone
+from typing import Dict, List, Optional, Union
 from gptmod.object_core import ApiCore
-from gptmod.api import GptmodAPI
 from gptmod.util import num_tokens_from_messages
-import openai
 
 
 class ChatCreation(ApiCore):

@@ -2,15 +2,12 @@
 Experimental secure key storage.
 """
 
-import configparser
 import os
-from pathlib import Path
 import gui
-from .TauCetiBot import TCBot, ConfigParserSub
+from .TauCetiBot import ConfigParserSub
 
 import keyring
 import sys
-import trace
 import nacl.secret
 import nacl.utils
 import nacl.exceptions

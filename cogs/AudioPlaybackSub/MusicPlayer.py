@@ -1,16 +1,10 @@
 import gui
 import asyncio
-import datetime
 import random
-import urllib
 
 import discord
-import logging
-from discord import app_commands, Embed, Colour
-from discord.app_commands import Choice
-from discord.ext import commands, tasks
-import re
-from functools import partial
+from discord import Embed, Colour
+from discord.ext import commands
 from queue import Queue
 from typing import Any, List, Optional, Union
 
@@ -19,7 +13,7 @@ from utility import seconds_to_time_string, seconds_to_time_stamp, urltomessage
 from utility import PageClassContainer
 from .AudioContainer import AudioContainer, speciallistsplitter
 from .MusicUtils import connection_check
-from .MusicViews import PlayerButtons, PlaylistButtons
+from .MusicViews import PlayerButtons
 from .MusicPlayer_Mixins import PlaylistMixin, PlayerMixin
 
 """this code is for the music player, and it's interactions."""
@@ -103,7 +97,7 @@ class PlaylistPageContainer(PageClassContainer):
         key = ""
         gui.gprint(len(self.display), self.page)
         playpage = "None"
-        name = " Page {}/{}\n".format(self.page, self.maxpages, self.length)
+        name = " Page {}/{}\n".format(self.page, self.maxpages, )
         emb = Embed(title="No Pages")
         if len(self.display) > 0:
             playpage = self.display[self.page - 1]

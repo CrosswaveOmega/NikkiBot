@@ -10,7 +10,6 @@ from hd2api.models import DiveharderAll, StaticAll
 from enum import Enum
 
 from pydantic import Field
-import discord
 import asyncio
 import random
 
@@ -527,7 +526,7 @@ async def detect_loggable_changes_planet(
 
     planetindexes = []
     for c in new.status.campaigns:
-        if not c.planetIndex in planetindexes:
+        if c.planetIndex not in planetindexes:
             planetindexes.append(c.planetIndex)
 
     output = {

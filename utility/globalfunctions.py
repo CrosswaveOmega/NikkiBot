@@ -2,18 +2,15 @@ import os
 import re
 import discord
 from io import BytesIO
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
-from discord.ext import commands, tasks
 
-from discord import Webhook, ui
 import site
 import gui
 from discord.utils import escape_markdown
-import re
 from typing import Union
 
 
@@ -210,7 +207,7 @@ def filter_trace_stack(stack):
 
     parent_dir = os.path.dirname(cwd)
     for line in stack:
-        if parent_dir.upper() in line.upper().strip() and not ".venv" in line.strip():
+        if parent_dir.upper() in line.upper().strip() and ".venv" not in line.strip():
             newlines.append(line)
     replaced_string = "\n".join(newlines)
 

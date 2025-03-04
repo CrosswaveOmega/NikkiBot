@@ -1,54 +1,23 @@
 import gui
-from typing import Literal
 import discord
 import asyncio
-import csv
 
 # import datetime
-from datetime import datetime, timedelta, date, timezone
-from sqlalchemy import event
+from datetime import datetime
 
-from utility import (
-    serverOwner,
-    serverAdmin,
-    seconds_to_time_string,
-    get_time_since_delta,
-    formatutil,
-)
-from utility import WebhookMessageWrapper as web, urltomessage, ConfirmView, RRuleView
 from bot import (
     TCBot,
-    TCGuildTask,
-    Guild_Task_Functions,
-    StatusEditMessage,
     TC_Cog_Mixin,
 )
-from random import randint
-from discord.ext import commands, tasks
+from discord.ext import commands
 
-from dateutil.rrule import rrule, rrulestr, WEEKLY, SU, MINUTELY, HOURLY
 
-from discord import app_commands
 from discord.app_commands import Choice
 
-from database.database_ai import AuditProfile, ServerAIConfig
-from database import ServerArchiveProfile, DatabaseSingleton
+from database import ServerArchiveProfile
 from .ArchiveSub import (
-    do_group,
-    collect_server_history,
-    check_channel,
-    ArchiveContext,
-    collect_server_history_lazy,
-    setup_lazy_grab,
-    lazy_archive,
-    LazyContext,
-    ChannelSep,
     ArchivedRPMessage,
-    MessageTemplates,
-    HistoryMakers,
-    ChannelArchiveStatus,
 )
-from collections import defaultdict
 
 
 class ToChoice(commands.Converter):
@@ -79,7 +48,7 @@ def should_archive_channel(
     elif mode == 2:
         return cat_ignore and not bool(chan_ignore), f"Mode {chan_ignore},{cat_ignore}"
 
-    return False, f"No mode at all..."
+    return False, "No mode at all..."
 
 
 class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):

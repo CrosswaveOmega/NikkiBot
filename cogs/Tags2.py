@@ -1,28 +1,14 @@
-import asyncio
-import base64
 from io import BytesIO
 from typing import Optional
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 import re
 
 from discord import app_commands
 
-from sqlitedict import SqliteDict
 
-from dateutil.relativedelta import relativedelta
-from datetime import datetime, timezone
-import gui
 import utility
 from utility import MessageTemplates
-from bot import (
-    TCBot,
-    TCGuildTask,
-    Guild_Task_Functions,
-    StatusEditMessage,
-    TC_Cog_Mixin,
-)
-import numpy as np
 from utility.views import BaseView
 
 from cogs.dat_Starboard import Tag
@@ -491,7 +477,7 @@ class Tags(commands.Cog):
         else:
             await MessageTemplates.tag_message(
                 ctx,
-                f"You don't have permission to delete this tag.",
+                "You don't have permission to delete this tag.",
                 title="Tag delete error.",
             )
 
@@ -510,7 +496,7 @@ class Tags(commands.Cog):
         if new_tag.user != interaction.user.id:
             await MessageTemplates.tag_message(
                 ctx,
-                f"You don't have permission to edit this tag.",
+                "You don't have permission to edit this tag.",
                 title="Tag edit error.",
                 ephemeral=True,
             )
@@ -565,7 +551,7 @@ class Tags(commands.Cog):
             else:
                 await MessageTemplates.tag_message(
                     ctx,
-                    f"You don't have permission to edit this tag.",
+                    "You don't have permission to edit this tag.",
                     title="Tag edit error.",
                     ephemeral=True,
                 )
@@ -581,7 +567,7 @@ class Tags(commands.Cog):
         ctx: commands.Context = await self.bot.get_context(interaction)
         tagdict = await Tag.list_all_cat(ctx.guild.id)
         if not tagdict:
-            await MessageTemplates.tag_message(ctx, f"No tags found", ephemeral=True)
+            await MessageTemplates.tag_message(ctx, "No tags found", ephemeral=True)
             return
         embed_list, e = [], 0
         act = False

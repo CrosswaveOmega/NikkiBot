@@ -6,14 +6,11 @@ import discord
 from PIL import Image, ImageDraw, ImageFont, ImageSequence
 import numpy as np
 from .GameStatus import ApiStatus
-from hd2api import Planet
-from .makeplanets import get_planet
 
-import importlib.util
 
 
 from utility.views import BaseView
-from utility.image_functions import draw_arrow, draw_dot
+from utility.image_functions import draw_arrow
 
 SCALE = 1.0
 CELL_SIZE = 200

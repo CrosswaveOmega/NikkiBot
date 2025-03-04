@@ -23,7 +23,6 @@ from typing import *
 from utility import load_json_with_substitutions
 from utility.globalfunctions import seconds_to_time_string
 import pandas as pd
-import numpy as np
 from matplotlib.font_manager import FontProperties
 import matplotlib.pyplot as plt
 

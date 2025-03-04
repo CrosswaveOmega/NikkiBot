@@ -3,28 +3,24 @@ import json
 import discord
 import io
 import gui
-from typing import List, Optional, Union
+from typing import List, Optional
 from sqlalchemy import (
     Column,
     Integer,
     String,
-    Boolean,
     ForeignKey,
-    DateTime,
     Boolean,
-    Text,
     delete,
     distinct,
     or_,
     update,
     func,
 )
-from sqlalchemy import LargeBinary, ForeignKey, PrimaryKeyConstraint, insert, distinct
-from sqlalchemy.orm import relationship, column_property
+from sqlalchemy import LargeBinary, PrimaryKeyConstraint
+from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
-from sqlalchemy.orm import aliased
 from database import DatabaseSingleton, AwareDateTime, add_or_update_all
-from sqlalchemy import select, event, exc
+from sqlalchemy import select
 
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import desc, asc, and_

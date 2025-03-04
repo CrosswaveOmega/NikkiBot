@@ -1,7 +1,7 @@
 import gui
 import random
 import string
-from discord.ext import commands, tasks
+from discord.ext import commands
 import datetime
 import asyncio
 import discord
@@ -39,7 +39,7 @@ class StatusEditMessage:
                 if "embed" in kwargs:
                     self.embed = kwargs["embed"]
                 await self.message.edit(**kwargs)
-            except Exception as e:
+            except Exception:
                 self.message = await urltomessage(self.message.jump_url, self.bot)
             self.last_update_time = datetime.datetime.now()
 

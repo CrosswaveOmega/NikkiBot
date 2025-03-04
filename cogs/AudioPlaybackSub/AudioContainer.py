@@ -1,5 +1,4 @@
 import gui
-import asyncio
 import datetime
 import os
 import random
@@ -15,7 +14,7 @@ import itertools
 import json
 from .MusicUtils import is_url
 from .MusicDatabase import MusicJSONMemoryDB
-from utility import MessageTemplates, seconds_to_time_string, seconds_to_time_stamp
+from utility import seconds_to_time_string, seconds_to_time_stamp
 import mutagen
 
 logs = logging.getLogger("TCLogger")

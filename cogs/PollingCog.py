@@ -4,27 +4,16 @@ import asyncio
 import discord
 from discord.ext import commands
 import json
-import os
-from typing import List, Literal
-import discord
+from typing import Literal
 
 
 # import datetime
 from datetime import datetime, timedelta
-import io
-from queue import Queue
-from discord.ext import commands, tasks
-from discord.utils import find
-from discord import Webhook
+from discord.ext import tasks
 
-import random
-import operator
-from random import randint, seed
-from bot import TCGuildTask, Guild_Task_Functions, TCBot, TC_Cog_Mixin
-import traceback
+from bot import Guild_Task_Functions, TCBot, TC_Cog_Mixin
 
 from discord import app_commands
-from discord.app_commands import Choice
 from .Polling import *
 from utility import pages_of_embeds, urltomessage
 from utility import serverOwner, serverAdmin
@@ -39,7 +28,7 @@ class PersistentView(discord.ui.View):
     async def callback(self, interaction, button):
         user = interaction.user
         label = button.label
-        if not str(user.id) in self.my_count:
+        if str(user.id) not in self.my_count:
             self.my_count[str(user.id)] = 0
         self.my_count[str(user.id)] += 1
         await interaction.response.send_message(
@@ -123,7 +112,7 @@ class Feedback(discord.ui.Modal, title="Feedback"):
                 chan = self.bot.get_channel(int(mychannel))
                 await chan.send(embed=embed)
         await interaction.response.send_message(
-            f"Thanks for your feedback!  I will save it to my feedback file.",
+            "Thanks for your feedback!  I will save it to my feedback file.",
             ephemeral=True,
         )
 
@@ -275,7 +264,7 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
                         await message.edit(embed=poll.poll_embed_view(), view=None)
             PollMessages.remove_invalid_poll_messages()
         except Exception as e:
-            await self.bot.send_error(e, f"Message update cleanup error.")
+            await self.bot.send_error(e, "Message update cleanup error.")
             gui.gprint(str(e))
 
     @app_commands.command(
@@ -302,7 +291,7 @@ class PollingCog(commands.Cog, TC_Cog_Mixin):
         prof = ServerArchiveProfile.get(server_id=guild.id)
         if prof:
             if autochannel.id == prof.history_channel_id:
-                result = f"this should not be the same channel as the archive channel.  Specify a different channel such as a bot spam channel."
+                result = "this should not be the same channel as the archive channel.  Specify a different channel such as a bot spam channel."
                 await MessageTemplates.poll_message(ctx, result)
                 return
         PollChannelSubscribe.set_or_update(

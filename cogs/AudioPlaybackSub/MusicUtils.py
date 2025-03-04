@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 from .MessageTemplates_EXT import MessageTemplatesMusic
 import os
 import re

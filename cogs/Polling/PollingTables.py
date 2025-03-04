@@ -1,5 +1,5 @@
 from typing import List, Tuple
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, and_, or_
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, and_, or_
 from sqlalchemy.orm import relationship, joinedload
 from sqlalchemy.orm import declarative_base
 from datetime import datetime

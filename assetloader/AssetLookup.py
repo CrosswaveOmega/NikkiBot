@@ -1,6 +1,5 @@
 import os
 import configparser
-import json
 import gui
 from typing import Optional
 

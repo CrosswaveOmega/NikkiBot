@@ -1,4 +1,4 @@
-from assetloader import GeoJSONGeometry, GeoJSONFeature
+from assetloader import GeoJSONFeature
 
 import json
 

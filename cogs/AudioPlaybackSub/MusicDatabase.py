@@ -1,24 +1,21 @@
 import json
-from typing import Any, List, Tuple
+from typing import List, Tuple
 from sqlalchemy import (
     Column,
     ForeignKey,
     Integer,
     String,
     Double,
-    Text,
     JSON,
     and_,
     or_,
-    cast,
-    Float,
 )
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import relationship, Session
 from database import DatabaseSingleton
 from sqlalchemy import case, func
 from .MusicUtils import is_url
-from urllib.parse import urlparse, parse_qs, urlsplit
+from urllib.parse import parse_qs, urlsplit
 import gui
 
 MusicBase = declarative_base(name="Music System Base")

@@ -376,7 +376,7 @@ class TCTaskManager:
             task (TCTask): The TCTask object to add to the list of tasks.
 
         """
-        logs.warning(f"added task %s ", task.name)
+        logs.warning("added task %s ", task.name)
         manager = cls.get_instance()
         manager.tasks[task.name] = task
         TCTaskManager.set_standby(task.name)
@@ -393,7 +393,7 @@ class TCTaskManager:
         """
         manager = cls.get_instance()
         if name in manager.tasks:
-            logs.warning(f"removing task", name)
+            logs.warning("removing task", name)
             manager.tasks.pop(name)
             return True
         return False
@@ -416,7 +416,7 @@ class TCTaskManager:
             name (str): The name of the task to be ran.
         """
         manager = cls.get_instance()
-        logs.warning(f"%s is running", name)
+        logs.warning("%s is running", name)
         manager.tasks[name].status = "running"
         # manager.to_delete.append(name)
 
@@ -429,9 +429,9 @@ class TCTaskManager:
         """
         manager = cls.get_instance()
 
-        logs.warning(f"%s is standby", name)
+        logs.warning("%s is standby", name)
         to_add = manager.tasks[name]
-        if (to_add.status != "standby") and (not (name in manager.to_delete)):
+        if (to_add.status != "standby") and (name not in manager.to_delete):
             manager.myqueue.put(to_add.get_ref())
             to_add.status = "standby"
         # manager.to_delete.append(name)

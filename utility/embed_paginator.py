@@ -1,5 +1,4 @@
 import copy
-import io
 import logging
 import re
 import discord

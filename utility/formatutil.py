@@ -1,5 +1,5 @@
 from typing import Any, List
-from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY, MO, TU, WE, TH, FR, SA, SU
+from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY
 from datetime import datetime, timedelta
 
 """

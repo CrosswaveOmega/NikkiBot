@@ -1,4 +1,3 @@
-import datetime
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error, r2_score
@@ -9,10 +8,7 @@ import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression, ElasticNet
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.neighbors import KNeighborsRegressor
-from sklearn.svm import SVR
-from sklearn.neural_network import MLPRegressor
 from scipy import stats
 from io import BytesIO
 from PIL import Image

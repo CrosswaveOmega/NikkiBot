@@ -1,4 +1,3 @@
-import subprocess
 import asyncio
 from queue import Queue
 

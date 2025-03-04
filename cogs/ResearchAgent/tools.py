@@ -1,7 +1,6 @@
 import asyncio
 import copy
 
-from concurrent.futures import ThreadPoolExecutor
 import datetime
 import re
 import uuid
@@ -16,7 +15,6 @@ from googleapiclient.discovery import build  # Import the library
 from gptfunctionutil import AILibFunction, GPTFunctionLibrary, LibParam
 from htmldate import find_date
 from langchain.docstore.document import Document
-from langchain_community.document_loaders import UnstructuredMarkdownLoader
 from langchain_openai import OpenAIEmbeddings
 from tqdm.asyncio import tqdm_asyncio
 

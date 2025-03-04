@@ -1,12 +1,11 @@
 from typing import Dict
 import gui
-from sqlalchemy import Engine, create_engine, text, MetaData, Table, inspect, Column
+from sqlalchemy import Engine, create_engine, MetaData
 from sqlalchemy.orm import sessionmaker, Session
 
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncEngine
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.orm import registry
 
 import logging
 from .db_compare_utils import compare_db, async_compare_db
@@ -93,7 +92,7 @@ class EngineContainer:
 
     def load_in_base(self, Base):
         gui.dprint("loading in: ", Base.__name__, Base)
-        if not Base in self.bases:
+        if Base not in self.bases:
             self.bases.append(Base)
         # if self.connected:    Base.metadata.create_all(self.engine)
 
@@ -163,7 +162,7 @@ class DatabaseSingleton:
             self.add_engine("async", adbname, True)
 
         def add_engine(self, ename, db_name, mode=False):
-            if not ename in self.engines:
+            if ename not in self.engines:
                 engine = EngineContainer(db_name, mode)
                 self.engines[ename] = engine
 
@@ -175,7 +174,7 @@ class DatabaseSingleton:
             else:
                 for en in self.engines.keys():
                     self.engines[en].load_in_base(Base)
-            if not Base in self.bases:
+            if Base not in self.bases:
                 self.bases.append(Base)
 
         async def startup_all(self):

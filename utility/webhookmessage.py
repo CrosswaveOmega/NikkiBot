@@ -1,4 +1,4 @@
-from random import randint, choice
+from random import choice
 import re
 from typing import List, Tuple, Union
 import discord

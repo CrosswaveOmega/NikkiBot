@@ -4,7 +4,6 @@ import datetime
 import json
 import os
 from typing import *
-import numpy as np
 
 from utility.debug import Timer
 
@@ -12,7 +11,7 @@ from .diff_util import detect_loggable_changes, detect_loggable_changes_planet
 from hd2api import *
 from .utils import prioritized_string_split
 from discord.utils import format_dt as fdt
-from hd2api import extract_timestamp as et, hdml_parse
+from hd2api import extract_timestamp as et
 from hd2api.util.utils import set_status_emoji
 
 MAX_ATTEMPT = 3
@@ -625,7 +624,7 @@ def load_from_json(filepath: str) -> "ApiStatus":
     try:
         with open(filepath, "r", encoding="utf8") as file:
             data = json.load(file)
-    except Exception as e:
+    except Exception:
         # print(e)
         return None
     return data

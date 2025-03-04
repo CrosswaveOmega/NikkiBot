@@ -13,7 +13,6 @@ from htmldate import find_date
 import assetloader
 from .metadataenums import MetadataDocType
 from bs4 import BeautifulSoup
-from markitdown import MarkItDown
 
 """This is a special loader that makes use of Mozilla's readability library."""
 
@@ -259,7 +258,7 @@ class ReadableLoader(dl.WebBaseLoader):
                         metadata = {}
                     typev = MetadataDocType.htmltext
 
-                    if not "title" in metadata:
+                    if "title" not in metadata:
                         metadata["title"] = "No Title"
                     if header is not None:
                         if "byline" in header:

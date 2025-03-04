@@ -650,7 +650,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             TCGuildTask.remove_guild_task(guild.id, task_name)
 
             self.bot.database.commit()
-            result = f"Dashboard cancelled."
+            result = "Dashboard cancelled."
             await ctx.send(result)
 
     @pcs.command(
@@ -716,7 +716,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             TCGuildTask.remove_guild_task(ctx.guild.id, task_name)
 
             self.bot.database.commit()
-            result = f"Unsubscribed to daily galactic war maps."
+            result = "Unsubscribed to daily galactic war maps."
             await ctx.send(result)
 
     @pcs.command(

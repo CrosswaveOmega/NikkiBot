@@ -6,7 +6,6 @@ from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY, MO, TU, WE, TH, FR, SA
 import gui
 
 from datetime import datetime, timedelta
-import time
 from .formatutil import explain_rrule
 
 
@@ -349,7 +348,7 @@ class RRuleView(discord.ui.View):
                     raise ValueError(f"{ival} can not be negative or zero.")
                 elif ival > 10:
                     raise ValueError(
-                        f"For the sake of my sanity, please keep this number below 10."
+                        "For the sake of my sanity, please keep this number below 10."
                     )
                 self.dtvals["interval"] = ival
                 button.label = f"Change Interval \n({ival})"

@@ -1,11 +1,10 @@
 import gui
 from typing import List
 
-from random import randint, seed
+from random import randint
 from .c_util import *
 
 from .calc_elements import DataBit, DatabitType, preprocess_string
-import re
 
 """This file specifies the functions used for turning a parenthesisless string into a 
 List of DataBit objects, and evaluating that list of DataBits via the order of operations.

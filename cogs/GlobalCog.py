@@ -1,6 +1,5 @@
 import base64
 import datetime
-import io
 from collections import defaultdict
 from io import BytesIO
 from typing import Dict, List, Optional, Tuple
@@ -17,7 +16,6 @@ from assetloader import AssetLookup
 from bot import TC_Cog_Mixin, super_context_menu
 from database.database_note import NotebookAux
 from gptmod.chromatools import ChromaTools
-from utility import WebhookMessageWrapper as web
 from utility.debug import Timer
 from utility.embed_paginator import pages_of_embed_attachments, pages_of_embeds
 from utility.mytemplatemessages import MessageTemplates
@@ -36,7 +34,6 @@ topictype = app_commands.Range[str, 2, 128]
 keytype = app_commands.Range[str, 2, 128]
 contenttype = app_commands.Range[str, 5, 4096]
 
-from io import BytesIO
 
 
 async def file_to_data_uri(file: discord.File) -> str:
@@ -435,11 +432,11 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         if self.check_warmup(interaction):
             await ctx.send(
-                f"Please wait, I'm still setting up the notes!", ephemeral=True
+                "Please wait, I'm still setting up the notes!", ephemeral=True
             )
             return
         user = interaction.user
-        if not user.id in self.usertopics:
+        if user.id not in self.usertopics:
             self.usertopics[user.id] = "any"
         self.usertopics[user.id] = topic
         mess = await ctx.send(f"Set your default topic to {topic}.", ephemeral=True)
@@ -465,7 +462,7 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         if self.check_warmup(interaction):
             await ctx.send(
-                f"Please wait, I'm still setting up the notes!", ephemeral=True
+                "Please wait, I'm still setting up the notes!", ephemeral=True
             )
             return
         view = NoteEditView(
@@ -532,7 +529,7 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         if self.check_warmup(interaction):
             await ctx.send(
-                f"Please wait, I'm still setting up the notes!", ephemeral=True
+                "Please wait, I'm still setting up the notes!", ephemeral=True
             )
             return
         mess = await ctx.send(
@@ -573,7 +570,7 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         if self.check_warmup(interaction):
             await ctx.send(
-                f"Please wait, I'm still setting up the notes!", ephemeral=True
+                "Please wait, I'm still setting up the notes!", ephemeral=True
             )
             return
         mess = await ctx.send(
@@ -621,7 +618,7 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         if self.check_warmup(interaction):
             await ctx.send(
-                f"Please wait, I'm still setting up the notes!", ephemeral=True
+                "Please wait, I'm still setting up the notes!", ephemeral=True
             )
             return
         mess = await ctx.send(
@@ -654,7 +651,7 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         if self.check_warmup(interaction):
             await ctx.send(
-                f"Please wait, I'm still setting up the notes!", ephemeral=True
+                "Please wait, I'm still setting up the notes!", ephemeral=True
             )
             return
         mess = await ctx.send(
@@ -699,7 +696,7 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         if self.check_warmup(interaction):
             await ctx.send(
-                f"Please wait, I'm still setting up the notes!", ephemeral=True
+                "Please wait, I'm still setting up the notes!", ephemeral=True
             )
             return
         mess = await ctx.send(
@@ -723,7 +720,7 @@ class NotesCog(commands.Cog, TC_Cog_Mixin):
         ctx: commands.Context = await self.bot.get_context(interaction)
         if self.check_warmup(interaction):
             await ctx.send(
-                f"Please wait, I'm still setting up the notes!", ephemeral=True
+                "Please wait, I'm still setting up the notes!", ephemeral=True
             )
             return
         cont, mess = await MessageTemplates.confirm(

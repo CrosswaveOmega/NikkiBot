@@ -1,9 +1,8 @@
 from typing import Any, Optional
-from discord import Embed, Color, Guild, GuildSticker, Message
+from discord import Embed, Message
 from discord.ext import commands
 
-from utility import MessageTemplates, get_server_icon_color
-from bot import TCGuildTask
+from utility import MessageTemplates
 from assetloader import AssetLookup
 from gptmod import ChatCreation
 import gui

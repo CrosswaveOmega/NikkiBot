@@ -2,8 +2,6 @@ from datetime import timedelta
 from typing import Optional
 import discord
 from discord.ext import commands, tasks
-import asyncio
-from sqlalchemy.future import select
 from cogs.dat_Starboard import (
     TempVCConfig,
 )
@@ -48,7 +46,7 @@ class VC_Dispatcher(discord.ui.View):
     async def callback(self, interaction, button):
         user = interaction.user
         label = button.label
-        if not str(user.id) in self.my_count:
+        if str(user.id) not in self.my_count:
             self.my_count[str(user.id)] = 0
         self.my_count[str(user.id)] += 1
         await interaction.response.send_message(
@@ -157,7 +155,7 @@ class TempVC(commands.Cog):
         ctx: commands.Context = await self.bot.get_context(interaction)
         config = await TempVCConfig.remove_temp_vc_config(ctx.guild.id)
         if config:
-            await ctx.send(f"Removed temp vc config.")
+            await ctx.send("Removed temp vc config.")
         else:
             await ctx.send(
                 "No configuration found for this guild. Use `>serverconfig set` first."

@@ -246,7 +246,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             pages.add_line(l)
         for e, p in enumerate(pages.pages):
             embed = discord.Embed(
-                title=f"Translation" if e == 0 else f"Translation {e + 1}",
+                title="Translation" if e == 0 else f"Translation {e + 1}",
                 description=p,
             )
             embeds.append(embed)
@@ -364,7 +364,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         res = []
         async with ctx.channel.typing():
             results = ra.tools.google_search(ctx.bot, query, result_limit)
-            if not "items" in results:
+            if "items" not in results:
                 return [], [
                     {
                         "title": "No results",
@@ -546,7 +546,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             ctx, all_links, chromac, statmess, override=over
         )
         embed = discord.Embed(
-            title=f"Collection load results",
+            title="Collection load results",
             description=f"{hascount}/{len(all_links)}\nout=\n{lines}",
         )
         embed.set_footer(text="Operation complete.")
@@ -613,7 +613,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                 description=f"{1}/{1}\nout=\n{lines}",
             )
             embed.set_footer(text="Operation complete.")
-            await statmess.editw(min_seconds=0, content=f"Overwrite ok.", embed=embed)
+            await statmess.editw(min_seconds=0, content="Overwrite ok.", embed=embed)
 
     @commands.hybrid_command(
         name="researchcached", description="Research a topic.", extras={}
@@ -773,7 +773,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         chromac = ChromaTools.get_chroma_client()
         res = await ctx.send("ok")
         statmess = StatusEditMessage(res, ctx)
-        embed = discord.Embed(title=f"Search Query: {question} ", description=f"ok")
+        embed = discord.Embed(title=f"Search Query: {question} ", description="ok")
         embed.add_field(name="Question", value=question, inline=False)
         if site_title_restriction != "None":
             embed.add_field(name="restrict", value=site_title_restriction, inline=False)
@@ -924,7 +924,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         # Call API
         bot = self.bot
 
-        targetmessage = await context.send(content=f"Translating...")
+        targetmessage = await context.send(content="Translating...")
 
         res = await bot.gptapi.callapi(chat)
         # await ctx.send(res)
@@ -936,7 +936,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             pages.add_line(l)
         for e, p in enumerate(pages.pages):
             embed = discord.Embed(
-                title=f"Translation" if e == 0 else f"Translation {e + 1}",
+                title="Translation" if e == 0 else f"Translation {e + 1}",
                 description=p,
             )
             embeds.append(embed)
@@ -992,11 +992,11 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         "recall docs for question."
 
         mes = await ctx.channel.send(
-            f"<a:LoadingBlue:1206301904863502337> Reading Article <a:LoadingBlue:1206301904863502337>"
+            "<a:LoadingBlue:1206301904863502337> Reading Article <a:LoadingBlue:1206301904863502337>"
         )
         try:
             article, header = await read_article(ctx.bot.jsenv, url)
-        except Exception as e:
+        except Exception:
             me = await ctx.send("I couldn't read the url.  Sorry.")
             return me
         await mes.delete()
@@ -1066,7 +1066,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             guild = message.guild
             user = message.author
             mes = await ctx.channel.send(
-                f"<a:LoadingBlue:1206301904863502337> Reading Article <a:LoadingBlue:1206301904863502337>"
+                "<a:LoadingBlue:1206301904863502337> Reading Article <a:LoadingBlue:1206301904863502337>"
             )
             try:
                 async with ctx.channel.typing():
@@ -1120,7 +1120,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             user = message.author
 
             mes = await ctx.channel.send(
-                f"<a:LoadingBlue:1206301904863502337> Reading Article <a:LoadingBlue:1206301904863502337>"
+                "<a:LoadingBlue:1206301904863502337> Reading Article <a:LoadingBlue:1206301904863502337>"
             )
             try:
                 article, header = await read_article(ctx.bot.jsenv, url)
@@ -1176,7 +1176,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         async with self.lock:
             message = ctx.message
             mes = await ctx.channel.send(
-                f"<a:LoadingBlue:1206301904863502337> Reading Article <a:LoadingBlue:1206301904863502337>"
+                "<a:LoadingBlue:1206301904863502337> Reading Article <a:LoadingBlue:1206301904863502337>"
             )
             client = ChromaTools.get_chroma_client()
             article = ""

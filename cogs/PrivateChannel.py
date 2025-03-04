@@ -1,24 +1,9 @@
-import asyncio
 import discord
-from discord.ext import commands, tasks
-import re
+from discord.ext import commands
 
-from discord import app_commands
 
 from sqlitedict import SqliteDict
 
-from datetime import datetime, timezone
-import gui
-import utility
-from utility import MessageTemplates
-from bot import (
-    TCBot,
-    TCGuildTask,
-    Guild_Task_Functions,
-    StatusEditMessage,
-    TC_Cog_Mixin,
-)
-import numpy as np
 
 
 class PersonalServerConfigs(commands.Cog):

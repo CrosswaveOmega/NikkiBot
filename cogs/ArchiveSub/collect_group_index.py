@@ -1,15 +1,12 @@
 import asyncio
 from typing import List
 import gui
-from datetime import datetime, timedelta, timezone
-from .archive_database import ArchivedRPMessage, ChannelSep, HistoryMakers
+from datetime import datetime, timezone
+from .archive_database import ArchivedRPMessage, ChannelSep
 from database import DatabaseSingleton
-from queue import Queue
 import time
 from bot import StatusEditMessage
 from utility import (
-    seconds_to_time_string,
-    urltomessage,
     Timer,
 )
 

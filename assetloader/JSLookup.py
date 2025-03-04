@@ -1,10 +1,8 @@
 import os
-import configparser
-import json
 
 from typing import Optional
 
-from javascriptasync import require_a, require, JSContext
+from javascriptasync import JSContext
 
 
 class JavascriptLookup:

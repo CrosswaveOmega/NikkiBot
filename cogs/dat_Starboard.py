@@ -1,14 +1,14 @@
 from typing import Optional, ByteString
 from sqlalchemy import Column, Integer, Boolean, BigInteger, String
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete, func, insert, and_, or_
+from sqlalchemy import select, delete, func, and_, or_
 from database.database_singleton import DatabaseSingleton
 from database.database_utils import upsert_a
 from database import ensure_session
 import discord
 from sqlalchemy.ext.declarative import declarative_base
 
-from sqlalchemy import Column, Integer, String, DateTime, LargeBinary
+from sqlalchemy import LargeBinary
 from sqlalchemy.orm import declarative_base
 from database.database_main import AwareDateTime
 from datetime import datetime

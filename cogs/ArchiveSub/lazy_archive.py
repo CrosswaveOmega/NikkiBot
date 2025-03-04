@@ -1,50 +1,24 @@
 import time
 from .archive_compiler import ArchiveCompiler, ArchiveProgress
 from .historycollect import collect_server_history_lazy
-from .archive_database import ChannelSep, ArchivedRPMessage, ChannelArchiveStatus
-from .collect_group_index import do_group
-from database import ServerArchiveProfile
+from .archive_database import ArchivedRPMessage
 from bot import (
-    TCBot,
-    TCGuildTask,
-    Guild_Task_Functions,
     StatusEditMessage,
-    TC_Cog_Mixin,
 )
-from utility import WebhookMessageWrapper as web, urltomessage, ConfirmView, RRuleView
 from utility import (
-    serverOwner,
-    serverAdmin,
     seconds_to_time_string,
-    get_time_since_delta,
-    formatutil,
 )
-import asyncio
-import gui
-from datetime import timezone, datetime
-import json
 import discord
-import io
 from sqlalchemy import (
     Column,
     Integer,
     String,
     Boolean,
-    ForeignKey,
-    DateTime,
-    Boolean,
-    Text,
-    distinct,
-    or_,
-    update,
-    func,
 )
 
-from database import DatabaseSingleton, AwareDateTime, add_or_update_all
-from sqlalchemy import select, event, exc
+from database import DatabaseSingleton
 
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import desc, asc, and_
 
 """
 RP archives is done within three phases: collecting, grouping, and then posting.
@@ -58,8 +32,6 @@ The lazy archive preforms each phase for about 15 minutes, then takes a pause.
 This reduces the  load on the server and system resources, and leaves the bot open for 
 preforming other tasks in the meantime.
 """
-from assetloader import AssetLookup
-from utility import hash_string
 
 LazyBase = declarative_base(name="Archive System LazyMode Base")
 
@@ -169,7 +141,7 @@ async def lazy_archive(self, ctx):
                 )
                 lazycontext.next_state()
                 return True
-            statusMessToEdit = await channel.send(f"Commencing Lazy Archive Run")
+            statusMessToEdit = await channel.send("Commencing Lazy Archive Run")
             statmess = StatusEditMessage(statusMessToEdit, ctx)
             while upper_time_limit() > 0:
                 bot.add_act(

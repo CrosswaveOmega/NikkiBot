@@ -9,7 +9,6 @@ from typing import (
     Any,
     Dict,
     List,
-    Optional,
     Union,
 )
 
@@ -90,7 +89,7 @@ class TC_Cog_Mixin:
         if name in ctx_comms:
             self.ctx_menus = {}
             for v in ctx_comms[name]:
-                if not v.callname in self.ctx_menus:
+                if v.callname not in self.ctx_menus:
                     # Check if the cog has a function by the name of
                     # v.callname
                     if hasattr(self, v.callname):

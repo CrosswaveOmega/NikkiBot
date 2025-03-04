@@ -2,16 +2,10 @@ import datetime
 import re
 from typing import Tuple, Union
 import discord
-from discord.ext import commands, tasks
-from database import DatabaseSingleton
+from discord.ext import commands
 from cogs.dat_Questboard import QuestLeaderboard, QuestRoleConfig, Questboard
-from utility import (
-    urltomessage,
-)
-import random
 import asyncio
 from discord import app_commands
-from discord.app_commands import Choice
 
 
 class QuestBoardCog(commands.Cog):
@@ -263,7 +257,7 @@ You can set the target expiration date by saying "X days Y hours" in your messag
                         )
             if dt_object:
                 if dt_object < datetime.datetime.now():
-                    await post.send(f"This quest is past due!  Please wrap it up.")
+                    await post.send("This quest is past due!  Please wrap it up.")
             else:
                 dt = await self.create_thread_expire_message("7d0h")
 
@@ -355,7 +349,7 @@ You can set the target expiration date by saying "X days Y hours" in your messag
                 continue
             if message.author.id != post.owner_id:
                 att = 0 or len(message.attachments)
-                if not (message.author.id in users):
+                if message.author.id not in users:
                     users[message.author.id] = {"m": 0, "w": 0, "a": 0, "q": 1}
                 if message.content:
                     words = re.findall(word_pattern, message.content)
@@ -436,7 +430,7 @@ You can set the target expiration date by saying "X days Y hours" in your messag
                 isvalid = True
         if not isvalid:
             await ctx.send(
-                f"You must give kudos to someone responding to the quest!",
+                "You must give kudos to someone responding to the quest!",
                 ephemeral=True,
             )
             return
@@ -486,11 +480,11 @@ You can set the target expiration date by saying "X days Y hours" in your messag
         post: discord.Thread = ctx.channel
 
         if ctx.author.id != post.owner_id:
-            await ctx.send(f"You are not the post owner.", ephemeral=True)
+            await ctx.send("You are not the post owner.", ephemeral=True)
             return
 
         if toreward.id == post.owner_id:
-            await ctx.send(f"You can't reward yourself.", ephemeral=True)
+            await ctx.send("You can't reward yourself.", ephemeral=True)
             return
 
         isvalid = False
@@ -500,7 +494,7 @@ You can set the target expiration date by saying "X days Y hours" in your messag
                 isvalid = True
         if not isvalid:
             await ctx.send(
-                f"You must give kudos to someone responding to the quest!",
+                "You must give kudos to someone responding to the quest!",
                 ephemeral=True,
             )
             return
@@ -515,7 +509,7 @@ You can set the target expiration date by saying "X days Y hours" in your messag
             cont = diff.total_seconds() >= 86400
             if not cont:
                 await ctx.send(
-                    f"You already gave kudos to this person today...", ephemeral=True
+                    "You already gave kudos to this person today...", ephemeral=True
                 )
                 return
 

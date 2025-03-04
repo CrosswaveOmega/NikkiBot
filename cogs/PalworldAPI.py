@@ -2,9 +2,7 @@ import io
 import re
 from typing import Literal, List
 import aiohttp
-import gui
 import discord
-import asyncio
 from PIL import Image, ImageDraw
 from discord import app_commands
 import numpy as np
@@ -20,7 +18,6 @@ from discord.ext import commands
 from .PalSub import read_data, write_data
 
 CELL_SIZE = 200
-from discord.app_commands import Choice
 
 
 def draw_grid(filepath, cell_size=200):

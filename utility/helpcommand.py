@@ -1,16 +1,8 @@
-import asyncio
-import itertools
-from opcode import hasconst
-from random import randint
 import gui
 import discord
 from discord.ext import commands
-from discord.ext.commands import Paginator
 from discord.ext.commands.help import HelpCommand
-from discord import Webhook, ui
 
-from discord import app_commands
-from discord.app_commands import Choice
 
 
 """

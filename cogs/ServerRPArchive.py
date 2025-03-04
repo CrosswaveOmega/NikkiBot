@@ -13,22 +13,19 @@ from discord.ext import commands
 import gui
 from bot import (
     Guild_Task_Functions,
-    StatusEditMessage,
     TC_Cog_Mixin,
     TCBot,
     TCGuildTask,
 )
 from database import DatabaseSingleton, ServerArchiveProfile
-from utility import ConfirmView, RRuleView
+from utility import RRuleView
 from utility import WebhookMessageWrapper as web
 from utility import (
     formatutil,
-    seconds_to_time_string,
     serverAdmin,
     serverOwner,
     urltomessage,
 )
-from utility.debug import Timer
 from utility.embed_paginator import pages_of_embeds
 
 from .ArchiveSub import (
@@ -38,8 +35,6 @@ from .ArchiveSub import (
     LazyContext,
     MessageTemplates,
     check_channel,
-    collect_server_history,
-    do_group,
     lazy_archive,
     setup_lazy_grab,
 )
@@ -131,7 +126,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await source_message.delete()
         except Exception as e:
             er = MessageTemplates.get_error_embed(
-                title=f"Error with AUTO", description=f"{str(e)}"
+                title="Error with AUTO", description=f"{str(e)}"
             )
             await source_message.channel.send(embed=er)
             raise e
@@ -148,7 +143,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await context.invoke(self.bot.get_command("compile_archive"))
         except Exception as e:
             er = MessageTemplates.get_error_embed(
-                title=f"Error with AUTO", description=f"{str(e)}"
+                title="Error with AUTO", description=f"{str(e)}"
             )
             await source_message.channel.send(embed=er)
             raise e
@@ -325,7 +320,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             )
             return
         if autochannel.id == prof.history_channel_id:
-            result = f"this should not be the same channel as the archive channel.  Specify a different channel such as a bot spam channel."
+            result = "this should not be the same channel as the archive channel.  Specify a different channel such as a bot spam channel."
             await MessageTemplates.server_archive_message(ctx, result)
             return
 
@@ -372,7 +367,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         old = TCGuildTask.get(guild.id, task_name)
         if old:
             old.change_next_run(self.bot, datetime.now() + timedelta(minutes=newtime))
-            result = f"Time has changed to newtime."
+            result = "Time has changed to newtime."
             await MessageTemplates.server_archive_message(ctx, result)
         else:
             await MessageTemplates.server_archive_message(
@@ -438,7 +433,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         myurl = message.jump_url
         new = TCGuildTask.remove_guild_task(guild.id, task_name)
 
-        result = f"the auto archive has been disabled."
+        result = "the auto archive has been disabled."
         await MessageTemplates.server_archive_message(ctx, result)
 
     @archive_setup.command(
@@ -772,14 +767,14 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 + "\nAre you sure about this?",
                 f"You are?  Alright, so just to be clear, you want me \nto begin archiving **{scopes[scope]}**"
                 + f"instead of archiving **{scopes[oldscope]}.**\nIs that correct?",
-                f"I need one final confirmation before I change the setting.  \n You are sure you want to change the archive scope?",
+                "I need one final confirmation before I change the setting.  \n You are sure you want to change the archive scope?",
             ]
             for r in steps:
                 confirm, mes = await MessageTemplates.confirm(ctx, r, ephemeral=False)
 
                 if not confirm:
                     await MessageTemplates.server_archive_message(
-                        ctx, f"Very well, scope changed aborted.", ephemeral=True
+                        ctx, "Very well, scope changed aborted.", ephemeral=True
                     )
                     return
                 await mes.delete()
@@ -787,7 +782,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             profile.update(archive_scope=scope)
             self.guild_db_cache[str(ctx.guild.id)] = profile
             await MessageTemplates.server_archive_message(
-                ctx, f"Ok then, I've changed the archive scope.", ephemeral=True
+                ctx, "Ok then, I've changed the archive scope.", ephemeral=True
             )
         else:
             await ctx.send("guild only.")
@@ -874,7 +869,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
                 if not confirm:
                     await MessageTemplates.server_archive_message(
-                        ctx, f"Very well, scope changed aborted.", ephemeral=True
+                        ctx, "Very well, scope changed aborted.", ephemeral=True
                     )
                     return
                 await mes.delete()
@@ -886,7 +881,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             else:
                 self.guild_cache[str(ctx.guild.id)] = 1
             await MessageTemplates.server_archive_message(
-                ctx, f"Alright, I've changed my active gather mode.", ephemeral=True
+                ctx, "Alright, I've changed my active gather mode.", ephemeral=True
             )
         else:
             await ctx.send("guild only.")
@@ -1029,7 +1024,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
                 await MessageTemplates.server_archive_message(
                     ctx,
-                    f"I've reset the grouping data for this server.  When you run another compile_archive, **everything in the archive_channel will be reposted.**",
+                    "I've reset the grouping data for this server.  When you run another compile_archive, **everything in the archive_channel will be reposted.**",
                 )
 
             else:
@@ -1059,9 +1054,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             steps = [
                 "# Warning! \n  THIS WILL COMPLETELY ERASE ALL DATA ARCHIVED FROM THIS SERVER!"
                 + "\nAre you sure about this?",
-                f"# This cannont be undone! \n "
-                + f"Are you sure you want to delete this server's data?",
-                f"I need one final confirmation before I change the setting.  \n You are sure you want to delete this server's data?",
+                "# This cannont be undone! \n "
+                + "Are you sure you want to delete this server's data?",
+                "I need one final confirmation before I change the setting.  \n You are sure you want to delete this server's data?",
             ]
             for r in steps:
                 confirm, mes = await MessageTemplates.confirm(ctx, r, False)
@@ -1069,7 +1064,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 if not confirm:
                     await mes.delete()
                     await MessageTemplates.server_archive_message(
-                        ctx, f"Very well, scope changed aborted.", ephemeral=True
+                        ctx, "Very well, scope changed aborted.", ephemeral=True
                     )
                     return
 
@@ -1112,7 +1107,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 )
                 await MessageTemplates.server_archive_message(
                     ctx,
-                    f"I've reset the grouping data for this server.  When you run another compile_archive, **everything in the archive_channel will be reposted.**",
+                    "I've reset the grouping data for this server.  When you run another compile_archive, **everything in the archive_channel will be reposted.**",
                 )
 
             else:
@@ -1246,7 +1241,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
             await edit_if_needed(iL)
             await edit_if_needed(cL)
-            gui.gprint(f"New posted_url value for ChannelSep")
+            gui.gprint("New posted_url value for ChannelSep")
 
     ##################################### FOR ACTIVE MODE##################################
     # Disabled for now.
@@ -1328,7 +1323,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         extras={"guildtask": ["rp_history"]},
     )
     async def compileArchiveChannelLazy(self, ctx):
-        await ctx.send(f"Coming soon.")
+        await ctx.send("Coming soon.")
 
     @commands.hybrid_command(
         name="compile_archive",

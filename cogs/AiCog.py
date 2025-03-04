@@ -601,7 +601,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             profile.ban()
             await ctx.send(f"Good riddance!  User <@{userid}> has been banned.")
         else:
-            await ctx.send(f"I see no user by that name.")
+            await ctx.send("I see no user by that name.")
 
     @app_commands.command(
         name="ban_server",
@@ -623,7 +623,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             profile.ban()
             await ctx.send(f"Good riddance!  The server with id {id} has been banned.")
         else:
-            await ctx.send(f"I see no server by that name.")
+            await ctx.send("I see no server by that name.")
 
     @ai_setup.command(
         name="add_ai_channel",
@@ -722,7 +722,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         except Exception as error:
             try:
                 emb = MessageTemplates.get_error_embed(
-                    title=f"Error with your query!", description=str(error)
+                    title="Error with your query!", description=str(error)
                 )
                 await message.channel.send(embed=emb)
             except Exception as e:
@@ -738,9 +738,9 @@ class AICog(commands.Cog, TC_Cog_Mixin):
                     pass
 
                 await self.bot.send_error(
-                    e, title=f"Could not send message", uselog=True
+                    e, title="Could not send message", uselog=True
                 )
-            await self.bot.send_error(error, title=f"AI Responce error", uselog=True)
+            await self.bot.send_error(error, title="AI Responce error", uselog=True)
 
 
 async def setup(bot):

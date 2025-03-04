@@ -1,33 +1,17 @@
-import json
-from typing import Union
 from sqlalchemy import (
     Column,
     Integer,
-    Text,
     String,
-    Boolean,
-    ForeignKey,
-    DateTime,
-    Double,
-    and_,
-    delete,
-    true,
 )
-from sqlalchemy.orm import relationship
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import Session
 from .database_singleton import DatabaseSingleton
-from sqlalchemy import select, not_, func
 
 """Tables related to the AI stuff."""
 
 
-from .database_main import AwareDateTime
 
-from dateutil import rrule, tz
 
-from datetime import datetime, time, timedelta
-import utility.hash as hash
 
 HDBase = declarative_base(name="HD API Base")
 

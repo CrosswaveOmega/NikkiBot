@@ -1,11 +1,9 @@
 from sqlalchemy import MetaData, select
 from sqlalchemy.orm import Session
-from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
-
-from sqlalchemy import select, delete, func
-from sqlalchemy.dialects.sqlite import insert
-from typing import List, Type, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from sqlalchemy.dialects.sqlite import insert
+from typing import List, Dict, Any
 from sqlalchemy.sql.expression import Insert
 
 

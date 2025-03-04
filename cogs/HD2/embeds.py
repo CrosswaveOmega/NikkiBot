@@ -1,9 +1,7 @@
-import json
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Optional, Union
 
 
 import datetime
-import os
 import discord
 
 from hd2api.models import Campaign
@@ -14,9 +12,6 @@ from hd2api import (
     Planet,
     SpaceStation,
     TacticalAction,
-    War,
-    GlobalEvent,
-    PlanetAttack,
 )
 from hd2api.builders import get_time_dh
 from hd2api.constants import items
@@ -25,7 +20,6 @@ from hd2api.constants import items
 Collection of embeds for formatting.
 """
 from collections import defaultdict
-import re
 from discord.utils import format_dt as fdt
 
 from hd2api import extract_timestamp as et, hdml_parse
@@ -440,7 +434,7 @@ def campaign_view(
         emb.add_field(
             name="Planetary Stalemates",
             value=f"{players_on_stalemated} players are on {len(stalemated)} stalemated worlds.\n"
-            + (f"\n".join([f"* {s}" for s in stalemated]))[:900],
+            + ("\n".join([f"* {s}" for s in stalemated]))[:900],
         )
 
     # Add overall contribution stats
@@ -684,8 +678,8 @@ def campaign_text_view(
     if stalemated:
         st = (
             f"{players_on_stalemated} players are on {len(stalemated)} stalemated worlds.\n"
-            + (f"\n".join([f"* {s}" for s in stalemated]))
+            + ("\n".join([f"* {s}" for s in stalemated]))
         )
-        out_main += f"**Planetary Stalemates:**\n" + st
+        out_main += "**Planetary Stalemates:**\n" + st
 
     return out_main

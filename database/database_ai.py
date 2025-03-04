@@ -1,5 +1,4 @@
 import json
-from typing import Union
 from sqlalchemy import (
     Column,
     Integer,
@@ -8,21 +7,19 @@ from sqlalchemy import (
     Boolean,
     ForeignKey,
     DateTime,
-    Double,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import declarative_base
 from .database_singleton import DatabaseSingleton
-from sqlalchemy import select, not_, func
 
 """Tables related to the AI stuff."""
 
 
 from .database_main import AwareDateTime
 
-from dateutil import rrule, tz
+from dateutil import rrule
 
-from datetime import datetime, time, timedelta
+from datetime import datetime
 import utility.hash as hash
 
 AIBase = declarative_base(name="AI Feature Base")

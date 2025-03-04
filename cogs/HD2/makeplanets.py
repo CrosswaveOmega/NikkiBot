@@ -4,9 +4,7 @@ import math
 import os
 import random
 import glob
-import matplotlib.pyplot as plt
 import numpy as np
-import math
 from matplotlib.colors import LinearSegmentedColormap
 from perlin_noise import PerlinNoise
 from PIL import Image, ImageDraw, ImageFont

@@ -1,11 +1,5 @@
-import discord
-import operator
-import csv
-from discord.ext import commands, tasks
+from discord.ext import commands
 
-from discord import Webhook
-from pathlib import Path
-import json
 
 
 # I need to redo the permission system.

@@ -1,5 +1,4 @@
 import gui
-from typing import Any, Coroutine
 import discord
 from discord.interactions import Interaction
 from assetloader import AssetLookup

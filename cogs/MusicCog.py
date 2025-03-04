@@ -3,33 +3,19 @@ import asyncio
 
 import discord
 import logging
-from discord import app_commands, Embed, Colour
-from discord.app_commands import Choice
+from discord import app_commands
 from discord.ext import commands, tasks
 import re
-from functools import partial
 from queue import Queue
 from typing import (
-    Any,
     Literal,
-    Callable,
-    Generator,
-    Generic,
-    IO,
-    Optional,
-    TYPE_CHECKING,
-    Tuple,
-    TypeVar,
-    Union,
 )
 from bot import TCBot, TC_Cog_Mixin
 
 import yt_dlp  # type: ignore
-import itertools
 
-from assetloader import AssetLookup
 
-from utility import seconds_to_time_string, seconds_to_time_stamp
+from utility import seconds_to_time_string
 
 from .AudioPlaybackSub import *
 
@@ -612,7 +598,7 @@ class MusicCog(commands.Cog, TC_Cog_Mixin):
         await MessageTemplatesMusic.music_msg(
             ctx,
             "Playlist",
-            f"Please wait, I'm downloading all your server specific music tracks!",
+            "Please wait, I'm downloading all your server specific music tracks!",
         )
         stat = self.bot.add_status_message(ctx)
         with yt_dlp.YoutubeDL(ydlops) as ydl:
@@ -674,7 +660,7 @@ class MusicCog(commands.Cog, TC_Cog_Mixin):
             await MessageTemplatesMusic.music_msg(
                 ctx,
                 "filecheck",
-                f"Uploading this file will exceed my radio folder's capacity!",
+                "Uploading this file will exceed my radio folder's capacity!",
             )
             return
 
@@ -682,19 +668,19 @@ class MusicCog(commands.Cog, TC_Cog_Mixin):
         regex = r".*\.(mp3|wav|ogg|aac|m4a|flac|wma|alac|ape|opus|webm)$"
         if not re.match(regex, file.filename):
             await MessageTemplatesMusic.music_msg(
-                ctx, "filecheck", f"This is not a valid audio file."
+                ctx, "filecheck", "This is not a valid audio file."
             )
             return
         filepath = f"{directory_name}/{file.filename}"
         profile = UserMusicProfile.get_or_new(interaction.user.id)
         if profile.check_existing_upload(filepath):
             await MessageTemplatesMusic.music_msg(
-                ctx, "filecheck", f"This is already uploaded."
+                ctx, "filecheck", "This is already uploaded."
             )
             return
         if profile.check_upload_limit():
             await MessageTemplatesMusic.music_msg(
-                ctx, "filecheck", f"You've hit the upper limit of uploadable songs."
+                ctx, "filecheck", "You've hit the upper limit of uploadable songs."
             )
             return
         profile.add_song(filepath, filesize)
@@ -742,7 +728,7 @@ class MusicCog(commands.Cog, TC_Cog_Mixin):
                 internetres = ydl.extract_info(f"{url}", download=False, process=False)
             res = await special_playlist_download(self.bot, ctx, internetres)
             stat = self.bot.add_status_message(ctx)
-            await stat.updatew(f"Converting Tracks.")
+            await stat.updatew("Converting Tracks.")
             if "entries" in res:
                 video = res["entries"]
                 l = len(video)
@@ -787,7 +773,7 @@ class MusicCog(commands.Cog, TC_Cog_Mixin):
             await MessageTemplatesMusic.music_msg(
                 ctx,
                 "something went wrong...",
-                f"The provided spot is out of range of my playlist!",
+                "The provided spot is out of range of my playlist!",
             )
             return
         await MessageTemplatesMusic.music_msg(
@@ -814,7 +800,7 @@ class MusicCog(commands.Cog, TC_Cog_Mixin):
             await MessageTemplatesMusic.music_msg(
                 ctx,
                 "something went wrong...",
-                f"The provided spot is out of range of my playlist!",
+                "The provided spot is out of range of my playlist!",
             )
             return
         await MessageTemplatesMusic.music_msg(

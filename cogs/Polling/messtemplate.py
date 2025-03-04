@@ -1,8 +1,5 @@
 import discord
-import logging
-from discord import app_commands, Embed, Color
-from discord.app_commands import Choice
-from discord.ext import commands, tasks
+from discord import Embed, Color
 
 from utility import MessageTemplates
 

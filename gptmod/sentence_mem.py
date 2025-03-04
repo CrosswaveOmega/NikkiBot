@@ -177,7 +177,7 @@ async def group_documents(docs: List[Document], max_tokens=3000):
     for e, tup in enumerate(docs):
         doc = tup
         source, split = doc.metadata["source"], doc.metadata["split"]
-        if not source in sources:
+        if source not in sources:
             sources[source] = {}
         sources[source][split] = doc
         if doc.page_content not in context:

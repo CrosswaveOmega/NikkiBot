@@ -1,9 +1,7 @@
-import aiohttp
 from bs4 import BeautifulSoup
 import discord
 import requests
 import json
-import re
 import gui
 
 
@@ -303,7 +301,7 @@ async def formatembed(
         if cheat_tattle:
             gui.dprint(cheat_tattle)
             embed.add_field(
-                name=f"Cheat Tattle", value=cheat_tattle[:1020], inline=False
+                name="Cheat Tattle", value=cheat_tattle[:1020], inline=False
             )
 
         embed.set_thumbnail(url=soup["image1"])

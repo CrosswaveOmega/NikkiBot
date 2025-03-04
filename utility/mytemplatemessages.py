@@ -1,7 +1,6 @@
 from typing import List, Union
 from discord import Embed, Color, Guild, Message
 from discord.ext import commands
-from .globalfunctions import get_server_icon_color
 from .manual_load import load_manual
 from .views import ConfirmView
 from assetloader import AssetLookup
@@ -100,9 +99,9 @@ class MessageTemplates:
         """utilizes the extend_field_list"""
         if "color" in dictionary:
             dictionary.pop("color")
-        if not "title" in dictionary:
+        if "title" not in dictionary:
             dictionary["title"] = "No title"
-        if not "description" in dictionary:
+        if "description" not in dictionary:
             dictionary["description"] = "N/A"
         embed = Embed(
             title=dictionary["title"],

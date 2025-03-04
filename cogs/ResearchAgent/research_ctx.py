@@ -1,9 +1,5 @@
 from typing import List, Tuple, Optional, Set, Dict, Any
-import chromadb
 import discord
-import asyncio
-from assetloader import AssetLookup
-import re
 import openai
 
 # import datetime
@@ -12,15 +8,13 @@ from io import StringIO
 
 from discord.ext import commands
 
-from discord import app_commands
-from bot import TC_Cog_Mixin, StatusEditMessage, super_context_menu, TCBot
+from bot import StatusEditMessage, TCBot
 
 import gptfunctionutil.functionlib as gptum
-from gptfunctionutil import SingleCall, SingleCallAsync
+from gptfunctionutil import SingleCallAsync
 from gptmod.chromatools import ChromaTools, DocumentScoreVector
 from .LinkLoader import SourceLinkLoader
 from utility import urltomessage
-from langchain.docstore.document import Document
 import cogs.ResearchAgent.actions as actions
 
 """

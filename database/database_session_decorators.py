@@ -1,9 +1,5 @@
-from sqlalchemy import MetaData, select
-from sqlalchemy.orm import Session
-from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from sqlalchemy import select, delete, func
-from sqlalchemy.dialects.sqlite import insert
 from typing import Optional
 from .database_singleton import DatabaseSingleton
 

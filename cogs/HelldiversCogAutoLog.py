@@ -706,12 +706,12 @@ class Embeds:
     @staticmethod
     def deadzoneWarningEmbed(campaign: BaseApiModel, mode="started") -> discord.Embed:
         emb = discord.Embed(
-            title=f"DEADZONE DETECTED",
+            title="DEADZONE DETECTED",
             description=f"A likely deadzone was {mode}!\nTimestamp:{fdt(campaign.retrieved_at, 'F')}",
             timestamp=campaign.retrieved_at,
             color=0xFF0000,
         )
-        emb.set_author(name=f"DEADZONE WARNING.")
+        emb.set_author(name="DEADZONE WARNING.")
         emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
         return emb
 
@@ -762,7 +762,7 @@ class Embeds:
             strings.append(string)
             timestamp = atk.retrieved_at
         emb = discord.Embed(
-            title=f"Planet Attacks",
+            title="Planet Attacks",
             description="\n".join([f"* {s}" for s in strings]),
             timestamp=timestamp,
             color=0x707CC8 if mode == EventModes.ADDED else 0xC08888,
@@ -935,7 +935,7 @@ class Embeds:
         emb.add_field(
             name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at, 'F')}"
         )
-        emb.set_author(name=f"Planet Value Change")
+        emb.set_author(name="Planet Value Change")
         emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
         return emb
 
@@ -945,7 +945,7 @@ class Embeds:
     ) -> discord.Embed:
         globtex = json.dumps(dump, default=str)
         emb = discord.Embed(
-            title=f"UNSEEN API Change",
+            title="UNSEEN API Change",
             description=f"Field changed for {name}\n```{globtex[:4000]}```",
             timestamp=campaign.retrieved_at,
             color=0x000054,
@@ -953,7 +953,7 @@ class Embeds:
         emb.add_field(
             name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at, 'F')}"
         )
-        emb.set_author(name=f"API Value Change")
+        emb.set_author(name="API Value Change")
         emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
         return emb
 
@@ -969,7 +969,7 @@ class Embeds:
         emb.add_field(
             name="Timestamp", value=f"Timestamp:{fdt(newsfeed.retrieved_at, 'F')}"
         )
-        emb.set_author(name=f"New dispatch from Super Earth...")
+        emb.set_author(name="New dispatch from Super Earth...")
         emb.set_footer(text=f"{custom_strftime(newsfeed.retrieved_at)}")
         return emb
 

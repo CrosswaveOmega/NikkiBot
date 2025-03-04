@@ -281,7 +281,7 @@ async def get_sources(
     docs3 = {}
     for doc in docs2:
         source = doc[0].metadata["source"]
-        if not source in docs3:
+        if source not in docs3:
             docs3[source] = []
         docs3[source].append(doc)
 
