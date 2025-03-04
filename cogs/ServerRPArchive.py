@@ -800,7 +800,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         mode=[  # param name
             Choice(name="Ignore Specified Channels", value=0),
             Choice(name="Only Archive Specified Channels", value=1),
-            Choice(name="Only Archive Specified Categories", value=1),
+            Choice(name="Only Archive Specified Categories", value=2),
         ]
     )
     async def set_ignore_mode(self, ctx, mode: int):
