@@ -67,14 +67,14 @@ class ArchiveMessageTemplate(MessageTemplates):
                 guild.get_channel(ment)
                 for ment in clist
                 if guild.get_channel(ment)
-                != None  # Filter out channels that still exist
+                is not None  # Filter out channels that still exist
             ]
             rc = len(
                 [
                     guild.get_channel(ment)
                     for ment in clist
                     if guild.get_channel(ment)
-                    == None  # Count channels that do not exist anymore
+                    is None  # Count channels that do not exist anymore
                 ]
             )
             mentionlist = [
@@ -99,10 +99,16 @@ class ArchiveMessageTemplate(MessageTemplates):
             cattext += (
                 f" and {len(catlist) - upper_ignore_limit} more!"  # Add extra number
             )
-        ments = f"Ignoring {len(mentionlist)} Channels:{mentions}\n"[
+        ments_pre = "Ignoring"
+        if profile.get_ignore_mode() == 1:
+            ments_pre = "Listening to "
+        ments = f"{ments_pre} {len(mentionlist)} Channels:{mentions}\n"[
             :3000
         ]  # Final mentions message with new limit
-        cats = f"Ignoring {len(catlist)} Categories:{cattext}\n"[
+        cats_pre = "Ignoring"
+        if profile.get_ignore_mode() == 2:
+            cats_pre = "Listening to "
+        cats = f"{cats_pre} {len(catlist)} Categories:{cattext}\n"[
             :1000
         ]  # Final category message with new limit
         if len(catlist) <= 0:  # No categories to display
