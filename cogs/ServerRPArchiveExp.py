@@ -113,8 +113,8 @@ class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
             f"Number of messages in the 15-minute interval starting from {timestamp}: {len(messages)}"
         )
     
-    @commands.command()
-    async def check_message_archive(self,ctx):
+    @commands.command(extras={"guildtask": ["rp_history"]})
+    async def check_message_archive_ignore(self,ctx):
         chantups = []
         guild=ctx.guild
         if not guild:
