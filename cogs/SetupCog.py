@@ -355,9 +355,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
                             name="User perm", value=f"<@{perm.id}>, {perm.permission}"
                         )
             except Exception:
-                embed.add_field(
-                    name="NO PERMS SET", value="No permissions where set."
-                )
+                embed.add_field(name="NO PERMS SET", value="No permissions where set.")
             embed_list.append(embed)
         if ctx.interaction:
             await pages_of_embeds(ctx, embed_list, ephemeral=True)

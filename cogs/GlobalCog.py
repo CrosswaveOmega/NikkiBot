@@ -35,7 +35,6 @@ keytype = app_commands.Range[str, 2, 128]
 contenttype = app_commands.Range[str, 5, 4096]
 
 
-
 async def file_to_data_uri(file: discord.File) -> str:
     # Read the bytes from the file
     with BytesIO(file.fp.read()) as f:

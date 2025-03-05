@@ -1,7 +1,6 @@
 from discord.ext import commands
 
 
-
 # I need to redo the permission system.
 def serverOwner(ctx: commands.context):
     user = ctx.message.author

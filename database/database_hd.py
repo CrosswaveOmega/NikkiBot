@@ -10,9 +10,6 @@ from .database_singleton import DatabaseSingleton
 """Tables related to the AI stuff."""
 
 
-
-
-
 HDBase = declarative_base(name="HD API Base")
 
 # Also for testing DatabaseSingleton's asyncronous mode.

@@ -4,7 +4,6 @@ from discord.ext import commands
 from discord.ext.commands.help import HelpCommand
 
 
-
 """
 Custom Help Functions
 """

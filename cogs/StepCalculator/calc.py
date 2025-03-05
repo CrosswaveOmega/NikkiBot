@@ -1,6 +1,3 @@
-
-
-
 from .c_util import *
 
 from .calc_nested import parse_and_calculate_string

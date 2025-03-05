@@ -5,7 +5,6 @@ from discord.ext import commands
 from sqlitedict import SqliteDict
 
 
-
 class PersonalServerConfigs(commands.Cog):
     def __init__(self, bot):
         self.helptext = "This is for personal server configuration.  Work in progress."

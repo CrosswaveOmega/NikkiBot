@@ -47,6 +47,7 @@ def toExpressionString(i):
     # This just removes the :game_die: emoji from the string for the next calculation.
     stri = str(i)
     stri = stri.replace(":game_die:", "")
+    stri = stri.replace("🎲", "")
     return stri
 
 
@@ -60,7 +61,13 @@ def toNumber(i):
         # Expression parser for the sake of simpicity
         # '\u2212' is the negative symbol.
         stri = i.replace("\u2212", "-")
-        if i == "-":
+        stri = stri.replace("🎲", "")
+        if stri == "-":
             return 0
+        if stri == "True":
+            return 1
+        elif stri == "False":
+            return 0
+
         r = float(stri)
         return r

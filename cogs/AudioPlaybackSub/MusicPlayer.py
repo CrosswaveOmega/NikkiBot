@@ -97,7 +97,10 @@ class PlaylistPageContainer(PageClassContainer):
         key = ""
         gui.gprint(len(self.display), self.page)
         playpage = "None"
-        name = " Page {}/{}\n".format(self.page, self.maxpages, )
+        name = " Page {}/{}\n".format(
+            self.page,
+            self.maxpages,
+        )
         emb = Embed(title="No Pages")
         if len(self.display) > 0:
             playpage = self.display[self.page - 1]

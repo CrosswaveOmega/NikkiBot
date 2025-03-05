@@ -8,7 +8,6 @@ import numpy as np
 from .GameStatus import ApiStatus
 
 
-
 from utility.views import BaseView
 from utility.image_functions import draw_arrow
 

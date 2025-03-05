@@ -3,7 +3,6 @@ from PIL import Image, ImageDraw, ImageFont
 import math
 
 
-
 from typing import Union
 import markdown
 
