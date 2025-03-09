@@ -91,6 +91,8 @@ class LimitedSizeList(list):
     def get_first_change(self):
         if len(self.items) > 1:
             return (self.items[0], self.items[1])
+        if len(self.items)==0:
+            return None,None
         return self.items[0], self.items[0]
 
     def get_change_from(self, mins=15):

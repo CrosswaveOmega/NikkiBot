@@ -343,6 +343,10 @@ def campaign_view(
     embs = [emb]
     # Get player information from the war status
     all_players, _ = stat.war.get_first_change()
+    if all_players==None:
+        emb0 = discord.Embed(title="Galactic War Overview", description=f"The war is disabled!  Please check back later.\n")
+        emb0.timestamp = discord.utils.utcnow()  # Set timestamp
+        return [embs]
     total_contrib = [0, 0.0, 0.0, 0.0, 0.0]
     total = 0
     el = 0
