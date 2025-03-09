@@ -1305,7 +1305,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 if planet:
                     # planets- owner, regenRate
                     # Every 15 minutes
-                    if "position" in dump and len(list(dump.keys())) == 1:
+                    if ("position" in dump or "regenPerSecond" in dump) and len(list(dump.keys())) == 1:
                         if int(info.index) not in self.last_move:
                             self.last_move[int(info.index)] = [planet, info, dump]
                             return Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
