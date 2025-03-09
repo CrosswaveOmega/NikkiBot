@@ -714,6 +714,18 @@ class Embeds:
         emb.set_author(name="DEADZONE WARNING.")
         emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
         return emb
+    
+    @staticmethod
+    def timetravelWarningEmbed(campaign: BaseApiModel, mode="started") -> discord.Embed:
+        emb = discord.Embed(
+            title="TIME TRAVEL DETECTED",
+            description=f"A likely deadzone was {mode}!\nTimestamp:{fdt(campaign.retrieved_at, 'F')}",
+            timestamp=campaign.retrieved_at,
+            color=0xFF0000,
+        )
+        emb.set_author(name="TIME TRAVEL WARNING.")
+        emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
+        return emb
 
     @staticmethod
     def planetAttackEmbed(
@@ -1199,6 +1211,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 return embed
         if event_type == EventModes.DEADZONE:
             embed = Embeds.deadzoneWarningEmbed(
+                value,
+                "started",
+            )
+        if event_type == EventModes.TIME_TRAVEL:
+            embed = Embeds.timetravelWarningEmbed(
                 value,
                 "started",
             )

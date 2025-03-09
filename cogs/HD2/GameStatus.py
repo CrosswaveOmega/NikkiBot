@@ -271,7 +271,8 @@ class ApiStatus:
                 nowv = await GetApiRawAll(
                     api_config_override=self.client, direct=self.direct
                 )
-            self.warall = nowv
+            if self.warall.status.time<=nowv:
+                self.warall = nowv
         if nowv:
             if current:
                 with Timer() as timer:

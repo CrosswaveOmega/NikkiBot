@@ -24,6 +24,7 @@ class EventModes(Enum):
     GROUP = 7
     DATA = 8
     DEADZONE_END = 9
+    TIME_TRAVEL = 10
 
 
 class GameEvent(BaseApiModel):
@@ -315,6 +316,16 @@ async def detect_loggable_changes(
             DEADZONE = True
 
             await QueueAll.put([newitem])
+    elif old.status.time> new.status.time:
+        newitem = GameEvent(
+                mode=EventModes.TIME_TRAVEL,
+                place=EventModes.TIME_TRAVEL,
+                batch=batch,
+                value=new.status,
+            )
+            
+        await QueueAll.put([newitem])
+        return superlist
     else:
         if DEADZONE:
             newitem = GameEvent(
