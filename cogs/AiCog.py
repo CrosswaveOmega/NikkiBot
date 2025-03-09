@@ -256,9 +256,10 @@ async def ai_message_invoke(
         await message.channel.send("This message is too big.")
         return False
     ctx = await bot.get_context(message)
-    if not bot.embedding():
-        await message.channel.send("I'm still warming up!")
-        return False
+    if MEMORYMODE:
+        if not bot.embedding():
+            await message.channel.send("I'm still warming up!")
+            return False
     if await ctx.bot.gptapi.check_oai(ctx):
         return
 
