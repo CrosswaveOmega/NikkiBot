@@ -1324,8 +1324,6 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                             or info.retrieved_at.minute != 0
                         ):
                             embed.title = "ResourceChange"
-                    elif "regenPerSecond" in dump and len(list(dump.keys())) == 1:
-                        embed = Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
                     else:
                         embed = Embeds.dumpEmbedPlanet(info, dump, planet, "changed")
                 else:
