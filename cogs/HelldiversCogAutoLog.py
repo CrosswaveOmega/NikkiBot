@@ -719,7 +719,7 @@ class Embeds:
     def timetravelWarningEmbed(campaign: BaseApiModel, mode="started") -> discord.Embed:
         emb = discord.Embed(
             title="TIME TRAVEL DETECTED",
-            description=f"The returned internal war time value is less than the last recorded war time value. \nThe war is paused until arrowhead gets this fixed.\nTimestamp:{fdt(campaign.retrieved_at, 'F')}",
+            description=f"The returned internal war time has rolled back to a state about 10 seconds prior. \nThe war is paused until arrowhead gets this fixed.\nTimestamp:{fdt(campaign.retrieved_at, 'F')}",
             timestamp=campaign.retrieved_at,
             color=0xFF0000,
         )
