@@ -253,6 +253,7 @@ async def iter_hist_messages(
         count = count + 1
         if add_check:
             thisMessage.content = thisMessage.clean_content
+            thisMessage.content=remove_lines_starting_with_gt(thisMessage.content)
             actx.alter_latest_time(thisMessage.created_at.timestamp())
             actx.character_len += len(thisMessage.content)
             messages.append(thisMessage)
