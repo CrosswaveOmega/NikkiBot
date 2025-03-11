@@ -10,6 +10,7 @@ from bot import StatusEditMessage
 import utility.formatutil as futil
 from discord import ChannelType as ct
 from discord.ext import commands
+import re
 
 """
 Collects all messages in non-blacklisted channels, and adds them to the database in batches of 10.
@@ -19,6 +20,8 @@ BATCH_SIZE = 50
 LAZYGRAB_LIMIT = 10000
 
 
+def remove_lines_starting_with_gt(text):
+    return re.sub(r'^> .*\n?', '', text, flags=re.MULTILINE)
 def should_archive_channel(
     mode: int, chan: discord.TextChannel, profile, guild: discord.Guild
 ):
