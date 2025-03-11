@@ -325,7 +325,7 @@ async def detect_loggable_changes(
             )
             
         await QueueAll.put([newitem])
-        return superlist
+        #return superlist
     else:
         if DEADZONE:
             newitem = GameEvent(
