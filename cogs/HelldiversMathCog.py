@@ -99,6 +99,7 @@ def resource_graph():
     plt.savefig("saveData/graph5.png")
     return "ok"
 
+
 def rate_of_change_graph():
     df5 = pd.read_csv("funny_number_track.csv")
 
@@ -118,9 +119,7 @@ def rate_of_change_graph():
     df25["timestamp"] = df25["timestamp"].apply(
         lambda x: datetime.datetime.fromtimestamp(x)
     )  # Format timestamps
-    df25["rate_of_change"] = (
-        df25["value"].diff() / 5
-    )  # Calculate the rate of change
+    df25["rate_of_change"] = df25["value"].diff() / 5  # Calculate the rate of change
     df25 = df25[df25["rate_of_change"] != 0]  # Remove zero rate of change entries
 
     threshold = 25  # Threshold for detecting transitions
@@ -175,9 +174,9 @@ def rate_of_change_graph():
         elif abs(rate["r"] - current_cluster["avg"]) <= clustering_threshold:
             # Add to current cluster if within threshold
             current_cluster["vals"].append(rate)
-            current_cluster["avg"] = sum(
-                r["r"] for r in current_cluster["vals"]
-            ) / len(current_cluster["vals"])
+            current_cluster["avg"] = sum(r["r"] for r in current_cluster["vals"]) / len(
+                current_cluster["vals"]
+            )
             current_cluster["first"] = min(current_cluster["first"], rate["st"])
             current_cluster["c"] += rate["count"]
             current_cluster["max_count_rate"] = max(
@@ -219,9 +218,7 @@ def rate_of_change_graph():
 
     # Add horizontal lines for clusters
     for row in clusters:
-        weighted_avg = (
-            sum(rate["r"] * rate["count"] for rate in row["vals"]) / row["c"]
-        )
+        weighted_avg = sum(rate["r"] * rate["count"] for rate in row["vals"]) / row["c"]
         plt.axhline(y=weighted_avg, color="red", linestyle="--", alpha=0.5)
         plt.text(
             row["first"],
@@ -255,9 +252,8 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         self.hd2 = load_json_with_substitutions("./assets/json", "flavor.json", {}).get(
             "hd2", {}
         )
-        self.time1=datetime.datetime.now()
-        self.time2=datetime.datetime.now()
-        
+        self.time1 = datetime.datetime.now()
+        self.time2 = datetime.datetime.now()
 
     def cog_unload(self):
         pass
@@ -622,15 +618,14 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
     ):
         ctx: commands.Context = await self.bot.get_context(interaction)
         # Check the time elapsed since time1
-        
+
         mes = await ctx.send("Graphing...", ephemeral=True)
-       
+
         if (datetime.datetime.now() - self.time1).total_seconds() > 900:
+            self.time1 = datetime.datetime.now()
             result1 = await asyncio.to_thread(resource_graph)
             print(f"Result from to_thread: {result1}")
-            self.time1=datetime.datetime.now()
         await ctx.send(file=discord.File("saveData/graph5.png"), ephemeral=True)
-
 
     @calc.command(
         name="rateofchange",
@@ -642,12 +637,12 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
     ):
         ctx: commands.Context = await self.bot.get_context(interaction)
         # Check the time elapsed since time2
-        
+
         mes = await ctx.send("Graphing...", ephemeral=True)
         if (datetime.datetime.now() - self.time2).total_seconds() > 900:
+            self.time2 = datetime.datetime.now()
             result1 = await asyncio.to_thread(rate_of_change_graph)
             print(f"Result from to_thread: {result1}")
-            self.time2=datetime.datetime.now()
 
         print(f"Result from to_thread: {result1}")
         await ctx.send(file=discord.File("saveData/graph2.png"), ephemeral=True)
