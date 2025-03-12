@@ -1,3 +1,4 @@
+import asyncio
 import csv
 import datetime
 import os
@@ -61,6 +62,191 @@ def extract_embed_text(embed):
     return bullet_string
 
 
+def resource_graph():
+    df5 = pd.read_csv("funny_number_track.csv")
+
+    df_groupeds = (
+        df5.groupby("timestamp", group_keys=False)
+        .apply(lambda x: x.to_dict(orient="records")[0])
+        .reset_index()
+    )
+    df25 = df_groupeds[0]
+    df25 = pd.DataFrame(df_groupeds[0].tolist())
+
+    terminal_font = FontProperties(fname=r"./assets/ChakraPetch-SemiBold.ttf")
+
+    XE = df25["timestamp"].apply(
+        lambda x: datetime.datetime.fromtimestamp(x)
+    )  # Format timestamps to show actual time
+    YE = df25["value"]
+    plt.figure(figsize=(50, 12), facecolor="black")
+    plt.xticks(color="white", fontproperties=terminal_font)
+    plt.yticks(color="white", fontproperties=terminal_font)
+    plt.grid(True, color="gray", linestyle="--", linewidth=0.5)  # Added grid ticks
+    ax = plt.gca()
+    ax.set_facecolor("black")
+    plt.plot(XE, YE)
+    plt.ylabel("Current", color="white")
+    plt.xlabel("Time", color="white")
+    plt.title("Tracking the gravity number.", color="white")
+
+    # Customize the spines to be white
+    ax.spines["bottom"].set_color("white")
+    ax.spines["left"].set_color("white")
+    ax.spines["top"].set_color("white")
+    ax.spines["right"].set_color("white")
+
+    plt.savefig("saveData/graph5.png")
+    return "ok"
+
+def rate_of_change_graph():
+    df5 = pd.read_csv("funny_number_track.csv")
+
+    df_groupeds = (
+        df5.groupby("timestamp", group_keys=False)
+        .apply(lambda x: x.to_dict(orient="records")[0])
+        .reset_index()
+    )
+    df25 = df_groupeds[0]
+    df25 = pd.DataFrame(df_groupeds[0].tolist())
+
+    terminal_font = FontProperties(
+        fname=r"./assets/ChakraPetch-SemiBold.ttf"
+    )  # Update path as needed
+
+    # Convert timestamp to datetime and calculate rate of change
+    df25["timestamp"] = df25["timestamp"].apply(
+        lambda x: datetime.datetime.fromtimestamp(x)
+    )  # Format timestamps
+    df25["rate_of_change"] = (
+        df25["value"].diff() / 5
+    )  # Calculate the rate of change
+    df25 = df25[df25["rate_of_change"] != 0]  # Remove zero rate of change entries
+
+    threshold = 25  # Threshold for detecting transitions
+    df25["is_transition"] = df25["rate_of_change"].diff().abs() > threshold
+    df25["segment"] = df25["is_transition"].cumsum()  # Group by segments
+
+    # Filter out transitions
+    df25_no_transitions = df25[df25["is_transition"] == False]
+
+    # Calculate segment averages
+    segment_averages = (
+        df25_no_transitions.groupby("segment")
+        .agg(
+            average_rate_of_change=("rate_of_change", "mean"),
+            start_time=("timestamp", "min"),
+            end_time=("timestamp", "max"),
+            count=("rate_of_change", "size"),
+            total=("rate_of_change", "sum"),
+        )
+        .reset_index()
+    )
+
+    # Prepare data for clustering
+    average_rates_of_change = [
+        {
+            "r": float(row["average_rate_of_change"]),
+            "st": row["start_time"],
+            "count": row["count"],
+            "weight": row["count"] / len(segment_averages),
+        }
+        for _, row in segment_averages.iterrows()
+    ]
+
+    # Threshold for clustering and sort rates
+    clustering_threshold = 10
+    sorted_rates = sorted(average_rates_of_change, key=lambda x: x["r"])
+
+    # Cluster logic
+    clusters = []
+    current_cluster = {}
+
+    for rate in sorted_rates:
+        if not current_cluster:
+            # Start a new cluster if the current cluster is empty
+            current_cluster = {
+                "avg": rate["r"],
+                "first": rate["st"],
+                "vals": [rate],
+                "c": rate["count"],
+                "max_count_rate": rate,
+            }
+        elif abs(rate["r"] - current_cluster["avg"]) <= clustering_threshold:
+            # Add to current cluster if within threshold
+            current_cluster["vals"].append(rate)
+            current_cluster["avg"] = sum(
+                r["r"] for r in current_cluster["vals"]
+            ) / len(current_cluster["vals"])
+            current_cluster["first"] = min(current_cluster["first"], rate["st"])
+            current_cluster["c"] += rate["count"]
+            current_cluster["max_count_rate"] = max(
+                current_cluster["max_count_rate"], rate, key=lambda x: x["count"]
+            )
+        else:
+            # Finalize current cluster and start a new one
+            clusters.append(current_cluster)
+            current_cluster = {
+                "avg": rate["r"],
+                "first": rate["st"],
+                "vals": [rate],
+                "c": rate["count"],
+                "max_count_rate": rate,
+            }
+
+    # Add the last cluster if exists
+    if current_cluster:
+        clusters.append(current_cluster)
+
+    # Optionally, save the results to a CSV file
+    segment_averages.to_csv("segment_averages.csv", index=False)
+
+    # Plotting
+    plt.figure(figsize=(15, 16), facecolor="black")
+    ax = plt.gca()
+    ax.set_facecolor("black")
+    plt.xticks(color="white", fontproperties=terminal_font)
+    plt.yticks(color="white", fontproperties=terminal_font)
+    plt.grid(True, color="gray", linestyle="--", linewidth=0.5)
+
+    # Plot rate of change
+    plt.plot(
+        df25_no_transitions["timestamp"],
+        df25_no_transitions["rate_of_change"],
+        label="Rate of Change",
+        color="blue",
+    )
+
+    # Add horizontal lines for clusters
+    for row in clusters:
+        weighted_avg = (
+            sum(rate["r"] * rate["count"] for rate in row["vals"]) / row["c"]
+        )
+        plt.axhline(y=weighted_avg, color="red", linestyle="--", alpha=0.5)
+        plt.text(
+            row["first"],
+            row["avg"],
+            f"Avg: {row['avg']:.2f}, {row['c']}, wavg:{weighted_avg:.2f}",
+            color="green",
+            fontproperties=terminal_font,
+        )
+
+    plt.ylabel("Rate of Change", color="white", fontproperties=terminal_font)
+    plt.xlabel("Time", color="white", fontproperties=terminal_font)
+    plt.title(
+        "Rate of Change in Value over Time",
+        color="white",
+        fontproperties=terminal_font,
+    )
+
+    # Customize plot spines
+    for spine in ax.spines.values():
+        spine.set_color("white")
+
+    plt.savefig("saveData/graph2.png")
+    return "ok"
+
+
 class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
     """Cog for helldivers 2.  Consider it my embedded automaton spy."""
 
@@ -69,6 +255,9 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         self.hd2 = load_json_with_substitutions("./assets/json", "flavor.json", {}).get(
             "hd2", {}
         )
+        self.time1=datetime.datetime.now()
+        self.time2=datetime.datetime.now()
+        
 
     def cog_unload(self):
         pass
@@ -432,42 +621,16 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         interaction: discord.Interaction,
     ):
         ctx: commands.Context = await self.bot.get_context(interaction)
+        # Check the time elapsed since time1
+        
         mes = await ctx.send("Graphing...", ephemeral=True)
-        df5 = pd.read_csv("funny_number_track.csv")
-
-        df_groupeds = (
-            df5.groupby("timestamp", group_keys=False)
-            .apply(lambda x: x.to_dict(orient="records")[0])
-            .reset_index()
-        )
-        df25 = df_groupeds[0]
-        df25 = pd.DataFrame(df_groupeds[0].tolist())
-
-        terminal_font = FontProperties(fname=r"./assets/ChakraPetch-SemiBold.ttf")
-
-        XE = df25["timestamp"].apply(
-            lambda x: datetime.datetime.fromtimestamp(x)
-        )  # Format timestamps to show actual time
-        YE = df25["value"]
-        plt.figure(figsize=(50, 12), facecolor="black")
-        plt.xticks(color="white", fontproperties=terminal_font)
-        plt.yticks(color="white", fontproperties=terminal_font)
-        plt.grid(True, color="gray", linestyle="--", linewidth=0.5)  # Added grid ticks
-        ax = plt.gca()
-        ax.set_facecolor("black")
-        plt.plot(XE, YE)
-        plt.ylabel("Current", color="white")
-        plt.xlabel("Time", color="white")
-        plt.title("Tracking the gravity number.", color="white")
-
-        # Customize the spines to be white
-        ax.spines["bottom"].set_color("white")
-        ax.spines["left"].set_color("white")
-        ax.spines["top"].set_color("white")
-        ax.spines["right"].set_color("white")
-
-        plt.savefig("saveData/graph5.png")
+       
+        if (datetime.datetime.now() - self.time1).total_seconds() > 900:
+            result1 = await asyncio.to_thread(resource_graph)
+            print(f"Result from to_thread: {result1}")
+            self.time1=datetime.datetime.now()
         await ctx.send(file=discord.File("saveData/graph5.png"), ephemeral=True)
+
 
     @calc.command(
         name="rateofchange",
@@ -478,151 +641,15 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         interaction: discord.Interaction,
     ):
         ctx: commands.Context = await self.bot.get_context(interaction)
+        # Check the time elapsed since time2
+        
         mes = await ctx.send("Graphing...", ephemeral=True)
-        df5 = pd.read_csv("funny_number_track.csv")
+        if (datetime.datetime.now() - self.time2).total_seconds() > 900:
+            result1 = await asyncio.to_thread(rate_of_change_graph)
+            print(f"Result from to_thread: {result1}")
+            self.time2=datetime.datetime.now()
 
-        df_groupeds = (
-            df5.groupby("timestamp", group_keys=False)
-            .apply(lambda x: x.to_dict(orient="records")[0])
-            .reset_index()
-        )
-        df25 = df_groupeds[0]
-        df25 = pd.DataFrame(df_groupeds[0].tolist())
-
-        terminal_font = FontProperties(
-            fname=r"./assets/ChakraPetch-SemiBold.ttf"
-        )  # Update path as needed
-
-        # Convert timestamp to datetime and calculate rate of change
-        df25["timestamp"] = df25["timestamp"].apply(
-            lambda x: datetime.datetime.fromtimestamp(x)
-        )  # Format timestamps
-        df25["rate_of_change"] = (
-            df25["value"].diff() / 5
-        )  # Calculate the rate of change
-        df25 = df25[df25["rate_of_change"] != 0]  # Remove zero rate of change entries
-
-        threshold = 25  # Threshold for detecting transitions
-        df25["is_transition"] = df25["rate_of_change"].diff().abs() > threshold
-        df25["segment"] = df25["is_transition"].cumsum()  # Group by segments
-
-        # Filter out transitions
-        df25_no_transitions = df25[df25["is_transition"] == False]
-
-        # Calculate segment averages
-        segment_averages = (
-            df25_no_transitions.groupby("segment")
-            .agg(
-                average_rate_of_change=("rate_of_change", "mean"),
-                start_time=("timestamp", "min"),
-                end_time=("timestamp", "max"),
-                count=("rate_of_change", "size"),
-                total=("rate_of_change", "sum"),
-            )
-            .reset_index()
-        )
-
-        # Prepare data for clustering
-        average_rates_of_change = [
-            {
-                "r": float(row["average_rate_of_change"]),
-                "st": row["start_time"],
-                "count": row["count"],
-                "weight": row["count"] / len(segment_averages),
-            }
-            for _, row in segment_averages.iterrows()
-        ]
-
-        # Threshold for clustering and sort rates
-        clustering_threshold = 10
-        sorted_rates = sorted(average_rates_of_change, key=lambda x: x["r"])
-
-        # Cluster logic
-        clusters = []
-        current_cluster = {}
-
-        for rate in sorted_rates:
-            if not current_cluster:
-                # Start a new cluster if the current cluster is empty
-                current_cluster = {
-                    "avg": rate["r"],
-                    "first": rate["st"],
-                    "vals": [rate],
-                    "c": rate["count"],
-                    "max_count_rate": rate,
-                }
-            elif abs(rate["r"] - current_cluster["avg"]) <= clustering_threshold:
-                # Add to current cluster if within threshold
-                current_cluster["vals"].append(rate)
-                current_cluster["avg"] = sum(
-                    r["r"] for r in current_cluster["vals"]
-                ) / len(current_cluster["vals"])
-                current_cluster["first"] = min(current_cluster["first"], rate["st"])
-                current_cluster["c"] += rate["count"]
-                current_cluster["max_count_rate"] = max(
-                    current_cluster["max_count_rate"], rate, key=lambda x: x["count"]
-                )
-            else:
-                # Finalize current cluster and start a new one
-                clusters.append(current_cluster)
-                current_cluster = {
-                    "avg": rate["r"],
-                    "first": rate["st"],
-                    "vals": [rate],
-                    "c": rate["count"],
-                    "max_count_rate": rate,
-                }
-
-        # Add the last cluster if exists
-        if current_cluster:
-            clusters.append(current_cluster)
-
-        # Optionally, save the results to a CSV file
-        segment_averages.to_csv("segment_averages.csv", index=False)
-
-        # Plotting
-        plt.figure(figsize=(15, 16), facecolor="black")
-        ax = plt.gca()
-        ax.set_facecolor("black")
-        plt.xticks(color="white", fontproperties=terminal_font)
-        plt.yticks(color="white", fontproperties=terminal_font)
-        plt.grid(True, color="gray", linestyle="--", linewidth=0.5)
-
-        # Plot rate of change
-        plt.plot(
-            df25_no_transitions["timestamp"],
-            df25_no_transitions["rate_of_change"],
-            label="Rate of Change",
-            color="blue",
-        )
-
-        # Add horizontal lines for clusters
-        for row in clusters:
-            weighted_avg = (
-                sum(rate["r"] * rate["count"] for rate in row["vals"]) / row["c"]
-            )
-            plt.axhline(y=weighted_avg, color="red", linestyle="--", alpha=0.5)
-            plt.text(
-                row["first"],
-                row["avg"],
-                f"Avg: {row['avg']:.2f}, {row['c']}, wavg:{weighted_avg:.2f}",
-                color="green",
-                fontproperties=terminal_font,
-            )
-
-        plt.ylabel("Rate of Change", color="white", fontproperties=terminal_font)
-        plt.xlabel("Time", color="white", fontproperties=terminal_font)
-        plt.title(
-            "Rate of Change in Value over Time",
-            color="white",
-            fontproperties=terminal_font,
-        )
-
-        # Customize plot spines
-        for spine in ax.spines.values():
-            spine.set_color("white")
-
-        plt.savefig("saveData/graph2.png")
+        print(f"Result from to_thread: {result1}")
         await ctx.send(file=discord.File("saveData/graph2.png"), ephemeral=True)
 
 
