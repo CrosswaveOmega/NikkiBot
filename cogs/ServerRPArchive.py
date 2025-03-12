@@ -3,6 +3,7 @@ from collections import defaultdict
 
 # import datetime
 from datetime import datetime, timedelta
+from typing import Union
 
 import discord
 from dateutil.rrule import MINUTELY, SU, WEEKLY, rrule
@@ -586,7 +587,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         channel="Name of channel to ignore",
     )
     async def ignore_channel(
-        self, ctx: commands.Context, mode: ToChoice, channel: discord.TextChannel
+        self, ctx: commands.Context, mode: ToChoice, channel: Union[discord.TextChannel,discord.ForumChannel]
     ):  # Add ignore.
         """
         Add or remove mentioned channels to/from this server's ignore list. Ignored channels will not be archived.
