@@ -940,7 +940,7 @@ class Embeds:
 
         emb = discord.Embed(
             title=f"{name} Field Change",
-            description=f"Stats changed for {name}, in sector {sector}.\n{specialtext}\n```{globtex[:3500]}```",
+            description=f"Stats {mode} for {name}, in sector {sector}.\n{specialtext}\n```{globtex[:3500]}```",
             timestamp=campaign.retrieved_at,
             color=color,
         )
