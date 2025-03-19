@@ -290,6 +290,7 @@ async def ai_message_invoke(
 
     chat.add_message("system", nikkiprompt)
     mem = None
+    mems=None
     if MEMORYMODE:
         mem = SentenceMemory(ctx.bot, guild, user)
         docs, mems, alltime = await mem.search_sim(message)
