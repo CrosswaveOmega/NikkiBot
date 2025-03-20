@@ -407,6 +407,27 @@ class TCBot(
         if resync:
             await self.all_guild_startup()
 
+    async def reload_one(self, ext, resync=False):
+        reload_this = []
+        for i, e in self.loaded_extensions.items():
+            if i != ext:
+                continue
+            try:
+                await self.unload_extension(i)
+                reload_this.append(i)
+            except commands.errors.ExtensionNotFound as e:
+                await self.send_error(e, "Could not find extension!", True)
+            except commands.errors.ExtensionNotLoaded as e:
+                await self.send_error(e, "ERROR", True)
+
+            self.loaded_extensions[i] = None
+
+        for ext in reload_this:
+            if ext not in self.loaded_extensions:
+                await self.extension_loader(ext)
+            else:
+                val = await self.extension_reload(ext)
+
     def pswitchload(self, pmode=False):
         # Once could load in a list of 'plugins' seperately, decided against.
         # since it just caused problems.

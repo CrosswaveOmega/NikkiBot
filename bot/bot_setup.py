@@ -431,6 +431,25 @@ class Main(commands.Cog):
                 embed = discord.Embed(title="Loaded Extensions")
         await ctx.send(embed=embed)
 
+
+    @commands.command()
+    async def reload_one(self, ctx,extname: str):
+        """debugging only."""
+        bot = ctx.bot
+        bot.update_ext_list()
+        await bot.reload_one(extname,True)
+        embed = discord.Embed(title="Reloaded Loaded Extensions")
+        for i, v in bot.loaded_extensions.items():
+            ex, val = v
+            embed.add_field(name=i, value=ex, inline=True)
+            if val:
+                exepemb = discord.Embed(title=f"Error={i}", description=f"{ex}\n{val}")
+                await ctx.send(embed=exepemb)
+            if len(embed.fields) > 20:
+                await ctx.send(embed=embed)
+                embed = discord.Embed(title="Loaded Extensions")
+        await ctx.send(embed=embed)
+
     @commands.command()
     async def view_extend_status(self, ctx):
         """debugging only."""
