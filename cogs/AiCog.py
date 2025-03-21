@@ -475,6 +475,19 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         if mode == False:
             await ctx.send("OpenAI mode turned off.")
 
+
+    
+    @commands.command(brief="Enable for user")
+    @commands.is_owner()
+    async def enable_for_user(self, ctx, user: int =0):
+        profile = AuditProfile.get_user(user)
+        if profile:
+            profile.disabled = False
+            self.bot.database.commit()
+            await ctx.send("done")
+        else:
+            await ctx.send("user not found.")
+
     @commands.command(brief="Check memory")
     @commands.is_owner()
     async def memory_check(self, ctx, prompt: str):
