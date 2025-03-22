@@ -26,7 +26,7 @@ Class extensions that assist with the Chromadb vector store.
 """
 
 
-DocumentScoreVector = Tuple[Document, float, Vector]
+DocumentScoreVector = Tuple[Document, float]
 
 
 def _results_to_docs_scores_emb(results: Any) -> List[DocumentScoreVector]:
