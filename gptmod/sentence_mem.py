@@ -6,7 +6,7 @@ import copy
 import uuid
 from typing import Any, Dict, List
 
-import chromadb
+#import chromadb
 import discord
 from discord.ext import commands
 from gptfunctionutil import AILibFunction, GPTFunctionLibrary, LibParamSpec
@@ -16,9 +16,11 @@ from langchain.docstore.document import Document
 import threading
 import gptmod.util as util
 import gui
-from gptmod.chromatools import ChromaTools, DocumentScoreVector
+#from gptmod.chromatools import ChromaTools, DocumentScoreVector
 from utility.debug import Timer
 
+ChromaTools=None
+DocumentScoreVector=None
 
 class MemoryFunctions(GPTFunctionLibrary):
     @AILibFunction(
@@ -421,7 +423,7 @@ class SentenceMemory:
 
 
 def remove_url(
-    url, collection="web_collection", client: chromadb.ClientAPI = None
+    url, collection="web_collection", client= None
 ) -> bool:
     persist = "saveData"
     if client != None:

@@ -197,8 +197,8 @@ class TCBot(
             # start playwright
             pmode = self.config.getboolean("feature", "playwright")
             print("playwrighter", pmode)
-            if pmode == True:
-                await self.start_player()
+            #if pmode == True:
+            #    await self.start_player()
             now = datetime.datetime.now()
             seconds_until_next_minute = (60 - now.second) % 20
             gui.gprint("sleeping for ", seconds_until_next_minute)
