@@ -128,7 +128,7 @@ class GuildCogToggle(Guild_Sync_Base):
         result = session.execute(statement).scalars().first()
 
         if result is None:
-            print(server_id, cog, result)
+            gui.gprint(server_id, cog, result)
             default = True
             manual = False
             if hasattr(cog, "manual_enable"):
@@ -137,10 +137,10 @@ class GuildCogToggle(Guild_Sync_Base):
                 default = False
             if hasattr(cog, "globalonly"):
                 if cog.globalonly and server_id != GLOBAL_ID:
-                    print("should not sync.")
+                    gui.gprint("should not sync.")
                     default = False
                 elif cog.globalonly and server_id == GLOBAL_ID:
-                    print("WILL SYNC GLOBAL.")
+                    gui.gprint("WILL SYNC GLOBAL.")
                     default = True
             elif server_id == GLOBAL_ID:
                 default = False
@@ -379,10 +379,10 @@ def should_skip_cog(cogname: str, cog, guildid, onlist, ignorelist) -> bool:
     """Determine whether a cog should be skipped during synchronization."""
     if hasattr(cog, "globalonly"):
         if cog.globalonly and guildid != GLOBAL_ID:
-            print("should not sync.")
+            gui.gprint("should not sync.")
             return True
         elif cog.globalonly and guildid == GLOBAL_ID:
-            print("WILL SYNC GLOBAL.")
+            gui.gprint("WILL SYNC GLOBAL.")
             return False
     elif guildid == GLOBAL_ID:
         return True
@@ -491,10 +491,10 @@ class SpecialAppSync:
             # synced=build_app_command_list(self.tree,guild)
             app_tree = build_and_format_app_commands(self.tree, guild)
             if not guild:
-                print(name, app_tree)
+                gui.gprint(name, app_tree)
             dbentry: AppGuildTreeSync = AppGuildTreeSync.get(guildid)
             if not dbentry:
-                print("NO DBENTRY for ", guild.id)
+                gui.gprint("NO DBENTRY for ", guild.id)
                 dbentry = AppGuildTreeSync.add(guildid)
             same, diffscore, score = dbentry.compare_with_command_tree(app_tree)
             gui.gprint(f"Check Results: {name} (ID {guildid}):{score}")
@@ -533,7 +533,7 @@ class SpecialAppSync:
         entry = AppGuildTreeSync.get(server_id=guildid)
         if entry:
             if entry.migrated is None:
-                print(guildid, entry.migrated)
+                gui.gprint(guildid, entry.migrated)
                 ignorelist = AppGuildTreeSync.load_list(guildid)
                 onlist = AppGuildTreeSync.load_onlist(guildid)
                 for cogname, cog in self.cogs.items():
@@ -543,12 +543,11 @@ class SpecialAppSync:
                     DatabaseSingleton.get_session().commit()
                 entry.migrated = True
                 DatabaseSingleton.get_session().commit()
-                print(guildid, entry.migrated)
+                gui.gprint(guildid, entry.migrated)
 
         gui.dprint(ignorelist)
 
         def syncprint(*lis):
-            # print(*lis)
             pass
             # gui.gprint(f"Sync for  (ID {guildid})", *lis)
 

@@ -45,7 +45,7 @@ Python 3.11 or higher!
 - gptfunctionutil
 - openai
 - keyring
-- chromadb
+- lancedb
 - [markitdown](https://github.com/microsoft/markitdown)
 - google-api-python-client
 - [Helldivers2api.py](https://github.com/CrosswaveOmega/hd2api.py)

@@ -261,7 +261,6 @@ class Batch:
             self.sector[sector_name].add_event(event, key)
         elif planet_name is not None:
             if planet_name not in self.planets:
-                # print("Adding ", planet_name)
                 self.planets[planet_name] = PlanetEvents(planet)
             self.planets[planet_name].add_event(event, key)
         else:
@@ -282,7 +281,6 @@ class Batch:
         planet: Optional[Planet] = None
 
         key: str = f"{place}_{mode}"
-        # print(key)
 
         if place in ["campaign", "planetevents"]:
             va = value
@@ -431,7 +429,6 @@ class Batch:
                         text: List[str] = self.format_combo_text(
                             c, planet_data, self.hd2[c]
                         )
-                        # print(text)
                         combos.extend(text)
                     else:
                         combos.append(str(c))
@@ -449,7 +446,6 @@ class Batch:
                         text: List[str] = self.format_combo_text(
                             c, sector_data, self.hd2[c]
                         )
-                        # print(text)
                         combos.extend(text)
                     else:
                         combos.append(str(c))
@@ -466,7 +462,6 @@ class Batch:
                         text: List[str] = self.format_combo_text(
                             c, general, self.hd2[c]
                         )
-                        # print(text)
                         combos.extend(text)
                     else:
                         combos.append(str(c))
@@ -714,7 +709,7 @@ class Embeds:
         emb.set_author(name="DEADZONE WARNING.")
         emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
         return emb
-    
+
     @staticmethod
     def timetravelWarningEmbed(campaign: BaseApiModel, mode="started") -> discord.Embed:
         emb = discord.Embed(
@@ -934,9 +929,9 @@ class Embeds:
             new_decay = round(maths.dps_to_lph(new_decay), 3)
             specialtext += f"\n* Regen Rate: `{old_decay}`->`{new_decay}`"
         if "position" in dump:
-            new_posx = dump["position"]["x"].get("new", 0)
-            new_posy = dump["position"]["y"].get("new", 0)
-            specialtext += f"\n*`{name} moves to X {new_posx} Y {new_posy} ({custom_strftime(campaign.retrieved_at)}`)"
+            new_posx = dump["position"].get('x',{'new':0}).get("new", 0)
+            new_posy = dump["position"].get('y',{'new':0}).get("new", 0)
+            specialtext += f"\n*`{name} moves to X {campaign.position.x} Y {campaign.position.y} ({custom_strftime(campaign.retrieved_at)}`)"
 
         emb = discord.Embed(
             title=f"{name} Field Change",
@@ -1065,7 +1060,6 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
         for event in events:
             batch_id = event["batch"]
-            # print(batch_id)
             if batch_id not in self.batches:
                 self.batches[batch_id] = Batch(batch_id)
             self.batches[batch_id].process_event(event, self.apistatus)
@@ -1325,26 +1319,36 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     if "position" in dump and len(list(dump.keys())) == 1:
                         if int(info.index) not in self.last_move:
                             self.last_move[int(info.index)] = [planet, info, dump]
-                            return Embeds.dumpEmbedPlanet(info, dump, planet, f"changed in {place}")
+                            return Embeds.dumpEmbedPlanet(
+                                info, dump, planet, f"changed in {place}"
+                            )
                         elif (
                             info.retrieved_at
                             - self.last_move[int(info.index)][1].retrieved_at
                         ).total_seconds() > 3600:
                             self.last_move[int(info.index)] = [planet, info, dump]
-                            return Embeds.dumpEmbedPlanet(info, dump, planet, f"changed in {place}")
+                            return Embeds.dumpEmbedPlanet(
+                                info, dump, planet, f"changed in {place}"
+                            )
                         self.last_move[int(info.index)] = [planet, info, dump]
                         if info.retrieved_at.minute % 15 != 0:
                             return None
-                        embed = Embeds.dumpEmbedPlanet(info, dump, planet, f"changed in {place}")
+                        embed = Embeds.dumpEmbedPlanet(
+                            info, dump, planet, f"changed in {place}"
+                        )
                         if (
                             info.retrieved_at.hour % 2 == 0
                             or info.retrieved_at.minute != 0
                         ):
                             embed.title = "ResourceChange"
                     else:
-                        embed = Embeds.dumpEmbedPlanet(info, dump, planet, f"changed in {place}")
+                        embed = Embeds.dumpEmbedPlanet(
+                            info, dump, planet, f"changed in {place}"
+                        )
                 else:
-                    embed = Embeds.dumpEmbed(info, dump, "planet", f"changed in {place}")
+                    embed = Embeds.dumpEmbed(
+                        info, dump, "planet", f"changed in {place}"
+                    )
             elif place == "stats_raw":
                 embed = Embeds.dumpEmbed(info, dump, "stats", "changed")
             elif place == "info_raw":
@@ -1419,6 +1423,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         """
         Load results from api.
         """
+
+        # 1: GET WEBHOOKS.
         if not self.loghook:
             hooks = ServerHDProfile.get_entries_with_webhook()
             lg = [AssetLookup.get_asset("loghook", "urls")]
@@ -1426,6 +1432,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 lg.append(h)
             self.redirect_hook = AssetLookup.get_asset("subhook", "urls")
             self.loghook = lg
+
+            
         self.get_running = True
         if self.test_with:
             # Code for testing the auto log.

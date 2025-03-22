@@ -1,5 +1,5 @@
-from typing import List, Optional, Tuple
-import chromadb
+from typing import List, Optional, Tuple, Union
+import lancedb
 import discord
 import asyncio
 
@@ -9,18 +9,20 @@ import asyncio
 from discord.ext import commands
 
 from bot import StatusEditMessage
+from gptmod.lancetools import LanceTools
+import gui
 from .tools import (
-    has_url,
     read_and_split_links,
+)
+
+from .storage_tools import (
+    has_url,
     store_many_splits,
 )
+
 from langchain.docstore.document import Document
 
-# I need the readability npm package to work, so
-
-from gptmod.chromatools import ChromaTools
-
-
+# I need the readability npm package to work
 from utility import select_emoji
 from utility import Timer
 
@@ -33,15 +35,15 @@ class SourceLinkLoader:
 
     def __init__(
         self,
-        chromac: chromadb.ClientAPI,
-        statusmessage: StatusEditMessage = None,
+        lance_connection: lancedb.LanceDBConnection,
+        statusmessage: Optional[StatusEditMessage] = None,
         embed: Optional[discord.Embed] = None,
-    ):
-        self.chromac = chromac
-        self.statmess = statusmessage
-        self.current = ""
-        self.hascount = 0
-        self.embed = embed
+    ) -> None:
+        self.lance_connection: lancedb.LanceDBConnection = lance_connection
+        self.statmess: Optional[StatusEditMessage] = statusmessage
+        self.current: str = ""
+        self.hascount: int = 0
+        self.embed: discord.Embed = embed
         self.store_list: List[Tuple[Document]] = []
         if statusmessage and not embed:
             if statusmessage.embed:
@@ -54,7 +56,7 @@ class SourceLinkLoader:
         ctx: commands.Context,
         all_links: List[str],
         override: bool = False,
-    ):
+    ) -> Tuple[int, str]:
         """
         Asynchronously loads links, checks for cached documents, and processes the split content.
 
@@ -69,17 +71,21 @@ class SourceLinkLoader:
         if not self.statmess:
             self.statmess = await self.initialize_status_message(ctx)
 
-        if not self.chromac:
-            self.chromac = ChromaTools.get_chroma_client()
+        if not self.lance_connection:
+            gui.gprint("Making new lance collection.")
+            self.lance_connection = LanceTools.get_lance_client()
 
         self.current, self.hascount = "", 0
-        self.all_link_status = [["pending", link] for link in all_links]
+        self.all_link_status: List[List[Union[str, str]]] = [
+            ["pending", link] for link in all_links
+        ]
 
-        links, linknums = [], []
+        links: List[Tuple[int, str]] = []
+        linknums: List = []
 
         for link_num, link in enumerate(all_links):
             self.embed.description = f"Web Link Loading: \n{self.get_status_lines()}"
-            has = False
+            has: bool = False
             if not override:
                 has, getres = await self.check_cached_documents(ctx, link, override)
 
@@ -96,7 +102,9 @@ class SourceLinkLoader:
         await self.add_all_splits(ctx)
         return self.hascount, self.get_status_lines()
 
-    async def initialize_status_message(self, ctx: commands.Context):
+    async def initialize_status_message(
+        self, ctx: commands.Context
+    ) -> StatusEditMessage:
         """
         Initializes and sends a status message in the given context.
 
@@ -113,7 +121,7 @@ class SourceLinkLoader:
         stmes = StatusEditMessage(target_message, ctx)
         return stmes
 
-    def get_status_lines(self):
+    def get_status_lines(self) -> str:
         """
         Generates status lines for all links based on their current processing status.
 
@@ -124,7 +132,9 @@ class SourceLinkLoader:
             [f"{select_emoji(s)} {link}" for s, link in self.all_link_status]
         )
 
-    async def check_cached_documents(self, ctx, link, override):
+    async def check_cached_documents(
+        self, ctx: commands.Context, link: str, override: bool
+    ) -> Tuple[bool, Optional[dict]]:
         """
         Checks if the provided link is already cached, unless overriding is requested.
 
@@ -137,21 +147,21 @@ class SourceLinkLoader:
             tuple: A tuple where the first element indicates if the link is cached, and the second element is the cached data if any.
         """
 
-        result = await asyncio.to_thread(has_url, link, client=self.chromac)
+        result = await asyncio.to_thread(has_url, link, client=self.lance_connection)
         has, getres = result
         # Accessing traced results
         # The results object contains information about executed lines, missing lines, and more
 
         if has and not override:
-            for d, me in zip(getres["documents"], getres["metadatas"]):
-                if me["source"] != link:
+            for doc in getres:
+                if doc["metadata"]["source"] != link:
                     raise Exception(
                         "the url in the cache doesn't match the provided url."
                     )
             return True, getres
         return False, None
 
-    def process_cached_link(self, link_num, link, getres):
+    def process_cached_link(self, link_num: int, link: str, getres: dict) -> str:
         """
         Processes a link that was found in the cache.
 
@@ -164,13 +174,13 @@ class SourceLinkLoader:
             str: A formatted string indicating the cached status of the link.
         """
         self.all_link_status[link_num][0] = "skip"
-        return f"[Link {link_num}]({link}) has {len(getres['documents'])} cached documents.\n"
+        return f"[Link {link_num}]({link}) has {len(getres)} cached documents.\n"
 
     async def process_uncached_links(
         self,
-        ctx,
-        links,
-    ):
+        ctx: commands.Context,
+        links: List[Tuple[int, str]],
+    ) -> None:
         """
         Processes a link that was not found in the cache.
 
@@ -184,7 +194,7 @@ class SourceLinkLoader:
         async for dat, e, typev in read_and_split_links(ctx.bot, links):
             try:
                 if typev == -5:
-                    print(type(dat))
+                    gui.gprint(type(dat))
                     raise dat
                 dbadd = True
                 for split in dat:
@@ -205,11 +215,11 @@ class SourceLinkLoader:
 
     async def process_uncached_link_add(
         self,
-        link_num,
-        link,
-        splits,
-        embed,
-    ):
+        link_num: int,
+        link: str,
+        splits: List[Document],
+        embed: discord.Embed,
+    ) -> None:
         """
         Adds a link and its splits to the database and updates the status message.
 
@@ -232,7 +242,14 @@ class SourceLinkLoader:
             embed=embed,
         )
 
-    async def process_uncached_link_error(self, ctx, link_num, link, err, embed):
+    async def process_uncached_link_error(
+        self,
+        ctx: commands.Context,
+        link_num: int,
+        link: str,
+        err: Exception,
+        embed: discord.Embed,
+    ) -> None:
         """
         Handles errors encountered during the processing of an uncached link, updating the status message accordingly.
 
@@ -256,11 +273,11 @@ class SourceLinkLoader:
         )
         await ctx.bot.send_error(err)
 
-    async def add_all_splits(self, ctx):
+    async def add_all_splits(self, ctx: commands.Context) -> None:
         with Timer() as timer:
-            await store_many_splits(self.store_list, client=self.chromac)
-        elapsed_time = timer.get_time()
-        print(f"Time elapsed STORE: {elapsed_time:.4f} seconds")
+            await store_many_splits(self.store_list, client=self.lance_connection)
+        elapsed_time: float = timer.get_time()
+        gui.gprint(f"Time elapsed SPLIT STORE: {elapsed_time:.4f} seconds")
 
         await self.statmess.editw(
             min_seconds=5,

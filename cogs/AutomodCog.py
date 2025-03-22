@@ -29,22 +29,22 @@ class AutomodCog(commands.Cog, TC_Cog_Mixin):
 
     @commands.Cog.listener()
     async def on_automod_rule_create(self, rule: AutoModRule):
-        gui.print(rule)
+        gui.gprint(rule)
         pass
 
     @commands.Cog.listener()
     async def on_automod_rule_update(self, rule: AutoModRule):
-        gui.print(rule)
+        gui.gprint(rule)
         pass
 
     @commands.Cog.listener()
     async def on_automod_rule_delete(self, rule: AutoModRule):
-        gui.print(rule)
+        gui.gprint(rule)
         pass
 
     @commands.Cog.listener()
     async def on_automod_action(self, execution: AutoModAction):
-        gui.print(execution)
+        gui.gprint(execution)
         pass
 
     @app_commands.command(

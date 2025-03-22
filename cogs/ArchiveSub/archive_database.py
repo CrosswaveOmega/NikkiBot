@@ -284,12 +284,10 @@ class ChannelSep(ArchiveBase):
                 .first()
             )
         if no_check or not channel_sep:
-            # print(chansepid, "Is not present.")
             channel_sep = ChannelSep.derive_from_archived_rp_message(message)
             session.add(channel_sep)
             # session.commit()
         else:
-            print("Is present.")
             channel_sep.update_message_count()
         return channel_sep
 

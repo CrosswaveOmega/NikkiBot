@@ -1,12 +1,11 @@
 """
-Functions for a chromadb based memory for the gptfunctions.
+Functions for a lancedb based memory for the gptfunctions.
 """
 
 import copy
 import uuid
 from typing import Any, Dict, List
 
-#import chromadb
 import discord
 from discord.ext import commands
 from gptfunctionutil import AILibFunction, GPTFunctionLibrary, LibParamSpec
@@ -16,11 +15,10 @@ from langchain.docstore.document import Document
 import threading
 import gptmod.util as util
 import gui
-#from gptmod.chromatools import ChromaTools, DocumentScoreVector
-from utility.debug import Timer
 
-ChromaTools=None
+from utility.debug import Timer
 DocumentScoreVector=None
+
 
 class MemoryFunctions(GPTFunctionLibrary):
     @AILibFunction(
@@ -67,18 +65,18 @@ class GenericThread:
         return self.get_result()
 
 
-print("importing sentence_mem")
+gui.gprint("importing sentence_mem")
 
 
 # Example target function
 def warmup():
-    print("Starting embedding model.")
+    gui.gprint("Starting embedding model.")
     with Timer() as timer:
         from langchain_huggingface import HuggingFaceEmbeddings
 
         hug_embed = HuggingFaceEmbeddings(model_name="thenlper/gte-small")
         hug_embed.embed_query("The quick brown fox jumped over the lazy frog.")
-    print("embedding model loaded in", timer.get_time())
+    gui.gprint("embedding model loaded in", timer.get_time())
     return hug_embed
 
 
@@ -165,11 +163,11 @@ def split_document(doc: Document, present_mem=""):
         metadatac["split"] = add
         add += 1
         new_doc = Document(page_content=chunk, metadata=metadatac)
-        if len(chunk) > 8:
-            print(chunk)
+        if len(chunk) > 2:
+            gui.gprint(chunk)
             newdata.append(new_doc)
         else:
-            print("skipping chunk due to insufficient size.")
+            gui.gprint("skipping chunk due to insufficient size.")
     return newdata
 
 
@@ -183,13 +181,13 @@ async def group_documents(docs: List[Document], max_tokens=3000):
             sources[source] = {}
         sources[source][split] = doc
         if doc.page_content not in context:
-            print(doc.page_content)
+            gui.gprint(doc.page_content)
             context += doc.page_content + "  "
         tokens = util.num_tokens_from_messages(
             [{"role": "system", "content": context}], "gpt-4o-mini"
         )
         if tokens >= max_tokens:
-            print("token break")
+            gui.gprint("token break")
             break
 
     out_list = []
@@ -199,9 +197,9 @@ async def group_documents(docs: List[Document], max_tokens=3000):
         lastkey = -6
 
         for k, v in sorted_dict:
-            # print(source, k, v)
-            if k != 0 and abs(k - lastkey) > 1:
-                # print(abs(k - lastkey))
+            # gui.gprint(source, k, v)
+            if k is not None and k != 0 and abs(k - lastkey) > 1:
+                # gui.gprint(abs(k - lastkey))
                 newc += "..."
             lastkey = k
             newc += f"[split:{k}]:{v.page_content}" + "  "
@@ -236,9 +234,11 @@ class SentenceMemory:
         # dimensions = 384
         self.guildid = guild.id
         self.userid = user.id
+        
+        from gptmod.lancetools import LanceTools
         metadata = {"desc": "Simple long term memory.  384 dimensions."}
-        self.coll = ChromaTools.get_collection(
-            "sentence_mem", embed=bot.embedding(), path="saveData/longterm"
+        self.coll= LanceTools.get_collection(
+            "sentence_mem", embed=bot.embedding()
         )
         self.shortterm = {}
 
@@ -268,8 +268,9 @@ class SentenceMemory:
                 f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, source))}],sid:[{split + 1}]"
             )
 
-        doc1 = self.coll.get(ids=list(ids), include=["documents", "metadatas"])
-        print(zip(doc1["documents"], doc1["metadatas"]))
+        doc1 = await self.coll.aget_by_ids("sentence_mem", list(ids))
+        return doc1
+        gui.gprint(zip(doc1["documents"], doc1["metadatas"]))
         if doc1:
             dc = results_to_docs(doc1)
             if dc:
@@ -287,22 +288,24 @@ class SentenceMemory:
         content = cont
         if not content:
             content = message.content
-        print("content", content)
+        gui.gprint("content", content)
         meta = {}
         meta["source"] = message.jump_url
         meta["foruser"] = self.userid
         meta["forguild"] = self.guildid
         meta["channel"] = message.channel.id
         meta["date"] = message.created_at.timestamp()
-        meta["role"] = "assistant" if message.author.id == ctx.bot.user.id else "user"
+        meta["role"] = "assistant"
         doc = Document(page_content=content, metadata=meta)
         docs = split_document(doc, present_mem)
-        ids = [
-            f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
-            for e, doc in enumerate(docs)
-        ]
+        gui.gprint(docs)
+        newdocs = []
+        for e, doc in enumerate(docs):
+            doc.id = f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
+            newdocs.append(doc)
         if docs:
-            self.coll.add_documents(docs, ids)
+            outs = self.coll.add_documents(newdocs)
+            gui.gprint(outs)
 
     async def add_list_to_mem(
         self,
@@ -312,7 +315,7 @@ class SentenceMemory:
         present_mem: str = "",
     ):
         content = cont
-        print("content", content)
+        gui.gprint("content", content)
         docs = []
         for e, c in enumerate(content):
             meta = {}
@@ -326,29 +329,22 @@ class SentenceMemory:
             )
             meta["split"] = e
             doc = Document(page_content=c, metadata=meta)
+            doc.id = f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
+
             docs.append(doc)
-        ids = [
-            f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
-            for e, doc in enumerate(docs)
-        ]
+
         if docs:
-            self.coll.add_documents(docs, ids)
+            self.coll.add_documents(docs)
 
     async def search_sim(self, message: discord.Message) -> List[DocumentScoreVector]:
         persist = "saveData"
 
-        filterwith = {
-            "$and": [
-                {"foruser": message.author.id},
-                {"forguild": message.guild.id},
-            ]
-        }
+        filterwith = f"metadata.foruser = {message.author.id} AND metadata.forguild = {message.guild.id};"
+
         sources: Dict[str : Dict[int, Any]] = {}
         with Timer() as all_timer:
-            docs = (
-                await self.coll.asimilarity_search_with_relevance_scores_and_embeddings(
-                    message.content, k=8, filter=filterwith
-                )
+            docs = await self.coll.asimilarity_search_with_relevance_scores(
+                message.content, k=4, filter=filterwith
             )
             context = ""
 
@@ -373,19 +369,15 @@ class SentenceMemory:
     async def dump_memory(self, message: discord.Message) -> List[DocumentScoreVector]:
         persist = "saveData"
 
-        filterwith = {
-            "$and": [
-                {"foruser": message.author.id},
-                {"forguild": message.guild.id},
-            ]
-        }
+        filterwith = f"metadata.foruser = {message.author.id} AND metadata.forguild = {message.guild.id};"
+
         sources: Dict[str : Dict[int, Any]] = {}
         with Timer() as all_timer:
-            docs = await self.coll.aget(where=filterwith, limit=128)
+            docs = await self.coll.aget(filter=filterwith, limit=128)
             context = ""
 
             docs2 = results_to_docs(docs)
-            print(docs, docs2)
+            gui.gprint(docs, docs2)
             all_neighbors = docs2
 
         checktime = all_timer.get_time()
@@ -405,7 +397,7 @@ class SentenceMemory:
 
     async def delete_message(self, url):
         try:
-            self.coll._collection.delete(where={"source": url})
+            self.coll.delete(filter=f'source="{url}"')
 
             return True
         except ValueError as e:
@@ -414,31 +406,12 @@ class SentenceMemory:
 
     async def delete_user_messages(self, userid):
         try:
-            self.coll._collection.delete(where={"foruser": userid})
+            self.coll.delete(filter=f"foruser={userid}")
 
             return True
         except ValueError as e:
             gui.dprint(e)
             return False
-
-
-def remove_url(
-    url, collection="web_collection", client= None
-) -> bool:
-    persist = "saveData"
-    if client != None:
-        try:
-            collectionvar = client.get_collection(collection)
-            sres = collectionvar.peek()
-            res = collectionvar.delete(where={"source": url})
-
-            return True
-        except ValueError as e:
-            gui.dprint(e)
-            raise e
-            return False
-    else:
-        return False
 
 
 def extract_embed_text(embed):

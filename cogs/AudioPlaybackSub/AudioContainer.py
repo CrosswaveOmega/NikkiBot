@@ -346,17 +346,17 @@ class AudioContainer:
                 gui.gprint("Soundcloud video")
                 self.get_song_soundcloud()
             elif "discordapp" in self.query:
-                gui.print("Youtube video")
+                gui.gprint("Youtube video")
                 self.get_song_remote_file()
             elif "local:" in self.query:
-                gui.print("local")
+                gui.gprint("local")
                 self.get_song_local_file()
             elif self.is_audio_link(self.query):
-                gui.print("link")
+                gui.gprint("link")
                 self.get_song_remote_file()
 
             else:  # No idea what it is, do a search.
-                gui.print("search")
+                gui.gprint("search")
                 if do_search:
                     self.get_song_youtube(search=True)
                 else:

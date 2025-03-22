@@ -197,7 +197,7 @@ class TCBot(
             # start playwright
             pmode = self.config.getboolean("feature", "playwright")
             print("playwrighter", pmode)
-            #if pmode == True:
+            # if pmode == True:
             #    await self.start_player()
             now = datetime.datetime.now()
             seconds_until_next_minute = (60 - now.second) % 20
@@ -257,7 +257,7 @@ class TCBot(
         discord.utils.setup_logging(level=logging.INFO, handler=handler2, root=False)
 
         self.logs = logging.getLogger("TCLogger")
-        self.logs.setLevel(logging.WARNING)
+        self.logs.setLevel(logging.INFO)
         handlerTC = logging.handlers.RotatingFileHandler(
             filename="./logs/tauceti__log.log",
             encoding="utf-8",

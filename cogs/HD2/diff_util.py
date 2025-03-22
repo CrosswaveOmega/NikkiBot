@@ -1,17 +1,18 @@
 import logging
 from typing import *
 
+import gui
+
 logs = logging.getLogger("TCLogger")
 
-from hd2api.models.ABC.model import BaseApiModel
-from hd2api.builders import *
-from hd2api.models import DiveharderAll, StaticAll
-
-from enum import Enum
-
-from pydantic import Field
 import asyncio
 import random
+from enum import Enum
+
+from hd2api.builders import *
+from hd2api.models import DiveharderAll, StaticAll
+from hd2api.models.ABC.model import BaseApiModel
+from pydantic import Field
 
 
 class EventModes(Enum):
@@ -57,7 +58,7 @@ async def compare_value_with_timeout(model1, field):
             try:
                 value.sort()
             except TypeError:
-                print(value, "unsortable")
+                gui.gprint(value, "unsortable")
         return value
     except asyncio.TimeoutError as e:
         logs.error("Could not get field %s ", field, exc_info=e)
@@ -70,7 +71,6 @@ async def compare_values(val1, val2, lvd, to_ignore: Set[str]):
     elif isinstance(val1, list) and isinstance(val2, list):
         list_diffs = {}
         if len(val1) != len(val2):
-            # print(len(val1),len(val2))
             biggestsize = max(len(val1), len(val2))
 
             for i in range(biggestsize):
@@ -136,7 +136,7 @@ async def get_differing_fields(
     differing_fields = {}
     for field in model1.model_fields:
         if field not in to_ignore:
-            logs.info("Retrieving field %s ", field)
+            #logs.info("Retrieving field %s ", field)
             value1 = await compare_value_with_timeout(model1, field)
             value2 = await compare_value_with_timeout(model2, field)
 
@@ -235,7 +235,6 @@ async def process_planet_attacks(
     for event in source:
         oc = await check_compare_value_list(keys, [event[key] for key in keys], target)
         if not oc:
-            print(place, EventModes.NEW, event)
             item = GameEvent(mode=EventModes.NEW, place=place, batch=batch, value=event)
             newlist.append(item)
             pushed_items.append(item)
@@ -316,16 +315,16 @@ async def detect_loggable_changes(
             DEADZONE = True
 
             await QueueAll.put([newitem])
-    elif old.status.time> new.status.time:
+    elif old.status.time > new.status.time:
         newitem = GameEvent(
-                mode=EventModes.TIME_TRAVEL,
-                place=EventModes.TIME_TRAVEL,
-                batch=batch,
-                value=new.status,
-            )
-            
+            mode=EventModes.TIME_TRAVEL,
+            place=EventModes.TIME_TRAVEL,
+            batch=batch,
+            value=new.status,
+        )
+
         await QueueAll.put([newitem])
-        #return superlist
+        # return superlist
     else:
         if DEADZONE:
             newitem = GameEvent(
@@ -369,7 +368,7 @@ async def detect_loggable_changes(
         superlist.append(item)
         await QueueAll.put([item])
     out["stats_raw"]["changes"] = rawout
-    logs.info("Starting loggable detection, stand by...")
+    logs.debug("Starting loggable detection, stand by...")
     superlist += await process_planet_attacks(
         new.status.planetAttacks,
         old.status.planetAttacks,
@@ -392,7 +391,7 @@ async def detect_loggable_changes(
     )
 
     if new.news_feed is not None and old.news_feed is not None:
-        logs.info("News feed loggable detection, stand by...")
+        logs.debug("News feed loggable detection, stand by...")
 
         superlist += await process_planet_events(
             new.news_feed,
@@ -408,7 +407,7 @@ async def detect_loggable_changes(
             ],
             game_time=gametime,
         )
-    logs.info("DSS movement detection, stand by...")
+    logs.debug("DSS movement detection, stand by...")
     superlist += await process_planet_events(
         new.status.spaceStations,
         old.status.spaceStations,
@@ -420,7 +419,7 @@ async def detect_loggable_changes(
         game_time=gametime,
     )
 
-    logs.info("Global Resourse detection, stand by...")
+    logs.debug("Global Resourse detection, stand by...")
     superlist += await process_planet_events(
         new.status.globalResources,
         old.status.globalResources,
@@ -431,7 +430,7 @@ async def detect_loggable_changes(
         ["retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
-    logs.info("campaigns detection, stand by...")
+    logs.debug("campaigns detection, stand by...")
     superlist += await process_planet_events(
         new.status.campaigns,
         old.status.campaigns,
@@ -442,7 +441,7 @@ async def detect_loggable_changes(
         ["retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
-    logs.info("planet events detection, stand by...")
+    logs.debug("planet events detection, stand by...")
     superlist += await process_planet_events(
         new.status.planetEvents,
         old.status.planetEvents,
@@ -453,7 +452,7 @@ async def detect_loggable_changes(
         ["health", "retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
-    logs.info("planet status detection, stand by...")
+    logs.debug("planet status detection, stand by...")
     superlist += await process_planet_events(
         new.status.planetStatus,
         old.status.planetStatus,
@@ -464,7 +463,7 @@ async def detect_loggable_changes(
         ["health", "players", "retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
-    logs.info("global event detection, stand by...")
+    logs.debug("global event detection, stand by...")
     superlist += await process_planet_events(
         new.status.globalEvents,
         old.status.globalEvents,
@@ -492,7 +491,7 @@ async def detect_loggable_changes(
             )
             superlist.append(item)
             await QueueAll.put([item])
-        logs.info("planet info detection, stand by...")
+        logs.debug("planet info detection, stand by...")
         superlist += await process_planet_events(
             new.war_info.planetInfos,
             old.war_info.planetInfos,

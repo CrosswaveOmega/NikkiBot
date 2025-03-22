@@ -1,3 +1,4 @@
+import gui
 from sqlalchemy import inspect, MetaData, text
 from sqlalchemy.schema import Column
 
@@ -103,7 +104,7 @@ def _compare_tables(table_name, tables1, tables2, insp, session, engine):
                 table2,
                 engine,
             )
-            print("THO", out)
+            gui.gprint("THO", out)
             result += out
     return result
 
@@ -121,7 +122,7 @@ async def _async_compare_tables(table_name, tables1, tables2, session, engine):
 
             def get_columns(conn, table_name, schema):
                 insp = inspect(conn)
-                print(table_name, schema, insp)
+                gui.gprint(table_name, schema, insp)
                 return insp.get_columns(table_name, schema=schema)
 
             columns1 = await async_conn.run_sync(

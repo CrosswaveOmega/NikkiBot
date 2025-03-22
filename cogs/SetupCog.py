@@ -150,7 +150,7 @@ class Setup(commands.Cog, TC_Cog_Mixin):
                 ctx.bot.tree.clear_commands(guild=ctx.guild)
                 await ctx.bot.all_guild_startup()
             else:
-                print(entry, entry.enabled)
+                gui.gprint(entry, entry.enabled)
                 if not entry.enabled:
                     # entry.enabled = True
                     GuildCogToggle.edit(ctx.guild.id, cog, True)

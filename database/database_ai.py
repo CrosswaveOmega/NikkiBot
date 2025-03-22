@@ -62,6 +62,9 @@ class AuditProfile(AIBase):
             if self.last_call > self.started_dt:
                 self.current = 0
                 self.set_rollover()
+        elif self.last_call == None:
+            self.last_call = datetime.fromtimestamp(0)
+            self.set_rollover()
 
     @staticmethod
     def get_or_new(server, user):

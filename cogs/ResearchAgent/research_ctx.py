@@ -12,7 +12,7 @@ from bot import StatusEditMessage, TCBot
 
 import gptfunctionutil.functionlib as gptum
 from gptfunctionutil import SingleCallAsync
-from gptmod.chromatools import ChromaTools, DocumentScoreVector
+from gptmod.lancetools import LanceTools, DocumentScoreVector
 from .LinkLoader import SourceLinkLoader
 from utility import urltomessage
 import cogs.ResearchAgent.actions as actions
@@ -190,7 +190,7 @@ class ResearchContext:
         links (List[str]): A list of links returned from the web search.
         res (List[Dict[str, str]]): A list of dictionaries containing the search results.
         """
-        chromac = ChromaTools.get_chroma_client()
+        lancedbc = LanceTools.get_lance_client()
         # create status message for load_links.
         embed = discord.Embed(
             title=f"Web Search Results for: {questtup[0]} ",
@@ -200,7 +200,9 @@ class ResearchContext:
         target_message = await self.ctx.send(embed=embed)
 
         statmess = StatusEditMessage(target_message, self.ctx)
-        loader = SourceLinkLoader(chromac=chromac, statusmessage=statmess, embed=embed)
+        loader = SourceLinkLoader(
+            lance_connection=lancedbc, statusmessage=statmess, embed=embed
+        )
         _, lines = await loader.load_links(self.ctx, links, False)
         await statmess.delete()
         s = lines.split("\n")

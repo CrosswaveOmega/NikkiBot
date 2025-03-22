@@ -1,3 +1,4 @@
+print("Importing Actions")
 import asyncio
 
 # import datetime
@@ -12,8 +13,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from bot import StatusEditMessage
 
-from gptmod.chromatools import ChromaTools, DocumentScoreVector
-from .tools import format_answer, get_doc_sources, search_sim, try_until_ok
+from gptmod.lancetools import LanceTools, DocumentScoreVector
+
+print("Importing Tools")
+from .tools import format_answer, get_doc_sources, try_until_ok
+from .storage_tools import search_sim
 
 UPPER_VALIDATION_LIM = 5
 
@@ -159,7 +163,7 @@ async def research_op(
     link_restrict: Optional[List[str]] = None,
 ) -> Tuple[str, Optional[str], List[DocumentScoreVector]]:
     """
-    Search the chroma db for relevant documents pertaining to the
+    Search the lance db for relevant documents pertaining to the
     question, and return a formatted result with the source links and original documents.
 
     Args:
@@ -181,7 +185,7 @@ async def research_op(
 
     """
 
-    chromac = ChromaTools.get_chroma_client()
+    lancedbc = LanceTools.get_lance_client()
 
     embed = discord.Embed(title=f"Query: {question} ")
 
@@ -195,7 +199,7 @@ async def research_op(
         )
     data = await search_sim(
         question,
-        client=chromac,
+        client=lancedbc,
         titleres=site_title_restriction,
         k=k,
         mmr=use_mmr,
@@ -230,7 +234,7 @@ async def get_sources(
     link_restrict: Optional[List[str]] = None,
 ) -> Tuple[str, Optional[str], List[DocumentScoreVector]]:
     """
-    Search the chroma db for relevant documents pertaining to the
+    Search the lance db for relevant documents pertaining to the
     question, and return a formatted result with the source links and original documents.
 
     Args:
@@ -252,8 +256,7 @@ async def get_sources(
 
     """
 
-    chromac = ChromaTools.get_chroma_client()
-
+    lancedbc = LanceTools.get_lance_client()
     embed = discord.Embed(title=f"Query: {question} ")
 
     embed.add_field(name="Question", value=question, inline=False)
@@ -266,7 +269,7 @@ async def get_sources(
         )
     data = await search_sim(
         question,
-        client=chromac,
+        client=lancedbc,
         titleres=site_title_restriction,
         k=k,
         mmr=use_mmr,

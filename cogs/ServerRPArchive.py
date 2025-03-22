@@ -587,7 +587,10 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         channel="Name of channel to ignore",
     )
     async def ignore_channel(
-        self, ctx: commands.Context, mode: ToChoice, channel: Union[discord.TextChannel,discord.ForumChannel]
+        self,
+        ctx: commands.Context,
+        mode: ToChoice,
+        channel: Union[discord.TextChannel, discord.ForumChannel],
     ):  # Add ignore.
         """
         Add or remove mentioned channels to/from this server's ignore list. Ignored channels will not be archived.

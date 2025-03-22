@@ -13,62 +13,63 @@ from scipy import stats
 from io import BytesIO
 from PIL import Image
 
-# Load your dataset (Assume your dataset is in a CSV file)
-# Replace 'your_dataset.csv' with your actual dataset file
-
-# List of regression models to use
 
 
-data = pd.read_csv("statistics.csv")
-data = data[
-    (data["wins_per_sec"] >= 0)
-    & (data["loss_per_sec"] >= 0)
-    & (data["kills_per_sec"] >= 0)
-    & (data["deaths_per_sec"] >= 0)
-]
-
-
-# Extract features and target
-T = data["timestamp"]
-X = data[
-    [
-        "player_count",
-        "mp_mult",
-        "wins_per_sec",
-        "loss_per_sec",
-        "decay_rate",
-        "kills_per_sec",
-        "deaths_per_sec",
+def load_and_filter_data(filepath: str) -> pd.DataFrame:
+    """Load CSV and filter out rows with negative values."""
+    data = pd.read_csv(filepath)
+    filtered = data[
+        (data["wins_per_sec"] >= 0) &
+        (data["loss_per_sec"] >= 0) &
+        (data["kills_per_sec"] >= 0) &
+        (data["deaths_per_sec"] >= 0)
     ]
-]
-Y = data["eps"]
+    return filtered
+
+def prepare_features_targets(data: pd.DataFrame):
+    """Extract features and targets for the models."""
+    T = data["timestamp"]
+    X = data[[
+        "player_count", "mp_mult", "wins_per_sec",
+        "loss_per_sec", "decay_rate", "kills_per_sec",
+        "deaths_per_sec"
+    ]]
+    Y = data["eps"]
+    XE = data[["eps"]]
+    YE = data["player_count"]
+    XE2 = data[["player_count"]]
+    YE2 = data["eps"]
+    return T, X, Y, XE, YE, XE2, YE2
 
 
-# XE = data[["eps", "mp_mult",'wins_per_sec','loss_per_sec','kills_per_sec','deaths_per_sec']]
-XE = data[["eps"]]
-YE = data["player_count"]
-model = LinearRegression()
-model.fit(X, Y)
+def train_players_needed_model(data):
+    XE = data[["eps"]]
+    YE = data["player_count"]
 
-# Fit the linear regression model
-players_needed_model = LinearRegression()
-players_needed_model.fit(XE[["eps"]], YE)
+    model = LinearRegression()
+    model.fit(XE, YE)
+    return model
 
-XE2 = data[["player_count"]]
-YE2 = data["eps"]
-players_to_eps_model = LinearRegression()
-players_to_eps_model.fit(XE2[["player_count"]], YE2)
+def train_players_to_eps_model(data):
+    XE2 = data[["player_count"]]
+    YE2 = data["eps"]
+
+    model = LinearRegression()
+    model.fit(XE2, YE2)
+    return model
+
+def evaluate_model(model: LinearRegression, X_test: pd.DataFrame, Y_test: pd.Series) -> float:
+    """Evaluate a model and return the Mean Squared Error."""
+    predictions = model.predict(X_test)
+    mse = mean_squared_error(Y_test, predictions)
+    return mse
 
 
-# Predict values
-predicted_eps = players_needed_model.predict(XE[["eps"]])
-
-# Calculate the mean squared error
-mse = mean_squared_error(YE, predicted_eps)
-# print(f"Mean Squared Error: {mse}")
 
 
 def experiment_models():
+    data=load_and_filter_data('statistics.csv')
+    T, X, Y, XE, YE, XE2, YE2=prepare_features_targets(data)
     models = [
         ("Linear Regression", LinearRegression()),
         ("ElasticNet", ElasticNet()),
@@ -98,13 +99,46 @@ def experiment_models():
     for name in mse_results:
         avg_mse = np.mean(mse_results[name])
         avg_r2 = np.mean(r2_results[name])
-        # print(f"{name}:")
-        # print(f"  Average Mean Squared Error: {avg_mse:.4f}")
-        # print(f"  Average R^2 Score: {avg_r2:.4f}\n")
+
+def build_main_model(data): 
+    T, X, Y, XE, YE, XE2, YE2=prepare_features_targets(data)
+    main_model = LinearRegression()
+    main_model.fit(X, Y)
+    return main_model
 
 
-# experiment_models()
+def build_models():
+    data=load_and_filter_data('statistics.csv')
+    model=build_main_model(data)
+    players_needed_model = train_players_needed_model(data)
+    players_to_eps_model = train_players_to_eps_model(data)
+    XE = data[["eps"]]
+    YE = data["player_count"]
+    mse = evaluate_model(players_needed_model, XE[["eps"]], YE)
+    return model,players_needed_model,players_to_eps_model,mse
 
+
+
+def compute_se_of_prediction(X_new, model, mse, XTX_inv=None):
+    """Optimize calculation without storing large matrices like XE."""
+    
+    # Calculate X_with_intercept for the new prediction
+    X_new_with_intercept = np.hstack((np.ones((X_new.shape[0], 1)), X_new))  # Add intercept to new data
+
+    # If XTX_inv (X'X inverse) is not provided, calculate it for the model
+    if XTX_inv is None:
+        # Compute XTX_inv using the model's training data (without storing XE)
+        X_with_intercept = np.hstack((np.ones((model.X_train.shape[0], 1)), model.X_train))  # Add intercept to model training data
+        XTX_inv = np.linalg.inv(X_with_intercept.T @ X_with_intercept)
+    
+    # Calculate the standard error of the prediction using the formula
+    se_of_prediction = np.sqrt(
+        mse * (1 + np.sum(np.dot(X_new_with_intercept, XTX_inv) * X_new_with_intercept, axis=1))
+    )
+
+    return se_of_prediction
+
+model,players_needed_model,players_to_eps_model,mse=build_models()
 
 def make_prediction_for_eps(data_dict):
     prediction_features = {
@@ -137,9 +171,6 @@ def make_prediction_for_eps(data_dict):
         ]
     )
 
-    # Add the prediction result to the schema
-    # print(eps_prediction)
-
     return eps_prediction[0]
 
 
@@ -155,24 +186,9 @@ def predict_needed_players(target_eps, mp_mult):
     y_pred = players_needed_model.predict(X_new)
     needed = y_pred[0]
 
-    y = YE
     # Calculate the standard error of the prediction
-    X_with_intercept = np.hstack((np.ones((XE.shape[0], 1)), XE))
-    X_new_with_intercept = np.hstack((np.ones((X_new.shape[0], 1)), X_new))
-    se_of_prediction = np.sqrt(
-        mse
-        * (
-            1
-            + np.dot(
-                np.dot(
-                    X_new_with_intercept,
-                    np.linalg.inv(np.dot(X_with_intercept.T, X_with_intercept)),
-                ),
-                X_new_with_intercept.T,
-            )
-        )
-    )
-    return needed, se_of_prediction
+    #se_of_prediction = compute_se_of_prediction(X_new, players_needed_model, mse)
+    return needed, 0.0 #se_of_prediction
 
 
 def predict_eps_for_players(players, mp_mult):
@@ -187,26 +203,14 @@ def predict_eps_for_players(players, mp_mult):
     y_pred = players_to_eps_model.predict(X_new)
     needed = y_pred[0]
 
-    # Calculate the standard error of the prediction
-    X_with_intercept = np.hstack((np.ones((XE2.shape[0], 1)), XE2))
-    X_new_with_intercept = np.hstack((np.ones((X_new.shape[0], 1)), X_new))
-    se_of_prediction = np.sqrt(
-        mse
-        * (
-            1
-            + np.dot(
-                np.dot(
-                    X_new_with_intercept,
-                    np.linalg.inv(np.dot(X_with_intercept.T, X_with_intercept)),
-                ),
-                X_new_with_intercept.T,
-            )
-        )
-    )
-    return needed, se_of_prediction
+    
+    #se_of_prediction = compute_se_of_prediction(X_new, players_to_eps_model, mse)
+    return needed, 0.0 #se_of_prediction
 
 
 def make_graph():
+    data=load_and_filter_data('statistics.csv')
+    T, X, Y, XE, YE, XE2, YE2=prepare_features_targets(data)
     se = np.sqrt(mse)
 
     from matplotlib.font_manager import FontProperties
@@ -219,7 +223,7 @@ def make_graph():
     confidence_level = 0.5
     degrees_of_freedom = len(XE) - 2
     t_value = stats.t.ppf((1 + confidence_level) / 2, degrees_of_freedom)
-
+    predicted_eps=model.predict(X)
     # Prediction intervals
     predicted_std = np.std(predicted_eps)
     interval = t_value * predicted_std
@@ -318,6 +322,8 @@ def make_graph():
 
 
 def make_graph2():
+    data=load_and_filter_data('statistics.csv')
+    T, X, Y, XE, YE, XE2, YE2=prepare_features_targets(data)
     from matplotlib.font_manager import FontProperties
 
     terminal_font = FontProperties(
@@ -428,6 +434,8 @@ def make_graph2():
 
 
 def make_graph3():
+    data=load_and_filter_data('statistics.csv')
+    T, X, Y, XE, YE, XE2, YE2=prepare_features_targets(data)
     se = np.sqrt(mse)
 
     from matplotlib.font_manager import FontProperties
@@ -516,5 +524,5 @@ def make_graph3():
     return image
 
 
-img = make_graph()
-img2 = make_graph2()
+#img = make_graph()
+#img2 = make_graph2()

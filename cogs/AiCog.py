@@ -197,7 +197,6 @@ async def process_result(
             page.add_line(p)
         split_by = split_string_with_code_blocks(mycontent, 2000)
         messageresp = None
-        print(mycontent)
         for pa in split_by:
             ms = await ctx.channel.send(pa)
             if messageresp == None:
@@ -221,7 +220,7 @@ async def process_result(
             for tool_call in res.choices[0].message.tool_calls:
                 outcome = await memlib.call_by_tool_async(tool_call)
                 contents, need = outcome["content"]
-                print(contents, need)
+                gui.gprint(contents, need)
                 if need:
                     await mem.add_list_to_mem(
                         ctx, messageresp, cont=contents, present_mem=present_mem
@@ -290,7 +289,7 @@ async def ai_message_invoke(
 
     chat.add_message("system", nikkiprompt)
     mem = None
-    mems=None
+    mems = None
     if MEMORYMODE:
         mem = SentenceMemory(ctx.bot, guild, user)
         docs, mems, alltime = await mem.search_sim(message)
@@ -475,11 +474,9 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         if mode == False:
             await ctx.send("OpenAI mode turned off.")
 
-
-    
     @commands.command(brief="Enable for user")
     @commands.is_owner()
-    async def enable_for_user(self, ctx, user: int =0):
+    async def enable_for_user(self, ctx, user: int = 0):
         profile = AuditProfile.get_user(user)
         if profile:
             profile.disabled = False
@@ -599,9 +596,24 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(
                 f"SERVER: <t:{int(serverrep.last_call.timestamp())}:F>, RESET ONL <t:{int(serverrep.started_dt.timestamp())}:F>, {serverrep.current}, {serverrep.DailyLimit}"
             )
-            await ctx.send(
-                f"USER: <t:{int(userrep.last_call.timestamp())}:F>, RESET ON<t:{int(userrep.started_dt.timestamp())}:F>, {userrep.current}, {userrep.DailyLimit}"
-            )
+            lastuser = userrep.last_call
+            resetwhen = userrep.started_dt
+            if lastuser and resetwhen:
+                await ctx.send(
+                    f"USER: <t:{int(lastuser.timestamp())}:F>, RESET ON<t:{int(resetwhen.timestamp())}:F>, {userrep.current}, {userrep.DailyLimit}"
+                )
+            elif lastuser:
+                await ctx.send(
+                    f"USER: <t:{int(lastuser.timestamp())}:F>, RESET NEVER, {userrep.current}, {userrep.DailyLimit}"
+                )
+            elif resetwhen:
+                await ctx.send(
+                    f"USER: NEVER, RESET ON<t:{int(resetwhen.timestamp())}:F>, {userrep.current}, {userrep.DailyLimit}"
+                )
+            else:
+                await ctx.send(
+                    f"USER: NEVER, RESET ON NEVER, {userrep.current}, {userrep.DailyLimit}"
+                )
 
         return True
 

@@ -1,8 +1,11 @@
+print("Importing views.")
 import discord
 from discord import Interaction
 import gui
 from typing import List, Tuple
 from utility import pages_of_embeds_2
+
+print("Importing actions...")
 from .actions import sentence_sim_op
 
 

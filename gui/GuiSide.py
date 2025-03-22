@@ -1,10 +1,13 @@
 import tkinter as tk
+import logging
 import asyncio
 from queue import Queue
+from typing import TextIO
 from .BotEntry import DataStore
 from datetime import datetime
 import tkinter.font as font
 
+logs = logging.getLogger("TCLogger")
 queued = Queue()
 
 
@@ -41,12 +44,20 @@ def dprint(*args, **kwargs):
         gprint(*args, **kwargs)
 
 
-def gprint(*args, **kwargs):
-    print(*args, **kwargs)
+def gprint(
+    *values: object,
+    sep: str | None = " ",
+    end: str | None = "\n",
+    file: TextIO | None = None,
+    flush: bool = False,
+):
+    message = sep.join(map(str, values))
+    print(*values, sep=sep, end=end, file=file, flush=flush)
+    logs.info(message)
     s = ""
     if not GUI_MODE:
         return
-    for arg in args:
+    for arg in values:
         s += str(arg)
     lines = f"•{str(s)}".split("\n")
     splitted_lines = []

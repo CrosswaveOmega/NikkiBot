@@ -8,6 +8,7 @@ from cogs.dat_Starboard import (
     StarboardEmojis,
     StarboardEntryTable,
     StarboardEntryGivers,
+    StarboardIgnoreChannels,
 )
 from utility import (
     urltomessage,
@@ -26,6 +27,7 @@ class StarboardCog(commands.Cog):
         self.lock = asyncio.Lock()
         self.emojilist = ["\N{HONEYBEE}", "<:2diverHeart:1221738356950564926>"]
         self.server_emoji_caches = {}
+        self.ignore_channels_cache = {}
 
         self.timerloop.start()  # type: ignore
 
@@ -35,12 +37,19 @@ class StarboardCog(commands.Cog):
     async def reaction_action(
         self, fmt: str, payload: discord.RawReactionActionEvent
     ) -> None:
+        """Preform a starboard related action for reaction."""
         try:
             self.bot.logs.info(str(payload.emoji))
             if payload.guild_id not in self.server_emoji_caches:
                 self.server_emoji_caches[
                     payload.guild_id
                 ] = await StarboardEmojis.get_emojis(payload.guild_id, 100)
+
+            if payload.guild_id not in self.ignore_channels_cache:
+                self.ignore_channels_cache[
+                    payload.guild_id
+                ] = await StarboardIgnoreChannels.get_channels(payload.guild_id, 100)
+            # ensure emoji is in cache
             if str(payload.emoji) not in self.server_emoji_caches[payload.guild_id]:
                 return
 
@@ -50,6 +59,15 @@ class StarboardCog(commands.Cog):
 
             channel = guild.get_channel_or_thread(payload.channel_id)
             if not isinstance(channel, (discord.Thread, discord.TextChannel)):
+                return
+            if isinstance(channel, discord.Thread):
+                if (
+                    int(channel.parent_id)
+                    in self.ignore_channels_cache[payload.guild_id]
+                ):
+                    return
+
+            if int(payload.channel_id) in self.ignore_channels_cache[payload.guild_id]:
                 return
             starboard = await Starboard.get_starboard(guild.id)
             if starboard:
@@ -363,6 +381,45 @@ class StarboardCog(commands.Cog):
         else:
             await ctx.send(f"Emoji {emoji} is not being tracked.")
 
+    @starboard.group()
+    async def ignore_channel(self, ctx):
+        """Manage ignored channels for the starboard."""
+        if ctx.invoked_subcommand is None:
+            await ctx.send("Invalid subcommand. Use add, remove, or list.")
+
+    @ignore_channel.command()
+    async def addchannel(self, ctx, channel: discord.TextChannel):
+        """Ignore a channel from the starboard."""
+        existing = await StarboardIgnoreChannels.get_channel(ctx.guild.id, channel.id)
+        if existing:
+            await ctx.send(f"{channel.mention} is already ignored.")
+        else:
+            await StarboardIgnoreChannels.add_channel(ctx.guild.id, channel.id)
+            self.ignore_channels_cache.setdefault(ctx.guild.id, set()).add(channel.id)
+            await ctx.send(f"Added {channel.mention} to ignored channels.")
+
+    @ignore_channel.command()
+    async def removechannel(self, ctx, channel: discord.TextChannel):
+        """Remove a channel from the ignored list."""
+        removed = await StarboardIgnoreChannels.remove_channel(ctx.guild.id, channel.id)
+        if removed:
+            self.ignore_channels_cache.get(ctx.guild.id, set()).discard(channel.id)
+            await ctx.send(f"Removed {channel.mention} from ignored channels.")
+        else:
+            await ctx.send(f"{channel.mention} was not in the ignored list.")
+
+    @ignore_channel.command()
+    async def list(self, ctx):
+        """List ignored channels."""
+        ignored_channels = await StarboardIgnoreChannels.get_channels(ctx.guild.id)
+        if ignored_channels:
+            channel_mentions = [
+                f"<#{channel.channel_id}>" for channel in ignored_channels
+            ]
+            await ctx.send("Ignored channels: " + ", ".join(channel_mentions))
+        else:
+            await ctx.send("No ignored channels.")
+
     @starboard.command()
     async def migrate(self, ctx):
         """Set the star threshold for the starboard."""
@@ -430,6 +487,34 @@ class StarboardCog(commands.Cog):
                 await ctx.send(listv)
 
             await session.commit()
+            await ctx.send("Done")
+
+    @starboard.command()
+    async def audit_stars(self, ctx):
+        """Dump a list of all stars to the chat."""
+        existing = await Starboard.get_starboard(ctx.guild.id)
+        if not existing:
+            await ctx.send("Starboard does not exist for this server.")
+            return
+        async with DatabaseSingleton.get_async_session() as session:
+            all_entries = await StarboardEntryTable.get_entries_by_guild(
+                ctx.guild.id, session=session
+            )
+            alls = []
+            for i, e in enumerate(all_entries):
+                # await ctx.send(str(e))
+                if e.bot_message_url is None:
+                    alls.append(f"deleting: {i},{str(e)}\n")
+                    await session.delete(e)
+                else:
+                    mess = await urltomessage(e.bot_message_url, self.bot)
+                    if not mess:
+                        await ctx.send(f"{str(e)} is not in starboard channel!")
+                        alls.append(f"deleting: {i} ,{str(e)}\n")
+                        await session.delete(e)
+
+            await session.commit()
+            await ctx.send(f"Audited and removed {len(alls)}")
             await ctx.send("Done")
 
     async def update_starboard_message(

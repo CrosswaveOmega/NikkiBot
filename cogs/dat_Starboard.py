@@ -5,6 +5,7 @@ from sqlalchemy import select, delete, func, and_, or_
 from database.database_singleton import DatabaseSingleton
 from database.database_utils import upsert_a
 from database import ensure_session
+import gui
 import discord
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -111,6 +112,53 @@ class StarboardEmojis(Base):
             return [s.emoji for s in emojis]
 
 
+class StarboardIgnoreChannels(Base):
+    __tablename__ = "starboard_ignore_channels"
+
+    guild_id = Column(BigInteger, primary_key=True)
+
+    channel_id = Column(BigInteger, primary_key=True)
+
+    @classmethod
+    async def add_channel(cls, guild_id: int, channel_id: int):
+        async with DatabaseSingleton.get_async_session() as session:
+            new_ignore_channel = cls(guild_id=guild_id, channel_id=channel_id)
+            session.add(new_ignore_channel)
+            await session.commit()
+            return new_ignore_channel
+
+    @classmethod
+    async def get_channel(cls, guild_id: int, channel_id: int):
+        async with DatabaseSingleton.get_async_session() as session:
+            query = select(cls).where(
+                cls.guild_id == guild_id, cls.channel_id == channel_id
+            )
+            result = await session.execute(query)
+            return result.scalar()
+
+    @classmethod
+    async def remove_channel(cls, guild_id: int, channel_id: int):
+        async with DatabaseSingleton.get_async_session() as session:
+            query = select(cls).where(
+                cls.guild_id == guild_id, cls.channel_id == channel_id
+            )
+            result = await session.execute(query)
+            channel_entry = result.scalar()
+            if channel_entry:
+                await session.delete(channel_entry)
+                await session.commit()
+                return True
+            return False
+
+    @classmethod
+    async def get_channels(cls, guild_id: int, limit: int = 25):
+        async with DatabaseSingleton.get_async_session() as session:
+            query = select(cls).where(cls.guild_id == guild_id).limit(limit)
+            result = await session.execute(query)
+            channels = result.scalars().all()
+            return channels
+
+
 class StarboardEntryTable(Base):
     __tablename__ = "starboard_entry"
     message_id = Column(BigInteger, nullable=False, primary_key=True)
@@ -163,7 +211,9 @@ class StarboardEntryTable(Base):
         result = await session.execute(query)
         entry = result.scalar()
 
-        print("entry being updated or added", entry, message_id, guild_id, message_url)
+        gui.gprint(
+            "entry being updated or added", entry, message_id, guild_id, message_url
+        )
         if entry:
             entry.total = await StarboardEntryGivers.count_starrers(
                 guild_id, message_id, session=session

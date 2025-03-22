@@ -21,7 +21,9 @@ LAZYGRAB_LIMIT = 10000
 
 
 def remove_lines_starting_with_gt(text):
-    return re.sub(r'^> .*\n?', '', text, flags=re.MULTILINE)
+    return re.sub(r"^> .*\n?", "", text, flags=re.MULTILINE)
+
+
 def should_archive_channel(
     mode: int, chan: discord.TextChannel, profile, guild: discord.Guild
 ):
@@ -253,7 +255,7 @@ async def iter_hist_messages(
         count = count + 1
         if add_check:
             thisMessage.content = thisMessage.clean_content
-            thisMessage.content=remove_lines_starting_with_gt(thisMessage.content)
+            thisMessage.content = remove_lines_starting_with_gt(thisMessage.content)
             actx.alter_latest_time(thisMessage.created_at.timestamp())
             actx.character_len += len(thisMessage.content)
             messages.append(thisMessage)

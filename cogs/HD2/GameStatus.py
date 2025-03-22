@@ -5,6 +5,7 @@ import json
 import os
 from typing import *
 
+import gui
 from utility.debug import Timer
 
 from .diff_util import detect_loggable_changes, detect_loggable_changes_planet
@@ -56,7 +57,7 @@ def lmj(directory_path: str):
                     file_key = os.path.splitext(filename)[0]
                     planets_data[file_key] = json_data
                 except json.JSONDecodeError as e:
-                    print(f"Error loading JSON from {filename}: {e}")
+                    gui.gprint(f"Error loading JSON from {filename}: {e}")
     return planets_data
 
 
@@ -91,8 +92,8 @@ class LimitedSizeList(list):
     def get_first_change(self):
         if len(self.items) > 1:
             return (self.items[0], self.items[1])
-        if len(self.items)==0:
-            return None,None
+        if len(self.items) == 0:
+            return None, None
         return self.items[0], self.items[0]
 
     def get_change_from(self, mins=15):
@@ -222,7 +223,6 @@ class ApiStatus:
             for item in v:
                 campaign_list.push(Campaign2(**item))
             newcks.campaigns[int(k)] = campaign_list
-            # print(newcks.campaigns)
         if "resources" in data:
             for k, v in data["resources"].items():
                 resource_list = LimitedSizeList(newcks.max_list_size)
@@ -268,6 +268,7 @@ class ApiStatus:
             if nowval:
                 nowv = nowval
             else:
+                # Make API CALL
                 nowv = await GetApiRawAll(
                     api_config_override=self.client, direct=self.direct
                 )
@@ -284,7 +285,7 @@ class ApiStatus:
                         )
                     if diff:
                         self.build_planets()
-                print("Operation took", timer.get_time(), "seconds")
+                gui.gprint("Planet Operation  took", timer.get_time(), "seconds")
                 return diff, nowv
 
         return None, nowv
@@ -295,7 +296,6 @@ class ApiStatus:
         ):
             active_stations = []
             for s in self.warall.status.spaceStations:
-                print(s)
                 id = s.id32
                 active_stations.append(id)
                 self.stations[id] = "READY"
@@ -307,12 +307,10 @@ class ApiStatus:
 
     async def get_station(self):
         return self.stations
-        print(datetime.datetime.now() - self.last_station_time)
         if (datetime.datetime.now() - self.last_station_time) > datetime.timedelta(
             minutes=15
         ):
             for s in self.warall.status.spaceStations:
-                print(s)
                 id = s.id32
                 station = await GetApiDirectSpaceStation(id, self.client)
                 self.stations[id] = station
@@ -323,7 +321,6 @@ class ApiStatus:
         """
         Query the community api, and load the data into the classes.
         """
-        # print(self.client)
         war = None
         campaigns = None
         assignments = None
@@ -350,10 +347,9 @@ class ApiStatus:
         except Exception as e:
             raise e
 
-        # print(war, campaigns, assignments)
         if war is not None:
             self.war.add(war)
-        print(self.assignments, "a2", assignments, "done")
+        # print(self.assignments, "a2", assignments, "done")
         self.handle_data(assignments, self.assignments, "assignment")
         self.handle_data(campaigns, self.campaigns, "campaign")
         self.handle_raw_data(
@@ -366,13 +362,13 @@ class ApiStatus:
         try:
             await self.update_stations()
         except Exception as e:
-            print(e)
+            gui.gprint(e)
 
             # print(self.warstat)
 
     def build_planets(self):
         planet_data = {}
-        print(self.statics.galaxystatic.planets.keys())
+        gui.gprint(self.statics.galaxystatic.planets.keys())
         for i, v in self.statics.galaxystatic.planets.items():
             planet = build_planet_2(i, self.warall, self.statics)
             planet_data[i] = planet
