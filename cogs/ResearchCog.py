@@ -23,6 +23,7 @@ from utility.embed_paginator import pages_of_embeds
 import importlib
 
 #from gptmod.chromatools import ChromaTools
+import cogs.ResearchAgent as ra
 from .ResearchAgent.views import *
 
 
@@ -268,10 +269,6 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
             outputthis += f"+ **Title: {r['title']}**\n **Link:**{r['link']}\n **Snippit:**\n{indent_string(desc, 1)}"
         returnme = await ctx.send(content=comment, embed=emb)
         return outputthis
-
-
-
-
 
     @commands.hybrid_command(
         name="translate_simple", description="Translate a block of text."

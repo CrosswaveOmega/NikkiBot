@@ -2,15 +2,12 @@ import asyncio
 import copy
 import datetime
 import re
-import uuid
-from typing import Any, AsyncGenerator, List, Tuple, Union
+from typing import Any, AsyncGenerator, List, Tuple, Union, Optional
 
-import discord
 import markitdown
 import openai
 from googleapiclient.discovery import build  # Import the library
 from gptfunctionutil import AILibFunction, GPTFunctionLibrary, LibParam
-from htmldate import find_date
 from langchain.docstore.document import Document
 
 
@@ -18,7 +15,7 @@ import gptmod
 import gui
 from gptmod.metadataenums import MetadataDocType
 from gptmod.ReadabilityLoader import ReadableLoader
-from utility import chunk_list, prioritized_string_split
+from utility import prioritized_string_split
 from utility.debug import Timer
 
 tosplitby = [
@@ -132,11 +129,13 @@ async def async_markdown_convert(url, timeout=30):
     return result
 
 
-async def read_and_split_pdf(bot, url: str, chunk_size, extract_meta: bool = False):
+async def read_and_split_pdf(
+    bot: Any, url: str, chunk_size: int, extract_meta: bool = False
+) -> Tuple[List[Document], int]:
     try:
         result = await async_markdown_convert(url)
         metadata = {}
-        new_docs = []
+        new_docs: List[Document] = []
         title, authors, date, abstract = (
             result.title,
             "NotFound",
@@ -165,8 +164,8 @@ async def read_and_split_pdf(bot, url: str, chunk_size, extract_meta: bool = Fal
             message = completion.choices[0].message
             if message.tool_calls:
                 for tool in message.tool_calls:
-                    typev = int(MetadataDocType.pdftext)
-                    out = await mylib.call_by_tool_async(tool)
+                    typev: int = int(MetadataDocType.pdftext)
+                    out: Optional[dict] = await mylib.call_by_tool_async(tool)
                     title, authors, date, abstract = out["content"]
                     break
         metadata["authors"] = authors
@@ -334,8 +333,6 @@ def split_link(doc: Document, chunk_size: int = 1800, prior=[], add=0):
     return newdata, add
 
 
-
-
 def set_ranges_based_on_token_size(tokens):
     ranges_dict = {
         250: ("4-7", "7-10", "3-4"),
@@ -346,9 +343,6 @@ def set_ranges_based_on_token_size(tokens):
         if tokens < size:
             return ranges
     return ("7-10", "8-16", "6-7")
-
-
-
 
 
 summary_prompt_old = """
@@ -463,3 +457,122 @@ def mask_links(text, links):
         text = re.sub(num_pattern, f"[{number}]({url})", text)
 
     return text
+
+
+async def format_answer(question: str, docs: List[Tuple[Document, float, Any]]) -> str:
+    """
+    Formats an answer to a given question using the provided documents.
+
+    Args:
+        question (str): The question to answer.
+        docs (List[Tuple[Document, float]]): A list of tuples containing Document objects and relevance scores.
+
+    Returns:
+        str: The formatted answer as a string.
+    """
+
+    prompt = """
+
+**Task:**
+Use the provided sources, 
+presented in individual system messages with relevant snippets, 
+to craft a comprehensive response to the user's question. 
+Each source is formatted in the following template:
+
+```
+BEGIN
+**ID:** [Source ID number here]
+**Name:** [Name Here]
+**Link:** [Link Here]
+**Text:** [Text Content Here]
+END
+```
+
+**Guidelines:**
+1. Your response should consist of 3-7 medium-length paragraphs, containing 6-12 sentences each.
+2. Preserve crucial information from the sources and maintain an objective, descriptive tone in your writing.  
+3. Ensure the inclusion of an inline citation for each piece of information obtained from a specific source,
+   using this format: 
+    Sentence goes here[0].
+   **This is crucially important, as the inline citations are used to verify the response accuracy.**
+4. If the sources do not provide sufficient information on a particular aspect of the question, explicitly state this limitation.
+5. Do not write a conclusion under any circumstance.  This is not an essay.
+6. Do not include the terms "summary", "conclusion", or "overall" in the response.
+7. Do not utilize superfluous language.
+    """
+    # The websites may contradict each other, prioritize information from encyclopedia pages and wikis.
+    # Valid news sources follow.
+    # Your goal is not to summarize, your goal is to answer the user's question based on the provided sources.
+    formatted_docs = []
+    messages = [
+        {"role": "system", "content": prompt},
+    ]
+
+    total_tokens = gptmod.util.num_tokens_from_messages(
+        [{"role": "system", "content": prompt}, {"role": "user", "content": question}],
+        "gpt-4o-mini",
+    )
+    for e, tup in enumerate(docs):
+        doc, _, emb = tup
+
+        meta = doc.metadata
+        content = doc.page_content
+        tile = "NOTITLE"
+        if "title" in meta:
+            tile = meta["title"]
+        output = f"""**ID**:{e}
+        **Name:** {tile}
+        **Link:** {meta["source"]}
+        **Text:** {content}"""
+        formatted_docs.append(output)
+
+        tokens = gptmod.util.num_tokens_from_messages(
+            [{"role": "system", "content": output}], "gpt-4o-mini"
+        )
+
+        if total_tokens + tokens >= 14000:
+            print("token break")
+            break
+        total_tokens += tokens
+
+        messages.append({"role": "system", "content": output})
+        if total_tokens >= 14000:
+            print("token break")
+            break
+    messages.append({"role": "user", "content": question})
+    client = openai.AsyncOpenAI()
+    for tries in range(0, 4):
+        try:
+            completion = await client.chat.completions.create(
+                model="gpt-4o-mini", messages=messages, timeout=60
+            )
+            return completion.choices[0].message.content
+        except Exception as e:
+            if tries >= 3:
+                raise e
+            
+def get_doc_sources(docs: List[Tuple[Document, float]]):
+    """
+    Takes a list of Document objects, counts the appearances of unique sources amoung them,
+    and return a string indicating the used sources.
+
+    Args:
+        docs (List[Tuple[Document,float]]): A list of tuples containing Document objects and their associated float score.
+
+    Returns:
+        str: A string formatted to list unique sources and the indices of their appearances in the provided list.
+    """
+    all_links = [doc.metadata.get("source", "???") for doc, e, i in docs]
+    links = set(doc.metadata.get("source", "???") for doc, e, i in docs)
+
+    def ie(all_links: List[str], value: str) -> List[int]:
+        return [index for index, link in enumerate(all_links) if link == value]
+
+    used = "\n".join(f"{ie(all_links, l)}{l}" for l in links)
+    source_pages = prioritized_string_split(used, ["%s\n"], 4000)
+    cont = ""
+    if len(source_pages) > 2:
+        new = "\n"
+        cont = f"...and {sum(len(se.split(new)) for se in source_pages[1:])} more."
+    source_string = f"{source_pages[0]}{cont}"
+    return source_string, used

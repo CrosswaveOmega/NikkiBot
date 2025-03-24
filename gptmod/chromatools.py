@@ -384,3 +384,4 @@ class ChromaBetter(Chroma):
         return await run_in_executor(
             None, self.get, ids, where, limit, offset, where_document, include
         )
+    

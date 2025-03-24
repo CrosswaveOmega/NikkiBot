@@ -3,7 +3,7 @@ from discord import Interaction
 import gui
 from typing import List, Tuple
 from utility import pages_of_embeds_2
-#from .actions import sentence_sim_op
+from .actions import sentence_sim_op
 
 
 class Followup(discord.ui.View):

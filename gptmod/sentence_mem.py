@@ -17,6 +17,7 @@ import threading
 import gptmod.util as util
 import gui
 #from gptmod.chromatools import ChromaTools, DocumentScoreVector
+from gptmod.lancetools import LanceTools,DocumentScoreVector,LanceBetter
 from utility.debug import Timer
 
 ChromaTools=None
@@ -165,7 +166,7 @@ def split_document(doc: Document, present_mem=""):
         metadatac["split"] = add
         add += 1
         new_doc = Document(page_content=chunk, metadata=metadatac)
-        if len(chunk) > 8:
+        if len(chunk) > 2:
             print(chunk)
             newdata.append(new_doc)
         else:
@@ -200,7 +201,7 @@ async def group_documents(docs: List[Document], max_tokens=3000):
 
         for k, v in sorted_dict:
             # print(source, k, v)
-            if k != 0 and abs(k - lastkey) > 1:
+            if k is not None and k != 0 and abs(k - lastkey) > 1:
                 # print(abs(k - lastkey))
                 newc += "..."
             lastkey = k
@@ -237,8 +238,8 @@ class SentenceMemory:
         self.guildid = guild.id
         self.userid = user.id
         metadata = {"desc": "Simple long term memory.  384 dimensions."}
-        self.coll = ChromaTools.get_collection(
-            "sentence_mem", embed=bot.embedding(), path="saveData/longterm"
+        self.coll:LanceBetter = LanceTools.get_collection(
+            "sentence_mem", embed=bot.embedding()
         )
         self.shortterm = {}
 
@@ -267,8 +268,9 @@ class SentenceMemory:
             ids.add(
                 f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, source))}],sid:[{split + 1}]"
             )
-
-        doc1 = self.coll.get(ids=list(ids), include=["documents", "metadatas"])
+        
+        doc1 = await self.coll.aget_by_ids('sentence_mem',list(ids))
+        return doc1
         print(zip(doc1["documents"], doc1["metadatas"]))
         if doc1:
             dc = results_to_docs(doc1)
@@ -294,15 +296,17 @@ class SentenceMemory:
         meta["forguild"] = self.guildid
         meta["channel"] = message.channel.id
         meta["date"] = message.created_at.timestamp()
-        meta["role"] = "assistant" if message.author.id == ctx.bot.user.id else "user"
+        meta["role"] = "assistant" 
         doc = Document(page_content=content, metadata=meta)
         docs = split_document(doc, present_mem)
-        ids = [
-            f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
-            for e, doc in enumerate(docs)
-        ]
+        print(docs)
+        newdocs=[]
+        for e, doc in enumerate(docs):
+            doc.id=f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
+            newdocs.append(doc)
         if docs:
-            self.coll.add_documents(docs, ids)
+            outs=self.coll.add_documents(newdocs)
+            print(outs)
 
     async def add_list_to_mem(
         self,
@@ -326,29 +330,23 @@ class SentenceMemory:
             )
             meta["split"] = e
             doc = Document(page_content=c, metadata=meta)
+            doc.id=f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
+           
             docs.append(doc)
-        ids = [
-            f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
-            for e, doc in enumerate(docs)
-        ]
+
         if docs:
-            self.coll.add_documents(docs, ids)
+            self.coll.add_documents(docs)
 
     async def search_sim(self, message: discord.Message) -> List[DocumentScoreVector]:
         persist = "saveData"
 
-        filterwith = {
-            "$and": [
-                {"foruser": message.author.id},
-                {"forguild": message.guild.id},
-            ]
-        }
+        filterwith=f"metadata.foruser = {message.author.id} AND metadata.forguild = {message.guild.id};"
+        
         sources: Dict[str : Dict[int, Any]] = {}
         with Timer() as all_timer:
             docs = (
-                await self.coll.asimilarity_search_with_relevance_scores_and_embeddings(
-                    message.content, k=8, filter=filterwith
-                )
+                await self.coll.asimilarity_search_with_relevance_scores(
+                    message.content, k=4, filter=filterwith )
             )
             context = ""
 
@@ -373,15 +371,11 @@ class SentenceMemory:
     async def dump_memory(self, message: discord.Message) -> List[DocumentScoreVector]:
         persist = "saveData"
 
-        filterwith = {
-            "$and": [
-                {"foruser": message.author.id},
-                {"forguild": message.guild.id},
-            ]
-        }
+        filterwith = f"metadata.foruser = {message.author.id} AND metadata.forguild = {message.guild.id};"
+        
         sources: Dict[str : Dict[int, Any]] = {}
         with Timer() as all_timer:
-            docs = await self.coll.aget(where=filterwith, limit=128)
+            docs = await self.coll.aget(filter=filterwith, limit=128)
             context = ""
 
             docs2 = results_to_docs(docs)
@@ -405,7 +399,7 @@ class SentenceMemory:
 
     async def delete_message(self, url):
         try:
-            self.coll._collection.delete(where={"source": url})
+            self.coll.delete(filter=f'source="{url}"')
 
             return True
         except ValueError as e:
@@ -414,31 +408,13 @@ class SentenceMemory:
 
     async def delete_user_messages(self, userid):
         try:
-            self.coll._collection.delete(where={"foruser": userid})
+            self.coll.delete(filter=f'foruser={userid}')
 
             return True
         except ValueError as e:
             gui.dprint(e)
             return False
 
-
-def remove_url(
-    url, collection="web_collection", client= None
-) -> bool:
-    persist = "saveData"
-    if client != None:
-        try:
-            collectionvar = client.get_collection(collection)
-            sres = collectionvar.peek()
-            res = collectionvar.delete(where={"source": url})
-
-            return True
-        except ValueError as e:
-            gui.dprint(e)
-            raise e
-            return False
-    else:
-        return False
 
 
 def extract_embed_text(embed):
