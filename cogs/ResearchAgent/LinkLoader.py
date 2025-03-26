@@ -152,8 +152,8 @@ class SourceLinkLoader:
         # The results object contains information about executed lines, missing lines, and more
 
         if has and not override:
-            for d, me in zip(getres["documents"], getres["metadatas"]):
-                if me["source"] != link:
+            for doc in getres:
+                if doc['metadata']['source']!=link:
                     raise Exception(
                         "the url in the cache doesn't match the provided url."
                     )
