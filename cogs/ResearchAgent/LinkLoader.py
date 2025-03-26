@@ -173,7 +173,7 @@ class SourceLinkLoader:
             str: A formatted string indicating the cached status of the link.
         """
         self.all_link_status[link_num][0] = "skip"
-        return f"[Link {link_num}]({link}) has {len(getres['documents'])} cached documents.\n"
+        return f"[Link {link_num}]({link}) has {len(getres)} cached documents.\n"
 
     async def process_uncached_links(
         self,
