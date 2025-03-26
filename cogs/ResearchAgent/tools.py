@@ -1,16 +1,17 @@
+
 import asyncio
 import copy
 import datetime
 import re
 from typing import Any, AsyncGenerator, List, Tuple, Union, Optional
 
-import markitdown
+import aiohttp
 import openai
 from googleapiclient.discovery import build  # Import the library
-from gptfunctionutil import AILibFunction, GPTFunctionLibrary, LibParam
 from langchain.docstore.document import Document
+from langchain.document_loaders import PyPDFLoader
 
-
+from gptfunctionutil import AILibFunction, GPTFunctionLibrary, LibParam
 import gptmod
 import gui
 from gptmod.metadataenums import MetadataDocType
@@ -123,17 +124,29 @@ def google_search(bot, query: str, result_limit: int) -> dict:
     return query_results
 
 
-async def async_markdown_convert(url, timeout=30):
-    markdown = markitdown.MarkItDown()
-    result = await asyncio.wait_for(asyncio.to_thread(markdown.convert, url), timeout)
-    return result
+
+async def extract_pdf_text_from_url(url: str) -> Tuple[str, int]:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                content = await response.read()
+                pdf_file_path = "/tmp/temp.pdf"
+                with open(pdf_file_path, "wb") as temp_pdf:
+                    temp_pdf.write(content)
+                loader = PyPDFLoader()
+                text = loader.extract_text(pdf_file_path)
+                return text, response.status
+            else:
+                return "", response.status
 
 
 async def read_and_split_pdf(
     bot: Any, url: str, chunk_size: int, extract_meta: bool = False
 ) -> Tuple[List[Document], int]:
     try:
-        result = await async_markdown_convert(url)
+        
+        result = await extract_pdf_text_from_url(url)
+
         metadata = {}
         new_docs: List[Document] = []
         title, authors, date, abstract = (
@@ -209,29 +222,30 @@ async def read_and_split_links(
             pdf_urls.append((e, url))
         else:
             regular_urls.append((e, url))
-    for e, pdfurl in pdf_urls:
-        pdfmode = True
-        newdata = []
-        with Timer() as timer:
-            data, typev = await read_and_split_pdf(bot, pdfurl, chunk_size)
-        print(f"PDF READ: Took {timer.get_time():.4f} seconds to READ pdf {e}.")
-
-        if isinstance(data, Exception):
-            yield data, e, typev
-            continue
-        splitnum = 0
-        for d in data:
+    if False:
+        for e, pdfurl in pdf_urls:
+            pdfmode = True
+            newdata = []
             with Timer() as timer:
-                newdat = await simplify_and_split_output(
-                    d, chunk_size, pdfsplit, splitnum
-                )
-            print(
-                f"PDF: Took {timer.get_time():.4f} seconds to convert {e} into {len(newdat)} splits."
-            )
+                data, typev = await read_and_split_pdf(bot, pdfurl, chunk_size)
+            print(f"PDF READ: Took {timer.get_time():.4f} seconds to READ pdf {e}.")
 
-            splitnum += len(newdat)
-            newdata.extend(newdat)
-        yield newdata, e, typev
+            if isinstance(data, Exception):
+                yield data, e, typev
+                continue
+            splitnum = 0
+            for d in data:
+                with Timer() as timer:
+                    newdat = await simplify_and_split_output(
+                        d, chunk_size, pdfsplit, splitnum
+                    )
+                print(
+                    f"PDF: Took {timer.get_time():.4f} seconds to convert {e} into {len(newdat)} splits."
+                )
+
+                splitnum += len(newdat)
+                newdata.extend(newdat)
+            yield newdata, e, typev
 
     loader = ReadableLoader(
         regular_urls,
@@ -259,7 +273,7 @@ async def read_and_split_link(
 ) -> Tuple[Union[List[Document], Exception], int, MetadataDocType]:
     # Document loader
     prioritysplit = []
-
+    
     if url.endswith(".pdf") or ".pdf?" in url:
         pdfmode = True
         symbol3 = re.escape("  ")
