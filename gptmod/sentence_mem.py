@@ -1,12 +1,11 @@
 """
-Functions for a chromadb based memory for the gptfunctions.
+Functions for a lancedb based memory for the gptfunctions.
 """
 
 import copy
 import uuid
 from typing import Any, Dict, List
 
-# import chromadb
 import discord
 from discord.ext import commands
 from gptfunctionutil import AILibFunction, GPTFunctionLibrary, LibParamSpec

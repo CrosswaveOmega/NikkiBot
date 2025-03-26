@@ -3,9 +3,9 @@ import asyncio
 import datetime
 import uuid
 from typing import List, Tuple
-
+print("Adding Lance DB")
 import lancedb
-
+print("OK.")
 from htmldate import find_date
 from langchain.docstore.document import Document
 from langchain_openai import OpenAIEmbeddings
