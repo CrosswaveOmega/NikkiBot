@@ -513,7 +513,7 @@ END
         "gpt-4o-mini",
     )
     for e, tup in enumerate(docs):
-        doc, _, emb = tup
+        doc, _ = tup
 
         meta = doc.metadata
         content = doc.page_content
