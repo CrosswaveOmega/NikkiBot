@@ -1,3 +1,4 @@
+from .LinkLoader import SourceLinkLoader
 async def setup(bot):
     import gui
 

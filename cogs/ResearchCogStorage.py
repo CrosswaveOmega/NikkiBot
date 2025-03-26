@@ -232,7 +232,7 @@ class ResearchCogStore(commands.Cog, TC_Cog_Mixin):
         Returns:
             Tuple[int, str]: A tuple containing the count of successfully processed links and a formatted status string.
         """
-        loader = ra.LinkLoader.SourceLinkLoader(
+        loader = ra.SourceLinkLoader(
             lance_connection=lancedbc, statusmessage=statmess, embed=embed
         )
         return await loader.load_links(ctx, all_links, override)
