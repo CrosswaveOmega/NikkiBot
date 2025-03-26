@@ -232,6 +232,7 @@ class ResearchCogStore(commands.Cog, TC_Cog_Mixin):
         Returns:
             Tuple[int, str]: A tuple containing the count of successfully processed links and a formatted status string.
         """
+        print("Starting source loader.")
         loader = ra.SourceLinkLoader(
             lance_connection=lancedbc, statusmessage=statmess, embed=embed
         )
@@ -474,6 +475,8 @@ class ResearchCogStore(commands.Cog, TC_Cog_Mixin):
 
             await ctx.send("removal complete")
         else:
+            
+            ra.storage_tools.remove_url(link, client=lancedbc)
             await ctx.send("Link not in database")
 
     @commands.is_owner()

@@ -71,6 +71,7 @@ class SourceLinkLoader:
             self.statmess = await self.initialize_status_message(ctx)
 
         if not self.lance_connection:
+            print("Making new lance collection.")
             self.lance_connection = LanceTools.get_lance_client()
 
         self.current, self.hascount = "", 0
