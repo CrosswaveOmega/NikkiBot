@@ -25,6 +25,7 @@ from utility.embed_paginator import pages_of_embeds
 import importlib
 print("Importing agent.")
 import cogs.ResearchAgent as ra
+print("Research agent done.")
 from .ResearchAgent.views import *
 
 

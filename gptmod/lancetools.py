@@ -10,23 +10,18 @@ from typing import (
 )
 import uuid
 import warnings
-import lancedb
 
 from langchain_core.documents import Document
 from langchain_core.utils import xor_args
 from langchain_core.runnables.config import run_in_executor
 
-from langchain_community.vectorstores import LanceDB
-
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 import numpy as np
 
-from typing import Optional, List, Tuple, Dict, Any, Iterable, Sequence
 import lancedb
-from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import LanceDB
+import langchain_community.vectorstores.LanceDB as LanceDB
 
 """
 Class extensions that assist with the LanceBD vector store.

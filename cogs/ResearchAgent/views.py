@@ -1,3 +1,4 @@
+print("Importing views.")
 import discord
 from discord import Interaction
 import gui
