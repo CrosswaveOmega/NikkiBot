@@ -1,15 +1,17 @@
 import asyncio
 import re
 from typing import Any, Dict, List, Optional, Tuple
-
+print("Discord import")
 import discord
 import gptfunctionutil.functionlib as gptum
 from discord import app_commands
 from discord.ext import commands
+print("Discord import")
 from gptfunctionutil import (
     AILibFunction,
     LibParam,
 )
+print("Discord import")
 from javascriptasync import JSContext
 
 import gptmod
@@ -21,8 +23,7 @@ from database.database_ai import AuditProfile
 from utility import prioritized_string_split
 from utility.embed_paginator import pages_of_embeds
 import importlib
-
-# from gptmod.chromatools import ChromaTools
+print("Importing agent.")
 import cogs.ResearchAgent as ra
 from .ResearchAgent.views import *
 
@@ -144,6 +145,7 @@ def generate_article_metatemplate(article_data, include_snppit=False):
     template = "Article Metadata: \n    " + template + ";\n    "
 
     return template.format(*values)
+
 
 
 target_server = AssetLookup.get_asset("oai_server")
@@ -303,6 +305,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         await targetmessage.edit(content=text, embed=embeds[0])
         for e in embeds[1:]:
             await context.send(embed=e)
+
 
     @AILibFunction(
         name="read_url",
@@ -498,3 +501,4 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
 
 async def setup(bot):
     await bot.add_cog(ResearchCog(bot))
+
