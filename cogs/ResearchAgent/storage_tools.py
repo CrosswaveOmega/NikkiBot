@@ -145,9 +145,7 @@ def has_url(
                 collection,
             )
             res = table.search().where(f"metadata.source=\"{url}\"").to_list()
-            print(res)
             if res:
-                gui.dprint("hasres", res)
                 return True, res
             return False, None
         except ValueError as e:
