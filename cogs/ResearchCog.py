@@ -151,7 +151,7 @@ def generate_article_metatemplate(article_data, include_snppit=False):
 
 target_server = AssetLookup.get_asset("oai_server")
 
-
+print("Defining Research Cog")
 class ResearchCog(commands.Cog, TC_Cog_Mixin):
     """Collection of commands."""
 

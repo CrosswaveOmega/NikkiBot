@@ -14,13 +14,9 @@ from tqdm.asyncio import tqdm_asyncio
 import gui
 from utility import chunk_list
 
-
-from gptmod.lancetools import LanceTools, LanceBetter
-
+print("Importing lance tools")
+from gptmod.lancetools import LanceTools, LanceBetter,DocumentScoreVector
 from gptmod.metadataenums import MetadataDocType
-
-
-DocumentStoreVector = Tuple[Document, float]
 
 
 async def add_summary(
@@ -209,7 +205,7 @@ async def search_sim(
     linkres=[],
     k=7,
     mmr=False,
-) -> List[DocumentStoreVector]:
+) -> List[DocumentScoreVector]:
     vs = LanceTools.configure_lance_client(
         client=client,
         embed=OpenAIEmbeddings(model="text-embedding-3-small"),
