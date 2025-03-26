@@ -259,7 +259,8 @@ class LanceBetter(LanceDB):
             tab = self._connection.open_table(_name)
             self._data[_name] = tab
             return tab
-        except Exception:
+        except Exception as e:
+            print(e)
             return None
 
     async def aget_by_ids(self, tablestr: str, ids: Sequence[str]) -> List[Document]:
