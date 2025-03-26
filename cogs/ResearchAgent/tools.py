@@ -550,7 +550,8 @@ END
         except Exception as e:
             if tries >= 3:
                 raise e
-            
+
+
 def get_doc_sources(docs: List[Tuple[Document, float]]):
     """
     Takes a list of Document objects, counts the appearances of unique sources amoung them,

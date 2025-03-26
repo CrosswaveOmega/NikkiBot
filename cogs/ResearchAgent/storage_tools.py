@@ -20,7 +20,8 @@ from gptmod.lancetools import LanceTools, LanceBetter
 from gptmod.metadataenums import MetadataDocType
 
 
-DocumentStoreVector=Tuple[Document, float]
+DocumentStoreVector = Tuple[Document, float]
+
 
 async def add_summary(
     url: str,
@@ -60,21 +61,23 @@ async def add_summary(
             newdata[i] = v
     metadata = newdata
     docs = Document(page_content=desc, metadata=metadata)
-    docs.id=f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, docs.metadata['source']))}],sum:[0]"
+    docs.id = (
+        f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, docs.metadata['source']))}],sum:[0]"
+    )
     usethesedocs = [docs]
     if client == None:
-        client=LanceTools.get_lance_client()
+        client = LanceTools.get_lance_client()
         vectorstore = LanceTools.configure_lance_client(
             embed=OpenAIEmbeddings(model="text-embedding-3-small"),
             collection=collection,
-            client=client
+            client=client,
         )
         await vectorstore.aadd_documents(usethesedocs)
     else:
         vectorstore = LanceTools.configure_lance_client(
             embed=OpenAIEmbeddings(model="text-embedding-3-small"),
             collection=collection,
-            client=client
+            client=client,
         )
         await vectorstore.aadd_documents(usethesedocs)
         # vectorstore.persist()
@@ -101,11 +104,11 @@ async def store_many_splits(
     """
     chunk_size = 10
     for e, doc in enumerate(splits):
-        doc.id=f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
+        doc.id = f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
 
     chunked2 = chunk_list(splits, chunk_size)
     tasks = []
-    client=LanceTools.get_lance_client()
+    client = LanceTools.get_lance_client()
     vs = LanceTools.configure_lance_client(
         client=client,
         embed=OpenAIEmbeddings(model="text-embedding-3-small"),
@@ -120,9 +123,9 @@ async def store_many_splits(
     return await tqdm_asyncio.gather(*tasks, desc="saving", ascii=True, mininterval=1)
 
 
-def store_splits(splits: List[Document],  lance: LanceBetter):
+def store_splits(splits: List[Document], lance: LanceBetter):
     """
-    This function embeds the splits within splits and ids within the chroma client.
+    This function embeds the splits within splits and ids within the lance client.
 
     Parameters:
     - splits (List[Document]): A list of Document objects to be stored.
@@ -135,6 +138,7 @@ def store_splits(splits: List[Document],  lance: LanceBetter):
 
     # vectorstore.persist()
 
+
 def has_url(
     url, collection="web_collection", client: lancedb.LanceDBConnection = None
 ) -> bool:
@@ -144,7 +148,7 @@ def has_url(
             table = client.open_table(
                 collection,
             )
-            res=table.search().where(f"metadata.source={url}").to_list()
+            res = table.search().where(f"metadata.source={url}").to_list()
 
             if res:
                 gui.dprint("hasres", res)
@@ -155,7 +159,6 @@ def has_url(
             return False, None
     else:
         raise Exception("SET A CONNECTION.")
-
 
 
 async def debug_get(
@@ -175,9 +178,9 @@ async def debug_get(
         return "NONE"
     else:
         gui.dprint("here")
-        res=vs.get(f"metadata.title LIKE '%{titleres}%'",10)
+        res = vs.get(f"metadata.title LIKE '%{titleres}%'", 10)
         return res
-    
+
 
 def remove_url(
     url, collection="web_collection", client: lancedb.LanceDBConnection = None
@@ -188,7 +191,7 @@ def remove_url(
             table = client.open_table(
                 collection,
             )
-            res=table.delete(f"metadata.source={url}")
+            res = table.delete(f"metadata.source={url}")
             return True
         except ValueError as e:
             gui.dprint(e)
@@ -196,7 +199,7 @@ def remove_url(
             return False
     else:
         return False
-    
+
 
 async def search_sim(
     question: str,
@@ -214,7 +217,7 @@ async def search_sim(
     )
     filterwith = ""
     if titleres != "None":
-        titleres=f"metadata.title LIKE '%{titleres}%'"
+        titleres = f"metadata.title LIKE '%{titleres}%'"
 
     gui.dprint("here")
     if mmr:
@@ -230,5 +233,3 @@ async def search_sim(
             filter=filterwith,  # {'':titleres}}
         )
     return docs
-
-

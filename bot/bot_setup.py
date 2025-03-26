@@ -431,13 +431,12 @@ class Main(commands.Cog):
                 embed = discord.Embed(title="Loaded Extensions")
         await ctx.send(embed=embed)
 
-
     @commands.command()
-    async def reload_one(self, ctx,extname: str):
+    async def reload_one(self, ctx, extname: str):
         """debugging only."""
         bot = ctx.bot
         bot.update_ext_list()
-        await bot.reload_one(extname,True)
+        await bot.reload_one(extname, True)
         embed = discord.Embed(title="Reloaded Loaded Extensions")
         for i, v in bot.loaded_extensions.items():
             ex, val = v

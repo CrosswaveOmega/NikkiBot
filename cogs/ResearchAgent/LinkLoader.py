@@ -11,17 +11,16 @@ from discord.ext import commands
 from bot import StatusEditMessage
 from gptmod.lancetools import LanceTools
 from .tools import (
-
     read_and_split_links,
-
 )
 
-from .storage_tools import(
+from .storage_tools import (
     has_url,
     store_many_splits,
 )
 
 from langchain.docstore.document import Document
+
 # I need the readability npm package to work
 from utility import select_emoji
 from utility import Timer
@@ -75,7 +74,9 @@ class SourceLinkLoader:
             self.lance_connection = LanceTools.get_lance_client()
 
         self.current, self.hascount = "", 0
-        self.all_link_status: List[List[Union[str, str]]] = [["pending", link] for link in all_links]
+        self.all_link_status: List[List[Union[str, str]]] = [
+            ["pending", link] for link in all_links
+        ]
 
         links: List[Tuple[int, str]] = []
         linknums: List = []
@@ -99,7 +100,9 @@ class SourceLinkLoader:
         await self.add_all_splits(ctx)
         return self.hascount, self.get_status_lines()
 
-    async def initialize_status_message(self, ctx: commands.Context) -> StatusEditMessage:
+    async def initialize_status_message(
+        self, ctx: commands.Context
+    ) -> StatusEditMessage:
         """
         Initializes and sends a status message in the given context.
 
@@ -127,7 +130,9 @@ class SourceLinkLoader:
             [f"{select_emoji(s)} {link}" for s, link in self.all_link_status]
         )
 
-    async def check_cached_documents(self, ctx: commands.Context, link: str, override: bool) -> Tuple[bool, Optional[dict]]:
+    async def check_cached_documents(
+        self, ctx: commands.Context, link: str, override: bool
+    ) -> Tuple[bool, Optional[dict]]:
         """
         Checks if the provided link is already cached, unless overriding is requested.
 

@@ -22,7 +22,7 @@ from utility import prioritized_string_split
 from utility.embed_paginator import pages_of_embeds
 import importlib
 
-#from gptmod.chromatools import ChromaTools
+# from gptmod.chromatools import ChromaTools
 import cogs.ResearchAgent as ra
 from .ResearchAgent.views import *
 
@@ -144,7 +144,6 @@ def generate_article_metatemplate(article_data, include_snppit=False):
     template = "Article Metadata: \n    " + template + ";\n    "
 
     return template.format(*values)
-
 
 
 target_server = AssetLookup.get_asset("oai_server")
@@ -304,7 +303,6 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
         await targetmessage.edit(content=text, embed=embeds[0])
         for e in embeds[1:]:
             await context.send(embed=e)
-
 
     @AILibFunction(
         name="read_url",

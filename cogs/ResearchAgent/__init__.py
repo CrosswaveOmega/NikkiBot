@@ -1,4 +1,3 @@
-
 async def setup(bot):
     import gui
 

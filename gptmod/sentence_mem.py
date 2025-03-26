@@ -6,7 +6,7 @@ import copy
 import uuid
 from typing import Any, Dict, List
 
-#import chromadb
+# import chromadb
 import discord
 from discord.ext import commands
 from gptfunctionutil import AILibFunction, GPTFunctionLibrary, LibParamSpec
@@ -16,12 +16,12 @@ from langchain.docstore.document import Document
 import threading
 import gptmod.util as util
 import gui
-#from gptmod.chromatools import ChromaTools, DocumentScoreVector
-from gptmod.lancetools import LanceTools,DocumentScoreVector,LanceBetter
+
+from gptmod.lancetools import LanceTools, DocumentScoreVector, LanceBetter
 from utility.debug import Timer
 
-ChromaTools=None
-DocumentScoreVector=None
+DocumentScoreVector = None
+
 
 class MemoryFunctions(GPTFunctionLibrary):
     @AILibFunction(
@@ -238,7 +238,7 @@ class SentenceMemory:
         self.guildid = guild.id
         self.userid = user.id
         metadata = {"desc": "Simple long term memory.  384 dimensions."}
-        self.coll:LanceBetter = LanceTools.get_collection(
+        self.coll: LanceBetter = LanceTools.get_collection(
             "sentence_mem", embed=bot.embedding()
         )
         self.shortterm = {}
@@ -268,8 +268,8 @@ class SentenceMemory:
             ids.add(
                 f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, source))}],sid:[{split + 1}]"
             )
-        
-        doc1 = await self.coll.aget_by_ids('sentence_mem',list(ids))
+
+        doc1 = await self.coll.aget_by_ids("sentence_mem", list(ids))
         return doc1
         print(zip(doc1["documents"], doc1["metadatas"]))
         if doc1:
@@ -296,16 +296,16 @@ class SentenceMemory:
         meta["forguild"] = self.guildid
         meta["channel"] = message.channel.id
         meta["date"] = message.created_at.timestamp()
-        meta["role"] = "assistant" 
+        meta["role"] = "assistant"
         doc = Document(page_content=content, metadata=meta)
         docs = split_document(doc, present_mem)
         print(docs)
-        newdocs=[]
+        newdocs = []
         for e, doc in enumerate(docs):
-            doc.id=f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
+            doc.id = f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
             newdocs.append(doc)
         if docs:
-            outs=self.coll.add_documents(newdocs)
+            outs = self.coll.add_documents(newdocs)
             print(outs)
 
     async def add_list_to_mem(
@@ -330,8 +330,8 @@ class SentenceMemory:
             )
             meta["split"] = e
             doc = Document(page_content=c, metadata=meta)
-            doc.id=f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
-           
+            doc.id = f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
+
             docs.append(doc)
 
         if docs:
@@ -340,13 +340,12 @@ class SentenceMemory:
     async def search_sim(self, message: discord.Message) -> List[DocumentScoreVector]:
         persist = "saveData"
 
-        filterwith=f"metadata.foruser = {message.author.id} AND metadata.forguild = {message.guild.id};"
-        
+        filterwith = f"metadata.foruser = {message.author.id} AND metadata.forguild = {message.guild.id};"
+
         sources: Dict[str : Dict[int, Any]] = {}
         with Timer() as all_timer:
-            docs = (
-                await self.coll.asimilarity_search_with_relevance_scores(
-                    message.content, k=4, filter=filterwith )
+            docs = await self.coll.asimilarity_search_with_relevance_scores(
+                message.content, k=4, filter=filterwith
             )
             context = ""
 
@@ -372,7 +371,7 @@ class SentenceMemory:
         persist = "saveData"
 
         filterwith = f"metadata.foruser = {message.author.id} AND metadata.forguild = {message.guild.id};"
-        
+
         sources: Dict[str : Dict[int, Any]] = {}
         with Timer() as all_timer:
             docs = await self.coll.aget(filter=filterwith, limit=128)
@@ -408,13 +407,12 @@ class SentenceMemory:
 
     async def delete_user_messages(self, userid):
         try:
-            self.coll.delete(filter=f'foruser={userid}')
+            self.coll.delete(filter=f"foruser={userid}")
 
             return True
         except ValueError as e:
             gui.dprint(e)
             return False
-
 
 
 def extract_embed_text(embed):

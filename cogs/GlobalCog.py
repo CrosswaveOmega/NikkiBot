@@ -30,7 +30,6 @@ async def owneronly(interaction: discord.Interaction):
     return await interaction.client.is_owner(interaction.user)
 
 
-
 class Global(commands.Cog, TC_Cog_Mixin):
     """General commands"""
 
@@ -278,10 +277,10 @@ class Global(commands.Cog, TC_Cog_Mixin):
 
 
 async def setup(bot):
-    #await bot.add_cog(NotesCog(bot))
+    # await bot.add_cog(NotesCog(bot))
     await bot.add_cog(Global(bot))
 
 
 async def teardown(bot):
-    #await bot.remove_cog("NotesCog")
+    # await bot.remove_cog("NotesCog")
     await bot.remove_cog("Global")

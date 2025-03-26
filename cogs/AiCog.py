@@ -290,7 +290,7 @@ async def ai_message_invoke(
 
     chat.add_message("system", nikkiprompt)
     mem = None
-    mems=None
+    mems = None
     if MEMORYMODE:
         mem = SentenceMemory(ctx.bot, guild, user)
         docs, mems, alltime = await mem.search_sim(message)
@@ -475,11 +475,9 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         if mode == False:
             await ctx.send("OpenAI mode turned off.")
 
-
-    
     @commands.command(brief="Enable for user")
     @commands.is_owner()
-    async def enable_for_user(self, ctx, user: int =0):
+    async def enable_for_user(self, ctx, user: int = 0):
         profile = AuditProfile.get_user(user)
         if profile:
             profile.disabled = False

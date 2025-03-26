@@ -18,6 +18,7 @@ from .storage_tools import search_sim
 
 UPPER_VALIDATION_LIM = 5
 
+
 def advanced_sentence_splitter(text):
     sentences = sent_tokenize(text)
     return sentences
@@ -159,7 +160,7 @@ async def research_op(
     link_restrict: Optional[List[str]] = None,
 ) -> Tuple[str, Optional[str], List[DocumentScoreVector]]:
     """
-    Search the chroma db for relevant documents pertaining to the
+    Search the lance db for relevant documents pertaining to the
     question, and return a formatted result with the source links and original documents.
 
     Args:
@@ -230,7 +231,7 @@ async def get_sources(
     link_restrict: Optional[List[str]] = None,
 ) -> Tuple[str, Optional[str], List[DocumentScoreVector]]:
     """
-    Search the chroma db for relevant documents pertaining to the
+    Search the lance db for relevant documents pertaining to the
     question, and return a formatted result with the source links and original documents.
 
     Args:

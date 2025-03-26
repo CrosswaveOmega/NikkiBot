@@ -197,7 +197,7 @@ class TCBot(
             # start playwright
             pmode = self.config.getboolean("feature", "playwright")
             print("playwrighter", pmode)
-            #if pmode == True:
+            # if pmode == True:
             #    await self.start_player()
             now = datetime.datetime.now()
             seconds_until_next_minute = (60 - now.second) % 20

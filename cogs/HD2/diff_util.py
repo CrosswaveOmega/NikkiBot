@@ -316,16 +316,16 @@ async def detect_loggable_changes(
             DEADZONE = True
 
             await QueueAll.put([newitem])
-    elif old.status.time> new.status.time:
+    elif old.status.time > new.status.time:
         newitem = GameEvent(
-                mode=EventModes.TIME_TRAVEL,
-                place=EventModes.TIME_TRAVEL,
-                batch=batch,
-                value=new.status,
-            )
-            
+            mode=EventModes.TIME_TRAVEL,
+            place=EventModes.TIME_TRAVEL,
+            batch=batch,
+            value=new.status,
+        )
+
         await QueueAll.put([newitem])
-        #return superlist
+        # return superlist
     else:
         if DEADZONE:
             newitem = GameEvent(

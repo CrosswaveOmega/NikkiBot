@@ -714,7 +714,7 @@ class Embeds:
         emb.set_author(name="DEADZONE WARNING.")
         emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
         return emb
-    
+
     @staticmethod
     def timetravelWarningEmbed(campaign: BaseApiModel, mode="started") -> discord.Embed:
         emb = discord.Embed(
@@ -1325,26 +1325,36 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     if "position" in dump and len(list(dump.keys())) == 1:
                         if int(info.index) not in self.last_move:
                             self.last_move[int(info.index)] = [planet, info, dump]
-                            return Embeds.dumpEmbedPlanet(info, dump, planet, f"changed in {place}")
+                            return Embeds.dumpEmbedPlanet(
+                                info, dump, planet, f"changed in {place}"
+                            )
                         elif (
                             info.retrieved_at
                             - self.last_move[int(info.index)][1].retrieved_at
                         ).total_seconds() > 3600:
                             self.last_move[int(info.index)] = [planet, info, dump]
-                            return Embeds.dumpEmbedPlanet(info, dump, planet, f"changed in {place}")
+                            return Embeds.dumpEmbedPlanet(
+                                info, dump, planet, f"changed in {place}"
+                            )
                         self.last_move[int(info.index)] = [planet, info, dump]
                         if info.retrieved_at.minute % 15 != 0:
                             return None
-                        embed = Embeds.dumpEmbedPlanet(info, dump, planet, f"changed in {place}")
+                        embed = Embeds.dumpEmbedPlanet(
+                            info, dump, planet, f"changed in {place}"
+                        )
                         if (
                             info.retrieved_at.hour % 2 == 0
                             or info.retrieved_at.minute != 0
                         ):
                             embed.title = "ResourceChange"
                     else:
-                        embed = Embeds.dumpEmbedPlanet(info, dump, planet, f"changed in {place}")
+                        embed = Embeds.dumpEmbedPlanet(
+                            info, dump, planet, f"changed in {place}"
+                        )
                 else:
-                    embed = Embeds.dumpEmbed(info, dump, "planet", f"changed in {place}")
+                    embed = Embeds.dumpEmbed(
+                        info, dump, "planet", f"changed in {place}"
+                    )
             elif place == "stats_raw":
                 embed = Embeds.dumpEmbed(info, dump, "stats", "changed")
             elif place == "info_raw":

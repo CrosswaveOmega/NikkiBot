@@ -16,7 +16,6 @@ from langchain_core.documents import Document
 from langchain_core.utils import xor_args
 from langchain_core.runnables.config import run_in_executor
 
-# from langchain_community.vectorstores.chroma import Chroma
 from langchain_community.vectorstores import LanceDB
 
 from langchain_openai import OpenAIEmbeddings
@@ -28,8 +27,9 @@ import lancedb
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import LanceDB
+
 """
-Class extensions that assist with the Chromadb vector store.
+Class extensions that assist with the LanceBD vector store.
 
 
 """
@@ -53,18 +53,19 @@ def _results_to_docs_scores_emb(results: Any) -> List[DocumentScoreVector]:
         )
     ]
 
+
 class LanceTools:
-    """Class full of static methods for simple Chroma DB ops."""
+    """Class full of static methods for simple Lance DB ops."""
 
     @staticmethod
     def get_lance_client() -> lancedb.DBConnection:
-        """Create a new chroma client."""
+        """Create a new Lance client."""
         client = lancedb.connect(uri="saveData/lance-db")
         return client
 
     @staticmethod
     async def get_async_client() -> lancedb.AsyncConnection:
-        """Create a new chroma client asynchronously."""
+        """Create a new Lance client asynchronously."""
         client = await lancedb.connect_async(uri="saveData/lance-db")
         return client
 
@@ -73,7 +74,7 @@ class LanceTools:
         collection: str = "web_collection",
         embed: Optional[OpenAIEmbeddings] = None,
         metadata: Optional[dict] = None,
-        path: str = "saveData"
+        path: str = "saveData",
     ) -> "LanceBetter":
         """Create a collection for LanceBetter with default configurations.
 
@@ -106,7 +107,7 @@ class LanceTools:
         collection: str = "web_collection",
         embed: Optional[OpenAIEmbeddings] = None,
         metadata: Optional[dict] = None,
-        path: str = "saveData"
+        path: str = "saveData",
     ) -> "LanceBetter":
         """Configures the lance client for specific collection.
 
@@ -139,7 +140,6 @@ class LanceClient:
     def __init__(self, path):
         client = lancedb.connect(uri="saveData/lance-db")
         self._data = {}
-
 
 
 class LanceBetter(LanceDB):
@@ -274,7 +274,9 @@ class LanceBetter(LanceDB):
         docs = self.results_to_docs(outputs, score=False)
         return docs
 
-    def get(self, filter: Optional[Any] = None, limit: Optional[int] = None) -> List[Document]:
+    def get(
+        self, filter: Optional[Any] = None, limit: Optional[int] = None
+    ) -> List[Document]:
         table = self.get_table()
         outputs = table.search().where(filter).limit(limit).to_arrow()
         docs = self.results_to_docs(outputs, score=False)
