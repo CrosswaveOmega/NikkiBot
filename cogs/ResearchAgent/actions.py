@@ -1,3 +1,4 @@
+print("Importing Actions")
 import asyncio
 
 # import datetime
@@ -13,6 +14,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from bot import StatusEditMessage
 
 from gptmod.lancetools import LanceTools, DocumentScoreVector
+print("Importing Tools")
 from .tools import format_answer, get_doc_sources, try_until_ok
 from .storage_tools import search_sim
 
