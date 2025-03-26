@@ -34,7 +34,7 @@ python_dateutil
 Requests
 scikit_learn
 scipy
-sagecipher
+
 SQLAlchemy
 sqlitedict
 tiktoken
