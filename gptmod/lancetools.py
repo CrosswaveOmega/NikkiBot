@@ -21,7 +21,7 @@ import numpy as np
 
 import lancedb
 from langchain_openai import OpenAIEmbeddings
-import langchain_community.vectorstores.LanceDB as LanceDB
+from  langchain_community.vectorstores import LanceDB
 
 """
 Class extensions that assist with the LanceBD vector store.
