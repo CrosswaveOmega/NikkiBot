@@ -144,7 +144,7 @@ def has_url(
             table = client.open_table(
                 collection,
             )
-            res = table.search().where({"metadata.source":url}).to_list()
+            res = table.search().where(f"metadata.source=\"{url}\"").to_list()
             print(res)
             if res:
                 gui.dprint("hasres", res)
@@ -187,7 +187,7 @@ def remove_url(
             table = client.open_table(
                 collection,
             )
-            res = table.delete({"metadata.source":url})
+            res = table.delete(f"metadata.source=\"{url}\"")
             return True
         except ValueError as e:
             gui.dprint(e)
