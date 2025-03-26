@@ -563,8 +563,8 @@ def get_doc_sources(docs: List[Tuple[Document, float]]):
     Returns:
         str: A string formatted to list unique sources and the indices of their appearances in the provided list.
     """
-    all_links = [doc.metadata.get("source", "???") for doc, e, i in docs]
-    links = set(doc.metadata.get("source", "???") for doc, e, i in docs)
+    all_links = [doc.metadata.get("source", "???") for doc, e, in docs]
+    links = set(doc.metadata.get("source", "???") for doc, e, in docs)
 
     def ie(all_links: List[str], value: str) -> List[int]:
         return [index for index, link in enumerate(all_links) if link == value]
