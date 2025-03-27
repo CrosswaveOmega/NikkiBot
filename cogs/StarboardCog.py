@@ -448,12 +448,12 @@ class StarboardCog(commands.Cog):
             for i, e in enumerate(all_entries):
                 # await ctx.send(str(e))
                 if e.bot_message_url is None:
-                    await ctx.send(f"deleting {e}")
+                    listv += f"{i},{str(e)}\n"
                     await session.delete(e)
                 if len(listv) + len(f"{str(e)}\n") >= 1500:
                     await ctx.send(listv)
                     listv = ""
-                listv += f"{i},{str(e)}\n"
+                
             if listv:
                 await ctx.send(listv)
 
