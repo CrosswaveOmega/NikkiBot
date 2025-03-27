@@ -444,20 +444,16 @@ class StarboardCog(commands.Cog):
             all_entries = await StarboardEntryTable.get_entries_by_guild(
                 ctx.guild.id, session=session
             )
+            alls=[]
             listv = ""
             for i, e in enumerate(all_entries):
                 # await ctx.send(str(e))
                 if e.bot_message_url is None:
-                    listv += f"{i},{str(e)}\n"
+                    alls.append(f"deleting: {i},{str(e)}\n")
                     await session.delete(e)
-                if len(listv) + len(f"{str(e)}\n") >= 1500:
-                    await ctx.send(listv)
-                    listv = ""
-                
-            if listv:
-                await ctx.send(listv)
 
             await session.commit()
+            await ctx.send(f"Audited and removed {len(alls)}")
             await ctx.send("Done")
 
     async def update_starboard_message(
