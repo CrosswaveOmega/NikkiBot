@@ -451,6 +451,13 @@ class StarboardCog(commands.Cog):
                 if e.bot_message_url is None:
                     alls.append(f"deleting: {i},{str(e)}\n")
                     await session.delete(e)
+                else:
+                    mess=await urltomessage(e.bot_message_url,self.bot)
+                    if not mess:
+                        await ctx.send(f"{str(e)} is not in starboard channel!")
+                        alls.append(f"deleting: {i},{str(e)}\n")
+                        await session.delete(e)
+
 
             await session.commit()
             await ctx.send(f"Audited and removed {len(alls)}")
