@@ -597,9 +597,24 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(
                 f"SERVER: <t:{int(serverrep.last_call.timestamp())}:F>, RESET ONL <t:{int(serverrep.started_dt.timestamp())}:F>, {serverrep.current}, {serverrep.DailyLimit}"
             )
-            await ctx.send(
-                f"USER: <t:{int(userrep.last_call.timestamp())}:F>, RESET ON<t:{int(userrep.started_dt.timestamp())}:F>, {userrep.current}, {userrep.DailyLimit}"
-            )
+            lastuser=userrep.last_call
+            resetwhen=userrep.started_dt
+            if lastuser and resetwhen:
+                await ctx.send(
+                    f"USER: <t:{int(lastuser.timestamp())}:F>, RESET ON<t:{int(resetwhen.timestamp())}:F>, {userrep.current}, {userrep.DailyLimit}"
+                )
+            elif lastuser:
+                await ctx.send(
+                    f"USER: <t:{int(lastuser.timestamp())}:F>, RESET NEVER, {userrep.current}, {userrep.DailyLimit}"
+                )
+            elif resetwhen:
+                await ctx.send(
+                    f"USER: NEVER, RESET ON<t:{int(resetwhen.timestamp())}:F>, {userrep.current}, {userrep.DailyLimit}"
+                )
+            else:
+                await ctx.send(
+                    f"USER: NEVER, RESET ON NEVER, {userrep.current}, {userrep.DailyLimit}"
+                )
 
         return True
 
