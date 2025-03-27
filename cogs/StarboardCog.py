@@ -432,6 +432,34 @@ class StarboardCog(commands.Cog):
             await session.commit()
             await ctx.send("Done")
 
+    
+    @starboard.command()
+    async def audit_stars(self, ctx):
+        """Dump a list of all stars to the chat."""
+        existing = await Starboard.get_starboard(ctx.guild.id)
+        if not existing:
+            await ctx.send("Starboard does not exist for this server.")
+            return
+        async with DatabaseSingleton.get_async_session() as session:
+            all_entries = await StarboardEntryTable.get_entries_by_guild(
+                ctx.guild.id, session=session
+            )
+            listv = ""
+            for i, e in enumerate(all_entries):
+                # await ctx.send(str(e))
+                if e.bot_message_url is None:
+                    await ctx.send(f"deleting {e}")
+                    await session.delete(e)
+                if len(listv) + len(f"{str(e)}\n") >= 1500:
+                    await ctx.send(listv)
+                    listv = ""
+                listv += f"{i},{str(e)}\n"
+            if listv:
+                await ctx.send(listv)
+
+            await session.commit()
+            await ctx.send("Done")
+
     async def update_starboard_message(
         self, guild: discord.Guild, message: discord.Message, bot_message: str
     ) -> None:
