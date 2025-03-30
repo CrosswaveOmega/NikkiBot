@@ -136,7 +136,7 @@ async def get_differing_fields(
     differing_fields = {}
     for field in model1.model_fields:
         if field not in to_ignore:
-            logs.info("Retrieving field %s ", field)
+            #logs.info("Retrieving field %s ", field)
             value1 = await compare_value_with_timeout(model1, field)
             value2 = await compare_value_with_timeout(model2, field)
 
