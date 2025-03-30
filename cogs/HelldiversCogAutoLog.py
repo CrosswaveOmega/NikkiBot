@@ -1423,6 +1423,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         """
         Load results from api.
         """
+
+        # 1: GET WEBHOOKS.
         if not self.loghook:
             hooks = ServerHDProfile.get_entries_with_webhook()
             lg = [AssetLookup.get_asset("loghook", "urls")]
@@ -1430,6 +1432,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 lg.append(h)
             self.redirect_hook = AssetLookup.get_asset("subhook", "urls")
             self.loghook = lg
+
+            
         self.get_running = True
         if self.test_with:
             # Code for testing the auto log.

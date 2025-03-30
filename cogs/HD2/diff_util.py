@@ -5,15 +5,14 @@ import gui
 
 logs = logging.getLogger("TCLogger")
 
-from hd2api.models.ABC.model import BaseApiModel
-from hd2api.builders import *
-from hd2api.models import DiveharderAll, StaticAll
-
-from enum import Enum
-
-from pydantic import Field
 import asyncio
 import random
+from enum import Enum
+
+from hd2api.builders import *
+from hd2api.models import DiveharderAll, StaticAll
+from hd2api.models.ABC.model import BaseApiModel
+from pydantic import Field
 
 
 class EventModes(Enum):

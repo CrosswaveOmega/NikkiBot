@@ -4,7 +4,6 @@ import datetime
 import re
 from typing import Any, AsyncGenerator, List, Tuple, Union, Optional
 
-import markitdown
 import openai
 from googleapiclient.discovery import build  # Import the library
 from gptfunctionutil import AILibFunction, GPTFunctionLibrary, LibParam
@@ -124,6 +123,8 @@ def google_search(bot, query: str, result_limit: int) -> dict:
 
 
 async def async_markdown_convert(url, timeout=30):
+    
+    import markitdown
     markdown = markitdown.MarkItDown()
     result = await asyncio.wait_for(asyncio.to_thread(markdown.convert, url), timeout)
     return result
