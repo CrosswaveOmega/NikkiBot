@@ -1,6 +1,8 @@
 import logging
 from typing import *
 
+import gui
+
 logs = logging.getLogger("TCLogger")
 
 from hd2api.models.ABC.model import BaseApiModel
@@ -57,7 +59,7 @@ async def compare_value_with_timeout(model1, field):
             try:
                 value.sort()
             except TypeError:
-                print(value, "unsortable")
+                gui.gprint(value, "unsortable")
         return value
     except asyncio.TimeoutError as e:
         logs.error("Could not get field %s ", field, exc_info=e)
@@ -70,7 +72,6 @@ async def compare_values(val1, val2, lvd, to_ignore: Set[str]):
     elif isinstance(val1, list) and isinstance(val2, list):
         list_diffs = {}
         if len(val1) != len(val2):
-            # print(len(val1),len(val2))
             biggestsize = max(len(val1), len(val2))
 
             for i in range(biggestsize):
@@ -235,7 +236,6 @@ async def process_planet_attacks(
     for event in source:
         oc = await check_compare_value_list(keys, [event[key] for key in keys], target)
         if not oc:
-            print(place, EventModes.NEW, event)
             item = GameEvent(mode=EventModes.NEW, place=place, batch=batch, value=event)
             newlist.append(item)
             pushed_items.append(item)

@@ -10,6 +10,7 @@ from discord.ext import commands
 
 from bot import StatusEditMessage
 from gptmod.lancetools import LanceTools
+import gui
 from .tools import (
     read_and_split_links,
 )
@@ -71,7 +72,7 @@ class SourceLinkLoader:
             self.statmess = await self.initialize_status_message(ctx)
 
         if not self.lance_connection:
-            print("Making new lance collection.")
+            gui.gprint("Making new lance collection.")
             self.lance_connection = LanceTools.get_lance_client()
 
         self.current, self.hascount = "", 0
@@ -153,7 +154,7 @@ class SourceLinkLoader:
 
         if has and not override:
             for doc in getres:
-                if doc['metadata']['source']!=link:
+                if doc["metadata"]["source"] != link:
                     raise Exception(
                         "the url in the cache doesn't match the provided url."
                     )
@@ -193,7 +194,7 @@ class SourceLinkLoader:
         async for dat, e, typev in read_and_split_links(ctx.bot, links):
             try:
                 if typev == -5:
-                    print(type(dat))
+                    gui.gprint(type(dat))
                     raise dat
                 dbadd = True
                 for split in dat:
@@ -276,7 +277,7 @@ class SourceLinkLoader:
         with Timer() as timer:
             await store_many_splits(self.store_list, client=self.lance_connection)
         elapsed_time: float = timer.get_time()
-        print(f"Time elapsed STORE: {elapsed_time:.4f} seconds")
+        gui.gprint(f"Time elapsed SPLIT STORE: {elapsed_time:.4f} seconds")
 
         await self.statmess.editw(
             min_seconds=5,

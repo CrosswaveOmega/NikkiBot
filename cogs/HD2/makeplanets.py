@@ -10,6 +10,8 @@ from perlin_noise import PerlinNoise
 from PIL import Image, ImageDraw, ImageFont
 from sklearn.cluster import KMeans
 
+import gui
+
 CLOUD_ALPHA = 180
 
 
@@ -196,8 +198,8 @@ def make_new_texture(colors, nme, num_craters, num_clouds, xpix, ypix, biome_nam
     lightest_color = max(colors, key=lambda c: sum(c[:-1]))
     darkest_color = min(colors, key=lambda c: sum(c[:-1]))
 
-    print(f"{nme} Lightest color: {lightest_color}")
-    print(f"{nme} Darkest color: {darkest_color}")
+    gui.gprint(f"{nme} Lightest color: {lightest_color}")
+    gui.gprint(f"{nme} Darkest color: {darkest_color}")
 
     cm = LinearSegmentedColormap.from_list("", np.array(colors) / 256, 256)
 

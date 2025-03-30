@@ -79,7 +79,7 @@ class MyLib(GPTFunctionLibrary):
         **kwargs,
     ):
         # Wait for a set period of time.
-        print("extra kwargs", kwargs)
+        gui.gprint("extra kwargs", kwargs)
         return title, authors, date, abstract
 
 
@@ -119,7 +119,7 @@ def google_search(bot, query: str, result_limit: int) -> dict:
         .execute()
     )
 
-    print(query_results)
+    gui.gprint(query_results)
     return query_results
 
 
@@ -209,12 +209,14 @@ async def read_and_split_links(
             pdf_urls.append((e, url))
         else:
             regular_urls.append((e, url))
+
+    # PDF LINKS
     for e, pdfurl in pdf_urls:
         pdfmode = True
         newdata = []
         with Timer() as timer:
             data, typev = await read_and_split_pdf(bot, pdfurl, chunk_size)
-        print(f"PDF READ: Took {timer.get_time():.4f} seconds to READ pdf {e}.")
+        gui.gprint(f"PDF READ: Took {timer.get_time():.4f} seconds to READ pdf {e}.")
 
         if isinstance(data, Exception):
             yield data, e, typev
@@ -225,7 +227,7 @@ async def read_and_split_links(
                 newdat = await simplify_and_split_output(
                     d, chunk_size, pdfsplit, splitnum
                 )
-            print(
+            gui.gprint(
                 f"PDF: Took {timer.get_time():.4f} seconds to convert {e} into {len(newdat)} splits."
             )
 
@@ -241,13 +243,13 @@ async def read_and_split_links(
     )
     # Index that wraps above steps
     async for d, e, typev2 in loader.aload(bot):
-        print(type(d), e, typev2)
+        gui.gprint(type(d), e, typev2)
         if typev2 == -5:
             yield d, e, typev2
         else:
             with Timer() as timer:
                 newdata = await simplify_and_split_output(d, chunk_size, prioritysplit)
-            print(
+            gui.gprint(
                 f"READABILITY: Took {timer.get_time():.4f} seconds to convert {e} into {len(newdata)} splits."
             )
 
@@ -288,7 +290,7 @@ async def read_and_split_link(
         )
         # Index that wraps above steps
         async for d, e, typev2 in loader.aload(bot):
-            print(type(d), e, typev2)
+            gui.gprint(type(d), e, typev2)
             if typev2 == -5:
                 return d, e, typev2
             newdata = await simplify_and_split_output(d, chunk_size, prioritysplit)
@@ -382,7 +384,7 @@ async def summarize(
     fil = prioritized_string_split(article, splitorder, 20000, length=local_length)
     filelength: int = len(fil)
     for num, articlepart in enumerate(fil):
-        print("summarize operation", num, filelength)
+        gui.gprint("summarize operation", num, filelength)
         messages = [
             {
                 "role": "system",
@@ -443,7 +445,7 @@ def mask_links(text, links):
 
     # Extract numbers for each element in newline
     for line in link_lines:
-        # print(line)
+        # gui.gprint(line)
         match = re.match(r"\[([\d, ]+)\](https?://[^\s]+)", line)
         if match:
             numbers, url = match.groups()
@@ -452,7 +454,7 @@ def mask_links(text, links):
 
     # Replace occurrences of [number] with masked links
     for number, url in links_dict.items():
-        # print(number, url)
+        # gui.gprint(number, url)
         num_pattern = re.compile(rf"\[({number})\]")
         text = re.sub(num_pattern, f"[{number}]({url})", text)
 
@@ -531,13 +533,13 @@ END
         )
 
         if total_tokens + tokens >= 14000:
-            print("token break")
+            gui.gprint("token break")
             break
         total_tokens += tokens
 
         messages.append({"role": "system", "content": output})
         if total_tokens >= 14000:
-            print("token break")
+            gui.gprint("token break")
             break
     messages.append({"role": "user", "content": question})
     client = openai.AsyncOpenAI()
@@ -563,8 +565,8 @@ def get_doc_sources(docs: List[Tuple[Document, float]]):
     Returns:
         str: A string formatted to list unique sources and the indices of their appearances in the provided list.
     """
-    all_links = [doc.metadata.get("source", "???") for doc, e, in docs]
-    links = set(doc.metadata.get("source", "???") for doc, e, in docs)
+    all_links = [doc.metadata.get("source", "???") for doc, e in docs]
+    links = set(doc.metadata.get("source", "???") for doc, e in docs)
 
     def ie(all_links: List[str], value: str) -> List[int]:
         return [index for index, link in enumerate(all_links) if link == value]

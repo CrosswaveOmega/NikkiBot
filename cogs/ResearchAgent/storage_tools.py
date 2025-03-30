@@ -3,9 +3,8 @@ import asyncio
 import datetime
 import uuid
 from typing import List, Tuple
-print("Adding Lance DB")
+
 import lancedb
-print("OK.")
 from htmldate import find_date
 from langchain.docstore.document import Document
 from langchain_openai import OpenAIEmbeddings
@@ -14,8 +13,7 @@ from tqdm.asyncio import tqdm_asyncio
 import gui
 from utility import chunk_list
 
-print("Importing lance tools")
-from gptmod.lancetools import LanceTools, LanceBetter,DocumentScoreVector
+from gptmod.lancetools import LanceTools, LanceBetter, DocumentScoreVector
 from gptmod.metadataenums import MetadataDocType
 
 
@@ -144,7 +142,7 @@ def has_url(
             table = client.open_table(
                 collection,
             )
-            res = table.search().where(f"metadata.source=\"{url}\"").to_list()
+            res = table.search().where(f'metadata.source="{url}"').to_list()
             if res:
                 return True, res
             return False, None
@@ -185,7 +183,7 @@ def remove_url(
             table = client.open_table(
                 collection,
             )
-            res = table.delete(f"metadata.source=\"{url}\"")
+            res = table.delete(f'metadata.source="{url}"')
             return True
         except ValueError as e:
             gui.dprint(e)

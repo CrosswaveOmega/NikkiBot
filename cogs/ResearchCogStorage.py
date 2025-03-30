@@ -197,9 +197,9 @@ class ResearchCogStore(commands.Cog, TC_Cog_Mixin):
         self.helptext = "This cog is for AI powered websearch and summarization."
         self.bot: TCBot = bot
         self.lock = asyncio.Lock()
-        
+
         self.manual_enable = True
-        self.private=True
+        self.private = True
 
         self.translationprompt = """
         Given text from a non-English language, provide an accurate English translation, followed by contextual explanations for why and how the text's components conveys that meaning. Organize the explanations in a list format, with each word/phrase/component followed by its corresponding definition and explanation.  Note any double meanings within these explanations.
@@ -208,7 +208,6 @@ class ResearchCogStore(commands.Cog, TC_Cog_Mixin):
         Given text from a non-English language, provide an accurate English translation.  If any part of the non-English text can be translated in more than one possible way, provide all possible translations for that part in parenthesis.
         """
         self.init_context_menus()
-
 
     async def load_links(
         self,
@@ -232,7 +231,7 @@ class ResearchCogStore(commands.Cog, TC_Cog_Mixin):
         Returns:
             Tuple[int, str]: A tuple containing the count of successfully processed links and a formatted status string.
         """
-        print("Starting source loader.")
+        gui.gprint("Starting source loader.")
         loader = ra.SourceLinkLoader(
             lance_connection=lancedbc, statusmessage=statmess, embed=embed
         )
@@ -475,7 +474,6 @@ class ResearchCogStore(commands.Cog, TC_Cog_Mixin):
 
             await ctx.send("removal complete")
         else:
-            
             ra.storage_tools.remove_url(link, client=lancedbc)
             await ctx.send("Link not in database")
 
@@ -695,12 +693,13 @@ class ResearchCogStore(commands.Cog, TC_Cog_Mixin):
 
             return answer
 
-
     @commands.command(name="get_source", description="get sources.", extras={})
     @oai_check()
     async def source_get(self, ctx: commands.Context, question: str):
         lancedbc = LanceTools.get_lance_client()
-        data = await ra.storage_tools.search_sim(question, client=lancedbc, titleres="None")
+        data = await ra.storage_tools.search_sim(
+            question, client=lancedbc, titleres="None"
+        )
         len(data)
         if len(data) <= 0:
             await ctx.send("NO RELEVANT DATA.")
@@ -743,7 +742,6 @@ class ResearchCogStore(commands.Cog, TC_Cog_Mixin):
         # viewme=Followup(bot=self.bot,page_content=docs2)
         # await ctx.channel.send(f'{len(data)} sources found',view=viewme)
 
-
     @AILibFunction(
         name="code_gen",
         description="Output a block of formatted code in accordance with the user's instructions.",
@@ -764,8 +762,6 @@ class ResearchCogStore(commands.Cog, TC_Cog_Mixin):
         emb = discord.Embed(title=comment, description=f"```py\n{code}\n```")
         returnme = await ctx.send(content=comment + f"{code[:1024]}", embed=emb)
         return returnme
-
-
 
     @commands.command(
         name="summarize_db", description="make a summary of a url.", extras={}
@@ -986,7 +982,7 @@ async def setup(bot):
     module_name = "cogs.ResearchAgent"
     try:
         importlib.reload(ra)
-        print(f"{module_name} reloaded successfully.")
+        gui.gprint(f"{module_name} reloaded successfully.")
     except ImportError:
-        print(f"Failed to reload {module_name}.")
+        gui.gprint(f"Failed to reload {module_name}.")
     await bot.add_cog(ResearchCogStore(bot))

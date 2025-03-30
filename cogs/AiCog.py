@@ -197,7 +197,6 @@ async def process_result(
             page.add_line(p)
         split_by = split_string_with_code_blocks(mycontent, 2000)
         messageresp = None
-        print(mycontent)
         for pa in split_by:
             ms = await ctx.channel.send(pa)
             if messageresp == None:
@@ -221,7 +220,7 @@ async def process_result(
             for tool_call in res.choices[0].message.tool_calls:
                 outcome = await memlib.call_by_tool_async(tool_call)
                 contents, need = outcome["content"]
-                print(contents, need)
+                gui.gprint(contents, need)
                 if need:
                     await mem.add_list_to_mem(
                         ctx, messageresp, cont=contents, present_mem=present_mem
@@ -597,8 +596,8 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(
                 f"SERVER: <t:{int(serverrep.last_call.timestamp())}:F>, RESET ONL <t:{int(serverrep.started_dt.timestamp())}:F>, {serverrep.current}, {serverrep.DailyLimit}"
             )
-            lastuser=userrep.last_call
-            resetwhen=userrep.started_dt
+            lastuser = userrep.last_call
+            resetwhen = userrep.started_dt
             if lastuser and resetwhen:
                 await ctx.send(
                     f"USER: <t:{int(lastuser.timestamp())}:F>, RESET ON<t:{int(resetwhen.timestamp())}:F>, {userrep.current}, {userrep.DailyLimit}"

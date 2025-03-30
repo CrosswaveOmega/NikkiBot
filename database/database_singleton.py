@@ -70,7 +70,7 @@ class EngineContainer:
     async def connect_to_engine_a(self):
         """async variant of connect_to_engine."""
         if not self.connected and self.async_mode:
-            gui.print("Connecting to ASYNCIO compatible engine variant.")
+            gui.gprint("Connecting to ASYNCIO compatible engine variant.")
             db_name = self.database_name
             self.aengine = create_async_engine(f"{ASYNCENGINE}{db_name}", echo=False)
             self.SessionAsyncLocal = async_sessionmaker(
@@ -246,7 +246,7 @@ class DatabaseSingleton:
 
     def load_base(self, Base):
         """Load in a Declarative base."""
-        print("Loading base ", Base)
+        gui.gprint("Loading base ", Base)
         self._instance.load_in_base(Base)
 
     def load_base_to(self, Base, ename: str):

@@ -5,6 +5,7 @@ from sqlalchemy import select, delete, func, and_, or_
 from database.database_singleton import DatabaseSingleton
 from database.database_utils import upsert_a
 from database import ensure_session
+import gui
 import discord
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -118,7 +119,6 @@ class StarboardIgnoreChannels(Base):
 
     channel_id = Column(BigInteger, primary_key=True)
 
-
     @classmethod
     async def add_channel(cls, guild_id: int, channel_id: int):
         async with DatabaseSingleton.get_async_session() as session:
@@ -130,14 +130,18 @@ class StarboardIgnoreChannels(Base):
     @classmethod
     async def get_channel(cls, guild_id: int, channel_id: int):
         async with DatabaseSingleton.get_async_session() as session:
-            query = select(cls).where(cls.guild_id == guild_id, cls.channel_id == channel_id)
+            query = select(cls).where(
+                cls.guild_id == guild_id, cls.channel_id == channel_id
+            )
             result = await session.execute(query)
             return result.scalar()
 
     @classmethod
     async def remove_channel(cls, guild_id: int, channel_id: int):
         async with DatabaseSingleton.get_async_session() as session:
-            query = select(cls).where(cls.guild_id == guild_id, cls.channel_id == channel_id)
+            query = select(cls).where(
+                cls.guild_id == guild_id, cls.channel_id == channel_id
+            )
             result = await session.execute(query)
             channel_entry = result.scalar()
             if channel_entry:
@@ -153,7 +157,6 @@ class StarboardIgnoreChannels(Base):
             result = await session.execute(query)
             channels = result.scalars().all()
             return channels
-
 
 
 class StarboardEntryTable(Base):
@@ -208,7 +211,9 @@ class StarboardEntryTable(Base):
         result = await session.execute(query)
         entry = result.scalar()
 
-        print("entry being updated or added", entry, message_id, guild_id, message_url)
+        gui.gprint(
+            "entry being updated or added", entry, message_id, guild_id, message_url
+        )
         if entry:
             entry.total = await StarboardEntryGivers.count_starrers(
                 guild_id, message_id, session=session

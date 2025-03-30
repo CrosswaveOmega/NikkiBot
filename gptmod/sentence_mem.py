@@ -67,18 +67,18 @@ class GenericThread:
         return self.get_result()
 
 
-print("importing sentence_mem")
+gui.gprint("importing sentence_mem")
 
 
 # Example target function
 def warmup():
-    print("Starting embedding model.")
+    gui.gprint("Starting embedding model.")
     with Timer() as timer:
         from langchain_huggingface import HuggingFaceEmbeddings
 
         hug_embed = HuggingFaceEmbeddings(model_name="thenlper/gte-small")
         hug_embed.embed_query("The quick brown fox jumped over the lazy frog.")
-    print("embedding model loaded in", timer.get_time())
+    gui.gprint("embedding model loaded in", timer.get_time())
     return hug_embed
 
 
@@ -166,10 +166,10 @@ def split_document(doc: Document, present_mem=""):
         add += 1
         new_doc = Document(page_content=chunk, metadata=metadatac)
         if len(chunk) > 2:
-            print(chunk)
+            gui.gprint(chunk)
             newdata.append(new_doc)
         else:
-            print("skipping chunk due to insufficient size.")
+            gui.gprint("skipping chunk due to insufficient size.")
     return newdata
 
 
@@ -183,13 +183,13 @@ async def group_documents(docs: List[Document], max_tokens=3000):
             sources[source] = {}
         sources[source][split] = doc
         if doc.page_content not in context:
-            print(doc.page_content)
+            gui.gprint(doc.page_content)
             context += doc.page_content + "  "
         tokens = util.num_tokens_from_messages(
             [{"role": "system", "content": context}], "gpt-4o-mini"
         )
         if tokens >= max_tokens:
-            print("token break")
+            gui.gprint("token break")
             break
 
     out_list = []
@@ -199,9 +199,9 @@ async def group_documents(docs: List[Document], max_tokens=3000):
         lastkey = -6
 
         for k, v in sorted_dict:
-            # print(source, k, v)
+            # gui.gprint(source, k, v)
             if k is not None and k != 0 and abs(k - lastkey) > 1:
-                # print(abs(k - lastkey))
+                # gui.gprint(abs(k - lastkey))
                 newc += "..."
             lastkey = k
             newc += f"[split:{k}]:{v.page_content}" + "  "
@@ -270,7 +270,7 @@ class SentenceMemory:
 
         doc1 = await self.coll.aget_by_ids("sentence_mem", list(ids))
         return doc1
-        print(zip(doc1["documents"], doc1["metadatas"]))
+        gui.gprint(zip(doc1["documents"], doc1["metadatas"]))
         if doc1:
             dc = results_to_docs(doc1)
             if dc:
@@ -288,7 +288,7 @@ class SentenceMemory:
         content = cont
         if not content:
             content = message.content
-        print("content", content)
+        gui.gprint("content", content)
         meta = {}
         meta["source"] = message.jump_url
         meta["foruser"] = self.userid
@@ -298,14 +298,14 @@ class SentenceMemory:
         meta["role"] = "assistant"
         doc = Document(page_content=content, metadata=meta)
         docs = split_document(doc, present_mem)
-        print(docs)
+        gui.gprint(docs)
         newdocs = []
         for e, doc in enumerate(docs):
             doc.id = f"url:[{str(uuid.uuid5(uuid.NAMESPACE_DNS, doc.metadata['source']))}],sid:[{doc.metadata['split']}]"
             newdocs.append(doc)
         if docs:
             outs = self.coll.add_documents(newdocs)
-            print(outs)
+            gui.gprint(outs)
 
     async def add_list_to_mem(
         self,
@@ -315,7 +315,7 @@ class SentenceMemory:
         present_mem: str = "",
     ):
         content = cont
-        print("content", content)
+        gui.gprint("content", content)
         docs = []
         for e, c in enumerate(content):
             meta = {}
@@ -377,7 +377,7 @@ class SentenceMemory:
             context = ""
 
             docs2 = results_to_docs(docs)
-            print(docs, docs2)
+            gui.gprint(docs, docs2)
             all_neighbors = docs2
 
         checktime = all_timer.get_time()

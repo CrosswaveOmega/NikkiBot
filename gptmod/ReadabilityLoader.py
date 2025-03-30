@@ -1,6 +1,6 @@
-print("importing readability loader")
 """Web base loader class."""
 
+import logging
 import langchain_community.document_loaders as dl
 from langchain.docstore.document import Document
 import asyncio
@@ -13,6 +13,8 @@ from htmldate import find_date
 import assetloader
 from .metadataenums import MetadataDocType
 from bs4 import BeautifulSoup
+
+logs = logging.getLogger("discord")
 
 """This is a special loader that makes use of Mozilla's readability library."""
 
@@ -134,7 +136,7 @@ class ReadableLoader(dl.WebBaseLoader):
             # call fetch with rate limit.
             results = await self.fetch_all(regular_urls)
         elapsed_time = timer.get_time()
-        print(f"READ: Took {elapsed_time:.4f} seconds to gather {len(urls)}.")
+        gui.gprint(f"READ: Took {elapsed_time:.4f} seconds to gather {len(urls)}.")
 
         for i, result in enumerate(results):
             if isinstance(result, Exception):
@@ -142,7 +144,7 @@ class ReadableLoader(dl.WebBaseLoader):
                 #     try:
                 #         markdown = MarkItDown()
                 #         result2 = markdown.convert(url)
-                #         print(result2.text_content)
+                #         gui.gprint(result2.text_content)
                 #         header = {"title": result2.title or result2.text_content[:100]}
                 #         header["siteName"] = "Siteunknown"
                 #         header["source"] = url
@@ -174,14 +176,14 @@ class ReadableLoader(dl.WebBaseLoader):
             clean_html = re.sub(
                 r"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>", "", result
             )
-            print("attempting read of ", urls[i][0], "length is", len(clean_html))
+            gui.gprint("attempting read of ", urls[i][0], "length is", len(clean_html))
             # readable = await check_readability(self.jsenv, clean_html, url)
             # if not readable:  gui.dprint("Not readable link.")
             try:
                 with Timer() as timer:
                     text, header = await read_article_aw(self.jsenv, clean_html, url)
                 elapsed_time = timer.get_time()
-                print(
+                gui.gprint(
                     f"READABILITY: Took {elapsed_time:.4f} seconds to convert {urls[i][0]} to readable."
                 )
                 # YIELD THIS:
@@ -282,7 +284,7 @@ class ReadableLoader(dl.WebBaseLoader):
                     metadata["type"] = int(typev)
 
                     metadata["sum"] = "source"
-                    print(metadata)
+                    gui.gprint(metadata)
                     yield Document(page_content=text, metadata=metadata), e, typev
                 except Exception as err:
                     gui.dprint(str(err))

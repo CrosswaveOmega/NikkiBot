@@ -1,5 +1,6 @@
 import asyncio
 import io
+import gui
 from typing import Literal
 from assetloader import AssetLookup
 import discord
@@ -112,7 +113,7 @@ class HD2OverviewView(discord.ui.View):
 
     async def est(self, interaction: discord.Interaction, button: discord.ui.Button):
         est = self.cog.apistatus.estimates()
-        print(est)
+        gui.gprint(est)
         title = "Galactic War Forecast"
         embed = discord.Embed(title=f"{title}")
         embeds = [embed]
@@ -145,7 +146,7 @@ class HD2OverviewView(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         stations = await self.cog.apistatus.get_station()
-        print(stations)
+        gui.gprint(stations)
         embeds = []
         for name, val in stations.items():
             emb = hd2.station_embed(
@@ -207,7 +208,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 new_cls = hd2.ApiStatus.from_dict(snap, client=hdoverride)
                 self.apistatus = new_cls
             except Exception as e:
-                print(e)
+                gui.gprint(e)
                 self.bot.logs.exception(e)
         Guild_Task_Functions.add_task_function("UPDATEOVERVIEW", self.gtask_update)
         Guild_Task_Functions.add_task_function("WARSTATUS", self.gtask_map)
@@ -215,7 +216,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         self.bot.add_view(HD2OverviewView(self))
         this_planet = self.apistatus.planets.get(64, None)
         if not this_planet:
-            print("NOPLANET")
+            gui.gprint("NOPLANET")
         else:
             this = this_planet.position
             if not this:
@@ -261,10 +262,10 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         Guild_Task_Functions.remove_task_function("UPDATEOVERVIEW")
 
     async def planet_tracker(self):
-        print(self.apistatus.planets.keys())
+        gui.gprint(self.apistatus.planets.keys())
         this_planet = self.apistatus.planets.get(64, None)
         if not this_planet:
-            print("No planet")
+            gui.gprint("No planet")
             self.outstring = "No planet"
             return
         this = this_planet.position
@@ -340,20 +341,20 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             f"Estimated time to reach target average without accel: {avg_speed_only_time}\n"
         )
         self.outstring = outstring
-        print(outstring)
+        gui.gprint(outstring)
 
     async def update_data(self):
         if self.api_up:
             await self.apistatus.update_data()
             hd2.save_to_json(self.apistatus.to_dict(), "./saveData/hd2_snapshot.json")
-            # print(self.apistatus.war)
+            # gui.gprint(self.apistatus.war)
             hd2.add_to_csv(self.apistatus)
 
             # await self.planet_tracker()
         return
 
     async def make_planets(self, ctx, usebiome=""):
-        print("Updating planets.")
+        gui.gprint("Updating planets.")
 
         async def update_planet(planet, ctx):
             planetbiome = self.apistatus.statics.galaxystatic["planets"].get(
@@ -388,7 +389,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
     def draw_img(self):
         """Create a GIF map."""
-        print("Updating map.")
+        gui.gprint("Updating map.")
         file_path = "./assets/GalacticMap.png"
         img = hd2.create_gif(file_path, apistat=self.apistatus)
         self.img = img
@@ -398,7 +399,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             "hd2", {}
         )
         try:
-            print("updating war")
+            gui.gprint("updating war")
             await self.update_data()
 
             await asyncio.gather(asyncio.to_thread(self.draw_img), asyncio.sleep(1))
@@ -538,7 +539,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             await asyncio.gather(asyncio.to_thread(self.draw_img), asyncio.sleep(1))
             img = self.img
 
-        # print(img)
+        # gui.gprint(img)
         liberations, defenses = 0, 0
         for i, campl in self.apistatus.campaigns.items():
             this = campl.get_first()
@@ -807,7 +808,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     @pc.command(name="station", description="get space station embed.")
     async def stationstate(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
-        print("GETTING STATIONS")
+        gui.gprint("GETTING STATIONS")
         stations = await self.apistatus.get_station()
         for i, v in stations.items():
             await ctx.send(
@@ -841,7 +842,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         planets = self._shared_autocomplete_logic(
             self.apistatus.planets.values(), current
         )
-        # print(planets)
+        # gui.gprint(planets)
         return planets
 
     async def campaign_autocomplete(
@@ -852,7 +853,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         """
         campaigns = (l.get_first().planet for l in self.apistatus.campaigns.values())
         planets = self._shared_autocomplete_logic(campaigns, current)
-        # print(planets)
+        # gui.gprint(planets)
         return planets
 
     def _shared_autocomplete_logic(self, items, current: str):
@@ -1291,9 +1292,9 @@ async def setup(bot):
     module_name = "cogs.HD2"
     try:
         importlib.reload(hd2)
-        print(f"{module_name} reloaded successfully.")
+        gui.gprint(f"{module_name} reloaded successfully.")
     except ImportError:
-        print(f"Failed to reload {module_name}.")
+        gui.gprint(f"Failed to reload {module_name}.")
     await bot.add_cog(HelldiversCog(bot))
 
 

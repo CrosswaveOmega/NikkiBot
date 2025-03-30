@@ -1,5 +1,7 @@
 import discord
 from discord import PartialEmoji
+
+import gui
 from .AudioContainer import AudioContainer
 
 
@@ -245,7 +247,7 @@ class PlayerButtons(discord.ui.View):
                     else:
                         add += 1
                 except Exception as e:
-                    print(e)
+                    gui.gprint(e)
                     err += 1
             if not errs:
                 await interaction.edit_original_response(

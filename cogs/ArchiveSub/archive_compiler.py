@@ -271,7 +271,6 @@ class ArchiveCompiler:
             off = 0
 
             while ap.remain_time() < upper_lim:
-                # print(ap.remain_time())
                 this_grouped = ChannelSep.get_unposted_separators(self.guild.id, 1, off)
                 if not this_grouped:
                     break

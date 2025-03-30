@@ -37,7 +37,7 @@ class StarboardCog(commands.Cog):
     async def reaction_action(
         self, fmt: str, payload: discord.RawReactionActionEvent
     ) -> None:
-        '''Preform a starboard related action for reaction.'''
+        """Preform a starboard related action for reaction."""
         try:
             self.bot.logs.info(str(payload.emoji))
             if payload.guild_id not in self.server_emoji_caches:
@@ -45,12 +45,11 @@ class StarboardCog(commands.Cog):
                     payload.guild_id
                 ] = await StarboardEmojis.get_emojis(payload.guild_id, 100)
 
-            
             if payload.guild_id not in self.ignore_channels_cache:
                 self.ignore_channels_cache[
                     payload.guild_id
                 ] = await StarboardIgnoreChannels.get_channels(payload.guild_id, 100)
-            #ensure emoji is in cache
+            # ensure emoji is in cache
             if str(payload.emoji) not in self.server_emoji_caches[payload.guild_id]:
                 return
 
@@ -61,8 +60,11 @@ class StarboardCog(commands.Cog):
             channel = guild.get_channel_or_thread(payload.channel_id)
             if not isinstance(channel, (discord.Thread, discord.TextChannel)):
                 return
-            if isinstance(channel,discord.Thread):
-                if int(channel.parent_id) in self.ignore_channels_cache[payload.guild_id]:
+            if isinstance(channel, discord.Thread):
+                if (
+                    int(channel.parent_id)
+                    in self.ignore_channels_cache[payload.guild_id]
+                ):
                     return
 
             if int(payload.channel_id) in self.ignore_channels_cache[payload.guild_id]:

@@ -261,7 +261,6 @@ class Batch:
             self.sector[sector_name].add_event(event, key)
         elif planet_name is not None:
             if planet_name not in self.planets:
-                # print("Adding ", planet_name)
                 self.planets[planet_name] = PlanetEvents(planet)
             self.planets[planet_name].add_event(event, key)
         else:
@@ -282,7 +281,6 @@ class Batch:
         planet: Optional[Planet] = None
 
         key: str = f"{place}_{mode}"
-        # print(key)
 
         if place in ["campaign", "planetevents"]:
             va = value
@@ -431,7 +429,6 @@ class Batch:
                         text: List[str] = self.format_combo_text(
                             c, planet_data, self.hd2[c]
                         )
-                        # print(text)
                         combos.extend(text)
                     else:
                         combos.append(str(c))
@@ -449,7 +446,6 @@ class Batch:
                         text: List[str] = self.format_combo_text(
                             c, sector_data, self.hd2[c]
                         )
-                        # print(text)
                         combos.extend(text)
                     else:
                         combos.append(str(c))
@@ -466,7 +462,6 @@ class Batch:
                         text: List[str] = self.format_combo_text(
                             c, general, self.hd2[c]
                         )
-                        # print(text)
                         combos.extend(text)
                     else:
                         combos.append(str(c))
@@ -1065,7 +1060,6 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
         for event in events:
             batch_id = event["batch"]
-            # print(batch_id)
             if batch_id not in self.batches:
                 self.batches[batch_id] = Batch(batch_id)
             self.batches[batch_id].process_event(event, self.apistatus)
