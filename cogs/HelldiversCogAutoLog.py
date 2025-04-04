@@ -931,7 +931,7 @@ class Embeds:
         if "position" in dump:
             new_posx = dump["position"].get('x',{'new':0}).get("new", 0)
             new_posy = dump["position"].get('y',{'new':0}).get("new", 0)
-            specialtext += f"\n*`{name} moves to X {new_posx} Y {new_posy} ({custom_strftime(campaign.retrieved_at)}`)"
+            specialtext += f"\n*`{name} moves to X {campaign.position.x} Y {campaign.position.y} ({custom_strftime(campaign.retrieved_at)}`)"
 
         emb = discord.Embed(
             title=f"{name} Field Change",
