@@ -929,8 +929,8 @@ class Embeds:
             new_decay = round(maths.dps_to_lph(new_decay), 3)
             specialtext += f"\n* Regen Rate: `{old_decay}`->`{new_decay}`"
         if "position" in dump:
-            new_posx = dump["position"]["x"].get("new", 0)
-            new_posy = dump["position"]["y"].get("new", 0)
+            new_posx = dump["position"].get('x',{'new':0}).get("new", 0)
+            new_posy = dump["position"].get('y',{'new':0}).get("new", 0)
             specialtext += f"\n*`{name} moves to X {new_posx} Y {new_posy} ({custom_strftime(campaign.retrieved_at)}`)"
 
         emb = discord.Embed(

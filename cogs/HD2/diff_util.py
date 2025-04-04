@@ -368,7 +368,7 @@ async def detect_loggable_changes(
         superlist.append(item)
         await QueueAll.put([item])
     out["stats_raw"]["changes"] = rawout
-    logs.info("Starting loggable detection, stand by...")
+    logs.debug("Starting loggable detection, stand by...")
     superlist += await process_planet_attacks(
         new.status.planetAttacks,
         old.status.planetAttacks,
@@ -391,7 +391,7 @@ async def detect_loggable_changes(
     )
 
     if new.news_feed is not None and old.news_feed is not None:
-        logs.info("News feed loggable detection, stand by...")
+        logs.debug("News feed loggable detection, stand by...")
 
         superlist += await process_planet_events(
             new.news_feed,
@@ -407,7 +407,7 @@ async def detect_loggable_changes(
             ],
             game_time=gametime,
         )
-    logs.info("DSS movement detection, stand by...")
+    logs.debug("DSS movement detection, stand by...")
     superlist += await process_planet_events(
         new.status.spaceStations,
         old.status.spaceStations,
@@ -419,7 +419,7 @@ async def detect_loggable_changes(
         game_time=gametime,
     )
 
-    logs.info("Global Resourse detection, stand by...")
+    logs.debug("Global Resourse detection, stand by...")
     superlist += await process_planet_events(
         new.status.globalResources,
         old.status.globalResources,
@@ -430,7 +430,7 @@ async def detect_loggable_changes(
         ["retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
-    logs.info("campaigns detection, stand by...")
+    logs.debug("campaigns detection, stand by...")
     superlist += await process_planet_events(
         new.status.campaigns,
         old.status.campaigns,
@@ -441,7 +441,7 @@ async def detect_loggable_changes(
         ["retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
-    logs.info("planet events detection, stand by...")
+    logs.debug("planet events detection, stand by...")
     superlist += await process_planet_events(
         new.status.planetEvents,
         old.status.planetEvents,
@@ -452,7 +452,7 @@ async def detect_loggable_changes(
         ["health", "retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
-    logs.info("planet status detection, stand by...")
+    logs.debug("planet status detection, stand by...")
     superlist += await process_planet_events(
         new.status.planetStatus,
         old.status.planetStatus,
@@ -463,7 +463,7 @@ async def detect_loggable_changes(
         ["health", "players", "retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
-    logs.info("global event detection, stand by...")
+    logs.debug("global event detection, stand by...")
     superlist += await process_planet_events(
         new.status.globalEvents,
         old.status.globalEvents,
@@ -491,7 +491,7 @@ async def detect_loggable_changes(
             )
             superlist.append(item)
             await QueueAll.put([item])
-        logs.info("planet info detection, stand by...")
+        logs.debug("planet info detection, stand by...")
         superlist += await process_planet_events(
             new.war_info.planetInfos,
             old.war_info.planetInfos,
