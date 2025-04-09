@@ -393,12 +393,20 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(f"Done with chunk {e + 1}:{allv}.")
 
 
-    def make_map(self):
+    async def make_map(self):
         """Create a GIF map."""
-        gui.gprint("Updating map.")
-        file_path = "./assets/GalacticMap.png"
-        img = hd2.create_png(file_path, apistat=self.apistatus)
-        self.img = img
+        
+        gui.gprint("updating map")
+        try:
+            await asyncio.gather(asyncio.to_thread(self.draw_img), asyncio.sleep(1))
+            gui.gprint("Updating map.")
+            file_path = "./assets/GalacticMap.png"
+            img = hd2.create_png(file_path, apistat=self.apistatus)
+            self.img = img
+        except Exception as e:
+            await self.bot.send_error(e, "Message update cleanup error.")
+            # gui.gprint(str(e))
+
 
     def draw_img(self):
         """Create a GIF map."""
@@ -414,8 +422,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         try:
             gui.gprint("updating war")
             await self.update_data()
-
-            
             #await asyncio.gather(asyncio.to_thread(self.draw_img), asyncio.sleep(1))
 
         except Exception as e:
