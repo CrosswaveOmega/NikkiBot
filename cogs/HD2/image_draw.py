@@ -183,7 +183,7 @@ def highlight(img, index, x, y, name, hper, owner, event, task_planets, health=0
 
 
 def place_planet(index, frames_dict):
-    filepath = f"./assets/planets/planet_{index}_rotate.png"
+    filepath = f"./assets/planets/planet_{index}.png"
     if os.path.exists(filepath):
         frames_dict[index] = []
         with Image.open(filepath) as planetimg:
