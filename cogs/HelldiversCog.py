@@ -235,7 +235,12 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if not TCTaskManager.does_task_exist("SuperEarthStatus"):
             self.tc_task = TCTask("SuperEarthStatus", robj, robj.after(st))
             self.tc_task.assign_wrapper(self.update_api)
-
+        
+        start_date = datetime(2023, 1, 1, 19, 48)
+        robj = rrule(freq=DAILY, interval=1, dtstart=start_date)
+        if not TCTaskManager.does_task_exist("SuperEarthMapMaker"):
+            self.tc_task = TCTask("SuperEarthMapMaker", robj, robj.after(st))
+            self.tc_task.assign_wrapper(self.make_map)
         # self.update_api.start()
 
     def server_profile_field_ext(self, guild: discord.Guild):
@@ -387,11 +392,19 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
             await ctx.send(f"Done with chunk {e + 1}:{allv}.")
 
+
+    def make_map(self):
+        """Create a GIF map."""
+        gui.gprint("Updating map.")
+        file_path = "./assets/GalacticMap.png"
+        img = hd2.create_png(file_path, apistat=self.apistatus)
+        self.img = img
+
     def draw_img(self):
         """Create a GIF map."""
         gui.gprint("Updating map.")
         file_path = "./assets/GalacticMap.png"
-        img = hd2.create_gif(file_path, apistat=self.apistatus)
+        img = hd2.create_png(file_path, apistat=self.apistatus)
         self.img = img
 
     async def update_api(self):
@@ -466,7 +479,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         try:
             profile = ServerHDProfile.get(context.guild.id)
             if profile:
-                if not
                 await self.get_map(context)
                 return "OK"
         except Exception as e:
