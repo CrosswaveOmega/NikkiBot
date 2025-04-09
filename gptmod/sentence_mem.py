@@ -16,10 +16,8 @@ import threading
 import gptmod.util as util
 import gui
 
-from gptmod.lancetools import LanceTools, DocumentScoreVector, LanceBetter
 from utility.debug import Timer
-
-DocumentScoreVector = None
+DocumentScoreVector=None
 
 
 class MemoryFunctions(GPTFunctionLibrary):
@@ -236,8 +234,10 @@ class SentenceMemory:
         # dimensions = 384
         self.guildid = guild.id
         self.userid = user.id
+        
+        from gptmod.lancetools import LanceTools
         metadata = {"desc": "Simple long term memory.  384 dimensions."}
-        self.coll: LanceBetter = LanceTools.get_collection(
+        self.coll= LanceTools.get_collection(
             "sentence_mem", embed=bot.embedding()
         )
         self.shortterm = {}

@@ -402,7 +402,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             gui.gprint("updating war")
             await self.update_data()
 
-            await asyncio.gather(asyncio.to_thread(self.draw_img), asyncio.sleep(1))
+            
+            #await asyncio.gather(asyncio.to_thread(self.draw_img), asyncio.sleep(1))
 
         except Exception as e:
             await self.bot.send_error(e, "Message update cleanup error.")
@@ -465,6 +466,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         try:
             profile = ServerHDProfile.get(context.guild.id)
             if profile:
+                if not
                 await self.get_map(context)
                 return "OK"
         except Exception as e:
@@ -1011,33 +1013,33 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         emb = hd2.campaign_view(self.apistatus, self.hd2)
         await ctx.send(embeds=emb)
 
-    @pc.command(name="map", description="get a scrollable galactic map.")
-    @app_commands.describe(planet="Focus map on this planet.")
-    @app_commands.describe(animated="Show an animated map, take more time to scroll.")
-    @app_commands.autocomplete(planet=planet_autocomplete)
-    async def map(
-        self, interaction: discord.Interaction, planet: int = 0, animated: bool = False
-    ):
-        ctx: commands.Context = await self.bot.get_context(interaction)
-        mes = await ctx.send("please wait...", ephemeral=True)
-        img = self.img
-        if not img:
-            await asyncio.gather(asyncio.to_thread(self.draw_img), asyncio.sleep(1))
-            img = self.img
-            # await mes.edit(content="Image not available.")
-            # return
-        cx, cy = 0, 0
-        if planet in self.apistatus.planets:
-            pos = self.apistatus.planets[planet].position
-            cx, cy = pos.x, pos.y
-        view = hd2.MapViewer(
-            user=ctx.author,
-            img=img,
-            initial_coor=hd2.get_im_coordinates(cx, cy),
-            oneonly=animated,
-        )
-        emb, file = view.make_embed()
-        await mes.edit(content="done", attachments=[file], embed=emb, view=view)
+    # @pc.command(name="map", description="get a scrollable galactic map.")
+    # @app_commands.describe(planet="Focus map on this planet.")
+    # @app_commands.describe(animated="Show an animated map, take more time to scroll.")
+    # @app_commands.autocomplete(planet=planet_autocomplete)
+    # async def map(
+    #     self, interaction: discord.Interaction, planet: int = 0, animated: bool = False
+    # ):
+    #     ctx: commands.Context = await self.bot.get_context(interaction)
+    #     mes = await ctx.send("please wait...", ephemeral=True)
+    #     img = self.img
+    #     if not img:
+    #         await asyncio.gather(asyncio.to_thread(self.draw_img), asyncio.sleep(1))
+    #         img = self.img
+    #         # await mes.edit(content="Image not available.")
+    #         # return
+    #     cx, cy = 0, 0
+    #     if planet in self.apistatus.planets:
+    #         pos = self.apistatus.planets[planet].position
+    #         cx, cy = pos.x, pos.y
+    #     view = hd2.MapViewer(
+    #         user=ctx.author,
+    #         img=img,
+    #         initial_coor=hd2.get_im_coordinates(cx, cy),
+    #         oneonly=animated,
+    #     )
+    #     emb, file = view.make_embed()
+    #     await mes.edit(content="done", attachments=[file], embed=emb, view=view)
 
     @app_commands.command(
         name="stratagem_roulette", description="Get a random stratagem loadout."
