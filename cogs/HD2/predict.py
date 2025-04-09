@@ -187,8 +187,8 @@ def predict_needed_players(target_eps, mp_mult):
     needed = y_pred[0]
 
     # Calculate the standard error of the prediction
-    se_of_prediction = compute_se_of_prediction(X_new, players_needed_model, mse)
-    return needed, se_of_prediction
+    #se_of_prediction = compute_se_of_prediction(X_new, players_needed_model, mse)
+    return needed, 0.0 #se_of_prediction
 
 
 def predict_eps_for_players(players, mp_mult):
@@ -204,8 +204,8 @@ def predict_eps_for_players(players, mp_mult):
     needed = y_pred[0]
 
     
-    se_of_prediction = compute_se_of_prediction(X_new, players_to_eps_model, mse)
-    return needed, se_of_prediction
+    #se_of_prediction = compute_se_of_prediction(X_new, players_to_eps_model, mse)
+    return needed, 0.0 #se_of_prediction
 
 
 def make_graph():
