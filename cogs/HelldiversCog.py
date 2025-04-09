@@ -572,7 +572,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             name="Current Field",
             value=f"Liberations:{liberations}\n Defences:{defenses}",
         )
-        embed.set_image(url="attachment://map.gif")
+        embed.set_image(url="attachment://map.png")
         embed.timestamp = discord.utils.utcnow()
         await context.send(embed=embed, file=discord.File(img))
 
