@@ -177,6 +177,9 @@ class LanceBetter(LanceDB):
                     self._id_key: ids[idx],
                     self._text_key: text,
                 }
+            #This is easier for lancedb.
+            #Having a metadata struct causes all kinds of issues.
+            
             for i, v in metadata.items():
                 target_doc[i]=v
             docs.append(
@@ -271,6 +274,19 @@ class LanceBetter(LanceDB):
         
 
     def get_metadata(self, results, inc: List[str] = []) -> List[Dict[str, Any]]:
+        """
+        Extract metadata from a LanceDB table query based on column names.
+        It's easier on maintaining lancedb tables if the metadata 
+        ISN'T wrapped inside a single "metadata" field struct.
+        Args:
+            results: The results from a LanceDB table query.
+            inc: A list of column names to include in the metadata extraction,
+                 excluding the default vector, id, and text keys.
+
+        Returns:
+            A list of dictionaries where each dictionary contains the metadata
+            for a corresponding row in the results.
+        """
         exclude = {self._vector_key, self._id_key, self._text_key}
         exclude.update(inc)
 
@@ -295,7 +311,9 @@ class LanceBetter(LanceDB):
         else:
             score_col = None
 
-        # Use custom metadata instead of the "metadata" field
+        # It's easier on lancedb if the metadata fields
+        # aren't wrapped in a struct.
+        
         metadata_list = self.get_metadata(results)
 
         if score_col is None or not score:

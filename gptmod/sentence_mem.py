@@ -144,14 +144,14 @@ async def try_until_ok(async_func, *args, **kwargs):
 
 def split_document(doc: Document, present_mem=""):
     """
-    Splits a Document object into smaller chunks based on sentences while maintaining metadata.
+    Splits a Document object into smaller chunks based on sentences while maintaining 
 
     Args:
         doc (Document): The Document object to be split.
         present_mem (str, optional): Additional memory context (default is "").
 
     Returns:
-        List[Document]: A list of new Document objects with split content and updated metadata.
+        List[Document]: A list of new Document objects with split content and updated 
     """
     newdata = []
     metadata = doc.metadata
@@ -339,7 +339,7 @@ class SentenceMemory:
     async def search_sim(self, message: discord.Message) -> List[DocumentScoreVector]:
         persist = "saveData"
 
-        filterwith = f"metadata.foruser = {message.author.id} AND metadata.forguild = {message.guild.id};"
+        filterwith = f"foruser = {message.author.id} AND forguild = {message.guild.id};"
 
         sources: Dict[str : Dict[int, Any]] = {}
         with Timer() as all_timer:
@@ -369,7 +369,7 @@ class SentenceMemory:
     async def dump_memory(self, message: discord.Message) -> List[DocumentScoreVector]:
         persist = "saveData"
 
-        filterwith = f"metadata.foruser = {message.author.id} AND metadata.forguild = {message.guild.id};"
+        filterwith = f"foruser = {message.author.id} AND forguild = {message.guild.id};"
 
         sources: Dict[str : Dict[int, Any]] = {}
         with Timer() as all_timer:
