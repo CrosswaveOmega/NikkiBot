@@ -194,6 +194,7 @@ class ReadableLoader(dl.WebBaseLoader):
 
             except Exception as e:
                 gui.dprint(f"Error reading url{i}, str({str(e)})",e)
+                self.bot.logs.exception(e)
                 text = souped.get_text(**self.bs_get_text_kwargs)
                 # YIELD THIS:
                 out = (remove_links(text), souped, None)
