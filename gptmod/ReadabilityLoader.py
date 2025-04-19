@@ -24,8 +24,6 @@ logs = logging.getLogger("discord")
 from utility import Timer
 
 
-
-
 def remove_links(markdown_text):
     # Regular expression pattern to match masked links
     # pattern = r'\[([^\]]+)\]\(([^\)]+)\)'
@@ -74,7 +72,7 @@ async def read_article_async(jsenv, url, clearout=True):
     myfile = await assetloader.JavascriptLookup.get_full_pathas(
         "readwebpage.js", "WEBJS", jsenv
     )
-    rsult = await myfile.read_webpage_plain( url, timeout=45)
+    rsult = await myfile.read_webpage_plain(url, timeout=45)
     output = await rsult.get_a("mark")
     header = await rsult.get_a("orig")
     serial = await header.get_dict_a()
@@ -87,19 +85,20 @@ async def read_article_async(jsenv, url, clearout=True):
     simplified_text = re.sub(r"\n+(\s*\n)*", "\n", simplified_text)
     return [simplified_text, serial]
 
+
 async def read_article_aw(jsenv, html, url):
-    now = discord.utils.utcnow()
     getthread = await read_article_direct(jsenv, html, url)
     result = getthread
     text, header = result[0], result[1]
     return text, header
 
+
 async def read_article_normal(jsenv, url):
-    now = discord.utils.utcnow()
     getthread = await read_article_async(jsenv, url)
     result = getthread
     text, header = result[0], result[1]
     return text, header
+
 
 def _build_metadata(soup: Any, url: str) -> dict:
     """Build metadata from BeautifulSoup output."""
@@ -112,8 +111,8 @@ def _build_metadata(soup: Any, url: str) -> dict:
         metadata["language"] = html.get("lang", "No language found.")
     metadata["dateadded"] = datetime.datetime.utcnow().timestamp()
     metadata["date"] = "None"
-    metadata["authors"]="N/A"
-    metadata['website']="SITE UNKNOWN"
+    metadata["authors"] = "N/A"
+    metadata["website"] = "SITE UNKNOWN"
     try:
         dt = find_date(str(soup))
         if dt:
@@ -158,7 +157,6 @@ class ReadableLoader(dl.WebBaseLoader):
         This function is an asyncronous generator."""
 
         regular_urls = []
-        
 
         for e, url in urls:
             regular_urls.append(url)
@@ -186,7 +184,14 @@ class ReadableLoader(dl.WebBaseLoader):
             clean_html = re.sub(
                 r"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>", "", result
             )
-            gui.gprint("attempting read of ", urls[i][0], "length is", len(clean_html), "and snippit",clean_html.strip()[:100])
+            gui.gprint(
+                "attempting read of ",
+                urls[i][0],
+                "length is",
+                len(clean_html),
+                "and snippit",
+                clean_html.strip()[:100],
+            )
             # readable = await check_readability(self.jsenv, clean_html, url)
             # if not readable:  gui.dprint("Not readable link.")
             try:
@@ -194,7 +199,9 @@ class ReadableLoader(dl.WebBaseLoader):
                     if self.check_url_filter(url):
                         text, header = await read_article_normal(self.jsenv, url)
                     else:
-                        text, header = await read_article_aw(self.jsenv, clean_html, url)
+                        text, header = await read_article_aw(
+                            self.jsenv, clean_html, url
+                        )
                 elapsed_time = timer.get_time()
                 gui.gprint(
                     f"READABILITY LOADER: Took {elapsed_time:.4f} seconds to convert {urls[i][0]} to readable."
@@ -204,19 +211,19 @@ class ReadableLoader(dl.WebBaseLoader):
                 yield i, urls[i][0], out
 
             except Exception as e:
-                gui.dprint(f"Error reading url{i}, str({str(e)})",e)
+                gui.dprint(f"Error reading url{i}, str({str(e)})", e)
                 self.bot.logs.exception(e)
                 text = souped.get_text(**self.bs_get_text_kwargs)
                 # YIELD THIS:
                 out = (remove_links(text), souped, None)
                 yield i, urls[i][0], out
-        
-    def check_url_filter(self,url):
+
+    def check_url_filter(self, url):
         parsed = urlparse(url)
-        domain=parsed.netloc.lower()
-        return any(domain.endswith(filter_domain) for filter_domain in self.filtered_domains)
-
-
+        domain = parsed.netloc.lower()
+        return any(
+            domain.endswith(filter_domain) for filter_domain in self.filtered_domains
+        )
 
         # return final_results
 
@@ -256,8 +263,8 @@ class ReadableLoader(dl.WebBaseLoader):
     def load(self) -> List[Document]:
         """Load text from the url(s) in web_path."""
         return list(self.lazy_load())
-    
-    def load_filtered_domains(self,filename="./urlfilters.json"):
+
+    def load_filtered_domains(self, filename="./urlfilters.json"):
         try:
             with open(filename, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -287,7 +294,7 @@ class ReadableLoader(dl.WebBaseLoader):
         self.load_filtered_domains()
         self.markitdown = False
         docs, typev = [], -1
-        
+
         # e is the original fetched url position.
         # i is the position in the self.web_paths list.
         # Result is either a tuple or exception.

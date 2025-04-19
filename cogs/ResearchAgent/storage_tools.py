@@ -210,6 +210,7 @@ async def search_sim(
     filterwith = ""
     if titleres != "None":
         titleres = f"title LIKE '%{titleres}%'"
+        filterwith=titleres
 
     gui.dprint("here")
     if mmr:
