@@ -193,7 +193,7 @@ class ReadableLoader(dl.WebBaseLoader):
                 yield i, urls[i][0], out
 
             except Exception as e:
-                gui.dprint(f"Error reading url{i}",e)
+                gui.dprint(f"Error reading url{i}, str({e})",e)
                 text = souped.get_text(**self.bs_get_text_kwargs)
                 # YIELD THIS:
                 out = (remove_links(text), souped, None)
