@@ -81,9 +81,12 @@ async def read_article_async(jsctx: JSContext, url, clearout=True):
     )
     gui.dprint(url)
     rsult = await myfile.read_webpage_plain(url, timeout=45)
+    gui.dprint(rsult)
 
     output = await rsult.get_a("mark")
     header = await rsult.get_a("orig")
+    gui.gprint(output)
+    gui.gprint(header)
     serial = await header.get_dict_a()
 
     simplified_text = output.strip()

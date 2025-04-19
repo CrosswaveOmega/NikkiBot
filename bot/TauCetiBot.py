@@ -155,7 +155,7 @@ class TCBot(
             # Start up the GuiPanel
             await self.jsenv.init_js_a()
             setup_logging(
-                logging.ERROR, handler=get_filehandler(log_level=logging.WARNING)
+                logging.DEBUG, handler=get_filehandler(log_level=logging.DEBUG)
             )
             guimode = self.config.getbool("gui")
             debugmode = self.config.getbool("debug")
@@ -255,7 +255,8 @@ class TCBot(
         handler2.setFormatter(formatter2)
         # handler2.addFilter(IntegrationCreateFilter("logfilter"))
         discord.utils.setup_logging(level=logging.INFO, handler=handler2, root=False)
-
+        
+        jslogs = logging.getLogger("asyncjs").setLevel(logging.INFO)
         self.logs = logging.getLogger("TCLogger")
         self.logs.setLevel(logging.INFO)
         handlerTC = logging.handlers.RotatingFileHandler(

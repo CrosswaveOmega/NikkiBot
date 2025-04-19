@@ -1,5 +1,6 @@
 """Web base loader class."""
 
+import json
 import logging
 import langchain_community.document_loaders as dl
 from langchain.docstore.document import Document
@@ -14,11 +15,15 @@ import assetloader
 from .metadataenums import MetadataDocType
 from bs4 import BeautifulSoup
 
+from urllib.parse import urlparse
+
 logs = logging.getLogger("discord")
 
 """This is a special loader that makes use of Mozilla's readability library."""
 
 from utility import Timer
+
+
 
 
 def remove_links(markdown_text):
@@ -65,6 +70,23 @@ async def read_article_direct(jsenv, html, url):
     return [simplified_text, serial]
 
 
+async def read_article_async(jsenv, url, clearout=True):
+    myfile = await assetloader.JavascriptLookup.get_full_pathas(
+        "readwebpage.js", "WEBJS", jsenv
+    )
+    rsult = await myfile.read_webpage_plain( url, timeout=45)
+    output = await rsult.get_a("mark")
+    header = await rsult.get_a("orig")
+    serial = await header.get_dict_a()
+
+    simplified_text = output.strip()
+    simplified_text = re.sub(r"(\n){4,}", "\n\n\n", simplified_text)
+    simplified_text = re.sub(r"\n\n", "\n", simplified_text)
+    simplified_text = re.sub(r" {3,}", "  ", simplified_text)
+    simplified_text = simplified_text.replace("\t", "")
+    simplified_text = re.sub(r"\n+(\s*\n)*", "\n", simplified_text)
+    return [simplified_text, serial]
+
 async def read_article_aw(jsenv, html, url):
     now = discord.utils.utcnow()
     getthread = await read_article_direct(jsenv, html, url)
@@ -72,6 +94,12 @@ async def read_article_aw(jsenv, html, url):
     text, header = result[0], result[1]
     return text, header
 
+async def read_article_normal(jsenv, url):
+    now = discord.utils.utcnow()
+    getthread = await read_article_async(jsenv, url)
+    result = getthread
+    text, header = result[0], result[1]
+    return text, header
 
 def _build_metadata(soup: Any, url: str) -> dict:
     """Build metadata from BeautifulSoup output."""
@@ -130,6 +158,7 @@ class ReadableLoader(dl.WebBaseLoader):
         This function is an asyncronous generator."""
 
         regular_urls = []
+        
 
         for e, url in urls:
             regular_urls.append(url)
@@ -142,27 +171,6 @@ class ReadableLoader(dl.WebBaseLoader):
 
         for i, result in enumerate(results):
             if isinstance(result, Exception):
-                # if self.markitdown:
-                #     try:
-                #         markdown = MarkItDown()
-                #         result2 = markdown.convert(url)
-                #         gui.gprint(result2.text_content)
-                #         header = {"title": result2.title or result2.text_content[:100]}
-                #         header["siteName"] = "Siteunknown"
-                #         header["source"] = url
-                #         header["description"] = result2.text_content[:200]
-                #         header["dateadded"] = datetime.datetime.utcnow().timestamp()
-                #         header["date"] = "None"
-                #         header["language"] = "en"
-
-                #         out = (remove_links(result2.text_content), None, header)
-
-                #         yield i, urls[i][0], out
-                #         continue
-                #     except Exception as e:
-                #         yield i, urls[i][0], e
-                #         continue
-                # else:
                 yield i, urls[i][0], result
                 continue
             url = regular_urls[i]
@@ -178,12 +186,15 @@ class ReadableLoader(dl.WebBaseLoader):
             clean_html = re.sub(
                 r"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>", "", result
             )
-            gui.gprint("attempting read of ", urls[i][0], "length is", len(clean_html))
+            gui.gprint("attempting read of ", urls[i][0], "length is", len(clean_html), "and snippit",clean_html.strip()[:100])
             # readable = await check_readability(self.jsenv, clean_html, url)
             # if not readable:  gui.dprint("Not readable link.")
             try:
                 with Timer() as timer:
-                    text, header = await read_article_aw(self.jsenv, clean_html, url)
+                    if self.check_url_filter(url):
+                        text, header = await read_article_normal(self.jsenv, url)
+                    else:
+                        text, header = await read_article_aw(self.jsenv, clean_html, url)
                 elapsed_time = timer.get_time()
                 gui.gprint(
                     f"READABILITY LOADER: Took {elapsed_time:.4f} seconds to convert {urls[i][0]} to readable."
@@ -194,10 +205,18 @@ class ReadableLoader(dl.WebBaseLoader):
 
             except Exception as e:
                 gui.dprint(f"Error reading url{i}, str({str(e)})",e)
+                self.bot.logs.exception(e)
                 text = souped.get_text(**self.bs_get_text_kwargs)
                 # YIELD THIS:
                 out = (remove_links(text), souped, None)
                 yield i, urls[i][0], out
+        
+    def check_url_filter(self,url):
+        parsed = urlparse(url)
+        domain=parsed.netloc.lower()
+        return any(domain.endswith(filter_domain) for filter_domain in self.filtered_domains)
+
+
 
         # return final_results
 
@@ -237,6 +256,26 @@ class ReadableLoader(dl.WebBaseLoader):
     def load(self) -> List[Document]:
         """Load text from the url(s) in web_path."""
         return list(self.lazy_load())
+    
+    def load_filtered_domains(self,filename="./urlfilters.json"):
+        try:
+            with open(filename, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            if isinstance(data, list):
+                self.filtered_domains = set(data)
+            elif isinstance(data, dict):
+                self.filtered_domains = set(data.get("domains", []))
+            else:
+                gui.gprint("Unexpected JSON structure.")
+                self.filtered_domains = set()
+
+        except FileNotFoundError:
+            gui.gprint(f"File '{filename}' not found.")
+            self.filtered_domains = set()
+        except json.JSONDecodeError:
+            gui.gprint("JSON file is not properly formatted.")
+            self.filtered_domains = set()
 
     async def aload(
         self, bot
@@ -245,8 +284,10 @@ class ReadableLoader(dl.WebBaseLoader):
         self.jsenv = bot.jsenv
         self.bot = bot
         self.continue_on_failure = True
+        self.load_filtered_domains()
         self.markitdown = False
         docs, typev = [], -1
+        
         # e is the original fetched url position.
         # i is the position in the self.web_paths list.
         # Result is either a tuple or exception.
