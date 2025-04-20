@@ -136,6 +136,10 @@ class AuditProfile(AIBase):
     def ban(self):
         self.banned = True
         self.banned_since = datetime.now()
+    
+    def unban(self):
+        self.banned = False
+        self.banned_since = None
 
 
 class ServerAIConfig(AIBase):
