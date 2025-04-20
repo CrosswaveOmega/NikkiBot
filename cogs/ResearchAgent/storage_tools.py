@@ -218,11 +218,13 @@ async def search_sim(
             question,
             k=k,
             filter=filterwith,  # {'':titleres}}
+            prefilter=True,
         )
     else:
         docs = await vs.asimilarity_search_with_relevance_scores(
             question,
             k=k,
             filter=filterwith,  # {'':titleres}}
+            prefilter=True,
         )
     return docs
