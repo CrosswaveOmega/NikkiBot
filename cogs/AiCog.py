@@ -654,7 +654,7 @@ class AICog(commands.Cog, TC_Cog_Mixin):
             return
         profile = AuditProfile.get_server(serverid)
         if profile:
-            if profile.banned:
+            if not profile.banned:
                 profile.ban()
                 await ctx.send(f"Good riddance!  The server with id {id} has been banned.")
             else:
