@@ -228,6 +228,7 @@ class StarboardCog(commands.Cog):
                 self.bot.logs.info("...entry edited")
                 await StarboardEntryTable.delete_entry_by_bot_message_url(bot_message)
         else:
+            mess = await urltomessage(bot_message, self.bot,partial=True)
             starboard = await Starboard.get_starboard(mess.guild.id)
             starboard_channel = self.bot.get_channel(starboard.channel_id)
             entry = await StarboardEntryTable.get_entry(message.guild.id, message.id)
