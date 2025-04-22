@@ -102,7 +102,7 @@ async def read_article_normal(jsenv, url):
 
 def _build_metadata(soup: Any, url: str) -> dict:
     """Build metadata from BeautifulSoup output."""
-    metadata = {"source": url}
+    metadata = {"source": url,"language":"EN","title":url,'description':"NO DESCRIPTION!"}
     if title := soup.find("title"):
         metadata["title"] = title.get_text()
     if description := soup.find("meta", attrs={"name": "description"}):
@@ -111,7 +111,7 @@ def _build_metadata(soup: Any, url: str) -> dict:
         metadata["language"] = html.get("lang", "No language found.")
     metadata["dateadded"] = datetime.datetime.utcnow().timestamp()
     metadata["date"] = "None"
-    metadata["authors"] = "N/A"
+    metadata["authors"] = "anon"
     metadata["website"] = "SITE UNKNOWN"
     try:
         dt = find_date(str(soup))
@@ -196,12 +196,9 @@ class ReadableLoader(dl.WebBaseLoader):
             # if not readable:  gui.dprint("Not readable link.")
             try:
                 with Timer() as timer:
-                    if self.check_url_filter(url):
-                        text, header = await read_article_normal(self.jsenv, url)
-                    else:
-                        text, header = await read_article_aw(
-                            self.jsenv, clean_html, url
-                        )
+                    text, header = await read_article_normal(self.jsenv, url)
+                    #if self.check_url_filter(url):text, header = await read_article_normal(self.jsenv, url)
+                    #else: text, header = await read_article_aw(  self.jsenv, clean_html, url)
                 elapsed_time = timer.get_time()
                 gui.gprint(
                     f"READABILITY LOADER: Took {elapsed_time:.4f} seconds to convert {urls[i][0]} to readable."
@@ -313,21 +310,24 @@ class ReadableLoader(dl.WebBaseLoader):
                     if "title" not in metadata:
                         metadata["title"] = "No Title"
                     if header is not None:
+                        gui.gprint({k: str(v)[:10] for k, v in header.items()})
                         if "byline" in header:
                             metadata["authors"] = header["byline"]
+                        elif "authors" not in metadata:
+                            metadata["authors"]="Anon"
                         metadata["website"] = header.get("siteName", "siteunknown")
                         metadata["title"] = header.get("title")
-                        if "date" in header:
-                            metadata["date"] = header["date"]
+                        if "publishedTime" in header:
+                            metadata["date"] = header["publishedTime"]
                         if "dateadded" in header:
                             metadata["dateadded"] = header["dateadded"]
 
-                        if "description" in header:
-                            metadata["description"] = header["description"]
+                        if "excerpt" in header:
+                            metadata["description"] = header["excerpt"]
                         if "source" in header and "source" not in metadata:
                             metadata["source"] = header["source"]
-                        if "language" in header:
-                            metadata["language"] = header["language"]
+                        if "lang" in header:
+                            metadata["language"] = header["lang"]
 
                         typev = MetadataDocType.readertext
 

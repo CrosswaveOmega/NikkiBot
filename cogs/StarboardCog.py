@@ -205,6 +205,9 @@ class StarboardCog(commands.Cog):
     async def edit_one_random(self):
         """Edit one random key/value pair in the to be edited dictionary."""
         (bot_message, message) = random.choice(list(self.to_be_edited.items()))
+        self.bot.logs.info(
+            f"found url {bot_message} for {str(message)}"
+        )
         self.to_be_edited.pop(bot_message)
         mess = await urltomessage(bot_message, self.bot)
         if mess:
