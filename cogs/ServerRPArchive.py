@@ -139,9 +139,9 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         if not source_message:
             return None
         context = await self.bot.get_context(source_message)
-        await context.channel.send("Greetings from GTASK.")
+        #await context.channel.send("Greetings from GTASK.")
         try:
-            await context.invoke(self.bot.get_command("compile_archive"))
+            await context.invoke(self.bot.get_command("compile_archive"),send_all_clear_message=False)
         except Exception as e:
             er = MessageTemplates.get_error_embed(
                 title="Error with AUTO", description=f"{str(e)}"
@@ -1334,7 +1334,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         brief="start archiving the server.  Will only archive messages based on defined archive scope.",
         extras={"guildtask": ["rp_history"]},
     )
-    async def compileArchiveChannel(self, ctx):
+    async def compileArchiveChannel(self, ctx, send_all_clear_message:bool=True):
         """Compile all messages into archive channel.  This can be invoked with options.
         +`full` - get the full history of this server
         +`update` -only update the current archive channel.  DEFAULT.
@@ -1357,7 +1357,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         if LazyContext.get(guild.id) != None:
             await ctx.send("There is an active lazy archive in progress, please wait.")
             return
-        actx = ArchiveCompiler(ctx)
+        actx = ArchiveCompiler(ctx,send_all_clear_message=send_all_clear_message)
         outcome = await actx.start()
         if outcome:
             self.guild_db_cache[str(guild.id)] = outcome
