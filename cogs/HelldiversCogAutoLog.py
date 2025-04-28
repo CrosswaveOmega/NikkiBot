@@ -1072,7 +1072,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             texts = self.batches[batch_id].combo_checker()
             for t in texts:
                 if "DSS_EFFECT" in t:
-                    t=await self.format_dss(self,t)
+                    t=await self.format_dss(t)
                 for hook in list(self.loghook):
                     try:
                         await web.postMessageAsWebhookWithURL(
