@@ -1476,7 +1476,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
     async def format_dss(self,t:str,id=749875195):
         await self.apistatus._update_stations()
-        station=await self.apistatus.stations.values()
+        station=list(self.apistatus.stations.values())[0]
         mode='ends'
         effect="()"
         endeffect=""
