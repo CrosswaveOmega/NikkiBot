@@ -289,20 +289,22 @@ class ApiStatus:
                 return diff, nowv
 
         return None, nowv
+    async def _update_stations(self):
+        active_stations = []
+        for s in self.warall.status.spaceStations:
+            id = s.id32
+            active_stations.append(id)
+            self.stations[id] = "READY"
+        for k in self.stations.keys():
+            id = int(k)
+            station = await GetApiDirectSpaceStation(id, self.client)
+            self.stations[id] = station
 
     async def update_stations(self):
         if (datetime.datetime.now() - self.last_station_time) > datetime.timedelta(
             minutes=15
         ):
-            active_stations = []
-            for s in self.warall.status.spaceStations:
-                id = s.id32
-                active_stations.append(id)
-                self.stations[id] = "READY"
-            for k in self.stations.keys():
-                id = int(k)
-                station = await GetApiDirectSpaceStation(id, self.client)
-                self.stations[id] = station
+            await self._update_stations()
             self.last_station_time = datetime.datetime.now()
 
     async def get_station(self):

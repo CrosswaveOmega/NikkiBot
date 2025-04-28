@@ -10,6 +10,18 @@
         "if station move only"
 
     ],
+    "dss effect": [
+        "DSS deploys to Vog-Sojoth of the Tanis sector",
+        [
+            "[TYPETEXT] [DSS_EFFECT] [DSS_EFFECT_MODE]"
+        ],
+        [
+            "DSS effect"
+        ],
+        "if station move only"
+
+    ],
+    
     "dispatch new": [
         "DSS deploys to Vog-Sojoth of the Tanis sector",
         [

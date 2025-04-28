@@ -19,8 +19,9 @@ from bot import (
     TC_Cog_Mixin,
     TCBot,
 )
-from hd2api import hdml_parse
+from hd2api import hdml_parse,GetApiDirectSpaceStation
 
+import gui
 from utility import WebhookMessageWrapper as web
 from bot.Tasks import TCTask, TCTaskManager
 
@@ -490,6 +491,9 @@ class Batch:
                     (info, dump) = evt.value
                     if "planetIndex" in dump:
                         combinations.append("station move")
+                    elif "activeEffectIds":
+                        gui.gprint(dump)
+                        combinations.append("dss effect")
 
         if (
             "campaign_EventModes.NEW" in trig_list
@@ -1067,6 +1071,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         for batch_id in list(self.batches.keys()):
             texts = self.batches[batch_id].combo_checker()
             for t in texts:
+                if "DSS_EFFECT" in t:
+                    t=await self.format_dss(self,t)
                 for hook in list(self.loghook):
                     try:
                         await web.postMessageAsWebhookWithURL(
@@ -1466,8 +1472,30 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     value=events,
                 )
                 await self.QueueAll.put([item])
-
         self.get_running = False
+
+    async def format_dss(self,t:str,id=749875195):
+        await self.apistatus.update_stations()
+        station=await GetApiDirectSpaceStation(id, self.apistatus.client)
+        mode='ends'
+        effect="()"
+        endeffect=""
+        endsec=0
+        for tact in station.tacticalActions:
+            if tact.status==2:
+                effect=tact.name or "UNKNOWN"
+                mode="starts"
+            elif tact.status==3:
+                if tact.statusExpireAtWarTimeSeconds>endsec:
+                    endsec=tact.statusExpireAtWarTimeSeconds
+                endeffect=tact.name or "UNKNOWN"
+        if mode=="starts":
+            t=t.replace("[DSS_EFFECT]",effect)
+        elif mode=="ends":
+            t=t.replace("[DSS_EFFECT]",endeffect)
+        
+        t=t.replace("[DSS_EFFECT_MODE]",mode)
+        return t
 
     @commands.is_owner()
     @commands.command(name="now_test")
