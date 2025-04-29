@@ -333,7 +333,7 @@ class Batch:
         if mode == EventModes.CHANGE and place == "sectors":
             pass
 
-    def format_combo_text(
+    async def format_combo_text(
         self, ctype: str, planet_data: PlanetEvents, ctext: List[List[str]]
     ) -> List[str]:
         targets: List[str] = []
@@ -380,6 +380,15 @@ class Batch:
                     "[FACTION]", faction_dict.get(planet_data.planet.owner, "UNKNOWN")
                 )
             target += f" ({custom_strftime(planet_data.ret)})"
+            if "DSS_EFFECT" in target:
+                for evt in planet_data.evt:
+                    if evt.mode == EventModes.CHANGE and evt.place == "station":
+                        (info, dump) = evt.value
+                        if "activeEffectIds" in dump:
+                            gui.gprint(dump)
+                            #combinations.append("dss effect")
+                            target=await self.format_dss(target,info.id32)
+
             targets.append(target)
         else:
             out = ctext[1][0]
@@ -389,6 +398,28 @@ class Batch:
             target += f" ({custom_strftime(planet_data.ret)})"
             targets.append(target)
         return targets
+
+    async def format_dss(self,t:str,id=749875195):
+        station=await GetApiDirectSpaceStation(id)
+        mode='ends'
+        effect="()"
+        endeffect=""
+        endsec=0
+        for tact in station.tacticalActions:
+            if tact.status==2:
+                effect=tact.name or "UNKNOWN"
+                mode="starts"
+            elif tact.status==3:
+                if tact.statusExpireAtWarTimeSeconds>endsec:
+                    endsec=tact.statusExpireAtWarTimeSeconds
+                endeffect=tact.name or "UNKNOWN"
+        if mode=="starts":
+            t=t.replace("[DSS_EFFECT]",effect)
+        elif mode=="ends":
+            t=t.replace("[DSS_EFFECT]",endeffect)
+        
+        t=t.replace("[DSS_EFFECT_MODE]",mode)
+        return t
 
     def format_combo_text_generic(
         self, ctype: str, planet_data: GeneralEvents, ctext: List[List[str]]
@@ -414,20 +445,20 @@ class Batch:
         targets.append(target)
         return targets
 
-    def combo_checker(self) -> List[str]:
+    async def combo_checker(self) -> List[str]:
         """Check for event combos"""
         combos: List[str] = []
 
         for planet_data in self.planets.values():
-            trig_list: List[str] = planet_data.trig
-
-            combo: Optional[List[str]] = self.check_trig_combinations(
-                trig_list, planet_data
+            #Start checking all planet events.
+            trigger_list: List[str] = planet_data.trig
+            combo: Optional[List[str]] = self.check_planet_trigger_combinations(
+                trigger_list, planet_data
             )
             if combo:
                 for c in combo:
                     if c in self.hd2:
-                        text: List[str] = self.format_combo_text(
+                        text: List[str] = await self.format_combo_text(
                             c, planet_data, self.hd2[c]
                         )
                         combos.extend(text)
@@ -435,16 +466,16 @@ class Batch:
                         combos.append(str(c))
 
         for sector_data in self.sector.values():
-            trig_list: List[str] = sector_data.trig
-            combos.append(str(sector_data.planet.name) + ":" + ",".join(trig_list))
+            trigger_list: List[str] = sector_data.trig
+            combos.append(str(sector_data.planet.name) + ":" + ",".join(trigger_list))
 
             combo: Optional[List[str]] = self.check_sector_trig_combinations(
-                trig_list, sector_data
+                trigger_list, sector_data
             )
             if combo:
                 for c in combo:
                     if c in self.hd2:
-                        text: List[str] = self.format_combo_text(
+                        text: List[str] = await self.format_combo_text(
                             c, sector_data, self.hd2[c]
                         )
                         combos.extend(text)
@@ -460,7 +491,7 @@ class Batch:
             if combo:
                 for c in combo:
                     if c in self.hd2:
-                        text: List[str] = self.format_combo_text(
+                        text: List[str] = await self.format_combo_text(
                             c, general, self.hd2[c]
                         )
                         combos.extend(text)
@@ -477,42 +508,42 @@ class Batch:
                 return False
         return True
 
-    def check_trig_combinations(
-        self, trig_list: List[str], planet_data: PlanetEvents
+    def check_planet_trigger_combinations(
+        self, trigger_list: List[str], planet_data: PlanetEvents
     ) -> List[str]:
         """Get a list of valid "combos", game events that happen when certain status elements
         are added/removed/changed at the same time."""
         planet: Planet = planet_data.planet
         combinations: List[str] = []
 
-        if "station_EventModes.CHANGE" in trig_list:
+        if "station_EventModes.CHANGE" in trigger_list:
             for evt in planet_data.evt:
                 if evt.mode == EventModes.CHANGE and evt.place == "station":
                     (info, dump) = evt.value
                     if "planetIndex" in dump:
                         combinations.append("station move")
-                    elif "activeEffectIds":
+                    elif "activeEffectIds" in dump:
                         gui.gprint(dump)
                         combinations.append("dss effect")
 
         if (
-            "campaign_EventModes.NEW" in trig_list
-            and "planetevents_EventModes.NEW" not in trig_list
+            "campaign_EventModes.NEW" in trigger_list
+            and "planetevents_EventModes.NEW" not in trigger_list
         ):
             combinations.append("cstart")
 
         if self.contains_all_values(
-            trig_list, ["campaign_EventModes.NEW", "planetevents_EventModes.NEW"]
+            trigger_list, ["campaign_EventModes.NEW", "planetevents_EventModes.NEW"]
         ):
             if planet_data.invasion_check():
                 combinations.append("invasion start")
             else:
                 combinations.append("defense start")
-        if "campaign_EventModes.REMOVE" in trig_list and len(trig_list) == 1:
+        if "campaign_EventModes.REMOVE" in trigger_list and len(trigger_list) == 1:
             combinations.append("cend")
 
         if self.contains_all_values(
-            trig_list, ["campaign_EventModes.REMOVE", "planets_EventModes.CHANGE"]
+            trigger_list, ["campaign_EventModes.REMOVE", "planets_EventModes.CHANGE"]
         ):
             if planet and planet.owner == 1:
                 new, old = planet_data.get_last_planet_owner()
@@ -520,7 +551,7 @@ class Batch:
                     combinations.append("planet won")
 
         if self.contains_all_values(
-            trig_list,
+            trigger_list,
             [
                 "campaign_EventModes.REMOVE",
                 "planetevents_EventModes.REMOVE",
@@ -532,10 +563,10 @@ class Batch:
 
         if (
             self.contains_all_values(
-                trig_list,
+                trigger_list,
                 ["campaign_EventModes.REMOVE", "planetevents_EventModes.REMOVE"],
             )
-            and "planets_EventModes.CHANGE" not in trig_list
+            and "planets_EventModes.CHANGE" not in trigger_list
         ):
             if planet_data.invasion_check():
                 if (
@@ -548,7 +579,7 @@ class Batch:
                 combinations.append("defense won")
 
         if self.contains_all_values(
-            trig_list,
+            trigger_list,
             [
                 "campaign_EventModes.REMOVE",
                 "planetevents_EventModes.REMOVE",
@@ -559,44 +590,44 @@ class Batch:
                 combinations.append("defense won")
 
         if (
-            "planets_EventModes.CHANGE" in trig_list
-            and "campaign_EventModes.REMOVE" not in trig_list
+            "planets_EventModes.CHANGE" in trigger_list
+            and "campaign_EventModes.REMOVE" not in trigger_list
         ):
             if planet and planet.owner != 1:
                 new, old = planet_data.get_last_planet_owner()
                 if old != new:
                     combinations.append("planet flip")
 
-        if "planets_EventModes.CHANGE" in trig_list:
+        if "planets_EventModes.CHANGE" in trigger_list:
             pass
             # combinations.append("pcheck")
 
         if any(
-            value in trig_list for value in ["planetInfo_EventModes.CHANGE"]
+            value in trigger_list for value in ["planetInfo_EventModes.CHANGE"]
         ) and self.is_anew_link(planet, planet_data):
             combinations.append("newlink")
 
         if any(
-            value in trig_list for value in ["planetInfo_EventModes.CHANGE"]
+            value in trigger_list for value in ["planetInfo_EventModes.CHANGE"]
         ) and self.is_destroyed_link(planet, planet_data):
             combinations.append("destroylink")
 
         return combinations if combinations else None
 
     def check_sector_trig_combinations(
-        self, trig_list: List[str], planet_data: SectorEvents
+        self, trigger_list: List[str], planet_data: SectorEvents
     ) -> Optional[List[str]]:
         combinations: List[str] = []
-        if "sectors_EventModes.CHANGE" in trig_list:
+        if "sectors_EventModes.CHANGE" in trigger_list:
             combinations.append("sector_state")
 
         return combinations if combinations else None
 
     def check_generic_trig_combinations(
-        self, trig_list: List[str], general: GeneralEvents
+        self, trigger_list: List[str], general: GeneralEvents
     ) -> Optional[List[str]]:
         combinations: List[str] = []
-        if "news_EventModes.NEW" in trig_list:
+        if "news_EventModes.NEW" in trigger_list:
             combinations.append("dispatch new")
 
         return combinations if combinations else None
@@ -1069,10 +1100,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             self.batches[batch_id].process_event(event, self.apistatus)
 
         for batch_id in list(self.batches.keys()):
-            texts = self.batches[batch_id].combo_checker()
+            texts = await self.batches[batch_id].combo_checker()
             for t in texts:
-                if "DSS_EFFECT" in t:
-                    t=await self.format_dss(t)
                 for hook in list(self.loghook):
                     try:
                         await web.postMessageAsWebhookWithURL(
@@ -1473,29 +1502,6 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 )
                 await self.QueueAll.put([item])
         self.get_running = False
-
-    async def format_dss(self,t:str,id=749875195):
-        await self.apistatus._update_stations()
-        station=list(self.apistatus.stations.values())[0]
-        mode='ends'
-        effect="()"
-        endeffect=""
-        endsec=0
-        for tact in station.tacticalActions:
-            if tact.status==2:
-                effect=tact.name or "UNKNOWN"
-                mode="starts"
-            elif tact.status==3:
-                if tact.statusExpireAtWarTimeSeconds>endsec:
-                    endsec=tact.statusExpireAtWarTimeSeconds
-                endeffect=tact.name or "UNKNOWN"
-        if mode=="starts":
-            t=t.replace("[DSS_EFFECT]",effect)
-        elif mode=="ends":
-            t=t.replace("[DSS_EFFECT]",endeffect)
-        
-        t=t.replace("[DSS_EFFECT_MODE]",mode)
-        return t
 
     @commands.is_owner()
     @commands.command(name="now_test")
