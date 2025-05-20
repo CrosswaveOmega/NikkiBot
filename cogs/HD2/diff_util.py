@@ -278,6 +278,7 @@ async def process_planet_attacks(
             await QueueAll.put([olditem])
     else:
         combined_list = oldlist + newlist
+        gui.gprint(place,combined_list)
         await QueueAll.put(combined_list)
     return pushed_items
 
