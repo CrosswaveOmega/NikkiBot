@@ -973,7 +973,7 @@ class Embeds:
             timestamp=campaign.retrieved_at,
             color=color,
         )
-
+        gui.gprint(type(campaign))
         # Populate fields from PlanetRegion
         if type(campaign) is PlanetRegion:
             field_map = {
