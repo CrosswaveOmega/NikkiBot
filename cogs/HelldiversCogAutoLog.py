@@ -1045,6 +1045,10 @@ class Embeds:
         if "regenPerSecond" in dump:
             old_rps = dump["regenPerSecond"].get("old", 0.0) or 0
             new_rps = dump["regenPerSecond"].get("new", 0.0) or 0
+            if old_rps is None:
+                old_rps=0
+            if new_rps is None:
+                new_rps=0
             old_lph = round(maths.dps_to_lph(old_rps), 3)
             new_lph = round(maths.dps_to_lph(new_rps), 3)
             specialtext += f"\n* Regen Rate: `{old_lph}` → `{new_lph}` LPH"
