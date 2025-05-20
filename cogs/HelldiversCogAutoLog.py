@@ -1005,7 +1005,7 @@ class Embeds:
         embed.add_field(
             name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at, 'F')}"
         )
-        embed.set_author(name="API Value Change")
+        embed.set_author(name="Region Value Change")
         embed.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
 
         return embed
@@ -1081,7 +1081,7 @@ class Embeds:
         embed.add_field(
             name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at, 'F')}"
         )
-        embed.set_author(name="API Value Change")
+        embed.set_author(name="Region Value  Change")
         embed.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
 
         return embed
