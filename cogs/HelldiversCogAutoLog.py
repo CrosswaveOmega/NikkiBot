@@ -948,19 +948,18 @@ class Embeds:
         return emb
 
     @staticmethod
-    def RegionEmbed(
-        campaign: Union["PlanetRegion", "PlanetRegionInfo"],
+    def RegionEmbed_PlanetRegion(
+        campaign: "PlanetRegion",
         planet: Optional["Planet"] = None,
         mode: str = "started",
     ) -> discord.Embed:
         """
-        Generate a Discord embed representing the state or info of a region on a planet,
-        where each data point is displayed as its own field.
+        Generate a Discord embed representing the state of a region on a planet from PlanetRegion data.
         """
         name = "Unknown Planet"
         sector = "Unknown Sector"
         color = 0x8C90B0
-        specialtext = ""\
+        specialtext = ""
 
         if planet:
             name = planet.get_name(False)
@@ -973,10 +972,9 @@ class Embeds:
             timestamp=campaign.retrieved_at,
             color=color,
         )
-        gui.gprint(type(campaign))
-        # Populate fields from PlanetRegion
-        if type(campaign) is PlanetRegion:
-            field_map = {
+        gui.gprint(campaign)
+
+        field_map = {
             "Planet Index": campaign.planetIndex,
             "Region Index": campaign.regionIndex,
             "Owner Faction": campaign.owner,
@@ -985,18 +983,7 @@ class Embeds:
             "Availability Factor": campaign.availabilityFactor,
             "Is Available": campaign.isAvailable,
             "Active Players": campaign.players,
-            }
-        # Populate fields from PlanetRegionInfo
-        elif type(campaign) is PlanetRegionInfo:
-            field_map = {
-            "Planet Index": campaign.planetIndex,
-            "Region Index": campaign.regionIndex,
-            "Settings Hash": campaign.settingsHash,
-            "Max Health": campaign.maxHealth,
-            "Region Size": campaign.regionSize,
-            }
-        else:
-            field_map = {"Error": "Unknown campaign data structure."}
+        }
 
         for field_name, value in field_map.items():
             embed.add_field(name=field_name, value=str(value), inline=True)
@@ -1005,6 +992,53 @@ class Embeds:
             name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at, 'F')}"
         )
         embed.set_author(name="Region Value Change")
+        embed.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
+
+        return embed
+
+
+    @staticmethod
+    def RegionEmbed_PlanetRegionInfo(
+        campaign: "PlanetRegionInfo",
+        planet: Optional["Planet"] = None,
+        mode: str = "started",
+    ) -> discord.Embed:
+        """
+        Generate a Discord embed representing the info of a region on a planet from PlanetRegionInfo data.
+        """
+        name = "Unknown Planet"
+        sector = "Unknown Sector"
+        color = 0x8C90B0
+        specialtext = ""
+
+        if planet:
+            name = planet.get_name(False)
+            sector = planet.sector or "N/A"
+            color = colors2.get(planet.currentOwner.lower(), 0x8C90B0)
+
+        embed = discord.Embed(
+            title=f"{name} Region Report",
+            description=f"Status **{mode}** for {name}, in sector {sector}.{specialtext}",
+            timestamp=campaign.retrieved_at,
+            color=color,
+        )
+        gui.gprint(campaign)
+
+        field_map = {
+            "Planet Index": campaign.planetIndex,
+            "Region Index": campaign.regionIndex,
+            "Settings Hash": campaign.settingsHash,
+            "Max Health": campaign.maxHealth,
+            "Region Size": campaign.regionSize,
+        }
+
+        for field_name, value in field_map.items():
+            embed.add_field(name=field_name, value=str(value), inline=True)
+
+        embed.add_field(
+            name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at, 'F')}"
+        )
+        embed.set_author(name="Region Info Report")
         embed.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
 
         return embed
@@ -1404,10 +1438,15 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.globalEventEmbed(value, "started")
             elif place == "news":
                 embed = Embeds.NewsFeedEmbed(value, "started")
-            elif place== "planetregions" or place=="regioninfo":
+            elif place== "planetregions":
                 planet = self.apistatus.planets.get(int(value.planetIndex), None)
-                embed = Embeds.RegionEmbed(
+                embed = Embeds.RegionEmbed_PlanetRegion(
                     value, planet, f"added in {place}"
+                )
+            elif place=="regioninfo":
+                planet = self.apistatus.planets.get(int(value.planetIndex), None)
+                embed = Embeds.RegionEmbed_PlanetRegionInfo(
+                    value, planet, f"removed in {place}"
                 )
 
         elif event_type == EventModes.REMOVE:
@@ -1454,10 +1493,15 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     value,
                     "removed",
                 )
-            elif place== "planetregions" or place=="regioninfo":
+            elif place== "planetregions":
                 planet = self.apistatus.planets.get(int(value.planetIndex), None)
-                embed = Embeds.RegionEmbed(
+                embed = Embeds.RegionEmbed_PlanetRegion(
                     value, planet, f"added in {place}"
+                )
+            elif place=="regioninfo":
+                planet = self.apistatus.planets.get(int(value.planetIndex), None)
+                embed = Embeds.RegionEmbed_PlanetRegionInfo(
+                    value, planet, f"removed in {place}"
                 )
         elif event_type == EventModes.CHANGE:
             print("IS_EventModes.CHANGE")
