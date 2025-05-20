@@ -975,25 +975,25 @@ class Embeds:
         )
 
         # Populate fields from PlanetRegion
-        if isinstance(campaign, PlanetRegion):
+        if type(campaign) is PlanetRegion:
             field_map = {
-                "Planet Index": campaign.planetIndex,
-                "Region Index": campaign.regionIndex,
-                "Owner Faction": campaign.owner,
-                "Health": campaign.health,
-                "Regen Rate": campaign.regenPerSecond,
-                "Availability Factor": campaign.availabilityFactor,
-                "Is Available": campaign.isAvailable,
-                "Active Players": campaign.players,
+            "Planet Index": campaign.planetIndex,
+            "Region Index": campaign.regionIndex,
+            "Owner Faction": campaign.owner,
+            "Health": campaign.health,
+            "Regen Rate": campaign.regenPerSecond,
+            "Availability Factor": campaign.availabilityFactor,
+            "Is Available": campaign.isAvailable,
+            "Active Players": campaign.players,
             }
         # Populate fields from PlanetRegionInfo
-        elif isinstance(campaign, PlanetRegionInfo):
+        elif type(campaign) is PlanetRegionInfo:
             field_map = {
-                "Planet Index": campaign.planetIndex,
-                "Region Index": campaign.regionIndex,
-                "Settings Hash": campaign.settingsHash,
-                "Max Health": campaign.maxHealth,
-                "Region Size": campaign.regionSize,
+            "Planet Index": campaign.planetIndex,
+            "Region Index": campaign.regionIndex,
+            "Settings Hash": campaign.settingsHash,
+            "Max Health": campaign.maxHealth,
+            "Region Size": campaign.regionSize,
             }
         else:
             field_map = {"Error": "Unknown campaign data structure."}

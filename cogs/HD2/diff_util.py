@@ -576,7 +576,7 @@ async def detect_loggable_changes(
         infoout = await get_differing_fields(
             old.war_info,
             new.war_info,
-            to_ignore=["planetInfos", "retrieved_at", "time_delta", "self"],
+            to_ignore=["planetInfos", "regionInfos","retrieved_at", "time_delta", "self"],
         )
         if infoout:
             item = GameEvent(
