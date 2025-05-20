@@ -1056,7 +1056,7 @@ class Embeds:
         embed = discord.Embed(
             title=f"{name} Field Change",
             description=f"Stats **{mode}** for {name}, in sector {sector}.{specialtext}",
-            timestamp=retrieved_at,
+            timestamp=campaign.retrieved_at,
             color=color,
         )
 
@@ -1089,9 +1089,12 @@ class Embeds:
             else:
                 embed.add_field(name=key, value=str(val), inline=True)
 
-        embed.add_field(name="Timestamp", value=f"Timestamp: {fdt(retrieved_at, 'F')}", inline=False)
-        embed.set_author(name="Planet Value Change")
-        embed.set_footer(text=custom_strftime(retrieved_at))
+
+        embed.add_field(
+            name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at, 'F')}"
+        )
+        embed.set_author(name="API Value Change")
+        embed.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
 
         return embed
 
