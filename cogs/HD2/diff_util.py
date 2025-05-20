@@ -352,6 +352,8 @@ async def detect_loggable_changes(
             "planetStatus",
             "planetEvents",
             "globalEvents",
+            "planetRegions",
+            "regionInfo",
             "planetActiveEffects",
             "spaceStations",
             "globalResources",
@@ -463,6 +465,17 @@ async def detect_loggable_changes(
         ["health", "players", "retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
+    superlist += await process_planet_attacks(
+        new.status.planetRegions,
+        old.status.planetRegions,
+        "planetregions",
+        ["planetIndex", "regionIndex"],
+        QueueAll,
+        batch,
+        ["health", "players", "retrieved_at", "time_delta", "self"],
+        game_time=gametime,
+    )
+    
     logs.debug("global event detection, stand by...")
     superlist += await process_planet_events(
         new.status.globalEvents,

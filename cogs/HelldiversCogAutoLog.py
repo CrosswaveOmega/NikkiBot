@@ -38,6 +38,8 @@ from hd2api import (
     GlobalResource,
     PlanetInfo,
     PlanetEvent,
+
+
     Campaign,
     SpaceStationStatus,
     Planet,
@@ -47,6 +49,11 @@ from hd2api import (
     PlanetActiveEffects,
     KnownPlanetEffect,
     build_planet_effect,
+)
+from hd2api.models import(
+    
+    PlanetRegion,
+    PlanetRegionInfo
 )
 
 from hd2api.constants import faction_names
@@ -938,9 +945,156 @@ class Embeds:
         emb.set_footer(text=f"{custom_strftime(evt.retrieved_at)}")
         return emb
 
+        return emb
+
     @staticmethod
-    def dumpEmbedPlanet(
-        campaign: Union[PlanetStatus, PlanetInfo],
+    def RegionEmbed(
+        campaign: Union["PlanetRegion", "PlanetRegionInfo"],
+        planet: Optional["Planet"] = None,
+        mode: str = "started",
+    ) -> discord.Embed:
+        """
+        Generate a Discord embed representing the state or info of a region on a planet,
+        where each data point is displayed as its own field.
+        """
+        name = "Unknown Planet"
+        sector = "Unknown Sector"
+        color = 0x8C90B0
+        specialtext = ""
+        retrieved_at: datetime = getattr(campaign, "retrieved_at", datetime.utcnow())
+
+        if planet:
+            name = planet.get_name(False)
+            sector = planet.sector or "N/A"
+            color = colors2.get(planet.currentOwner.lower(), 0x8C90B0)
+
+        embed = discord.Embed(
+            title=f"{name} Region Report",
+            description=f"Status **{mode}** for {name}, in sector {sector}.{specialtext}",
+            timestamp=retrieved_at,
+            color=color,
+        )
+
+        # Populate fields from PlanetRegion
+        if isinstance(campaign, PlanetRegion):
+            field_map = {
+                "Planet Index": campaign.planetIndex,
+                "Region Index": campaign.regionIndex,
+                "Owner Faction": campaign.owner,
+                "Health": campaign.health,
+                "Regen Rate": campaign.regenPerSecond,
+                "Availability Factor": campaign.availabilityFactor,
+                "Is Available": campaign.isAvailable,
+                "Active Players": campaign.players,
+            }
+        # Populate fields from PlanetRegionInfo
+        elif isinstance(campaign, PlanetRegionInfo):
+            field_map = {
+                "Planet Index": campaign.planetIndex,
+                "Region Index": campaign.regionIndex,
+                "Settings Hash": campaign.settingsHash,
+                "Max Health": campaign.maxHealth,
+                "Region Size": campaign.regionSize,
+            }
+        else:
+            field_map = {"Error": "Unknown campaign data structure."}
+
+        for field_name, value in field_map.items():
+            embed.add_field(name=field_name, value=str(value), inline=True)
+
+        embed.add_field(name="Timestamp", value=f"Timestamp: {fdt(retrieved_at, 'F')}", inline=False)
+        embed.set_author(name="Region Status Update")
+        embed.set_footer(text=custom_strftime(retrieved_at))
+
+        return embed
+
+
+    def dumpEmbedRegion(
+        campaign: Union["PlanetRegion", "PlanetRegionInfo"],
+        dump: Dict[str, Any],
+        planet: Optional["Planet"] = None,
+        mode: str = "started",
+    ) -> discord.Embed:
+        """
+        Generate a Discord embed summarizing differences in region data,
+        with each changed field as its own embed field.
+        """
+        name = "Unknown Planet"
+        sector = "Unknown Sector"
+        color = 0x8C90B0
+        specialtext = ""
+        retrieved_at: datetime = getattr(campaign, "retrieved_at", datetime.utcnow())
+
+        # Set name, sector, and color if planet data is provided
+        if planet:
+            name = planet.get_name(False)
+            sector = planet.sector or "N/A"
+            color = colors2.get(planet.currentOwner.lower(), 0x8C90B0)
+
+        # Owner change color override
+        if "owner" in dump:
+            old_owner = dump["owner"].get("old", 5)
+            new_owner = dump["owner"].get("new", 5)
+            color = getColor(new_owner)
+            specialtext += (
+                f"\n* Owner: `{faction_names.get(old_owner, 'Unknown')}`"
+                f" → `{faction_names.get(new_owner, 'Unknown')}`"
+            )
+
+        # Regen rate change description (LPH)
+        if "regenPerSecond" in dump:
+            old_rps = dump["regenPerSecond"].get("old", 0.0)
+            new_rps = dump["regenPerSecond"].get("new", 0.0)
+            old_lph = round(maths.dps_to_lph(old_rps), 3)
+            new_lph = round(maths.dps_to_lph(new_rps), 3)
+            specialtext += f"\n* Regen Rate: `{old_lph}` → `{new_lph}` LPH"
+
+        embed = discord.Embed(
+            title=f"{name} Field Change",
+            description=f"Stats **{mode}** for {name}, in sector {sector}.{specialtext}",
+            timestamp=retrieved_at,
+            color=color,
+        )
+
+        # Always show planet and region index if available
+        planet_index = getattr(campaign, "planetIndex", "N/A")
+        region_index = getattr(campaign, "regionIndex", "N/A")
+        embed.add_field(name="Planet Index", value=str(planet_index), inline=True)
+        embed.add_field(name="Region Index", value=str(region_index), inline=True)
+
+        # Add each changed value as its own embed field
+        for key, val in dump.items():
+            if isinstance(val, dict) and "old" in val and "new" in val:
+                old = val["old"]
+                new = val["new"]
+
+                if key == "regenPerSecond":
+                    old = round(maths.dps_to_lph(old), 3)
+                    new = round(maths.dps_to_lph(new), 3)
+                    embed.add_field(
+                        name="Regen Rate (LPH)", value=f"`{old}` → `{new}`", inline=True
+                    )
+                elif key == "owner":
+                    old_name = faction_names.get(old, str(old))
+                    new_name = faction_names.get(new, str(new))
+                    embed.add_field(
+                        name="Owner Faction", value=f"`{old_name}` → `{new_name}`", inline=True
+                    )
+                else:
+                    embed.add_field(name=key, value=f"`{old}` → `{new}`", inline=True)
+            else:
+                embed.add_field(name=key, value=str(val), inline=True)
+
+        embed.add_field(name="Timestamp", value=f"Timestamp: {fdt(retrieved_at, 'F')}", inline=False)
+        embed.set_author(name="Planet Value Change")
+        embed.set_footer(text=custom_strftime(retrieved_at))
+
+        return embed
+
+    
+    @staticmethod
+    def dumpEmbedRegion(
+        campaign: Union[PlanetRegion, PlanetRegionInfo],
         dump: Dict[str, Any],
         planet: Optional[Planet],
         mode="started",
@@ -963,10 +1117,6 @@ class Embeds:
             old_decay = round(maths.dps_to_lph(old_decay), 3)
             new_decay = round(maths.dps_to_lph(new_decay), 3)
             specialtext += f"\n* Regen Rate: `{old_decay}`->`{new_decay}`"
-        if "position" in dump:
-            new_posx = dump["position"].get('x',{'new':0}).get("new", 0)
-            new_posy = dump["position"].get('y',{'new':0}).get("new", 0)
-            specialtext += f"\n*`{name} moves to X {campaign.position.x} Y {campaign.position.y} ({custom_strftime(campaign.retrieved_at)}`)"
 
         emb = discord.Embed(
             title=f"{name} Field Change",
@@ -979,7 +1129,6 @@ class Embeds:
         )
         emb.set_author(name="Planet Value Change")
         emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
-        return emb
 
     @staticmethod
     def dumpEmbed(
@@ -1299,6 +1448,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.globalEventEmbed(value, "started")
             elif place == "news":
                 embed = Embeds.NewsFeedEmbed(value, "started")
+            elif place== "planetregions" or place=="regioninfo":
+                planet = self.apistatus.planets.get(int(value.planetIndex), None)
+                embed = Embeds.RegionEmbed(
+                    value, planet, f"added in {place}"
+                )
+
         elif event_type == EventModes.REMOVE:
             if place == "campaign":
                 embed = Embeds.campaignLogEmbed(
@@ -1343,6 +1498,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     value,
                     "removed",
                 )
+            elif place== "planetregions" or place=="regioninfo":
+                planet = self.apistatus.planets.get(int(value.planetIndex), None)
+                embed = Embeds.RegionEmbed(
+                    value, planet, f"added in {place}"
+                )
         elif event_type == EventModes.CHANGE:
             print("IS_EventModes.CHANGE")
             (info, dump) = value
@@ -1384,6 +1544,13 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     embed = Embeds.dumpEmbed(
                         info, dump, "planet", f"changed in {place}"
                     )
+            if place== "planetregions" or place=="regioninfo":
+                planet = self.apistatus.planets.get(int(info.planetIndex), None)
+                if planet:
+                    embed=Embeds.dumpEmbedRegion(info,dump,planet, f"changed in {place}")
+                else:
+                    embed=Embeds.dumpEmbedRegion(info,dump,planet, f"changed in {place}")
+                
             elif place == "stats_raw":
                 embed = Embeds.dumpEmbed(info, dump, "stats", "changed")
             elif place == "info_raw":
