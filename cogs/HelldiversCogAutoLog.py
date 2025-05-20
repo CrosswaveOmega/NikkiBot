@@ -960,8 +960,7 @@ class Embeds:
         name = "Unknown Planet"
         sector = "Unknown Sector"
         color = 0x8C90B0
-        specialtext = ""
-        retrieved_at: datetime = getattr(campaign, "retrieved_at", datetime.utcnow())
+        specialtext = ""\
 
         if planet:
             name = planet.get_name(False)
