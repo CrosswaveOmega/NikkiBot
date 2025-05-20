@@ -1073,20 +1073,7 @@ class Embeds:
                 old = val["old"]
                 new = val["new"]
 
-                if key == "regenPerSecond":
-                    old = round(maths.dps_to_lph(old), 3)
-                    new = round(maths.dps_to_lph(new), 3)
-                    embed.add_field(
-                        name="Regen Rate (LPH)", value=f"`{old}` → `{new}`", inline=True
-                    )
-                elif key == "owner":
-                    old_name = faction_names.get(old, str(old))
-                    new_name = faction_names.get(new, str(new))
-                    embed.add_field(
-                        name="Owner Faction", value=f"`{old_name}` → `{new_name}`", inline=True
-                    )
-                else:
-                    embed.add_field(name=key, value=f"`{old}` → `{new}`", inline=True)
+                embed.add_field(name=key, value=f"`{old}` → `{new}`", inline=True)
             else:
                 embed.add_field(name=key, value=str(val), inline=True)
 
