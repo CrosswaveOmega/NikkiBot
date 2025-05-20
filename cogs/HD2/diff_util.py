@@ -476,8 +476,8 @@ async def detect_loggable_changes(
         game_time=gametime,
     )
     superlist += await process_planet_attacks(
-        new.info.regionInfos,
-        old.info.regionInfos,
+        new.war_info.regionInfos,
+        old.war_info.regionInfos,
         "regioninfo",
         ["planetIndex", "regionIndex"],
         QueueAll,
