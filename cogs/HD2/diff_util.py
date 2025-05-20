@@ -485,6 +485,7 @@ async def detect_loggable_changes(
         ["retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
+    logs.info(f"{str(superlist)}")
     
     logs.debug("global event detection, stand by...")
     superlist += await process_planet_events(
