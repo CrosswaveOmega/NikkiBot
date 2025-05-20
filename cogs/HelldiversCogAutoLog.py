@@ -971,7 +971,7 @@ class Embeds:
         embed = discord.Embed(
             title=f"{name} Region Report",
             description=f"Status **{mode}** for {name}, in sector {sector}.{specialtext}",
-            timestamp=retrieved_at,
+            timestamp=campaign.retrieved_at,
             color=color,
         )
 
@@ -1002,9 +1002,11 @@ class Embeds:
         for field_name, value in field_map.items():
             embed.add_field(name=field_name, value=str(value), inline=True)
 
-        embed.add_field(name="Timestamp", value=f"Timestamp: {fdt(retrieved_at, 'F')}", inline=False)
-        embed.set_author(name="Region Status Update")
-        embed.set_footer(text=custom_strftime(retrieved_at))
+        embed.add_field(
+            name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at, 'F')}"
+        )
+        embed.set_author(name="API Value Change")
+        embed.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
 
         return embed
 
@@ -1023,7 +1025,6 @@ class Embeds:
         sector = "Unknown Sector"
         color = 0x8C90B0
         specialtext = ""
-        retrieved_at: datetime = getattr(campaign, "retrieved_at", datetime.utcnow())
 
         # Set name, sector, and color if planet data is provided
         if planet:
