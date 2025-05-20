@@ -226,24 +226,43 @@ async def process_planet_events(
     return pushed_items
 
 
-async def process_planet_attacks(
-    source, target, place, keys, QueueAll, batch, exclude=[], game_time=0
+async def process_planet_events(
+    source, target, place, key, QueueAll, batch, exclude=[], game_time=0
 ):
     pushed_items = []
-    newlist = []
-    oldlist = []
-    for event in source:
-        oc = await check_compare_value_list(keys, [event[key] for key in keys], target)
-        if not oc:
-            item = GameEvent(mode=EventModes.NEW, place=place, batch=batch, value=event)
-            newlist.append(item)
-            pushed_items.append(item)
-            # await QueueAll.put(item)
+    new_items = []
+    change_items = []
+    old_items = []
 
+    # Detect new and changed items
+    for event in source:
+        oc = await check_compare_value(key, event[key], target)
+        if not oc:
+            item = GameEvent(
+                mode=EventModes.NEW,
+                place=place,
+                batch=batch,
+                value=event,
+                game_time=game_time,
+            )
+            new_items.append(item)
+            pushed_items.append(item)
+        else:
+            differ = await get_differing_fields(oc, event, to_ignore=exclude)
+            if differ:
+                item = GameEvent(
+                    mode=EventModes.CHANGE,
+                    place=place,
+                    batch=batch,
+                    value=(event, differ),
+                    game_time=game_time,
+                )
+                change_items.append(item)
+                pushed_items.append(item)
+
+    # Detect removed items
     for event in target:
-        if not await check_compare_value_list(
-            keys, [event[key] for key in keys], source
-        ):
+        if not await check_compare_value(key, event[key], source):
             item = GameEvent(
                 mode=EventModes.REMOVE,
                 place=place,
@@ -251,35 +270,17 @@ async def process_planet_attacks(
                 value=event,
                 game_time=game_time,
             )
+            old_items.append(item)
             pushed_items.append(item)
-            oldlist.append(item)
-            # await QueueAll.put(item)
 
-    if place == "planetAttacks":
-        if newlist:
-            newitem = GameEvent(
-                mode=EventModes.ADDED,
-                place=place,
-                batch=batch,
-                value=newlist,
-                cluster=True,
-                game_time=game_time,
-            )
-            await QueueAll.put([newitem])
-        if oldlist:
-            olditem = GameEvent(
-                mode=EventModes.REMOVED,
-                place=place,
-                batch=batch,
-                value=oldlist,
-                cluster=True,
-                game_time=game_time,
-            )
-            await QueueAll.put([olditem])
-    else:
-        combined_list = oldlist + newlist
-        gui.gprint(place,combined_list)
-        await QueueAll.put(combined_list)
+    # Send to queue
+    if new_items:
+        await QueueAll.put(new_items)
+    if change_items:
+        await QueueAll.put(change_items)
+    if old_items:
+        await QueueAll.put(old_items)
+
     return pushed_items
 
 
