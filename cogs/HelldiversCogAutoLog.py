@@ -1033,8 +1033,8 @@ class Embeds:
 
         # Owner change color override
         if "owner" in dump:
-            old_owner = dump["owner"].get("old", 5)
-            new_owner = dump["owner"].get("new", 5)
+            old_owner = dump["owner"].get("old", 5) or 0
+            new_owner = dump["owner"].get("new", 5) or 0
             color = getColor(new_owner)
             specialtext += (
                 f"\n* Owner: `{faction_names.get(old_owner, 'Unknown')}`"
@@ -1043,8 +1043,8 @@ class Embeds:
 
         # Regen rate change description (LPH)
         if "regenPerSecond" in dump:
-            old_rps = dump["regenPerSecond"].get("old", 0.0)
-            new_rps = dump["regenPerSecond"].get("new", 0.0)
+            old_rps = dump["regenPerSecond"].get("old", 0.0) or 0
+            new_rps = dump["regenPerSecond"].get("new", 0.0) or 0
             old_lph = round(maths.dps_to_lph(old_rps), 3)
             new_lph = round(maths.dps_to_lph(new_rps), 3)
             specialtext += f"\n* Regen Rate: `{old_lph}` → `{new_lph}` LPH"
