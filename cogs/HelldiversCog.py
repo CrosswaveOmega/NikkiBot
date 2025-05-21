@@ -1,5 +1,6 @@
 import asyncio
 import io
+import logging
 import gui
 from typing import Literal
 from assetloader import AssetLookup
@@ -210,6 +211,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             except Exception as e:
                 gui.gprint(e)
                 self.bot.logs.exception(e)
+                log = logging.getLogger("discord")
+                log.error("An error has been raised: %s", e, exc_info=e)
         Guild_Task_Functions.add_task_function("UPDATEOVERVIEW", self.gtask_update)
         Guild_Task_Functions.add_task_function("WARSTATUS", self.gtask_map)
 
