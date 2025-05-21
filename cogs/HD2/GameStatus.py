@@ -66,7 +66,9 @@ class LimitedSizeList(list):
 
     def __init__(self, max_size):
         self.max_size = max_size
-        self.items: List[Union[War, Assignment2, Campaign2, GlobalResource]] = []
+        self.items: List[
+            Union[War, Assignment2, Campaign2, GlobalResource, Region]
+        ] = []
 
     def add(self, item):
         if len(self.items) >= self.max_size:
@@ -78,7 +80,9 @@ class LimitedSizeList(list):
             self.items.pop(0)
         self.items.append(item)
 
-    def get_changes(self) -> List[Union[War, Assignment2, Campaign2, GlobalResource]]:
+    def get_changes(
+        self,
+    ) -> List[Union[War, Assignment2, Campaign2, GlobalResource, Region]]:
         """return a list of all differences between items in this limited sized list."""
         curr, this = None, []
         for i in self.items:
@@ -134,6 +138,7 @@ class ApiStatus:
         "assignments",
         "resources",
         "planets",
+        "regions",
         "dispatches",
         "last_planet_get",
         "statics",
@@ -155,6 +160,8 @@ class ApiStatus:
         self.assignments: Dict[int, LimitedSizeList[Assignment2]] = {}
         self.campaigns: Dict[int, LimitedSizeList[Campaign2]] = {}
         self.resources: Dict[int, LimitedSizeList[GlobalResource]] = {}
+
+        self.regions: Dict[int, LimitedSizeList[Region]] = {}
         self.planets: Dict[int, Planet] = {}
         self.dispatches: List[Dispatch] = []
         self.last_planet_get: datetime.datetime = datetime.datetime(2024, 1, 1, 0, 0, 0)
@@ -182,6 +189,10 @@ class ApiStatus:
             "resources": {
                 k: [item.model_dump(exclude="time_delta") for item in v.items]
                 for k, v in self.resources.items()
+            },
+            "regions": {
+                k: [item.model_dump(exclude="time_delta") for item in v.items]
+                for k, v in self.regions.items()
             },
             "campaigns": {
                 k: [item.model_dump(exclude="time_delta") for item in v.items]
@@ -229,6 +240,12 @@ class ApiStatus:
                 for item in v:
                     resource_list.push(GlobalResource(**item))
                 newcks.resources[int(k)] = resource_list
+        if "regions" in data:
+            for k, v in data["regions"].items():
+                resource_list = LimitedSizeList(newcks.max_list_size)
+                for item in v:
+                    resource_list.push(Region(**item))
+                newcks.regions[int(k)] = resource_list
         else:
             newcks.resources = {}
         newcks.planets = {int(k): Planet(**v) for k, v in data["planets"].items()}
@@ -289,6 +306,7 @@ class ApiStatus:
                 return diff, nowv
 
         return None, nowv
+
     async def _update_stations(self):
         active_stations = []
         for s in self.warall.status.spaceStations:
@@ -325,6 +343,7 @@ class ApiStatus:
         """
         war = None
         campaigns = None
+        regions = None
         assignments = None
         dispatches = None
         maxattempt = 3
@@ -345,6 +364,7 @@ class ApiStatus:
             # as1 = await GetApiV1AssignmentsAll(api_config_override=self.client)
             assignments = build_all_assignments(self.warall.major_order)
             campaigns = build_all_campaigns(self.planets, self.warall.status)
+            regions = build_all_regions(self.warall, self.statics)
 
         except Exception as e:
             raise e
@@ -354,13 +374,10 @@ class ApiStatus:
         # print(self.assignments, "a2", assignments, "done")
         self.handle_data(assignments, self.assignments, "assignment")
         self.handle_data(campaigns, self.campaigns, "campaign")
+        self.handle_data(regions, self.regions, "region")
         self.handle_raw_data(
             self.warall.status.globalResources, self.resources, "Resource"
         )
-        # for l in self.campaigns.values():
-        #     camp = l.get_first()
-        #     self.planets[camp.planet.index] = camp.planet
-
         try:
             await self.update_stations()
         except Exception as e:
@@ -371,14 +388,14 @@ class ApiStatus:
     def build_planets(self):
         planet_data = {}
         gui.gprint(self.statics.galaxystatic.planets.keys())
-        for i, v in self.statics.galaxystatic.planets.items():
-            planet = build_planet_2(i, self.warall, self.statics)
-            planet_data[i] = planet
+        # for i, v in self.statics.galaxystatic.planets.items():
+        #     planet = build_planet_2(i, self.warall, self.statics)
+        #     planet_data[i] = planet
         self.planets = build_all_planets(self.warall, self.statics)
 
     def handle_data(
         self,
-        data: List[Union[Campaign2, Assignment2]],
+        data: List[Union[Campaign2, Assignment2, Region]],
         storage: Dict[int, LimitedSizeList],
         data_type: str,
     ) -> None:
@@ -839,8 +856,6 @@ def add_to_csv(stat: ApiStatus):
         # Write the rows
         for row in rows_for_new:
             writer.writerow(row)
-
-    
 
 
 def get_feature_dictionary(

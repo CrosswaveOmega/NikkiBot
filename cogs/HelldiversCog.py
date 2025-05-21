@@ -235,7 +235,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if not TCTaskManager.does_task_exist("SuperEarthStatus"):
             self.tc_task = TCTask("SuperEarthStatus", robj, robj.after(st))
             self.tc_task.assign_wrapper(self.update_api)
-        
+
         start_date = datetime(2023, 1, 1, 19, 48)
         robj = rrule(freq=DAILY, interval=1, dtstart=start_date)
         if not TCTaskManager.does_task_exist("SuperEarthMapMaker"):
@@ -392,10 +392,9 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
             await ctx.send(f"Done with chunk {e + 1}:{allv}.")
 
-
     async def make_map(self):
         """Create a GIF map."""
-        
+
         gui.gprint("updating map")
         try:
             await asyncio.gather(asyncio.to_thread(self.draw_img), asyncio.sleep(1))
@@ -406,7 +405,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         except Exception as e:
             await self.bot.send_error(e, "Message update cleanup error.")
             # gui.gprint(str(e))
-
 
     def draw_img(self):
         """Create a GIF map."""
@@ -422,7 +420,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         try:
             gui.gprint("updating war")
             await self.update_data()
-            #await asyncio.gather(asyncio.to_thread(self.draw_img), asyncio.sleep(1))
+            # await asyncio.gather(asyncio.to_thread(self.draw_img), asyncio.sleep(1))
 
         except Exception as e:
             await self.bot.send_error(e, "Message update cleanup error.")
@@ -972,6 +970,35 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             # await pages_of_embeds(ctx, embeds, show_page_nums=False, ephemeral=False)
         else:
             await ctx.send("Planet not found.", ephemeral=True)
+
+    @pc.command(
+        name="planetregions", description="View region data for a specific planet"
+    )
+    @app_commands.autocomplete(byplanet=planet_autocomplete)
+    @app_commands.describe(byplanet="View regions for a specific planet index.")
+    async def pregion(self, interaction: discord.Interaction, byplanet: int):
+        ctx: commands.Context = await self.bot.get_context(interaction)
+
+        if not self.apistatus or not self.apistatus.regions:
+            return await ctx.send("No region data is available.", ephemeral=True)
+
+        # Check if any regions exist for the given planet index
+        planet_region_keys = [k for k in self.apistatus.regions if k[0] == byplanet]
+        if not planet_region_keys:
+            return await ctx.send(
+                f"No regions found for planet index {byplanet}.", ephemeral=True
+            )
+
+        # Generate the embed(s)
+        embeds = hd2.region_view(
+            stat=self.apistatus,
+            planetIndex=byplanet,
+            hdtext=self.hdtext,  # Optional: use if you're managing flavor text
+            full=False,
+            show_stalemate=True,
+        )
+
+        await ctx.send(embeds=embeds, ephemeral=True)
 
     @commands.command()
     @commands.is_owner()

@@ -1,6 +1,7 @@
 from .LinkLoader import SourceLinkLoader
 from .research_ctx import ResearchContext
 
+
 async def setup(bot):
     import gui
 

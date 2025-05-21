@@ -19,7 +19,7 @@ from bot import (
     TC_Cog_Mixin,
     TCBot,
 )
-from hd2api import hdml_parse,GetApiDirectSpaceStation
+from hd2api import hdml_parse, GetApiDirectSpaceStation
 
 import gui
 from utility import WebhookMessageWrapper as web
@@ -38,8 +38,6 @@ from hd2api import (
     GlobalResource,
     PlanetInfo,
     PlanetEvent,
-
-
     Campaign,
     SpaceStationStatus,
     Planet,
@@ -50,11 +48,7 @@ from hd2api import (
     KnownPlanetEffect,
     build_planet_effect,
 )
-from hd2api.models import(
-    
-    PlanetRegion,
-    PlanetRegionInfo
-)
+from hd2api.models import PlanetRegion, PlanetRegionInfo
 
 from hd2api.constants import faction_names
 from cogs.HD2.maths import maths
@@ -393,8 +387,8 @@ class Batch:
                         (info, dump) = evt.value
                         if "activeEffectIds" in dump:
                             gui.gprint(dump)
-                            #combinations.append("dss effect")
-                            target=await self.format_dss(target,info.id32)
+                            # combinations.append("dss effect")
+                            target = await self.format_dss(target, info.id32)
 
             targets.append(target)
         else:
@@ -406,26 +400,26 @@ class Batch:
             targets.append(target)
         return targets
 
-    async def format_dss(self,t:str,id=749875195):
-        station=await GetApiDirectSpaceStation(id)
-        mode='ends'
-        effect="()"
-        endeffect=""
-        endsec=0
+    async def format_dss(self, t: str, id=749875195):
+        station = await GetApiDirectSpaceStation(id)
+        mode = "ends"
+        effect = "()"
+        endeffect = ""
+        endsec = 0
         for tact in station.tacticalActions:
-            if tact.status==2:
-                effect=tact.name or "UNKNOWN"
-                mode="starts"
-            elif tact.status==3:
-                if tact.statusExpireAtWarTimeSeconds>endsec:
-                    endsec=tact.statusExpireAtWarTimeSeconds
-                endeffect=tact.name or "UNKNOWN"
-        if mode=="starts":
-            t=t.replace("[DSS_EFFECT]",effect)
-        elif mode=="ends":
-            t=t.replace("[DSS_EFFECT]",endeffect)
-        
-        t=t.replace("[DSS_EFFECT_MODE]",mode)
+            if tact.status == 2:
+                effect = tact.name or "UNKNOWN"
+                mode = "starts"
+            elif tact.status == 3:
+                if tact.statusExpireAtWarTimeSeconds > endsec:
+                    endsec = tact.statusExpireAtWarTimeSeconds
+                endeffect = tact.name or "UNKNOWN"
+        if mode == "starts":
+            t = t.replace("[DSS_EFFECT]", effect)
+        elif mode == "ends":
+            t = t.replace("[DSS_EFFECT]", endeffect)
+
+        t = t.replace("[DSS_EFFECT_MODE]", mode)
         return t
 
     def format_combo_text_generic(
@@ -457,7 +451,7 @@ class Batch:
         combos: List[str] = []
 
         for planet_data in self.planets.values():
-            #Start checking all planet events.
+            # Start checking all planet events.
             trigger_list: List[str] = planet_data.trig
             combo: Optional[List[str]] = self.check_planet_trigger_combinations(
                 trigger_list, planet_data
@@ -996,7 +990,6 @@ class Embeds:
 
         return embed
 
-
     @staticmethod
     def RegionEmbed_PlanetRegionInfo(
         campaign: "PlanetRegionInfo",
@@ -1043,7 +1036,6 @@ class Embeds:
 
         return embed
 
-
     def dumpEmbedRegion(
         campaign: Union["PlanetRegion", "PlanetRegionInfo"],
         dump: Dict[str, Any],
@@ -1080,9 +1072,9 @@ class Embeds:
             old_rps = dump["regenPerSecond"].get("old", 0.0) or 0
             new_rps = dump["regenPerSecond"].get("new", 0.0) or 0
             if old_rps is None:
-                old_rps=0
+                old_rps = 0
             if new_rps is None:
-                new_rps=0
+                new_rps = 0
             old_lph = round(maths.dps_to_lph(old_rps), 3)
             new_lph = round(maths.dps_to_lph(new_rps), 3)
             specialtext += f"\n* Regen Rate: `{old_lph}` → `{new_lph}` LPH"
@@ -1110,7 +1102,6 @@ class Embeds:
             else:
                 embed.add_field(name=key, value=str(val), inline=True)
 
-
         embed.add_field(
             name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at, 'F')}"
         )
@@ -1118,7 +1109,6 @@ class Embeds:
         embed.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
 
         return embed
-
 
     @staticmethod
     def dumpEmbed(
@@ -1438,15 +1428,15 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.globalEventEmbed(value, "started")
             elif place == "news":
                 embed = Embeds.NewsFeedEmbed(value, "started")
-            elif place== "planetregions":
+            elif place == "planetregions":
                 planet = self.apistatus.planets.get(int(value.planetIndex), None)
                 embed = Embeds.RegionEmbed_PlanetRegion(
                     value, planet, f"added in {place}"
                 )
-            elif place=="regioninfo":
+            elif place == "regioninfo":
                 planet = self.apistatus.planets.get(int(value.planetIndex), None)
                 embed = Embeds.RegionEmbed_PlanetRegionInfo(
-                    value, planet, f"removed in {place}"
+                    value, planet, f"added in {place}"
                 )
 
         elif event_type == EventModes.REMOVE:
@@ -1493,12 +1483,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     value,
                     "removed",
                 )
-            elif place== "planetregions":
+            elif place == "planetregions":
                 planet = self.apistatus.planets.get(int(value.planetIndex), None)
                 embed = Embeds.RegionEmbed_PlanetRegion(
-                    value, planet, f"added in {place}"
+                    value, planet, f"removed in {place}"
                 )
-            elif place=="regioninfo":
+            elif place == "regioninfo":
                 planet = self.apistatus.planets.get(int(value.planetIndex), None)
                 embed = Embeds.RegionEmbed_PlanetRegionInfo(
                     value, planet, f"removed in {place}"
@@ -1544,13 +1534,17 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     embed = Embeds.dumpEmbed(
                         info, dump, "planet", f"changed in {place}"
                     )
-            if place== "planetregions" or place=="regioninfo":
+            if place == "planetregions" or place == "regioninfo":
                 planet = self.apistatus.planets.get(int(info.planetIndex), None)
                 if planet:
-                    embed=Embeds.dumpEmbedRegion(info,dump,planet, f"changed in {place}")
+                    embed = Embeds.dumpEmbedRegion(
+                        info, dump, planet, f"changed in {place}"
+                    )
                 else:
-                    embed=Embeds.dumpEmbedRegion(info,dump,planet, f"changed in {place}")
-                
+                    embed = Embeds.dumpEmbedRegion(
+                        info, dump, planet, f"changed in {place}"
+                    )
+
             elif place == "stats_raw":
                 embed = Embeds.dumpEmbed(info, dump, "stats", "changed")
             elif place == "info_raw":
@@ -1635,7 +1629,6 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             self.redirect_hook = AssetLookup.get_asset("subhook", "urls")
             self.loghook = lg
 
-            
         self.get_running = True
         if self.test_with:
             # Code for testing the auto log.

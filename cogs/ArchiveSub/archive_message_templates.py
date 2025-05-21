@@ -159,9 +159,10 @@ class ArchiveMessageTemplate(MessageTemplates):
         embed.set_footer(text=f"Server ID: {guild.id}")  # Add server ID in footer
         return embed  # Return the fully constructed embed
 
-
     @staticmethod
-    def get_server_archive_embed_simple(guild: Guild, description: str, color: int = 0xFFFFFF):
+    def get_server_archive_embed_simple(
+        guild: Guild, description: str, color: int = 0xFFFFFF
+    ):
         """Create an embed that sums up the server archive information for this server."""
         profile = ServerArchiveProfile.get(
             guild.id

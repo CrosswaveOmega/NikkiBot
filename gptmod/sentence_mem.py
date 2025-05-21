@@ -17,7 +17,8 @@ import gptmod.util as util
 import gui
 
 from utility.debug import Timer
-DocumentScoreVector=None
+
+DocumentScoreVector = None
 
 
 class MemoryFunctions(GPTFunctionLibrary):
@@ -144,14 +145,14 @@ async def try_until_ok(async_func, *args, **kwargs):
 
 def split_document(doc: Document, present_mem=""):
     """
-    Splits a Document object into smaller chunks based on sentences while maintaining 
+    Splits a Document object into smaller chunks based on sentences while maintaining
 
     Args:
         doc (Document): The Document object to be split.
         present_mem (str, optional): Additional memory context (default is "").
 
     Returns:
-        List[Document]: A list of new Document objects with split content and updated 
+        List[Document]: A list of new Document objects with split content and updated
     """
     newdata = []
     metadata = doc.metadata
@@ -234,12 +235,11 @@ class SentenceMemory:
         # dimensions = 384
         self.guildid = guild.id
         self.userid = user.id
-        
+
         from gptmod.lancetools import LanceTools
+
         metadata = {"desc": "Simple long term memory.  384 dimensions."}
-        self.coll= LanceTools.get_collection(
-            "sentence_mem", embed=bot.embedding()
-        )
+        self.coll = LanceTools.get_collection("sentence_mem", embed=bot.embedding())
         self.shortterm = {}
 
     async def get_neighbors(self, docs: List[Document]):

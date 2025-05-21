@@ -102,7 +102,12 @@ async def read_article_normal(jsenv, url):
 
 def _build_metadata(soup: Any, url: str) -> dict:
     """Build metadata from BeautifulSoup output."""
-    metadata = {"source": url,"language":"EN","title":url,'description':"NO DESCRIPTION!"}
+    metadata = {
+        "source": url,
+        "language": "EN",
+        "title": url,
+        "description": "NO DESCRIPTION!",
+    }
     if title := soup.find("title"):
         metadata["title"] = title.get_text()
     if description := soup.find("meta", attrs={"name": "description"}):
@@ -197,8 +202,8 @@ class ReadableLoader(dl.WebBaseLoader):
             try:
                 with Timer() as timer:
                     text, header = await read_article_normal(self.jsenv, url)
-                    #if self.check_url_filter(url):text, header = await read_article_normal(self.jsenv, url)
-                    #else: text, header = await read_article_aw(  self.jsenv, clean_html, url)
+                    # if self.check_url_filter(url):text, header = await read_article_normal(self.jsenv, url)
+                    # else: text, header = await read_article_aw(  self.jsenv, clean_html, url)
                 elapsed_time = timer.get_time()
                 gui.gprint(
                     f"READABILITY LOADER: Took {elapsed_time:.4f} seconds to convert {urls[i][0]} to readable."
@@ -314,7 +319,7 @@ class ReadableLoader(dl.WebBaseLoader):
                         if "byline" in header:
                             metadata["authors"] = header["byline"]
                         elif "authors" not in metadata:
-                            metadata["authors"]="Anon"
+                            metadata["authors"] = "Anon"
                         metadata["website"] = header.get("siteName", "siteunknown")
                         metadata["title"] = header.get("title")
                         if "publishedTime" in header:

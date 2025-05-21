@@ -205,9 +205,7 @@ class StarboardCog(commands.Cog):
     async def edit_one_random(self):
         """Edit one random key/value pair in the to be edited dictionary."""
         (bot_message, message) = random.choice(list(self.to_be_edited.items()))
-        self.bot.logs.info(
-            f"found url {bot_message} for {str(message)}"
-        )
+        self.bot.logs.info(f"found url {bot_message} for {str(message)}")
         self.to_be_edited.pop(bot_message)
         mess = await urltomessage(bot_message, self.bot)
         if mess:
@@ -231,7 +229,7 @@ class StarboardCog(commands.Cog):
                 self.bot.logs.info("...entry edited")
                 await StarboardEntryTable.delete_entry_by_bot_message_url(bot_message)
         else:
-            mess = await urltomessage(bot_message, self.bot,partial=True)
+            mess = await urltomessage(bot_message, self.bot, partial=True)
             starboard = await Starboard.get_starboard(mess.guild.id)
             starboard_channel = self.bot.get_channel(starboard.channel_id)
             entry = await StarboardEntryTable.get_entry(message.guild.id, message.id)

@@ -255,7 +255,7 @@ class TCBot(
         handler2.setFormatter(formatter2)
         # handler2.addFilter(IntegrationCreateFilter("logfilter"))
         discord.utils.setup_logging(level=logging.INFO, handler=handler2, root=False)
-        
+
         jslogs = logging.getLogger("asyncjs").setLevel(logging.INFO)
         self.logs = logging.getLogger("TCLogger")
         self.logs.setLevel(logging.INFO)

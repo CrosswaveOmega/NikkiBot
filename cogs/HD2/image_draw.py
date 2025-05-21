@@ -25,11 +25,12 @@ def crop_png(image, focus_cell, cell_size=CELL_SIZE, one_only=False):
     y_end = y_start + cell_size
 
     cropped_image = image.crop((x_start, y_start, x_end, y_end))
-    
+
     if one_only:
         return cropped_image
 
     return cropped_image  # Return the cropped image; no need for multi-frame logic
+
 
 def update_lastval_file(lastplanets):
     lastval_file = "./saveData/lastval.json"
@@ -254,7 +255,6 @@ def create_png(filepath, apistat: ApiStatus):
     return "./saveData/map.png"
 
 
-
 class MapViewer(BaseView):
     """
     Scrollable map that generates and interacts with a single PNG.
@@ -272,7 +272,7 @@ class MapViewer(BaseView):
         # Load the PNG image
         with Image.open(img) as planetimg:
             self.img = planetimg.convert("RGBA")
-        
+
         # Set the focus cell based on the initial coordinates
         self.focus_cell = np.array(initial_coor) // CELL_SIZE
 
@@ -294,7 +294,7 @@ class MapViewer(BaseView):
             cell_size=CELL_SIZE,
             one_only=self.oneframe,
         )
-        
+
         # Save the cropped image as a PNG
         with io.BytesIO() as image_binary:
             cropped_frame.save(image_binary, format="PNG")
@@ -313,40 +313,56 @@ class MapViewer(BaseView):
         self.stop()
 
     @discord.ui.button(label="Up", style=discord.ButtonStyle.green, row=2)
-    async def move_up(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def move_up(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         """
         Move the view up by one cell.
         """
         self.focus_cell += np.array((0, -1))
         embed, file = self.make_embed()
-        await interaction.response.edit_message(content="", embed=embed, attachments=[file])
+        await interaction.response.edit_message(
+            content="", embed=embed, attachments=[file]
+        )
 
     @discord.ui.button(label="Down", style=discord.ButtonStyle.green, row=4)
-    async def move_down(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def move_down(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         """
         Move the view down by one cell.
         """
         self.focus_cell += np.array((0, 1))
         embed, file = self.make_embed()
-        await interaction.response.edit_message(content="", embed=embed, attachments=[file])
+        await interaction.response.edit_message(
+            content="", embed=embed, attachments=[file]
+        )
 
     @discord.ui.button(label="Left", style=discord.ButtonStyle.green, row=3)
-    async def move_left(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def move_left(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         """
         Move the view left by one cell.
         """
         self.focus_cell += np.array((-1, 0))
         embed, file = self.make_embed()
-        await interaction.response.edit_message(content="", embed=embed, attachments=[file])
+        await interaction.response.edit_message(
+            content="", embed=embed, attachments=[file]
+        )
 
     @discord.ui.button(label="Right", style=discord.ButtonStyle.green, row=3)
-    async def move_right(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def move_right(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         """
         Move the view right by one cell.
         """
         self.focus_cell += np.array((1, 0))
         embed, file = self.make_embed()
-        await interaction.response.edit_message(content="", embed=embed, attachments=[file])
+        await interaction.response.edit_message(
+            content="", embed=embed, attachments=[file]
+        )
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.grey, row=4)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -356,4 +372,3 @@ class MapViewer(BaseView):
         self.value = False
         await interaction.response.edit_message(content="Terminating.")
         self.stop()
-

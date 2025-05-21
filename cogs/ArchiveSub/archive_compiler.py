@@ -98,21 +98,21 @@ class ArchiveProgress:
 
 
 class ArchiveCompiler:
-    def __init__(self, ctx, lazymode=False,send_all_clear_message=True):
+    def __init__(self, ctx, lazymode=False, send_all_clear_message=True):
         self.ctx = ctx
         self.lazy = lazymode
         self.bot = ctx.bot
         self.auth = ctx.message.author
         self.channel = ctx.message.channel
         self.guild = self.channel.guild
-        self.send_all_clear_message=send_all_clear_message
+        self.send_all_clear_message = send_all_clear_message
 
         self.update = True
         self.archive_from = "server"
         self.dynamicwait = False
         self.timebetweenmess = 2.0
         self.characterdelay = 0.05
-        self.inital_edit_mess=None
+        self.inital_edit_mess = None
 
         self.ap = ArchiveProgress(0, 0)
         self.sep_total = 0
@@ -437,7 +437,7 @@ class ArchiveCompiler:
         await mt.delete()
         return didthing
 
-    async def cleanup(self, profile: ServerArchiveProfile,m:discord.Message):
+    async def cleanup(self, profile: ServerArchiveProfile, m: discord.Message):
         game = discord.Game("{}".format("clear"))
         await self.bot.change_presence(activity=game)
 
@@ -459,11 +459,11 @@ class ArchiveCompiler:
                 f"Archive operation completed at <t:{int(datetime.now().timestamp())}:f>",
             )
         else:
-            embed= MessageTemplates.get_server_archive_embed_simple(
+            embed = MessageTemplates.get_server_archive_embed_simple(
                 channel.guild,
                 f"Archive operation completed at <t:{int(datetime.now().timestamp())}:f>",
             )
-            await m.edit(content=f"{m.content}",embed=embed)
+            await m.edit(content=f"{m.content}", embed=embed)
 
     async def start(self):
         outcome = await self.setup()
@@ -473,5 +473,5 @@ class ArchiveCompiler:
         await self.collect(m, profile)
         await self.group(m, profile)
         await self.post(m, profile, archive_channel)
-        await self.cleanup(profile,m)
+        await self.cleanup(profile, m)
         return profile

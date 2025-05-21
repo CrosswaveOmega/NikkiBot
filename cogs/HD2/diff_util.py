@@ -136,7 +136,7 @@ async def get_differing_fields(
     differing_fields = {}
     for field in model1.model_fields:
         if field not in to_ignore:
-            #logs.info("Retrieving field %s ", field)
+            # logs.info("Retrieving field %s ", field)
             value1 = await compare_value_with_timeout(model1, field)
             value2 = await compare_value_with_timeout(model2, field)
 
@@ -306,52 +306,8 @@ async def process_planet_attacks(
             await QueueAll.put([changeitem])
     else:
         combined_list = oldlist + newlist + changelist
-        gui.gprint(place, combined_list)
         await QueueAll.put(combined_list)
 
-    return pushed_items
-
-
-    for event in target:
-        if not await check_compare_value_list(
-            keys, [event[key] for key in keys], source
-        ):
-            item = GameEvent(
-                mode=EventModes.REMOVE,
-                place=place,
-                batch=batch,
-                value=event,
-                game_time=game_time,
-            )
-            pushed_items.append(item)
-            oldlist.append(item)
-            # await QueueAll.put(item)
-
-    if place == "planetAttacks":
-        if newlist:
-            newitem = GameEvent(
-                mode=EventModes.ADDED,
-                place=place,
-                batch=batch,
-                value=newlist,
-                cluster=True,
-                game_time=game_time,
-            )
-            await QueueAll.put([newitem])
-        if oldlist:
-            olditem = GameEvent(
-                mode=EventModes.REMOVED,
-                place=place,
-                batch=batch,
-                value=oldlist,
-                cluster=True,
-                game_time=game_time,
-            )
-            await QueueAll.put([olditem])
-    else:
-        combined_list = oldlist + newlist
-        gui.gprint(place,combined_list)
-        await QueueAll.put(combined_list)
     return pushed_items
 
 
@@ -545,7 +501,7 @@ async def detect_loggable_changes(
         ["planetIndex", "regionIndex"],
         QueueAll,
         batch,
-        ["health","players", "retrieved_at", "time_delta", "self"],
+        ["health", "players", "retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
     superlist += await process_planet_attacks(
@@ -559,7 +515,7 @@ async def detect_loggable_changes(
         game_time=gametime,
     )
     logs.info(f"{str(superlist)}")
-    
+
     logs.debug("global event detection, stand by...")
     superlist += await process_planet_events(
         new.status.globalEvents,
@@ -576,7 +532,14 @@ async def detect_loggable_changes(
         infoout = await get_differing_fields(
             old.war_info,
             new.war_info,
-            to_ignore=["planetInfos", "regionInfos","planetRegions","retrieved_at", "time_delta", "self"],
+            to_ignore=[
+                "planetInfos",
+                "regionInfos",
+                "planetRegions",
+                "retrieved_at",
+                "time_delta",
+                "self",
+            ],
         )
         if infoout:
             item = GameEvent(

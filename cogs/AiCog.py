@@ -656,13 +656,14 @@ class AICog(commands.Cog, TC_Cog_Mixin):
         if profile:
             if not profile.banned:
                 profile.ban()
-                await ctx.send(f"Good riddance!  The server with id {id} has been banned.")
+                await ctx.send(
+                    f"Good riddance!  The server with id {id} has been banned."
+                )
             else:
                 profile.unban()
                 await ctx.send(f"The server with id {id} has been unbanned.")
         else:
             await ctx.send("I see no server by that name.")
-
 
     @ai_setup.command(
         name="add_ai_channel",

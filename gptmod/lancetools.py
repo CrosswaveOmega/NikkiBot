@@ -172,19 +172,17 @@ class LanceBetter(LanceDB):
         for idx, text in enumerate(texts):
             embedding = embeddings[idx]
             metadata = metadatas[idx] if metadatas else {}
-            target_doc={
-                    self._vector_key: embedding,
-                    self._id_key: ids[idx],
-                    self._text_key: text,
-                }
-            #This is easier for lancedb.
-            #Having a metadata struct causes all kinds of issues.
-            
+            target_doc = {
+                self._vector_key: embedding,
+                self._id_key: ids[idx],
+                self._text_key: text,
+            }
+            # This is easier for lancedb.
+            # Having a metadata struct causes all kinds of issues.
+
             for i, v in metadata.items():
-                target_doc[i]=v
-            docs.append(
-               target_doc
-            )
+                target_doc[i] = v
+            docs.append(target_doc)
 
         tbl = self.get_table()
 
@@ -271,12 +269,11 @@ class LanceBetter(LanceDB):
         except Exception as e:
             print(e)
             return None
-        
 
     def get_metadata(self, results, inc: List[str] = []) -> List[Dict[str, Any]]:
         """
         Extract metadata from a LanceDB table query based on column names.
-        It's easier on maintaining lancedb tables if the metadata 
+        It's easier on maintaining lancedb tables if the metadata
         ISN'T wrapped inside a single "metadata" field struct.
         Args:
             results: The results from a LanceDB table query.
@@ -300,7 +297,6 @@ class LanceBetter(LanceDB):
             metadata_rows.append(metadata)
         return metadata_rows
 
-
     def results_to_docs(self, results: Any, score: bool = False) -> Any:
         columns = results.schema.names
 
@@ -313,7 +309,7 @@ class LanceBetter(LanceDB):
 
         # It's easier on lancedb if the metadata fields
         # aren't wrapped in a struct.
-        
+
         metadata_list = self.get_metadata(results)
 
         if score_col is None or not score:
@@ -335,7 +331,6 @@ class LanceBetter(LanceDB):
                 )
                 for idx in range(len(results))
             ]
-
 
     async def aget_by_ids(self, tablestr: str, ids: Sequence[str]) -> List[Document]:
         table = self.get_table(tablestr)

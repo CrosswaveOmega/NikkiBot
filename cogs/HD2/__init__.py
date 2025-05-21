@@ -6,6 +6,7 @@ from .embeds import (
     create_war_embed,
     campaign_text_view,
     station_embed,
+    region_view,
 )
 
 from .db import ServerHDProfile

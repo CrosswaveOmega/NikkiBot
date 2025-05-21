@@ -123,8 +123,8 @@ def google_search(bot, query: str, result_limit: int) -> dict:
 
 
 async def async_markdown_convert(url, timeout=30):
-    
     import markitdown
+
     markdown = markitdown.MarkItDown()
     result = await asyncio.wait_for(asyncio.to_thread(markdown.convert, url), timeout)
     return result

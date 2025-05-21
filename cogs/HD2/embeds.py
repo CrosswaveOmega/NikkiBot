@@ -160,8 +160,11 @@ def create_campaign_str(data: Union[Campaign2, Campaign]) -> str:
 
 
 def create_planet_embed(
-    data: Planet, cstr: Campaign2, last: Planet = None, stat: ApiStatus = None
-):
+    data: Planet,
+    cstr: Campaign2,
+    last: Optional[Planet] = None,
+    stat: Optional[ApiStatus] = None,
+) -> discord.Embed:
     """Create a detailed embed for a single planet."""
     cstri = ""
     if cstr:
@@ -179,6 +182,7 @@ def create_planet_embed(
     owner = f"{curr_owner} Control"
     if curr_owner != orig_owner:
         owner = f"{curr_owner} Occupation"
+
     embed = discord.Embed(
         title=f"{data.get_name()}",
         description=f"{planet_sector} Sector\n{owner}\n {stat_str}",
@@ -186,6 +190,18 @@ def create_planet_embed(
     )
     embed.set_footer(text=cstri)
     embed.set_author(name=f"Planet Index {planet_index}")
+
+    _add_biome_and_hazards(embed, data)
+    _add_health_and_regen(embed, data, last, stat)
+    _add_avg_and_estimated_time(embed, data, cstr, stat)
+    _add_event_details(embed, data, last)
+    _add_connections_and_attacks(embed, data, stat)
+    _add_effects(embed, data)
+
+    return embed
+
+
+def _add_biome_and_hazards(embed: discord.Embed, data: Planet) -> None:
     if data.biome:
         embed.add_field(
             name=f"Biome: {data.biome.name}",
@@ -201,6 +217,13 @@ def create_planet_embed(
             hazards_str += f"**{hazard_name}:** {hazard_description}\n"
         embed.add_field(name="Hazards", value=hazards_str, inline=False)
 
+
+def _add_health_and_regen(
+    embed: discord.Embed,
+    data: Planet,
+    last: Optional[Planet],
+    stat: Optional[ApiStatus],
+) -> None:
     max_health = data.get("maxHealth", 0)
     health = data.get("health", 0)
     if last and last.health != 0:
@@ -222,6 +245,14 @@ def create_planet_embed(
         value=f"`{regen_per_second}` .  \n Need `{round(needed_eps, 2)}` eps and `{round(needed_players, 2)}` divers ",
         inline=True,
     )
+
+
+def _add_avg_and_estimated_time(
+    embed: discord.Embed,
+    data: Planet,
+    cstr: Campaign2,
+    stat: Optional[ApiStatus],
+) -> None:
     avg = None
     if cstr:
         lis = stat.campaigns.get(cstr.id)
@@ -234,27 +265,33 @@ def create_planet_embed(
             if remaining_time:
                 embed.add_field(name="Est. Lib Time", value=f"{remaining_time}")
 
-    event_info = data.get("event", None)
 
+def _add_event_details(
+    embed: discord.Embed,
+    data: Planet,
+    last: Optional[Planet],
+) -> None:
+    event_info = data.get("event", None)
     if event_info:
         last_evt = None
         if last is not None and last.event is not None:
             last_evt = last.event
         event_details = event_info.long_event_details(last_evt)
         embed.add_field(name="Event Details", value=event_details, inline=False)
-        if avg:
-            if avg.event:
-                embed.add_field(
-                    name="Event Prediction",
-                    value=data.event.estimate_remaining_lib_time(avg.event),
-                    inline=False,
-                )
+        avg = None
+        if hasattr(data, "avg") and data.avg and data.avg.event:
+            embed.add_field(
+                name="Event Prediction",
+                value=data.event.estimate_remaining_lib_time(data.avg.event),
+                inline=False,
+            )
 
-    # position = data.position
-    # if position:
-    #     x, y = position.get("x", 0), position.get("y", 0)
-    #     embed.add_field(name="Galactic Position", value=f"x:{x},y:{y}", inline=True)
 
+def _add_connections_and_attacks(
+    embed: discord.Embed,
+    data: Planet,
+    stat: Optional[ApiStatus],
+) -> None:
     planet_connections = []
     under_attack_by = []
     for i, v in stat.planets.items():
@@ -313,6 +350,8 @@ def create_planet_embed(
             inline=True,
         )
 
+
+def _add_effects(embed: discord.Embed, data: Planet) -> None:
     if data.activePlanetEffects:
         effect_str = ""
         for effect in data.activePlanetEffects:
@@ -320,8 +359,6 @@ def create_planet_embed(
             effect_description = effect.description
             effect_str += f"**{effect_name}:** {effect_description}\n"
         embed.add_field(name="Effects", value=effect_str[:1020], inline=False)
-
-    return embed
 
 
 def campaign_view(
@@ -690,3 +727,125 @@ def campaign_text_view(
         out_main += "**Planetary Stalemates:**\n" + st
 
     return out_main
+
+
+import discord
+import random
+import datetime
+from typing import Optional, Dict, List
+from collections import defaultdict
+from hd2api.model.region.regionstatus import RegionStatus
+from hd2api.logic.predictor import make_prediction_for_eps
+from hd2api.logic.features import get_feature_dictionary
+
+
+def region_view(
+    stat,
+    planetIndex: int,
+    hdtext: Optional[Dict[str, str]] = None,
+    full: bool = False,
+    show_stalemate: bool = True,
+) -> List[discord.Embed]:
+    flav = "Regional Status"
+    if hdtext and "planetary_overview" in hdtext:
+        flav = random.choice(hdtext["planetary_overview"]["value"])
+
+    emb0 = discord.Embed(
+        title=f"Planetary Region Status (#{planetIndex})",
+        description=f"{flav}\n",
+    )
+    emb = emb0
+    embs = [emb]
+
+    if stat.war is None:
+        emb0.description += "The war is disabled! Please check back later."
+        emb0.timestamp = discord.utils.utcnow()
+        return embs
+
+    total_contrib = [0, 0.0, 0.0, 0.0, 0.0]  # playerCount, rate, %, %/hr, eps
+    total = 0
+    el = 0
+    prop = defaultdict(int)
+    stalemated = []
+    players_on_stalemated = 0
+
+    # Filter to regions for this planetIndex
+    regions = {k: v for k, v in stat.regions.items() if k[0] == planetIndex}
+
+    for key, region_list in regions.items():
+        reg, last = region_list.get_change_from(15)
+        changes = region_list.get_changes()
+        pc = reg.statistics.playerCount
+        total += pc
+        avg = RegionStatus.average(changes[:4]) if changes else None
+        diff: RegionStatus = reg - last
+
+        name, desc = reg.simple_view(diff, avg, full=full)
+        desc = "\n".join(desc)
+
+        if not show_stalemate and "Stalemate" in desc:
+            stalemated.append(name)
+            players_on_stalemated += pc
+            continue
+
+        # Calculate EPS contributions
+        if diff.event:
+            p_evt = diff.event
+            if isinstance(p_evt.time_delta, datetime.timedelta):
+                total_sec = p_evt.time_delta.total_seconds()
+                if total_sec > 0:
+                    rate = -1 * p_evt.health
+                    total_contrib[0] += pc
+                    total_contrib[1] += rate
+                    thisamt = round((rate / reg.maxHealth) * 100.0, 5)
+                    total_contrib[2] += thisamt
+                    total_contrib[3] += (thisamt / total_sec) * 3600
+                    total_contrib[4] += rate / total_sec
+        elif diff.health != 0:
+            if isinstance(diff.time_delta, datetime.timedelta):
+                total_sec = diff.time_delta.total_seconds()
+                if total_sec > 0:
+                    rate = (-1 * diff.health) + (reg.regenPerSecond * total_sec)
+                    total_contrib[0] += pc
+                    total_contrib[1] += rate
+                    thisamt = round((rate / reg.maxHealth) * 100.0, 5)
+                    total_contrib[2] += thisamt
+                    total_contrib[3] += (thisamt / total_sec) * 3600
+                    total_contrib[4] += rate / total_sec
+
+        features = get_feature_dictionary(stat, key)
+        pred = make_prediction_for_eps(features)
+        eps_est = round(pred, 3)
+        eps_real = round(features.get("eps", 0.0), 3)
+        desc += f"\ninfl/s:`{eps_est},c{eps_real}`"
+
+        if el >= 24:
+            emb = discord.Embed()
+            embs.append(emb)
+            el = 0
+
+        emb.add_field(name=name, value=desc, inline=True)
+        el += 1
+
+    if stalemated:
+        emb.add_field(
+            name="Stalemated Regions",
+            value=f"{players_on_stalemated} players are on {len(stalemated)} stalemated regions.\n"
+            + ("\n".join([f"* {s}" for s in stalemated]))[:900],
+        )
+
+    # Contribution summary
+    try:
+        all_players, _ = stat.war.get_first_change()
+        if all_players:
+            emb0.description += (
+                f"\n`{round((total_contrib[0] / all_players.statistics.playerCount) * 100.0, 4)}%` "
+                f"divers contributed `{round(total_contrib[1], 4)}` visible Impact, "
+                f"`{round(total_contrib[4], 8)}` impact/sec → "
+                f"`({round(total_contrib[2], 5)}%, {round(total_contrib[3], 5)}%/hr)` lib."
+            )
+    except Exception:
+        emb0.description += "\n[Unable to calculate global contribution summary]"
+
+    emb0.timestamp = discord.utils.utcnow()
+    return embs
