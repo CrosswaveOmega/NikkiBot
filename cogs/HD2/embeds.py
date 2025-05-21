@@ -148,7 +148,7 @@ def create_campaign_str(data: Union[Campaign2, Campaign]) -> str:
     cid = data["id"]
     campaign_type = campaign_types.get(data["type"], f"Unknown type {data.type}")
     count = data["count"]
-    output = f"C{cid}: {campaign_type}.  Op number:{count}"
+    output = f"C{cid}: {campaign_type}.  Op number:{count}, Faction:{data.faction}"
 
     return output
 
