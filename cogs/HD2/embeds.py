@@ -762,12 +762,12 @@ def region_view(
     for key, region_list in regions.items():
         reg, last = region_list.get_change_from(15)
         changes = region_list.get_changes()
-        pc = reg.statistics.playerCount
+        pc = reg.players
         total += pc
         avg = Region.average(changes[:4]) if changes else None
         diff: Region = reg - last
         name=reg.name
-        desc += f"{reg.description}`"
+        desc = f"{reg.description}`"
 
         if el >= 24:
             emb = discord.Embed()
