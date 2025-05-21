@@ -775,7 +775,7 @@ def region_view(
             embs.append(emb)
             el = 0
 
-        emb.add_field(name=name, value=desc, inline=False)
+        emb.add_field(name=name, value="\n".join(desc), inline=False)
         el += 1
 
     if stalemated:
