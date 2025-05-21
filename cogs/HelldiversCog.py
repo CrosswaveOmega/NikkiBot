@@ -993,7 +993,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             # Generate the embed(s)
             embeds = hd2.region_view(
                 stat=self.apistatus,
-                planetIndex=planet,
+                planet=planet,
                 hdtext=self.hd2,  # Optional: use if you're managing flavor text
                 full=False,
                 show_stalemate=True,

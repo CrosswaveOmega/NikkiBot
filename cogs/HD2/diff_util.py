@@ -504,9 +504,10 @@ async def detect_loggable_changes(
         ["health", "players", "retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
+    gui.gprint(old.war_info.planetRegions,new.war_info.planetRegions)
     superlist += await process_planet_attacks(
-        new.war_info.regionInfos,
-        old.war_info.regionInfos,
+        new.war_info.planetRegions,
+        old.war_info.planetRegions,
         "regioninfo",
         ["planetIndex", "regionIndex"],
         QueueAll,
@@ -534,7 +535,7 @@ async def detect_loggable_changes(
             new.war_info,
             to_ignore=[
                 "planetInfos",
-                "regionInfos",
+                "planetRegions",
                 "planetRegions",
                 "retrieved_at",
                 "time_delta",
