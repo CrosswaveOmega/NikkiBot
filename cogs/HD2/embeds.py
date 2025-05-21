@@ -766,52 +766,15 @@ def region_view(
         total += pc
         avg = Region.average(changes[:4]) if changes else None
         diff: Region = reg - last
-
-        name, desc = reg.simple_view(diff, avg, full=full)
-        desc = "\n".join(desc)
-
-        if not show_stalemate and "Stalemate" in desc:
-            stalemated.append(name)
-            players_on_stalemated += pc
-            continue
-
-        # Calculate EPS contributions
-        if diff.event:
-            p_evt = diff.event
-            if isinstance(p_evt.time_delta, datetime.timedelta):
-                total_sec = p_evt.time_delta.total_seconds()
-                if total_sec > 0:
-                    rate = -1 * p_evt.health
-                    total_contrib[0] += pc
-                    total_contrib[1] += rate
-                    thisamt = round((rate / reg.maxHealth) * 100.0, 5)
-                    total_contrib[2] += thisamt
-                    total_contrib[3] += (thisamt / total_sec) * 3600
-                    total_contrib[4] += rate / total_sec
-        elif diff.health != 0:
-            if isinstance(diff.time_delta, datetime.timedelta):
-                total_sec = diff.time_delta.total_seconds()
-                if total_sec > 0:
-                    rate = (-1 * diff.health) + (reg.regenPerSecond * total_sec)
-                    total_contrib[0] += pc
-                    total_contrib[1] += rate
-                    thisamt = round((rate / reg.maxHealth) * 100.0, 5)
-                    total_contrib[2] += thisamt
-                    total_contrib[3] += (thisamt / total_sec) * 3600
-                    total_contrib[4] += rate / total_sec
-
-        features = get_feature_dictionary(stat, key)
-        pred = make_prediction_for_eps(features)
-        eps_est = round(pred, 3)
-        eps_real = round(features.get("eps", 0.0), 3)
-        desc += f"\ninfl/s:`{eps_est},c{eps_real}`"
+        name=reg.name
+        desc += f"{reg.description}`"
 
         if el >= 24:
             emb = discord.Embed()
             embs.append(emb)
             el = 0
 
-        emb.add_field(name=name, value=desc, inline=True)
+        emb.add_field(name=name, value=desc, inline=False)
         el += 1
 
     if stalemated:
