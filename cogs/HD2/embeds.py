@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Union
+from typing import Dict, List, Optional, Union
 
 
 import datetime
@@ -6,13 +6,7 @@ import discord
 
 from hd2api.models import Campaign
 
-from hd2api import (
-    Assignment2,
-    Campaign2,
-    Planet,
-    SpaceStation,
-    TacticalAction,
-)
+from hd2api import Assignment2, Campaign2, Planet, SpaceStation, TacticalAction, Region
 from hd2api.builders import get_time_dh
 from hd2api.constants import items
 
@@ -729,16 +723,6 @@ def campaign_text_view(
     return out_main
 
 
-import discord
-import random
-import datetime
-from typing import Optional, Dict, List
-from collections import defaultdict
-from hd2api.model.region.regionstatus import RegionStatus
-from hd2api.logic.predictor import make_prediction_for_eps
-from hd2api.logic.features import get_feature_dictionary
-
-
 def region_view(
     stat,
     planetIndex: int,
@@ -777,8 +761,8 @@ def region_view(
         changes = region_list.get_changes()
         pc = reg.statistics.playerCount
         total += pc
-        avg = RegionStatus.average(changes[:4]) if changes else None
-        diff: RegionStatus = reg - last
+        avg = Region.average(changes[:4]) if changes else None
+        diff: Region = reg - last
 
         name, desc = reg.simple_view(diff, avg, full=full)
         desc = "\n".join(desc)
