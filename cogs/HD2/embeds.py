@@ -725,12 +725,14 @@ def campaign_text_view(
 
 def region_view(
     stat,
-    planetIndex: int,
+    planet: Planet,
     hdtext: Optional[Dict[str, str]] = None,
     full: bool = False,
     show_stalemate: bool = True,
 ) -> List[discord.Embed]:
     flav = "Regional Status"
+    planetIndex=planet.index
+    
     if hdtext and "planetary_overview" in hdtext:
         flav = random.choice(hdtext["planetary_overview"]["value"])
 
@@ -752,9 +754,10 @@ def region_view(
     prop = defaultdict(int)
     stalemated = []
     players_on_stalemated = 0
+    allids=[int(p.id) for p in planet.regions]
 
     # Filter to regions for this planetIndex
-    regions = {k: v for k, v in stat.regions.items() if k[0] == planetIndex}
+    regions = {k: v for k, v in stat.regions.items() if int(k) in allids}
 
     for key, region_list in regions.items():
         reg, last = region_list.get_change_from(15)

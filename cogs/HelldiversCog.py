@@ -982,23 +982,21 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if not self.apistatus or not self.apistatus.regions:
             return await ctx.send("No region data is available.", ephemeral=True)
 
-        # Check if any regions exist for the given planet index
-        planet_region_keys = [k for k in self.apistatus.regions if k[0] == byplanet]
-        if not planet_region_keys:
-            return await ctx.send(
-                f"No regions found for planet index {byplanet}.", ephemeral=True
+        if byplanet in self.apistatus.planets:
+            planet = self.apistatus.planets[byplanet]
+            # Check if any regions exist for the given planet index
+
+
+            # Generate the embed(s)
+            embeds = hd2.region_view(
+                stat=self.apistatus,
+                planetIndex=planet,
+                hdtext=self.hdtext,  # Optional: use if you're managing flavor text
+                full=False,
+                show_stalemate=True,
             )
 
-        # Generate the embed(s)
-        embeds = hd2.region_view(
-            stat=self.apistatus,
-            planetIndex=byplanet,
-            hdtext=self.hdtext,  # Optional: use if you're managing flavor text
-            full=False,
-            show_stalemate=True,
-        )
-
-        await ctx.send(embeds=embeds, ephemeral=True)
+            await ctx.send(embeds=embeds, ephemeral=True)
 
     @commands.command()
     @commands.is_owner()
