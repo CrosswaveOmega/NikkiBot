@@ -766,8 +766,9 @@ def region_view(
         total += pc
         avg = Region.average(changes[:4]) if changes else None
         diff: Region = reg - last
-        name=reg.name
-        desc = f"{reg.description}`"
+        name,desc=reg.simple_region_view(diff,avg)
+
+
 
         if el >= 24:
             emb = discord.Embed()
