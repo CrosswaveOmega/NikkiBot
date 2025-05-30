@@ -1109,7 +1109,50 @@ class Embeds:
         embed.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
 
         return embed
+        
+    @staticmethod
+    def dumpEmbedPlanet(
+        campaign: Union[PlanetStatus, PlanetInfo],
+        dump: Dict[str, Any],
+        planet: Optional[Planet],
+        mode="started",
+    ) -> discord.Embed:
+        name, sector = "PLANET", None
+        specialtext = ""
+        color = 0x8C90B0
+        if planet:
+            name, sector = planet.get_name(False), planet.sector
+            color = colors2.get(planet.currentOwner.lower(), 0x8C90B0)
+        globtex = json.dumps(dump, default=str)
+        if "owner" in dump:
+            color = getColor(campaign.owner)
+            old_owner = dump["owner"].get("old", 5)
+            new_owner = dump["owner"].get("new", 5)
+            specialtext += f"\n* Owner: `{faction_names.get(old_owner, 'er')}`->`{faction_names.get(new_owner, 'er')}`"
+        if "regenPerSecond" in dump:
+            old_decay = dump["regenPerSecond"].get("old", 99999)
+            new_decay = dump["regenPerSecond"].get("new", 99999)
+            old_decay = round(maths.dps_to_lph(old_decay), 3)
+            new_decay = round(maths.dps_to_lph(new_decay), 3)
+            specialtext += f"\n* Regen Rate: `{old_decay}`->`{new_decay}`"
+        if "position" in dump:
+            new_posx = dump["position"].get('x',{'new':0}).get("new", 0)
+            new_posy = dump["position"].get('y',{'new':0}).get("new", 0)
+            specialtext += f"\n*`{name} moves to X {campaign.position.x} Y {campaign.position.y} ({custom_strftime(campaign.retrieved_at)}`)"
 
+        emb = discord.Embed(
+            title=f"{name} Field Change",
+            description=f"Stats {mode} for {name}, in sector {sector}.\n{specialtext}\n```{globtex[:3500]}```",
+            timestamp=campaign.retrieved_at,
+            color=color,
+        )
+        emb.add_field(
+            name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at, 'F')}"
+        )
+        emb.set_author(name="Planet Value Change")
+        emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
+        return emb
+        
     @staticmethod
     def dumpEmbed(
         campaign: BaseApiModel, dump: Dict[str, Any], name: str, mode="started"
