@@ -2,8 +2,6 @@
 
 Nikki Bot is a personal multipurpose, experimental Discord bot written using the discord.py library.
 
-Invite Link: https://discord.com/api/oauth2/authorize?client_id=1069780327502975006&permissions=40581639556672&scope=applications.commands%20bot
-
 ## Features
 
 1. **Server archive system**: This feature is designed for roleplaying servers. It condenses recent roleplay messages into a chronologically ordered channel called the Archive Channel, grouping them into clusters based on the original channel names and timestamps. This makes it easier for users to find relevant messages without cluttering the main chat channels.
