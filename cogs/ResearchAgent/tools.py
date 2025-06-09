@@ -169,6 +169,7 @@ async def read_and_split_pdf(
                     out: Optional[dict] = await mylib.call_by_tool_async(tool)
                     title, authors, date, abstract = out["content"]
                     break
+        typev: int = int(MetadataDocType.pdftext)
         metadata["authors"] = authors
         metadata["website"] = "PDF_ORIGIN"
         metadata["title"] = title
