@@ -1132,8 +1132,6 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         guild = channel.guild
         guildid = guild.id
 
-        if not (serverOwner(ctx) or serverAdmin(ctx)):  # Permission Check.
-            return False
 
         profile = ServerArchiveProfile.get_or_new(guildid)
 
@@ -1145,6 +1143,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         await ctx.send("timestamp:{}".format(last_time.timestamp()))
 
     @commands.command()
+    @commands.is_owner()
     async def setlastfirsttimestamp(self, ctx, time: int):
         """Set the timestamp to begin archiving at."""
         bot = ctx.bot
@@ -1158,8 +1157,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         indexbot = True
         user = False
 
-        if not (serverOwner(ctx) or serverAdmin(ctx)):  # Permission Check.
-            return False
+
 
         profile = ServerArchiveProfile.get_or_new(guildid)
 
