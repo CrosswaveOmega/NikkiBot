@@ -1039,7 +1039,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await ctx.send("guild only.")
 
     @commands.guild_only()
-    @commands.has_guild_permissions(administrator=True)
+    @commands.is_owner()
     @commands.command(
         name="delete_archive", description="ADMIN ONLY: WILL DELETE ALL ARCHIVE DATA."
     )
