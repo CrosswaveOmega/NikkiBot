@@ -989,8 +989,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await ctx.send("guild only.")
 
     @commands.guild_only()
-    @commands.has_guild_permissions(administrator=True)
-    @commands.command(
+    @commands.is_owner()
         name="reset_archive", description="ADMIN ONLY: WILL RESET THE ARCHIVE GROUPING."
     )
     async def archive_reset(self, ctx):
