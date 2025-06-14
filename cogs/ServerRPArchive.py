@@ -1000,11 +1000,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                     ctx, "Set a history channel first."
                 )
                 return False
-            if not (serverOwner(ctx) or serverAdmin(ctx)):
-                await MessageTemplates.server_archive_message(
-                    ctx, "You do not have permission to use this command."
-                )
-                return False
+            
             confirm, mes = await MessageTemplates.confirm(
                 ctx, "Are you sure about this?", ephemeral=False
             )
