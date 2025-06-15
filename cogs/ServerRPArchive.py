@@ -1009,6 +1009,8 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 await mes.delete()
                 ChannelSep.delete_channel_seps_by_server_id(ctx.guild.id)
                 ArchivedRPMessage.reset_channelsep_data(ctx.guild.id)
+                await ctx.send(ChannelArchiveStatus.count_all(ctx.guild.id))
+                ChannelArchiveStatus.delete_status_by_server_id(ctx.guild.id)
                 profile.update(last_group_num=0)
                 confirm2, mes2 = await MessageTemplates.confirm(
                     ctx,
