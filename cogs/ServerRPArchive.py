@@ -913,7 +913,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             await ctx.send("guild only.")
 
     @commands.guild_only()
-    @commands.has_guild_permissions(manage_messages=True, manage_channels=True)
+    @commands.has_permissions(manage_messages=True, manage_channels=True)
     @commands.command(name="lazymode", description="For big, unarchived servers.")
     async def setup_lazy_archive(self, ctx, autochannel: discord.TextChannel, *args):
         if ctx.guild:
@@ -1046,11 +1046,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                     ctx, "Set a history channel first."
                 )
                 return False
-            if not (serverOwner(ctx) or serverAdmin(ctx)):
-                await MessageTemplates.server_archive_message(
-                    ctx, "You do not have permission to use this command."
-                )
-                return False
+
 
             steps = [
                 "# Warning! \n  THIS WILL COMPLETELY ERASE ALL DATA ARCHIVED FROM THIS SERVER!"
