@@ -14,7 +14,7 @@ def serverOwner(ctx: commands.context):
 def serverAdmin(ctx: commands.context, gchan=None):
     user = ctx.message.author
     perm = user.guild_permissions
-    perm_chan=ctx.message.author(user)
+    perm_chan=ctx.channel.permissions_for(user)
     if perm.administrator or perm.manage_messages:
         return True
         
