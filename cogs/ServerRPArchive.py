@@ -941,7 +941,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             if not passok:
                 await MessageTemplates.server_archive_message(ctx, statusmessage)
                 return
-            if not (serverOwner(ctx) or serverAdmin(ctx)):
+            if not (serverOwner(ctx) or serverAdmin(ctx,gchan=archive_channel)):
                 await MessageTemplates.server_archive_message(
                     ctx, "You do not have permission to use this command."
                 )
