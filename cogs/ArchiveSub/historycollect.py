@@ -270,7 +270,7 @@ async def iter_hist_messages(
             messages = []
         if mlen % 25 == 0 and mlen > 0:
             await asyncio.sleep(1)
-            await actx.edit_mess(cobj.name)
+            await actx.edit_mess(cname=cobj.name)
             # await edittime.invoke_if_time(content=f"{mlen} messages so far in this channel, this may take a moment.   \n On channel {chancount}/{chanlen},\n {cobj.name},\n gathered <a:SquareLoading:1143238358303264798>.  This will take a while...")
             # await statusMess.updatew(f"{mlen} messages so far in this channel, this may take a moment.   \n On channel {chancount}/{chanlen},\n {cobj.name},\n gathered <a:SquareLoading:1143238358303264798>.  This will take a while...")
     if messages:
