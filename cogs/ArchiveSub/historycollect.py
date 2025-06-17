@@ -16,7 +16,7 @@ import re
 Collects all messages in non-blacklisted channels, and adds them to the database in batches of 10.
 
 """
-BATCH_SIZE = 50
+BATCH_SIZE = 9000
 LAZYGRAB_LIMIT = 10000
 
 
@@ -180,10 +180,10 @@ class ArchiveContext:
         if carch.first_message_time is not None:
             if carch.first_message_time > self.last_stored_time:
                 # print("TOO BIG.")
-                timev = carch.first_message_time
+                timev =  self.last_stored_time# carch.first_message_time
         else:
             timev = None
-        return {"after": timev, "oldest_first": True}
+        return {"after": timev, "oldest_first": True,"limit":90000}
 
     async def edit_mess(self, pre="", cname="", seconds=15):
         """Edits the status message to update the progress of the archival process.
@@ -264,10 +264,11 @@ async def iter_hist_messages(
             mlen += 1
         else:
             actx.total_ignored += 1
+            gui.gprint(actx.total_ignored)
         if len(messages) % BATCH_SIZE == 0 and len(messages) > 0:
             hmes = await HistoryMakers.get_history_message_list(messages)
             messages = []
-        if mlen % 200 == 0 and mlen > 0:
+        if mlen % 25 == 0 and mlen > 0:
             await asyncio.sleep(1)
             await actx.edit_mess(cobj.name)
             # await edittime.invoke_if_time(content=f"{mlen} messages so far in this channel, this may take a moment.   \n On channel {chancount}/{chanlen},\n {cobj.name},\n gathered <a:SquareLoading:1143238358303264798>.  This will take a while...")
