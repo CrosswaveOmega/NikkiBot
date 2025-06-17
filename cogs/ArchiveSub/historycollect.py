@@ -268,7 +268,7 @@ async def iter_hist_messages(
         if len(messages) % BATCH_SIZE == 0 and len(messages) > 0:
             hmes = await HistoryMakers.get_history_message_list(messages)
             messages = []
-        if mlen % 25 == 0 and mlen > 0:
+        if mlen % 200 == 0 and mlen > 0:
             await asyncio.sleep(1)
             await actx.edit_mess(cname=cobj.name)
             # await edittime.invoke_if_time(content=f"{mlen} messages so far in this channel, this may take a moment.   \n On channel {chancount}/{chanlen},\n {cobj.name},\n gathered <a:SquareLoading:1143238358303264798>.  This will take a while...")
