@@ -941,7 +941,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
             if not passok:
                 await MessageTemplates.server_archive_message(ctx, statusmessage)
                 return
-            if not (serverOwner(ctx) or serverAdmin(ctx,gchan=archive_channel)):
+            if not (serverOwner(ctx) or serverAdmin(ctx, gchan=archive_channel)):
                 await MessageTemplates.server_archive_message(
                     ctx, "You do not have permission to use this command."
                 )
@@ -990,7 +990,8 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
 
     @commands.guild_only()
     @commands.is_owner()
-    @commands.command(name="reset_archive", description="ADMIN ONLY: WILL RESET THE ARCHIVE GROUPING."
+    @commands.command(
+        name="reset_archive", description="ADMIN ONLY: WILL RESET THE ARCHIVE GROUPING."
     )
     async def archive_reset(self, ctx):
         if ctx.guild:
@@ -1000,7 +1001,7 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                     ctx, "Set a history channel first."
                 )
                 return False
-            
+
             confirm, mes = await MessageTemplates.confirm(
                 ctx, "Are you sure about this?", ephemeral=False
             )
@@ -1048,7 +1049,6 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                     ctx, "Set a history channel first."
                 )
                 return False
-
 
             steps = [
                 "# Warning! \n  THIS WILL COMPLETELY ERASE ALL DATA ARCHIVED FROM THIS SERVER!"
@@ -1125,7 +1125,6 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         guild = channel.guild
         guildid = guild.id
 
-
         profile = ServerArchiveProfile.get_or_new(guildid)
 
         if profile.history_channel_id == 0:
@@ -1149,8 +1148,6 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
         update = False
         indexbot = True
         user = False
-
-
 
         profile = ServerArchiveProfile.get_or_new(guildid)
 

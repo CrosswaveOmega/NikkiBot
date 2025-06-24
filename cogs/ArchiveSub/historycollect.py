@@ -71,7 +71,7 @@ class ArchiveContext:
         """Initializes the ArchiveContext instance.
 
         Args:
-            bot: The bot infographic.
+            bot: The bot.
             status_mess: Status message of ongoing archival process.
             last_stored_time: Last recorded timestamp of the archive process.
             update: Boolean flag indicating if an update operation is to be performed.
@@ -84,7 +84,7 @@ class ArchiveContext:
             total_ignored: Total count of messages ignored during the archival process.
         """
         self.bot = bot
-        self.status_mess = status_mess
+        self.status_mess: StatusEditMessage = status_mess
         self.last_stored_time = last_stored_time
         self.update = update
         self.profile = profile
@@ -180,10 +180,10 @@ class ArchiveContext:
         if carch.first_message_time is not None:
             if carch.first_message_time > self.last_stored_time:
                 # print("TOO BIG.")
-                timev =  self.last_stored_time# carch.first_message_time
+                timev = self.last_stored_time  # carch.first_message_time
         else:
             timev = None
-        return {"after": timev, "oldest_first": True,"limit":90000}
+        return {"after": timev, "oldest_first": True, "limit": 100000}
 
     async def edit_mess(self, pre="", cname="", seconds=15):
         """Edits the status message to update the progress of the archival process.
@@ -462,12 +462,16 @@ async def collect_server_history(ctx, **kwargs):
     totalcharlen = 0
     mode = profile.get_ignore_mode()
     await arch_ctx.edit_mess(seconds=0)
+    unarchive_chain = True
     for tup, chan in chantups:
         arch_ctx.channel_spot += 1
         doarchive = should_archive_channel(mode, chan, profile, guild)
 
         if doarchive:
             threads = chan.threads
+            if unarchive_chain:
+                await arch_ctx.edit_mess("", chan.name, seconds=0)
+                unarchive_chain = False
 
             lastmessage_str = f"{tup}, {chan.name}: {chan.last_message_id}"
             gui.gprint(lastmessage_str)
@@ -493,6 +497,8 @@ async def collect_server_history(ctx, **kwargs):
             await arch_ctx.edit_mess("", chan.name)
             if current_channel_count % current_channel_every == 0:
                 await asyncio.sleep(1)
+        else:
+            unarchive_chain = True
 
     if statusMessToEdit != None:
         await statusMessToEdit.delete()

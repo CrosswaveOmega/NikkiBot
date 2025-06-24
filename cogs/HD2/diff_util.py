@@ -10,7 +10,7 @@ import random
 from enum import Enum
 
 from hd2api.builders import *
-from hd2api.models import DiveharderAll, StaticAll
+from hd2api.models import DiveharderAll, StaticAll, Region
 from hd2api.models.ABC.model import BaseApiModel
 from pydantic import Field
 
@@ -494,8 +494,8 @@ async def detect_loggable_changes(
         ["health", "players", "retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
-    
-    gui.gprint(old.status.planetRegions,new.status.planetRegions)
+
+    gui.gprint(old.status.planetRegions, new.status.planetRegions)
     superlist += await process_planet_attacks(
         new.status.planetRegions,
         old.status.planetRegions,
@@ -506,7 +506,7 @@ async def detect_loggable_changes(
         ["health", "players", "retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
-    gui.gprint(old.war_info.planetRegions,new.war_info.planetRegions)
+    gui.gprint(old.war_info.planetRegions, new.war_info.planetRegions)
     superlist += await process_planet_attacks(
         new.war_info.planetRegions,
         old.war_info.planetRegions,
@@ -518,6 +518,21 @@ async def detect_loggable_changes(
         game_time=gametime,
     )
     logs.info(f"{str(superlist)}")
+
+    # For regions since they're a bit different.
+    olds: List[Region] = build_all_regions(old, statics=statics)
+    news: List[Region] = build_all_regions(new, statics=statics)
+
+    superlist += await process_planet_attacks(
+        news,
+        olds,
+        "regions",
+        ["planetIndex", "regionIndex"],
+        QueueAll,
+        batch,
+        ["players", "retrieved_at", "time_delta", "self"],
+        game_time=gametime,
+    )
 
     logs.debug("global event detection, stand by...")
     superlist += await process_planet_events(
@@ -575,6 +590,7 @@ async def detect_loggable_changes(
         ["planetStatus", "retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
+
     logs.info("Done detection, stand by...")
     if new.major_order is None:
         if old.major_order is not None:

@@ -47,6 +47,7 @@ from hd2api import (
     PlanetActiveEffects,
     KnownPlanetEffect,
     build_planet_effect,
+    build_all_regions,
 )
 from hd2api.models import PlanetRegion, PlanetRegionInfo
 
@@ -301,6 +302,14 @@ class Batch:
             if planet:
                 planet_name_source = planet.get_name(False)
 
+        if place in ["planetregions", "regioninfo"]:
+            va, _ = value
+            # planet = apistatus.planets.get(int(va.index), None)
+
+            planet = SimplePlanet.from_index(va.planetIndex)
+            if planet:
+                planet_name_source = planet.get_name(False)
+
         if place in ["sectors"]:
             va, _ = value
             planet = va
@@ -540,6 +549,7 @@ class Batch:
                 combinations.append("invasion start")
             else:
                 combinations.append("defense start")
+
         if "campaign_EventModes.REMOVE" in trigger_list and len(trigger_list) == 1:
             combinations.append("cend")
 
@@ -1109,7 +1119,7 @@ class Embeds:
         embed.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
 
         return embed
-        
+
     @staticmethod
     def dumpEmbedPlanet(
         campaign: Union[PlanetStatus, PlanetInfo],
@@ -1136,8 +1146,8 @@ class Embeds:
             new_decay = round(maths.dps_to_lph(new_decay), 3)
             specialtext += f"\n* Regen Rate: `{old_decay}`->`{new_decay}`"
         if "position" in dump:
-            new_posx = dump["position"].get('x',{'new':0}).get("new", 0)
-            new_posy = dump["position"].get('y',{'new':0}).get("new", 0)
+            new_posx = dump["position"].get("x", {"new": 0}).get("new", 0)
+            new_posy = dump["position"].get("y", {"new": 0}).get("new", 0)
             specialtext += f"\n*`{name} moves to X {campaign.position.x} Y {campaign.position.y} ({custom_strftime(campaign.retrieved_at)}`)"
 
         emb = discord.Embed(
@@ -1152,7 +1162,7 @@ class Embeds:
         emb.set_author(name="Planet Value Change")
         emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
         return emb
-        
+
     @staticmethod
     def dumpEmbed(
         campaign: BaseApiModel, dump: Dict[str, Any], name: str, mode="started"
@@ -1578,6 +1588,16 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         info, dump, "planet", f"changed in {place}"
                     )
             if place == "planetregions" or place == "regioninfo":
+                planet = self.apistatus.planets.get(int(info.planetIndex), None)
+                if planet:
+                    embed = Embeds.dumpEmbedRegion(
+                        info, dump, planet, f"changed in {place}"
+                    )
+                else:
+                    embed = Embeds.dumpEmbedRegion(
+                        info, dump, planet, f"changed in {place}"
+                    )
+            if place == "regions":
                 planet = self.apistatus.planets.get(int(info.planetIndex), None)
                 if planet:
                     embed = Embeds.dumpEmbedRegion(

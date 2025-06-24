@@ -764,7 +764,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             ephemeral=True,
         )
         hooks = ServerHDProfile.get_entries_with_webhook()
-        #await ctx.send(f"{hooks}", ephemeral=True)
+        # await ctx.send(f"{hooks}", ephemeral=True)
         lg = [AssetLookup.get_asset("loghook", "urls")]
         for h in hooks:
             lg.append(h)
@@ -988,7 +988,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if byplanet in self.apistatus.planets:
             planet = self.apistatus.planets[byplanet]
             # Check if any regions exist for the given planet index
-
 
             # Generate the embed(s)
             embeds = hd2.region_view(

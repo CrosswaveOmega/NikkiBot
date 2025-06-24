@@ -731,8 +731,8 @@ def region_view(
     show_stalemate: bool = True,
 ) -> List[discord.Embed]:
     flav = "Regional Status"
-    planetIndex=planet.index
-    
+    planetIndex = planet.index
+
     if hdtext and "planetary_overview" in hdtext:
         flav = random.choice(hdtext["planetary_overview"]["value"])
 
@@ -754,7 +754,7 @@ def region_view(
     prop = defaultdict(int)
     stalemated = []
     players_on_stalemated = 0
-    allids=[int(p.id) for p in planet.regions]
+    allids = [int(p.id) for p in planet.regions]
 
     # Filter to regions for this planetIndex
     regions = {k: v for k, v in stat.regions.items() if int(k) in allids}
@@ -766,9 +766,7 @@ def region_view(
         total += pc
         avg = Region.average(changes[:4]) if changes else None
         diff: Region = reg - last
-        name,desc=reg.simple_region_view(diff,avg)
-
-
+        name, desc = reg.simple_region_view(diff, avg)
 
         if el >= 24:
             emb = discord.Embed()
