@@ -54,6 +54,50 @@
         ],
         "if campaign_remove and planet_change, where planet.owner==1"
     ],
+    "region_siege_start":
+    [
+        "Heeth is liberated",
+        [
+            "[PLANET 0] Region [RegionIndex] [RegionName] [RegionSize] [TYPETEXT] [FACTION]"
+        ],
+        [
+            "is besieged by"
+        ],
+        "if campaign_remove and planet_change, where planet.owner==1"
+    ],
+    "region_siege_changehands":
+    [
+        "Heeth is liberated",
+        [
+            "[PLANET 0] Region [RegionIndex] [RegionName] [RegionSize] [TYPETEXT] [FACTION]"
+        ],
+        [
+            "has fallen to"
+        ],
+        "if campaign_remove and planet_change, where planet.owner==1"
+    ],
+    "region":
+    [
+        "Heeth is liberated",
+        [
+            "[PLANET 0] Region [RegionIndex] [RegionName] [RegionSize] [TYPETEXT] [FACTION]"
+        ],
+        [
+            "has fallen to"
+        ],
+        "if campaign_remove and planet_change, where planet.owner==1"
+    ],
+    "region_siege_ends":
+    [
+        "Heeth is liberated",
+        [
+            "[PLANET 0] Region [RegionIndex] [RegionName] [RegionSize] [TYPETEXT]"
+        ],
+        [
+            "siege has ended"
+        ],
+        "if campaign_remove and planet_change, where planet.owner==1"
+    ],
 
     "defense start": [
         "Mantes of the Xzar sector is attacked by Automatons",

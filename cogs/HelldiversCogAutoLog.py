@@ -51,7 +51,7 @@ from hd2api import (
 )
 from hd2api.models import PlanetRegion, PlanetRegionInfo
 
-from hd2api.constants import faction_names
+from hd2api.constants import faction_names, region_size_enums
 from cogs.HD2.maths import maths
 from cogs.HD2.diff_util import process_planet_attacks, GameEvent, EventModes
 from utility.manual_load import load_json_with_substitutions
@@ -302,7 +302,7 @@ class Batch:
             if planet:
                 planet_name_source = planet.get_name(False)
 
-        if place in ["planetregions", "regioninfo"]:
+        if place in ["regions"]:
             va, _ = value
             # planet = apistatus.planets.get(int(va.index), None)
 
@@ -329,12 +329,6 @@ class Batch:
             pass
         if place in ["planetAttacks"]:
             pass
-            # planet_source = apistatus.planets.get(int(value.source), None)
-            # planet_target = apistatus.planets.get(int(value.target), None)
-            # if planet_source:
-            #     planet_name_source = planet_source.get_name(False)
-            # if planet_target:
-            #     planet = planet_target
 
         self.add_event(event, planet_name_source, key, planet, sector_name)
 
@@ -344,7 +338,7 @@ class Batch:
             pass
 
     async def format_combo_text(
-        self, ctype: str, planet_data: PlanetEvents, ctext: List[List[str]]
+        self, ctype: str, planet_data: PlanetEvents, ctext: List[List[str]], alls=None
     ) -> List[str]:
         targets: List[str] = []
         data_path: str = "./hd2json/planets/planets.json"
@@ -370,6 +364,51 @@ class Batch:
                 )
                 target += f" ({custom_strftime(planet_data.ret)})"
                 targets.append(target)
+
+        elif "region" in ctype:
+            for evt in planet_data.evt:
+                if evt.mode == EventModes.CHANGE and evt.place == "region":
+                    (info, dump) = evt.value
+                    ym = "region_siege_changehands"
+                    if "isAvailable" in dump:
+                        if info.isAvailable:
+                            ym = "region_siege_start"
+                        elif info.isAvailable:
+                            ym = "region_siege_end"
+                    if "owner" in dump:
+                        ym = "region_siege_changehands"
+                    ctext = alls[ym]
+                    target = (
+                        ctext[1][0]
+                        .replace("[TYPETEXT]", ctext[2][0])
+                        .replace("[PLANET 0]", planet_data.planet.name)
+                    )
+                    target = target.replace("[SECTOR 1]", planet_data.planet.sector)
+
+                    target += f" ({custom_strftime(planet_data.ret)})"
+                    if ctype == "region_siege_start":
+                        target = target.replace(
+                            "[FACTION]", faction_dict.get(1, "UNKNOWN")
+                        )
+                    else:
+                        if info.owner is not None:
+                            target = target.replace(
+                                "[FACTION]",
+                                faction_dict.get(info.owner, "UNKNOWN"),
+                            )
+                        else:
+                            target = target.replace(
+                                "[FACTION]",
+                                faction_dict.get(planet_data.planet.owner, "UNKNOWN"),
+                            )
+                    target = target.replace("[RegionIndex]", info.regionIndex)
+                    target = target.replace("[RegionName]", info.name)
+                    target = target.replace(
+                        "[RegionSize]",
+                        region_size_enums.get(info.regionSize, "UnknownSize"),
+                    )
+
+                    targets.append(target)
 
         elif planet_data.planet is not None:
             target = (
@@ -469,7 +508,7 @@ class Batch:
                 for c in combo:
                     if c in self.hd2:
                         text: List[str] = await self.format_combo_text(
-                            c, planet_data, self.hd2[c]
+                            c, planet_data, self.hd2[c], self.hd2
                         )
                         combos.extend(text)
                     else:
@@ -535,6 +574,21 @@ class Batch:
                     elif "activeEffectIds" in dump:
                         gui.gprint(dump)
                         combinations.append("dss effect")
+
+        if "regions_EventModes.CHANGE" in trigger_list:
+            for evt in planet_data.evt:
+                if evt.mode == EventModes.CHANGE and evt.place == "regions":
+                    (info, dump) = evt.value
+                    if "region" not in combinations:
+                        combinations.append("region")
+                    # if "isAvailable" in dump:
+                    #     if info.isAvailable:
+                    #         combinations.append("region_siege_start")
+                    #     elif info.isAvailable:
+                    #         combinations.append("region_siege_end")
+                    # if "owner" in dump:
+                    #     gui.gprint(dump)
+                    #     combinations.append("region_siege_changehands")
 
         if (
             "campaign_EventModes.NEW" in trigger_list
@@ -698,6 +752,13 @@ colors2 = {
     "terminids": 0xEF8E20,  # Yellow
     "humans": 0x79E0FF,  # Cyan-like color
     "illuminate": 0x960096,
+}
+
+inds2 = {
+    "automaton": 3,  # Red
+    "terminids": 2,  # Yellow
+    "humans": 1,  # Cyan-like color
+    "illuminate": 4,
 }
 
 
@@ -1069,8 +1130,12 @@ class Embeds:
 
         # Owner change color override
         if "owner" in dump:
-            old_owner = dump["owner"].get("old", 5) or 0
-            new_owner = dump["owner"].get("new", 5) or 0
+            old_owner = dump["owner"].get("old", 5)
+            new_owner = dump["owner"].get("new", 5)
+            if old_owner is None:
+                old_owner = inds2.get(planet.currentOwner.lower(), 0)
+            if new_owner is None:
+                new_owner = inds2.get(planet.currentOwner.lower(), 0)
             color = getColor(new_owner)
             specialtext += (
                 f"\n* Owner: `{faction_names.get(old_owner, 'Unknown')}`"
@@ -1088,11 +1153,11 @@ class Embeds:
             old_lph = round(maths.dps_to_lph(old_rps), 3)
             new_lph = round(maths.dps_to_lph(new_rps), 3)
             specialtext += f"\n* Regen Rate: `{old_lph}` → `{new_lph}` LPH"
-        rname= campaign.get("name","None")
-        rsize = campaign.get("regionSize","UNKNOWNSIZE")
+        rname = campaign.get("name", "None")
+        rsize = campaign.get("regionSize", "UNKNOWNSIZE")
         embed = discord.Embed(
             title=f"Region {rname} in {name} Field Change",
-            description=f"Stats **{mode}** for {name}'s {rname} {rsize}, in sector {sector}.{specialtext}",
+            description=f"Stats **{mode}** for {name}'s {rname} (size  {rsize}), in sector {sector}.{specialtext}",
             timestamp=campaign.retrieved_at,
             color=color,
         )
@@ -1588,16 +1653,16 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     embed = Embeds.dumpEmbed(
                         info, dump, "planet", f"changed in {place}"
                     )
-            if place == "planetregions" or place == "regioninfo":
-                planet = self.apistatus.planets.get(int(info.planetIndex), None)
-                if planet:
-                    embed = Embeds.dumpEmbedRegion(
-                        info, dump, planet, f"changed in {place}"
-                    )
-                else:
-                    embed = Embeds.dumpEmbedRegion(
-                        info, dump, planet, f"changed in {place}"
-                    )
+            # if place == "planetregions" or place == "regioninfo":
+            #     planet = self.apistatus.planets.get(int(info.planetIndex), None)
+            #     if planet:
+            #         embed = Embeds.dumpEmbedRegion(
+            #             info, dump, planet, f"changed in {place}"
+            #         )
+            #     else:
+            #         embed = Embeds.dumpEmbedRegion(
+            #             info, dump, planet, f"changed in {place}"
+            #         )
             if place == "regions":
                 planet = self.apistatus.planets.get(int(info.planetIndex), None)
                 if planet:
