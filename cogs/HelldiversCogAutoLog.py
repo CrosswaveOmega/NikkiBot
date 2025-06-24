@@ -1089,9 +1089,10 @@ class Embeds:
             new_lph = round(maths.dps_to_lph(new_rps), 3)
             specialtext += f"\n* Regen Rate: `{old_lph}` → `{new_lph}` LPH"
         rname= campaign.get("name","None")
+        rsize = campaign.get("regionSize","UNKNOWNSIZE")
         embed = discord.Embed(
             title=f"Region {rname} in {name} Field Change",
-            description=f"Stats **{mode}** for {name}, in sector {sector}.{specialtext}",
+            description=f"Stats **{mode}** for {name}'s {rname} {rsize}, in sector {sector}.{specialtext}",
             timestamp=campaign.retrieved_at,
             color=color,
         )
