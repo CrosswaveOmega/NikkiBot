@@ -528,7 +528,7 @@ async def detect_loggable_changes(
         ["planetIndex", "regionIndex"],
         QueueAll,
         batch,
-        ["players", "retrieved_at", "time_delta", "self"],
+        ["health", "players", "retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
 
