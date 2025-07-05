@@ -402,8 +402,8 @@ class Batch:
                                 "[FACTION]",
                                 faction_dict.get(planet_data.planet.owner, "UNKNOWN"),
                             )
-                    target = target.replace("[RegionIndex]", info.regionIndex)
-                    target = target.replace("[RegionName]", info.name)
+                    target = target.replace("[RegionIndex]", str(info.regionIndex))
+                    target = target.replace("[RegionName]", str(info.name))
                     target = target.replace(
                         "[RegionSize]",
                         region_size_enums.get(info.regionSize, "UnknownSize"),
