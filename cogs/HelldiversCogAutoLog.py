@@ -258,6 +258,7 @@ class Batch:
         planet: Optional[Planet],
         sector_name: Optional[str],
     ) -> None:
+        gui.gprint(key)
         if sector_name is not None:
             if sector_name not in self.sector:
                 self.sector[sector_name] = SectorEvents(planet)
@@ -501,6 +502,8 @@ class Batch:
         for planet_data in self.planets.values():
             # Start checking all planet events.
             trigger_list: List[str] = planet_data.trig
+            
+            gui.gprint(trigger_list)
             combo: Optional[List[str]] = self.check_planet_trigger_combinations(
                 trigger_list, planet_data
             )
