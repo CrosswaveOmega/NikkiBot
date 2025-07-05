@@ -580,7 +580,7 @@ class Batch:
 
         if "regions_EventModes.CHANGE" in trigger_list:
             for evt in planet_data.evt:
-                gui.gprint(dump,evt.mode,evt.place)
+                gui.gprint(evt.mode,evt.place,evt.value)
                 if evt.mode == EventModes.CHANGE and evt.place == "regions":
                     (info, dump) = evt.value
                     if "region" not in combinations:
