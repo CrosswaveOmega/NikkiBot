@@ -369,6 +369,7 @@ class Batch:
         elif "region" in ctype:
             for evt in planet_data.evt:
                 if evt.mode == EventModes.CHANGE and evt.place == "region":
+                    gui.gprint(evt,info)
                     (info, dump) = evt.value
                     ym = "region_siege_changehands"
                     if "isAvailable" in dump:
@@ -585,6 +586,8 @@ class Batch:
                     (info, dump) = evt.value
                     if "region" not in combinations:
                         combinations.append("region")
+                        
+                        gui.gprint(combinations,evt.mode,evt.place,evt.value)
                     # if "isAvailable" in dump:
                     #     if info.isAvailable:
                     #         combinations.append("region_siege_start")
