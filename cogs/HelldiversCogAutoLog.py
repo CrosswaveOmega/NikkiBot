@@ -502,7 +502,7 @@ class Batch:
         for planet_data in self.planets.values():
             # Start checking all planet events.
             trigger_list: List[str] = planet_data.trig
-            
+
             gui.gprint(trigger_list)
             combo: Optional[List[str]] = self.check_planet_trigger_combinations(
                 trigger_list, planet_data
@@ -580,13 +580,13 @@ class Batch:
 
         if "regions_EventModes.CHANGE" in trigger_list:
             for evt in planet_data.evt:
-                gui.gprint(evt.mode,evt.place,evt.value)
+                gui.gprint(evt.mode, evt.place, evt.value)
                 if evt.mode == EventModes.CHANGE and evt.place == "regions":
                     (info, dump) = evt.value
                     if "region" not in combinations:
                         combinations.append("region")
-                        
-                        gui.gprint(combinations,evt.mode,evt.place,evt.value)
+
+                        gui.gprint(combinations, evt.mode, evt.place, evt.value)
                     # if "isAvailable" in dump:
                     #     if info.isAvailable:
                     #         combinations.append("region_siege_start")

@@ -191,6 +191,7 @@ def create_planet_embed(
     _add_event_details(embed, data, last)
     _add_connections_and_attacks(embed, data, stat)
     _add_effects(embed, data)
+    _add_regions(embed, data)
 
     return embed
 
@@ -353,6 +354,14 @@ def _add_effects(embed: discord.Embed, data: Planet) -> None:
             effect_description = effect.description
             effect_str += f"**{effect_name}:** {effect_description}\n"
         embed.add_field(name="Effects", value=effect_str[:1020], inline=False)
+
+
+def _add_regions(embed: discord.Embed, data: Planet) -> None:
+    if data.regions:
+        for region in data.regions:
+            namev,outlist=region.simple_region_view()
+            de="\n".join(o for o in outlist)
+            embed.add_field(name=namev, value=de[:1020], inline=False)
 
 
 def campaign_view(
