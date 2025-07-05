@@ -368,8 +368,7 @@ class Batch:
 
         elif "region" in ctype:
             for evt in planet_data.evt:
-                if evt.mode == EventModes.CHANGE and evt.place == "region":
-                    gui.gprint(evt,info)
+                if evt.mode == EventModes.CHANGE and evt.place == "regions":
                     (info, dump) = evt.value
                     ym = "region_siege_changehands"
                     if "isAvailable" in dump:
