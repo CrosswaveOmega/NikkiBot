@@ -415,8 +415,8 @@ def campaign_view(
         # Skip stalemated planets if necessary
         if not show_stalemate:
             if "Stalemate" in desc and "REGIONS" not in desc:
-                desc=desc.replace("Stalemate.","")
-                desc=desc.replace("HP `100.0%`","")
+                desc=desc.replace("Stalemate.\n","")
+                desc=desc.replace("HP `100.0% `\n","")
                 #stalemated.append(name)
                 players_on_stalemated += camp.planet.statistics.playerCount
                 #continue
