@@ -428,26 +428,18 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         except Exception as e:
             await self.bot.send_error(e, "Message update cleanup error.")
             # gui.gprint(str(e))
-
-    async def gtask_update(self, source_message: discord.Message = None):
-        """
-        Guild task that updates the overview message.
-        """
-        if not source_message:
-            return None
-        context = await self.bot.get_context(source_message)
-        try:
-            profile = ServerHDProfile.get(context.guild.id)
-            if profile:
-                target = await urltomessage(profile.overview_message_url, context.bot)
-                if self.api_up is False:
-                    await target.edit(content="**WARNING, COMMS ARE DOWN!**")
-                    return
-                emb = hd2.campaign_view(self.apistatus, self.hd2)
-
-                embs = emb
-                if self.apistatus.assignments:
-                    for i, assignment in self.apistatus.assignments.items():
+            
+    async def edit_target_message(self, context, stalemated=True):
+        profile = ServerHDProfile.get(context.guild.id)
+        if profile:
+            target = await urltomessage(profile.overview_message_url, context.bot)
+            if self.api_up is False:
+                await target.edit(content="**WARNING, COMMS ARE DOWN!**")
+                return
+            emb = hd2.campaign_view(self.apistatus, self.hd2,show_stalemated=stalemated)
+            embs = emb
+            if self.apistatus.assignments:
+                for i, assignment in self.apistatus.assignments.items():
                         b, a = assignment.get_first_change()
                         emb3 = hd2.create_assignment_embed(
                             b, b - a, planets=self.apistatus.planets
@@ -457,8 +449,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                             0,
                             emb3,
                         )
-                output_string = self.outstring
-                if output_string:
+            output_string = self.outstring
+            if output_string:
                     embs.insert(
                         0,
                         discord.Embed(
@@ -467,14 +459,29 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                         ),
                     )
 
-                await target.edit(content="Current game status.", embeds=embs)
-                return "OK"
+            await target.edit(content="Current game status.", embeds=embs)
+            
+    async def gtask_update(self, source_message: discord.Message = None):
+        """
+        Guild task that updates the overview message.
+        """
+        if not source_message:
+            return None
+        context = await self.bot.get_context(source_message)
+        try:
+            await self.edit_target_message(context,stalemated=True)
+            return "OK"
         except Exception as e:
-            er = MessageTemplates.get_error_embed(
-                title="Error with AUTO", description=f"{str(e)}"
-            )
-            await source_message.channel.send(embed=er)
-            raise e
+            try:
+                await self.edit_target_message(context,stalemated=False)
+                return "OK"
+            except Exception as e:
+                er = MessageTemplates.get_error_embed(
+                    title="Error with AUTO", description=f"{str(e)}"
+                )
+            
+                await source_message.channel.send(embed=er)
+                raise e
 
     async def gtask_map(self, source_message: discord.Message = None):
         """
