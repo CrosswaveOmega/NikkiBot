@@ -436,7 +436,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             if self.api_up is False:
                 await target.edit(content="**WARNING, COMMS ARE DOWN!**")
                 return
-            emb = hd2.campaign_view(self.apistatus, self.hd2,show_stalemated=stalemated)
+            emb = hd2.campaign_view(self.apistatus, self.hd2, show_stalemate=stalemated)
             embs = emb
             if self.apistatus.assignments:
                 for i, assignment in self.apistatus.assignments.items():
