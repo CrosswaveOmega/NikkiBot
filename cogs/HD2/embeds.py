@@ -148,7 +148,13 @@ def create_campaign_str(data: Union[Campaign2, Campaign]) -> str:
     cid = data["id"]
     campaign_type = campaign_types.get(data["type"], f"Unknown type {data.type}")
     count = data["count"]
-    output = f"C{cid}: {campaign_type}.  Op number:{count}, Faction:{data.faction}"
+    fact=None
+    if hasattr(data,"faction"):
+        fact=data.faction
+    else:
+        fact=data.race
+    
+    output = f"C{cid}: {campaign_type}.  Op number:{count}, Faction:{fact}"
 
     return output
 
@@ -414,10 +420,12 @@ def campaign_view(
         desc = "\n".join(desc)
         # Skip stalemated planets if necessary
         if not show_stalemate:
-            if "Stalemate" in desc:
-                stalemated.append(name)
+            if "Stalemate" in desc and "REGIONS" not in desc:
+                desc=desc.replace("Stalemate.\n","")
+                desc=desc.replace("HP `100.0% `\n","")
+                #stalemated.append(name)
                 players_on_stalemated += camp.planet.statistics.playerCount
-                continue
+                #continue
 
         if planet_difference.event != None:
             p_evt = planet_difference.event
