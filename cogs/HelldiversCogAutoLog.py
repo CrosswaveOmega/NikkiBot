@@ -523,7 +523,7 @@ class Batch:
             trigger_list: List[str] = sector_data.trig
             combos.append(str(sector_data.planet.name) + ":" + ",".join(trigger_list))
 
-            combo:List[str] = self.check_sector_trig_combinations(
+            combo: List[str] = self.check_sector_trig_combinations(
                 trigger_list, sector_data
             )
             if combo:
@@ -539,9 +539,7 @@ class Batch:
         if self.general.evt:
             general = self.general
             trig = general.trig
-            combo: List[str] = self.check_generic_trig_combinations(
-                trig, general
-            )
+            combo: List[str] = self.check_generic_trig_combinations(trig, general)
             if combo:
                 for c in combo:
                     if c in self.hd2:
