@@ -419,6 +419,7 @@ def campaign_view(
         name, desc = camp.planet.simple_planet_view(planet_difference, avg, full)
         desc = "\n".join(desc)
         # Skip stalemated planets if necessary
+
         if not show_stalemate:
             if "Stalemate" in desc and "REGIONS" not in desc:
                 desc=desc.replace("Stalemate.\n","")
@@ -471,7 +472,8 @@ def campaign_view(
         pred = make_prediction_for_eps(features)
         eps_estimated = round(pred, 3)
         eps_real = round(features["eps"], 3)
-        desc += f"\ninfl/s:`{eps_estimated},c{eps_real}`"
+        if not (eps_estimated<=0 and eps_real<=0):
+            desc += f"\ninfl/s:`{eps_estimated},c{eps_real}`"
         # Manage embed field lengths
         if el >= 24:
             emb = discord.Embed()
