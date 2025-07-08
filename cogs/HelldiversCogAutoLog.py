@@ -372,9 +372,9 @@ class Batch:
                     (info, dump) = evt.value
                     ym = "region_siege_changehands"
                     if "isAvailable" in dump:
-                        if info.isAvailable == True:
+                        if info.isAvailable:
                             ym = "region_siege_start"
-                        elif info.isAvailable == False and not "owner" in dump:
+                        elif not info.isAvailable and "owner" not in dump:
                             ym = "region_siege_end"
                         elif "owner" in dump:
                             ym = "region_siege_changehands"
@@ -506,7 +506,7 @@ class Batch:
             trigger_list: List[str] = planet_data.trig
 
             gui.gprint(trigger_list)
-            combo: Optional[List[str]] = self.check_planet_trigger_combinations(
+            combo: List[str] = self.check_planet_trigger_combinations(
                 trigger_list, planet_data
             )
             if combo:
@@ -523,7 +523,7 @@ class Batch:
             trigger_list: List[str] = sector_data.trig
             combos.append(str(sector_data.planet.name) + ":" + ",".join(trigger_list))
 
-            combo: Optional[List[str]] = self.check_sector_trig_combinations(
+            combo:List[str] = self.check_sector_trig_combinations(
                 trigger_list, sector_data
             )
             if combo:
@@ -539,7 +539,7 @@ class Batch:
         if self.general.evt:
             general = self.general
             trig = general.trig
-            combo: Optional[List[str]] = self.check_generic_trig_combinations(
+            combo: List[str] = self.check_generic_trig_combinations(
                 trig, general
             )
             if combo:
@@ -586,6 +586,7 @@ class Batch:
                 if evt.mode == EventModes.CHANGE and evt.place == "regions":
                     (info, dump) = evt.value
                     if "region" not in combinations:
+                        # many regions per planet.
                         combinations.append("region")
 
                         gui.gprint(combinations, evt.mode, evt.place, evt.value)
@@ -685,16 +686,16 @@ class Batch:
         ) and self.is_destroyed_link(planet, planet_data):
             combinations.append("destroylink")
 
-        return combinations if combinations else None
+        return combinations if combinations else []
 
     def check_sector_trig_combinations(
         self, trigger_list: List[str], planet_data: SectorEvents
-    ) -> Optional[List[str]]:
+    ) -> List[str]:
         combinations: List[str] = []
         if "sectors_EventModes.CHANGE" in trigger_list:
             combinations.append("sector_state")
 
-        return combinations if combinations else None
+        return combinations if combinations else []
 
     def check_generic_trig_combinations(
         self, trigger_list: List[str], general: GeneralEvents
@@ -1018,8 +1019,6 @@ class Embeds:
         emb.set_footer(text=f"{custom_strftime(evt.retrieved_at)}")
         return emb
 
-        return emb
-
     @staticmethod
     def RegionEmbed_PlanetRegion(
         campaign: "PlanetRegion",
@@ -1115,6 +1114,7 @@ class Embeds:
 
         return embed
 
+    @staticmethod
     def dumpEmbedRegion(
         campaign: Union["PlanetRegion", "PlanetRegionInfo"],
         dump: Dict[str, Any],
@@ -1478,6 +1478,14 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         await self.send_embeds_through_webhook(batches)
 
     async def build_embed(self, item: GameEvent):
+        """Build up an embed.
+
+        Args:
+            item (GameEvent): _description_
+
+        Returns:
+            _type_: _description_
+        """
         event_type = item.mode
         if event_type == EventModes.GROUP:
             # Schedule a grouping task.
@@ -1594,11 +1602,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 ti = value.titleId32
                 mi = value.messageId32
                 tc, mc = False, False
-                if value.title and ti != None:
+                if value.title and ti is not None:
                     if self.titleids.get(ti, None) != value.title:
                         self.titleids[ti] = value.title
                         tc = True
-                if value.message and mi != None:
+                if value.message and mi is not None:
                     if self.messageids.get(mi, None) != value.message:
                         self.messageids[mi] = value.message
                         mc = True
@@ -1687,6 +1695,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             elif place == "info_raw":
                 embed = Embeds.dumpEmbed(info, dump, "info", "changed")
             elif place == "station":
+                if "currentElectionEndWarTime" in dump and len(dump) == 1:
+                    return None
                 embed = Embeds.spaceStationEmbed(info, dump, self.apistatus, "changed")
             elif place == "globalEvents":
                 listv = [k for k in dump.keys()]
@@ -1694,7 +1704,6 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 mi = info.messageId32
                 tc, mc = False, 0
                 footer_delta = ""
-                difflib.context_diff
                 if info.title:
                     stored = hdml_parse(self.titleids.get(ti, ""))
                     new = hdml_parse(info.title)

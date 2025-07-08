@@ -148,12 +148,12 @@ def create_campaign_str(data: Union[Campaign2, Campaign]) -> str:
     cid = data["id"]
     campaign_type = campaign_types.get(data["type"], f"Unknown type {data.type}")
     count = data["count"]
-    fact=None
-    if hasattr(data,"faction"):
-        fact=data.faction
+    fact = None
+    if hasattr(data, "faction"):
+        fact = data.faction
     else:
-        fact=data.race
-    
+        fact = data.race
+
     output = f"C{cid}: {campaign_type}.  Op number:{count}, Faction:{fact}"
 
     return output
@@ -422,11 +422,11 @@ def campaign_view(
 
         if not show_stalemate:
             if "Stalemate" in desc and "REGIONS" not in desc:
-                desc=desc.replace("Stalemate.\n","")
-                desc=desc.replace("HP `100.0% `\n","")
-                #stalemated.append(name)
+                desc = desc.replace("Stalemate.\n", "")
+                desc = desc.replace("HP `100.0% `\n", "")
+                # stalemated.append(name)
                 players_on_stalemated += camp.planet.statistics.playerCount
-                #continue
+                # continue
 
         if planet_difference.event != None:
             p_evt = planet_difference.event
@@ -472,7 +472,7 @@ def campaign_view(
         pred = make_prediction_for_eps(features)
         eps_estimated = round(pred, 3)
         eps_real = round(features["eps"], 3)
-        if not (eps_estimated<=0 and eps_real<=0):
+        if not (eps_estimated <= 0 and eps_real <= 0):
             desc += f"\ninfl/s:`{eps_estimated},c{eps_real}`"
         # Manage embed field lengths
         if el >= 24:

@@ -428,7 +428,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         except Exception as e:
             await self.bot.send_error(e, "Message update cleanup error.")
             # gui.gprint(str(e))
-            
+
     async def edit_target_message(self, context, stalemated=True):
         profile = ServerHDProfile.get(context.guild.id)
         if profile:
@@ -440,27 +440,27 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             embs = emb
             if self.apistatus.assignments:
                 for i, assignment in self.apistatus.assignments.items():
-                        b, a = assignment.get_first_change()
-                        emb3 = hd2.create_assignment_embed(
-                            b, b - a, planets=self.apistatus.planets
-                        )
-
-                        embs.insert(
-                            0,
-                            emb3,
-                        )
-            output_string = self.outstring
-            if output_string:
-                    embs.insert(
-                        0,
-                        discord.Embed(
-                            title="Meridia Status.",
-                            description=f"{output_string}"[:4090],
-                        ),
+                    b, a = assignment.get_first_change()
+                    emb3 = hd2.create_assignment_embed(
+                        b, b - a, planets=self.apistatus.planets
                     )
 
+                    embs.insert(
+                        0,
+                        emb3,
+                    )
+            output_string = self.outstring
+            if output_string:
+                embs.insert(
+                    0,
+                    discord.Embed(
+                        title="Meridia Status.",
+                        description=f"{output_string}"[:4090],
+                    ),
+                )
+
             await target.edit(content="Current game status.", embeds=embs)
-            
+
     async def gtask_update(self, source_message: discord.Message = None):
         """
         Guild task that updates the overview message.
@@ -469,17 +469,17 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             return None
         context = await self.bot.get_context(source_message)
         try:
-            await self.edit_target_message(context,stalemated=True)
+            await self.edit_target_message(context, stalemated=True)
             return "OK"
         except Exception as e:
             try:
-                await self.edit_target_message(context,stalemated=False)
+                await self.edit_target_message(context, stalemated=False)
                 return "OK"
             except Exception as e:
                 er = MessageTemplates.get_error_embed(
                     title="Error with AUTO", description=f"{str(e)}"
                 )
-            
+
                 await source_message.channel.send(embed=er)
                 raise e
 

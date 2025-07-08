@@ -296,7 +296,7 @@ async def process_planet_attacks(
             await QueueAll.put([olditem])
         if changelist:
             changeitem = GameEvent(
-                mode=EventModes.CHANGED,
+                mode=EventModes.CHANGE,
                 place=place,
                 batch=batch,
                 value=changelist,
@@ -400,6 +400,7 @@ async def detect_loggable_changes(
         await QueueAll.put([item])
     out["stats_raw"]["changes"] = rawout
     logs.debug("Starting loggable detection, stand by...")
+    ### PLANET ATTACKS
     superlist += await process_planet_attacks(
         new.status.planetAttacks,
         old.status.planetAttacks,
@@ -410,6 +411,7 @@ async def detect_loggable_changes(
         ["retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
+    ### PLANET EFFECTS
     superlist += await process_planet_attacks(
         new.status.planetActiveEffects,
         old.status.planetActiveEffects,
@@ -438,17 +440,6 @@ async def detect_loggable_changes(
             ],
             game_time=gametime,
         )
-    logs.debug("DSS movement detection, stand by...")
-    superlist += await process_planet_events(
-        new.status.spaceStations,
-        old.status.spaceStations,
-        "station",
-        "id32",
-        QueueAll,
-        batch,
-        ["retrieved_at", "time_delta", "self"],
-        game_time=gametime,
-    )
 
     logs.debug("Global Resourse detection, stand by...")
     superlist += await process_planet_events(
@@ -538,6 +529,17 @@ async def detect_loggable_changes(
         old.status.globalEvents,
         "globalEvents",
         "eventId",
+        QueueAll,
+        batch,
+        ["retrieved_at", "time_delta", "self"],
+        game_time=gametime,
+    )
+    logs.debug("DSS movement detection, stand by...")
+    superlist += await process_planet_events(
+        new.status.spaceStations,
+        old.status.spaceStations,
+        "station",
+        "id32",
         QueueAll,
         batch,
         ["retrieved_at", "time_delta", "self"],
