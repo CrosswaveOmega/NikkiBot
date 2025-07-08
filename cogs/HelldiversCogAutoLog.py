@@ -372,11 +372,13 @@ class Batch:
                     (info, dump) = evt.value
                     ym = "region_siege_changehands"
                     if "isAvailable" in dump:
-                        if info.isAvailable:
+                        if info.isAvailable == True:
                             ym = "region_siege_start"
-                        elif info.isAvailable:
+                        elif info.isAvailable == False and not "owner" in dump:
                             ym = "region_siege_end"
-                    if "owner" in dump:
+                        elif "owner" in dump:
+                            ym = "region_siege_changehands"
+                    elif "owner" in dump:
                         ym = "region_siege_changehands"
                     ctext = alls[ym]
                     target = (

@@ -359,8 +359,8 @@ def _add_effects(embed: discord.Embed, data: Planet) -> None:
 def _add_regions(embed: discord.Embed, data: Planet) -> None:
     if data.regions:
         for region in data.regions:
-            namev,outlist=region.simple_region_view()
-            de="\n".join(o for o in outlist)
+            namev, outlist = region.simple_region_view()
+            de = "\n".join(o for o in outlist)
             embed.add_field(name=namev, value=de[:1020], inline=False)
 
 
