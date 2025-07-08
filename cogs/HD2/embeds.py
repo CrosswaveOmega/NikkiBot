@@ -149,7 +149,7 @@ def create_campaign_str(data: Union[Campaign2, Campaign]) -> str:
     campaign_type = campaign_types.get(data["type"], f"Unknown type {data.type}")
     count = data["count"]
     fact=None
-    if hasattr("faction",data):
+    if hasattr(data,"faction"):
         fact=data.faction
     else:
         fact=data.race
