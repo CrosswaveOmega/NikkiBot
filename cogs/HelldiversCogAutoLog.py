@@ -611,7 +611,7 @@ class Batch:
             else:
                 combinations.append("defense start")
 
-        if "campaign_EventModes.REMOVE" in trigger_list and len(trigger_list) == 1:
+        if "campaign_EventModes.REMOVE" in trigger_list and "planetevents_EventModes.REMOVE" not in trigger_list:
             combinations.append("cend")
 
         if self.contains_all_values(
