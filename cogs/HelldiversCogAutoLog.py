@@ -1360,7 +1360,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     try:
                         await web.postMessageAsWebhookWithURL(
                             hook,
-                            message_content=t,
+                            message_content=t[:1950],
                             display_username="SUPER EVENT",
                             avatar_url=self.bot.user.avatar.url,
                         )
