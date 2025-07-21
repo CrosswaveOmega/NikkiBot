@@ -195,7 +195,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         self.img = None
         hdoverride.client_name = bot.keys.get("hd2cli")
         self.apistatus = hd2.ApiStatus(client=hdoverride)
-
+        self.apistatus.direct=True
         self.hd2 = load_json_with_substitutions("./assets/json", "flavor.json", {}).get(
             "hd2", {}
         )
