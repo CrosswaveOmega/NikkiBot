@@ -151,7 +151,7 @@ class ApiStatus:
         "deadzone",
     ]
 
-    def __init__(self, client: APIConfig = APIConfig(), max_list_size=8, direct=False):
+    def __init__(self, client: APIConfig = APIConfig(), max_list_size=8, direct=True):
         set_status_emoji(status_emoji)
         self.client = client
         self.max_list_size = max_list_size
