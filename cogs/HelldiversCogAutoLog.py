@@ -611,7 +611,10 @@ class Batch:
             else:
                 combinations.append("defense start")
 
-        if "campaign_EventModes.REMOVE" in trigger_list and "planetevents_EventModes.REMOVE" not in trigger_list:
+        if (
+            "campaign_EventModes.REMOVE" in trigger_list
+            and "planetevents_EventModes.REMOVE" not in trigger_list
+        ):
             combinations.append("cend")
 
         if self.contains_all_values(
@@ -1265,7 +1268,7 @@ class Embeds:
         emb.add_field(
             name="Timestamp", value=f"Timestamp:{fdt(newsfeed.retrieved_at, 'F')}"
         )
-        emb.set_author(name="New dispatch from Super Earth...")
+        emb.set_author(name=f"{mode} dispatch from Super Earth...")
         emb.set_footer(text=f"{custom_strftime(newsfeed.retrieved_at)}")
         return emb
 
@@ -1560,7 +1563,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         mc = True
                 embed = Embeds.globalEventEmbed(value, "started")
             elif place == "news":
-                embed = Embeds.NewsFeedEmbed(value, "started")
+                embed = Embeds.NewsFeedEmbed(value, "New")
             elif place == "planetregions":
                 planet = self.apistatus.planets.get(int(value.planetIndex), None)
                 embed = Embeds.RegionEmbed_PlanetRegion(
@@ -1610,7 +1613,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         mc = True
                 embed = Embeds.globalEventEmbed(value, "ended")
             elif place == "news":
-                embed = Embeds.NewsFeedEmbed(value, "ended")
+                embed = Embeds.NewsFeedEmbed(value, "Retired")
             elif place == "resources":
                 embed = Embeds.resourceEmbed(
                     value,
@@ -1725,6 +1728,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         )
                 else:
                     embed = Embeds.globalEventEmbed(info, "changed", ",".join(listv))
+            elif place == "news":
+                embed = Embeds.NewsFeedEmbed(value, "Changed")
             elif place == "resources":
                 if "currentValue" in dump and len(list(dump.keys())) == 1:
                     if info.retrieved_at.minute % 15 != 0:

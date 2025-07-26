@@ -195,7 +195,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         self.img = None
         hdoverride.client_name = bot.keys.get("hd2cli")
         self.apistatus = hd2.ApiStatus(client=hdoverride)
-        
+
         self.hd2 = load_json_with_substitutions("./assets/json", "flavor.json", {}).get(
             "hd2", {}
         )
@@ -213,7 +213,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 self.bot.logs.exception(e)
                 log = logging.getLogger("discord")
                 log.error("An error has been raised: %s", e, exc_info=e)
-        self.apistatus.direct=True
+        self.apistatus.direct = True
+
         Guild_Task_Functions.add_task_function("UPDATEOVERVIEW", self.gtask_update)
         Guild_Task_Functions.add_task_function("WARSTATUS", self.gtask_map)
 
