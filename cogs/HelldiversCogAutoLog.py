@@ -1728,8 +1728,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         )
                 else:
                     embed = Embeds.globalEventEmbed(info, "changed", ",".join(listv))
-            elif place == "news":
-                embed = Embeds.NewsFeedEmbed(info, "Changed")
+            #elif place == "news": embed = Embeds.NewsFeedEmbed(info, "Changed")
             elif place == "resources":
                 if "currentValue" in dump and len(list(dump.keys())) == 1:
                     if info.retrieved_at.minute % 15 != 0:
