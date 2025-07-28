@@ -1505,7 +1505,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.planetAttacksEmbed(
                     item, self.apistatus.planets, item.mode
                 )
-                embed.set_author(name=f"{embed._author.name} at wt {item['game_time']}")
+                embed.set_author(name=f"{embed._author['name']} at wt {item['game_time']}")
 
                 return embed
         if event_type == EventModes.DEADZONE:
@@ -1740,10 +1740,10 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         return None
                     embed = Embeds.resourceEmbed(info, "changed", "")
                     embed.title = "ResourceChange"
-                    embed.set_author(name=f"{embed._author.name} at wt {item['game_time']}")
+                    embed.set_author(name=f"{embed._author['name']} at wt {item['game_time']}")
                     return embed
                 embed = Embeds.resourceEmbed(info, "changed", "")
-        embed.set_author(name=f"{embed._author.name} at wt {item['game_time']}")
+        embed.set_author(name=f"{embed._author['name']} at wt {item['game_time']}")
         return embed
 
     @process_game_events.error
