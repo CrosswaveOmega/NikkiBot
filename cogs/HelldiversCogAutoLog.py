@@ -1743,7 +1743,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     embed.set_author(name=f"{embed._author['name']} at wt {item['game_time']}")
                     return embed
                 embed = Embeds.resourceEmbed(info, "changed", "")
-        embed.set_author(name=f"{embed._author['name']} at wt {item['game_time']}")
+        if embed:
+            embed.set_author(name=f"{embed._author['name']} at wt {item['game_time']}")
         return embed
 
     @process_game_events.error
