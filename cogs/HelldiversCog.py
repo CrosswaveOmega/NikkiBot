@@ -1058,19 +1058,23 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     @pc.command(
         name="overview", description="Return the current state of the HD2 Galactic War."
     )
-    async def campoverview(self, interaction: discord.Interaction):
+    @app_commands.describe(simplify="Don't show stalemated planets.")
+    async def campoverview(self, interaction: discord.Interaction,simplify:bool=False):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
         data = self.apistatus.campaigns
 
         if not data:
             return await ctx.send("No result")
+        
+    
         try:
-            emb = hd2.campaign_view(self.apistatus, self.hd2)
+            emb = hd2.campaign_view(self.apistatus, self.hd2,show_stalemate=not simplify)
             await ctx.send(embeds=emb)
         except Exception as e:
             emb = hd2.campaign_view(self.apistatus, self.hd2,show_stalemate=False)
             await ctx.send(embeds=emb)
+    
 
     # @pc.command(name="map", description="get a scrollable galactic map.")
     # @app_commands.describe(planet="Focus map on this planet.")
