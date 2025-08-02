@@ -427,6 +427,9 @@ def campaign_view(
                 stalemated.append(name)
                 players_on_stalemated += camp.planet.statistics.playerCount
                 continue
+            elif "Stalemate" in desc:
+                desc = desc.replace("Stalemate.\n", "")
+                desc = desc.replace("HP `100.0% `\n", "")
 
         if planet_difference.event != None:
             p_evt = planet_difference.event
