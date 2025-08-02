@@ -533,8 +533,7 @@ def campaign_view(
         emb0.description += outstring
 
     emb0.timestamp = discord.utils.utcnow()  # Set timestamp
-
-    total_size = sum(len(str(embed)) for embed in embs)
+    total_size = sum(len(str(embed.to_dict())) for embed in embs)
     gui.gprint(total_size)
 
     
