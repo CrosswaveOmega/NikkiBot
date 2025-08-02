@@ -9,7 +9,7 @@ from hd2api.models import Campaign
 from hd2api import Assignment2, Campaign2, Planet, SpaceStation, TacticalAction, Region
 from hd2api.builders import get_time_dh
 from hd2api.constants import items
-
+from utility import count_total_embed_characters
 import gui
 
 """
@@ -533,7 +533,7 @@ def campaign_view(
         emb0.description += outstring
 
     emb0.timestamp = discord.utils.utcnow()  # Set timestamp
-    total_size = sum(len(str(embed.to_dict())) for embed in embs)
+    total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
     gui.gprint(total_size)
 
     

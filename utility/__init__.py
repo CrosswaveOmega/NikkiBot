@@ -20,6 +20,7 @@ from .globalfunctions import (
     extract_timestamp,
     find_urls,
     human_format,
+    count_total_embed_characters
 )
 from .image_functions import wrap_text
 from .mytemplatemessages import MessageTemplates
