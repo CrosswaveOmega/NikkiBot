@@ -244,8 +244,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         start_date = datetime(2023, 1, 1, 19, 48)
         robj = rrule(freq=DAILY, interval=1, dtstart=start_date)
         if not TCTaskManager.does_task_exist("SuperEarthMapMaker"):
-            self.tc_task = TCTask("SuperEarthMapMaker", robj, robj.after(st))
-            self.tc_task.assign_wrapper(self.make_map)
+            self.tc_task2 = TCTask("SuperEarthMapMaker", robj, robj.after(st))
+            self.tc_task2.assign_wrapper(self.make_map)
         # self.update_api.start()
 
     def server_profile_field_ext(self, guild: discord.Guild):
@@ -481,6 +481,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 er = MessageTemplates.get_error_embed(
                     title="Error with AUTO", description=f"{str(e)}"
                 )
+                er.add_field(name="Actual len")
 
                 await source_message.channel.send(embed=er)
                 raise e
