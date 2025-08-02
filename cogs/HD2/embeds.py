@@ -432,6 +432,14 @@ def campaign_view(
             elif "Stalemate" in desc:
                 desc = desc.replace("Stalemate.\n", "")
                 desc = desc.replace("HP `100.0% `\n", "")
+            if "Settlement" in desc:
+                desc=desc.replace("Settlement","🏚️")
+            if "MegaCity" in desc:
+                desc=desc.replace("MegaCity","🏙️")
+            if "City" in desc:
+                desc=desc.replace("City","🏨")
+            if "Town" in desc:
+                desc=desc.replace("Town","🏘️")
 
         if planet_difference.event != None:
             p_evt = planet_difference.event
