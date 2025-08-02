@@ -1065,8 +1065,12 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         if not data:
             return await ctx.send("No result")
-        emb = hd2.campaign_view(self.apistatus, self.hd2)
-        await ctx.send(embeds=emb)
+        try:
+            emb = hd2.campaign_view(self.apistatus, self.hd2)
+            await ctx.send(embeds=emb)
+        except Exception as e:
+            emb = hd2.campaign_view(self.apistatus, self.hd2,show_stalemate=False)
+            await ctx.send(embeds=emb)
 
     # @pc.command(name="map", description="get a scrollable galactic map.")
     # @app_commands.describe(planet="Focus map on this planet.")
