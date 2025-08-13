@@ -148,6 +148,7 @@ class ApiStatus:
         "getlock",
         "stations",
         "last_station_time",
+        "ignore_these",
         "deadzone",
     ]
 
@@ -174,6 +175,7 @@ class ApiStatus:
             effectstatic=EffectStatic(**effectjson),
         )
         self.stations = {}
+        self.ignore_these = []
         self.last_station_time = datetime.datetime(2024, 1, 1, 1, 1, 0)
         self.getlock = asyncio.Lock()
         self.deadzone = False
@@ -294,7 +296,11 @@ class ApiStatus:
             if current:
                 with Timer() as timer:
                     diff = await detect_loggable_changes(
-                        current, nowv, Queue, self.statics
+                        current,
+                        nowv,
+                        Queue,
+                        self.statics,
+                        self.ignore_these,
                     )
                     if PlanetQueue:
                         await detect_loggable_changes_planet(

@@ -315,7 +315,11 @@ DEADZONE = False
 
 
 async def detect_loggable_changes(
-    old: DiveharderAll, new: DiveharderAll, QueueAll: asyncio.Queue, statics: StaticAll
+    old: DiveharderAll,
+    new: DiveharderAll,
+    QueueAll: asyncio.Queue,
+    statics: StaticAll,
+    ignore_these: Optional[List[str]] = None,
 ) -> Tuple[dict, list]:
     global DEADZONE
     out = {
@@ -577,7 +581,7 @@ async def detect_loggable_changes(
             "index",
             QueueAll,
             batch,
-            ["retrieved_at", "time_delta", "self"],
+            ["retrieved_at", "time_delta", "self"].extend(ignore_these),
             game_time=gametime,
         )
     superlist += await process_planet_events(

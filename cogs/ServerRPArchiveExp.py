@@ -105,6 +105,122 @@ class ServerRPArchiveExtra(commands.Cog, TC_Cog_Mixin):
             doarchive = should_archive_channel(mode, chan, profile, guild)
             await ctx.send(f"Can archive {chan.name} {doarchive}")
 
+    @commands.command()
+    async def export_rp_with_list(
+        self,
+        ctx,
+        daystr: str,
+        endstr: str = None,
+        IncludeList: str = "",
+    ):
+        from .ArchiveSub import (
+            ArchivedRPMessage,
+            ChannelArchiveStatus,
+            ChannelSep,
+            LazyContext,
+            MessageTemplates,
+            check_channel,
+            lazy_archive,
+            setup_lazy_grab,
+        )
+        from bot import StatusEditMessage
+        from datetime import timedelta, datetime
+        from collections import defaultdict
+
+        """Create a calendar of all archived messages with dates in this channel."""
+        bot = ctx.bot
+        channel = ctx.message.channel
+        guild = channel.guild
+        guildid = guild.id
+
+        if await ctx.bot.gptapi.check_oai(ctx):
+            return
+
+        def format_location_name(csep):
+            channel_name = csep.channel
+            category = csep.category
+            thread = csep.thread
+            formatted_name = channel_name.replace("-", " ").capitalize()
+            output = f"Location: {formatted_name}, {category}."
+            if thread is not None:
+                output = f"{output}  {thread}"
+            return output
+
+        me = await ctx.channel.send(
+            content=f"<a:LetWalk:1118184074239021209> Retrieving archived messages..."
+        )
+        mt = StatusEditMessage(me, ctx)
+        datetime_object = datetime.strptime(
+            f"{daystr} 00:00:00 +0000", "%Y-%m-%d %H:%M:%S %z"
+        )
+        datetime_object_end = datetime_object
+        if endstr:
+            datetime_object_end = datetime.strptime(
+                f"{endstr} 00:00:00 +0000", "%Y-%m-%d %H:%M:%S %z"
+            )
+
+        usethese = set(s.strip() for s in IncludeList.split(",") if s.strip())
+        await ctx.send(str(IncludeList))
+
+        allnew = set()
+
+        allnew = defaultdict(int)
+        script = ""
+        count = ecount = mcount = 0
+        await ctx.send("Starting gather.")
+
+        for sep in ChannelSep.get_all_separators_on_dates(
+            guildid, datetime_object, datetime_object_end
+        ):
+            if usethese and sep.channel not in usethese and sep.thread not in usethese:
+                continue
+            allnew[sep.channel] += 1
+            allnew[sep.thread] += 1
+            ecount += 1
+            await mt.editw(
+                min_seconds=15,
+                content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount} ({sep.message_count}),message {mcount}.\n{str(allnew)}",
+            )
+
+            location = format_location_name(sep)
+            script += "\n" + location + "\n"
+            await asyncio.sleep(0.2)
+
+            messages = sep.get_messages()
+            await asyncio.sleep(0.5)
+            for m in messages:
+                count += 1
+                mcount += 1
+                await asyncio.sleep(0.02)
+                if count > 5:
+                    await mt.editw(
+                        min_seconds=15,
+                        content=f"<a:LetWalk:1118184074239021209> Currently on Separator {ecount},message {mcount}.\n{str(allnew)}",
+                    )
+                    count = 0
+
+                embed = m.get_embed()
+                if m.content:
+                    script = f"{script}\n {m.author}: {m.content}"
+                elif embed:
+                    embed = embed[0]
+                    if embed.type == "rich":
+                        embedscript = f"{embed.title}: {embed.description}"
+                        script = f"{script}\n {m.author}: {embedscript}"
+
+        filename = f"archive_{daystr}.txt"
+        try:
+            with open(filename, "w", encoding="utf-8") as file:
+                file.write(script)
+            await ctx.send(f"Script saved as {filename}.")
+        except Exception as e:
+            await ctx.send(f"Failed to save script: {e}")
+
+        try:
+            await ctx.send(file=discord.File(filename))
+        except Exception as e:
+            await ctx.send(f"Failed to send script file: {e}")
+
 
 async def setup(bot):
     gui.dprint(__name__)

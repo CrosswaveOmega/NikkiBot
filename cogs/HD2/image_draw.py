@@ -220,7 +220,7 @@ def create_png(filepath, apistat: ApiStatus):
             for pf in apistat.warall.war_info.planetInfos:
                 if pf.index == planet.index:
                     name = str(planet.name).replace(" ", "\n")
-                    hper = str(pf.sector)+":" + str(planet.sector)
+                    hper = str(pf.sector) + ":" + str(planet.sector)
                     break
         event = True if planet.event is not None else False
         owner = planet.currentOwner.lower()

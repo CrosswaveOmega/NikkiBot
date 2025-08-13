@@ -320,12 +320,12 @@ def human_format(num):
         "{:f}".format(num).rstrip("0").rstrip("."), suffixes[magnitude]
     )
 
+
 def count_total_embed_characters(embed: dict) -> int:
     total = len(embed.get("title", "")) + len(embed.get("description", ""))
     for field in embed.get("fields", []):
         total += len(field.get("name", "")) + len(field.get("value", ""))
     return total
-
 
 
 if __name__ == "__main__":  # testing

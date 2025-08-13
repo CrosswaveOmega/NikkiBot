@@ -214,7 +214,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 log = logging.getLogger("discord")
                 log.error("An error has been raised: %s", e, exc_info=e)
         self.apistatus.direct = True
-
+        self.apistatus.ignore_these.append("sector")
         Guild_Task_Functions.add_task_function("UPDATEOVERVIEW", self.gtask_update)
         Guild_Task_Functions.add_task_function("WARSTATUS", self.gtask_map)
 
@@ -1059,22 +1059,24 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         name="overview", description="Return the current state of the HD2 Galactic War."
     )
     @app_commands.describe(simplify="Don't show stalemated planets.")
-    async def campoverview(self, interaction: discord.Interaction,simplify:bool=False):
+    async def campoverview(
+        self, interaction: discord.Interaction, simplify: bool = False
+    ):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
         data = self.apistatus.campaigns
 
         if not data:
             return await ctx.send("No result")
-        
-    
+
         try:
-            emb = hd2.campaign_view(self.apistatus, self.hd2,show_stalemate=not simplify)
+            emb = hd2.campaign_view(
+                self.apistatus, self.hd2, show_stalemate=not simplify
+            )
             await ctx.send(embeds=emb)
         except Exception as e:
-            emb = hd2.campaign_view(self.apistatus, self.hd2,show_stalemate=False)
+            emb = hd2.campaign_view(self.apistatus, self.hd2, show_stalemate=False)
             await ctx.send(embeds=emb)
-    
 
     # @pc.command(name="map", description="get a scrollable galactic map.")
     # @app_commands.describe(planet="Focus map on this planet.")

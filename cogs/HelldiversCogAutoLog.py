@@ -1481,7 +1481,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         batches = self.group_embeds(embs)
         await self.send_embeds_through_webhook(batches)
 
-    async def build_embed(self, item: GameEvent)->Optional[discord.Embed]:
+    async def build_embed(self, item: GameEvent) -> Optional[discord.Embed]:
         """Build up an embed.
 
         Args:
@@ -1505,7 +1505,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.planetAttacksEmbed(
                     item, self.apistatus.planets, item.mode
                 )
-                embed.set_author(name=f"{embed._author['name']} at wt {item['game_time']}")
+                embed.set_author(
+                    name=f"{embed._author['name']} at wt {item['game_time']}"
+                )
 
                 return embed
         if event_type == EventModes.DEADZONE:
@@ -1740,7 +1742,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         return None
                     embed = Embeds.resourceEmbed(info, "changed", "")
                     embed.title = "ResourceChange"
-                    embed.set_author(name=f"{embed._author['name']} at wt {item['game_time']}")
+                    embed.set_author(
+                        name=f"{embed._author['name']} at wt {item['game_time']}"
+                    )
                     return embed
                 embed = Embeds.resourceEmbed(info, "changed", "")
         if embed:

@@ -433,13 +433,13 @@ def campaign_view(
                 desc = desc.replace("Stalemate.\n", "")
                 desc = desc.replace("HP `100.0% `\n", "")
             if "Settlement" in desc:
-                desc=desc.replace("Settlement","🏚️")
+                desc = desc.replace("Settlement", "🏚️")
             if "MegaCity" in desc:
-                desc=desc.replace("MegaCity","🏙️")
+                desc = desc.replace("MegaCity", "🏙️")
             if "City" in desc:
-                desc=desc.replace("City","🏨")
+                desc = desc.replace("City", "🏨")
             if "Town" in desc:
-                desc=desc.replace("Town","🏘️")
+                desc = desc.replace("Town", "🏘️")
 
         if planet_difference.event != None:
             p_evt = planet_difference.event
@@ -544,7 +544,6 @@ def campaign_view(
     total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
     gui.gprint(total_size)
 
-    
     return embs
 
 

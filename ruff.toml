@@ -1,0 +1,3 @@
+[lint.pylint]
+max-branches = 5
+max-statements = 75
