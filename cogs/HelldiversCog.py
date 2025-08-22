@@ -1101,6 +1101,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         if not data:
             return await ctx.send("No result")
+        
+        embs=self.create_overview_embeds(True,False)
         total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
         gui.gprint(total_size)
         if total_size>6000:
