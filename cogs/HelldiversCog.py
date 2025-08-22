@@ -432,8 +432,13 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             await self.bot.send_error(e, "Message update cleanup error.")
             # gui.gprint(str(e))
 
-    def create_overview_embeds(self,stalemated=True,simplify_city=False):
-        emb = hd2.campaign_view(self.apistatus, self.hd2, show_stalemate=stalemated,simplify_city=simplify_city)
+    def create_overview_embeds(self, stalemated=True, simplify_city=False):
+        emb = hd2.campaign_view(
+            self.apistatus,
+            self.hd2,
+            show_stalemate=stalemated,
+            simplify_city=simplify_city,
+        )
         embs = emb
         if self.apistatus.assignments:
             for i, assignment in self.apistatus.assignments.items():
@@ -457,26 +462,31 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             )
         return embs
 
-    async def edit_target_message(self, context, stalemated=True,simplify_city=False):
+    async def edit_target_message(self, context, stalemated=True, simplify_city=False):
         profile = ServerHDProfile.get(context.guild.id)
         if profile:
             target = await urltomessage(profile.overview_message_url, context.bot)
             if self.api_up is False:
                 await target.edit(content="**WARNING, COMMS ARE DOWN!**")
                 return
-            total_size=99999999
-            embs=self.create_overview_embeds(True,False)
-            total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
+            embs = self.create_overview_embeds(True, False)
+            total_size = sum(
+                count_total_embed_characters(embed.to_dict()) for embed in embs
+            )
             gui.gprint(total_size)
-            if total_size>6000:
-                embs=self.create_overview_embeds(False,False)
-                total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
+            if total_size > 6000:
+                embs = self.create_overview_embeds(False, False)
+                total_size = sum(
+                    count_total_embed_characters(embed.to_dict()) for embed in embs
+                )
                 gui.gprint(total_size)
-            if total_size>6000:
-                embs=self.create_overview_embeds(False,True)
-                total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
+            if total_size > 6000:
+                embs = self.create_overview_embeds(False, True)
+                total_size = sum(
+                    count_total_embed_characters(embed.to_dict()) for embed in embs
+                )
                 gui.gprint(total_size)
-            
+
             await target.edit(content="Current game status.", embeds=embs)
 
     async def gtask_update(self, source_message: discord.Message = None):
@@ -1083,27 +1093,36 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         if not data:
             return await ctx.send("No result")
-        
-        embs=self.create_overview_embeds(True,False)
-        total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
-        gui.gprint('1',total_size)
-        
+
+        embs = self.create_overview_embeds(True, False)
+        total_size = sum(
+            count_total_embed_characters(embed.to_dict()) for embed in embs
+        )
+        gui.gprint("1", total_size)
+
         await ctx.send(f"{total_size}")
-        if total_size>5900:
-            embs=self.create_overview_embeds(False,False)
-            total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
-            gui.gprint('2',total_size)
-            
+        if total_size > 5900:
+            embs = self.create_overview_embeds(False, False)
+            total_size = sum(
+                count_total_embed_characters(embed.to_dict()) for embed in embs
+            )
+            gui.gprint("2", total_size)
+
             await ctx.send(f"{total_size}")
-        if total_size>5900:
-            embs=self.create_overview_embeds(False,True)
-            total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
-            gui.gprint('3',total_size)
-            
+        if total_size > 5900:
+            embs = self.create_overview_embeds(False, True)
+            total_size = sum(
+                count_total_embed_characters(embed.to_dict()) for embed in embs
+            )
+            gui.gprint("3", total_size)
+
             await ctx.send(f"{total_size}")
-        if total_size>5900:
+        if total_size > 5900:
             embs = hd2.campaign_view(
-                self.apistatus, self.hd2, show_stalemate=not simplify,simplify_city=simplify
+                self.apistatus,
+                self.hd2,
+                show_stalemate=not simplify,
+                simplify_city=simplify,
             )
         await ctx.send(embeds=embs)
 

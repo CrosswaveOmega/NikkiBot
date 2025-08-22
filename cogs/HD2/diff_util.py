@@ -581,7 +581,7 @@ async def detect_loggable_changes(
             "index",
             QueueAll,
             batch,
-            ["retrieved_at", "time_delta", "self","sector"],
+            ["retrieved_at", "time_delta", "self", "sector"],
             game_time=gametime,
         )
     superlist += await process_planet_events(
