@@ -377,6 +377,7 @@ def campaign_view(
     hdtext: Optional[Dict[str, str]] = None,
     full: bool = False,
     show_stalemate: bool = True,
+    simplify_city:bool=False
 ) -> discord.Embed:
     # Set default flavor text
     flav = "Galactic Status."
@@ -385,7 +386,8 @@ def campaign_view(
         if "galactic_overview" in hdtext:
             flav = random.choice(hdtext["galactic_overview"]["value"])
     # Create the initial Discord embed
-
+    if not show_stalemate:
+        flav=""
     emb0 = discord.Embed(title="Galactic War Overview", description=f"{flav}\n")
     emb = emb0
     embs = [emb]
@@ -418,7 +420,7 @@ def campaign_view(
             avg = Planet.average([c.planet for c in changes[:4]])
         # Calculate difference in planet statistics
         planet_difference: Planet = (camp - last).planet
-        name, desc = camp.planet.simple_planet_view(planet_difference, avg, full)
+        name, desc = camp.planet.simple_planet_view(planet_difference, avg, full,regions=True)
         desc = "\n".join(desc)
         # Skip stalemated planets if necessary
 
@@ -440,7 +442,17 @@ def campaign_view(
                 desc = desc.replace("City", "🏨")
             if "Town" in desc:
                 desc = desc.replace("Town", "🏘️")
+        if simplify_city and "REGIONS" not in desc:
+            desc=desc.replace("Decay:","⏷")
+            desc = desc.replace("-100.0%", "")
+            desc = desc.replace("Humans", "H")
+            
+            desc = desc.replace("Terminids", "🪲")
+            desc = desc.replace("Automaton", "🤖")
+            desc = desc.replace("Illuminate", "🦑")
+            
 
+            
         if planet_difference.event != None:
             p_evt = planet_difference.event
             if isinstance(p_evt.time_delta, datetime.timedelta):
@@ -541,8 +553,7 @@ def campaign_view(
         emb0.description += outstring
 
     emb0.timestamp = discord.utils.utcnow()  # Set timestamp
-    total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
-    gui.gprint(total_size)
+    
 
     return embs
 

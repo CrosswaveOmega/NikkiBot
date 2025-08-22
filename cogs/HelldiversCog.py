@@ -22,6 +22,7 @@ from bot import (
     TCBot,
     TCGuildTask,
 )
+from utility.globalfunctions import count_total_embed_characters
 
 # import datetime
 from .HD2.db import ServerHDProfile
@@ -431,14 +432,14 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             await self.bot.send_error(e, "Message update cleanup error.")
             # gui.gprint(str(e))
 
-    async def edit_target_message(self, context, stalemated=True):
+    async def edit_target_message(self, context, stalemated=True,simplify_city=False):
         profile = ServerHDProfile.get(context.guild.id)
         if profile:
             target = await urltomessage(profile.overview_message_url, context.bot)
             if self.api_up is False:
                 await target.edit(content="**WARNING, COMMS ARE DOWN!**")
                 return
-            emb = hd2.campaign_view(self.apistatus, self.hd2, show_stalemate=stalemated)
+            emb = hd2.campaign_view(self.apistatus, self.hd2, show_stalemate=stalemated,simplify_city=simplify_city)
             embs = emb
             if self.apistatus.assignments:
                 for i, assignment in self.apistatus.assignments.items():
@@ -460,6 +461,22 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                         description=f"{output_string}"[:4090],
                     ),
                 )
+            total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
+            gui.gprint(total_size)
+            if total_size>6000:
+                emb = hd2.campaign_view(self.apistatus, self.hd2, show_stalemate=stalemated,simplify_city=True)
+                embs = emb
+                if self.apistatus.assignments:
+                    for i, assignment in self.apistatus.assignments.items():
+                        b, a = assignment.get_first_change()
+                        emb3 = hd2.create_assignment_embed(
+                            b, b - a, planets=self.apistatus.planets
+                        )
+
+                        embs.insert(
+                            0,
+                            emb3,
+                        )
 
             await target.edit(content="Current game status.", embeds=embs)
 
@@ -481,7 +498,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 er = MessageTemplates.get_error_embed(
                     title="Error with AUTO", description=f"{str(e)}"
                 )
-                er.add_field(name="Actual len")
 
                 await source_message.channel.send(embed=er)
                 raise e
