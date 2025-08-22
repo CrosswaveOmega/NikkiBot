@@ -432,14 +432,33 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             await self.bot.send_error(e, "Message update cleanup error.")
             # gui.gprint(str(e))
 
-    async def edit_target_message(self, context, stalemated=True,simplify_city=False):
-        profile = ServerHDProfile.get(context.guild.id)
-        if profile:
-            target = await urltomessage(profile.overview_message_url, context.bot)
-            if self.api_up is False:
-                await target.edit(content="**WARNING, COMMS ARE DOWN!**")
-                return
-            emb = hd2.campaign_view(self.apistatus, self.hd2, show_stalemate=stalemated,simplify_city=simplify_city)
+    async def create_overview_embeds(self,stalemated=True,simplify_city=False):
+        emb = hd2.campaign_view(self.apistatus, self.hd2, show_stalemate=stalemated,simplify_city=False)
+        embs = emb
+        if self.apistatus.assignments:
+            for i, assignment in self.apistatus.assignments.items():
+                b, a = assignment.get_first_change()
+                emb3 = hd2.create_assignment_embed(
+                    b, b - a, planets=self.apistatus.planets
+                )
+
+                embs.insert(
+                    0,
+                    emb3,
+                )
+        output_string = self.outstring
+        if output_string:
+            embs.insert(
+                0,
+                discord.Embed(
+                    title="Meridia Status.",
+                    description=f"{output_string}"[:4090],
+                ),
+            )
+        total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
+        gui.gprint(total_size)
+        if total_size>6000:
+            emb = hd2.campaign_view(self.apistatus, self.hd2, show_stalemate=stalemated,simplify_city=True)
             embs = emb
             if self.apistatus.assignments:
                 for i, assignment in self.apistatus.assignments.items():
@@ -452,32 +471,30 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                         0,
                         emb3,
                     )
-            output_string = self.outstring
-            if output_string:
-                embs.insert(
-                    0,
-                    discord.Embed(
-                        title="Meridia Status.",
-                        description=f"{output_string}"[:4090],
-                    ),
-                )
+            total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
+            gui.gprint(total_size)
+        return embs
+
+    async def edit_target_message(self, context, stalemated=True,simplify_city=False):
+        profile = ServerHDProfile.get(context.guild.id)
+        if profile:
+            target = await urltomessage(profile.overview_message_url, context.bot)
+            if self.api_up is False:
+                await target.edit(content="**WARNING, COMMS ARE DOWN!**")
+                return
+            total_size=99999999
+            embs=self.create_overview_embeds(True,False)
             total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
             gui.gprint(total_size)
             if total_size>6000:
-                emb = hd2.campaign_view(self.apistatus, self.hd2, show_stalemate=stalemated,simplify_city=True)
-                embs = emb
-                if self.apistatus.assignments:
-                    for i, assignment in self.apistatus.assignments.items():
-                        b, a = assignment.get_first_change()
-                        emb3 = hd2.create_assignment_embed(
-                            b, b - a, planets=self.apistatus.planets
-                        )
-
-                        embs.insert(
-                            0,
-                            emb3,
-                        )
-
+                embs=self.create_overview_embeds(False,False)
+                total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
+                gui.gprint(total_size)
+            if total_size>6000:
+                embs=self.create_overview_embeds(False,True)
+                total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
+                gui.gprint(total_size)
+            
             await target.edit(content="Current game status.", embeds=embs)
 
     async def gtask_update(self, source_message: discord.Message = None):
@@ -1084,12 +1101,22 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         if not data:
             return await ctx.send("No result")
-
-        try:
-            emb = hd2.campaign_view(
+        total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
+        gui.gprint(total_size)
+        if total_size>6000:
+            embs=self.create_overview_embeds(False,False)
+            total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
+            gui.gprint(total_size)
+        if total_size>6000:
+            embs=self.create_overview_embeds(False,True)
+            total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
+            gui.gprint(total_size)
+        if total_size>6000:
+            embs = hd2.campaign_view(
                 self.apistatus, self.hd2, show_stalemate=not simplify,simplify_city=simplify
             )
-            await ctx.send(embeds=emb)
+        try:
+            await ctx.send(embeds=embs)
         except Exception as e:
             emb = hd2.campaign_view(self.apistatus, self.hd2, show_stalemate=False)
             await ctx.send(embeds=emb)
