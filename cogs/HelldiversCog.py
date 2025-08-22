@@ -1087,7 +1087,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         try:
             emb = hd2.campaign_view(
-                self.apistatus, self.hd2, show_stalemate=not simplify
+                self.apistatus, self.hd2, show_stalemate=not simplify,simplify_city=not simplify
             )
             await ctx.send(embeds=emb)
         except Exception as e:
