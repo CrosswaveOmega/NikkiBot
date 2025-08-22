@@ -455,8 +455,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                     description=f"{output_string}"[:4090],
                 ),
             )
-        total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
-
         return embs
 
     async def edit_target_message(self, context, stalemated=True,simplify_city=False):
