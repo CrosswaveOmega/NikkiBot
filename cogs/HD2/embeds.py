@@ -420,7 +420,7 @@ def campaign_view(
             avg = Planet.average([c.planet for c in changes[:4]])
         # Calculate difference in planet statistics
         planet_difference: Planet = (camp - last).planet
-        name, desc = camp.planet.simple_planet_view(planet_difference, avg, full,regions=True)
+        name, desc = camp.planet.simple_planet_view(planet_difference, avg, full,show_city=True)
         desc = "\n".join(desc)
         # Skip stalemated planets if necessary
 
@@ -450,7 +450,7 @@ def campaign_view(
             desc = desc.replace("Terminids", "🪲")
             desc = desc.replace("Automaton", "🤖")
             desc = desc.replace("Illuminate", "🦑")
-            
+
 
             
         if planet_difference.event != None:
