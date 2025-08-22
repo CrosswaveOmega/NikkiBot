@@ -428,7 +428,7 @@ def campaign_view(
         # Skip stalemated planets if necessary
         if simplify_city and "REGIONS" in desc:
             desc = desc.replace("Decay:", "⏷")
-            split=desc.split("REGIONS")
+            split=desc.split("**REGIONS")
             p1=split[0]
             d2=split[1]
             newdesc=""
@@ -446,7 +446,9 @@ def campaign_view(
                 else:
                     ignore+=1
             if newdesc:
-                newdesc=f"{p1}\nREGIONS\n{newdesc}\n & {ignore} more"
+                newdesc=f"{p1}\nREGIONS\n{newdesc}"
+                if ignore:
+                    newdesc+=f"\n & {ignore} more"
                 desc=newdesc
             else:
                 desc=p1+f"regions {ignore} "
@@ -536,11 +538,25 @@ def campaign_view(
     )
     if stalemated:
         # Add information about stalemated planets
-        emb.add_field(
-            name="Planetary Stalemates",
-            value=f"{players_on_stalemated} players are on {len(stalemated)} stalemated worlds.\n"
-            + ("\n".join([f"* {s}" for s in stalemated]))[:900],
-        )
+        stalemate_description = f"{players_on_stalemated} players are on {len(stalemated)} stalemated worlds.\n"
+        max_length = 900
+        stalelines = [f"* {s}" for s in stalemated]
+
+        current_value = stalemate_description
+        for line in stalelines:
+            # +1 for newline if needed
+            next_value = f"{current_value}{line}\n" if current_value else f"{line}\n"
+            if len(next_value) > max_length:
+                # add current chunk as a field
+                emb.add_field(name="Planetary Stalemates", value=current_value.rstrip(), inline=False)
+                # start new chunk
+                current_value = f"{line}\n"
+            else:
+                current_value = next_value
+
+        # add any remaining lines
+        if current_value:
+            emb.add_field(name="Planetary Stalemates", value=current_value.rstrip(), inline=False)
 
     # Add overall contribution stats
     emb0.description += (
