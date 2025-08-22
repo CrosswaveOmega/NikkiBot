@@ -446,9 +446,9 @@ def campaign_view(
                 else:
                     ignore+=1
             if newdesc:
-                newdesc=f"{p1}\nREGIONS\n{newdesc}"
+                newdesc=f"{p1}REGIONS\n{newdesc}"
                 if ignore:
-                    newdesc+=f"\n & {ignore} more"
+                    newdesc+=f"& {ignore} more"
                 desc=newdesc
             else:
                 desc=p1+f"regions {ignore} "
@@ -548,7 +548,7 @@ def campaign_view(
             next_value = f"{current_value}{line}\n" if current_value else f"{line}\n"
             if len(next_value) > max_length:
                 # add current chunk as a field
-                emb.add_field(name="Planetary Stalemates", value=current_value.rstrip(), inline=False)
+                emb.add_field(name="Planetary Stalemates", value=current_value.rstrip(), inline=True)
                 # start new chunk
                 current_value = f"{line}\n"
             else:
