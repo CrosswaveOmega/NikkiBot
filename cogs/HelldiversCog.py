@@ -433,7 +433,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             # gui.gprint(str(e))
 
     def create_overview_embeds(self,stalemated=True,simplify_city=False):
-        emb = hd2.campaign_view(self.apistatus, self.hd2, show_stalemate=stalemated,simplify_city=False)
+        emb = hd2.campaign_view(self.apistatus, self.hd2, show_stalemate=stalemated,simplify_city=simplify_city)
         embs = emb
         if self.apistatus.assignments:
             for i, assignment in self.apistatus.assignments.items():
@@ -456,23 +456,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 ),
             )
         total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
-        gui.gprint(total_size)
-        if total_size>6000:
-            emb = hd2.campaign_view(self.apistatus, self.hd2, show_stalemate=stalemated,simplify_city=True)
-            embs = emb
-            if self.apistatus.assignments:
-                for i, assignment in self.apistatus.assignments.items():
-                    b, a = assignment.get_first_change()
-                    emb3 = hd2.create_assignment_embed(
-                        b, b - a, planets=self.apistatus.planets
-                    )
 
-                    embs.insert(
-                        0,
-                        emb3,
-                    )
-            total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
-            gui.gprint(total_size)
         return embs
 
     async def edit_target_message(self, context, stalemated=True,simplify_city=False):
