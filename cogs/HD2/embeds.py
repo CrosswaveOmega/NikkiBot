@@ -537,26 +537,58 @@ def campaign_view(
         [f"{k}:{v}" for k, v in prop.items()]
     )
     if stalemated:
-        # Add information about stalemated planets
+        # Emoji mapping
+        emojis = {
+            "automaton": "<:bots:1241748819620659332>",
+            "terminids": "<:bugs:1241748834632208395>",
+            "humans": "<:superearth:1275126046869557361>",
+            "illuminate": "<:squid:1274752443246448702>",
+        }
+
+        # Prepare lists
+        automaton_list = []
+        terminids_list = []
+        humans_list = []
+        illuminate_list = []
+        other_list = []
+
+        for s in stalemated:
+            if emojis["automaton"] in s:
+                automaton_list.append(f"* {s.replace( emojis["automaton"],"")}")
+            elif emojis["terminids"] in s:
+                terminids_list.append(f"* {s.replace( emojis["terminids"],"")}")
+            elif emojis["humans"] in s:
+                humans_list.append(f"* {s.replace( emojis["humans"],"")}")
+            elif emojis["illuminate"] in s:
+                illuminate_list.append(f"* {s.replace( emojis["illuminate"],"")}")
+            else:
+                other_list.append(f"* {s}")
+
+
         stalemate_description = f"{players_on_stalemated} players are on {len(stalemated)} stalemated worlds.\n"
         max_length = 900
-        stalelines = [f"* {s}" for s in stalemated]
+        emb.add_field(name="Planetary Stalemates", value=stalemate_description, inline=False)
+        def add_chunks(name, lines):
+            '''helper function to chunk owned planets together.'''
+            if not lines:
+                return
+            current_value = ""
+            for line in lines:
+                next_value = f"{current_value}{line}\n" if current_value else f"{line}\n"
+                if len(next_value) > max_length:
+                    emb.add_field(name=name, value=current_value.rstrip(), inline=True)
+                    current_value = f"{line}\n"
+                else:
+                    current_value = next_value
+            if current_value:
+                emb.add_field(name=name, value=current_value.rstrip(), inline=True)
 
-        current_value = stalemate_description
-        for line in stalelines:
-            # +1 for newline if needed
-            next_value = f"{current_value}{line}\n" if current_value else f"{line}\n"
-            if len(next_value) > max_length:
-                # add current chunk as a field
-                emb.add_field(name="Planetary Stalemates", value=current_value.rstrip(), inline=True)
-                # start new chunk
-                current_value = f"{line}\n"
-            else:
-                current_value = next_value
-
-        # add any remaining lines
-        if current_value:
-            emb.add_field(name="Planetary Stalemates", value=current_value.rstrip(), inline=False)
+                
+        add_chunks("Automatons", automaton_list)
+        add_chunks("Terminids", terminids_list)
+        add_chunks("Illuminate", illuminate_list)
+        add_chunks("Other", other_list)
+                    
 
     # Add overall contribution stats
     emb0.description += (
