@@ -568,8 +568,9 @@ def campaign_view(
         stalemate_description = f"{players_on_stalemated} players are on {len(stalemated)} stalemated worlds.\n"
         max_length = 900
         emb.add_field(name="Planetary Stalemates", value=stalemate_description, inline=False)
-        def add_chunks(name, lines):
+        def add_chunks(name_orig, lines):
             '''helper function to chunk owned planets together.'''
+            name=f"{name_orig} ({len(lines)})"
             if not lines:
                 return
             current_value = ""
