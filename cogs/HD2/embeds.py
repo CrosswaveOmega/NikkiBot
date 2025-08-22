@@ -405,6 +405,7 @@ def campaign_view(
     el = 0
     prop = defaultdict(int)
     stalemated = []
+    allp=all_players.statistics.playerCount
     players_on_stalemated = 0
     # Iterate over each campaign in the status
     for k, list in stat.campaigns.items():
@@ -427,11 +428,29 @@ def campaign_view(
         # Skip stalemated planets if necessary
         if simplify_city and "REGIONS" in desc:
             desc = desc.replace("Decay:", "⏷")
-            desc = desc.replace("-100.0%", "")
-            desc = desc.replace("Humans", "H")
-            desc = desc.replace("Terminids", "🪲")
-            desc = desc.replace("Automaton", "🤖")
-            desc = desc.replace("Illuminate", "🦑")
+            split=desc.split("REGIONS")
+            p1=split[0]
+            d2=split[1]
+            newdesc=""
+            ignore=0
+            significant=True
+            if (pc/allp)<0.02:
+                significant=False
+            for reg in camp.planet.regions:
+                reg.inline_view()
+                hpv=round((reg.health / max(reg.maxHealth, 1)) * 100, 1)
+                if (reg.isAvailable and significant) or hpv<100.0:
+                    newdesc+=reg.inline_view()+"\n"
+                elif reg.owner==1:
+                    newdesc+=reg.inline_view()+"\n"
+                else:
+                    ignore+=1
+            if newdesc:
+                newdesc=f"{p1}\nREGIONS\n{newdesc}\n & {ignore} more"
+                desc=newdesc
+            else:
+                desc=p1+f"regions {ignore} "
+
 
         if not show_stalemate:
             if "Stalemate" in desc and "REGIONS" not in desc:
@@ -451,6 +470,11 @@ def campaign_view(
                 desc = desc.replace("City", "🏨")
             if "Town" in desc:
                 desc = desc.replace("Town", "🏘️")
+            if simplify_city:
+                desc = desc.replace("Humans", "H")
+                desc = desc.replace("Terminids", "🪲")
+                desc = desc.replace("Automaton", "🤖")
+                desc = desc.replace("Illuminate", "🦑")
 
         if planet_difference.event != None:
             p_evt = planet_difference.event
