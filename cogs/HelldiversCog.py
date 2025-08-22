@@ -1089,19 +1089,19 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         gui.gprint('1',total_size)
         
         await ctx.send(f"{total_size}")
-        if total_size>6000:
+        if total_size>5900:
             embs=self.create_overview_embeds(False,False)
             total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
             gui.gprint('2',total_size)
             
             await ctx.send(f"{total_size}")
-        if total_size>6000:
+        if total_size>5900:
             embs=self.create_overview_embeds(False,True)
             total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
             gui.gprint('3',total_size)
             
             await ctx.send(f"{total_size}")
-        if total_size>6000:
+        if total_size>5900:
             embs = hd2.campaign_view(
                 self.apistatus, self.hd2, show_stalemate=not simplify,simplify_city=simplify
             )
