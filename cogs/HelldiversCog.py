@@ -1087,23 +1087,25 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         embs=self.create_overview_embeds(True,False)
         total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
         gui.gprint('1',total_size)
+        
+        await ctx.send(f"{total_size}")
         if total_size>6000:
             embs=self.create_overview_embeds(False,False)
             total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
             gui.gprint('2',total_size)
+            
+            await ctx.send(f"{total_size}")
         if total_size>6000:
             embs=self.create_overview_embeds(False,True)
             total_size = sum(count_total_embed_characters(embed.to_dict()) for embed in embs)
             gui.gprint('3',total_size)
+            
+            await ctx.send(f"{total_size}")
         if total_size>6000:
             embs = hd2.campaign_view(
                 self.apistatus, self.hd2, show_stalemate=not simplify,simplify_city=simplify
             )
-        try:
-            await ctx.send(embeds=embs)
-        except Exception as e:
-            emb = hd2.campaign_view(self.apistatus, self.hd2, show_stalemate=False)
-            await ctx.send(embeds=emb)
+        await ctx.send(embeds=embs)
 
     # @pc.command(name="map", description="get a scrollable galactic map.")
     # @app_commands.describe(planet="Focus map on this planet.")
