@@ -432,7 +432,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             await self.bot.send_error(e, "Message update cleanup error.")
             # gui.gprint(str(e))
 
-    async def create_overview_embeds(self,stalemated=True,simplify_city=False):
+    def create_overview_embeds(self,stalemated=True,simplify_city=False):
         emb = hd2.campaign_view(self.apistatus, self.hd2, show_stalemate=stalemated,simplify_city=False)
         embs = emb
         if self.apistatus.assignments:
