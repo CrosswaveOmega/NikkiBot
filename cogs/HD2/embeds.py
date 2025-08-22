@@ -442,7 +442,7 @@ def campaign_view(
                 desc = desc.replace("City", "🏨")
             if "Town" in desc:
                 desc = desc.replace("Town", "🏘️")
-        if simplify_city and "REGIONS" not in desc:
+        if simplify_city and "REGIONS" in desc:
             desc=desc.replace("Decay:","⏷")
             desc = desc.replace("-100.0%", "")
             desc = desc.replace("Humans", "H")
