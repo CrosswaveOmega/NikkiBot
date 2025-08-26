@@ -432,11 +432,13 @@ def campaign_view(
             p1=split[0]
             d2=split[1]
             newdesc=""
-            ignore=0
+            ignore,act=0,0
             significant=True
             if (pc/allp)<0.02:
                 significant=False
             for reg in camp.planet.regions:
+                if reg.isAvailable:
+                    act+=1
                 reg.inline_view()
                 hpv=round((reg.health / max(reg.maxHealth, 1)) * 100, 1)
                 if (reg.isAvailable and significant) or hpv<100.0:
@@ -451,14 +453,17 @@ def campaign_view(
                     newdesc+=f"& {ignore} more"
                 desc=newdesc
             else:
-                desc=p1+f"regions {ignore} "
+                desc=p1+f"{act}/{ignore} Regions Active"
 
 
         if not show_stalemate:
             if "Stalemate" in desc and "REGIONS" not in desc:
                 desc = desc.replace("Stalemate.\n", "")
                 desc = desc.replace("HP `100.0% `\n", "")
-                stalemated.append(name)
+                namew=name
+                if camp.planet.regions:
+                    namew+=f"({len(camp.planet.regions)})"
+                stalemated.append(namew)
                 players_on_stalemated += camp.planet.statistics.playerCount
                 continue
             elif "Stalemate" in desc:
