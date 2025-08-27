@@ -405,7 +405,7 @@ def campaign_view(
     el = 0
     prop = defaultdict(int)
     stalemated = []
-    allp=all_players.statistics.playerCount
+    allp = all_players.statistics.playerCount
     players_on_stalemated = 0
     # Iterate over each campaign in the status
     for k, list in stat.campaigns.items():
@@ -428,41 +428,40 @@ def campaign_view(
         # Skip stalemated planets if necessary
         if simplify_city and "REGIONS" in desc:
             desc = desc.replace("Decay:", "⏷")
-            split=desc.split("**REGIONS")
-            p1=split[0]
-            d2=split[1]
-            newdesc=""
-            ignore,act=0,0
-            significant=True
-            if (pc/allp)<0.02:
-                significant=False
+            split = desc.split("**REGIONS")
+            p1 = split[0]
+            d2 = split[1]
+            newdesc = ""
+            ignore, act = 0, 0
+            significant = True
+            if (pc / allp) < 0.02:
+                significant = False
             for reg in camp.planet.regions:
                 if reg.isAvailable:
-                    act+=1
+                    act += 1
                 reg.inline_view()
-                hpv=round((reg.health / max(reg.maxHealth, 1)) * 100, 1)
-                if (reg.isAvailable and significant) or hpv<100.0:
-                    newdesc+=reg.inline_view()+"\n"
-                elif reg.owner==1:
-                    newdesc+=reg.inline_view()+"\n"
+                hpv = round((reg.health / max(reg.maxHealth, 1)) * 100, 1)
+                if (reg.isAvailable and significant) or hpv < 100.0:
+                    newdesc += reg.inline_view() + "\n"
+                elif reg.owner == 1:
+                    newdesc += reg.inline_view() + "\n"
                 else:
-                    ignore+=1
+                    ignore += 1
             if newdesc:
-                newdesc=f"{p1}REGIONS\n{newdesc}"
+                newdesc = f"{p1}REGIONS\n{newdesc}"
                 if ignore:
-                    newdesc+=f"& {ignore} more"
-                desc=newdesc
+                    newdesc += f"& {ignore} more"
+                desc = newdesc
             else:
-                desc=p1+f"{act}/{ignore} Regions Active"
-
+                desc = p1 + f"{act}/{ignore} Regions Active"
 
         if not show_stalemate:
             if "Stalemate" in desc and "REGIONS" not in desc:
                 desc = desc.replace("Stalemate.\n", "")
                 desc = desc.replace("HP `100.0% `\n", "")
-                namew=name
+                namew = name
                 if camp.planet.regions:
-                    namew+=f"({len(camp.planet.regions)})"
+                    namew += f"({len(camp.planet.regions)})"
                 stalemated.append(namew)
                 players_on_stalemated += camp.planet.statistics.playerCount
                 continue
@@ -559,16 +558,15 @@ def campaign_view(
 
         for s in stalemated:
             if emojis["automaton"] in s:
-                automaton_list.append(f"* {s.replace( emojis["automaton"],"")}")
+                automaton_list.append(f"* {s.replace(emojis['automaton'], '')}")
             elif emojis["terminids"] in s:
-                terminids_list.append(f"* {s.replace( emojis["terminids"],"")}")
+                terminids_list.append(f"* {s.replace(emojis['terminids'], '')}")
             elif emojis["humans"] in s:
-                humans_list.append(f"* {s.replace( emojis["humans"],"")}")
+                humans_list.append(f"* {s.replace(emojis['humans'], '')}")
             elif emojis["illuminate"] in s:
-                illuminate_list.append(f"* {s.replace( emojis["illuminate"],"")}")
+                illuminate_list.append(f"* {s.replace(emojis['illuminate'], '')}")
             else:
                 other_list.append(f"* {s}")
-
 
         stalemate_description = f"{players_on_stalemated} players are on {len(stalemated)} stalemated worlds.\n"
         max_length = 900
@@ -577,17 +575,21 @@ def campaign_view(
             embs.append(emb)
             el = 0
         # Add fields to embed
-        emb.add_field(name="Planetary Stalemates", value=stalemate_description, inline=False)
+        emb.add_field(
+            name="Planetary Stalemates", value=stalemate_description, inline=False
+        )
         el += 1
-        
-        def add_chunks(name_orig, lines,el,emb,embs):
-            '''helper function to chunk owned planets together.'''
-            name=f"{name_orig} ({len(lines)})"
+
+        def add_chunks(name_orig, lines, el, emb, embs):
+            """helper function to chunk owned planets together."""
+            name = f"{name_orig} ({len(lines)})"
             if not lines:
                 return
             current_value = ""
             for line in lines:
-                next_value = f"{current_value}{line}\n" if current_value else f"{line}\n"
+                next_value = (
+                    f"{current_value}{line}\n" if current_value else f"{line}\n"
+                )
                 if len(next_value) > max_length:
                     if el >= 24:
                         emb = discord.Embed()
@@ -595,7 +597,7 @@ def campaign_view(
                         el = 0
                     # Add fields to embed
                     emb.add_field(name=name, value=current_value.rstrip(), inline=True)
-                    el+=1
+                    el += 1
                     current_value = f"{line}\n"
                 else:
                     current_value = next_value
@@ -606,15 +608,13 @@ def campaign_view(
                     el = 0
                 # Add fields to embed
                 emb.add_field(name=name, value=current_value.rstrip(), inline=True)
-                el+=1
+                el += 1
             return el
 
-                
-        el=add_chunks("Automatons", automaton_list,el,emb,embs)
-        el=add_chunks("Terminids", terminids_list,el,emb,embs)
-        el=add_chunks("Illuminate", illuminate_list,el,emb,embs)
-        el=add_chunks("Other", other_list,el,emb,embs)
-                    
+        el = add_chunks("Automatons", automaton_list, el, emb, embs)
+        el = add_chunks("Terminids", terminids_list, el, emb, embs)
+        el = add_chunks("Illuminate", illuminate_list, el, emb, embs)
+        el = add_chunks("Other", other_list, el, emb, embs)
 
     # Add overall contribution stats
     emb0.description += (
