@@ -572,7 +572,14 @@ def campaign_view(
 
         stalemate_description = f"{players_on_stalemated} players are on {len(stalemated)} stalemated worlds.\n"
         max_length = 900
+        if el >= 24:
+            emb = discord.Embed()
+            embs.append(emb)
+            el = 0
+        # Add fields to embed
         emb.add_field(name="Planetary Stalemates", value=stalemate_description, inline=False)
+        el += 1
+        
         def add_chunks(name_orig, lines):
             '''helper function to chunk owned planets together.'''
             name=f"{name_orig} ({len(lines)})"
@@ -582,12 +589,24 @@ def campaign_view(
             for line in lines:
                 next_value = f"{current_value}{line}\n" if current_value else f"{line}\n"
                 if len(next_value) > max_length:
+                    if el >= 24:
+                        emb = discord.Embed()
+                        embs.append(emb)
+                        el = 0
+                    # Add fields to embed
                     emb.add_field(name=name, value=current_value.rstrip(), inline=True)
+                    el+=1
                     current_value = f"{line}\n"
                 else:
                     current_value = next_value
             if current_value:
+                if el >= 24:
+                    emb = discord.Embed()
+                    embs.append(emb)
+                    el = 0
+                # Add fields to embed
                 emb.add_field(name=name, value=current_value.rstrip(), inline=True)
+                el+=1
 
                 
         add_chunks("Automatons", automaton_list)
