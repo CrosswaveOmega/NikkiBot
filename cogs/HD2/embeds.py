@@ -580,7 +580,7 @@ def campaign_view(
         emb.add_field(name="Planetary Stalemates", value=stalemate_description, inline=False)
         el += 1
         
-        def add_chunks(name_orig, lines,el):
+        def add_chunks(name_orig, lines,el,emb,embs):
             '''helper function to chunk owned planets together.'''
             name=f"{name_orig} ({len(lines)})"
             if not lines:
@@ -610,10 +610,10 @@ def campaign_view(
             return el
 
                 
-        el=add_chunks("Automatons", automaton_list,el)
-        el=add_chunks("Terminids", terminids_list,el)
-        el=add_chunks("Illuminate", illuminate_list,el)
-        el=add_chunks("Other", other_list,el)
+        el=add_chunks("Automatons", automaton_list,el,emb,embs)
+        el=add_chunks("Terminids", terminids_list,el,emb,embs)
+        el=add_chunks("Illuminate", illuminate_list,el,emb,embs)
+        el=add_chunks("Other", other_list,el,emb,embs)
                     
 
     # Add overall contribution stats
