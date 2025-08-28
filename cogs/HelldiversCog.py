@@ -470,7 +470,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             if self.api_up is False:
                 await target.edit(content="**WARNING, COMMS ARE DOWN!**")
                 return
-            overview_embeds, assign_embeds = self.create_overview_embed(True, False)
+            overview_embeds, assign_embeds = self.create_overview_embeds(True, False)
             embs=[]
             embs.extend(overview_embeds)
             embs.extend(assign_embeds)
@@ -479,7 +479,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             )
             gui.gprint(total_size)
             if total_size > 6000:
-                overview_embeds, assign_embeds = self.create_overview_embed(False, False)
+                overview_embeds, assign_embeds = self.create_overview_embeds(False, False)
                 embs=[]
                 embs.extend(overview_embeds)
                 embs.extend(assign_embeds)
@@ -488,7 +488,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 )
                 gui.gprint(total_size)
             if total_size > 6000:
-                overview_embeds, assign_embeds = self.create_overview_embed(False, True)
+                overview_embeds, assign_embeds = self.create_overview_embeds(False, True)
                 embs=[]
                 embs.extend(overview_embeds)
                 embs.extend(assign_embeds)
@@ -497,7 +497,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 )
                 gui.gprint(total_size)
             if total_size > 6000:
-                #overview_embeds, assign_embeds = self.create_overview_embed(False, True)
                 embs=overview_embeds
                 #embs.extend(overview_embeds)
                 #embs.extend(assign_embeds)
@@ -1113,7 +1112,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if not data:
             return await ctx.send("No result")
 
-        overview_embeds, assign_embeds = self.create_overview_embed(True, False)
+        overview_embeds, assign_embeds = self.create_overview_embeds(True, False)
         total_size = sum(
             count_total_embed_characters(embed.to_dict()) for embed in embs
         )
@@ -1121,7 +1120,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         await ctx.send(f"{total_size}")
         if total_size > 5900:
-            overview_embeds, assign_embeds = self.create_overview_embed(False, False)
+            overview_embeds, assign_embeds = self.create_overview_embeds(False, False)
             total_size = sum(
                 count_total_embed_characters(embed.to_dict()) for embed in embs
             )
@@ -1129,7 +1128,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
             await ctx.send(f"{total_size}")
         if total_size > 5900:
-            overview_embeds, assign_embeds = self.create_overview_embed(False, True)
+            overview_embeds, assign_embeds = self.create_overview_embeds(False, True)
             total_size = sum(
                 count_total_embed_characters(embed.to_dict()) for embed in embs
             )
