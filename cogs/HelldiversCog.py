@@ -467,16 +467,16 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         profile = ServerHDProfile.get(context.guild.id)
         if profile:
             target = await urltomessage(profile.overview_message_url, context.bot)
-            assignment=None
+            assignment = None
             if profile.assignment_message_url:
-                assignment = await urltomessage(profile.assignment_message_url, context.bot)
-            if not assignment:
-                assignment = await context.send(
-                    "Overview_message"
+                assignment = await urltomessage(
+                    profile.assignment_message_url, context.bot
                 )
+            if not assignment:
+                assignment = await context.send("Overview_message")
                 url = assignment.jump_url
                 profile.update(assignment=url)
-            
+
             if self.api_up is False:
                 await target.edit(content="**WARNING, COMMS ARE DOWN!**")
                 return
@@ -683,9 +683,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         task_name = "UPDATEOVERVIEW"
         if not assignment_message:
-            assignment_message = await autochannel.send(
-                "Overview_message"
-            )
+            assignment_message = await autochannel.send("Overview_message")
             url = assignment_message.jump_url
             profile.update(assignment_message_url=url)
         elif assignment_message and edit:
@@ -1140,45 +1138,37 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             return await ctx.send("No result")
 
         overview_embeds, assign_embeds = self.create_overview_embeds(True, False)
-        embs = []
-        embs.extend(overview_embeds)
-        embs.extend(assign_embeds)
+
         total_size = sum(
-            count_total_embed_characters(embed.to_dict()) for embed in embs
+            count_total_embed_characters(embed.to_dict()) for embed in overview_embeds
         )
         gui.gprint("1", total_size)
 
         await ctx.send(f"{total_size}")
         if total_size > 5900:
             overview_embeds, assign_embeds = self.create_overview_embeds(False, False)
-            embs = []
-            embs.extend(overview_embeds)
-            embs.extend(assign_embeds)
+
             total_size = sum(
-                count_total_embed_characters(embed.to_dict()) for embed in embs
+                count_total_embed_characters(embed.to_dict())
+                for embed in overview_embeds
             )
             gui.gprint("2", total_size)
 
             await ctx.send(f"{total_size}")
         if total_size > 5900:
             overview_embeds, assign_embeds = self.create_overview_embeds(False, True)
-            embs = []
-            embs.extend(overview_embeds)
-            embs.extend(assign_embeds)
+
             total_size = sum(
-                count_total_embed_characters(embed.to_dict()) for embed in embs
+                count_total_embed_characters(embed.to_dict())
+                for embed in overview_embeds
             )
             gui.gprint("3", total_size)
 
             await ctx.send(f"{total_size}")
-        if total_size > 5900:
-            embs = hd2.campaign_view(
-                self.apistatus,
-                self.hd2,
-                show_stalemate=not simplify,
-                simplify_city=simplify,
-            )
-        await ctx.send(embeds=embs)
+
+        await ctx.send(embeds=assign_embeds)
+
+        await ctx.send(embeds=overview_embeds)
 
     # @pc.command(name="map", description="get a scrollable galactic map.")
     # @app_commands.describe(planet="Focus map on this planet.")
