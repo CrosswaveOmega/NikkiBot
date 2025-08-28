@@ -569,16 +569,11 @@ def campaign_view(
                 other_list.append(f"* {s}")
 
         stalemate_description = f"{players_on_stalemated} players are on {len(stalemated)} stalemated worlds.\n"
-        max_length = 900
-        if el >= 24:
-            emb = discord.Embed()
-            embs.append(emb)
-            el = 0
         # Add fields to embed
         emb.add_field(
             name="Planetary Stalemates", value=stalemate_description, inline=False
         )
-        el += 1
+        embs.append(emb)
 
         def add_chunks(name_orig, lines, el, emb, embs):
             """helper function to chunk owned planets together."""
@@ -590,31 +585,21 @@ def campaign_view(
                 next_value = (
                     f"{current_value}{line}\n" if current_value else f"{line}\n"
                 )
-                if len(next_value) > max_length:
-                    if el >= 24:
-                        emb = discord.Embed()
-                        embs.append(emb)
-                        el = 0
+                if len(next_value) > 1000:
                     # Add fields to embed
                     emb.add_field(name=name, value=current_value.rstrip(), inline=True)
-                    el += 1
                     current_value = f"{line}\n"
                 else:
                     current_value = next_value
             if current_value:
-                if el >= 24:
-                    emb = discord.Embed()
-                    embs.append(emb)
-                    el = 0
                 # Add fields to embed
                 emb.add_field(name=name, value=current_value.rstrip(), inline=True)
-                el += 1
             return el
-
-        el = add_chunks("Automatons", automaton_list, el, emb, embs)
-        el = add_chunks("Terminids", terminids_list, el, emb, embs)
-        el = add_chunks("Illuminate", illuminate_list, el, emb, embs)
-        el = add_chunks("Other", other_list, el, emb, embs)
+        emb = discord.Embed()
+        el = add_chunks("Automatons", automaton_list, el, emb)
+        el = add_chunks("Terminids", terminids_list, el, emb)
+        el = add_chunks("Illuminate", illuminate_list, el, emb)
+        el = add_chunks("Other", other_list, el, emb)
 
     # Add overall contribution stats
     emb0.description += (
