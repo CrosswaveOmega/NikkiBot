@@ -16,6 +16,7 @@ class ServerHDProfile(SuperEarthBase):
     __tablename__ = "server_superearth_profile"
     server_id = Column(Integer, primary_key=True, nullable=False, unique=True)
     overview_message_url = Column(String, nullable=True, default=None)
+    assignment_message_url = Column(String, nullable=True, default=None)
     update_channel = Column(Integer, nullable=True, default=None)
     last_global_briefing = Column(String, nullable=True, default=None)
     webhook_url = Column(String, nullable=True, default=None)

@@ -440,7 +440,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             simplify_city=simplify_city,
         )
         embs = emb
-        assign_embs=[]
+        assign_embs = []
         if self.apistatus.assignments:
             for i, assignment in self.apistatus.assignments.items():
                 b, a = assignment.get_first_change()
@@ -461,49 +461,60 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                     description=f"{output_string}"[:4090],
                 ),
             )
-        return embs,assign_embs
+        return embs, assign_embs
 
     async def edit_target_message(self, context, stalemated=True, simplify_city=False):
         profile = ServerHDProfile.get(context.guild.id)
         if profile:
             target = await urltomessage(profile.overview_message_url, context.bot)
+            assignment=None
+            if profile.assignment_message_url:
+                assignment = await urltomessage(profile.assignment_message_url, context.bot)
+            if not assignment:
+                assignment = await context.send(
+                    "Overview_message"
+                )
+                url = assignment.jump_url
+                profile.update(assignment=url)
+            
             if self.api_up is False:
                 await target.edit(content="**WARNING, COMMS ARE DOWN!**")
                 return
             overview_embeds, assign_embeds = self.create_overview_embeds(True, False)
-            embs=[]
-            embs.extend(overview_embeds)
-            embs.extend(assign_embeds)
+
             total_size = sum(
-                count_total_embed_characters(embed.to_dict()) for embed in embs
+                count_total_embed_characters(embed.to_dict())
+                for embed in overview_embeds
             )
             gui.gprint(total_size)
             if total_size > 6000:
-                overview_embeds, assign_embeds = self.create_overview_embeds(False, False)
-                embs=[]
-                embs.extend(overview_embeds)
-                embs.extend(assign_embeds)
+                overview_embeds, assign_embeds = self.create_overview_embeds(
+                    False, False
+                )
                 total_size = sum(
-                    count_total_embed_characters(embed.to_dict()) for embed in embs
+                    count_total_embed_characters(embed.to_dict())
+                    for embed in overview_embeds
                 )
                 gui.gprint(total_size)
             if total_size > 6000:
-                overview_embeds, assign_embeds = self.create_overview_embeds(False, True)
-                embs=[]
-                embs.extend(overview_embeds)
-                embs.extend(assign_embeds)
+                overview_embeds, assign_embeds = self.create_overview_embeds(
+                    False, True
+                )
                 total_size = sum(
-                    count_total_embed_characters(embed.to_dict()) for embed in embs
+                    count_total_embed_characters(embed.to_dict())
+                    for embed in overview_embeds
                 )
                 gui.gprint(total_size)
             if total_size > 6000:
-                embs=overview_embeds
+                embs = overview_embeds
                 total_size = sum(
-                    count_total_embed_characters(embed.to_dict()) for embed in embs
+                    count_total_embed_characters(embed.to_dict())
+                    for embed in overview_embeds
                 )
                 gui.gprint(total_size)
 
-            await target.edit(content="Current game status.", embeds=embs)
+            await target.edit(content="Current game status.", embeds=overview_embeds)
+            await assignment.edit(content="Assignment", embeds=assign_embeds)
 
     async def gtask_update(self, source_message: discord.Message = None):
         """
@@ -654,7 +665,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
     async def overview_make_logic(self, ctx, guild, autochannel, edit=False):
         """This function makes a dashboard message for the bot."""
-        target_message = None
+        target_message, assignment_message = None, None
         profile = ServerHDProfile.get_or_new(guild.id)
         if profile.overview_message_url:
             target_message = await urltomessage(profile.overview_message_url, ctx.bot)
@@ -662,14 +673,31 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 await target_message.delete()
                 target_message = None
 
+        if profile.assignment_message_url:
+            assignment_message = await urltomessage(
+                profile.assignment_message_url, ctx.bot
+            )
+            if assignment_message and not edit:
+                await assignment_message.delete()
+                assignment_message = None
+
         task_name = "UPDATEOVERVIEW"
+        if not assignment_message:
+            assignment_message = await autochannel.send(
+                "Overview_message"
+            )
+            url = assignment_message.jump_url
+            profile.update(assignment_message_url=url)
+        elif assignment_message and edit:
+            await assignment_message.edit(view=HD2OverviewView(self))
+
         if not target_message:
             target_message = await autochannel.send(
                 "Overview_message", view=HD2OverviewView(self)
             )
             url = target_message.jump_url
             profile.update(overview_message_url=url)
-        elif target_message and edit == True:
+        elif target_message and edit:
             await target_message.edit(view=HD2OverviewView(self))
 
         old = TCGuildTask.get(guild.id, task_name)
@@ -684,7 +712,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             )
             new.to_task(ctx.bot)
 
-            result = "Overview message set.  every 15 minutes, this message will update with the latest galactic status.  Please don't delete it unless you want to stop."
+            result = "Overview message set.  Every 15 minutes, this message will update with the latest galactic status.  Please don't delete it unless you want to stop."
             await ctx.send(result)
         else:
             old.target_channel_id = autochannel.id
@@ -727,7 +755,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(result)
 
     @pcs.command(
-        name="make_overview", description="Setup a constantly updating message "
+        name="make_overview",
+        description="Setup a constantly updating message to display the war status",
     )
     async def overview_make(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
@@ -1111,7 +1140,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             return await ctx.send("No result")
 
         overview_embeds, assign_embeds = self.create_overview_embeds(True, False)
-        embs=[]
+        embs = []
         embs.extend(overview_embeds)
         embs.extend(assign_embeds)
         total_size = sum(
@@ -1122,7 +1151,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         await ctx.send(f"{total_size}")
         if total_size > 5900:
             overview_embeds, assign_embeds = self.create_overview_embeds(False, False)
-            embs=[]
+            embs = []
             embs.extend(overview_embeds)
             embs.extend(assign_embeds)
             total_size = sum(
@@ -1133,7 +1162,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(f"{total_size}")
         if total_size > 5900:
             overview_embeds, assign_embeds = self.create_overview_embeds(False, True)
-            embs=[]
+            embs = []
             embs.extend(overview_embeds)
             embs.extend(assign_embeds)
             total_size = sum(

@@ -594,6 +594,7 @@ def campaign_view(
                 # Add fields to embed
                 emb.add_field(name=name, value=current_value.rstrip(), inline=True)
             return el
+
         emb2 = discord.Embed()
         el = add_chunks("Automatons", automaton_list, el, emb2)
         el = add_chunks("Terminids", terminids_list, el, emb2)
