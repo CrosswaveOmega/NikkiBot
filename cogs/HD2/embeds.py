@@ -575,7 +575,7 @@ def campaign_view(
         )
         embs.append(emb)
 
-        def add_chunks(name_orig, lines, el, emb, embs):
+        def add_chunks(name_orig, lines, el, emb):
             """helper function to chunk owned planets together."""
             name = f"{name_orig} ({len(lines)})"
             if not lines:
@@ -600,6 +600,7 @@ def campaign_view(
         el = add_chunks("Terminids", terminids_list, el, emb)
         el = add_chunks("Illuminate", illuminate_list, el, emb)
         el = add_chunks("Other", other_list, el, emb)
+        embs.append(emb)
 
     # Add overall contribution stats
     emb0.description += (
