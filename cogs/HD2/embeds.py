@@ -379,6 +379,7 @@ def campaign_view(
     show_stalemate: bool = True,
     simplify_city: bool = False,
 ) -> discord.Embed:
+    """Create a view for the campaign."""
     # Set default flavor text
     flav = "Galactic Status."
     # Check if hdtext has a galactic overview and randomize flavor text if present
@@ -408,7 +409,10 @@ def campaign_view(
     allp = all_players.statistics.playerCount
     players_on_stalemated = 0
     # Iterate over each campaign in the status
-    for k, list in stat.campaigns.items():
+    for k, list in sorted(
+        stat.campaigns.items(),
+        key=lambda item: item[1].get_first().planet.statistics.playerCount,
+    ):
         camp, last = list.get_change_from(15)
         changes = list.get_changes()
         this_faction = camp.planet.campaign_against()  # Determine opposing faction
