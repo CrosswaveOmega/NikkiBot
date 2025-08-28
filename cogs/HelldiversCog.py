@@ -440,6 +440,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             simplify_city=simplify_city,
         )
         embs = emb
+        assign_embs=[]
         if self.apistatus.assignments:
             for i, assignment in self.apistatus.assignments.items():
                 b, a = assignment.get_first_change()
@@ -447,7 +448,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                     b, b - a, planets=self.apistatus.planets
                 )
 
-                embs.insert(
+                assign_embs.insert(
                     0,
                     emb3,
                 )
@@ -460,7 +461,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                     description=f"{output_string}"[:4090],
                 ),
             )
-        return embs
+        return embs,assign_embs
 
     async def edit_target_message(self, context, stalemated=True, simplify_city=False):
         profile = ServerHDProfile.get(context.guild.id)
@@ -469,19 +470,37 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             if self.api_up is False:
                 await target.edit(content="**WARNING, COMMS ARE DOWN!**")
                 return
-            embs = self.create_overview_embeds(True, False)
+            overview_embeds, assign_embeds = self.create_overview_embed(True, False)
+            embs=[]
+            embs.extend(overview_embeds)
+            embs.extend(assign_embeds)
             total_size = sum(
                 count_total_embed_characters(embed.to_dict()) for embed in embs
             )
             gui.gprint(total_size)
             if total_size > 6000:
-                embs = self.create_overview_embeds(False, False)
+                overview_embeds, assign_embeds = self.create_overview_embed(False, False)
+                embs=[]
+                embs.extend(overview_embeds)
+                embs.extend(assign_embeds)
                 total_size = sum(
                     count_total_embed_characters(embed.to_dict()) for embed in embs
                 )
                 gui.gprint(total_size)
             if total_size > 6000:
-                embs = self.create_overview_embeds(False, True)
+                overview_embeds, assign_embeds = self.create_overview_embed(False, True)
+                embs=[]
+                embs.extend(overview_embeds)
+                embs.extend(assign_embeds)
+                total_size = sum(
+                    count_total_embed_characters(embed.to_dict()) for embed in embs
+                )
+                gui.gprint(total_size)
+            if total_size > 6000:
+                #overview_embeds, assign_embeds = self.create_overview_embed(False, True)
+                embs=overview_embeds
+                #embs.extend(overview_embeds)
+                #embs.extend(assign_embeds)
                 total_size = sum(
                     count_total_embed_characters(embed.to_dict()) for embed in embs
                 )
@@ -1094,7 +1113,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if not data:
             return await ctx.send("No result")
 
-        embs = self.create_overview_embeds(True, False)
+        overview_embeds, assign_embeds = self.create_overview_embed(True, False)
         total_size = sum(
             count_total_embed_characters(embed.to_dict()) for embed in embs
         )
@@ -1102,7 +1121,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         await ctx.send(f"{total_size}")
         if total_size > 5900:
-            embs = self.create_overview_embeds(False, False)
+            overview_embeds, assign_embeds = self.create_overview_embed(False, False)
             total_size = sum(
                 count_total_embed_characters(embed.to_dict()) for embed in embs
             )
@@ -1110,7 +1129,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
             await ctx.send(f"{total_size}")
         if total_size > 5900:
-            embs = self.create_overview_embeds(False, True)
+            overview_embeds, assign_embeds = self.create_overview_embed(False, True)
             total_size = sum(
                 count_total_embed_characters(embed.to_dict()) for embed in embs
             )
