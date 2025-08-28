@@ -535,7 +535,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                     title="Error with AUTO", description=f"{str(e)}"
                 )
 
-                await source_message.channel.send(embed=er)
+                await source_message.edit(content=str(e))
                 raise e
 
     async def gtask_map(self, source_message: discord.Message = None):
