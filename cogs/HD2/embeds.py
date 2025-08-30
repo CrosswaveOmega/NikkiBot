@@ -412,7 +412,7 @@ def campaign_view(
     for k, list in sorted(
         stat.campaigns.items(),
         key=lambda item: item[1].get_first().planet.statistics.playerCount,
-        reverse=True
+        reverse=True,
     ):
         camp, last = list.get_change_from(15)
         changes = list.get_changes()

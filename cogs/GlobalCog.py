@@ -71,6 +71,62 @@ class Global(commands.Cog, TC_Cog_Mixin):
             embed=embed,
         )
 
+    @super_context_menu(name="cite message", flags="user")
+    async def cite_message(
+        self, interaction: discord.Interaction, message: discord.Message
+    ) -> None:
+        """Right click a message to cite it."""
+        cont = message.content
+        guild = message.guild
+
+        channel = ""
+        thread = ""
+        embed = discord.Embed(description=f"It says *{message.content}")
+        if hasattr(message, "author"):
+            embed.add_field(
+                name="Author", value=f"* {str(message.author)}{type(message.author)}, "
+            )
+
+        if hasattr(message, "jump_url"):
+            embed.add_field(name="url", value=f"* {str(message.jump_url)}, ")
+        if hasattr(message, "channel"):
+            embed.add_field(name="channel", value=f"* {str(message.channel)}, ")
+            if hasattr(message.channel, "parent"):
+                embed.add_field(
+                    name="parent", value=f"* {str(message.channel.parent)}, "
+                )
+                thread = message.channel
+                channel = message.channel.parent
+                if hasattr(thread, "name"):
+                    thread = thread.name
+                else:
+                    thread = thread.jump_url
+
+            else:
+                channel = message.channel
+        if hasattr(channel, "name"):
+            channel = channel.name
+        else:
+            channel = channel.jump_url
+        if interaction.guild_id:
+            embed.add_field(name="guildid", value=interaction.guild_id)
+
+
+        citation = "{{Cite discord|url={}|message={}|author={}|channel={}|thread={}|access-date={}}}".format(
+            message.jump_url,
+            message.content,
+            message.author.name,
+            channel,
+            thread,
+            datetime.datetime.now().strftime("%Y-%m-%d"),
+        )
+        await interaction.response.send_message(
+            content=f"```{citation}```",
+            ephemeral=True,
+            
+            embed=embed,
+        )
+
     @super_context_menu(name="CopyMessage", flags="user")
     async def memethief(
         self, interaction: discord.Interaction, message: discord.Message
