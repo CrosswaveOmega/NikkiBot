@@ -75,7 +75,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
     async def cite_message(
         self, interaction: discord.Interaction, message: discord.Message
     ) -> None:
-        """Right click a message to cite it."""
+        """Right click a message to generate a citation for it."""
         cont = message.content
         guild = message.guild
 
@@ -115,7 +115,7 @@ class Global(commands.Cog, TC_Cog_Mixin):
             "{{"
             + "Cite discord|url={}|message={}|author={}|channel={}|thread={}|access-date={}".format(
                 message.jump_url,
-                message.content,
+                message.content.replace("\n","  "),
                 message.author.name,
                 channel,
                 thread,
