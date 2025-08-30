@@ -111,13 +111,17 @@ class Global(commands.Cog, TC_Cog_Mixin):
         if interaction.guild_id:
             embed.add_field(name="guildid", value=interaction.guild_id)
 
-        citation = "{{Cite discord|url={}|message={}|author={}|channel={}|thread={}|access-date={}}}".format(
-            message.jump_url,
-            message.content,
-            message.author.name,
-            channel,
-            thread,
-            datetime.datetime.now().strftime("%Y-%m-%d"),
+        citation = (
+            "{{"
+            + "Cite discord|url={}|message={}|author={}|channel={}|thread={}|access-date={}".format(
+                message.jump_url,
+                message.content,
+                message.author.name,
+                channel,
+                thread,
+                datetime.datetime.now().strftime("%Y-%m-%d"),
+            )
+            + "}}"
         )
         await interaction.response.send_message(
             content=f"```{citation}```",
