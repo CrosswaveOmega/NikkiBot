@@ -712,6 +712,8 @@ def add_to_csv(stat: ApiStatus):
 
         camp, last = campaign_list.get_change_from(15)
         # print(camp,last)
+        if camp.planet is None:
+            continue
         players = camp.planet.statistics.playerCount
         lastplayers = last.planet.statistics.playerCount
         avg_players = (players + lastplayers) / 2
