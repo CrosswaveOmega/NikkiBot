@@ -584,6 +584,10 @@ class ApiStatus:
         total_contrib = [0, 0.0, 0.0, 0.0, 0.0]
         for k, list in self.campaigns.items():
             camp, last = list.get_first_change()
+            if camp.planet is None:
+                continue
+            if camp.planet.statistics is None:
+                continue
             pc = camp.planet.statistics.playerCount
             planet_difference: Planet = (camp - last).planet
             if planet_difference.event != None:
