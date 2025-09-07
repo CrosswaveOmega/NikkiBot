@@ -111,10 +111,14 @@ class TCBot(
         )
 
         self.keys = {}
+
+        self.error_channel: int = None
+
+        
+        #GPT Mode
         self.gptapi = None
         self.embedding = None 
 
-        self.error_channel: int = None
 
         print("JS CONTEXT setup")
         self.jsenv: JSContext = JSContext()
