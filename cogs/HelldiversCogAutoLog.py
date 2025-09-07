@@ -296,15 +296,18 @@ class Batch:
                 planet_name_source = planet.get_name(False)
 
         if place in ["planets", "planetInfo"]:
-            va, _ = value
+            va=value
+            if mode == EventModes.CHANGE:
+                va, _ = value
             # planet = apistatus.planets.get(int(va.index), None)
-
             planet = SimplePlanet.from_index(va.index)
             if planet:
                 planet_name_source = planet.get_name(False)
 
         if place in ["regions"]:
-            va, _ = value
+            va=value
+            if mode == EventModes.CHANGE:
+                va, _ = value
             # planet = apistatus.planets.get(int(va.index), None)
 
             planet = SimplePlanet.from_index(va.planetIndex)
@@ -312,7 +315,9 @@ class Batch:
                 planet_name_source = planet.get_name(False)
 
         if place in ["sectors"]:
-            va, _ = value
+            va=value
+            if mode == EventModes.CHANGE:
+                va, _ = value
             planet = va
             if planet:
                 sector_name = va.name
