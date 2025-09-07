@@ -18,8 +18,8 @@ statistics.csv
 statistics_new.csv
 # Dependency directories
 node_modules/
-assets/planets/*
-
+assets/planets/planet_64_rotate.gif
+assets/planets/planet_planet_64_texture.png
 
 # Build directory
 dist/

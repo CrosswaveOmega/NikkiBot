@@ -58,7 +58,12 @@ class ConfigParserSub(configparser.ConfigParser):
         return super().get(section, option, fallback=fallback, **kwargs)
 
     def getbool(self, option, fallback=None, **kwargs):
-        return super().getboolean("feature", option, fallback=False, **kwargs)
+        try:
+            return super().getboolean("feature", option, fallback=False, **kwargs)
+        except Exception as e:
+            print("could not get", option)
+            print(e)
+            return False
 
 
 class TreeOverride(CommandTree):
@@ -113,11 +118,9 @@ class TCBot(
 
         self.error_channel: int = None
 
-
-        #GPT Mode
+        # GPT Mode
         self.gptapi = None
-        self.embedding = None 
-
+        self.embedding = None
 
         print("JS CONTEXT setup")
         self.jsenv: JSContext = JSContext()
@@ -177,8 +180,9 @@ class TCBot(
                 # self.gthread=gui.Gui.run(self.gui)
             if gptapi_mode:
                 import gptmod
+
                 self.gptapi = gptmod.GptmodAPI()
-                self.embedding=gptmod.GenericThread(gptmod.warmup)
+                self.embedding = gptmod.GenericThread(gptmod.warmup)
 
             print("Turning on db")
             await self.database_on()
