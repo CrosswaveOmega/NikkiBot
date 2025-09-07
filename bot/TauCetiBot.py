@@ -176,7 +176,6 @@ class TCBot(
                 pass
                 # self.gthread=gui.Gui.run(self.gui)
             if gptapi_mode:
-                
                 import gptmod
                 self.gptapi = gptmod.GptmodAPI()
                 self.embedding=gptmod.GenericThread(gptmod.warmup)
