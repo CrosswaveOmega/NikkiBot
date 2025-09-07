@@ -221,6 +221,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
 
         self.bot.add_view(HD2OverviewView(self))
         this_planet = self.apistatus.planets.get(64, None)
+        
         if not this_planet:
             gui.gprint("NOPLANET")
         else:

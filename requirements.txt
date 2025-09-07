@@ -14,7 +14,6 @@ langchain_openai
 langchain_huggingface
 lancedb
 accelerate
-tokenizers
 transformers
 lxml
 Markdown

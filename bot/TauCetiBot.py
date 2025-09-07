@@ -111,10 +111,14 @@ class TCBot(
         )
 
         self.keys = {}
-        self.gptapi: gptmod.GptmodAPI = None
+        self.gptapi = None
+        self.embedding = None 
+
         self.error_channel: int = None
+
         print("JS CONTEXT setup")
         self.jsenv: JSContext = JSContext()
+
         print("done")
         self.config: ConfigParserSub = ConfigParserSub()
         self.exit_status: str = "none"
@@ -122,8 +126,6 @@ class TCBot(
 
         self.logs = logging.getLogger("TCLogger")
         self.loggersetup()
-        self.embedding = gptmod.GenericThread(gptmod.warmup)
-        # self.embedding.run()
 
         self.extensiondir, self.extension_list = "", []
         self.plugindir, self.plugin_list = "", []
@@ -159,6 +161,8 @@ class TCBot(
             )
             guimode = self.config.getbool("gui")
             debugmode = self.config.getbool("debug")
+            gptapi_mode = self.config.getbool("gpt")
+
             if debugmode:
                 gui.toggle_debug_mode(debugmode)
             if guimode:
@@ -168,7 +172,10 @@ class TCBot(
                 self.gui.run(self.loop)
                 pass
                 # self.gthread=gui.Gui.run(self.gui)
-            self.gptapi = gptmod.GptmodAPI()
+            if gptapi_mode:
+                self.gptapi = gptmod.GptmodAPI()
+                self.embedding=gptmod.GenericThread(gptmod.warmup)
+
             print("Turning on db")
             await self.database_on()
 
