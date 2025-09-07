@@ -18,7 +18,6 @@ from javascriptasync import JSContext
 from javascriptasync.logging import get_filehandler, setup_logging
 from sqlalchemy.exc import IntegrityError
 
-import gptmod
 import gui
 from utility import Chelp, MessageTemplates, replace_working_directory
 import database
@@ -114,7 +113,7 @@ class TCBot(
 
         self.error_channel: int = None
 
-        
+
         #GPT Mode
         self.gptapi = None
         self.embedding = None 
@@ -177,6 +176,8 @@ class TCBot(
                 pass
                 # self.gthread=gui.Gui.run(self.gui)
             if gptapi_mode:
+                
+                import gptmod
                 self.gptapi = gptmod.GptmodAPI()
                 self.embedding=gptmod.GenericThread(gptmod.warmup)
 
