@@ -1144,7 +1144,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             total_size,
         ) = await self.get_and_size_overview_embeds()
 
-        await ctx.send(embeds=assign_embeds)
+        await ctx.send(content="Assignments", embeds=assign_embeds)
         await ctx.send(content=f"{total_size}", embeds=overview_embeds)
 
     @pc.command(
