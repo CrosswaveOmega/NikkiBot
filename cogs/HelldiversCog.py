@@ -467,7 +467,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         return embs, assign_embs
 
     async def get_and_size_overview_embeds(
-        self, simple_city:bool=False
+        self, simple_city: bool = False
     ) -> Tuple[List[discord.Embed], List[discord.Embed], int]:
         """
         Get overview_embeds and assign_embeds,
@@ -1148,10 +1148,13 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         await ctx.send(content=f"{total_size}", embeds=overview_embeds)
 
     @pc.command(
-        name="overview_embs", description="Return the current state of the HD2 Galactic War."
+        name="overview_embs",
+        description="Return the current state of the HD2 Galactic War.",
     )
     @app_commands.describe()
-    async def show_overview_now(self, interaction: discord.Interaction,simple_city:bool=True):
+    async def show_overview_now(
+        self, interaction: discord.Interaction, simple_city: bool = True
+    ):
         ctx: commands.Context = await self.bot.get_context(interaction)
         data = self.apistatus.campaigns
         if not data:

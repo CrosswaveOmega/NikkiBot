@@ -378,7 +378,7 @@ def campaign_view(
     full: bool = False,
     show_stalemate: bool = True,
     simplify_city: bool = False,
-    add_estimated_influence_per_second:bool=True
+    add_estimated_influence_per_second: bool = True,
 ) -> discord.Embed:
     """Create a view for the current game state."""
     # Set default flavor text
@@ -436,13 +436,14 @@ def campaign_view(
         desc = "\n".join(desc)
         # Skip stalemated planets if necessary
         if simplify_city and "REGIONS" in desc:
-            desc = desc.replace("Decay:", "⏷")
+            desc = desc.replace("Decay:", "⏷%")
             split = desc.split("**REGIONS")
             p1 = split[0]
             d2 = split[1]
             newdesc = ""
-            ignore, act = 0, 0
+            ignore, owned, act, allregions = 0, 0, 0, len(camp.planet.regions)
             significant = True
+            # Check if planet has a significant
             if (pc / allp) < 0.02:
                 significant = False
             for reg in camp.planet.regions:
@@ -451,18 +452,19 @@ def campaign_view(
                 reg.inline_view()
                 hpv = round((reg.health / max(reg.maxHealth, 1)) * 100, 1)
                 if (reg.isAvailable and significant) or hpv < 100.0:
+                    # eg, are they doing something.
                     newdesc += reg.inline_view() + "\n"
                 elif reg.owner == 1:
-                    newdesc += reg.inline_view() + "\n"
+                    owned += 1
                 else:
                     ignore += 1
             if newdesc:
                 newdesc = f"{p1}REGIONS\n{newdesc}"
                 if ignore:
-                    newdesc += f"& {ignore} more"
+                    newdesc += f"{act}/{allregions} Active, {owned}:{ignore}"
                 desc = newdesc
             else:
-                desc = p1 + f"{act}/{ignore} Regions Active"
+                desc = p1 + f"{act}/{allregions} Active, {owned}:{ignore}"
 
         if not show_stalemate:
             if "Stalemate" in desc and "REGIONS" not in desc:
