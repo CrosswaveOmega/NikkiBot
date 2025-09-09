@@ -1134,7 +1134,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     @pc.command(
         name="overview", description="Return the current state of the HD2 Galactic War."
     )
-    @app_commands.describe(simplify="Don't show stalemated planets.")
+    @app_commands.describe()
     async def campoverview(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
