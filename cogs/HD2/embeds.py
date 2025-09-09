@@ -477,7 +477,7 @@ def campaign_view(
                 desc = desc.replace("HP `100.0% `\n", "")
                 namew = name
                 if camp.planet.regions:
-                    namew += f"({r_act}/[{r_ours}:{r_theirs}])"
+                    namew += f"({r_act}:{r_ours}:{r_theirs})"
                 stalemated.append((namew, camp.planet.statistics.playerCount))
                 players_on_stalemated += camp.planet.statistics.playerCount
                 continue
