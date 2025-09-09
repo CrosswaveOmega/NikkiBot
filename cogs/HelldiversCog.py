@@ -475,21 +475,21 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             count_total_embed_characters(embed.to_dict()) for embed in overview_embeds
         )
         gui.gprint(total_size)
-        if total_size >= 6000:
+        if total_size >= 5900:
             overview_embeds, assign_embeds = self.create_overview_embeds(False, False)
             total_size = sum(
                 count_total_embed_characters(embed.to_dict())
                 for embed in overview_embeds
             )
             gui.gprint(total_size)
-        if total_size >= 6000:
+        if total_size >= 5900:
             overview_embeds, assign_embeds = self.create_overview_embeds(False, True)
             total_size = sum(
                 count_total_embed_characters(embed.to_dict())
                 for embed in overview_embeds
             )
             gui.gprint(total_size)
-        if total_size >= 6000:
+        if total_size >= 5900:
             embs = overview_embeds
             total_size = sum(
                 count_total_embed_characters(embed.to_dict())
