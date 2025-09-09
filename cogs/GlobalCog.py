@@ -267,8 +267,9 @@ class Global(commands.Cog, TC_Cog_Mixin):
     @app_commands.allowed_installs(guilds=True, users=True)
     async def websearch(self, interaction: discord.Interaction, query: str) -> None:
         """Do a web search"""
-        
+
         import cogs.ResearchAgent as ra
+
         ctx: commands.Context = await self.bot.get_context(interaction)
         mess = await ctx.send(
             "<a:LoadingBlue:1206301904863502337> Searching", ephemeral=True
@@ -312,8 +313,8 @@ class Global(commands.Cog, TC_Cog_Mixin):
             "<a:LoadingBlue:1206301904863502337> Searching", ephemeral=True
         )
         try:
-            
             import cogs.ResearchAgent as ra
+
             ans, source, _ = await ra.actions.research_op(query, 9)
             emb = discord.Embed(description=ans)
             emb.add_field(name="source", value=str(source)[:1000], inline=False)

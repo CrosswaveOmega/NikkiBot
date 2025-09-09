@@ -2,7 +2,7 @@ import asyncio
 import io
 import logging
 import gui
-from typing import Literal
+from typing import List, Literal, Tuple
 from assetloader import AssetLookup
 import discord
 import random
@@ -464,6 +464,40 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             )
         return embs, assign_embs
 
+    async def get_and_size_overview_embeds(
+        self,
+    ) -> Tuple[List[discord.Embed], List[discord.Embed], int]:
+        """Get overview_embeds and assign_embeds,
+        overview embeds is downsized as best as possible."""
+        overview_embeds, assign_embeds = self.create_overview_embeds(True, False)
+
+        total_size = sum(
+            count_total_embed_characters(embed.to_dict()) for embed in overview_embeds
+        )
+        gui.gprint(total_size)
+        if total_size >= 6000:
+            overview_embeds, assign_embeds = self.create_overview_embeds(False, False)
+            total_size = sum(
+                count_total_embed_characters(embed.to_dict())
+                for embed in overview_embeds
+            )
+            gui.gprint(total_size)
+        if total_size >= 6000:
+            overview_embeds, assign_embeds = self.create_overview_embeds(False, True)
+            total_size = sum(
+                count_total_embed_characters(embed.to_dict())
+                for embed in overview_embeds
+            )
+            gui.gprint(total_size)
+        if total_size >= 6000:
+            embs = overview_embeds
+            total_size = sum(
+                count_total_embed_characters(embed.to_dict())
+                for embed in overview_embeds
+            )
+            gui.gprint(total_size)
+        return overview_embeds, assign_embeds, total_size
+
     async def edit_target_message(self, context, stalemated=True, simplify_city=False):
         profile = ServerHDProfile.get(context.guild.id)
         if profile:
@@ -481,39 +515,12 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             if self.api_up is False:
                 await target.edit(content="**WARNING, COMMS ARE DOWN!**")
                 return
-            overview_embeds, assign_embeds = self.create_overview_embeds(True, False)
 
-            total_size = sum(
-                count_total_embed_characters(embed.to_dict())
-                for embed in overview_embeds
-            )
-            gui.gprint(total_size)
-            if total_size > 6000:
-                overview_embeds, assign_embeds = self.create_overview_embeds(
-                    False, False
-                )
-                total_size = sum(
-                    count_total_embed_characters(embed.to_dict())
-                    for embed in overview_embeds
-                )
-                gui.gprint(total_size)
-            if total_size > 6000:
-                overview_embeds, assign_embeds = self.create_overview_embeds(
-                    False, True
-                )
-                total_size = sum(
-                    count_total_embed_characters(embed.to_dict())
-                    for embed in overview_embeds
-                )
-                gui.gprint(total_size)
-            if total_size > 6000:
-                embs = overview_embeds
-                total_size = sum(
-                    count_total_embed_characters(embed.to_dict())
-                    for embed in overview_embeds
-                )
-                gui.gprint(total_size)
-
+            (
+                overview_embeds,
+                assign_embeds,
+                total_size,
+            ) = await self.get_and_size_overview_embeds()
             await target.edit(content="Current game status.", embeds=overview_embeds)
             await assignment.edit(content="Assignment", embeds=assign_embeds)
 
@@ -1128,9 +1135,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         name="overview", description="Return the current state of the HD2 Galactic War."
     )
     @app_commands.describe(simplify="Don't show stalemated planets.")
-    async def campoverview(
-        self, interaction: discord.Interaction, simplify: bool = False
-    ):
+    async def campoverview(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
 
         data = self.apistatus.campaigns
@@ -1138,38 +1143,15 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if not data:
             return await ctx.send("No result")
 
-        overview_embeds, assign_embeds = self.create_overview_embeds(True, False)
-
-        total_size = sum(
-            count_total_embed_characters(embed.to_dict()) for embed in overview_embeds
-        )
-        gui.gprint("1", total_size)
-
-        await ctx.send(f"{total_size}")
-        if total_size > 5900:
-            overview_embeds, assign_embeds = self.create_overview_embeds(False, False)
-
-            total_size = sum(
-                count_total_embed_characters(embed.to_dict())
-                for embed in overview_embeds
-            )
-            gui.gprint("2", total_size)
-
-            await ctx.send(f"{total_size}")
-        if total_size > 5900:
-            overview_embeds, assign_embeds = self.create_overview_embeds(False, True)
-
-            total_size = sum(
-                count_total_embed_characters(embed.to_dict())
-                for embed in overview_embeds
-            )
-            gui.gprint("3", total_size)
-
-            await ctx.send(f"{total_size}")
+        (
+            overview_embeds,
+            assign_embeds,
+            total_size,
+        ) = await self.get_and_size_overview_embeds()
 
         await ctx.send(embeds=assign_embeds)
 
-        await ctx.send(embeds=overview_embeds)
+        await ctx.send(content=f"{total_size}", embeds=overview_embeds)
 
     # @pc.command(name="map", description="get a scrollable galactic map.")
     # @app_commands.describe(planet="Focus map on this planet.")

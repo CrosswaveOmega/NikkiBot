@@ -121,10 +121,12 @@ class SimplePlanet(BaseApiModel):
             regenPerSecond=0.0,
         )
 
+
 class Events:
-    '''Class for event combination grouping.'''
+    """Class for event combination grouping."""
+
     def __init__(self) -> None:
-        self.planet=None
+        self.planet = None
         self.lastInfo: Dict[str, Any] = {}
         self.lastStatus: Dict[str, Any] = {}
         self.evt: List[GameEvent] = []
@@ -207,7 +209,7 @@ class SectorEvents(Events):
 
 
 class GeneralEvents(Events):
-    def __init__(self ) -> None:
+    def __init__(self) -> None:
         super().__init__()
         self.planet = None
         self.hdml = ""
@@ -273,7 +275,7 @@ class Batch:
                 planet_name_source = planet.get_name(False)
 
         if place in ["planets", "planetInfo"]:
-            va=value
+            va = value
             if mode == EventModes.CHANGE:
                 va, _ = value
             # planet = apistatus.planets.get(int(va.index), None)
@@ -282,7 +284,7 @@ class Batch:
                 planet_name_source = planet.get_name(False)
 
         if place in ["regions"]:
-            va=value
+            va = value
             if mode == EventModes.CHANGE:
                 va, _ = value
             # planet = apistatus.planets.get(int(va.index), None)
@@ -292,7 +294,7 @@ class Batch:
                 planet_name_source = planet.get_name(False)
 
         if place in ["sectors"]:
-            va=value
+            va = value
             if mode == EventModes.CHANGE:
                 va, _ = value
             planet = va
@@ -1730,7 +1732,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         await self.bot.send_error(ex, "LOG ERROR FOR POST", True)
 
     async def updatelog(self):
-        '''TC_TASK, Runs every minute on the dot.'''
+        """TC_TASK, Runs every minute on the dot."""
         try:
             if not self.get_running:
                 task = asyncio.create_task(self.load_log())
@@ -1743,7 +1745,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             self.get_running = False
 
     async def load_log(self):
-        '''Ran within update_log'''
+        """Ran within update_log"""
         try:
             await asyncio.wait_for(self.main_log(), timeout=60)
         except Exception as e:
