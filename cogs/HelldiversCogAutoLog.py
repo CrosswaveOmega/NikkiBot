@@ -121,35 +121,39 @@ class SimplePlanet(BaseApiModel):
             regenPerSecond=0.0,
         )
 
-
-class PlanetEvents:
-    def __init__(self, planet: Planet) -> None:
-        self.planet: Planet = planet
-        self.planet_event: Optional[str] = None
-        self.planet1: Optional[str] = None
+class Events:
+    '''Main Class for Event combination groupings.'''
+    def __init__(self) -> None:
+        self.planet=None
         self.lastInfo: Dict[str, Any] = {}
         self.lastStatus: Dict[str, Any] = {}
         self.evt: List[GameEvent] = []
         self.trig: List[str] = []
         self.ret = None
 
+    def add_event(self, event: GameEvent, key: str) -> None:
+        self.evt.append(event)
+        if event.mode in [EventModes.NEW, EventModes.REMOVE]:
+            self.ret = event.value.retrieved_at
+        elif event.mode == EventModes.CHANGE:
+            self.ret = event.value[0].retrieved_at
+
+        if key not in self.trig:
+            self.trig.append(key)
+
+
+class PlanetEvents(Events):
+    def __init__(self, planet: Planet) -> None:
+        super().__init__()
+        self.planet: Planet = planet
+        self.planet_event: Optional[str] = None
+        self.planet1: Optional[str] = None
+
     def invasion_check(self):
         if self.planet_event:
             if self.planet_event.eventType == 2:
                 return True
         return False
-
-    def add_event(self, event: GameEvent, key: str) -> None:
-        self.evt.append(event)
-        if event.mode in [EventModes.NEW, EventModes.REMOVE]:
-            self.ret = event["value"].retrieved_at
-            if event["place"] == "planetevents":
-                self.planet_event = event["value"]
-        elif event.mode == EventModes.CHANGE:
-            self.ret = event["value"][0].retrieved_at
-
-        if key not in self.trig:
-            self.trig.append(key)
 
     def get_links(self) -> Tuple[List[int], List[int]]:
         new, old = [], []
@@ -195,45 +199,18 @@ class PlanetEvents:
             self.ret = v.retrieved_at
 
 
-class SectorEvents:
+class SectorEvents(Events):
     def __init__(self, planet: SectorStates) -> None:
+        super().__init__()
         self.planet: SectorStates = planet
         self.planet_event = None
-        self.lastInfo: Dict[str, Any] = {}
-        self.lastStatus: Dict[str, Any] = {}
-        self.evt: List[Dict[str, Any]] = []
-        self.trig: List[str] = []
-        self.ret = None
-
-    def add_event(self, event: GameEvent, key: str) -> None:
-        self.evt.append(event)
-        if event.mode in [EventModes.NEW, EventModes.REMOVE]:
-            self.ret = event.value.retrieved_at
-        elif event.mode == EventModes.CHANGE:
-            self.ret = event.value[0].retrieved_at
-        if key not in self.trig:
-            self.trig.append(key)
 
 
-class GeneralEvents:
-    def __init__(self) -> None:
+class GeneralEvents(Events):
+    def __init__(self ) -> None:
+        super().__init__()
         self.planet = None
-        self.evt: List[Dict[str, Any]] = []
-        self.trig: List[str] = []
         self.hdml = ""
-        self.ret = None
-
-    def add_event(self, event: GameEvent, key: str) -> None:
-        self.evt.append(event)
-        if event.mode in [EventModes.NEW, EventModes.REMOVE]:
-            self.ret = event.value.retrieved_at
-            if event.place == "news":
-                self.hdml += hdml_parse(event.value.message).replace("\n", " ")
-        elif event.mode == EventModes.CHANGE:
-            self.ret = event.value[0].retrieved_at
-
-        if key not in self.trig:
-            self.trig.append(key)
 
 
 faction_dict = {1: "Human", 2: "Terminid", 3: "Automaton", 4: "Illuminate"}
