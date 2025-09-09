@@ -1161,7 +1161,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             overview_embeds,
             assign_embeds,
             total_size,
-        ) = await self.get_and_size_overview_embeds()
+        ) = await self.get_and_size_overview_embeds(simple_city=simple_city)
 
         await ctx.send(embeds=assign_embeds)
         await ctx.send(content=f"{total_size}", embeds=overview_embeds)
