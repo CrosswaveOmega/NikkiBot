@@ -122,7 +122,7 @@ class SimplePlanet(BaseApiModel):
         )
 
 class Events:
-    '''Main Class for Event combination groupings.'''
+    '''Class for event combination grouping.'''
     def __init__(self) -> None:
         self.planet=None
         self.lastInfo: Dict[str, Any] = {}
@@ -570,14 +570,6 @@ class Batch:
                         combinations.append("region")
 
                         gui.gprint(combinations, evt.mode, evt.place, evt.value)
-                    # if "isAvailable" in dump:
-                    #     if info.isAvailable:
-                    #         combinations.append("region_siege_start")
-                    #     elif info.isAvailable:
-                    #         combinations.append("region_siege_end")
-                    # if "owner" in dump:
-                    #     gui.gprint(dump)
-                    #     combinations.append("region_siege_changehands")
 
         if (
             "campaign_EventModes.NEW" in trigger_list
@@ -1738,6 +1730,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         await self.bot.send_error(ex, "LOG ERROR FOR POST", True)
 
     async def updatelog(self):
+        '''TC_TASK, Runs every minute on the dot.'''
         try:
             if not self.get_running:
                 task = asyncio.create_task(self.load_log())
@@ -1750,6 +1743,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             self.get_running = False
 
     async def load_log(self):
+        '''Ran within update_log'''
         try:
             await asyncio.wait_for(self.main_log(), timeout=60)
         except Exception as e:

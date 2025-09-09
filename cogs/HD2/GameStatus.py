@@ -207,7 +207,6 @@ class ApiStatus:
                 k: p.model_dump(exclude="time_delta") for k, p in self.stations.items()
             },
             "dispatches": [d.model_dump(exclude="time_delta") for d in self.dispatches],
-            # "warstat": self.warstat.model_dump(),
             "warall": self.warall.model_dump(exclude="time_delta"),
         }
 

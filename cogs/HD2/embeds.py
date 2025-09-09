@@ -411,11 +411,13 @@ def campaign_view(
     # Iterate over each campaign in the status
     for k, list in sorted(
         stat.campaigns.items(),
-        key=lambda item: item[1].get_first().planet.statistics.playerCount,
+        key=lambda item: item[1].get_first().planet.statistics.playerCount if item[1].get_first().planet is not None else 0,
         reverse=True,
     ):
         camp, last = list.get_change_from(15)
         changes = list.get_changes()
+        if not camp.planet:
+            continue
         this_faction = camp.planet.campaign_against()  # Determine opposing faction
         pc = camp.planet.statistics.playerCount
         prop[this_faction] += pc
@@ -467,7 +469,7 @@ def campaign_view(
                 namew = name
                 if camp.planet.regions:
                     namew += f"({len(camp.planet.regions)})"
-                stalemated.append(namew)
+                stalemated.append((namew,camp.planet.statistics.playerCount))
                 players_on_stalemated += camp.planet.statistics.playerCount
                 continue
             elif "Stalemate" in desc:
@@ -561,15 +563,15 @@ def campaign_view(
         illuminate_list = []
         other_list = []
 
-        for s in stalemated:
+        for s,pc in stalemated:
             if emojis["automaton"] in s:
-                automaton_list.append(f"* {s.replace(emojis['automaton'], '')}")
+                automaton_list.append(f"* {s.replace(emojis['automaton'], '')}\n  * {pc}")
             elif emojis["terminids"] in s:
-                terminids_list.append(f"* {s.replace(emojis['terminids'], '')}")
+                terminids_list.append(f"* {s.replace(emojis['terminids'], '')}\n  * {pc}")
             elif emojis["humans"] in s:
-                humans_list.append(f"* {s.replace(emojis['humans'], '')}")
+                humans_list.append(f"* {s.replace(emojis['humans'], '')}\n  * {pc}")
             elif emojis["illuminate"] in s:
-                illuminate_list.append(f"* {s.replace(emojis['illuminate'], '')}")
+                illuminate_list.append(f"* {s.replace(emojis['illuminate'], '')}\n  * {pc}")
             else:
                 other_list.append(f"* {s}")
 
