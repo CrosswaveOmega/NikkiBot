@@ -433,7 +433,12 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             await self.bot.send_error(e, "Message update cleanup error.")
             # gui.gprint(str(e))
 
-    def create_overview_embeds(self, stalemated=True, simplify_city=False):
+    def create_overview_embeds(
+        self, stalemated: bool = True, simplify_city: bool = False
+    ) -> Tuple[List[discord.Embed], List[discord.Embed]]:
+        """
+        Create overview embeds for the current Helldivers campaign.
+        """
         emb = hd2.campaign_view(
             self.apistatus,
             self.hd2,
@@ -455,7 +460,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
                 )
         output_string = self.outstring
         if output_string:
-            embs.insert(
+            assign_embs.insert(
                 0,
                 discord.Embed(
                     title="Meridia Status.",
@@ -467,35 +472,30 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     async def get_and_size_overview_embeds(
         self,
     ) -> Tuple[List[discord.Embed], List[discord.Embed], int]:
-        """Get overview_embeds and assign_embeds,
-        overview embeds is downsized as best as possible."""
+        """
+        Get overview_embeds and assign_embeds,
+        overview embeds are downsized as best as possible.
+        """
         overview_embeds, assign_embeds = self.create_overview_embeds(True, False)
 
         total_size = sum(
             count_total_embed_characters(embed.to_dict()) for embed in overview_embeds
         )
         gui.gprint(total_size)
-        if total_size >= 5900:
-            overview_embeds, assign_embeds = self.create_overview_embeds(False, False)
-            total_size = sum(
-                count_total_embed_characters(embed.to_dict())
-                for embed in overview_embeds
-            )
-            gui.gprint(total_size)
-        if total_size >= 5900:
-            overview_embeds, assign_embeds = self.create_overview_embeds(False, True)
-            total_size = sum(
-                count_total_embed_characters(embed.to_dict())
-                for embed in overview_embeds
-            )
-            gui.gprint(total_size)
-        if total_size >= 5900:
-            embs = overview_embeds
-            total_size = sum(
-                count_total_embed_characters(embed.to_dict())
-                for embed in overview_embeds
-            )
-            gui.gprint(total_size)
+
+        for simplify in [False, True]:
+            if total_size >= 5900:
+                overview_embeds, assign_embeds = self.create_overview_embeds(
+                    False, simplify
+                )
+                total_size = sum(
+                    count_total_embed_characters(embed.to_dict())
+                    for embed in overview_embeds
+                )
+                gui.gprint(total_size)
+            else:
+                break
+
         return overview_embeds, assign_embeds, total_size
 
     async def edit_target_message(self, context, stalemated=True, simplify_city=False):
@@ -1137,9 +1137,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     @app_commands.describe()
     async def campoverview(self, interaction: discord.Interaction):
         ctx: commands.Context = await self.bot.get_context(interaction)
-
         data = self.apistatus.campaigns
-
         if not data:
             return await ctx.send("No result")
 
@@ -1150,7 +1148,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         ) = await self.get_and_size_overview_embeds()
 
         await ctx.send(embeds=assign_embeds)
-
         await ctx.send(content=f"{total_size}", embeds=overview_embeds)
 
     # @pc.command(name="map", description="get a scrollable galactic map.")

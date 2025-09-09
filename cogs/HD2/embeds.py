@@ -567,19 +567,13 @@ def campaign_view(
 
         for s, pc in stalemated:
             if emojis["automaton"] in s:
-                automaton_list.append(
-                    f"* {s.replace(emojis['automaton'], '')}`{pc}`"
-                )
+                automaton_list.append(f"* {s.replace(emojis['automaton'], '')}`{pc}`")
             elif emojis["terminids"] in s:
-                terminids_list.append(
-                    f"* {s.replace(emojis['terminids'], '')}`{pc}`"
-                )
+                terminids_list.append(f"* {s.replace(emojis['terminids'], '')}`{pc}`")
             elif emojis["humans"] in s:
                 humans_list.append(f"* {s.replace(emojis['humans'], '')}`{pc}`")
             elif emojis["illuminate"] in s:
-                illuminate_list.append(
-                    f"* {s.replace(emojis['illuminate'], '')}`{pc}`"
-                )
+                illuminate_list.append(f"* {s.replace(emojis['illuminate'], '')}`{pc}`")
             else:
                 other_list.append(f"* {s}")
 
