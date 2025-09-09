@@ -378,8 +378,9 @@ def campaign_view(
     full: bool = False,
     show_stalemate: bool = True,
     simplify_city: bool = False,
+    add_estimated_influence_per_second:bool=True
 ) -> discord.Embed:
-    """Create a view for the campaign."""
+    """Create a view for the current game state."""
     # Set default flavor text
     flav = "Galactic Status."
     # Check if hdtext has a galactic overview and randomize flavor text if present
@@ -402,8 +403,7 @@ def campaign_view(
         emb0.timestamp = discord.utils.utcnow()  # Set timestamp
         return [embs]
     total_contrib = [0, 0.0, 0.0, 0.0, 0.0]
-    total = 0
-    el = 0
+    total, embed_list_length = 0, 0
     prop = defaultdict(int)
     stalemated = []
     allp = all_players.statistics.playerCount
@@ -531,20 +531,21 @@ def campaign_view(
                 total_contrib[4] += rate / total_sec  # Impact per second
 
         # Get estimated and real EPS
-        features = get_feature_dictionary(stat, k)
-        pred = make_prediction_for_eps(features)
-        eps_estimated = round(pred, 3)
-        eps_real = round(features["eps"], 3)
-        if not (eps_estimated <= 0 and eps_real <= 0):
-            desc += f"\ninfl/s:`{eps_estimated},c{eps_real}`"
+        if add_estimated_influence_per_second:
+            features = get_feature_dictionary(stat, k)
+            pred = make_prediction_for_eps(features)
+            eps_estimated = round(pred, 3)
+            eps_real = round(features["eps"], 3)
+            if not (eps_estimated <= 0 and eps_real <= 0):
+                desc += f"\ninfl/s:`{eps_estimated},c{eps_real}`"
         # Manage embed field lengths
-        if el >= 24:
+        if embed_list_length >= 24:
             emb = discord.Embed()
             embs.append(emb)
-            el = 0
+            embed_list_length = 0
         # Add fields to embed
         emb.add_field(name=name, value=desc, inline=True)
-        el += 1
+        embed_list_length += 1
 
     emb0.description += f"???:{all_players.statistics.playerCount - total}," + ",".join(
         [f"{k}:{v}" for k, v in prop.items()]
@@ -583,7 +584,7 @@ def campaign_view(
             name="Planetary Stalemates", value=stalemate_description, inline=False
         )
 
-        def add_chunks(name_orig, lines, el, emb):
+        def add_chunks(name_orig, lines, emb):
             """helper function to chunk owned planets together."""
             name = f"{name_orig} ({len(lines)})"
             if not lines:
@@ -602,13 +603,13 @@ def campaign_view(
             if current_value:
                 # Add fields to embed
                 emb.add_field(name=name, value=current_value.rstrip(), inline=True)
-            return el
+            return embed_list_length
 
         emb2 = discord.Embed()
-        el = add_chunks("Automatons", automaton_list, el, emb2)
-        el = add_chunks("Terminids", terminids_list, el, emb2)
-        el = add_chunks("Illuminate", illuminate_list, el, emb2)
-        el = add_chunks("Other", other_list, el, emb2)
+        add_chunks("Automatons", automaton_list, emb2)
+        add_chunks("Terminids", terminids_list, emb2)
+        add_chunks("Illuminate", illuminate_list, emb2)
+        add_chunks("Other", other_list, emb2)
         embs.append(emb2)
 
     # Add overall contribution stats
@@ -761,7 +762,7 @@ def campaign_text_view(
     change_war = all_players - last
     total_contrib = [0, 0.0, 0.0, 0.0, 0.0]
     total = 0
-    el = 0
+    embed_list_length = 0
     prop = defaultdict(int)
     stalemated = []
     players_on_stalemated = 0
@@ -836,7 +837,7 @@ def campaign_text_view(
         else:
             liberation_campaigns.append((name, desc))
 
-        el += 1
+        embed_list_length += 1
     out_main += f"???:{all_players.statistics.playerCount - total}," + ",".join(
         [f"{k}:{v}" for k, v in prop.items()]
     )
@@ -887,7 +888,7 @@ def region_view(
 
     total_contrib = [0, 0.0, 0.0, 0.0, 0.0]  # playerCount, rate, %, %/hr, eps
     total = 0
-    el = 0
+    embed_list_length = 0
     prop = defaultdict(int)
     stalemated = []
     players_on_stalemated = 0
@@ -905,13 +906,13 @@ def region_view(
         diff: Region = reg - last
         name, desc = reg.simple_region_view(diff, avg)
 
-        if el >= 24:
+        if embed_list_length >= 24:
             emb = discord.Embed()
             embs.append(emb)
-            el = 0
+            embed_list_length = 0
 
         emb.add_field(name=name, value="\n".join(desc), inline=False)
-        el += 1
+        embed_list_length += 1
 
     if stalemated:
         emb.add_field(
