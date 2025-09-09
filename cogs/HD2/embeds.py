@@ -435,6 +435,7 @@ def campaign_view(
         )
         desc = "\n".join(desc)
         # Skip stalemated planets if necessary
+        r_act, r_ours, r_theirs = 0, 0, 0
         if simplify_city and "REGIONS" in desc:
             desc = desc.replace("Decay:", "⏷%")
             split = desc.split("**REGIONS")
@@ -449,6 +450,10 @@ def campaign_view(
             for reg in camp.planet.regions:
                 if reg.isAvailable:
                     act += 1
+                    r_act += 1
+                else:
+                    r_ours += int(reg.owner == 1)
+                    r_theirs += int(reg.owner != 1)
                 reg.inline_view()
                 hpv = round((reg.health / max(reg.maxHealth, 1)) * 100, 1)
                 if (reg.isAvailable and significant) or hpv < 100.0:
@@ -472,7 +477,7 @@ def campaign_view(
                 desc = desc.replace("HP `100.0% `\n", "")
                 namew = name
                 if camp.planet.regions:
-                    namew += f"({len(camp.planet.regions)})"
+                    namew += f"({r_act}/[{r_ours}:{r_theirs}])"
                 stalemated.append((namew, camp.planet.statistics.playerCount))
                 players_on_stalemated += camp.planet.statistics.playerCount
                 continue
