@@ -1173,10 +1173,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         if not data:
             return await ctx.send("No result")
 
-        (
-            overview_embeds,
-            assign_embeds,
-        ) = self.create_overview_embeds(
+        overview_embeds, assign_embeds = self.create_overview_embeds(
             not no_stalemates,
             simplify_city=simplify_city,
             estimate_influence_per_second=not no_inf_per_second,
