@@ -204,7 +204,9 @@ class ApiStatus:
                 k: p.model_dump(exclude="time_delta") for k, p in self.planets.items()
             },
             "stations": {
-                k: p if isinstance(p,str) else p.model_dump(exclude="time_delta") for k, p in self.stations.items()
+                k: p.model_dump(exclude="time_delta")
+                for k, p in self.stations.items()
+                if not isinstance(p, str)
             },
             "dispatches": [d.model_dump(exclude="time_delta") for d in self.dispatches],
             "warall": self.warall.model_dump(exclude="time_delta"),
