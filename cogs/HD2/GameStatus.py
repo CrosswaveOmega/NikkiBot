@@ -151,10 +151,17 @@ class ApiStatus:
         "stations",
         "last_station_time",
         "ignore_these",
+        "grab_station",
         "deadzone",
     ]
 
-    def __init__(self, client: APIConfig = APIConfig(), max_list_size=8, direct=True):
+    def __init__(
+        self,
+        client: APIConfig = APIConfig(),
+        max_list_size=8,
+        direct=True,
+        get_station=True,
+    ):
         set_status_emoji(status_emoji)
         self.client = client
         self.max_list_size = max_list_size
@@ -178,6 +185,7 @@ class ApiStatus:
         )
         self.stations = {}
         self.ignore_these = []
+        self.grab_station = get_station
         self.last_station_time = datetime.datetime(2024, 1, 1, 1, 1, 0)
         self.getlock = asyncio.Lock()
         self.deadzone = False
@@ -221,7 +229,7 @@ class ApiStatus:
         return None
 
     @classmethod
-    def from_dict(cls, data, client: APIConfig = APIConfig()):
+    def from_dict(cls, data, client: APIConfig = APIConfig(), get_station=True):
         newcks = cls(client=client)
         newcks.max_list_size = data["max_list_size"]
         newcks.war = LimitedSizeList(newcks.max_list_size)
@@ -263,6 +271,8 @@ class ApiStatus:
             newcks.stations = {
                 int(k): SpaceStation(**v) for k, v in data["stations"].items()
             }
+
+        newcks.grab_station = get_station
         return newcks
 
     def __repr__(self):
@@ -318,6 +328,8 @@ class ApiStatus:
 
     async def _update_stations(self):
         active_stations = []
+        if not self.grab_station:
+            return
         for s in self.warall.status.spaceStations:
             id = s.id32
             active_stations.append(id)
@@ -335,15 +347,6 @@ class ApiStatus:
             self.last_station_time = datetime.datetime.now()
 
     async def get_station(self):
-        return self.stations
-        if (datetime.datetime.now() - self.last_station_time) > datetime.timedelta(
-            minutes=15
-        ):
-            for s in self.warall.status.spaceStations:
-                id = s.id32
-                station = await GetApiDirectSpaceStation(id, self.client)
-                self.stations[id] = station
-            self.last_station_time = datetime.datetime.now()
         return self.stations
 
     async def update_data(self):
