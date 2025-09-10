@@ -57,7 +57,7 @@ class ConfigParserSub(configparser.ConfigParser):
     def get(self, section, option, fallback=None, **kwargs):
         return super().get(section, option, fallback=fallback, **kwargs)
 
-    def getbool(self, option, fallback=None, **kwargs):
+    def getfeature(self, option, fallback=None, **kwargs):
         try:
             return super().getboolean("feature", option, fallback=False, **kwargs)
         except Exception as e:
@@ -165,9 +165,9 @@ class TCBot(
             setup_logging(
                 logging.DEBUG, handler=get_filehandler(log_level=logging.DEBUG)
             )
-            guimode = self.config.getbool("gui")
-            debugmode = self.config.getbool("debug")
-            gptapi_mode = self.config.getbool("gpt")
+            guimode = self.config.getfeature("gui")
+            debugmode = self.config.getfeature("debug")
+            gptapi_mode = self.config.getfeature("gpt")
 
             if debugmode:
                 gui.toggle_debug_mode(debugmode)
