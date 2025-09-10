@@ -436,8 +436,10 @@ def campaign_view(
         desc = "\n".join(desc)
         # Skip stalemated planets if necessary
         r_act, r_ours, r_theirs = 0, 0, 0
-        if simplify_city and "REGIONS" in desc:
+        if simplify_city:
+            desc = desc.replace("Decay:`0.0`", "⏷0%")
             desc = desc.replace("Decay:", "⏷%")
+        if simplify_city and "REGIONS" in desc:
             split = desc.split("**REGIONS")
             p1 = split[0]
             d2 = split[1]

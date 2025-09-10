@@ -431,7 +431,10 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             await self.bot.send_error(e, "Message update cleanup error.")
 
     def create_overview_embeds(
-        self, stalemated: bool = True, simplify_city: bool = False
+        self,
+        stalemated: bool = True,
+        simplify_city: bool = False,
+        estimate_influence_per_second: bool = True,
     ) -> Tuple[List[discord.Embed], List[discord.Embed]]:
         """
         Create overview embeds for the current Helldivers campaign.
@@ -441,6 +444,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             self.hd2,
             show_stalemate=stalemated,
             simplify_city=simplify_city,
+            add_estimated_influence_per_second=estimate_influence_per_second,
         )
         embs = emb
         assign_embs = []
@@ -480,10 +484,11 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         )
         gui.gprint(total_size)
 
-        for simplify in [False, True]:
+        for mode in [(False, True), (True, True), (True, False)]:
             if total_size >= 5900:
+                simplify, no_infl = mode
                 overview_embeds, assign_embeds = self.create_overview_embeds(
-                    False, simplify or simple_city
+                    False, simplify or simple_city, no_infl
                 )
                 total_size = sum(
                     count_total_embed_characters(embed.to_dict())
@@ -1145,7 +1150,11 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         ) = await self.get_and_size_overview_embeds()
 
         await ctx.send(content="Assignments", embeds=assign_embeds)
-        await ctx.send(content=f"{total_size}", embeds=overview_embeds)
+        if total_size >= 5900:
+            for e in overview_embeds:
+                await ctx.send(content=f"{total_size}", embeds=[e])
+        else:
+            await ctx.send(content=f"{total_size}", embeds=overview_embeds)
 
     @pc.command(
         name="overview_embs",
@@ -1153,7 +1162,11 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     )
     @app_commands.describe()
     async def show_overview_now(
-        self, interaction: discord.Interaction, simple_city: bool = True
+        self,
+        interaction: discord.Interaction,
+        no_stalemates: bool = False,
+        simple_city: bool = True,
+        no_inf_per_second: bool = False,
     ):
         ctx: commands.Context = await self.bot.get_context(interaction)
         data = self.apistatus.campaigns
@@ -1163,11 +1176,16 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         (
             overview_embeds,
             assign_embeds,
-            total_size,
-        ) = await self.get_and_size_overview_embeds(simple_city=simple_city)
+        ) = await self.create_overview_embeds(
+            not no_stalemates,
+            simple_city=simple_city,
+            estimate_influence_per_second=not no_inf_per_second,
+        )
 
-        await ctx.send(embeds=assign_embeds)
-        await ctx.send(content=f"{total_size}", embeds=overview_embeds)
+        await ctx.send(content="Assignments", embeds=assign_embeds)
+
+        for e in overview_embeds:
+            await ctx.send(content=f"Overview", embeds=[e])
 
     # @pc.command(name="map", description="get a scrollable galactic map.")
     # @app_commands.describe(planet="Focus map on this planet.")
