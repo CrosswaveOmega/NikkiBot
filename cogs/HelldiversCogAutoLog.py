@@ -340,7 +340,10 @@ class Batch:
                     .replace("[TYPETEXT]", ctext[2][0])
                     .replace("[PLANET 0]", planet_data.planet.name)
                 )
-                target = target.replace("[PLANET 1]", planets_data_json[str(i)]["name"])
+                target_name=f"P#{i}"
+                if str(i) in planets_data_json:
+                    target_name=planets_data_json[str(i)]["name"]
+                target = target.replace("[PLANET 1]", target_name)
                 target = target.replace("[SECTOR 1]", planet_data.planet.sector)
                 target = target.replace(
                     "[FACTION]",
