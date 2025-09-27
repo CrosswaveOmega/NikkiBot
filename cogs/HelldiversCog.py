@@ -426,9 +426,6 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         self.img = img
 
     async def update_api(self):
-        self.hd2 = load_json_with_substitutions("./assets/json", "flavor.json", {}).get(
-            "hd2", {}
-        )
         try:
             gui.gprint("updating war")
             await self.update_data()
