@@ -204,6 +204,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             "hd2", {}
         )
         self.api_up = True
+
         self.outstring = ""
         snap = hd2.load_from_json("./saveData/hd2_snapshot.json")
         if snap:
@@ -243,6 +244,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
         st = datetime(
             nowd.year, nowd.month, nowd.day, nowd.hour, int(nowd.minute / 5) * 5
         )
+        self.update_lock = asyncio.Lock()
         robj = rrule(freq=MINUTELY, interval=5, dtstart=st)
         if not TCTaskManager.does_task_exist("SuperEarthStatus"):
             self.tc_task = TCTask("SuperEarthStatus", robj, robj.after(st))
@@ -428,7 +430,10 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     async def update_api(self):
         try:
             gui.gprint("updating war")
-            await self.update_data()
+            async with self.update_lock:
+                await asyncio.wait_for(self.update_data(), timeout=60)
+        except asyncio.TimeoutError as e:
+            await self.bot.send_error(e, "Update timed out after 60 seconds.", True)
         except Exception as e:
             await self.bot.send_error(e, "Message update cleanup error.")
 
