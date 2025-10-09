@@ -514,7 +514,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             if not assignment:
                 assignment = await context.send("Overview_message")
                 url = assignment.jump_url
-                profile.update(assignment=url)
+                profile.update(assignment_message_url=url)
 
             if self.api_up is False:
                 await target.edit(content="**WARNING, COMMS ARE DOWN!**")
@@ -539,16 +539,10 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             await self.edit_target_message(context, stalemated=True)
             return "OK"
         except Exception as e:
-            try:
-                await self.edit_target_message(context, stalemated=False)
-                return "OK"
-            except Exception as e:
-                er = MessageTemplates.get_error_embed(
-                    title="Error with AUTO", description=f"{str(e)}"
-                )
+            await self.bot.send_error(e, "ERROR FOR OVERVIEW", True)
 
-                await source_message.edit(content=str(e))
-                raise e
+            # await source_message.edit(content=str(e))
+            # raise e
 
     async def gtask_map(self, source_message: discord.Message = None):
         """
