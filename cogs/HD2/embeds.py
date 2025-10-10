@@ -394,8 +394,8 @@ def campaign_view(
     emb = emb0
     embs = [emb]
     # Get player information from the war status
-    all_players, _ = stat.war.get_first_change()
-    if all_players == None:
+    current_war, _ = stat.war.get_first_change()
+    if current_war == None:
         emb0 = discord.Embed(
             title="Galactic War Overview",
             description=f"The war is disabled!  Please check back later.\n",
@@ -406,8 +406,9 @@ def campaign_view(
     total, embed_list_length = 0, 0
     prop = defaultdict(int)
     stalemated = []
-    allp = all_players.statistics.playerCount
+    allp = current_war.statistics.playerCount
     players_on_stalemated = 0
+
     # Iterate over each campaign in the status
     for k, list in sorted(
         stat.campaigns.items(),
@@ -556,7 +557,7 @@ def campaign_view(
         emb.add_field(name=name, value=desc, inline=True)
         embed_list_length += 1
 
-    emb0.description += f"???:{all_players.statistics.playerCount - total}," + ",".join(
+    emb0.description += f"???:{current_war.statistics.playerCount - total}," + ",".join(
         [f"{k}:{v}" for k, v in prop.items()]
     )
     if stalemated:
@@ -623,10 +624,11 @@ def campaign_view(
 
     # Add overall contribution stats
     emb0.description += (
-        f"\n`{round((total_contrib[0] / all_players.statistics.playerCount) * 100.0, 4)}%` "
+        f"\n`{round((total_contrib[0] / current_war.statistics.playerCount) * 100.0, 4)}%` "
         f"divers contributed `{round(total_contrib[1], 4)}` visible Impact, which is "
         f"`{round(total_contrib[4], 8)}` impact per second, so about "
-        f"`({round(total_contrib[2], 5)}%, {round(total_contrib[3], 5)}% per hour)` lib."
+        f"`({round(total_contrib[2], 5)}%, {round(total_contrib[3], 5)}% per hour)` lib.\n"
+        f"Last war snapshot at {fdt(et(current_war.now), 'F')}"
     )
 
     emb0.description += "\n"
@@ -767,8 +769,8 @@ def campaign_text_view(
     out_main += "\n A negative DPS is good for us, a positive one means we are losing on that world."
     out_main += "\n Objective for Defense Campaigns is to reduce EventHP to zero before the deadline.\n"
 
-    all_players, last = stat.war.get_first_change()
-    change_war = all_players - last
+    current_war, last = stat.war.get_first_change()
+    change_war = current_war - last
     total_contrib = [0, 0.0, 0.0, 0.0, 0.0]
     total = 0
     embed_list_length = 0
@@ -847,12 +849,12 @@ def campaign_text_view(
             liberation_campaigns.append((name, desc))
 
         embed_list_length += 1
-    out_main += f"???:{all_players.statistics.playerCount - total}," + ",".join(
+    out_main += f"???:{current_war.statistics.playerCount - total}," + ",".join(
         [f"{k}:{v}" for k, v in prop.items()]
     )
 
     out_main += (
-        f"\n`{round((total_contrib[0] / all_players.statistics.playerCount) * 100.0, 4)}%` "
+        f"\n`{round((total_contrib[0] / current_war.statistics.playerCount) * 100.0, 4)}%` "
         f"divers contributed `{round(total_contrib[1], 4)}` visible Impact, which is "
         f"`{round(total_contrib[4], 8)}` impact per second, so about "
         f"`({round(total_contrib[2], 5)}%, {round(total_contrib[3], 5)}% per hour)` lib."
@@ -932,10 +934,10 @@ def region_view(
 
     # Contribution summary
     try:
-        all_players, _ = stat.war.get_first_change()
-        if all_players:
+        current_war, _ = stat.war.get_first_change()
+        if current_war:
             emb0.description += (
-                f"\n`{round((total_contrib[0] / all_players.statistics.playerCount) * 100.0, 4)}%` "
+                f"\n`{round((total_contrib[0] / current_war.statistics.playerCount) * 100.0, 4)}%` "
                 f"divers contributed `{round(total_contrib[1], 4)}` visible Impact, "
                 f"`{round(total_contrib[4], 8)}` impact/sec → "
                 f"`({round(total_contrib[2], 5)}%, {round(total_contrib[3], 5)}%/hr)` lib."

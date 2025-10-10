@@ -145,6 +145,7 @@ class ApiStatus:
         "last_planet_get",
         "statics",
         "warall",
+        "wt",
         "direct",
         "nowval",
         "getlock",
@@ -166,6 +167,7 @@ class ApiStatus:
         self.client = client
         self.max_list_size = max_list_size
         self.direct = direct
+        self.wt = 0
         self.war: LimitedSizeList[War] = LimitedSizeList(self.max_list_size)
         self.assignments: Dict[int, LimitedSizeList[Assignment2]] = {}
         self.campaigns: Dict[int, LimitedSizeList[Campaign2]] = {}
@@ -220,6 +222,7 @@ class ApiStatus:
             },
             "dispatches": [d.model_dump(exclude="time_delta") for d in self.dispatches],
             "warall": self.warall.model_dump(exclude="time_delta"),
+            "wt": self.wt,
         }
 
     @property
@@ -271,12 +274,16 @@ class ApiStatus:
             newcks.stations = {
                 int(k): SpaceStation(**v) for k, v in data["stations"].items()
             }
+        if "wt" in data:
+            newcks.wt = data["wt"]
 
         newcks.grab_station = get_station
         return newcks
 
     def __repr__(self):
         s = ""
+
+        s += repr(self.wt) + "\n"
         s += repr(self.war) + "\n"
         s += repr(self.assignments) + "\n"
         s += repr(self.campaigns) + "\n"
@@ -385,8 +392,9 @@ class ApiStatus:
             self.war.add(war)
         # print(self.assignments, "a2", assignments, "done")
         self.handle_data(assignments, self.assignments, "assignment")
-        self.handle_data(campaigns, self.campaigns, "campaign")
         self.handle_data(regions, self.regions, "region")
+        self.handle_data(campaigns, self.campaigns, "campaign")
+
         self.handle_raw_data(
             self.warall.status.globalResources, self.resources, "Resource"
         )
@@ -404,6 +412,8 @@ class ApiStatus:
         #     planet = build_planet_2(i, self.warall, self.statics)
         #     planet_data[i] = planet
         self.planets = build_all_planets(self.warall, self.statics)
+        self.wt = self.warall.status.time
+        gui.gprint(self.planets.keys())
 
     def handle_data(
         self,

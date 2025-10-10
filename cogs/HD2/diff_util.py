@@ -366,7 +366,7 @@ async def detect_loggable_changes(
                 place=EventModes.DEADZONE_END,
                 batch=batch,
                 value=new.status,
-                game_time=old.status.time
+                game_time=old.status.time,
             )
             DEADZONE = False
 

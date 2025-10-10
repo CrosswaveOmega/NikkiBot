@@ -370,7 +370,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             hd2.add_to_csv(self.apistatus)
 
             # await self.planet_tracker()
-        return
+            return True
+        return False
 
     async def make_planets(self, ctx, usebiome=""):
         gui.gprint("Updating planets.")
@@ -571,8 +572,8 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     @commands.is_owner()
     @commands.command(name="load_now")
     async def load_now(self, ctx: commands.Context):
-        await self.update_data()
-        await ctx.send("force loaded api data now.")
+        result=await self.update_data()
+        await ctx.send(f"force loaded api data now.  Complete: {result}")
 
     @commands.is_owner()
     @commands.command(name="make_planets")
@@ -721,7 +722,11 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             )
             new.to_task(ctx.bot)
 
-            result = "Overview message set.  Every 15 minutes, this message will update with the latest galactic status.  Please don't delete it unless you want to stop."
+            result = (
+                "Overview message set."
+                "Every 15 minutes, this message will update with the latest galactic status."
+                "Please don't delete it unless you want to stop."
+            )
             await ctx.send(result)
         else:
             old.target_channel_id = autochannel.id
@@ -797,7 +802,11 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
             )
             new.to_task(ctx.bot)
 
-            result = "Overview message set.  every DAY, this message will update with the latest galactic status.  Please don't delete it unless you want to stop."
+            result = (
+                "Overview message set."
+                "every DAY, this message will update with the latest galactic status."
+                "Please don't delete it unless you want to stop."
+            )
             await ctx.send(result)
         else:
             old.target_channel_id = autochannel.id
