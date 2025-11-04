@@ -1638,7 +1638,19 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 if planet:
                     # planets- owner, regenRate
                     # Every 15 minutes
-                    if "position" in dump and len(list(dump.keys())) == 1:
+                    if "maxHealth" in dump and len(list(dump.keys()))==1:
+                        if info.index in [258,259]:
+                            name, sector = planet.get_name(False), planet.sector
+                            color = colors2.get(planet.currentOwner.lower(), 0x8C90B0)
+                            embed=discord.Embed(
+                                description=f"{name} max hp changed to `{dump['maxHealth']['new']}`"
+                            )
+                        else:
+                            embed = Embeds.dumpEmbedPlanet(
+                                info, dump, planet, f"changed in {place}"
+                            )
+                        
+                    elif "position" in dump and len(list(dump.keys())) == 1:
                         if int(info.index) not in self.last_move:
                             self.last_move[int(info.index)] = [planet, info, dump]
                             return Embeds.dumpEmbedPlanet(
