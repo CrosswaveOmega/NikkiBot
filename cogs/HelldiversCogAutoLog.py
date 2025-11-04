@@ -1645,6 +1645,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                             embed=discord.Embed(
                                 title=f"{name} max hp changed to `{dump['maxHealth']['new']}`"
                             )
+                            return embed
                         else:
                             embed = Embeds.dumpEmbedPlanet(
                                 info, dump, planet, f"changed in {place}"
