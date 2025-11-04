@@ -1643,7 +1643,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                             name, sector = planet.get_name(False), planet.sector
                             color = colors2.get(planet.currentOwner.lower(), 0x8C90B0)
                             embed=discord.Embed(
-                                description=f"{name} max hp changed to `{dump['maxHealth']['new']}`"
+                                title=f"{name} max hp changed to `{dump['maxHealth']['new']}`"
                             )
                         else:
                             embed = Embeds.dumpEmbedPlanet(
