@@ -63,7 +63,7 @@ def extract_embed_text(embed):
 
 
 def resource_graph():
-    df5 = pd.read_csv("funny_number_track.csv")
+    df5 = pd.read_csv("resource_track.csv")
 
     df_groupeds = (
         df5.groupby("timestamp", group_keys=False)
@@ -101,7 +101,7 @@ def resource_graph():
 
 
 def rate_of_change_graph():
-    df5 = pd.read_csv("funny_number_track.csv")
+    df5 = pd.read_csv("resource_track.csv")
 
     df_groupeds = (
         df5.groupby("timestamp", group_keys=False)

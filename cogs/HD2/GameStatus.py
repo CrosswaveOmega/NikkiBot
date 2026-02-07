@@ -823,7 +823,7 @@ def add_to_csv(stat: ApiStatus):
     csv_file_path = "statistics.csv"
     csv_impact_track = "impact_track.csv"
 
-    csv_funnynumber = "funny_number_track.csv"
+    csv_funnynumber = "resource_track.csv"
 
     diver_amount, total_players, diverpercent, total_contrib, per_second = (
         stat.calculate_total_impact()
@@ -846,9 +846,20 @@ def add_to_csv(stat: ApiStatus):
                 "id": i.id32,
                 "value": i.currentValue,
                 "maxValue": i.maxValue,
+                "changePerSecond": i.changePerSecond,
             }
         )
+    if rows_for_number:
+        with open(csv_funnynumber, mode="a+", newline="", encoding="utf8") as file:
+            writer = csv.DictWriter(file, fieldnames=rows_for_imp[0].keys())
 
+            # If the file is empty, write the header
+            if file.tell() == 0:
+                writer.writeheader()
+
+            # Write the rows
+            for row in rows_for_imp:
+                writer.writerow(row)
     with open(csv_impact_track, mode="a+", newline="", encoding="utf8") as file:
         writer = csv.DictWriter(file, fieldnames=rows_for_imp[0].keys())
 
