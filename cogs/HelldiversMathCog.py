@@ -88,7 +88,7 @@ def resource_graph():
     plt.ylabel("Current", color="white")
     plt.xlabel("Time", color="white")
     plt.title("Tracking the resource numbers", color="white")
-    plt.plot(XE,YE)
+    plt.plot(XE, YE, marker='+')
     # Customize the spines to be white
     ax.spines["bottom"].set_color("white")
     ax.spines["left"].set_color("white")
