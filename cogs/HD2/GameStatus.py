@@ -851,15 +851,16 @@ def add_to_csv(stat: ApiStatus):
         )
     if rows_for_number:
         with open(csv_funnynumber, mode="a+", newline="", encoding="utf8") as file:
-            writer = csv.DictWriter(file, fieldnames=rows_for_imp[0].keys())
+            writer = csv.DictWriter(file, fieldnames=rows_for_number[0].keys())
 
             # If the file is empty, write the header
             if file.tell() == 0:
                 writer.writeheader()
 
             # Write the rows
-            for row in rows_for_imp:
+            for row in rows_for_number:
                 writer.writerow(row)
+                
     with open(csv_impact_track, mode="a+", newline="", encoding="utf8") as file:
         writer = csv.DictWriter(file, fieldnames=rows_for_imp[0].keys())
 

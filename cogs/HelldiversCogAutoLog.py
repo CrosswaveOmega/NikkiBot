@@ -1307,11 +1307,7 @@ class Embeds:
     def dumpEmbedNew(
         campaign: BaseApiModel,  name: str, mode="started"
     ) -> discord.Embed:
-        dump=campaign.model_dump()
-        for i in ['retrieved_at','time_delta']:
-            if i in dump:
-                dump.pop(i)
-        globtex = json.dumps(dump, default=str)
+
         emb = discord.Embed(
             title=f"EXTRA CASE: {mode.capitalize()} of {name.capitalize()}",
             description=f"Field {mode.capitalize()} for {name.capitalize()}\n",
@@ -1319,13 +1315,22 @@ class Embeds:
             color=0x000054,
         )
         embs=0
-        for i, v in dump.items():
+        try:
+            dump=campaign.model_dump()
+            for i in ['retrieved_at','time_delta']:
+                if i in dump:
+                    dump.pop(i)
+            for i, v in dump.items():
+                emb.add_field(
+                    name=i.capitalize()[:50],value=str(v)[:200], inline=False
+                )
+                embs=embs+1
+                if embs>=20:
+                    break
+        except Exception as e:
             emb.add_field(
-                name=i.capitalize()[:50],value=str(v)[:200], inline=False
+                name="NEVER SEEN BEFORE!", value=f""
             )
-            embs=embs+1
-            if embs>=20:
-                break
         emb.add_field(
             name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at, 'F')}"
         )
