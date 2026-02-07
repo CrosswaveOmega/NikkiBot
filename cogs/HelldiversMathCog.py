@@ -252,7 +252,7 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         self.hd2 = load_json_with_substitutions("./assets/json", "flavor.json", {}).get(
             "hd2", {}
         )
-        self.time1 = datetime.datetime.now()
+        self.time1 = datetime.datetime.now()-datetime.timedelta(minutes=15)
         self.time2 = datetime.datetime.now()
 
     def cog_unload(self):
