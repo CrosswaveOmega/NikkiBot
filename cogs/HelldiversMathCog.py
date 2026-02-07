@@ -85,10 +85,9 @@ def resource_graph():
     plt.grid(True, color="gray", linestyle="--", linewidth=0.5)  # Added grid ticks
     ax = plt.gca()
     ax.set_facecolor("black")
-    plt.plot(XE, YE)
     plt.ylabel("Current", color="white")
     plt.xlabel("Time", color="white")
-    plt.title("Tracking the gravity number.", color="white")
+    plt.title("Tracking the resource numbers", color="white")
 
     # Customize the spines to be white
     ax.spines["bottom"].set_color("white")
@@ -119,86 +118,7 @@ def rate_of_change_graph():
     df25["timestamp"] = df25["timestamp"].apply(
         lambda x: datetime.datetime.fromtimestamp(x)
     )  # Format timestamps
-    df25["rate_of_change"] = df25["value"].diff() / 5  # Calculate the rate of change
-    df25 = df25[df25["rate_of_change"] != 0]  # Remove zero rate of change entries
-
-    threshold = 25  # Threshold for detecting transitions
-    df25["is_transition"] = df25["rate_of_change"].diff().abs() > threshold
-    df25["segment"] = df25["is_transition"].cumsum()  # Group by segments
-
-    # Filter out transitions
-    df25_no_transitions = df25[df25["is_transition"] == False]
-
-    # Calculate segment averages
-    segment_averages = (
-        df25_no_transitions.groupby("segment")
-        .agg(
-            average_rate_of_change=("rate_of_change", "mean"),
-            start_time=("timestamp", "min"),
-            end_time=("timestamp", "max"),
-            count=("rate_of_change", "size"),
-            total=("rate_of_change", "sum"),
-        )
-        .reset_index()
-    )
-
-    # Prepare data for clustering
-    average_rates_of_change = [
-        {
-            "r": float(row["average_rate_of_change"]),
-            "st": row["start_time"],
-            "count": row["count"],
-            "weight": row["count"] / len(segment_averages),
-        }
-        for _, row in segment_averages.iterrows()
-    ]
-
-    # Threshold for clustering and sort rates
-    clustering_threshold = 10
-    sorted_rates = sorted(average_rates_of_change, key=lambda x: x["r"])
-
-    # Cluster logic
-    clusters = []
-    current_cluster = {}
-
-    for rate in sorted_rates:
-        if not current_cluster:
-            # Start a new cluster if the current cluster is empty
-            current_cluster = {
-                "avg": rate["r"],
-                "first": rate["st"],
-                "vals": [rate],
-                "c": rate["count"],
-                "max_count_rate": rate,
-            }
-        elif abs(rate["r"] - current_cluster["avg"]) <= clustering_threshold:
-            # Add to current cluster if within threshold
-            current_cluster["vals"].append(rate)
-            current_cluster["avg"] = sum(r["r"] for r in current_cluster["vals"]) / len(
-                current_cluster["vals"]
-            )
-            current_cluster["first"] = min(current_cluster["first"], rate["st"])
-            current_cluster["c"] += rate["count"]
-            current_cluster["max_count_rate"] = max(
-                current_cluster["max_count_rate"], rate, key=lambda x: x["count"]
-            )
-        else:
-            # Finalize current cluster and start a new one
-            clusters.append(current_cluster)
-            current_cluster = {
-                "avg": rate["r"],
-                "first": rate["st"],
-                "vals": [rate],
-                "c": rate["count"],
-                "max_count_rate": rate,
-            }
-
-    # Add the last cluster if exists
-    if current_cluster:
-        clusters.append(current_cluster)
-
-    # Optionally, save the results to a CSV file
-    segment_averages.to_csv("segment_averages.csv", index=False)
+    
 
     # Plotting
     plt.figure(figsize=(15, 16), facecolor="black")
@@ -210,23 +130,11 @@ def rate_of_change_graph():
 
     # Plot rate of change
     plt.plot(
-        df25_no_transitions["timestamp"],
-        df25_no_transitions["rate_of_change"],
-        label="Rate of Change",
+        df25["timestamp"],
+        df25["changePerSecond"],
+        label="Rate of Change Per Minute",
         color="blue",
     )
-
-    # Add horizontal lines for clusters
-    for row in clusters:
-        weighted_avg = sum(rate["r"] * rate["count"] for rate in row["vals"]) / row["c"]
-        plt.axhline(y=weighted_avg, color="red", linestyle="--", alpha=0.5)
-        plt.text(
-            row["first"],
-            row["avg"],
-            f"Avg: {row['avg']:.2f}, {row['c']}, wavg:{weighted_avg:.2f}",
-            color="green",
-            fontproperties=terminal_font,
-        )
 
     plt.ylabel("Rate of Change", color="white", fontproperties=terminal_font)
     plt.xlabel("Time", color="white", fontproperties=terminal_font)
