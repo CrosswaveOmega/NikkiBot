@@ -161,7 +161,7 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
             "hd2", {}
         )
         self.time1 = datetime.datetime.now()-datetime.timedelta(minutes=15)
-        self.time2 = datetime.datetime.now()
+        self.time2 = datetime.datetime.now()-datetime.timedelta(minutes=15)
 
     def cog_unload(self):
         pass
