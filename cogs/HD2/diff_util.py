@@ -492,6 +492,7 @@ async def detect_loggable_changes(
         game_time=gametime,
     )
 
+    # Planet Regions
     superlist += await process_planet_attacks(
         new.status.planetRegions,
         old.status.planetRegions,

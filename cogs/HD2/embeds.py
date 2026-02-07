@@ -649,9 +649,7 @@ def campaign_view(
             )
             // count
         )
-        rate = 0
-        if avg_time > 0:
-            rate = avg_value / avg_time
+        rate = r.changePerSecond
         cng = r - c
         outstring = f"{r.id32}:[`{r.currentValue}({cng.currentValue})/{r.maxValue}`,flags=`{r.flags}`] `Rate:{rate}`\n"
         emb0.description += outstring
