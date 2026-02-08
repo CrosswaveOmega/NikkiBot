@@ -1170,7 +1170,8 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 emb, lc = target.create_embed()
                 gui.gprint(lc)
                 target.update(neighbor_count=lc)
-                await message.edit(embeds=[emb])
+                if message:
+                    await message.edit(embeds=[emb])
 
         session = DatabaseSingleton.get_session()
         waittime = 0
@@ -1225,7 +1226,8 @@ class ServerRPArchive(commands.Cog, TC_Cog_Mixin):
                 emb, lc = target.create_embed()
                 gui.gprint(lc)
                 target.update(neighbor_count=lc)
-                await message.edit(embeds=[emb])
+                if message:
+                    await message.edit(embeds=[emb])
 
         gui.gprint(target, target.posted_url)
         if target.posted_url:
