@@ -1626,6 +1626,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     "started",
                 )
             elif place == "planetEffects":
+                
                 embed = Embeds.planeteffectsEmbed(
                     value,
                     self.apistatus.planets.get(int(value.index), None),
