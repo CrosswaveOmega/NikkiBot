@@ -121,7 +121,7 @@ def rate_of_change_graph():
     
 
     # Plotting
-    plt.figure(figsize=(15, 16), facecolor="black")
+    plt.figure(figsize=(50, 12), facecolor="black")
     ax = plt.gca()
     ax.set_facecolor("black")
     plt.xticks(color="white", fontproperties=terminal_font)
