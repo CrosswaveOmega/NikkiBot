@@ -467,10 +467,14 @@ class Batch:
                 if tact.statusExpireAtWarTimeSeconds > endsec:
                     endsec = tact.statusExpireAtWarTimeSeconds
                 endeffect = tact.name or "UNKNOWN"
+        modetext="stops"
         if mode == "starts":
             t = t.replace("[DSS_EFFECT]", effect)
+            modetext=="is activated"
         elif mode == "ends":
             t = t.replace("[DSS_EFFECT]", endeffect)
+
+
 
         t = t.replace("[DSS_EFFECT_MODE]", mode)
         return t
