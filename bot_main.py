@@ -106,6 +106,7 @@ if __name__ == "__main__":
             print("result", result)
             if result == "shutdown":
                 sys.exit(3)
+            break
 
         except Exception as e:
             print(e)
