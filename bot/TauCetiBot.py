@@ -255,37 +255,7 @@ class TCBot(
                 self.logs.error(str(e), exc_info=e)
         print("close done?")
         log.warning("Close done?")
-        for extension in tuple(self.__extensions):
-            try:
-                await self.unload_extension(extension)
-            except Exception:
-                pass
-
-        for cog in tuple(self.__cogs):
-            try:
-                await self.remove_cog(cog)
-            except Exception:
-                pass
-        if self._closed:
-            
-            log.warning("Already closed?")
-            return
-
-        self._closed = True
-        log.warning("Closing connection?")
-        await self._connection.close()
-
-        if self.ws is not None and self.ws.open:
-            await self.ws.close(code=1000)
-
-        log.warning("Closing http?")
-        await self.http.close()
         
-        log.warning("clearing HTTP?")
-        if self._ready is not MISSING:
-            self._ready.clear()
-
-        self.loop = MISSING
         await super().close()
 
     def loggersetup(self):
