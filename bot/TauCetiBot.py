@@ -235,6 +235,9 @@ class TCBot(
         self.status_ticker.cancel()
         del self.jsenv
         # close the gui
+        log = logging.getLogger("discord")
+        log.warning("Closing GUI")
+
         if self.gui:
             await self.gui.kill()
         if self.playapi:
@@ -250,7 +253,7 @@ class TCBot(
                 # l=logging.getLogger("TCLogger")
                 self.logs.error(str(e), exc_info=e)
         print("close done?")
-
+        log.warning("Close done?")
         await super().close()
 
     def loggersetup(self):
