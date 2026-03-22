@@ -209,6 +209,7 @@ class PlanetEvents(Events):
             self.ret = event["value"].retrieved_at
             if event["place"] == "planetevents":
                 self.planet_event = event["value"]
+            
         elif event.mode == EventModes.CHANGE:
             self.ret = event["value"][0].retrieved_at
 
@@ -267,6 +268,7 @@ class Batch:
     def update_planet(
         self, planet_name: str, value: Tuple[Any, Dict[str, Any]], place: str
     ) -> None:
+        
         if planet_name in self.planets:
             self.planets[planet_name].update_planet(value, place)
 
@@ -291,6 +293,15 @@ class Batch:
 
         if place in ["planets", "planetInfo"]:
             va = value
+            if mode == EventModes.CHANGE:
+                va, _ = value
+            # planet = apistatus.planets.get(int(va.index), None)
+            planet = SimplePlanet.from_index(va.index)
+            if planet:
+                planet_name_source = planet.get_name(False)
+
+        if place in ["planetEffects"]:
+            va:PlanetActiveEffects = value
             if mode == EventModes.CHANGE:
                 va, _ = value
             # planet = apistatus.planets.get(int(va.index), None)
@@ -338,7 +349,7 @@ class Batch:
             pass
 
     async def format_combo_text(
-        self, ctype: str, planet_data: PlanetEvents, ctext: List[List[str]], alls=None
+        self, ctype: str, planet_data: PlanetEvents, ctext: List[List[str]], alls=None,statics=None
     ) -> List[str]:
         targets: List[str] = []
         data_path: str = "./hd2json/planets/planets.json"
@@ -414,6 +425,48 @@ class Batch:
                     )
 
                     targets.append(target)
+
+        elif "planetEffects" in ctype:
+            for evt in planet_data.evt:
+                if evt.mode == EventModes.NEW and evt.place == "planetEffects":
+                    act_effect:PlanetActiveEffects= evt.value
+                    ym = "planet_effect_add"
+
+                    ctext = alls[ym]
+                    target = (
+                        ctext[1][0]
+                        .replace("[TYPETEXT]", ctext[2][0])
+                        .replace("[PLANET 0]", planet_data.planet.name)
+                    )
+                    built_effect=build_planet_effect(
+                        statics.effectstatic, act_effect.galacticEffectId
+                    )
+                    target = target.replace("[PLANET EFFECT NAME]", built_effect.name or "NAME UNKNOWN")
+
+                    target = target.replace("[PLANET EFFECT DESC]", built_effect.description or "NAME UNKNOWN")
+                    target += f" ({custom_strftime(planet_data.ret)})"
+                    
+                    targets.append(target)
+                if evt.mode == EventModes.REMOVE and evt.place == "planetEffects":
+                    act_effect:PlanetActiveEffects= evt.value
+                    ym = "planet_effect_remove"
+
+                    ctext = alls[ym]
+                    target = (
+                        ctext[1][0]
+                        .replace("[TYPETEXT]", ctext[2][0])
+                        .replace("[PLANET 0]", planet_data.planet.name)
+                    )
+                    built_effect=build_planet_effect(
+                        statics.effectstatic, act_effect.galacticEffectId
+                    )
+                    target = target.replace("[PLANET EFFECT NAME]", built_effect.name or "NAME UNKNOWN")
+
+                    target = target.replace("[PLANET EFFECT DESC]", built_effect.description or "NAME UNKNOWN")
+                    target += f" ({custom_strftime(planet_data.ret)})"
+                    
+                    targets.append(target)
+
 
         elif planet_data.planet is not None:
             target = (
@@ -503,7 +556,7 @@ class Batch:
         targets.append(target)
         return targets
 
-    async def combo_checker(self) -> List[str]:
+    async def combo_checker(self,apistatus) -> List[str]:
         """Check for event combos"""
         combos: List[str] = []
 
@@ -519,7 +572,7 @@ class Batch:
                 for c in combo:
                     if c in self.hd2:
                         text: List[str] = await self.format_combo_text(
-                            c, planet_data, self.hd2[c], self.hd2
+                            c, planet_data, self.hd2[c], self.hd2, apistatus, statics=apistatus.statics
                         )
                         combos.extend(text)
                     else:
@@ -594,7 +647,22 @@ class Batch:
                         combinations.append("region")
 
                         gui.gprint(combinations, evt.mode, evt.place, evt.value)
+        if "planetEffects_EventModes.NEW" in trigger_list:
+            for evt in planet_data.evt:
+                gui.gprint(evt.mode, evt.place, evt.value)
+                if evt.mode == EventModes.NEW and evt.place == "planetEffects":
+                    if "planetEffects" not in combinations:
+                        combinations.append("planetEffects")
 
+                        gui.gprint(combinations, evt.mode, evt.place, evt.value)
+        if "planetEffects_EventModes.REMOVE" in trigger_list:
+            for evt in planet_data.evt:
+                gui.gprint(evt.mode, evt.place, evt.value)
+                if evt.mode == EventModes.REMOVE and evt.place == "planetEffects":
+                    if "planetEffects" not in combinations:
+                        # many planetEffects per planet.
+                        combinations.append("planetEffects")
+                        gui.gprint(combinations, evt.mode, evt.place, evt.value)
         if (
             "campaign_EventModes.NEW" in trigger_list
             and "planetevents_EventModes.NEW" not in trigger_list
@@ -1437,8 +1505,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
                         self.test_with.append(add)
 
-    async def batch_events(self, events):
-        """Stitch multiple events together into one."""
+    async def batch_events(self, events:List[GameEvent]):
+        """Stitch multiple events together into one, then check for combos"""
 
         for event in events:
             batch_id = event["batch"]
@@ -1447,7 +1515,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             self.batches[batch_id].process_event(event, self.apistatus)
 
         for batch_id in list(self.batches.keys()):
-            texts = await self.batches[batch_id].combo_checker()
+            texts = await self.batches[batch_id].combo_checker(self.apistatus)
             for t in texts:
                 for hook in list(self.loghook):
                     try:
@@ -1520,27 +1588,27 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         if not embeds:
             return
 
-        val_batches = self.group_embeds(embeds)
-        await self.send_embeds_through_webhook(val_batches)
+        val_embed_groups = self.group_embeds(embeds)
+        await self.send_embeds_through_webhook(val_embed_groups)
 
     def group_embeds(self, embeds: List[discord.Embed]):
         """Group Embeds Together."""
-        val_batches = []
-        batch = []
+        val_embed_groups = []
+        group = []
         for e in embeds:
             val = json.dumps(e.to_dict())
             size = len(val)
             if (
-                sum(len(json.dumps(b.to_dict())) for b in batch) + size > 6000
-                or len(batch) >= 10
+                sum(len(json.dumps(b.to_dict())) for b in group) + size > 6000
+                or len(group) >= 10
             ):
-                val_batches.append(batch)
-                batch = [e]
+                val_embed_groups.append(group)
+                group = [e]
             else:
-                batch.append(e)
-        if batch:
-            val_batches.append(batch)
-        return val_batches
+                group.append(e)
+        if group:
+            val_embed_groups.append(group)
+        return val_embed_groups
 
     async def send_embeds_through_webhook(self, batches: List[discord.Embed]):
         for embeds in batches:
