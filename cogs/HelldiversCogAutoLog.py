@@ -572,7 +572,7 @@ class Batch:
                 for c in combo:
                     if c in self.hd2:
                         text: List[str] = await self.format_combo_text(
-                            c, planet_data, self.hd2[c], self.hd2, apistatus, statics=apistatus.statics
+                            c, planet_data, self.hd2[c], self.hd2,  statics=apistatus.statics
                         )
                         combos.extend(text)
                     else:
