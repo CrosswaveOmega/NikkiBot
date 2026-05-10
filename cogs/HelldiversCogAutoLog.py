@@ -426,7 +426,7 @@ class Batch:
 
                     targets.append(target)
 
-        elif "planetEffects" in ctype:
+        elif "planet_effect" in ctype:
             for evt in planet_data.evt:
                 if evt.mode == EventModes.NEW and evt.place == "planetEffects":
                     act_effect:PlanetActiveEffects= evt.value
@@ -651,17 +651,17 @@ class Batch:
             for evt in planet_data.evt:
                 gui.gprint(evt.mode, evt.place, evt.value)
                 if evt.mode == EventModes.NEW and evt.place == "planetEffects":
-                    if "planetEffects" not in combinations:
-                        combinations.append("planetEffects")
+                    if "planet_effect_add" not in combinations:
+                        combinations.append("planet_effect_add")
 
                         gui.gprint(combinations, evt.mode, evt.place, evt.value)
         if "planetEffects_EventModes.REMOVE" in trigger_list:
             for evt in planet_data.evt:
                 gui.gprint(evt.mode, evt.place, evt.value)
                 if evt.mode == EventModes.REMOVE and evt.place == "planetEffects":
-                    if "planetEffects" not in combinations:
+                    if "planet_effect_remove" not in combinations:
                         # many planetEffects per planet.
-                        combinations.append("planetEffects")
+                        combinations.append("planet_effect_remove")
                         gui.gprint(combinations, evt.mode, evt.place, evt.value)
         if (
             "campaign_EventModes.NEW" in trigger_list
@@ -1518,6 +1518,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             texts = await self.batches[batch_id].combo_checker(self.apistatus)
             for t in texts:
                 for hook in list(self.loghook):
+                    with open("./saveData/extra_log.log", "a+") as log_file:
+
+                        log_file.write(t[:1950]+"\n---------\n")
                     try:
                         await web.postMessageAsWebhookWithURL(
                             hook,
@@ -1612,6 +1615,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
     async def send_embeds_through_webhook(self, batches: List[discord.Embed]):
         for embeds in batches:
+            with open("./saveData/embed_log.log", "a+") as log_file:
+                for e in embeds:
+                    log_file.write(json.dumps(e.to_dict()) + "\n---------\n")
             for hook in list(self.loghook):
                 try:
                     await web.postMessageAsWebhookWithURL(
