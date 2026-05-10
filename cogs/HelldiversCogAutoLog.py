@@ -658,7 +658,7 @@ class Batch:
             for evt in planet_data.evt:
                 gui.gprint(evt.mode, evt.place, evt.value)
                 if evt.mode == EventModes.NEW and evt.place == "planetEffects":
-                    if "planet_effect_add" not in combinations:
+                    #if "planet_effect_add" not in combinations:
                         combinations.append("planet_effect_add")
 
                         gui.gprint(combinations, evt.mode, evt.place, evt.value)
@@ -666,7 +666,7 @@ class Batch:
             for evt in planet_data.evt:
                 gui.gprint(evt.mode, evt.place, evt.value)
                 if evt.mode == EventModes.REMOVE and evt.place == "planetEffects":
-                    if "planet_effect_remove" not in combinations:
+                    #if "planet_effect_remove" not in combinations:
                         # many planetEffects per planet.
                         combinations.append("planet_effect_remove")
                         gui.gprint(combinations, evt.mode, evt.place, evt.value)
