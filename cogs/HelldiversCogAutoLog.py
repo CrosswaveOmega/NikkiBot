@@ -431,16 +431,19 @@ class Batch:
                 if evt.mode == EventModes.NEW and evt.place == "planetEffects":
                     act_effect:PlanetActiveEffects= evt.value
                     ym = "planet_effect_add"
-
+                    built_effect=build_planet_effect(
+                        statics.effectstatic, act_effect.galacticEffectId
+                    )
+                    if "(enemies)" in built_effect.name.lower():
+                        ym="planet_effect_assault_division_add"
                     ctext = alls[ym]
                     target = (
                         ctext[1][0]
                         .replace("[TYPETEXT]", ctext[2][0])
                         .replace("[PLANET 0]", planet_data.planet.name)
                     )
-                    built_effect=build_planet_effect(
-                        statics.effectstatic, act_effect.galacticEffectId
-                    )
+       
+
                     target = target.replace("[PLANET EFFECT NAME]", built_effect.name or "NAME UNKNOWN")
 
                     target = target.replace("[PLANET EFFECT DESC]", built_effect.description or "NAME UNKNOWN")
@@ -450,7 +453,11 @@ class Batch:
                 if evt.mode == EventModes.REMOVE and evt.place == "planetEffects":
                     act_effect:PlanetActiveEffects= evt.value
                     ym = "planet_effect_remove"
-
+                    built_effect=build_planet_effect(
+                        statics.effectstatic, act_effect.galacticEffectId
+                    )
+                    if "(enemies)" in built_effect.name.lower():
+                        ym="planet_effect_assault_division_remove"
                     ctext = alls[ym]
                     target = (
                         ctext[1][0]

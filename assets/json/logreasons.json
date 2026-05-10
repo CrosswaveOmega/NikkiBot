@@ -257,5 +257,23 @@
             "was removed"
         ],
         "if campaign_remove and planet_change, where planet.owner==1"
+    ],
+    "planet_effect_assault_division_add": [
+        "Heeth is liberated", [
+            "Assault Division: [PLANET EFFECT NAME] UVAR [TYPETEXT] [PLANET 0]"
+        ],
+        [
+            "deploys to"
+        ],
+        "if campaign_remove and planet_change, where planet.owner==1"
+    ],
+    "planet_effect_assault_division_remove": [
+        "Heeth is liberated", [
+            "Assault Division: [PLANET EFFECT NAME] UVAR [TYPETEXT] [PLANET 0]"
+        ],
+        [
+            "leaves"
+        ],
+        "if campaign_remove and planet_change, where planet.owner==1"
     ]
 }
