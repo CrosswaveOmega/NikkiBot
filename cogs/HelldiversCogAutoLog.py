@@ -1421,6 +1421,10 @@ class Embeds:
     @staticmethod
     def NewsFeedEmbed(gamevent: GameEvent, mode="started") -> discord.Embed:
         newsfeed: NewsFeedItem = gamevent.value
+        if mode=="Retired":
+            if (gamevent.game_time-newsfeed.published)>100000:
+                return None
+
         title, desc = newsfeed.to_str()
         emb = discord.Embed(
             title=f"{title}",
