@@ -848,7 +848,7 @@ inds2 = {
 class Embeds:
     @staticmethod
     def dump_extras(
-        campaign: BaseApiModel, mode="started", item:GameEvent=None,diff:Optional[Dict[str,any]],
+        campaign: BaseApiModel, mode="started", item:GameEvent=None,diff:Optional[Dict[str,any]]=None,
     ) -> discord.Embed:
         extra_fields=list(campaign.model_extra.keys())
         strc = hd2.embeds.create_campaign_str(campaign)
