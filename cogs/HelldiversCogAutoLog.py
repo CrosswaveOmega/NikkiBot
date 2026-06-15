@@ -1583,11 +1583,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             if item.mode==EventModes.CHANGE:
                 print("thing")
                 ver,dum=item.value
-                if item.model_extra:
+                if ver.model_extra:
                     eembed=Embeds.dump_extras(ver,"Changed",item,dum)
                     embeds.append(eembed)
             else:
-                if item.model_extra:
+                if item.value.model_extra:
                     eembed=Embeds.dump_extras(item.value,item.mode,item)
                     embeds.append(eembed)
             
