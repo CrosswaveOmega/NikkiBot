@@ -851,7 +851,6 @@ class Embeds:
         campaign: BaseApiModel, mode="started", item:GameEvent=None,diff:Optional[Dict[str,any]]=None,
     ) -> discord.Embed:
         extra_fields=list(campaign.model_extra.keys())
-        strc = hd2.embeds.create_campaign_str(campaign)
 
         json_dump = json.dumps(
             campaign.model_dump(mode="json"),
@@ -869,7 +868,7 @@ class Embeds:
             emb.add_field(name=f"{d}"[:100],value=str(campaign.model_extra[d])[:512])
 
         emb.set_author(name=f"Extra Fields {item.place}-{str(mode)}")
-        emb.set_footer(text=f"{strc},{custom_strftime(campaign.retrieved_at)}")
+        emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
         return emb
     
     @staticmethod
