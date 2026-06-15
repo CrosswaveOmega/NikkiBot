@@ -867,29 +867,9 @@ class Embeds:
         emb.set_footer(text=f"{strc},{custom_strftime(campaign.retrieved_at)}")
         return emb
 
-    @staticmethod
-    def campaignsLogEmbed(
-        campaign: Campaign, planet: Optional[Planet], mode="started"
-    ) -> discord.Embed:
-        strc = hd2.embeds.create_campaign_str(campaign)
-        name, sector = campaign.planetIndex, None
-        color = 0x009696
-        if planet:
-            name, sector = planet.get_name(False), planet.sector
-            color = colors.get(planet.currentOwner.lower(), 0x009696)
-
-        emb = discord.Embed(
-            title=f"{name} Campaign {mode}",
-            description=f"A campaign has {mode} for {name}, in sector {sector}.\n{strc}\nTimestamp:{fdt(campaign.retrieved_at, 'F')}",
-            timestamp=campaign.retrieved_at,
-            color=color,
-        )
-        emb.set_author(name=f"Campaign {mode}.")
-        emb.set_footer(text=f"{strc},{custom_strftime(campaign.retrieved_at)}")
-        return emb
 
     @staticmethod
-    def deadzoneWarningEmbed(campaign: BaseApiModel, mode="started") -> discord.Embed:
+    def deadzoneWarningEmbed(campaign: BaseApiModel, mode="started",item) -> discord.Embed:
         emb = discord.Embed(
             title="DEADZONE DETECTED",
             description=f"A likely deadzone was {mode}!\nTimestamp:{fdt(campaign.retrieved_at, 'F')}",
@@ -901,10 +881,10 @@ class Embeds:
         return emb
 
     @staticmethod
-    def timetravelWarningEmbed(campaign: BaseApiModel, mode="started") -> discord.Embed:
+    def timetravelWarningEmbed(campaign: BaseApiModel, mode="started",item:Any=None) -> discord.Embed:
         emb = discord.Embed(
             title="TIME TRAVEL DETECTED",
-            description=f"The returned internal war time has rolled back to a state about 10 seconds prior. \nThe war is paused until arrowhead gets this fixed.\nTimestamp:{fdt(campaign.retrieved_at, 'F')},\n New WT:{campaign.time}",
+            description=f"The returned internal war time has rolled back to a state about {item['game_time']-campaign.time} seconds prior. \n For the sake of everyone's sanity, the autolog will skip updating this round.\nTimestamp:{fdt(campaign.retrieved_at, 'F')},\n New WT:{campaign.time}",
             timestamp=campaign.retrieved_at,
             color=0xFF0000,
         )
@@ -1672,6 +1652,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         place = item["place"]
         value = item["value"]
         embed = None
+        
         if item["cluster"]:
             if place == "planetAttacks":
                 embed = Embeds.planetAttacksEmbed(
@@ -1686,6 +1667,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             embed = Embeds.deadzoneWarningEmbed(
                 value,
                 "started",
+                item
             )
         if event_type == EventModes.TIME_TRAVEL:
             embed = Embeds.timetravelWarningEmbed(
@@ -1871,16 +1853,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     embed = Embeds.dumpEmbed(
                         info, dump, "planet", f"changed in {place}"
                     )
-            # if place == "planetregions" or place == "regioninfo":
-            #     planet = self.apistatus.planets.get(int(info.planetIndex), None)
-            #     if planet:
-            #         embed = Embeds.dumpEmbedRegion(
-            #             info, dump, planet, f"changed in {place}"
-            #         )
-            #     else:
-            #         embed = Embeds.dumpEmbedRegion(
-            #             info, dump, planet, f"changed in {place}"
-            #         )
+
             if place == "regions":
                 planet = self.apistatus.planets.get(int(info.planetIndex), None)
                 if planet:

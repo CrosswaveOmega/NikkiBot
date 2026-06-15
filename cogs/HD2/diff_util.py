@@ -134,7 +134,15 @@ async def get_differing_fields(
         to_ignore = to_ignore2
 
     differing_fields = {}
-    for field in model1.model_fields:
+    fields = set(model1.model_fields)
+
+    # Extra fields (Pydantic v2)
+    if model1.model_extra:
+        fields.update(model1.model_extra.keys())
+
+    if model2.model_extra:
+        fields.update(model2.model_extra.keys())
+    for field in fields:
         if field not in to_ignore:
             # logs.info("Retrieving field %s ", field)
             value1 = await compare_value_with_timeout(model1, field)
@@ -358,7 +366,7 @@ async def detect_loggable_changes(
         )
 
         await QueueAll.put([newitem])
-        # return superlist
+        return superlist
     else:
         if DEADZONE:
             newitem = GameEvent(
@@ -559,7 +567,6 @@ async def detect_loggable_changes(
             new.war_info,
             to_ignore=[
                 "planetInfos",
-                "planetRegions",
                 "planetRegions",
                 "retrieved_at",
                 "time_delta",
