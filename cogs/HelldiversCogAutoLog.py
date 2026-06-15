@@ -1587,9 +1587,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     eembed=Embeds.dump_extras(ver,"Changed",item,dum)
                     embeds.append(eembed)
             else:
-                if item.value.model_extra:
-                    eembed=Embeds.dump_extras(item.value,item.mode,item)
-                    embeds.append(eembed)
+                values = item.value if isinstance(item.value, list) else [item.value]
+
+                for value in values:
+                    if isinstance(value, BaseModel) and value.model_extra:
+                        eembed = Embeds.dump_extras(value, item.mode, item)
+                        embeds.append(eembed)
             
             embed = await self.build_embed(item)
             if embed:
