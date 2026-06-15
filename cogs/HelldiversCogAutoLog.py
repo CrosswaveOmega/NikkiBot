@@ -1673,6 +1673,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             embed = Embeds.timetravelWarningEmbed(
                 value,
                 "started",
+                item
             )
         if event_type == EventModes.DEADZONE_END:
             embed = Embeds.deadzoneWarningEmbed(
