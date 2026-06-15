@@ -847,6 +847,32 @@ inds2 = {
 
 class Embeds:
     @staticmethod
+    def dump_extras(
+        campaign: BaseApiModel, mode="started", item:GameEvent=None,diff:Optional[Dict[str,any]],
+    ) -> discord.Embed:
+        extra_fields=list(campaign.model_extra.keys())
+        strc = hd2.embeds.create_campaign_str(campaign)
+
+        json_dump = json.dumps(
+            campaign.model_dump(mode="json"),
+            separators=(",", ":"),
+            default=str,
+        )[:256]
+        emb = discord.Embed(
+            title=f"{item.place} Extras detected {mode}",
+            description=f"Extras detected logged!  \n```{json_dump}```    ",
+            timestamp=campaign.retrieved_at,
+            color = 0x009696
+        )
+        emb.add_field(name="Extra Fields",value=",".join(extra_fields))
+        for d in extra_fields[:20]:
+            emb.add_field(name=f"{d}"[:100],value=str(campaign.model_extra[d])[:512])
+
+        emb.set_author(name=f"Extra Fields {item.place}-{str(mode)}")
+        emb.set_footer(text=f"{strc},{custom_strftime(campaign.retrieved_at)}")
+        return emb
+    
+    @staticmethod
     def campaignLogEmbed(
         campaign: Campaign, planet: Optional[Planet], mode="started"
     ) -> discord.Embed:
@@ -1554,6 +1580,17 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
         for item in item_list:
             # Go through each game event, build embeds.
+            if item.mode==EventModes.CHANGE:
+                print("thing")
+                ver,dum=item.value
+                if item.model_extra:
+                    eembed=Embeds.dump_extras(ver,"Changed",item,dum)
+                    embeds.append(eembed)
+            else:
+                if item.model_extra:
+                    eembed=Embeds.dump_extras(item.value,item.mode,item)
+                    embeds.append(eembed)
+            
             embed = await self.build_embed(item)
             if embed:
                 if embed.title == "ResourceChange":
