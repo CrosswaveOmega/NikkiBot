@@ -26,7 +26,7 @@ from utility import WebhookMessageWrapper as web
 from bot.Tasks import TCTask, TCTaskManager
 
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 from discord.utils import format_dt as fdt
 
 
