@@ -869,7 +869,7 @@ class Embeds:
 
 
     @staticmethod
-    def deadzoneWarningEmbed(campaign: BaseApiModel, mode="started",item) -> discord.Embed:
+    def deadzoneWarningEmbed(campaign: BaseApiModel, mode="started") -> discord.Embed:
         emb = discord.Embed(
             title="DEADZONE DETECTED",
             description=f"A likely deadzone was {mode}!\nTimestamp:{fdt(campaign.retrieved_at, 'F')}",
