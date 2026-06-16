@@ -1705,8 +1705,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         if event_type == EventModes.DEADZONE:
             embed = Embeds.deadzoneWarningEmbed(
                 value,
-                "started",
-                item
+                "started"
             )
         if event_type == EventModes.TIME_TRAVEL:
             embed = Embeds.timetravelWarningEmbed(
