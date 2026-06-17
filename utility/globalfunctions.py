@@ -143,8 +143,7 @@ def prioritized_string_split(
                 cluster, max_len, split_substring, length=length
             )
             new_splits.extend(result_clusters)
-        # for c_num, cluster in enumerate(new_splits):
-        #    print(f"Pass {e},  Cluster {c_num + 1}: {len(cluster)}, {len(cluster)}")
+
         current_clusters = new_splits
 
     # Optional trimming of leading and trailing whitespaces

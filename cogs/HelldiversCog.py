@@ -572,7 +572,7 @@ class HelldiversCog(commands.Cog, TC_Cog_Mixin):
     @commands.is_owner()
     @commands.command(name="load_now")
     async def load_now(self, ctx: commands.Context):
-        result=await self.update_data()
+        result = await self.update_data()
         await ctx.send(f"force loaded api data now.  Complete: {result}")
 
     @commands.is_owner()

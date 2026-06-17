@@ -255,7 +255,7 @@ class TCBot(
                 self.logs.error(str(e), exc_info=e)
         print("close done?")
         log.warning("Close done?")
-        
+
         await super().close()
 
     def loggersetup(self):

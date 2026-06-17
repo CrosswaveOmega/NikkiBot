@@ -441,15 +441,15 @@ class ResearchCogStore(commands.Cog, TC_Cog_Mixin):
                 await mes.edit(
                     content="I couldn't read the link, sorry.  It might be too large."
                 )
-                header={}
+                header = {}
             await mes.delete()
 
             async with ctx.channel.typing():
                 splits, e, dat = await ra.tools.read_and_split_link(ctx.bot, url)
-                article=""
+                article = ""
                 for s in splits:
-                    article+=str(s.page_content)+"\n"
-            
+                    article += str(s.page_content) + "\n"
+
             prompt = generate_article_metatemplate(header)
             sources = []
             mylinks = extract_masked_links(article)
@@ -475,7 +475,7 @@ class ResearchCogStore(commands.Cog, TC_Cog_Mixin):
             except Exception as e:
                 await ctx.bot.send_error(e)
                 return await ctx.send(e)
-            
+
     @commands.is_owner()
     @commands.command(name="loadmany")
     @oai_check()

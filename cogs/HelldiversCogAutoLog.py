@@ -49,7 +49,7 @@ from hd2api import (
     build_planet_effect,
     build_all_regions,
 )
-from hd2api.models import PlanetRegion, PlanetRegionInfo
+from hd2api.models import Episode, EpisodePhase, PlanetRegion, PlanetRegionInfo
 
 from hd2api.constants import faction_names, region_size_enums
 from cogs.HD2.maths import maths
@@ -209,7 +209,7 @@ class PlanetEvents(Events):
             self.ret = event["value"].retrieved_at
             if event["place"] == "planetevents":
                 self.planet_event = event["value"]
-            
+
         elif event.mode == EventModes.CHANGE:
             self.ret = event["value"][0].retrieved_at
 
@@ -268,7 +268,6 @@ class Batch:
     def update_planet(
         self, planet_name: str, value: Tuple[Any, Dict[str, Any]], place: str
     ) -> None:
-        
         if planet_name in self.planets:
             self.planets[planet_name].update_planet(value, place)
 
@@ -301,7 +300,7 @@ class Batch:
                 planet_name_source = planet.get_name(False)
 
         if place in ["planetEffects"]:
-            va:PlanetActiveEffects = value
+            va: PlanetActiveEffects = value
             if mode == EventModes.CHANGE:
                 va, _ = value
             # planet = apistatus.planets.get(int(va.index), None)
@@ -349,7 +348,12 @@ class Batch:
             pass
 
     async def format_combo_text(
-        self, ctype: str, planet_data: PlanetEvents, ctext: List[List[str]], alls=None,statics=None
+        self,
+        ctype: str,
+        planet_data: PlanetEvents,
+        ctext: List[List[str]],
+        alls=None,
+        statics=None,
     ) -> List[str]:
         targets: List[str] = []
         data_path: str = "./hd2json/planets/planets.json"
@@ -429,51 +433,59 @@ class Batch:
         elif "planet_effect" in ctype:
             for evt in planet_data.evt:
                 if evt.mode == EventModes.NEW and evt.place == "planetEffects":
-                    act_effect:PlanetActiveEffects= evt.value
+                    act_effect: PlanetActiveEffects = evt.value
                     ym = "planet_effect_add"
-                    built_effect=build_planet_effect(
+                    built_effect = build_planet_effect(
                         statics.effectstatic, act_effect.galacticEffectId
                     )
                     if "(enemies)" in built_effect.name.lower():
-                        ym="planet_effect_assault_division_add"
+                        ym = "planet_effect_assault_division_add"
                     ctext = alls[ym]
                     target = (
                         ctext[1][0]
                         .replace("[TYPETEXT]", ctext[2][0])
                         .replace("[PLANET 0]", planet_data.planet.name)
                     )
-       
 
-                    target = target.replace("[PLANET EFFECT NAME]", built_effect.name or "NAME UNKNOWN")
+                    target = target.replace(
+                        "[PLANET EFFECT NAME]", built_effect.name or "NAME UNKNOWN"
+                    )
 
-                    target = target.replace("[PLANET EFFECT DESC]", built_effect.description or "NAME UNKNOWN")
+                    target = target.replace(
+                        "[PLANET EFFECT DESC]",
+                        built_effect.description or "NAME UNKNOWN",
+                    )
                     target += f" ({custom_strftime(planet_data.ret)})"
-                    
+
                     targets.append(target)
                 if evt.mode == EventModes.REMOVE and evt.place == "planetEffects":
-                    act_effect:PlanetActiveEffects= evt.value
+                    act_effect: PlanetActiveEffects = evt.value
                     ym = "planet_effect_remove"
-                    built_effect=build_planet_effect(
+                    built_effect = build_planet_effect(
                         statics.effectstatic, act_effect.galacticEffectId
                     )
                     if "(enemies)" in built_effect.name.lower():
-                        ym="planet_effect_assault_division_remove"
+                        ym = "planet_effect_assault_division_remove"
                     ctext = alls[ym]
                     target = (
                         ctext[1][0]
                         .replace("[TYPETEXT]", ctext[2][0])
                         .replace("[PLANET 0]", planet_data.planet.name)
                     )
-                    built_effect=build_planet_effect(
+                    built_effect = build_planet_effect(
                         statics.effectstatic, act_effect.galacticEffectId
                     )
-                    target = target.replace("[PLANET EFFECT NAME]", built_effect.name or "NAME UNKNOWN")
+                    target = target.replace(
+                        "[PLANET EFFECT NAME]", built_effect.name or "NAME UNKNOWN"
+                    )
 
-                    target = target.replace("[PLANET EFFECT DESC]", built_effect.description or "NAME UNKNOWN")
+                    target = target.replace(
+                        "[PLANET EFFECT DESC]",
+                        built_effect.description or "NAME UNKNOWN",
+                    )
                     target += f" ({custom_strftime(planet_data.ret)})"
-                    
-                    targets.append(target)
 
+                    targets.append(target)
 
         elif planet_data.planet is not None:
             target = (
@@ -527,14 +539,12 @@ class Batch:
                 if tact.statusExpireAtWarTimeSeconds > endsec:
                     endsec = tact.statusExpireAtWarTimeSeconds
                 endeffect = tact.name or "UNKNOWN"
-        modetext="stops"
+        modetext = "stops"
         if mode == "starts":
             t = t.replace("[DSS_EFFECT]", effect)
-            modetext=="is activated"
+            modetext == "is activated"
         elif mode == "ends":
             t = t.replace("[DSS_EFFECT]", endeffect)
-
-
 
         t = t.replace("[DSS_EFFECT_MODE]", mode)
         return t
@@ -563,7 +573,7 @@ class Batch:
         targets.append(target)
         return targets
 
-    async def combo_checker(self,apistatus) -> List[str]:
+    async def combo_checker(self, apistatus) -> List[str]:
         """Check for event combos"""
         combos: List[str] = []
 
@@ -579,7 +589,11 @@ class Batch:
                 for c in combo:
                     if c in self.hd2:
                         text: List[str] = await self.format_combo_text(
-                            c, planet_data, self.hd2[c], self.hd2,  statics=apistatus.statics
+                            c,
+                            planet_data,
+                            self.hd2[c],
+                            self.hd2,
+                            statics=apistatus.statics,
                         )
                         combos.extend(text)
                     else:
@@ -658,18 +672,18 @@ class Batch:
             for evt in planet_data.evt:
                 gui.gprint(evt.mode, evt.place, evt.value)
                 if evt.mode == EventModes.NEW and evt.place == "planetEffects":
-                    #if "planet_effect_add" not in combinations:
-                        combinations.append("planet_effect_add")
+                    # if "planet_effect_add" not in combinations:
+                    combinations.append("planet_effect_add")
 
-                        gui.gprint(combinations, evt.mode, evt.place, evt.value)
+                    gui.gprint(combinations, evt.mode, evt.place, evt.value)
         if "planetEffects_EventModes.REMOVE" in trigger_list:
             for evt in planet_data.evt:
                 gui.gprint(evt.mode, evt.place, evt.value)
                 if evt.mode == EventModes.REMOVE and evt.place == "planetEffects":
-                    #if "planet_effect_remove" not in combinations:
-                        # many planetEffects per planet.
-                        combinations.append("planet_effect_remove")
-                        gui.gprint(combinations, evt.mode, evt.place, evt.value)
+                    # if "planet_effect_remove" not in combinations:
+                    # many planetEffects per planet.
+                    combinations.append("planet_effect_remove")
+                    gui.gprint(combinations, evt.mode, evt.place, evt.value)
         if (
             "campaign_EventModes.NEW" in trigger_list
             and "planetevents_EventModes.NEW" not in trigger_list
@@ -848,9 +862,12 @@ inds2 = {
 class Embeds:
     @staticmethod
     def dump_extras(
-        campaign: BaseApiModel, mode="started", item:GameEvent=None,diff:Optional[Dict[str,any]]=None,
+        campaign: BaseApiModel,
+        mode="started",
+        item: GameEvent = None,
+        diff: Optional[Dict[str, any]] = None,
     ) -> discord.Embed:
-        extra_fields=list(campaign.model_extra.keys())
+        extra_fields = list(campaign.model_extra.keys())
 
         json_dump = json.dumps(
             campaign.model_dump(mode="json"),
@@ -861,16 +878,16 @@ class Embeds:
             title=f"{item.place} Extras detected {mode}",
             description=f"Extras detected logged!  \n```{json_dump}```    ",
             timestamp=campaign.retrieved_at,
-            color = 0x009696
+            color=0x009696,
         )
-        emb.add_field(name="Extra Fields",value=",".join(extra_fields))
+        emb.add_field(name="Extra Fields", value=",".join(extra_fields))
         for d in extra_fields[:20]:
-            emb.add_field(name=f"{d}"[:100],value=str(campaign.model_extra[d])[:512])
+            emb.add_field(name=f"{d}"[:100], value=str(campaign.model_extra[d])[:512])
 
         emb.set_author(name=f"Extra Fields {item.place}-{str(mode)}")
         emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
         return emb
-    
+
     @staticmethod
     def campaignLogEmbed(
         campaign: Campaign, planet: Optional[Planet], mode="started"
@@ -892,7 +909,6 @@ class Embeds:
         emb.set_footer(text=f"{strc},{custom_strftime(campaign.retrieved_at)}")
         return emb
 
-
     @staticmethod
     def deadzoneWarningEmbed(campaign: BaseApiModel, mode="started") -> discord.Embed:
         emb = discord.Embed(
@@ -906,10 +922,12 @@ class Embeds:
         return emb
 
     @staticmethod
-    def timetravelWarningEmbed(campaign: BaseApiModel, mode="started",item:Any=None) -> discord.Embed:
+    def timetravelWarningEmbed(
+        campaign: BaseApiModel, mode="started", item: Any = None
+    ) -> discord.Embed:
         emb = discord.Embed(
             title="TIME TRAVEL DETECTED",
-            description=f"The returned internal war time has rolled back to a state about {item['game_time']-campaign.time} seconds prior. \n For the sake of everyone's sanity, the autolog will skip updating this round.\nTimestamp:{fdt(campaign.retrieved_at, 'F')},\n New WT:{campaign.time}",
+            description=f"The returned internal war time has rolled back to a state about {item['game_time'] - campaign.time} seconds prior. \n For the sake of everyone's sanity, the autolog will skip updating this round.\nTimestamp:{fdt(campaign.retrieved_at, 'F')},\n New WT:{campaign.time}",
             timestamp=campaign.retrieved_at,
             color=0xFF0000,
         )
@@ -1180,8 +1198,8 @@ class Embeds:
             "Settings Hash": campaign.settingsHash,
             "Max Health": campaign.maxHealth,
             "Region Size": campaign.regionSize,
-            "Flags":campaign.flags,
-            "Damage Multiplier":campaign.damageMultiplier
+            "Flags": campaign.flags,
+            "Damage Multiplier": campaign.damageMultiplier,
         }
 
         for field_name, value in field_map.items():
@@ -1194,8 +1212,7 @@ class Embeds:
         embed.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
 
         return embed
-    
-    
+
     @staticmethod
     def RegionEmbed_Planet_Generic(
         campaign: "PlanetRegionInfo",
@@ -1229,8 +1246,8 @@ class Embeds:
             "Settings Hash": campaign.settingsHash,
             "Max Health": campaign.maxHealth,
             "Region Size": campaign.regionSize,
-            "Flags":campaign.flags,
-            "Damage Multiplier":campaign.damageMultiplier
+            "Flags": campaign.flags,
+            "Damage Multiplier": campaign.damageMultiplier,
         }
 
         for field_name, value in field_map.items():
@@ -1243,7 +1260,6 @@ class Embeds:
         embed.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
 
         return embed
-
 
     @staticmethod
     def dumpEmbedRegion(
@@ -1385,36 +1401,32 @@ class Embeds:
         emb.set_author(name="API Value Change")
         emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
         return emb
-    
-    
+
     @staticmethod
     def dumpEmbedNew(
-        campaign: BaseApiModel,  name: str, mode="started"
+        campaign: BaseApiModel, name: str, mode="started"
     ) -> discord.Embed:
-
         emb = discord.Embed(
             title=f"EXTRA CASE: {mode.capitalize()} of {name.capitalize()}",
             description=f"Field {mode.capitalize()} for {name.capitalize()}\n",
             timestamp=campaign.retrieved_at,
             color=0x000054,
         )
-        embs=0
+        embs = 0
         try:
-            dump=campaign.model_dump()
-            for i in ['retrieved_at','time_delta']:
+            dump = campaign.model_dump()
+            for i in ["retrieved_at", "time_delta"]:
                 if i in dump:
                     dump.pop(i)
             for i, v in dump.items():
                 emb.add_field(
-                    name=i.capitalize()[:50],value=str(v)[:200], inline=False
+                    name=i.capitalize()[:50], value=str(v)[:200], inline=False
                 )
-                embs=embs+1
-                if embs>=20:
+                embs = embs + 1
+                if embs >= 20:
                     break
         except Exception as e:
-            emb.add_field(
-                name="NEVER SEEN BEFORE!", value=f""
-            )
+            emb.add_field(name="NEVER SEEN BEFORE!", value=f"")
         emb.add_field(
             name="Timestamp", value=f"Timestamp:{fdt(campaign.retrieved_at, 'F')}"
         )
@@ -1422,12 +1434,11 @@ class Embeds:
         emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
         return emb
 
-
     @staticmethod
-    def NewsFeedEmbed(gamevent: GameEvent, mode="started") -> discord.Embed:
+    def EpisodeEmbed(gamevent: GameEvent, mode="started") -> discord.Embed:
         newsfeed: NewsFeedItem = gamevent.value
-        if mode=="Retired":
-            if (gamevent.game_time-newsfeed.published)>100000:
+        if mode == "Retired":
+            if (gamevent.game_time - newsfeed.published) > 100000:
                 return None
 
         title, desc = newsfeed.to_str()
@@ -1444,6 +1455,104 @@ class Embeds:
             name=f"{mode} dispatch from Super Earth at wartime {gamevent.game_time}"
         )
         emb.set_footer(text=f"{custom_strftime(newsfeed.retrieved_at)}")
+        return emb
+
+    @staticmethod
+    def NewsFeedEmbed(gamevent: GameEvent, mode="started") -> discord.Embed:
+        newsfeed: NewsFeedItem = gamevent.value
+        if mode == "Retired":
+            if (gamevent.game_time - newsfeed.published) > 100000:
+                return None
+
+        title, desc = newsfeed.to_str()
+        emb = discord.Embed(
+            title=f"{title}",
+            description=desc,
+            timestamp=newsfeed.retrieved_at,
+            color=0x222222,
+        )
+        emb.add_field(
+            name="Timestamp", value=f"Timestamp:{fdt(newsfeed.retrieved_at, 'F')}"
+        )
+        emb.set_author(
+            name=f"{mode} dispatch from Super Earth at wartime {gamevent.game_time}"
+        )
+        emb.set_footer(text=f"{custom_strftime(newsfeed.retrieved_at)}")
+        return emb
+
+    @staticmethod
+    def EpisodeEmbed(gamevent: GameEvent, mode="started") -> discord.Embed:
+        episode: Episode = gamevent.value
+        dump = {}
+        if mode == "Changed":
+            episode, dump = gamevent.value
+
+        title, desc = episode.to_str()
+        emb = discord.Embed(
+            title=f"{title}",
+            description=desc,
+            timestamp=episode.retrieved_at,
+            color=0x222222,
+        )
+
+        emb.add_field(name="race", value=str(episode.race))
+
+        emb.add_field(name="startWarTime", value=str(episode.start_war_time))
+
+        emb.add_field(name="bannerImageId32", value=str(episode.banner_image_id32))
+
+        emb.add_field(name="status", value=str(episode.status))
+
+        emb.add_field(
+            name="Phases",
+            value=", ".join(f"{e}-{r.id32}" for e, r in enumerate(episode.phases)),
+            inline=False,
+        )
+        emb.add_field(
+            name="Timestamp", value=f"Timestamp:{fdt(episode.retrieved_at, 'F')}"
+        )
+        emb.add_field(
+            name="Rewards",
+            value=", ".join(f"{r.mix_id}x{r.amount}" for r in episode.rewards),
+            inline=False,
+        )
+        emb.set_author(name=f"{mode} episode at wartime {gamevent.game_time}")
+        emb.set_footer(text=f"{custom_strftime(episode.retrieved_at)}")
+        return emb
+
+    @staticmethod
+    def EpisodePhaseEmbed(gamevent: GameEvent, mode="started") -> discord.Embed:
+        episodephase: EpisodePhase = gamevent.value
+        dump = {}
+        if mode == "Changed":
+            episodephase, dump = gamevent.value
+
+        title, desc = episodephase.to_str()
+        emb = discord.Embed(
+            title=f"Episode {episodephase.episode_id32} Phase-{title}",
+            description=desc,
+            timestamp=episodephase.retrieved_at,
+            color=0x222222,
+        )
+
+        emb.add_field(name="status", value=str(episodephase.status))
+
+        emb.add_field(name="Intro Media Id32", value=str(episodephase.intro_media_id32))
+        emb.add_field(name="Outro Media Id32", value=str(episodephase.outro_media_id32))
+
+        for e, ent in enumerate(episodephase.entries):
+            emb.add_field(name=f"Entry {e}", value=f"{str(ent)}"[:512], inline=False)
+
+        emb.add_field(
+            name="Rewards",
+            value=", ".join(f"{r.mix_id}x{r.amount}" for r in episodephase.rewards),
+            inline=False,
+        )
+        emb.add_field(
+            name="Timestamp", value=f"Timestamp:{fdt(episodephase.retrieved_at, 'F')}"
+        )
+        emb.set_author(name=f"{mode} phase at wartime {gamevent.game_time}")
+        emb.set_footer(text=f"{custom_strftime(episodephase.retrieved_at)}")
         return emb
 
 
@@ -1521,7 +1630,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
                         self.test_with.append(add)
 
-    async def batch_events(self, events:List[GameEvent]):
+    async def batch_events(self, events: List[GameEvent]):
         """Stitch multiple events together into one, then check for combos"""
 
         for event in events:
@@ -1535,8 +1644,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             for t in texts:
                 for hook in list(self.loghook):
                     with open("./saveData/extra_log.log", "a+") as log_file:
-
-                        log_file.write(t[:1950]+"\n---------\n")
+                        log_file.write(t[:1950] + "\n---------\n")
                     try:
                         await web.postMessageAsWebhookWithURL(
                             hook,
@@ -1579,11 +1687,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
         for item in item_list:
             # Go through each game event, build embeds.
-            if item.mode==EventModes.CHANGE:
+            if item.mode == EventModes.CHANGE:
                 print("thing")
-                ver,dum=item.value
+                ver, dum = item.value
                 if ver.model_extra:
-                    eembed=Embeds.dump_extras(ver,"Changed",item,dum)
+                    eembed = Embeds.dump_extras(ver, "Changed", item, dum)
                     embeds.append(eembed)
             else:
                 values = item.value if isinstance(item.value, list) else [item.value]
@@ -1592,7 +1700,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     if isinstance(value, BaseModel) and value.model_extra:
                         eembed = Embeds.dump_extras(value, item.mode, item)
                         embeds.append(eembed)
-            
+
             embed = await self.build_embed(item)
             if embed:
                 if embed.title == "ResourceChange":
@@ -1649,6 +1757,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 for e in embeds:
                     log_file.write(json.dumps(e.to_dict()) + "\n---------\n")
             for hook in list(self.loghook):
+                print(hook, self.loghook)
                 try:
                     await web.postMessageAsWebhookWithURL(
                         hook,
@@ -1691,7 +1800,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         place = item["place"]
         value = item["value"]
         embed = None
-        
+
         if item["cluster"]:
             if place == "planetAttacks":
                 embed = Embeds.planetAttacksEmbed(
@@ -1703,16 +1812,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
                 return embed
         if event_type == EventModes.DEADZONE:
-            embed = Embeds.deadzoneWarningEmbed(
-                value,
-                "started"
-            )
+            embed = Embeds.deadzoneWarningEmbed(value, "started")
         if event_type == EventModes.TIME_TRAVEL:
-            embed = Embeds.timetravelWarningEmbed(
-                value,
-                "started",
-                item
-            )
+            embed = Embeds.timetravelWarningEmbed(value, "started", item)
         if event_type == EventModes.DEADZONE_END:
             embed = Embeds.deadzoneWarningEmbed(
                 value,
@@ -1736,7 +1838,6 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     "started",
                 )
             elif place == "planetEffects":
-                
                 embed = Embeds.planeteffectsEmbed(
                     value,
                     self.apistatus.planets.get(int(value.index), None),
@@ -1765,6 +1866,10 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.globalEventEmbed(value, "started")
             elif place == "news":
                 embed = Embeds.NewsFeedEmbed(item, "New")
+            elif place == "episode":
+                embed = Embeds.EpisodeEmbed(item, "New")
+            elif place == "episodephase":
+                embed = Embeds.EpisodePhaseEmbed(item, "New")
             elif place == "planetregions":
                 planet = self.apistatus.planets.get(int(value.planetIndex), None)
                 embed = Embeds.RegionEmbed_PlanetRegion(
@@ -1776,9 +1881,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     value, planet, f"added in {place}"
                 )
             else:
-                embed = Embeds.dumpEmbedNew(
-                    value, place, mode=f"added"
-                )
+                embed = Embeds.dumpEmbedNew(value, place, mode=f"added")
 
         elif event_type == EventModes.REMOVE:
             if place == "campaign":
@@ -1819,6 +1922,10 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.globalEventEmbed(value, "ended")
             elif place == "news":
                 embed = Embeds.NewsFeedEmbed(item, "Retired")
+            elif place == "episode":
+                embed = Embeds.EpisodeEmbed(item, "Retired")
+            elif place == "episodephase":
+                embed = Embeds.EpisodePhaseEmbed(item, "Retired")
             elif place == "resources":
                 embed = Embeds.resourceEmbed(
                     value,
@@ -1835,9 +1942,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     value, planet, f"removed in {place}"
                 )
             else:
-                embed = Embeds.dumpEmbedNew(
-                    value, place, mode=f"removed"
-                )
+                embed = Embeds.dumpEmbedNew(value, place, mode=f"removed")
         elif event_type == EventModes.CHANGE:
             print("IS_EventModes.CHANGE")
             (info, dump) = value
@@ -1846,11 +1951,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 if planet:
                     # planets- owner, regenRate
                     # Every 15 minutes
-                    if "maxHealth" in dump and len(list(dump.keys()))==1:
-                        if info.index in [258,259]:
+                    if "maxHealth" in dump and len(list(dump.keys())) == 1:
+                        if info.index in [258, 259]:
                             name, sector = planet.get_name(False), planet.sector
                             color = colors2.get(planet.currentOwner.lower(), 0x8C90B0)
-                            embed=discord.Embed(
+                            embed = discord.Embed(
                                 title=f"{name} max hp changed to `{dump['maxHealth']['new']}`"
                             )
                             return embed
@@ -1858,7 +1963,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                             embed = Embeds.dumpEmbedPlanet(
                                 info, dump, planet, f"changed in {place}"
                             )
-                        
+
                     elif "position" in dump and len(list(dump.keys())) == 1:
                         if int(info.index) not in self.last_move:
                             self.last_move[int(info.index)] = [planet, info, dump]
@@ -1903,7 +2008,10 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     embed = Embeds.dumpEmbedRegion(
                         info, dump, planet, f"changed in {place}"
                     )
-
+            elif place == "episode":
+                embed = Embeds.EpisodeEmbed(item, "Changed")
+            elif place == "episodephase":
+                embed = Embeds.EpisodePhaseEmbed(item, "Changed")
             elif place == "stats_raw":
                 embed = Embeds.dumpEmbed(info, dump, "stats", "changed")
             elif place == "info_raw":

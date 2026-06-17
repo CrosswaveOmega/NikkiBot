@@ -1,3 +1,4 @@
+from collections import defaultdict
 import logging
 from typing import *
 
@@ -10,7 +11,7 @@ import random
 from enum import Enum
 
 from hd2api.builders import *
-from hd2api.models import DiveharderAll, StaticAll, Region
+from hd2api.models import DiveharderAll, StaticAll, Region, Episodes
 from hd2api.models.ABC.model import BaseApiModel
 from pydantic import Field
 
@@ -454,6 +455,59 @@ async def detect_loggable_changes(
             ],
             game_time=gametime,
         )
+    eps_new = Episodes(episodes=[])
+    eps_old = Episodes(episodes=[])
+    if new.episodes is not None:
+        eps_new = new.episodes
+    if old.episodes is not None:
+        eps_old = old.episodes
+    # if new.episodes is not None and old.news_feed is not None:
+    logs.debug("Episodes loggable detection, stand by...")
+
+    superlist += await process_planet_events(
+        eps_new.episodes or [],
+        eps_old.episodes or [],
+        "episode",
+        "id32",
+        QueueAll,
+        batch,
+        [
+            "retrieved_at",
+            "time_delta",
+            "phases",
+            "self",
+        ],
+        game_time=gametime,
+    )
+    logs.debug("Episode Phases loggable detection, stand by...")
+    alls = defaultdict(dict)
+    for i in eps_new.episodes:
+        id32 = i.id32
+        newp = []
+        for ph in i.phases:
+            ph.episode_id32 = id32
+            # newp.append(ph)
+        alls[str(id32)] = {"new": i.phases}
+    for i in eps_old.episodes:
+        id32 = i.id32
+        for ph in i.phases:
+            ph.episode_id32 = id32
+        alls[str(id32)]["old"] = i.phases
+    for idv, dictval in alls.items():
+        superlist += await process_planet_events(
+            dictval.get("new", []),
+            dictval.get("old", []),
+            "episodephase",
+            "id32",
+            QueueAll,
+            batch,
+            [
+                "retrieved_at",
+                "time_delta",
+                "self",
+            ],
+            game_time=gametime,
+        )
 
     logs.debug("Global Resourse detection, stand by...")
     superlist += await process_planet_events(
@@ -463,7 +517,7 @@ async def detect_loggable_changes(
         "id32",
         QueueAll,
         batch,
-        ["retrieved_at", "time_delta", "self","currentValue","changePerSecond"],
+        ["retrieved_at", "time_delta", "self", "currentValue", "changePerSecond"],
         game_time=gametime,
     )
     logs.debug("campaigns detection, stand by...")

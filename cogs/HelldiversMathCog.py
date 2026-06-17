@@ -63,8 +63,8 @@ def extract_embed_text(embed):
 
 
 def resource_graph():
-    
     import matplotlib.dates as mdates
+
     df5 = pd.read_csv("resource_track.csv")
 
     df_groupeds = (
@@ -85,13 +85,13 @@ def resource_graph():
     plt.xticks(color="white", fontproperties=terminal_font)
     plt.yticks(color="white", fontproperties=terminal_font)
     plt.grid(True, color="gray", linestyle="--", linewidth=0.5)  # Added grid ticks
-    
+
     ax = plt.gca()
-    
+
     ax.set_facecolor("black")
     # ---- DATE AXIS CONFIGURATION ----
-    ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))      # major tick: each day
-    ax.xaxis.set_minor_locator(mdates.HourLocator(interval=1))     # minor tick: each hour
+    ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))  # major tick: each day
+    ax.xaxis.set_minor_locator(mdates.HourLocator(interval=1))  # minor tick: each hour
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
 
     ax.tick_params(axis="x", which="major", length=10, color="white")
@@ -120,8 +120,8 @@ def resource_graph():
 
 
 def rate_of_change_graph():
-    
     import matplotlib.dates as mdates
+
     df5 = pd.read_csv("resource_track.csv")
 
     df_groupeds = (
@@ -140,15 +140,15 @@ def rate_of_change_graph():
     df25["timestamp"] = df25["timestamp"].apply(
         lambda x: datetime.datetime.fromtimestamp(x)
     )  # Format timestamps
-    
+
     df25 = df25[df25["changePerSecond"] >= -8000]
     # Plotting
-    plt.figure(figsize=(50*2, 12*2), facecolor="black")
+    plt.figure(figsize=(50 * 2, 12 * 2), facecolor="black")
     ax = plt.gca()
-    
+
     ax.set_facecolor("black")
-    ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))      # major tick: each day
-    ax.xaxis.set_minor_locator(mdates.HourLocator(interval=1))     # minor tick: each hour
+    ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))  # major tick: each day
+    ax.xaxis.set_minor_locator(mdates.HourLocator(interval=1))  # minor tick: each hour
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
 
     ax.tick_params(axis="x", which="major", length=10, color="white")
@@ -172,7 +172,7 @@ def rate_of_change_graph():
         label="Rate of Change Per Minute",
         color="blue",
         marker="+",
-         linewidth=0.5
+        linewidth=0.5,
     )
 
     plt.ylabel("Rate of Change", color="white", fontproperties=terminal_font)
@@ -199,8 +199,8 @@ class HelldiversMathCog(commands.Cog, TC_Cog_Mixin):
         self.hd2 = load_json_with_substitutions("./assets/json", "flavor.json", {}).get(
             "hd2", {}
         )
-        self.time1 = datetime.datetime.now()-datetime.timedelta(minutes=15)
-        self.time2 = datetime.datetime.now()-datetime.timedelta(minutes=15)
+        self.time1 = datetime.datetime.now() - datetime.timedelta(minutes=15)
+        self.time2 = datetime.datetime.now() - datetime.timedelta(minutes=15)
 
     def cog_unload(self):
         pass

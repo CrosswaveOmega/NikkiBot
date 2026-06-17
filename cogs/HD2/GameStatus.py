@@ -860,7 +860,7 @@ def add_to_csv(stat: ApiStatus):
             # Write the rows
             for row in rows_for_number:
                 writer.writerow(row)
-                
+
     with open(csv_impact_track, mode="a+", newline="", encoding="utf8") as file:
         writer = csv.DictWriter(file, fieldnames=rows_for_imp[0].keys())
 
