@@ -456,8 +456,8 @@ class Batch:
                         built_effect.description or "NAME UNKNOWN",
                     )
                     target += f" ({custom_strftime(planet_data.ret)})"
-
-                    targets.append(target)
+                    if target not in targets:
+                        targets.append(target)
                 if evt.mode == EventModes.REMOVE and evt.place == "planetEffects":
                     act_effect: PlanetActiveEffects = evt.value
                     ym = "planet_effect_remove"
