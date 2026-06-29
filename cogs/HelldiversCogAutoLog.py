@@ -1525,7 +1525,7 @@ class Embeds:
             emb.add_field(
                 name=f"Changed Field {i}",
                 value=f"Old:{json.dumps(old,default=str)[:200]}\n\nNew:{json.dumps(new,default=str)[:200]}",
-                inline=False
+                inline=True
             )
         emb.set_author(name=f"{mode} episode at wartime {gamevent.game_time}")
         emb.set_footer(text=f"{custom_strftime(episode.retrieved_at)}")
@@ -1562,6 +1562,15 @@ class Embeds:
         emb.add_field(
             name="Timestamp", value=f"Timestamp:{fdt(episodephase.retrieved_at, 'F')}"
         )
+        for i, v in dump.items():
+            new=v.get('new',{})
+            old=v.get('old',{})
+
+            emb.add_field(
+                name=f"Changed Field {i}",
+                value=f"Old:{json.dumps(old,default=str)[:200]}\n\nNew:{json.dumps(new,default=str)[:200]}",
+                inline=True
+            )
         emb.set_author(name=f"{mode} phase at wartime {gamevent.game_time}")
         emb.set_footer(text=f"{custom_strftime(episodephase.retrieved_at)}")
         return emb
