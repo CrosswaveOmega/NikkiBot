@@ -1502,6 +1502,8 @@ class Embeds:
         emb.add_field(name="bannerImageId32", value=str(episode.banner_image_id32))
 
         emb.add_field(name="status", value=str(episode.status))
+        if episode.end_war_time:
+            emb.add_field(name="endWarTime", value=str(episode.end_war_time))
 
         emb.add_field(
             name="Phases",
