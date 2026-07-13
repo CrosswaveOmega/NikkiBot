@@ -2,6 +2,7 @@ import asyncio
 import json
 import datetime
 import difflib
+import re
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import discord
@@ -431,9 +432,20 @@ class Batch:
                     targets.append(target)
 
         elif "planet_effect" in ctype:
+            endv=ctype.split("_")[-1]
+            
+            m = re.match(r"^P#(\d+)-(\d+)$", endv)
+            if m:
+                planet_index = int(m.group(1))
+                galactic_effect_id = int(m.group(2))
+
             for evt in planet_data.evt:
+                
                 if evt.mode == EventModes.NEW and evt.place == "planetEffects":
+                    
                     act_effect: PlanetActiveEffects = evt.value
+                    if galactic_effect_id!=act_effect.galacticEffectId:
+                        continue
                     ym = "planet_effect_add"
                     built_effect = build_planet_effect(
                         statics.effectstatic, act_effect.galacticEffectId
@@ -460,6 +472,8 @@ class Batch:
                         targets.append(target)
                 if evt.mode == EventModes.REMOVE and evt.place == "planetEffects":
                     act_effect: PlanetActiveEffects = evt.value
+                    if galactic_effect_id!=act_effect.galacticEffectId:
+                        continue
                     ym = "planet_effect_remove"
                     built_effect = build_planet_effect(
                         statics.effectstatic, act_effect.galacticEffectId
@@ -484,8 +498,9 @@ class Batch:
                         built_effect.description or "NAME UNKNOWN",
                     )
                     target += f" ({custom_strftime(planet_data.ret)})"
-
-                    targets.append(target)
+                    if target not in targets:
+                        targets.append(target)
+                    #targets.append(target)
 
         elif planet_data.planet is not None:
             target = (
@@ -668,12 +683,16 @@ class Batch:
                         combinations.append("region")
 
                         gui.gprint(combinations, evt.mode, evt.place, evt.value)
+
         if "planetEffects_EventModes.NEW" in trigger_list:
             for evt in planet_data.evt:
                 gui.gprint(evt.mode, evt.place, evt.value)
                 if evt.mode == EventModes.NEW and evt.place == "planetEffects":
                     # if "planet_effect_add" not in combinations:
-                    combinations.append("planet_effect_add")
+                    string=f"P#{planet_data.planet.index}-{evt.value.galacticEffectId}"
+                    inp=f"planet_effect_add_{string}"
+                    if inp not in combinations:
+                        combinations.append(inp)
 
                     gui.gprint(combinations, evt.mode, evt.place, evt.value)
         if "planetEffects_EventModes.REMOVE" in trigger_list:
@@ -682,8 +701,13 @@ class Batch:
                 if evt.mode == EventModes.REMOVE and evt.place == "planetEffects":
                     # if "planet_effect_remove" not in combinations:
                     # many planetEffects per planet.
-                    combinations.append("planet_effect_remove")
+                    string=f"P#{planet_data.planet.index}-{evt.value.galacticEffectId}"
+                    inp=f"planet_effect_remove_{string}"
+                    if inp not in combinations:
+                        combinations.append(inp)
+                    #combinations.append("planet_effect_remove")
                     gui.gprint(combinations, evt.mode, evt.place, evt.value)
+
         if (
             "campaign_EventModes.NEW" in trigger_list
             and "planetevents_EventModes.NEW" not in trigger_list
