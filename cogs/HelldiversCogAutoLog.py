@@ -437,7 +437,7 @@ class Batch:
 
             endv=ctype.split("_")[-1]
             m = re.match(r"^P#(\d+)-(\d+)$", endv)
-            print(m)
+            print(ctype,m)
             if m:
                 planet_index = int(m.group(1))
                 galactic_effect_id = int(m.group(2))
