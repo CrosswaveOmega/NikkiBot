@@ -433,7 +433,9 @@ class Batch:
 
         elif "planet_effect" in ctype:
             endv=ctype.split("_")[-1]
-            
+            #ctype="planet_effect_add_P#186-1375"
+
+            endv=ctype.split("_")[-1]
             m = re.match(r"^P#(\d+)-(\d+)$", endv)
             if m:
                 planet_index = int(m.group(1))
@@ -444,7 +446,7 @@ class Batch:
                 if evt.mode == EventModes.NEW and evt.place == "planetEffects":
                     
                     act_effect: PlanetActiveEffects = evt.value
-                    if galactic_effect_id!=act_effect.galacticEffectId:
+                    if galactic_effect_id!=int(act_effect.galacticEffectId):
                         continue
                     ym = "planet_effect_add"
                     built_effect = build_planet_effect(
@@ -472,7 +474,7 @@ class Batch:
                         targets.append(target)
                 if evt.mode == EventModes.REMOVE and evt.place == "planetEffects":
                     act_effect: PlanetActiveEffects = evt.value
-                    if galactic_effect_id!=act_effect.galacticEffectId:
+                    if galactic_effect_id!=int(act_effect.galacticEffectId):
                         continue
                     ym = "planet_effect_remove"
                     built_effect = build_planet_effect(
