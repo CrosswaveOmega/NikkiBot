@@ -606,10 +606,16 @@ class Batch:
             if combo:
                 for c in combo:
                     if c in self.hd2 or "planet_effect" in c:
+                        target=c
+                        if "planet_effect_add" in c:
+                            target="planet_effect_add"
+                        if "planet_effect_remove" in c:
+                            target="planet_effect_remove"
+                            
                         text: List[str] = await self.format_combo_text(
                             c,
                             planet_data,
-                            self.hd2[c],
+                            self.hd2[target],
                             self.hd2,
                             statics=apistatus.statics,
                         )
