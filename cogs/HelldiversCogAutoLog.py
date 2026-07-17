@@ -605,7 +605,7 @@ class Batch:
             )
             if combo:
                 for c in combo:
-                    if c in self.hd2:
+                    if c in self.hd2 or "planet_effect" in c:
                         text: List[str] = await self.format_combo_text(
                             c,
                             planet_data,
