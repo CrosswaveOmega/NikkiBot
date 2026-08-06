@@ -407,10 +407,19 @@ class Batch:
                     target = target.replace("[SECTOR 1]", planet_data.planet.sector)
 
                     target += f" ({custom_strftime(planet_data.ret)})"
-                    if ctype == "region_siege_start":
+                    if ym == "region_siege_start":
+                        thisowner=1
+                        if info.owner is not None:
+                            thisowner=info.owner
+
+                        else:
+                            thisowner=planet_data.planet.owner
+
                         target = target.replace(
-                            "[FACTION]", faction_dict.get(1, "UNKNOWN")
-                        )
+                                "[FACTION]",
+                                faction_dict.get(1, "UNKNOWN"),
+                            )
+
                     else:
                         if info.owner is not None:
                             target = target.replace(
@@ -1551,9 +1560,14 @@ class Embeds:
             value=", ".join(f"{r.mix_id}x{r.amount}" for r in episode.rewards),
             inline=False,
         )
+        justnull=False
         for i, v in dump.items():
             new=v.get('new',{})
             old=v.get('old',{})
+            if old is None or new is None:
+                justnull=True
+            else:
+                justnull=False
 
             emb.add_field(
                 name=f"Changed Field {i}",
@@ -1562,7 +1576,7 @@ class Embeds:
             )
         emb.set_author(name=f"{mode} episode at wartime {gamevent.game_time}")
         emb.set_footer(text=f"{custom_strftime(episode.retrieved_at)}")
-        return emb
+        return emb, justnull
 
     @staticmethod
     def EpisodePhaseEmbed(gamevent: GameEvent, mode="started") -> discord.Embed:
@@ -1595,10 +1609,14 @@ class Embeds:
         emb.add_field(
             name="Timestamp", value=f"Timestamp:{fdt(episodephase.retrieved_at, 'F')}"
         )
+        justnull=False
         for i, v in dump.items():
             new=v.get('new',{})
             old=v.get('old',{})
-
+            if old is None or new is None:
+                justnull=True
+            else:
+                justnull=False
             emb.add_field(
                 name=f"Changed Field {i}",
                 value=f"Old:{json.dumps(old,default=str)[:200]}\n\nNew:{json.dumps(new,default=str)[:200]}",
@@ -1606,7 +1624,7 @@ class Embeds:
             )
         emb.set_author(name=f"{mode} phase at wartime {gamevent.game_time}")
         emb.set_footer(text=f"{custom_strftime(episodephase.retrieved_at)}")
-        return emb
+        return emb, justnull
 
 
 def update_retrieved_at(data, nowv):
@@ -1920,9 +1938,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             elif place == "news":
                 embed = Embeds.NewsFeedEmbed(item, "New")
             elif place == "episode":
-                embed = Embeds.EpisodeEmbed(item, "New")
+                embed,_ = Embeds.EpisodeEmbed(item, "New")
             elif place == "episodephase":
-                embed = Embeds.EpisodePhaseEmbed(item, "New")
+                embed,_ = Embeds.EpisodePhaseEmbed(item, "New")
             elif place == "planetregions":
                 planet = self.apistatus.planets.get(int(value.planetIndex), None)
                 embed = Embeds.RegionEmbed_PlanetRegion(
@@ -1976,9 +1994,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             elif place == "news":
                 embed = Embeds.NewsFeedEmbed(item, "Retired")
             elif place == "episode":
-                embed = Embeds.EpisodeEmbed(item, "Retired")
+                embed,_ = Embeds.EpisodeEmbed(item, "Retired")
             elif place == "episodephase":
-                embed = Embeds.EpisodePhaseEmbed(item, "Retired")
+                embed,_ = Embeds.EpisodePhaseEmbed(item, "Retired")
             elif place == "resources":
                 embed = Embeds.resourceEmbed(
                     value,
@@ -2062,9 +2080,13 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         info, dump, planet, f"changed in {place}"
                     )
             elif place == "episode":
-                embed = Embeds.EpisodeEmbed(item, "Changed")
+                embed, justnull = Embeds.EpisodeEmbed(item, "Changed")
+                if justnull:
+                    embed=None
             elif place == "episodephase":
-                embed = Embeds.EpisodePhaseEmbed(item, "Changed")
+                embed, justnull = Embeds.EpisodePhaseEmbed(item, "Changed")
+                if justnull:
+                    embed=None
             elif place == "stats_raw":
                 embed = Embeds.dumpEmbed(info, dump, "stats", "changed")
             elif place == "info_raw":
