@@ -471,7 +471,8 @@ class Batch:
                         .replace("[TYPETEXT]", ctext[2][0])
                         .replace("[PLANET 0]", planet_data.planet.name)
                     )
-
+                    if act_effect.place_id:
+                        target=target.replace("UVAR", act_effect.place_id)
                     target = target.replace(
                         "[PLANET EFFECT NAME]", built_effect.name or "NAME UNKNOWN"
                     )
