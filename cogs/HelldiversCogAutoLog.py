@@ -500,7 +500,7 @@ class Batch:
                         .replace("[PLANET 0]", planet_data.planet.name)
                     )
                     if act_effect.place_id:
-                        target.replace("UVAR", act_effect.place_id)
+                        target=target.replace("UVAR", act_effect.place_id)
                     built_effect = build_planet_effect(
                         statics.effectstatic, act_effect.galacticEffectId
                     )
