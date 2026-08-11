@@ -319,6 +319,104 @@ async def process_planet_attacks(
 
     return pushed_items
 
+def generate_geffect_place(counter):
+    digit = counter // 26 + 1
+    letter = chr(ord("A") + counter % 26)
+
+    return f"U{digit}{letter}"
+
+async def process_planet_effects(
+    source, target, place, keys, QueueAll, batch, exclude=[], game_time=0, last_effect_cache={}
+):
+    pushed_items = []
+    newlist = []
+    oldlist = []
+    changelist = []
+
+    for event in source:
+        oc = await check_compare_value_list(keys, [event[key] for key in keys], target)
+        if not oc:
+            pindex=str(event['index'])
+            geffect=str(event['galacticEffectId'])
+            if geffect not in last_effect_cache:
+                last_effect_cache[geffect]={
+                    'free_places':[],
+                    'counter':0,
+                    'planets':{}
+                }
+            thisid=""
+            if last_effect_cache[geffect]['free_places']:
+                thisid=last_effect_cache[geffect]['free_places'].pop(0)
+            else:
+                thisid=generate_geffect_place(last_effect_cache[geffect]['counter'])
+                last_effect_cache[geffect]['counter']+=1
+            if pindex not in last_effect_cache[geffect]['planets']:
+                last_effect_cache[geffect]['planets'][pindex]=[]
+            last_effect_cache[geffect]['planets'][pindex].append(thisid)
+            event.place_id=thisid
+            item = GameEvent(
+                mode=EventModes.NEW,
+                place=place,
+                batch=batch,
+                value=event,
+                game_time=game_time,
+            )
+            newlist.append(item)
+            pushed_items.append(item)
+        else:
+            differ = await get_differing_fields(oc, event, to_ignore=exclude)
+            if differ:
+                item = GameEvent(
+                    mode=EventModes.CHANGE,
+                    place=place,
+                    batch=batch,
+                    value=(event, differ),
+                    game_time=game_time,
+                )
+                changelist.append(item)
+                pushed_items.append(item)
+
+    for event in target:
+        if not await check_compare_value_list(
+            keys, [event[key] for key in keys], source
+        ):
+            pindex=str(event['index'])
+            geffect=str(event['galacticEffectId'])
+            if geffect not in last_effect_cache:
+                last_effect_cache[geffect]={
+                    'free_places':[],
+                    'counter':0,
+                    'planets':{}
+                }
+            lastid=generate_geffect_place(0)
+
+            if pindex not in last_effect_cache[geffect]['planets']:
+                last_effect_cache[geffect]['planets'][pindex]=[]
+            if last_effect_cache[geffect]['planets'][pindex]:
+                lastid=last_effect_cache[geffect]['planets'][pindex].pop(0)
+
+            if last_effect_cache[geffect]['free_places']:
+                last_effect_cache[geffect]['free_places'].append(lastid)
+            else:
+                 last_effect_cache[geffect]['free_places']=[]
+            event.place_id=lastid
+            item = GameEvent(
+                mode=EventModes.REMOVE,
+                place=place,
+                batch=batch,
+                value=event,
+                game_time=game_time,
+            )
+            oldlist.append(item)
+            pushed_items.append(item)
+
+    if place == "planetAttacks":
+        pass
+    else:
+        combined_list = oldlist + newlist + changelist
+        await QueueAll.put(combined_list)
+
+    return pushed_items
 
 DEADZONE = False
 
@@ -329,6 +427,7 @@ async def detect_loggable_changes(
     QueueAll: asyncio.Queue,
     statics: StaticAll,
     ignore_these: Optional[List[str]] = None,
+    last_effect_cache:Dict[str,Any]={}
 ) -> Tuple[dict, list]:
     global DEADZONE
     out = {
@@ -427,7 +526,7 @@ async def detect_loggable_changes(
         game_time=gametime,
     )
     ### PLANET EFFECTS
-    superlist += await process_planet_attacks(
+    superlist += await process_planet_effects(
         new.status.planetActiveEffects,
         old.status.planetActiveEffects,
         "planetEffects",
@@ -436,6 +535,7 @@ async def detect_loggable_changes(
         batch,
         ["retrieved_at", "time_delta", "self"],
         game_time=gametime,
+        last_effect_cache=last_effect_cache
     )
 
     if new.news_feed is not None and old.news_feed is not None:

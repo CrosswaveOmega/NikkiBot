@@ -154,6 +154,7 @@ class ApiStatus:
         "ignore_these",
         "grab_station",
         "deadzone",
+        "last_effect_cache"
     ]
 
     def __init__(
@@ -186,6 +187,7 @@ class ApiStatus:
             effectstatic=EffectStatic(**effectjson),
         )
         self.stations = {}
+        self.last_effect_cache={}
         self.ignore_these = []
         self.grab_station = get_station
         self.last_station_time = datetime.datetime(2024, 1, 1, 1, 1, 0)
@@ -223,6 +225,7 @@ class ApiStatus:
             "dispatches": [d.model_dump(exclude="time_delta") for d in self.dispatches],
             "warall": self.warall.model_dump(exclude="time_delta"),
             "wt": self.wt,
+            "last_effect_cache":self.last_effect_cache
         }
 
     @property
@@ -250,18 +253,23 @@ class ApiStatus:
             for item in v:
                 campaign_list.push(Campaign2(**item))
             newcks.campaigns[int(k)] = campaign_list
-        if "resources" in data:
-            for k, v in data["resources"].items():
-                resource_list = LimitedSizeList(newcks.max_list_size)
-                for item in v:
-                    resource_list.push(GlobalResource(**item))
-                newcks.resources[int(k)] = resource_list
         if "regions" in data:
             for k, v in data["regions"].items():
                 resource_list = LimitedSizeList(newcks.max_list_size)
                 for item in v:
                     resource_list.push(Region(**item))
                 newcks.regions[int(k)] = resource_list
+        if "last_effect_cache" in data:
+            newcks.last_effect_cache=data['last_effect_cache']
+        else:
+            newcks.last_effect_cache={}
+        if "resources" in data:
+            for k, v in data["resources"].items():
+                resource_list = LimitedSizeList(newcks.max_list_size)
+                for item in v:
+                    resource_list.push(GlobalResource(**item))
+                newcks.resources[int(k)] = resource_list
+        
         else:
             newcks.resources = {}
         newcks.planets = {int(k): Planet(**v) for k, v in data["planets"].items()}
@@ -321,6 +329,7 @@ class ApiStatus:
                         Queue,
                         self.statics,
                         self.ignore_these,
+                        self.last_effect_cache
                     )
                     if PlanetQueue:
                         await detect_loggable_changes_planet(

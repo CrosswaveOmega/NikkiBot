@@ -388,7 +388,7 @@ class Batch:
             for evt in planet_data.evt:
                 if evt.mode == EventModes.CHANGE and evt.place == "regions":
                     (info, dump) = evt.value
-                    ym = "region_siege_changehands"
+                    ym = "region_siege_alter"
                     if "isAvailable" in dump:
                         if info.isAvailable:
                             ym = "region_siege_start"
@@ -397,7 +397,8 @@ class Batch:
                         elif "owner" in dump:
                             ym = "region_siege_changehands"
                     elif "owner" in dump:
-                        ym = "region_siege_changehands"
+                        if dump['owner']['new']!=None and dump['owner']['old']!=None:
+                            ym = "region_siege_changehands"
                     ctext = alls[ym]
                     target = (
                         ctext[1][0]
@@ -498,6 +499,8 @@ class Batch:
                         .replace("[TYPETEXT]", ctext[2][0])
                         .replace("[PLANET 0]", planet_data.planet.name)
                     )
+                    if act_effect.place_id:
+                        target.replace("UVAR", act_effect.place_id)
                     built_effect = build_planet_effect(
                         statics.effectstatic, act_effect.galacticEffectId
                     )
@@ -1059,6 +1062,7 @@ class Embeds:
         campaign: PlanetActiveEffects,
         planet: Optional[Planet],
         effectid: Optional[KnownPlanetEffect],
+        place_id:str="",
         mode="started",
     ) -> discord.Embed:
         name, sector = campaign.index, None
@@ -1077,6 +1081,10 @@ class Embeds:
         if effectid:
             emb.add_field(
                 name=f"{effectid.name}", value=f"{effectid.description[:100]}"
+            )
+        if place_id:
+            emb.add_field(
+                name=f"Place Id", value=f"{place_id}",inline=False
             )
         emb.set_author(name=f"Planet Effect {mode}.")
         emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
@@ -1659,6 +1667,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             for i, v in snap["messages"].items():
                 self.messageids[int(i)] = v
 
+
         self.lock = asyncio.Lock()
         self.load_test_files()
         nowd = datetime.datetime.now()
@@ -1915,6 +1924,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     build_planet_effect(
                         self.apistatus.statics.effectstatic, value.galacticEffectId
                     ),
+                    value.place_id,
                     "added",
                 )
             elif place == "resources":
@@ -1976,6 +1986,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     build_planet_effect(
                         self.apistatus.statics.effectstatic, value.galacticEffectId
                     ),
+                    
+                    value.place_id,
                     "removed",
                 )
             elif place == "globalEvents":

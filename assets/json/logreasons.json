@@ -67,6 +67,15 @@
         ],
         "if campaign_remove and planet_change, where planet.owner==1"
     ],
+    "region_siege_alter": [
+        "Heeth is liberated", [
+            "[PLANET 0] Region [RegionIndex] [RegionName] [RegionSize] [TYPETEXT] [FACTION] was aktered"
+        ],
+        [
+            "owned by "
+        ],
+        "if campaign_remove and planet_change, where planet.owner==1"
+    ],
     "region_siege_end": [
         "Heeth is liberated", [
             "[PLANET 0] Region [RegionIndex] [RegionName] [RegionSize] [TYPETEXT] "
