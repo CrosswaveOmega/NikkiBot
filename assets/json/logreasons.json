@@ -69,7 +69,7 @@
     ],
     "region_siege_alter": [
         "Heeth is liberated", [
-            "[PLANET 0] Region [RegionIndex] [RegionName] [RegionSize] [TYPETEXT] [FACTION] was aktered"
+            "[PLANET 0] Region [RegionIndex] [RegionName] [RegionSize] [TYPETEXT] [FACTION] was altered"
         ],
         [
             "owned by "
