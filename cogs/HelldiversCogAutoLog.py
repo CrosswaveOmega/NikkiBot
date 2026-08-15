@@ -87,9 +87,12 @@ class SimplePlanet(BaseApiModel):
 
         pval = planets_data_json.get(str(planet_status.index), None)
         name = sector = "NA"
+
         if pval:
             name = pval["name"]
             sector = pval["sector"]
+        else:
+            name=f"Planet P#{planet_status.index}"
 
         return cls(
             index=int(planet_status.index),
