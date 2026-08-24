@@ -1474,7 +1474,7 @@ class Embeds:
                     dump.pop(i)
             for i, v in dump.items():
                 emb.add_field(
-                    name=i.capitalize()[:50], value=str(v)[:200], inline=False
+                    name=i.capitalize()[:50], value=str(v)[:200], inline=True
                 )
                 embs = embs + 1
                 if embs >= 20:
