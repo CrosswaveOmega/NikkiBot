@@ -21,7 +21,29 @@
     ],
 
     "dispatch new": [
-        "DSS deploys to Vog-Sojoth of the Tanis sector", [
+        "Dispatch: HELLO ", [
+            "[TYPETEXT] [HDML]"
+        ],
+        [
+            "Dispatch: "
+        ],
+        "if station move only"
+
+    ],
+    
+    "mo new": [
+        "Major Order: Hallo", [
+            "[TYPETEXT] [HDML]"
+        ],
+        [
+            "Dispatch: "
+        ],
+        "if station move only"
+
+    ],
+    
+    "mo remove": [
+        "SPECIAL", [
             "[TYPETEXT] [HDML]"
         ],
         [

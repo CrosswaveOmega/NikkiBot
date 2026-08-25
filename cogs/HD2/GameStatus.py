@@ -17,6 +17,9 @@ from discord.utils import format_dt as fdt
 from hd2api import extract_timestamp as et
 from hd2api.util.utils import set_status_emoji
 
+from dataclasses import dataclass, field
+
+
 MAX_ATTEMPT = 3
 
 status_emoji: Dict[str, str] = {
@@ -61,6 +64,36 @@ def lmj(directory_path: str):
                 except json.JSONDecodeError as e:
                     gui.gprint(f"Error loading JSON from {filename}: {e}")
     return planets_data
+
+
+    
+class MOCache(BaseModel):
+    model_config = pydantic.ConfigDict(extra="allow")
+    start_year: int = 2023
+    yearcount: int = 0
+    ymcount: dict[str, int] = Field(default_factory=dict)
+    assigns: dict[str, str] = Field(default_factory=dict)
+
+    def get_tag(self,assignment_id,timestamp=None):
+        if not timestamp:
+            timestamp=datetime.datetime.now(tz=datetime.timezone.utc)
+        assign_id=str(assignment_id)
+        date=timestamp.date()
+        if assign_id not in self.assigns:
+            yearno=date.year -self.start_year
+            monthno=date.month
+            tag=f"A{yearno}-{monthno}"
+            if tag not in self.ymcount:
+                self.ymcount[tag]=0
+            self.ymcount[tag]+=1
+            mytag=f"{tag}-{self.ymcount[tag]}"
+            self.assigns[assign_id]=mytag
+        return self.assigns[assign_id]
+
+
+class AllCache(BaseModel):
+    model_config = pydantic.ConfigDict(extra="allow")
+    mo_cache: MOCache = Field(default_factory=MOCache)
 
 
 class LimitedSizeList(list):
@@ -154,7 +187,8 @@ class ApiStatus:
         "ignore_these",
         "grab_station",
         "deadzone",
-        "last_effect_cache"
+        "last_effect_cache",
+        "all_cache"
     ]
 
     def __init__(
@@ -188,6 +222,7 @@ class ApiStatus:
         )
         self.stations = {}
         self.last_effect_cache={}
+        self.all_cache=AllCache()
         self.ignore_these = []
         self.grab_station = get_station
         self.last_station_time = datetime.datetime(2024, 1, 1, 1, 1, 0)
@@ -225,7 +260,8 @@ class ApiStatus:
             "dispatches": [d.model_dump(exclude="time_delta") for d in self.dispatches],
             "warall": self.warall.model_dump(exclude="time_delta"),
             "wt": self.wt,
-            "last_effect_cache":self.last_effect_cache
+            "last_effect_cache":self.last_effect_cache,
+            "all_cache":self.all_cache.model_dump()
         }
 
     @property
@@ -263,6 +299,13 @@ class ApiStatus:
             newcks.last_effect_cache=data['last_effect_cache']
         else:
             newcks.last_effect_cache={}
+        if "all_cache" in data:
+            newcks.all_cache=AllCache.model_validate(
+                data.get("all_cache", {})
+            )
+        else:
+            newcks.all_cache=AllCache()
+
         if "resources" in data:
             for k, v in data["resources"].items():
                 resource_list = LimitedSizeList(newcks.max_list_size)

@@ -136,14 +136,23 @@ class Events:
         self.evt: List[GameEvent] = []
         self.trig: List[str] = []
         self.hdml = ""
+        self.dispatch_texts=[]
+        self.globevt: List[GameEvent]=[]
         self.ret = None
+        self.apistatus:ApiStatus=None
 
-    def add_event(self, event: GameEvent, key: str) -> None:
+    def add_event(self, event: GameEvent, key: str, apistatus: Optional[ApiStatus]) -> None:
         self.evt.append(event)
+        if apistatus:
+            self.apistatus=apistatus
         if event.mode in [EventModes.NEW, EventModes.REMOVE]:
             self.ret = event.value.retrieved_at
             if event.place == "news":
                 self.hdml += hdml_parse(event.value.message).replace("\n", " ")
+                self.dispatch_texts.append(hdml_parse(event.value.message).replace("\n", " "))
+            if event.place == "globalEvents":
+                self.globevt.append(event)
+
         elif event.mode == EventModes.CHANGE:
             self.ret = event.value[0].retrieved_at
 
@@ -256,6 +265,7 @@ class Batch:
         key: str,
         planet: Optional[Planet],
         sector_name: Optional[str],
+        apistatus: ApiStatus
     ) -> None:
         gui.gprint(key)
         if sector_name is not None:
@@ -267,7 +277,7 @@ class Batch:
                 self.planets[planet_name] = PlanetEvents(planet)
             self.planets[planet_name].add_event(event, key)
         else:
-            self.general.add_event(event, key)
+            self.general.add_event(event, key, apistatus)
 
     def update_planet(
         self, planet_name: str, value: Tuple[Any, Dict[str, Any]], place: str
@@ -275,7 +285,7 @@ class Batch:
         if planet_name in self.planets:
             self.planets[planet_name].update_planet(value, place)
 
-    def process_event(self, event: GameEvent, apistatus: Any) -> None:
+    def process_event(self, event: GameEvent, apistatus: ApiStatus) -> None:
         mode: EventModes = event.mode
         place: str = event.place
         value: Any = event.value
@@ -344,7 +354,12 @@ class Batch:
         if place in ["planetAttacks"]:
             pass
 
-        self.add_event(event, planet_name_source, key, planet, sector_name)
+        if place in ["globalEvents"]:
+            va = value
+            if mode == EventModes.CHANGE:
+                va, _ = value
+
+        self.add_event(event, planet_name_source, key, planet, sector_name,apistatus)
 
         if mode == EventModes.CHANGE and place != "sectors":
             self.update_planet(planet_name_source, value, place)
@@ -365,7 +380,22 @@ class Batch:
         with open(data_path, "r") as file:
             planets_data_json = json.load(file)
 
-        if ctype in ["newlink", "destroylink"]:
+        if ctype in ["mo new","mo remove"]:
+            for event in planet_data.globevt:
+                if event.mode==EventModes.NEW or event.mode==EventModes.REMOVE:
+                    value:GlobalEvent=event.value
+                    aid=value.assignmentId32
+                    if aid:
+                        mo_id=planet_data.apistatus.all_cache.mo_cache.get_tag(aid,value.retrieved_at)
+                        if event.mode==EventModes.NEW:
+                            target=f"Major Order | {mo_id} EPISODENAME-PHASENAME is issued | Objective: ADDME"
+                        if event.mode==EventModes.REMOVE:
+                            target=f"Major Order | {mo_id} EPISODENAME-PHASENAME is [won/failed] | Objective: ADDME"
+                        
+                        target += f" ({custom_strftime(planet_data.ret)})"
+                        targets.append(target)
+        
+        elif ctype in ["newlink", "destroylink"]:
             new, old = planet_data.get_links()
             links = new if ctype == "newlink" else old
             for i in links:
@@ -840,6 +870,10 @@ class Batch:
         combinations: List[str] = []
         if "news_EventModes.NEW" in trigger_list:
             combinations.append("dispatch new")
+        if "globalEvents_EventModes.NEW" in trigger_list:
+            combinations.append("mo new")
+        if "globalEvents_EventModes.REMOVE" in trigger_list:
+            combinations.append("mo remove")
 
         return combinations if combinations else None
 
@@ -1096,7 +1130,7 @@ class Embeds:
 
     @staticmethod
     def globalEventEmbed(
-        evt: GlobalEvent, mode="started", footerchanges=""
+        evt: GlobalEvent, mode="started", footerchanges="",moid=""
     ) -> discord.Embed:
         globtex = ""
         title = ""
@@ -1114,6 +1148,8 @@ class Embeds:
         )
         emb.add_field(name="Event Details", value=evt.strout())
         emb.add_field(name="Timestamp", value=f"Timestamp:{fdt(evt.retrieved_at, 'F')}")
+        if moid:
+            emb.add_field(name="mo_id", value=f" {moid}",inline=False)
         emb.set_author(name=f"Global Event {mode}.")
         emb.set_footer(
             text=f"{footerchanges},EID:{evt.eventId}, {custom_strftime(evt.retrieved_at)}"
@@ -1948,7 +1984,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     if self.messageids.get(mi, None) != value.message:
                         self.messageids[mi] = value.message
                         mc = True
-                embed = Embeds.globalEventEmbed(value, "started")
+                aid=value.assignmentId32
+                tag=""
+                if aid:
+                    tag=self.apistatus.all_cache.mo_cache.get_tag(aid,value.retrieved_at)
+                embed = Embeds.globalEventEmbed(value, "started",moid=tag)
             elif place == "news":
                 embed = Embeds.NewsFeedEmbed(item, "New")
             elif place == "episode":
@@ -2006,7 +2046,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     if self.messageids.get(mi, None) != value.message:
                         self.messageids[mi] = value.message
                         mc = True
-                embed = Embeds.globalEventEmbed(value, "ended")
+                aid=value.assignmentId32
+                tag=""
+                if aid:
+                    tag=self.apistatus.all_cache.mo_cache.get_tag(aid,value.retrieved_at)
+                embed = Embeds.globalEventEmbed(value, "ended",moid=tag)
             elif place == "news":
                 embed = Embeds.NewsFeedEmbed(item, "Retired")
             elif place == "episode":
@@ -2116,6 +2160,10 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 ti = info.titleId32
                 mi = info.messageId32
                 tc, mc = False, 0
+                aid=info.assignmentId32
+                tag=""
+                if aid:
+                    tag=self.apistatus.all_cache.mo_cache.get_tag(aid,info.retrieved_at)
                 footer_delta = ""
                 if info.title:
                     stored = hdml_parse(self.titleids.get(ti, ""))
@@ -2135,11 +2183,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         mc = len(delta) + 1
                 if all(key in ["title", "message"] for key in listv):
                     if tc or mc > 0:
+                        
                         embed = Embeds.globalEventEmbed(
-                            info, f"changed_{tc},{mc}", ",".join(listv)
+                            info, f"changed_{tc},{mc}", ",".join(listv),moid=tag
                         )
                 else:
-                    embed = Embeds.globalEventEmbed(info, "changed", ",".join(listv))
+                    embed = Embeds.globalEventEmbed(info, "changed", ",".join(listv),moid=tag)
             # elif place == "news": embed = Embeds.NewsFeedEmbed(info, "Changed")
             elif place == "resources":
                 if "currentValue" in dump and len(list(dump.keys())) == 1:

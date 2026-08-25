@@ -333,6 +333,47 @@ async def process_planet_effects(
     oldlist = []
     changelist = []
 
+    # REMOVE
+    for event in target:
+        if not await check_compare_value_list(
+            keys, [event[key] for key in keys], source
+        ):
+            pindex=str(event['index'])
+            geffect=str(event['galacticEffectId'])
+            if geffect not in last_effect_cache:
+                last_effect_cache[geffect]={
+                    'free_places':[],
+                    'counter':0,
+                    'planets':{}
+                }
+            lastid=generate_geffect_place(0)
+
+            if pindex not in last_effect_cache[geffect]['planets']:
+                last_effect_cache[geffect]['planets'][pindex]=[]
+            if last_effect_cache[geffect]['planets'][pindex]:
+                lastid=last_effect_cache[geffect]['planets'][pindex].pop(0)
+
+                if 'free_places' in last_effect_cache[geffect]:
+                    if lastid not in last_effect_cache[geffect]['free_places']:
+                        last_effect_cache[geffect]['free_places'].append(lastid)
+                        gui.gprint("ADDED TO CACHE!",last_effect_cache[geffect])
+                else:
+                    last_effect_cache[geffect]['free_places']=[]
+            
+                #last_effect_cache[geffect]['free_places'].append(lastid)
+                #gui.gprint("Cleared CACHE!",last_effect_cache[geffect])
+            event.place_id=lastid
+            item = GameEvent(
+                mode=EventModes.REMOVE,
+                place=place,
+                batch=batch,
+                value=event,
+                game_time=game_time,
+            )
+            oldlist.append(item)
+            pushed_items.append(item)
+
+    # ADD/CHANGE
     for event in source:
         oc = await check_compare_value_list(keys, [event[key] for key in keys], target)
         if not oc:
@@ -376,39 +417,7 @@ async def process_planet_effects(
                 changelist.append(item)
                 pushed_items.append(item)
 
-    for event in target:
-        if not await check_compare_value_list(
-            keys, [event[key] for key in keys], source
-        ):
-            pindex=str(event['index'])
-            geffect=str(event['galacticEffectId'])
-            if geffect not in last_effect_cache:
-                last_effect_cache[geffect]={
-                    'free_places':[],
-                    'counter':0,
-                    'planets':{}
-                }
-            lastid=generate_geffect_place(0)
 
-            if pindex not in last_effect_cache[geffect]['planets']:
-                last_effect_cache[geffect]['planets'][pindex]=[]
-            if last_effect_cache[geffect]['planets'][pindex]:
-                lastid=last_effect_cache[geffect]['planets'][pindex].pop(0)
-
-            if last_effect_cache[geffect]['free_places']:
-                last_effect_cache[geffect]['free_places'].append(lastid)
-            else:
-                 last_effect_cache[geffect]['free_places']=[]
-            event.place_id=lastid
-            item = GameEvent(
-                mode=EventModes.REMOVE,
-                place=place,
-                batch=batch,
-                value=event,
-                game_time=game_time,
-            )
-            oldlist.append(item)
-            pushed_items.append(item)
 
     if place == "planetAttacks":
         pass
