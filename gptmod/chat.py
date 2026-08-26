@@ -42,7 +42,7 @@ class ChatCreation(ApiCore):
         self.presence_penalty = presence_penalty
         self.response_format = response_format
         self.frequency_penalty = frequency_penalty
-        self.reasoning_effort = None
+        self.reasoning_effort = 'none'
         self.use_model = model
 
     async def calloai(self, client):
