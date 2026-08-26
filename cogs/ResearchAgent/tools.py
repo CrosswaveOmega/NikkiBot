@@ -148,7 +148,7 @@ async def read_and_split_pdf(
             client = openai.AsyncClient()
 
             completion = await client.chat.completions.create(
-                model="gpt-5-mini",
+                model="gpt-5.6-luna",
                 messages=[
                     {
                         "role": "system",
@@ -379,7 +379,7 @@ async def summarize(
                 {"role": "system", "content": summary_prompt + prompt},
                 {"role": "user", "content": st},
             ],
-            "gpt-5-mini",
+            "gpt-5.6-luna",
         )
 
     result: str = ""
@@ -396,7 +396,7 @@ async def summarize(
         ]
         completion = await try_until_ok(
             client.chat.completions.create,
-            model="gpt-5-mini",
+            model="gpt-5.6-luna",
             messages=messages,
             timeout=60,
         )
@@ -514,7 +514,7 @@ END
 
     total_tokens = gptmod.util.num_tokens_from_messages(
         [{"role": "system", "content": prompt}, {"role": "user", "content": question}],
-        "gpt-5-mini",
+        "gpt-5.6-luna",
     )
     for e, tup in enumerate(docs):
         doc, _ = tup
@@ -531,7 +531,7 @@ END
         formatted_docs.append(output)
 
         tokens = gptmod.util.num_tokens_from_messages(
-            [{"role": "system", "content": output}], "gpt-5-mini"
+            [{"role": "system", "content": output}], "gpt-5.6-luna"
         )
 
         if total_tokens + tokens >= 14000:
@@ -548,7 +548,7 @@ END
     for tries in range(0, 4):
         try:
             completion = await client.chat.completions.create(
-                model="gpt-5-mini", messages=messages, timeout=60
+                model="gpt-5.6-luna", messages=messages, timeout=60
             )
             return completion.choices[0].message.content
         except Exception as e:

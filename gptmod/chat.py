@@ -26,7 +26,7 @@ class ChatCreation(ApiCore):
         response_format: Optional[Dict[str, str]] = None,
         tools: Optional[List[Dict[str, str]]] = None,
         tool_choice: Optional[Union[Dict[str, str], str]] = None,
-        model="gpt-5-mini",
+        model="gpt-5.6-luna",
     ):
         self.messages = []
         if messages is not None:
@@ -54,7 +54,7 @@ class ChatCreation(ApiCore):
 
     def to_dict(self, pro=True):
         data = super().to_dict()
-        data["model"] = "gpt-5-mini"
+        data["model"] = "gpt-5.6-luna"
         return data
 
     def summary(self):

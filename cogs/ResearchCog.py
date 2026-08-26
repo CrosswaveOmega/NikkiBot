@@ -365,7 +365,7 @@ class ResearchCog(commands.Cog, TC_Cog_Mixin):
                     {"role": "system", "content": prompt},
                     {"role": "user", "content": st},
                 ],
-                "gpt-5-mini",
+                "gpt-5.6-luna",
             )
 
         fil = prioritized_string_split(
