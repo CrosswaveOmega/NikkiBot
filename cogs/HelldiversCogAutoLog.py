@@ -141,7 +141,7 @@ class Events:
         self.ret = None
         self.apistatus:ApiStatus=None
 
-    def add_event(self, event: GameEvent, key: str, apistatus: Optional[ApiStatus]) -> None:
+    def add_event(self, event: GameEvent, key: str, apistatus: Optional[ApiStatus]=None) -> None:
         self.evt.append(event)
         if apistatus:
             self.apistatus=apistatus
