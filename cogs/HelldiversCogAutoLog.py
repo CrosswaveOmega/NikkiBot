@@ -1616,6 +1616,7 @@ class Embeds:
         emb.set_author(name="Something New Value Change")
         emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
         return emb
+    
     @staticmethod
     def timeEmbed(
         campaign: WarStatus, name: str, mode="started"
@@ -1624,21 +1625,31 @@ class Embeds:
         wartime = campaign.time
 
         # campaign.time is in seconds
-        game_day = campaign.time / 60 / 60 / 24
+        total_seconds = int(campaign.time)
+
+        days = total_seconds // 86400
+        hours = (total_seconds % 86400) // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
 
         emb = discord.Embed(
             title="Time Marches on",
             description=(
                 f"Time marches on, and the age of a new king draws nearer...\n"
-                f"Game Day: {game_day:.2f}"
+                f"Day #{days}, {hours:02d}:{minutes:02d}:{seconds:02d}"
             ),
             timestamp=campaign.retrieved_at,
             color=0x000054,
         )
 
         emb.add_field(
-            name="Game Day",
-            value=f"Day #{int(game_day)} ({game_day:.2f} days)",
+            name="Game Time",
+            value=(
+                f"Day #{days}\n"
+                f"{hours:02d} hours, "
+                f"{minutes:02d} minutes, "
+                f"{seconds:02d} seconds"
+            ),
             inline=True,
         )
 
@@ -2425,6 +2436,15 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
     async def load_test_now(self, ctx: commands.Context):
         await self.load_log()
         await ctx.send("Done testing now.")
+
+    @commands.is_owner()
+    @commands.command(name="wartime")
+    async def time_marches_on(self, ctx: commands.Context):
+        
+        wartime=self.apistatus.warall.status
+        embed = Embeds.timeEmbed(wartime, 'started', mode=f"added")
+        await ctx.send(embed=embed)
+
 
     @commands.is_owner()
     @commands.command(name="get_last_recorded_positions")
