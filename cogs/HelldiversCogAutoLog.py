@@ -764,6 +764,14 @@ class Batch:
                         combinations.append(inp)
                     # combinations.append("planet_effect_remove")
                     gui.gprint(combinations, evt.mode, evt.place, evt.value)
+        if (
+            "planets_EventModes.CHANGE" in trigger_list
+            and "campaign_EventModes.REMOVE" not in trigger_list
+        ):
+            if planet and planet.owner != 1:
+                new, old = planet_data.get_last_planet_owner()
+                if old != new:
+                    combinations.append("planet flip")
 
         if self.contains_all_values(
             trigger_list, ["campaign_EventModes.NEW", "planetevents_EventModes.NEW"]
@@ -830,15 +838,6 @@ class Batch:
                 new, old = planet_data.get_last_planet_owner()
                 if old != new:
                     combinations.append("planet won")
-
-        if (
-            "planets_EventModes.CHANGE" in trigger_list
-            and "campaign_EventModes.REMOVE" not in trigger_list
-        ):
-            if planet and planet.owner != 1:
-                new, old = planet_data.get_last_planet_owner()
-                if old != new:
-                    combinations.append("planet flip")
 
         if "planets_EventModes.CHANGE" in trigger_list:
             pass
