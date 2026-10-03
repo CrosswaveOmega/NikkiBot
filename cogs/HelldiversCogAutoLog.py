@@ -58,7 +58,7 @@ from cogs.HD2.diff_util import process_planet_attacks, GameEvent, EventModes
 from utility.manual_load import load_json_with_substitutions
 
 
-DAY_ONE = datetime(2024, 2, 8, 9, 0, 0, tzinfo=datetime.timezone.utc)
+DAY_ONE = datetime.datetime(2024, 2, 8, 9, 0, 0, tzinfo=datetime.timezone.utc)
 
 
 def ordinal(n):
