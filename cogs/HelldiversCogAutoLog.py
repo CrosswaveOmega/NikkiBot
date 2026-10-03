@@ -381,7 +381,7 @@ class Batch:
             va = value
             if mode == EventModes.CHANGE:
                 va, _ = value
-        if place in ["globalEvents"]:
+        if place in ["time_marches_on"]:
             va = value
             if mode == EventModes.CHANGE:
                 va, _ = value
