@@ -23,7 +23,7 @@ def past_9am_utc(dt):
 
     dt = dt.astimezone(timezone.utc)
     print(dt.hour,dt.minute)
-    return dt.hour >= 19 #9
+    return dt.hour >= 9
 
 
 class EventModes(Enum):
