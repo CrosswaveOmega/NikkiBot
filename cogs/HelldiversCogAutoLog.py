@@ -1659,7 +1659,7 @@ class Embeds:
             inline=True,
         )
 
-        emb.set_author(name="Something New Value Change")
+        emb.set_author(name="The wartime day has changed...")
         emb.set_footer(
             text=f"{custom_strftime(campaign.retrieved_at)}"
         )
