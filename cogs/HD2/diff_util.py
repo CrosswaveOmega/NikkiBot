@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import timezone
 import logging
 from typing import *
 
@@ -14,6 +15,15 @@ from hd2api.builders import *
 from hd2api.models import DiveharderAll, StaticAll, Region, Episodes
 from hd2api.models.ABC.model import BaseApiModel
 from pydantic import Field
+
+
+def past_9am_utc(dt):
+    if dt is None:
+        return False
+
+    dt = dt.astimezone(timezone.utc)
+    print(dt.hour,dt.minute)
+    return dt.hour >= 19 #9
 
 
 class EventModes(Enum):
@@ -459,10 +469,11 @@ async def detect_loggable_changes(
         "news": {"new": {}, "changes": {}, "old": {}},
         "stats_raw": {"changes": {}},
         "info_raw": {"changes": {}},
+
     }
     batch = (int(new.retrieved_at.timestamp()) >> 4) | (random.randint(0, 15))
-
     superlist = []
+
     if old.status.time == new.status.time:
         if not DEADZONE:
             newitem = GameEvent(
@@ -498,6 +509,38 @@ async def detect_loggable_changes(
 
             await QueueAll.put([newitem])
     gametime = new.status.time
+
+    
+    if not past_9am_utc(old.retrieved_at) and past_9am_utc(new.retrieved_at):
+        print(
+            f"9:00 AM UTC crossed: "
+            f"{old.retrieved_at} to {new.retrieved_at}"
+        )
+        item = GameEvent(
+            mode=EventModes.NEW,
+            place="time_marches_on",
+            batch=batch,
+            value=new.war_info,
+            game_time=gametime,
+        )
+        superlist.append(item)
+        await QueueAll.put([item])
+
+    old_day = int(old.status.time / 60 / 60 / 24)
+    new_day = int(new.status.time / 60 / 60 / 24)
+
+    if new_day > old_day:
+        print(f"Game day crossed: Day {old_day} tp Day {new_day}")
+        item = GameEvent(
+            mode=EventModes.NEW,
+            place="time_marches_on_2",
+            batch=batch,
+            value=new.status,
+            game_time=gametime,
+        )
+        superlist.append(item)
+        await QueueAll.put([item])
+
     rawout = await get_differing_fields(
         old.status,
         new.status,
