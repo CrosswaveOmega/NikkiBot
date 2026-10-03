@@ -92,7 +92,7 @@ class SimplePlanet(BaseApiModel):
             name = pval["name"]
             sector = pval["sector"]
         else:
-            name=f"Planet P#{planet_status.index}"
+            name = f"Planet P#{planet_status.index}"
 
         return cls(
             index=int(planet_status.index),
@@ -136,20 +136,24 @@ class Events:
         self.evt: List[GameEvent] = []
         self.trig: List[str] = []
         self.hdml = ""
-        self.dispatch_texts=[]
-        self.globevt: List[GameEvent]=[]
+        self.dispatch_texts = []
+        self.globevt: List[GameEvent] = []
         self.ret = None
-        self.apistatus:ApiStatus=None
+        self.apistatus: ApiStatus = None
 
-    def add_event(self, event: GameEvent, key: str, apistatus: Optional[ApiStatus]=None) -> None:
+    def add_event(
+        self, event: GameEvent, key: str, apistatus: Optional[ApiStatus] = None
+    ) -> None:
         self.evt.append(event)
         if apistatus:
-            self.apistatus=apistatus
+            self.apistatus = apistatus
         if event.mode in [EventModes.NEW, EventModes.REMOVE]:
             self.ret = event.value.retrieved_at
             if event.place == "news":
                 self.hdml += hdml_parse(event.value.message).replace("\n", " ")
-                self.dispatch_texts.append(hdml_parse(event.value.message).replace("\n", " "))
+                self.dispatch_texts.append(
+                    hdml_parse(event.value.message).replace("\n", " ")
+                )
             if event.place == "globalEvents":
                 self.globevt.append(event)
 
@@ -265,7 +269,7 @@ class Batch:
         key: str,
         planet: Optional[Planet],
         sector_name: Optional[str],
-        apistatus: ApiStatus
+        apistatus: ApiStatus,
     ) -> None:
         gui.gprint(key)
         if sector_name is not None:
@@ -359,7 +363,7 @@ class Batch:
             if mode == EventModes.CHANGE:
                 va, _ = value
 
-        self.add_event(event, planet_name_source, key, planet, sector_name,apistatus)
+        self.add_event(event, planet_name_source, key, planet, sector_name, apistatus)
 
         if mode == EventModes.CHANGE and place != "sectors":
             self.update_planet(planet_name_source, value, place)
@@ -380,21 +384,35 @@ class Batch:
         with open(data_path, "r") as file:
             planets_data_json = json.load(file)
 
-        if ctype in ["mo new","mo remove"]:
+        if ctype in ["mo new", "mo remove"]:
             for event in planet_data.globevt:
-                if event.mode==EventModes.NEW or event.mode==EventModes.REMOVE:
-                    value:GlobalEvent=event.value
-                    aid=value.assignmentId32
+                if event.mode == EventModes.NEW or event.mode == EventModes.REMOVE:
+                    value: GlobalEvent = event.value
+                    aid = value.assignmentId32
                     if aid:
-                        mo_id=planet_data.apistatus.all_cache.mo_cache.get_tag(aid,value.retrieved_at)
-                        if event.mode==EventModes.NEW:
-                            target=f"Major Order | {mo_id} EPISODENAME-PHASENAME is issued | Objective: ADDME"
-                        if event.mode==EventModes.REMOVE:
-                            target=f"Major Order | {mo_id} EPISODENAME-PHASENAME is [won/failed] | Objective: ADDME"
-                        
+                        mo_id = planet_data.apistatus.all_cache.mo_cache.get_tag(
+                            aid, value.retrieved_at
+                        )
+
+                        episode, phase = (
+                            planet_data.apistatus.warall.episodes.lookup_episode(
+                                value.id32
+                            )
+                        )
+                        epname = "EPISODENAME"
+                        phasename = "PHASENAME"
+                        if episode:
+                            epname = str(episode.title or episode.id32)
+                        if phase:
+                            phasename = str(phase.intro_title or phase.id32)
+                        if event.mode == EventModes.NEW:
+                            target = f"Major Order | {mo_id} {epname}-{phasename} is issued | Objective: ADDME"
+                        if event.mode == EventModes.REMOVE:
+                            target = f"Major Order | {mo_id} {epname}-{phasename} is [won/failed] | Objective: ADDME"
+
                         target += f" ({custom_strftime(planet_data.ret)})"
                         targets.append(target)
-        
+
         elif ctype in ["newlink", "destroylink"]:
             new, old = planet_data.get_links()
             links = new if ctype == "newlink" else old
@@ -430,7 +448,10 @@ class Batch:
                         elif "owner" in dump:
                             ym = "region_siege_changehands"
                     elif "owner" in dump:
-                        if dump['owner']['new']!=None and dump['owner']['old']!=None:
+                        if (
+                            dump["owner"]["new"] != None
+                            and dump["owner"]["old"] != None
+                        ):
                             ym = "region_siege_changehands"
                     ctext = alls[ym]
                     target = (
@@ -442,17 +463,17 @@ class Batch:
 
                     target += f" ({custom_strftime(planet_data.ret)})"
                     if ym == "region_siege_start":
-                        thisowner=1
+                        thisowner = 1
                         if info.owner is not None:
-                            thisowner=info.owner
+                            thisowner = info.owner
 
                         else:
-                            thisowner=planet_data.planet.owner
+                            thisowner = planet_data.planet.owner
 
                         target = target.replace(
-                                "[FACTION]",
-                                faction_dict.get(1, "UNKNOWN"),
-                            )
+                            "[FACTION]",
+                            faction_dict.get(1, "UNKNOWN"),
+                        )
 
                     else:
                         if info.owner is not None:
@@ -475,22 +496,20 @@ class Batch:
                     targets.append(target)
 
         elif "planet_effect" in ctype:
-            endv=ctype.split("_")[-1]
-            #ctype="planet_effect_add_P#186-1375"
+            endv = ctype.split("_")[-1]
+            # ctype="planet_effect_add_P#186-1375"
 
-            endv=ctype.split("_")[-1]
+            endv = ctype.split("_")[-1]
             m = re.match(r"^P#(\d+)-(\d+)$", endv)
-            print(ctype,m)
+            print(ctype, m)
             if m:
                 planet_index = int(m.group(1))
                 galactic_effect_id = int(m.group(2))
 
             for evt in planet_data.evt:
-                
                 if evt.mode == EventModes.NEW and evt.place == "planetEffects":
-                    
                     act_effect: PlanetActiveEffects = evt.value
-                    if galactic_effect_id!=int(act_effect.galacticEffectId):
+                    if galactic_effect_id != int(act_effect.galacticEffectId):
                         continue
                     ym = "planet_effect_add"
                     built_effect = build_planet_effect(
@@ -505,7 +524,7 @@ class Batch:
                         .replace("[PLANET 0]", planet_data.planet.name)
                     )
                     if act_effect.place_id:
-                        target=target.replace("UVAR", act_effect.place_id)
+                        target = target.replace("UVAR", act_effect.place_id)
                     target = target.replace(
                         "[PLANET EFFECT NAME]", built_effect.name or "NAME UNKNOWN"
                     )
@@ -519,7 +538,7 @@ class Batch:
                         targets.append(target)
                 if evt.mode == EventModes.REMOVE and evt.place == "planetEffects":
                     act_effect: PlanetActiveEffects = evt.value
-                    if galactic_effect_id!=int(act_effect.galacticEffectId):
+                    if galactic_effect_id != int(act_effect.galacticEffectId):
                         continue
                     ym = "planet_effect_remove"
                     built_effect = build_planet_effect(
@@ -534,7 +553,7 @@ class Batch:
                         .replace("[PLANET 0]", planet_data.planet.name)
                     )
                     if act_effect.place_id:
-                        target=target.replace("UVAR", act_effect.place_id)
+                        target = target.replace("UVAR", act_effect.place_id)
                     built_effect = build_planet_effect(
                         statics.effectstatic, act_effect.galacticEffectId
                     )
@@ -549,7 +568,7 @@ class Batch:
                     target += f" ({custom_strftime(planet_data.ret)})"
                     if target not in targets:
                         targets.append(target)
-                    #targets.append(target)
+                    # targets.append(target)
 
         elif planet_data.planet is not None:
             target = (
@@ -652,12 +671,12 @@ class Batch:
             if combo:
                 for c in combo:
                     if c in self.hd2 or "planet_effect" in c:
-                        target=c
+                        target = c
                         if "planet_effect_add" in c:
-                            target="planet_effect_add"
+                            target = "planet_effect_add"
                         if "planet_effect_remove" in c:
-                            target="planet_effect_remove"
-                            
+                            target = "planet_effect_remove"
+
                         text: List[str] = await self.format_combo_text(
                             c,
                             planet_data,
@@ -718,34 +737,15 @@ class Batch:
         planet: Planet = planet_data.planet
         combinations: List[str] = []
 
-        if "station_EventModes.CHANGE" in trigger_list:
-            for evt in planet_data.evt:
-                if evt.mode == EventModes.CHANGE and evt.place == "station":
-                    (info, dump) = evt.value
-                    if "planetIndex" in dump:
-                        combinations.append("station move")
-                    elif "activeEffectIds" in dump:
-                        gui.gprint(dump)
-                        combinations.append("dss effect")
-
-        if "regions_EventModes.CHANGE" in trigger_list:
-            for evt in planet_data.evt:
-                gui.gprint(evt.mode, evt.place, evt.value)
-                if evt.mode == EventModes.CHANGE and evt.place == "regions":
-                    (info, dump) = evt.value
-                    if "region" not in combinations:
-                        # many regions per planet.
-                        combinations.append("region")
-
-                        gui.gprint(combinations, evt.mode, evt.place, evt.value)
-
         if "planetEffects_EventModes.NEW" in trigger_list:
             for evt in planet_data.evt:
                 gui.gprint(evt.mode, evt.place, evt.value)
                 if evt.mode == EventModes.NEW and evt.place == "planetEffects":
                     # if "planet_effect_add" not in combinations:
-                    string=f"P#{planet_data.planet.index}-{evt.value.galacticEffectId}"
-                    inp=f"planet_effect_add_{string}"
+                    string = (
+                        f"P#{planet_data.planet.index}-{evt.value.galacticEffectId}"
+                    )
+                    inp = f"planet_effect_add_{string}"
                     if inp not in combinations:
                         combinations.append(inp)
 
@@ -756,18 +756,14 @@ class Batch:
                 if evt.mode == EventModes.REMOVE and evt.place == "planetEffects":
                     # if "planet_effect_remove" not in combinations:
                     # many planetEffects per planet.
-                    string=f"P#{planet_data.planet.index}-{evt.value.galacticEffectId}"
-                    inp=f"planet_effect_remove_{string}"
+                    string = (
+                        f"P#{planet_data.planet.index}-{evt.value.galacticEffectId}"
+                    )
+                    inp = f"planet_effect_remove_{string}"
                     if inp not in combinations:
                         combinations.append(inp)
-                    #combinations.append("planet_effect_remove")
+                    # combinations.append("planet_effect_remove")
                     gui.gprint(combinations, evt.mode, evt.place, evt.value)
-
-        if (
-            "campaign_EventModes.NEW" in trigger_list
-            and "planetevents_EventModes.NEW" not in trigger_list
-        ):
-            combinations.append("cstart")
 
         if self.contains_all_values(
             trigger_list, ["campaign_EventModes.NEW", "planetevents_EventModes.NEW"]
@@ -777,20 +773,6 @@ class Batch:
             else:
                 combinations.append("defense start")
 
-        if (
-            "campaign_EventModes.REMOVE" in trigger_list
-            and "planetevents_EventModes.REMOVE" not in trigger_list
-        ):
-            combinations.append("cend")
-
-        if self.contains_all_values(
-            trigger_list, ["campaign_EventModes.REMOVE", "planets_EventModes.CHANGE"]
-        ):
-            if planet and planet.owner == 1:
-                new, old = planet_data.get_last_planet_owner()
-                if old != new:
-                    combinations.append("planet won")
-
         if self.contains_all_values(
             trigger_list,
             [
@@ -799,8 +781,8 @@ class Batch:
                 "planets_EventModes.CHANGE",
             ],
         ):
-            if planet and planet.owner != 1:
-                combinations.append("defense lost")
+            if planet and planet.owner == 1:
+                combinations.append("defense won")
 
         if (
             self.contains_all_values(
@@ -827,8 +809,27 @@ class Batch:
                 "planets_EventModes.CHANGE",
             ],
         ):
+            if planet and planet.owner != 1:
+                combinations.append("defense lost")
+
+        if (
+            "campaign_EventModes.NEW" in trigger_list
+            and "planetevents_EventModes.NEW" not in trigger_list
+        ):
+            combinations.append("cstart")
+        if (
+            "campaign_EventModes.REMOVE" in trigger_list
+            and "planetevents_EventModes.REMOVE" not in trigger_list
+        ):
+            combinations.append("cend")
+
+        if self.contains_all_values(
+            trigger_list, ["campaign_EventModes.REMOVE", "planets_EventModes.CHANGE"]
+        ):
             if planet and planet.owner == 1:
-                combinations.append("defense won")
+                new, old = planet_data.get_last_planet_owner()
+                if old != new:
+                    combinations.append("planet won")
 
         if (
             "planets_EventModes.CHANGE" in trigger_list
@@ -842,6 +843,27 @@ class Batch:
         if "planets_EventModes.CHANGE" in trigger_list:
             pass
             # combinations.append("pcheck")
+
+        if "regions_EventModes.CHANGE" in trigger_list:
+            for evt in planet_data.evt:
+                gui.gprint(evt.mode, evt.place, evt.value)
+                if evt.mode == EventModes.CHANGE and evt.place == "regions":
+                    (info, dump) = evt.value
+                    if "region" not in combinations:
+                        # many regions per planet.
+                        combinations.append("region")
+
+                        gui.gprint(combinations, evt.mode, evt.place, evt.value)
+
+        if "station_EventModes.CHANGE" in trigger_list:
+            for evt in planet_data.evt:
+                if evt.mode == EventModes.CHANGE and evt.place == "station":
+                    (info, dump) = evt.value
+                    if "planetIndex" in dump:
+                        combinations.append("station move")
+                    elif "activeEffectIds" in dump:
+                        gui.gprint(dump)
+                        combinations.append("dss effect")
 
         if any(
             value in trigger_list for value in ["planetInfo_EventModes.CHANGE"]
@@ -1100,7 +1122,7 @@ class Embeds:
         campaign: PlanetActiveEffects,
         planet: Optional[Planet],
         effectid: Optional[KnownPlanetEffect],
-        place_id:str="",
+        place_id: str = "",
         mode="started",
     ) -> discord.Embed:
         name, sector = campaign.index, None
@@ -1121,16 +1143,14 @@ class Embeds:
                 name=f"{effectid.name}", value=f"{effectid.description[:100]}"
             )
         if place_id:
-            emb.add_field(
-                name=f"Place Id", value=f"{place_id}",inline=False
-            )
+            emb.add_field(name=f"Place Id", value=f"{place_id}", inline=False)
         emb.set_author(name=f"Planet Effect {mode}.")
         emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
         return emb
 
     @staticmethod
     def globalEventEmbed(
-        evt: GlobalEvent, mode="started", footerchanges="",moid=""
+        evt: GlobalEvent, mode="started", footerchanges="", moid=""
     ) -> discord.Embed:
         globtex = ""
         title = ""
@@ -1149,7 +1169,7 @@ class Embeds:
         emb.add_field(name="Event Details", value=evt.strout())
         emb.add_field(name="Timestamp", value=f"Timestamp:{fdt(evt.retrieved_at, 'F')}")
         if moid:
-            emb.add_field(name="mo_id", value=f" {moid}",inline=False)
+            emb.add_field(name="mo_id", value=f" {moid}", inline=False)
         emb.set_author(name=f"Global Event {mode}.")
         emb.set_footer(
             text=f"{footerchanges},EID:{evt.eventId}, {custom_strftime(evt.retrieved_at)}"
@@ -1509,9 +1529,7 @@ class Embeds:
                 if i in dump:
                     dump.pop(i)
             for i, v in dump.items():
-                emb.add_field(
-                    name=i.capitalize()[:50], value=str(v)[:200], inline=True
-                )
+                emb.add_field(name=i.capitalize()[:50], value=str(v)[:200], inline=True)
                 embs = embs + 1
                 if embs >= 20:
                     break
@@ -1608,19 +1626,19 @@ class Embeds:
             value=", ".join(f"{r.mix_id}x{r.amount}" for r in episode.rewards),
             inline=False,
         )
-        justnull=False
+        justnull = False
         for i, v in dump.items():
-            new=v.get('new',{})
-            old=v.get('old',{})
+            new = v.get("new", {})
+            old = v.get("old", {})
             if old is None or new is None:
-                justnull=True
+                justnull = True
             else:
-                justnull=False
+                justnull = False
 
             emb.add_field(
                 name=f"Changed Field {i}",
-                value=f"Old:{json.dumps(old,default=str)[:200]}\n\nNew:{json.dumps(new,default=str)[:200]}",
-                inline=True
+                value=f"Old:{json.dumps(old, default=str)[:200]}\n\nNew:{json.dumps(new, default=str)[:200]}",
+                inline=True,
             )
         emb.set_author(name=f"{mode} episode at wartime {gamevent.game_time}")
         emb.set_footer(text=f"{custom_strftime(episode.retrieved_at)}")
@@ -1657,18 +1675,18 @@ class Embeds:
         emb.add_field(
             name="Timestamp", value=f"Timestamp:{fdt(episodephase.retrieved_at, 'F')}"
         )
-        justnull=False
+        justnull = False
         for i, v in dump.items():
-            new=v.get('new',{})
-            old=v.get('old',{})
+            new = v.get("new", {})
+            old = v.get("old", {})
             if old is None or new is None:
-                justnull=True
+                justnull = True
             else:
-                justnull=False
+                justnull = False
             emb.add_field(
                 name=f"Changed Field {i}",
-                value=f"Old:{json.dumps(old,default=str)[:200]}\n\nNew:{json.dumps(new,default=str)[:200]}",
-                inline=True
+                value=f"Old:{json.dumps(old, default=str)[:200]}\n\nNew:{json.dumps(new, default=str)[:200]}",
+                inline=True,
             )
         emb.set_author(name=f"{mode} phase at wartime {gamevent.game_time}")
         emb.set_footer(text=f"{custom_strftime(episodephase.retrieved_at)}")
@@ -1706,7 +1724,6 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 self.titleids[int(i)] = v
             for i, v in snap["messages"].items():
                 self.messageids[int(i)] = v
-
 
         self.lock = asyncio.Lock()
         self.load_test_files()
@@ -1984,17 +2001,19 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     if self.messageids.get(mi, None) != value.message:
                         self.messageids[mi] = value.message
                         mc = True
-                aid=value.assignmentId32
-                tag=""
+                aid = value.assignmentId32
+                tag = ""
                 if aid:
-                    tag=self.apistatus.all_cache.mo_cache.get_tag(aid,value.retrieved_at)
-                embed = Embeds.globalEventEmbed(value, "started",moid=tag)
+                    tag = self.apistatus.all_cache.mo_cache.get_tag(
+                        aid, value.retrieved_at
+                    )
+                embed = Embeds.globalEventEmbed(value, "started", moid=tag)
             elif place == "news":
                 embed = Embeds.NewsFeedEmbed(item, "New")
             elif place == "episode":
-                embed,_ = Embeds.EpisodeEmbed(item, "New")
+                embed, _ = Embeds.EpisodeEmbed(item, "New")
             elif place == "episodephase":
-                embed,_ = Embeds.EpisodePhaseEmbed(item, "New")
+                embed, _ = Embeds.EpisodePhaseEmbed(item, "New")
             elif place == "planetregions":
                 planet = self.apistatus.planets.get(int(value.planetIndex), None)
                 embed = Embeds.RegionEmbed_PlanetRegion(
@@ -2030,7 +2049,6 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     build_planet_effect(
                         self.apistatus.statics.effectstatic, value.galacticEffectId
                     ),
-                    
                     value.place_id,
                     "removed",
                 )
@@ -2046,17 +2064,19 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     if self.messageids.get(mi, None) != value.message:
                         self.messageids[mi] = value.message
                         mc = True
-                aid=value.assignmentId32
-                tag=""
+                aid = value.assignmentId32
+                tag = ""
                 if aid:
-                    tag=self.apistatus.all_cache.mo_cache.get_tag(aid,value.retrieved_at)
-                embed = Embeds.globalEventEmbed(value, "ended",moid=tag)
+                    tag = self.apistatus.all_cache.mo_cache.get_tag(
+                        aid, value.retrieved_at
+                    )
+                embed = Embeds.globalEventEmbed(value, "ended", moid=tag)
             elif place == "news":
                 embed = Embeds.NewsFeedEmbed(item, "Retired")
             elif place == "episode":
-                embed,_ = Embeds.EpisodeEmbed(item, "Retired")
+                embed, _ = Embeds.EpisodeEmbed(item, "Retired")
             elif place == "episodephase":
-                embed,_ = Embeds.EpisodePhaseEmbed(item, "Retired")
+                embed, _ = Embeds.EpisodePhaseEmbed(item, "Retired")
             elif place == "resources":
                 embed = Embeds.resourceEmbed(
                     value,
@@ -2142,11 +2162,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             elif place == "episode":
                 embed, justnull = Embeds.EpisodeEmbed(item, "Changed")
                 if justnull:
-                    embed=None
+                    embed = None
             elif place == "episodephase":
                 embed, justnull = Embeds.EpisodePhaseEmbed(item, "Changed")
                 if justnull:
-                    embed=None
+                    embed = None
             elif place == "stats_raw":
                 embed = Embeds.dumpEmbed(info, dump, "stats", "changed")
             elif place == "info_raw":
@@ -2160,10 +2180,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 ti = info.titleId32
                 mi = info.messageId32
                 tc, mc = False, 0
-                aid=info.assignmentId32
-                tag=""
+                aid = info.assignmentId32
+                tag = ""
                 if aid:
-                    tag=self.apistatus.all_cache.mo_cache.get_tag(aid,info.retrieved_at)
+                    tag = self.apistatus.all_cache.mo_cache.get_tag(
+                        aid, info.retrieved_at
+                    )
                 footer_delta = ""
                 if info.title:
                     stored = hdml_parse(self.titleids.get(ti, ""))
@@ -2183,12 +2205,13 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         mc = len(delta) + 1
                 if all(key in ["title", "message"] for key in listv):
                     if tc or mc > 0:
-                        
                         embed = Embeds.globalEventEmbed(
-                            info, f"changed_{tc},{mc}", ",".join(listv),moid=tag
+                            info, f"changed_{tc},{mc}", ",".join(listv), moid=tag
                         )
                 else:
-                    embed = Embeds.globalEventEmbed(info, "changed", ",".join(listv),moid=tag)
+                    embed = Embeds.globalEventEmbed(
+                        info, "changed", ",".join(listv), moid=tag
+                    )
             # elif place == "news": embed = Embeds.NewsFeedEmbed(info, "Changed")
             elif place == "resources":
                 if "currentValue" in dump and len(list(dump.keys())) == 1:
