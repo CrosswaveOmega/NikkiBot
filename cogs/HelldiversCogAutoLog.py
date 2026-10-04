@@ -57,7 +57,6 @@ from cogs.HD2.maths import maths
 from cogs.HD2.diff_util import process_planet_attacks, GameEvent, EventModes
 from utility.manual_load import load_json_with_substitutions
 
-
 DAY_ONE = datetime.datetime(2024, 2, 8, 9, 0, 0, tzinfo=datetime.timezone.utc)
 
 
@@ -72,6 +71,32 @@ def ordinal(n):
         }.get(n % 10, "th")
 
     return f"{suffix}"
+
+
+def calculate_real_timestamp(retrieval: datetime.datetime):
+    elapsed = retrieval - DAY_ONE
+    daycount = elapsed.days + 1
+
+    # Extract the retrieved time/date
+    hour = 9
+    minute = 0
+
+    # 12-hour clock
+    ampm = "am" if hour < 12 else "pm"
+    display_hour = hour % 12
+    if display_hour == 0:
+        display_hour = 12
+
+    HH = display_hour
+    MM = f"{minute:02d}"
+
+    day = retrieval.day
+    ext = ordinal(day)
+
+    month = retrieval.strftime("%b")
+    year = retrieval.year
+    return f"Day #{daycount} " f"{HH}:{MM}{ampm} " f"{day}{ext} {month} {year}"
+
 
 class SimplePlanet(BaseApiModel):
     index: Optional[int] = Field(alias="index", default=None)
@@ -174,7 +199,6 @@ class Events:
                 self.globevt.append(event)
             if event.place == "TimeMarchesOn":
                 self.daycount.append(event)
-
 
         elif event.mode == EventModes.CHANGE:
             self.ret = event.value[0].retrieved_at
@@ -440,47 +464,22 @@ class Batch:
                 if event.mode == EventModes.NEW:
 
                     value: GlobalEvent = event.value
-                    retrival=value.retrieved_at
-                    #Get number of days between retrieval and
-                    #Day #1 9:00am 8th Feb 2024 UTC
-                    #aid = value.assignmentId32
+
+                    # Get number of days between retrieval and
+                    # Day #1 9:00am 8th Feb 2024 UTC
+                    # aid = value.assignmentId32
 
                     retrieval = value.retrieved_at.astimezone(datetime.timezone.utc)
 
                     # Number of complete 24-hour periods since Day #1 9:00 AM UTC.
                     # Day #1 itself is 2024-02-08 09:00 UTC.
-                    elapsed = retrieval - DAY_ONE
-                    daycount = elapsed.days + 1
 
-                    # Extract the retrieved time/date
-                    hour = 9
-                    minute = 0
-
-                    # 12-hour clock
-                    ampm = "am" if hour < 12 else "pm"
-                    display_hour = hour % 12
-                    if display_hour == 0:
-                        display_hour = 12
-
-                    HH = display_hour
-                    MM = f"{minute:02d}"
-
-                    day = retrieval.day
-                    ext = ordinal(day)
-
-                    month = retrieval.strftime("%b")
-                    year = retrieval.year
-
+                    realtarget = calculate_real_timestamp(retrieval)
                     target = (
                         "Time marches on, and the age of a new king draws nearer..."
                     )
 
-                    target += (
-                        f"\nDay #{daycount} "
-                        f"{HH}:{MM}{ampm} "
-                        f"{day}{ext} {month} {year}"
-                    )
-
+                    target += realtarget+"\n"
                     target += f" ({custom_strftime(planet_data.ret)})"
 
                     targets.append(target)
@@ -509,7 +508,7 @@ class Batch:
         elif "region" in ctype:
             for evt in planet_data.evt:
                 if evt.mode == EventModes.CHANGE and evt.place == "regions":
-                    (info, dump) = evt.value
+                    info, dump = evt.value
                     ym = "region_siege_alter"
                     if "isAvailable" in dump:
                         if info.isAvailable:
@@ -663,7 +662,7 @@ class Batch:
             if "DSS_EFFECT" in target:
                 for evt in planet_data.evt:
                     if evt.mode == EventModes.CHANGE and evt.place == "station":
-                        (info, dump) = evt.value
+                        info, dump = evt.value
                         if "activeEffectIds" in dump:
                             gui.gprint(dump)
                             # combinations.append("dss effect")
@@ -918,7 +917,7 @@ class Batch:
             for evt in planet_data.evt:
                 gui.gprint(evt.mode, evt.place, evt.value)
                 if evt.mode == EventModes.CHANGE and evt.place == "regions":
-                    (info, dump) = evt.value
+                    info, dump = evt.value
                     if "region" not in combinations:
                         # many regions per planet.
                         combinations.append("region")
@@ -928,7 +927,7 @@ class Batch:
         if "station_EventModes.CHANGE" in trigger_list:
             for evt in planet_data.evt:
                 if evt.mode == EventModes.CHANGE and evt.place == "station":
-                    (info, dump) = evt.value
+                    info, dump = evt.value
                     if "planetIndex" in dump:
                         combinations.append("station move")
                     elif "activeEffectIds" in dump:
@@ -1613,13 +1612,9 @@ class Embeds:
         emb.set_author(name="Something New Value Change")
         emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
         return emb
-    
-    @staticmethod
-    def timeEmbed(
-        campaign: WarStatus, name: str, mode="started"
-    ) -> discord.Embed:
 
-        wartime = campaign.time
+    @staticmethod
+    def timeEmbed(campaign: WarStatus, name: str, mode="started") -> discord.Embed:
 
         # campaign.time is in seconds
         total_seconds = int(campaign.time)
@@ -1633,14 +1628,14 @@ class Embeds:
             title="Time Marches on",
             description=(
                 f"Time marches on, and the age of a new king draws nearer...\n"
-                f"Day #{days}, {hours:02d}:{minutes:02d}:{seconds:02d}"
+                f"Wartime: Day #{days}, {hours:02d}:{minutes:02d}:{seconds:02d}"
             ),
             timestamp=campaign.retrieved_at,
             color=0x000054,
         )
 
         emb.add_field(
-            name="Game Time",
+            name="Internal Game Time based on wartime:",
             value=(
                 f"Day #{days}\n"
                 f"{hours:02d} hours, "
@@ -1649,17 +1644,20 @@ class Embeds:
             ),
             inline=True,
         )
-
+        emb.add_field(
+            name="Current UNIX time",
+            value=(calculate_real_timestamp(campaign.retrieved_at)
+            ),
+            inline=True,
+        )
         emb.add_field(
             name="Timestamp",
             value=f"Timestamp:{fdt(campaign.retrieved_at, 'F')}",
-            inline=True,
+            inline=False,
         )
 
-        emb.set_author(name="The wartime day has changed...")
-        emb.set_footer(
-            text=f"{custom_strftime(campaign.retrieved_at)}"
-        )
+        emb.set_author(name=f"The {name} day has changed...")
+        emb.set_footer(text=f"{custom_strftime(campaign.retrieved_at)}")
 
         return emb
 
@@ -2147,9 +2145,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 )
             elif place == "TimeMarchesOn":
                 pass
-                #embed = Embeds.(value, place, mode=f"added")
+                embed = Embeds.timeEmbed(value, "UNIX Day", mode=f"added")
             elif place == "TimeMarchesOn_2":
-                embed = Embeds.timeEmbed(value, place, mode=f"added")
+                embed = Embeds.timeEmbed(value, "Wartime Day", mode=f"added")
             else:
                 embed = Embeds.dumpEmbedNew(value, place, mode=f"added")
 
@@ -2222,7 +2220,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.dumpEmbedNew(value, place, mode=f"removed")
         elif event_type == EventModes.CHANGE:
             print("IS_EventModes.CHANGE")
-            (info, dump) = value
+            info, dump = value
             if place == "planets" or place == "planetInfo":
                 planet = self.apistatus.planets.get(int(info.index), None)
                 if planet:
@@ -2437,11 +2435,10 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
     @commands.is_owner()
     @commands.command(name="wartime")
     async def TimeMarchesOn(self, ctx: commands.Context):
-        
-        wartime=self.apistatus.warall.status
-        embed = Embeds.timeEmbed(wartime, 'started', mode=f"added")
-        await ctx.send(embed=embed)
 
+        wartime = self.apistatus.warall.status
+        embed = Embeds.timeEmbed(wartime, "started", mode=f"added")
+        await ctx.send(embed=embed)
 
     @commands.is_owner()
     @commands.command(name="get_last_recorded_positions")
