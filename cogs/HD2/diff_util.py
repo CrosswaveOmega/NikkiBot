@@ -518,7 +518,7 @@ async def detect_loggable_changes(
         )
         item = GameEvent(
             mode=EventModes.NEW,
-            place="time_marches_on",
+            place="TimeMarchesOn",
             batch=batch,
             value=new.war_info,
             game_time=gametime,
@@ -533,7 +533,7 @@ async def detect_loggable_changes(
         print(f"Game day crossed: Day {old_day} tp Day {new_day}")
         item = GameEvent(
             mode=EventModes.NEW,
-            place="time_marches_on_2",
+            place="TimeMarchesOn_2",
             batch=batch,
             value=new.status,
             game_time=gametime,

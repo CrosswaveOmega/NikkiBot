@@ -52,6 +52,17 @@
         "if station move only"
 
     ],
+        
+    "time marches on": [
+        "SPECIAL", [
+            "[TYPETEXT] [HDML]"
+        ],
+        [
+            "The age of a new king draws nearer..."
+        ],
+        "if station move only"
+
+    ],
     "cstart": [
         "Heeth liberation campaign starts", [
             "[PLANET 0] liberation [TYPETEXT]"

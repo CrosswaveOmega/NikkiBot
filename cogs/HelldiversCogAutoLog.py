@@ -172,7 +172,7 @@ class Events:
                 )
             if event.place == "globalEvents":
                 self.globevt.append(event)
-            if event.place == "time_marches_on":
+            if event.place == "TimeMarchesOn":
                 self.daycount.append(event)
 
 
@@ -381,7 +381,7 @@ class Batch:
             va = value
             if mode == EventModes.CHANGE:
                 va, _ = value
-        if place in ["time_marches_on"]:
+        if place in ["TimeMarchesOn"]:
             va = value
             if mode == EventModes.CHANGE:
                 va, _ = value
@@ -483,9 +483,6 @@ class Batch:
 
                     target += f" ({custom_strftime(planet_data.ret)})"
 
-                    targets.append(target)
-                    target+=f"\n Day #{daycount} {HH}:{MM}{ampm} {day}{ext} {month} {year}"
-                    target += f" ({custom_strftime(planet_data.ret)})"
                     targets.append(target)
         elif ctype in ["newlink", "destroylink"]:
             new, old = planet_data.get_links()
@@ -969,7 +966,7 @@ class Batch:
             combinations.append("mo new")
         if "globalEvents_EventModes.REMOVE" in trigger_list:
             combinations.append("mo remove")
-        if "time_marches_on_EventModes.NEW" in trigger_list:
+        if "TimeMarchesOn_EventModes.NEW" in trigger_list:
             combinations.append("time marches on")
 
         return combinations if combinations else None
@@ -2148,10 +2145,10 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.RegionEmbed_PlanetRegionInfo(
                     value, planet, f"added in {place}"
                 )
-            elif place == "time_marches_on":
+            elif place == "TimeMarchesOn":
                 pass
                 #embed = Embeds.(value, place, mode=f"added")
-            elif place == "time_marches_on_2":
+            elif place == "TimeMarchesOn_2":
                 embed = Embeds.timeEmbed(value, place, mode=f"added")
             else:
                 embed = Embeds.dumpEmbedNew(value, place, mode=f"added")
@@ -2439,7 +2436,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
     @commands.is_owner()
     @commands.command(name="wartime")
-    async def time_marches_on(self, ctx: commands.Context):
+    async def TimeMarchesOn(self, ctx: commands.Context):
         
         wartime=self.apistatus.warall.status
         embed = Embeds.timeEmbed(wartime, 'started', mode=f"added")
