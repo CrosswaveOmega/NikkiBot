@@ -73,13 +73,17 @@ def ordinal(n):
     return f"{suffix}"
 
 
-def calculate_real_timestamp(retrieval: datetime.datetime):
+def calculate_real_timestamp(retrieval: datetime.datetime,fixhour:bool=True):
     elapsed = retrieval - DAY_ONE
     daycount = elapsed.days + 1
 
+    hour=retrieval.hour
+    minute=retrieval.minute
     # Extract the retrieved time/date
-    hour = 9
-    minute = 0
+    if fixhour:
+        hour = 9
+        minute = 0
+    
 
     # 12-hour clock
     ampm = "am" if hour < 12 else "pm"
@@ -1646,7 +1650,7 @@ class Embeds:
         )
         emb.add_field(
             name="Current UNIX time",
-            value=(calculate_real_timestamp(campaign.retrieved_at)
+            value=(calculate_real_timestamp(campaign.retrieved_at,fixhour=False)
             ),
             inline=True,
         )
