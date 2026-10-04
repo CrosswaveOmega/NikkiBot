@@ -71,7 +71,7 @@ def ordinal(n):
             3: "rd",
         }.get(n % 10, "th")
 
-    return f"{n}{suffix}"
+    return f"{suffix}"
 
 class SimplePlanet(BaseApiModel):
     index: Optional[int] = Field(alias="index", default=None)
@@ -998,7 +998,7 @@ def suffix(d):
 
 def custom_strftime(t):
     format = "%#I:%M%p UTC {S} %b %Y"
-    out = t.strftime(format).replace("{S}", str(t.day) + suffix(t.day))
+    out = t.strftime(format).replace("{S}", str(t.day) + ordinal(t.day))
     out = out.replace("AM", "am")
     out = out.replace("PM", "pm")
     return out
