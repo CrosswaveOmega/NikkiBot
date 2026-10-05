@@ -480,7 +480,7 @@ class Batch:
 
                     realtarget = calculate_real_timestamp(retrieval)
                     target = (
-                        "Time marches on, and the age of a new king draws nearer..."
+                        "Time marches on, and the age of a new king draws nearer...\n"
                     )
 
                     target += realtarget+"\n"
