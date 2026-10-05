@@ -463,7 +463,7 @@ class Batch:
 
                         target += f" ({custom_strftime(planet_data.ret)})"
                         targets.append(target)
-        if ctype in ["time marches on"]:
+        elif ctype in ["time marches on"]:
             for event in planet_data.daycount:
                 if event.mode == EventModes.NEW:
 
