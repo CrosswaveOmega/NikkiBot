@@ -520,7 +520,7 @@ async def detect_loggable_changes(
             mode=EventModes.NEW,
             place="TimeMarchesOn",
             batch=batch,
-            value=new.war_info,
+            value=new.status,
             game_time=gametime,
         )
         superlist.append(item)
