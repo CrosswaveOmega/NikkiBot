@@ -36,7 +36,7 @@
             "[TYPETEXT] [HDML]"
         ],
         [
-            "Dispatch: "
+            "(NEW MAJOR ORDER OR EVENT)"
         ],
         "if station move only"
 
@@ -47,7 +47,7 @@
             "[TYPETEXT] [HDML]"
         ],
         [
-            "Dispatch: "
+            "(REMOVED MAJOR ORDER OR EVENT)"
         ],
         "if station move only"
 
