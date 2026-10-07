@@ -2136,11 +2136,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 embed = Embeds.globalEventEmbed(value, "started", moid=tag)
             elif place == "news":
                     
-                targetid=item.published*item.id
-                if item.message:
+                targetid=item.value.published*item.value.id
+                if item.value.message:
                     stored=self.dispatchesids.get(targetid,"")
-                    if stored!=item.message:
-                        self.dispatchesids=item.message
+                    if stored!=item.value.message:
+                        self.dispatchesids=item.value.message
                 embed = Embeds.NewsFeedEmbed(item, "New")
             elif place == "episode":
                 embed, _ = Embeds.EpisodeEmbed(item, "New")
