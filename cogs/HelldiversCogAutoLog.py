@@ -1683,7 +1683,7 @@ class Embeds:
             name="Timestamp", value=f"Timestamp:{fdt(newsfeed.retrieved_at, 'F')}"
         )
         emb.set_author(
-            name=f"{mode} dispatch from Super Earth at wartime {gamevent.game_time}"
+            name=f"{mode} episode from Super Earth at wartime {gamevent.game_time}"
         )
         emb.set_footer(text=f"{custom_strftime(newsfeed.retrieved_at)}")
         return emb
@@ -1839,6 +1839,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         self.test_with = []
         self.titleids = {}
         self.messageids = {}
+        self.dispatchesids={}
         self.last_move = {}
         self.redirect_hook = ""
         snap = hd2.load_from_json("./saveData/mt_pairs.json")
@@ -1847,7 +1848,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 self.titleids[int(i)] = v
             for i, v in snap["messages"].items():
                 self.messageids[int(i)] = v
-
+            for i, v in snap["dispatches"].items():
+                self.dispatchesids[int(i)] = v
         self.lock = asyncio.Lock()
         self.load_test_files()
         nowd = datetime.datetime.now()
@@ -1871,7 +1873,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
     def cog_unload(self):
         TCTaskManager.remove_task("UpdateLog")
         self.process_game_events.cancel()
-        hold = {"titles": self.titleids, "messages": self.messageids}
+        hold = {"titles": self.titleids, "messages": self.messageids,"dispatches":self.dispatchesids}
         hd2.save_to_json(hold, "./saveData/mt_pairs.json")
 
     def load_test_files(self):
@@ -2132,6 +2134,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     )
                 embed = Embeds.globalEventEmbed(value, "started", moid=tag)
             elif place == "news":
+                    
+                targetid=item.published*item.id
+                if item.message:
+                    stored=self.dispatchesids.get(targetid,"")
+                    if stored!=item.message:
+                        self.dispatchesids=item.message
                 embed = Embeds.NewsFeedEmbed(item, "New")
             elif place == "episode":
                 embed, _ = Embeds.EpisodeEmbed(item, "New")
@@ -2340,7 +2348,17 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     embed = Embeds.globalEventEmbed(
                         info, "changed", ",".join(listv), moid=tag
                     )
-            # elif place == "news": embed = Embeds.NewsFeedEmbed(info, "Changed")
+            elif place == "news":
+                
+                targetid=info.published*info.id
+                edit=False
+                if info.message:
+                    stored=self.dispatchesids.get(targetid,"")
+                    if stored!=info.message:
+                        self.dispatchesids=info.message
+                        edit=True
+                if edit:
+                    embed = Embeds.NewsFeedEmbed(info, "Changed")
             elif place == "resources":
                 if "currentValue" in dump and len(list(dump.keys())) == 1:
                     if info.retrieved_at.minute % 15 != 0:
