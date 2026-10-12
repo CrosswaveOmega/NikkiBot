@@ -2560,7 +2560,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             oldest_first=True,
         ):
             entry = webhook_servers.get(message.webhook_id)
-
+            gui.gprint(webhook_servers,entry,message.webhook_id)
             if entry:
                 webhook = entry["webhook"]
                 for embed in message.embeds:
