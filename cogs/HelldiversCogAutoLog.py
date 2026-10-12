@@ -2551,12 +2551,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         catch+=1
                         gui.gprint(field.value)
                         effect_match = re.search(
-                            r"effectIds:\s*`?(\[[^\]]*\])`?",
+                            r"effectIds:`(\[[^\]]*\])`",
                             field.value,
                         )
 
                         planet_match = re.search(
-                            r"planetIndices:\s*`?(\[[^\]]*\])`?",
+                            r"planetIndices:`(\[[^\]]*\])`",
                             field.value,
                         )
 
