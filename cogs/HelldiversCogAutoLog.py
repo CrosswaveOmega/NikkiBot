@@ -2550,6 +2550,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                             continue
                         catch+=1
                         gui.gprint(field.value)
+                        ##I AM HERE
                         effect_match = re.search(
                             r"effectIds:`(\[[^\]]*\])`",
                             field.value,
@@ -2564,11 +2565,33 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
                             effect_ids = list(map(int, re.findall(r"\d+", effect_match.group(1))))
                             planet_indices = list(map(int, re.findall(r"\d+", planet_match.group(1))))
+                            effect_names = []
+                            planet_names = []
+                            currstat=self.apistatus
+                            if currstat:
+                                for effect_id in effect_ids:
+                                    effect = build_planet_effect(
+                                        currstat.statics.effectstatic, effect_id
+                                    )
+                                    effect_names.append(
+                                        f"{effect_id}: {effect.name}" if effect else str(effect_id)
+                                    )
+
+                                for planet_index in planet_indices:
+                                    planet = currstat.planets.get(planet_index)
+
+                                    if planet:
+                                        planet_names.append(
+                                            f"{planet_index}: {planet.get_name()}"
+                                        )
+
+                            print("Effects:", ", ".join(effect_names))
+                            print("Planets:", ", ".join(planet_names))
                             matches.append({
                                 "message_url": message.jump_url,
                                 "timestamp": message.created_at,
-                                "effectIds": effect_ids,
-                                "planetIndices": planet_indices,
+                                "effectIds": effect_names,
+                                "planetIndices": planet_names,
                             })
 
         await ctx.send(f"Found {catch} events, found {len(matches)} matching events.")
