@@ -1225,7 +1225,7 @@ class Embeds:
 
     @staticmethod
     def globalEventEmbed(
-        evt: GlobalEvent, mode="started", footerchanges="", moid=""
+        evt: GlobalEvent, mode="started", footerchanges="", moid="", currstat:ApiStatus=None
     ) -> discord.Embed:
         globtex = ""
         title = ""
@@ -1245,6 +1245,23 @@ class Embeds:
         emb.add_field(name="Timestamp", value=f"Timestamp:{fdt(evt.retrieved_at, 'F')}")
         if moid:
             emb.add_field(name="mo_id", value=f" {moid}", inline=False)
+        if currstat:
+            if evt.effectIds:
+                alleffects=""
+                for value in evt.effectIds:
+                    effect=build_planet_effect(
+                        currstat.statics.effectstatic, value.galacticEffectId
+                    )
+                    alleffects+=str(effect.name)+"\n"
+                emb.add_field(name="Effects",value=alleffects[:1024],inline=False)
+
+            if evt.planetIndices:
+                allplanets=""
+                for p in evt.planetIndices:
+                    planet = currstat.planets.get(p,None)
+                    if planet:
+                        allplanets+=planet.get_name()+'\n'
+                emb.add_field(name="Planets",value=allplanets[:1024],inline=False)
         emb.set_author(name=f"Global Event {mode}.")
         emb.set_footer(
             text=f"{footerchanges},EID:{evt.eventId}, {custom_strftime(evt.retrieved_at)}"
@@ -2133,7 +2150,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     tag = self.apistatus.all_cache.mo_cache.get_tag(
                         aid, value.retrieved_at
                     )
-                embed = Embeds.globalEventEmbed(value, "started", moid=tag)
+                embed = Embeds.globalEventEmbed(value, "started", moid=tag,currstat=self.apistatus)
             elif place == "news":
                     
                 targetid=item.value.published*item.value.id
@@ -2207,7 +2224,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     tag = self.apistatus.all_cache.mo_cache.get_tag(
                         aid, value.retrieved_at
                     )
-                embed = Embeds.globalEventEmbed(value, "ended", moid=tag)
+                embed = Embeds.globalEventEmbed(value, "ended", moid=tag, currstat=self.apistatus)
             elif place == "news":
                 embed = Embeds.NewsFeedEmbed(item, "Retired")
             elif place == "episode":
@@ -2343,11 +2360,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 if all(key in ["title", "message"] for key in listv):
                     if tc or mc > 0:
                         embed = Embeds.globalEventEmbed(
-                            info, f"changed_{tc},{mc}", ",".join(listv), moid=tag
+                            info, f"changed_{tc},{mc}", ",".join(listv), moid=tag, currstat=self.apistatus
                         )
                 else:
                     embed = Embeds.globalEventEmbed(
-                        info, "changed", ",".join(listv), moid=tag
+                        info, "changed", ",".join(listv), moid=tag, currstat=self.apistatus
                     )
             elif place == "news":
                 
