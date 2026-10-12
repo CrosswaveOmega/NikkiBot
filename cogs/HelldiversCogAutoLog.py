@@ -2519,8 +2519,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
         webhook_servers = {}
 
-        for server in ServerHDProfile.get_entries_with_webhook():
-            webhook_url = server.webhook
+        for webhook in ServerHDProfile.get_entries_with_webhook():
+            webhook_url = webhook
 
             if not webhook_url:
                 continue
@@ -2532,7 +2532,6 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
             webhook = await self.bot.fetch_webhook(webhook_id)
             webhook_servers[webhook_id] = {
-                "server": server,
                 "webhook": webhook,
             }
         if start_message is None or end_message is None:
@@ -2563,7 +2562,6 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             entry = webhook_servers.get(message.webhook_id)
 
             if entry:
-                server = entry["server"]
                 webhook = entry["webhook"]
                 for embed in message.embeds:
                     text = "\n".join([ embed.title or "", embed.description or "", *[ f"{field.name}: {field.value}" for field in embed.fields ], ])
