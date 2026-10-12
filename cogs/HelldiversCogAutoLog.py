@@ -2544,11 +2544,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             for embed in message.embeds:
                 text = "\n".join([ embed.title or "", embed.description or "", *[ f"{field.name}: {field.value}" for field in embed.fields ], ])
                 if ( "Global Event started" in text or "Event Details" in text ):
-                    catch+=1
+                    
                     for field in embed.fields:
                         if field.name != "Event Details":
                             continue
-
+                        catch+=1
                         effect_match = re.search(
                             r"effectIds:\s*(\[[^\]]*\])",
                             field.value,
