@@ -2582,7 +2582,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
                                     if planet:
                                         planet_names.append(
-                                            f"{planet_index}: {planet.get_name()}"
+                                            f"{planet_index}: {planet.get_name(False)}"
                                         )
 
                             print("Effects:", ", ".join(effect_names))
