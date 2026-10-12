@@ -2530,7 +2530,10 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             except (ValueError, IndexError):
                 continue
 
-            webhook = await self.bot.fetch_webhook(webhook_id)
+            webhook = discord.Webhook.from_url(
+                webhook_url,
+                client=self.bot,
+            )
             webhook_servers[webhook_id] = {
                 "webhook": webhook,
             }
