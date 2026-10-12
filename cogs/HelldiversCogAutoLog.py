@@ -73,17 +73,16 @@ def ordinal(n):
     return f"{suffix}"
 
 
-def calculate_real_timestamp(retrieval: datetime.datetime,fixhour:bool=True):
+def calculate_real_timestamp(retrieval: datetime.datetime, fixhour: bool = True):
     elapsed = retrieval - DAY_ONE
     daycount = elapsed.days + 1
 
-    hour=retrieval.hour
-    minute=retrieval.minute
+    hour = retrieval.hour
+    minute = retrieval.minute
     # Extract the retrieved time/date
     if fixhour:
         hour = 9
         minute = 0
-    
 
     # 12-hour clock
     ampm = "am" if hour < 12 else "pm"
@@ -483,7 +482,7 @@ class Batch:
                         "Time marches on, and the age of a new king draws nearer...\n"
                     )
 
-                    target += realtarget+"\n"
+                    target += realtarget + "\n"
                     target += f" ({custom_strftime(planet_data.ret)})"
 
                     targets.append(target)
@@ -1225,7 +1224,11 @@ class Embeds:
 
     @staticmethod
     def globalEventEmbed(
-        evt: GlobalEvent, mode="started", footerchanges="", moid="", currstat:ApiStatus=None
+        evt: GlobalEvent,
+        mode="started",
+        footerchanges="",
+        moid="",
+        currstat: ApiStatus = None,
     ) -> discord.Embed:
         globtex = ""
         title = ""
@@ -1247,21 +1250,21 @@ class Embeds:
             emb.add_field(name="mo_id", value=f" {moid}", inline=False)
         if currstat:
             if evt.effectIds:
-                alleffects=""
+                alleffects = ""
                 for value in evt.effectIds:
-                    effect=build_planet_effect(
+                    effect = build_planet_effect(
                         currstat.statics.effectstatic, value.galacticEffectId
                     )
-                    alleffects+=str(effect.name)+"\n"
-                emb.add_field(name="Effects",value=alleffects[:1024],inline=False)
+                    alleffects += str(effect.name) + "\n"
+                emb.add_field(name="Effects", value=alleffects[:1024], inline=False)
 
             if evt.planetIndices:
-                allplanets=""
+                allplanets = ""
                 for p in evt.planetIndices:
-                    planet = currstat.planets.get(p,None)
+                    planet = currstat.planets.get(p, None)
                     if planet:
-                        allplanets+=planet.get_name()+'\n'
-                emb.add_field(name="Planets",value=allplanets[:1024],inline=False)
+                        allplanets += planet.get_name() + "\n"
+                emb.add_field(name="Planets", value=allplanets[:1024], inline=False)
         emb.set_author(name=f"Global Event {mode}.")
         emb.set_footer(
             text=f"{footerchanges},EID:{evt.eventId}, {custom_strftime(evt.retrieved_at)}"
@@ -1667,8 +1670,7 @@ class Embeds:
         )
         emb.add_field(
             name="Current UNIX time",
-            value=(calculate_real_timestamp(campaign.retrieved_at,fixhour=False)
-            ),
+            value=(calculate_real_timestamp(campaign.retrieved_at, fixhour=False)),
             inline=True,
         )
         emb.add_field(
@@ -1856,7 +1858,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         self.test_with = []
         self.titleids = {}
         self.messageids = {}
-        self.dispatchesids={}
+        self.dispatchesids = {}
         self.last_move = {}
         self.redirect_hook = ""
         snap = hd2.load_from_json("./saveData/mt_pairs.json")
@@ -1891,7 +1893,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
     def cog_unload(self):
         TCTaskManager.remove_task("UpdateLog")
         self.process_game_events.cancel()
-        hold = {"titles": self.titleids, "messages": self.messageids,"dispatches":self.dispatchesids}
+        hold = {
+            "titles": self.titleids,
+            "messages": self.messageids,
+            "dispatches": self.dispatchesids,
+        }
         hd2.save_to_json(hold, "./saveData/mt_pairs.json")
 
     def load_test_files(self):
@@ -2150,14 +2156,16 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     tag = self.apistatus.all_cache.mo_cache.get_tag(
                         aid, value.retrieved_at
                     )
-                embed = Embeds.globalEventEmbed(value, "started", moid=tag,currstat=self.apistatus)
+                embed = Embeds.globalEventEmbed(
+                    value, "started", moid=tag, currstat=self.apistatus
+                )
             elif place == "news":
-                    
-                targetid=item.value.published*item.value.id
+
+                targetid = item.value.published * item.value.id
                 if item.value.message:
-                    stored=self.dispatchesids.get(targetid,"")
-                    if stored!=item.value.message:
-                        self.dispatchesids=item.value.message
+                    stored = self.dispatchesids.get(targetid, "")
+                    if stored != item.value.message:
+                        self.dispatchesids[targetid] = item.value.message
                 embed = Embeds.NewsFeedEmbed(item, "New")
             elif place == "episode":
                 embed, _ = Embeds.EpisodeEmbed(item, "New")
@@ -2224,7 +2232,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     tag = self.apistatus.all_cache.mo_cache.get_tag(
                         aid, value.retrieved_at
                     )
-                embed = Embeds.globalEventEmbed(value, "ended", moid=tag, currstat=self.apistatus)
+                embed = Embeds.globalEventEmbed(
+                    value, "ended", moid=tag, currstat=self.apistatus
+                )
             elif place == "news":
                 embed = Embeds.NewsFeedEmbed(item, "Retired")
             elif place == "episode":
@@ -2360,21 +2370,29 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 if all(key in ["title", "message"] for key in listv):
                     if tc or mc > 0:
                         embed = Embeds.globalEventEmbed(
-                            info, f"changed_{tc},{mc}", ",".join(listv), moid=tag, currstat=self.apistatus
+                            info,
+                            f"changed_{tc},{mc}",
+                            ",".join(listv),
+                            moid=tag,
+                            currstat=self.apistatus,
                         )
                 else:
                     embed = Embeds.globalEventEmbed(
-                        info, "changed", ",".join(listv), moid=tag, currstat=self.apistatus
+                        info,
+                        "changed",
+                        ",".join(listv),
+                        moid=tag,
+                        currstat=self.apistatus,
                     )
             elif place == "news":
-                
-                targetid=info.published*info.id
-                edit=False
+
+                targetid = info.published * info.id
+                edit = False
                 if info.message:
-                    stored=self.dispatchesids.get(targetid,"")
-                    if stored!=info.message:
-                        self.dispatchesids=info.message
-                        edit=True
+                    stored = self.dispatchesids.get(targetid, "")
+                    if stored != info.message:
+                        self.dispatchesids[targetid] = info.message
+                        edit = True
                 if edit:
                     embed = Embeds.NewsFeedEmbed(info, "Changed")
             elif place == "resources":
