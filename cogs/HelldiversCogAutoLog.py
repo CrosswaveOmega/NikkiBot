@@ -2518,7 +2518,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
 
         webhook_servers = {}
-        
+        gui.gprint(self.loghook)
         for webhook in self.loghook:
             webhook_url = webhook
 
