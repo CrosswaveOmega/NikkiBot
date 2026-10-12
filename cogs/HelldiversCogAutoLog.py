@@ -2546,9 +2546,10 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 if ( "Global Event started" in text or "Event Details" in text ):
                     
                     for field in embed.fields:
-                        if field.name != "Event Details":
+                        if "Event Details".lower() not in field.name.lower():
                             continue
                         catch+=1
+                        gui.gprint(field.value)
                         effect_match = re.search(
                             r"effectIds:\s*(\[[^\]]*\])",
                             field.value,
