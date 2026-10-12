@@ -56,6 +56,7 @@ from hd2api.constants import faction_names, region_size_enums
 from cogs.HD2.maths import maths
 from cogs.HD2.diff_util import process_planet_attacks, GameEvent, EventModes
 from utility.manual_load import load_json_with_substitutions
+from utility.urltomessage import urltomessage
 
 DAY_ONE = datetime.datetime(2024, 2, 8, 9, 0, 0, tzinfo=datetime.timezone.utc)
 
@@ -2497,7 +2498,75 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         wartime = self.apistatus.warall.status
         embed = Embeds.timeEmbed(wartime, "started", mode=f"added")
         await ctx.send(embed=embed)
+        
+    @commands.is_owner()
+    @commands.command(name="searchlog")
+    async def LogSearch(
+        self,
+        ctx: commands.Context,
+        start_url: str,
+        end_url: str,
+    ):
+        start_message = await urltomessage(
+            link=start_url,
+            bot=self.bot,
+        )
+        end_message = await urltomessage(
+            link=end_url,
+            bot=self.bot,
+        )
 
+        if start_message is None or end_message is None:
+            await ctx.send("Could not resolve one or both message URLs.")
+            return
+
+        if start_message.channel.id != end_message.channel.id:
+            await ctx.send("Both messages must be in the same channel.")
+            return
+
+        channel = start_message.channel
+
+        start_id = start_message.id
+        end_id = end_message.id
+
+        if start_id > end_id:
+            start_id, end_id = end_id, start_id
+
+        matches = []
+
+        async for message in channel.history(
+            limit=None,
+            after=discord.Object(id=start_id - 1),
+            before=discord.Object(id=end_id + 1),
+            oldest_first=True,
+        ):
+            for embed in message.embeds:
+                text = "\n".join([
+                    embed.title or "",
+                    embed.description or "",
+                    *[
+                        f"{field.name}: {field.value}"
+                        for field in embed.fields
+                    ],
+                ])
+
+                if (
+                    "Global Event started" in text
+                    or "Event Details" in text
+                ):
+                    matches.append(message)
+                    break
+
+        await ctx.send(f"Found {len(matches)} matching messages.")
+
+        for message in matches:
+            await ctx.send(
+                f"Message: {message.jump_url}\n"
+                + "\n".join(
+                    f"{embed.title or ''}\n{embed.description or ''}"
+                    for embed in message.embeds
+                )
+            )
     @commands.is_owner()
     @commands.command(name="get_last_recorded_positions")
     async def get_last_recorded_positions(self, ctx: commands.Context):

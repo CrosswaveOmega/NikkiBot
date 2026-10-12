@@ -192,6 +192,39 @@ async def check_compare_value_list(
             return s
     return None
 
+def get_geffect_place_id(last_effect_cache, geffect, pindex, add=True):
+    if geffect not in last_effect_cache:
+        last_effect_cache[geffect] = {
+            "free_places": [],
+            "counter": 0,
+            "planets": {},
+        }
+
+
+    planets = last_effect_cache[geffect]["planets"]
+
+    if pindex not in last_effect_cache[geffect]["planets"]:
+        last_effect_cache[geffect]["planets"][pindex] = []
+
+    if add:
+        if last_effect_cache[geffect]["free_places"]:
+            place_id = last_effect_cache[geffect]["free_places"].pop(0)
+        else:
+            place_id = generate_geffect_place(last_effect_cache[geffect]["counter"])
+            last_effect_cache[geffect]["counter"] += 1
+
+        last_effect_cache[geffect]["planets"][pindex].append(place_id)
+        return place_id
+
+    if planets[pindex]:
+        place_id = last_effect_cache[geffect]["planets"][pindex].pop(0)
+
+        if place_id not in last_effect_cache[geffect]["free_places"]:
+            last_effect_cache[geffect]["free_places"].append(place_id)
+
+        return place_id
+
+    return generate_geffect_place(0)
 
 async def process_planet_events(
     source, target, place, key, QueueAll, batch, exclude=[], game_time=0
@@ -360,28 +393,9 @@ async def process_planet_effects(
         ):
             pindex = str(event["index"])
             geffect = str(event["galacticEffectId"])
-            if geffect not in last_effect_cache:
-                last_effect_cache[geffect] = {
-                    "free_places": [],
-                    "counter": 0,
-                    "planets": {},
-                }
-            lastid = generate_geffect_place(0)
-
-            if pindex not in last_effect_cache[geffect]["planets"]:
-                last_effect_cache[geffect]["planets"][pindex] = []
-            if last_effect_cache[geffect]["planets"][pindex]:
-                lastid = last_effect_cache[geffect]["planets"][pindex].pop(0)
-
-                if "free_places" in last_effect_cache[geffect]:
-                    if lastid not in last_effect_cache[geffect]["free_places"]:
-                        last_effect_cache[geffect]["free_places"].append(lastid)
-                        gui.gprint("ADDED TO CACHE!", last_effect_cache[geffect])
-                else:
-                    last_effect_cache[geffect]["free_places"] = []
-
-                # last_effect_cache[geffect]['free_places'].append(lastid)
-                # gui.gprint("Cleared CACHE!",last_effect_cache[geffect])
+            lastid = get_geffect_place_id(
+                last_effect_cache, geffect, pindex, add=False
+            )
             event.place_id = lastid
             item = GameEvent(
                 mode=EventModes.REMOVE,
@@ -399,21 +413,9 @@ async def process_planet_effects(
         if not oc:
             pindex = str(event["index"])
             geffect = str(event["galacticEffectId"])
-            if geffect not in last_effect_cache:
-                last_effect_cache[geffect] = {
-                    "free_places": [],
-                    "counter": 0,
-                    "planets": {},
-                }
-            thisid = ""
-            if last_effect_cache[geffect]["free_places"]:
-                thisid = last_effect_cache[geffect]["free_places"].pop(0)
-            else:
-                thisid = generate_geffect_place(last_effect_cache[geffect]["counter"])
-                last_effect_cache[geffect]["counter"] += 1
-            if pindex not in last_effect_cache[geffect]["planets"]:
-                last_effect_cache[geffect]["planets"][pindex] = []
-            last_effect_cache[geffect]["planets"][pindex].append(thisid)
+            thisid = get_geffect_place_id(
+                last_effect_cache, geffect, pindex, add=True
+            )
             event.place_id = thisid
             item = GameEvent(
                 mode=EventModes.NEW,
@@ -764,6 +766,7 @@ async def detect_loggable_changes(
         ["retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
+    
     logs.debug("DSS movement detection, stand by...")
     superlist += await process_planet_events(
         new.status.spaceStations,
