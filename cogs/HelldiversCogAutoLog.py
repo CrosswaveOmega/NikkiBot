@@ -2640,7 +2640,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             await ctx.send(
                 f"**Message:** {match['message_url']}\n"
                 
-                f"**Mode:** {match['timestamp']}\n"
+                f"**Mode:** {match['mode']}\n"
                 f"**Timestamp:** {match['timestamp']}\n"
                 f"**Effect IDs:** {match['effectIds']}\n"
                 f"**Planet Indices:** {match['planetIndices']}"
