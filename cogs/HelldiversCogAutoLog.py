@@ -2534,6 +2534,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
         matches = []
 
+        catch=0
         async for message in channel.history(
             limit=None,
             after=discord.Object(id=start_id - 1),
@@ -2541,31 +2542,34 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             oldest_first=True,
         ):
             for embed in message.embeds:
-                for field in embed.fields:
-                    if field.name != "Event Details":
-                        continue
+                text = "\n".join([ embed.title or "", embed.description or "", *[ f"{field.name}: {field.value}" for field in embed.fields ], ])
+                if ( "Global Event started" in text or "Event Details" in text ):
+                    catch+=1
+                    for field in embed.fields:
+                        if field.name != "Event Details":
+                            continue
 
-                    effect_match = re.search(
-                        r"effectIds:\s*(\[[^\]]*\])",
-                        field.value,
-                    )
-                    planet_match = re.search(
-                        r"planetIndices:\s*(\[[^\]]*\])",
-                        field.value,
-                    )
+                        effect_match = re.search(
+                            r"effectIds:\s*(\[[^\]]*\])",
+                            field.value,
+                        )
+                        planet_match = re.search(
+                            r"planetIndices:\s*(\[[^\]]*\])",
+                            field.value,
+                        )
 
-                    if not effect_match or not planet_match:
-                        continue
-                    effect_ids = list(map(int, re.findall(r"\d+", effect_match.group(1))))
-                    planet_indices = list(map(int, re.findall(r"\d+", planet_match.group(1))))
-                    matches.append({
-                        "message_url": message.jump_url,
-                        "timestamp": message.created_at,
-                        "effectIds": effect_ids,
-                        "planetIndices": planet_indices,
-                    })
+                        if effect_match or planet_match:
 
-        await ctx.send(f"Found {len(matches)} matching events.")
+                            effect_ids = list(map(int, re.findall(r"\d+", effect_match.group(1))))
+                            planet_indices = list(map(int, re.findall(r"\d+", planet_match.group(1))))
+                            matches.append({
+                                "message_url": message.jump_url,
+                                "timestamp": message.created_at,
+                                "effectIds": effect_ids,
+                                "planetIndices": planet_indices,
+                            })
+
+        await ctx.send(f"Found {catch} events, found {len(matches)} matching events.")
 
         for match in matches:
             await ctx.send(
