@@ -2518,6 +2518,14 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
 
         webhook_servers = {}
+        if not self.loghook:
+            hooks = ServerHDProfile.get_entries_with_webhook()
+            lg = [AssetLookup.get_asset("loghook", "urls")]
+            for h in hooks:
+                lg.append(h)
+            self.redirect_hook = AssetLookup.get_asset("subhook", "urls")
+            self.loghook = lg
+
         gui.gprint(self.loghook)
         for webhook in self.loghook:
             webhook_url = webhook
