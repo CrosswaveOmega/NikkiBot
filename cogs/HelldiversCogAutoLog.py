@@ -1867,7 +1867,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 self.titleids[int(i)] = v
             for i, v in snap["messages"].items():
                 self.messageids[int(i)] = v
-            if "dispatches" in snap:
+            if isinstance(snap.get("dispatches"), dict):
                 for i, v in snap["dispatches"].items():
                     self.dispatchesids[int(i)] = v
         self.lock = asyncio.Lock()
