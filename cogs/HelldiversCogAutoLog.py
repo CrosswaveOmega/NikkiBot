@@ -2518,8 +2518,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
 
         webhook_servers = {}
-
-        for webhook in ServerHDProfile.get_entries_with_webhook():
+        
+        for webhook in self.loghook:
             webhook_url = webhook
 
             if not webhook_url:
@@ -2568,8 +2568,13 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 webhook = entry["webhook"]
                 for embed in message.embeds:
                     text = "\n".join([ embed.title or "", embed.description or "", *[ f"{field.name}: {field.value}" for field in embed.fields ], ])
-                    if ( "Global Event started" in text or "Event Details" in text ):
-                        
+                    mode="none"
+                    if ( "Event Details" in text ):
+                        if "Global Event started" in text:
+                            mode='new'
+                        if "Global Event ended" in text:
+                            mode='gone'
+                            
                         for field in embed.fields:
                             if "Event Details".lower() not in field.name.lower():
                                 continue
@@ -2617,6 +2622,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                                     "timestamp": message.created_at,
                                     "effectIds": effect_names,
                                     "planetIndices": planet_names,
+                                    "mode":mode,
+                                    "webhook":webhook
                                 })
 
         await ctx.send(f"Found {catch} events, found {len(matches)} matching events.")
@@ -2624,6 +2631,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         for match in matches:
             await ctx.send(
                 f"**Message:** {match['message_url']}\n"
+                
+                f"**Mode:** {match['timestamp']}\n"
                 f"**Timestamp:** {match['timestamp']}\n"
                 f"**Effect IDs:** {match['effectIds']}\n"
                 f"**Planet Indices:** {match['planetIndices']}"
