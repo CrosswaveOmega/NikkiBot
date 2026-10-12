@@ -2498,7 +2498,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         wartime = self.apistatus.warall.status
         embed = Embeds.timeEmbed(wartime, "started", mode=f"added")
         await ctx.send(embed=embed)
-        
+
     @commands.is_owner()
     @commands.command(name="searchlog")
     async def LogSearch(
@@ -2541,31 +2541,38 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             oldest_first=True,
         ):
             for embed in message.embeds:
-                text = "\n".join([
-                    embed.title or "",
-                    embed.description or "",
-                    *[
-                        f"{field.name}: {field.value}"
-                        for field in embed.fields
-                    ],
-                ])
+                for field in embed.fields:
+                    if field.name != "Event Details":
+                        continue
 
-                if (
-                    "Global Event started" in text
-                    or "Event Details" in text
-                ):
-                    matches.append(message)
-                    break
+                    effect_match = re.search(
+                        r"effectIds:\s*(\[[^\]]*\])",
+                        field.value,
+                    )
+                    planet_match = re.search(
+                        r"planetIndices:\s*(\[[^\]]*\])",
+                        field.value,
+                    )
 
-        await ctx.send(f"Found {len(matches)} matching messages.")
+                    if not effect_match or not planet_match:
+                        continue
+                    effect_ids = list(map(int, re.findall(r"\d+", effect_match.group(1))))
+                    planet_indices = list(map(int, re.findall(r"\d+", planet_match.group(1))))
+                    matches.append({
+                        "message_url": message.jump_url,
+                        "timestamp": message.created_at,
+                        "effectIds": effect_ids,
+                        "planetIndices": planet_indices,
+                    })
 
-        for message in matches:
+        await ctx.send(f"Found {len(matches)} matching events.")
+
+        for match in matches:
             await ctx.send(
-                f"Message: {message.jump_url}\n"
-                + "\n".join(
-                    f"{embed.title or ''}\n{embed.description or ''}"
-                    for embed in message.embeds
-                )
+                f"**Message:** {match['message_url']}\n"
+                f"**Timestamp:** {match['timestamp']}\n"
+                f"**Effect IDs:** {match['effectIds']}\n"
+                f"**Planet Indices:** {match['planetIndices']}"
             )
     @commands.is_owner()
     @commands.command(name="get_last_recorded_positions")
