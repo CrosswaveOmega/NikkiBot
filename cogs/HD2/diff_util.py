@@ -12,7 +12,13 @@ import random
 from enum import Enum
 
 from hd2api.builders import *
-from hd2api.models import DiveharderAll, StaticAll, Region, Episodes
+from hd2api.models import (
+    DiveharderAll,
+    PlanetActiveEffects,
+    StaticAll,
+    Region,
+    Episodes,
+)
 from hd2api.models.ABC.model import BaseApiModel
 from pydantic import Field
 
@@ -22,7 +28,7 @@ def past_9am_utc(dt):
         return False
 
     dt = dt.astimezone(timezone.utc)
-    print(dt.hour,dt.minute)
+    print(dt.hour, dt.minute)
     return dt.hour >= 9
 
 
@@ -56,6 +62,9 @@ class GameEvent(BaseApiModel):
     )
     cluster: Optional[bool] = Field(alias="cluster", default=False)
     game_time: Optional[int] = Field(alias="game_time", default=0)
+    newvalue: Optional[Union[Any, Tuple[Any, Dict[str, Any]]]] = Field(
+        alias="newvalue", default=None
+    )
 
 
 async def compare_value_with_timeout(model1, field):
@@ -192,14 +201,16 @@ async def check_compare_value_list(
             return s
     return None
 
-def get_geffect_place_id(last_effect_cache, geffect, pindex, add=True,counter_default=0):
+
+def get_geffect_place_id(
+    last_effect_cache, geffect, pindex, add=True, counter_default=0
+):
     if geffect not in last_effect_cache:
         last_effect_cache[geffect] = {
             "free_places": [],
             "counter": counter_default,
             "planets": {},
         }
-
 
     planets = last_effect_cache[geffect]["planets"]
 
@@ -226,6 +237,7 @@ def get_geffect_place_id(last_effect_cache, geffect, pindex, add=True,counter_de
 
     return generate_geffect_place(0)
 
+
 async def process_planet_events(
     source, target, place, key, QueueAll, batch, exclude=[], game_time=0
 ):
@@ -240,6 +252,7 @@ async def process_planet_events(
                 batch=batch,
                 value=event,
                 game_time=game_time,
+                newvalue=event,
             )
             pushed_items.append(item)
             new.append(item)
@@ -252,6 +265,7 @@ async def process_planet_events(
                     batch=batch,
                     value=(event, differ),
                     game_time=game_time,
+                    newvalue=event,
                 )
                 pushed_items.append(item)
                 change.append(item)
@@ -264,6 +278,7 @@ async def process_planet_events(
                 batch=batch,
                 value=event,
                 game_time=game_time,
+                newvalue=event,
             )
             pushed_items.append(item)
             old.append(item)
@@ -393,9 +408,7 @@ async def process_planet_effects(
         ):
             pindex = str(event["index"])
             geffect = str(event["galacticEffectId"])
-            lastid = get_geffect_place_id(
-                last_effect_cache, geffect, pindex, add=False
-            )
+            lastid = get_geffect_place_id(last_effect_cache, geffect, pindex, add=False)
             event.place_id = lastid
             item = GameEvent(
                 mode=EventModes.REMOVE,
@@ -411,11 +424,10 @@ async def process_planet_effects(
     for event in source:
         oc = await check_compare_value_list(keys, [event[key] for key in keys], target)
         if not oc:
+            # ADD
             pindex = str(event["index"])
             geffect = str(event["galacticEffectId"])
-            thisid = get_geffect_place_id(
-                last_effect_cache, geffect, pindex, add=True
-            )
+            thisid = get_geffect_place_id(last_effect_cache, geffect, pindex, add=True)
             event.place_id = thisid
             item = GameEvent(
                 mode=EventModes.NEW,
@@ -427,6 +439,7 @@ async def process_planet_effects(
             newlist.append(item)
             pushed_items.append(item)
         else:
+            # CHANGE
             differ = await get_differing_fields(oc, event, to_ignore=exclude)
             if differ:
                 item = GameEvent(
@@ -471,7 +484,6 @@ async def detect_loggable_changes(
         "news": {"new": {}, "changes": {}, "old": {}},
         "stats_raw": {"changes": {}},
         "info_raw": {"changes": {}},
-
     }
     batch = (int(new.retrieved_at.timestamp()) >> 4) | (random.randint(0, 15))
     superlist = []
@@ -512,12 +524,8 @@ async def detect_loggable_changes(
             await QueueAll.put([newitem])
     gametime = new.status.time
 
-    
     if not past_9am_utc(old.retrieved_at) and past_9am_utc(new.retrieved_at):
-        print(
-            f"9:00 AM UTC crossed: "
-            f"{old.retrieved_at} to {new.retrieved_at}"
-        )
+        print(f"9:00 AM UTC crossed: " f"{old.retrieved_at} to {new.retrieved_at}")
         item = GameEvent(
             mode=EventModes.NEW,
             place="TimeMarchesOn",
@@ -756,7 +764,7 @@ async def detect_loggable_changes(
     )
 
     logs.debug("global event detection, stand by...")
-    superlist += await process_planet_events(
+    globalevents = await process_planet_events(
         new.status.globalEvents,
         old.status.globalEvents,
         "globalEvents",
@@ -766,7 +774,58 @@ async def detect_loggable_changes(
         ["retrieved_at", "time_delta", "self"],
         game_time=gametime,
     )
-    
+    if False:
+        nextlist=[]
+        for gameevent in sorted(globalevents, key=lambda e: e.newvalue.retrieved_at):
+            # CHECK IF ANY EFFECTS ARE IN globalevents THERE.
+            globoevent = gameevent.newvalue
+            nextv = True
+            if gameevent.mode == EventModes.CHANGE:
+                event, differ = gameevent.value
+                nextv = "planetIndices" in differ or "effectIds" in differ
+
+            if globoevent.get("effectIds") and globoevent.get("planetIndices") and nextv:
+                
+                for eid in globoevent.effectIds:
+                    for pid in globoevent.planetIndices:
+                        evt = PlanetActiveEffects(
+                            index=pid,
+                            galacticEffectId=eid,
+                            retrieved_at=globoevent.retrieved_at,
+                        )
+                        pindex = str(evt["index"])
+                        geffect = str(evt["galacticEffectId"])
+
+                        if gameevent.mode == EventModes.REMOVE:
+
+                            lastid = get_geffect_place_id(
+                                last_effect_cache, geffect, pindex, add=False
+                            )
+                            evt.place_id = lastid
+                            item = GameEvent(
+                                mode=EventModes.REMOVE,
+                                place="planetEffects",
+                                batch=batch,
+                                value=evt,
+                                game_time=gametime,
+                            )
+                            nextlist.append(item)
+                        else:
+                            lastid = get_geffect_place_id(
+                                last_effect_cache, geffect, pindex, add=True
+                            )
+                            evt.place_id = lastid
+                            item = GameEvent(
+                                mode=gameevent.mode,
+                                place="planetEffects",
+                                batch=batch,
+                                value=evt,
+                                game_time=gametime,
+                            )
+                            nextlist.append(item)
+        if nextlist:
+            superlist+=nextlist
+    superlist += globalevents
     logs.debug("DSS movement detection, stand by...")
     superlist += await process_planet_events(
         new.status.spaceStations,

@@ -2703,8 +2703,6 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     for eid, en in effect_names:
                         if "Enemies" in en:
                             for pid, pn,s in planet_json_names:
-                                
-                                
                                 matches.append((eid,en,mode,pid,pn,date))
                             
 
