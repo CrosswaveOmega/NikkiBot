@@ -2585,6 +2585,19 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             modified = False
 
             for embed_index, embed in enumerate(message.embeds):
+                mode="none"
+                footer=embed.footer.text
+                date=footer.split(",")[-1]
+                text = "\n".join([ embed.title or "", embed.description or "", *[ f"{field.name}: {field.value}" for field in embed.fields ], ])
+                if ( "Event Details" in text ):
+
+                    if "Global Event started" in text:
+
+                        mode='deploys to'
+
+                    if "Global Event ended" in text:
+
+                        mode='leaves'
                 for field in embed.fields:
                     if field.name.lower() != "event details":
                         continue
@@ -2600,7 +2613,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         field.value,
                     )
 
-                    if not effect_match or not planet_match:
+                    if not (effect_match or planet_match):
                         continue
 
                     effect_ids = list(map(
@@ -2650,6 +2663,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                             value="\n".join(planet_names)[:1024],
                             inline=False,
                         )
+                    for e in effect_names:
+                        if "Enemies" in e:
+                            for p in planet_names:
+                                newtext=f"Assault Division: {e} UVAR {mode} [PLANET 0] ({date})"
+                                matches.append(newtext)
+                            
 
                     modified = True
 
@@ -2665,6 +2684,10 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     gui.gprint(
                         f"Failed to edit {message.jump_url}: {exc}"
                     )
+        for m in matches:
+            await ctx.send(m)
+
+            
     @commands.is_owner()
     @commands.command(name="get_last_recorded_positions")
     async def get_last_recorded_positions(self, ctx: commands.Context):
