@@ -4,7 +4,7 @@ import datetime
 import difflib
 import re
 from typing import Any, Dict, List, Optional, Tuple, Union
-
+import io
 import discord
 from dateutil.rrule import MINUTELY, rrule
 from discord.ext import commands, tasks
@@ -2500,6 +2500,29 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         await ctx.send(embed=embed)
 
     @commands.is_owner()
+    @commands.command(name="planeteffectcache")
+    async def GetPlanetCache(self, ctx: commands.Context):
+
+        cache = self.apistatus.last_effect_cache
+
+        json_data = json.dumps(
+            cache,
+            indent=4,
+            ensure_ascii=False,
+            default=str,
+        )
+
+        file = discord.File(
+            io.BytesIO(json_data.encode("utf-8")),
+            filename="planet_effect_cache.json",
+        )
+
+        await ctx.send(
+            content="Planet effect cache:",
+            file=file,
+        )
+
+    @commands.is_owner()
     @commands.command(name="searchlog")
     async def LogSearch(
         self,
@@ -2565,6 +2588,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         if start_id > end_id:
             start_id, end_id = end_id, start_id
 
+        last_effect_cache={}
         matches = []
 
         catch=0
@@ -2677,7 +2701,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         )
                     for e in effect_names:
                         if "Enemies" in e:
-                            for p,s in planet_names:
+                            for p,s in planet_json_names:
                                 newtext=f"Assault Division: {e} UVAR {mode} {p} ({date})"
                                 matches.append(newtext)
                             

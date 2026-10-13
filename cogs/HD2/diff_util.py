@@ -192,11 +192,11 @@ async def check_compare_value_list(
             return s
     return None
 
-def get_geffect_place_id(last_effect_cache, geffect, pindex, add=True):
+def get_geffect_place_id(last_effect_cache, geffect, pindex, add=True,counter_default=0):
     if geffect not in last_effect_cache:
         last_effect_cache[geffect] = {
             "free_places": [],
-            "counter": 0,
+            "counter": counter_default,
             "planets": {},
         }
 
