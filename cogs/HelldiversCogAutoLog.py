@@ -2666,7 +2666,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     for e in effect_names:
                         if "Enemies" in e:
                             for p in planet_names:
-                                newtext=f"Assault Division: {e} UVAR {mode} [PLANET 0] ({date})"
+                                newtext=f"Assault Division: {e} UVAR {mode} {p} ({date})"
                                 matches.append(newtext)
                             
 
@@ -2687,7 +2687,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         for m in matches:
             await ctx.send(m)
 
-            
+
     @commands.is_owner()
     @commands.command(name="get_last_recorded_positions")
     async def get_last_recorded_positions(self, ctx: commands.Context):
