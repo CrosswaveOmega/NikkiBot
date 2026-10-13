@@ -2724,7 +2724,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     )
         def parse_date(value):
             value = re.sub(r"(\d+)(st|nd|rd|th)", r"\1", value)
-            return datetime.strptime(value, "%I:%M%p UTC %d %b %Y")
+            return datetime.datetime.strptime(value, "%I:%M%p UTC %d %b %Y")
 
         # Sort oldest to newest
         matches.sort(key=lambda item: parse_date(item[-1]))                   
