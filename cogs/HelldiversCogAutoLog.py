@@ -2516,6 +2516,10 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
             bot=self.bot,
         )
 
+        data_path: str = "./hd2json/planets/planets.json"
+
+        with open(data_path, "r") as file:
+            planets_data_json = json.load(file)
 
         webhook_servers = {}
         if not self.loghook:
@@ -2564,7 +2568,14 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         matches = []
 
         catch=0
+        def get_from_json(index):
 
+            pval = planets_data_json.get(str(index), None)
+            name = sector = "NA"
+            if pval:
+                name = pval["name"]
+                sector = pval["sector"]
+            return name, sector
         async for message in channel.history(
             limit=None,
             after=discord.Object(id=start_id - 1),
@@ -2636,11 +2647,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                             effect_names.append(effect.name)
 
                     planet_names = []
+                    planet_json_names = []
                     for planet_index in planet_indices:
                         planet = currstat.planets.get(planet_index)
                         if planet:
                             planet_names.append(planet.get_name(False))
-
+                            planet_json_names.append(get_from_json(planet_index))
                     if not effect_names and not planet_names:
                         continue
 
@@ -2665,7 +2677,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         )
                     for e in effect_names:
                         if "Enemies" in e:
-                            for p in planet_names:
+                            for p,s in planet_names:
                                 newtext=f"Assault Division: {e} UVAR {mode} {p} ({date})"
                                 matches.append(newtext)
                             
