@@ -54,7 +54,12 @@ from hd2api.models import Episode, EpisodePhase, PlanetRegion, PlanetRegionInfo
 
 from hd2api.constants import faction_names, region_size_enums
 from cogs.HD2.maths import maths
-from cogs.HD2.diff_util import get_geffect_place_id, process_planet_attacks, GameEvent, EventModes
+from cogs.HD2.diff_util import (
+    get_geffect_place_id,
+    process_planet_attacks,
+    GameEvent,
+    EventModes,
+)
 from utility.manual_load import load_json_with_substitutions
 from utility.urltomessage import urltomessage
 
@@ -1709,7 +1714,9 @@ class Embeds:
         return emb
 
     @staticmethod
-    def NewsFeedEmbed(newsfeed:NewsFeedItem, gamevent: GameEvent, mode="started") -> discord.Embed:
+    def NewsFeedEmbed(
+        newsfeed: NewsFeedItem, gamevent: GameEvent, mode="started"
+    ) -> discord.Embed:
         if mode == "Retired":
             if (gamevent.game_time - newsfeed.published) > 100000:
                 return None
@@ -2166,7 +2173,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     stored = self.dispatchesids.get(targetid, "")
                     if stored != item.value.message:
                         self.dispatchesids[targetid] = item.value.message
-                embed = Embeds.NewsFeedEmbed(item.value,item, "New")
+                embed = Embeds.NewsFeedEmbed(item.value, item, "New")
             elif place == "episode":
                 embed, _ = Embeds.EpisodeEmbed(item, "New")
             elif place == "episodephase":
@@ -2399,7 +2406,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 if "currentValue" in dump and len(list(dump.keys())) == 1:
                     if info.retrieved_at.minute % 15 != 0:
                         return None
-                    embed = Embeds.resourceEmbed(info,item, "changed", "")
+                    embed = Embeds.resourceEmbed(info, item, "changed", "")
                     embed.title = "ResourceChange"
                     embed.set_author(
                         name=f"{embed._author['name']} at wt {item['game_time']}"
@@ -2587,10 +2594,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         if start_id > end_id:
             start_id, end_id = end_id, start_id
 
-        last_effect_cache={}
+        last_effect_cache = {}
         matches = []
 
-        catch=0
+        catch = 0
+
         def get_from_json(index):
 
             pval = planets_data_json.get(str(index), None)
@@ -2599,6 +2607,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 name = pval["name"]
                 sector = pval["sector"]
             return name, sector
+
         async for message in channel.history(
             limit=None,
             after=discord.Object(id=start_id - 1),
@@ -2613,25 +2622,30 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
             # Copy every embed so we can modify only the matching ones.
             updated_embeds = [
-                discord.Embed.from_dict(embed.to_dict())
-                for embed in message.embeds
+                discord.Embed.from_dict(embed.to_dict()) for embed in message.embeds
             ]
             modified = False
 
             for embed_index, embed in enumerate(message.embeds):
-                mode="none"
-                footer=embed.footer.text
-                date=footer.split(",")[-1].strip()
-                text = "\n".join([ embed.title or "", embed.description or "", *[ f"{field.name}: {field.value}" for field in embed.fields ], ])
-                if ( "Event Details" in text ):
+                mode = "none"
+                footer = embed.footer.text
+                date = footer.split(",")[-1].strip()
+                text = "\n".join(
+                    [
+                        embed.title or "",
+                        embed.description or "",
+                        *[f"{field.name}: {field.value}" for field in embed.fields],
+                    ]
+                )
+                if "Event Details" in text:
 
                     if "Global Event started" in text:
 
-                        mode='deploys to'
+                        mode = "deploys to"
 
                     if "Global Event ended" in text:
 
-                        mode='leaves'
+                        mode = "leaves"
                 for field in embed.fields:
                     if field.name.lower() != "event details":
                         continue
@@ -2650,12 +2664,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     if not (effect_match or planet_match):
                         continue
 
-                    effect_ids = list(map(
-                        int, re.findall(r"\d+", effect_match.group(1))
-                    ))
-                    planet_indices = list(map(
-                        int, re.findall(r"\d+", planet_match.group(1))
-                    ))
+                    effect_ids = list(
+                        map(int, re.findall(r"\d+", effect_match.group(1)))
+                    )
+                    planet_indices = list(
+                        map(int, re.findall(r"\d+", planet_match.group(1)))
+                    )
 
                     currstat = self.apistatus
                     if not currstat:
@@ -2667,7 +2681,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                             currstat.statics.effectstatic, effect_id
                         )
                         if effect:
-                            effect_names.append((effect_id,effect.name))
+                            effect_names.append((effect_id, effect.name))
 
                     planet_names = []
                     planet_json_names = []
@@ -2675,8 +2689,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         planet = currstat.planets.get(planet_index)
                         if planet:
                             planet_names.append(planet.get_name(False))
-                            pn,sn=get_from_json(planet_index)
-                            planet_json_names.append((planet_index,pn,sn))
+                            pn, sn = get_from_json(planet_index)
+                            planet_json_names.append((planet_index, pn, sn))
                     if not effect_names and not planet_names:
                         continue
 
@@ -2689,7 +2703,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     if effect_names and "Effects" not in existing_fields:
                         target_embed.add_field(
                             name="Effects",
-                            value="\n".join( n for _, n in effect_names)[:1024],
+                            value="\n".join(n for _, n in effect_names)[:1024],
                             inline=False,
                         )
 
@@ -2701,9 +2715,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         )
                     for eid, en in effect_names:
                         if "Enemies" in en:
-                            for pid, pn,s in planet_json_names:
-                                matches.append((eid,en,mode,pid,pn,date))
-                            
+                            for pid, pn, s in planet_json_names:
+                                matches.append((eid, en, mode, pid, pn, date))
 
                     modified = True
 
@@ -2716,24 +2729,24 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     gui.gprint(f"Updated embeds in {message.jump_url}")
 
                 except discord.HTTPException as exc:
-                    gui.gprint(
-                        f"Failed to edit {message.jump_url}: {exc}"
-                    )
+                    gui.gprint(f"Failed to edit {message.jump_url}: {exc}")
+
         def parse_date(value):
             value = re.sub(r"(\d+)(st|nd|rd|th)", r"\1", value)
             return datetime.datetime.strptime(value, "%I:%M%p UTC %d %b %Y")
 
         # Sort oldest to newest
-        matches.sort(key=lambda item: parse_date(item[-1]))                   
+        matches.sort(key=lambda item: parse_date(item[-1]))
         for m in matches:
-            eid,en,mode,pid,pn,date=m
-            add=True
-            if 'leaves' in mode:
-                add=False
-            uvar=get_geffect_place_id(last_effect_cache,str(eid),str(pid),add=add,counter_default=172)
-            newtext=f"Assault Division: {en} {uvar} {mode} {pn} ({date})"
+            eid, en, mode, pid, pn, date = m
+            add = True
+            if "leaves" in mode:
+                add = False
+            uvar = get_geffect_place_id(
+                last_effect_cache, str(eid), str(pid), add=add, counter_default=172
+            )
+            newtext = f"Assault Division: {en} {uvar} {mode} {pn} ({date})"
             await ctx.send(newtext)
-
 
     @commands.is_owner()
     @commands.command(name="get_last_recorded_positions")
