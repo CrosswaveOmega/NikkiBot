@@ -1709,8 +1709,7 @@ class Embeds:
         return emb
 
     @staticmethod
-    def NewsFeedEmbed(gamevent: GameEvent, mode="started") -> discord.Embed:
-        newsfeed: NewsFeedItem = gamevent.value
+    def NewsFeedEmbed(newsfeed:NewsFeedItem, gamevent: GameEvent, mode="started") -> discord.Embed:
         if mode == "Retired":
             if (gamevent.game_time - newsfeed.published) > 100000:
                 return None
@@ -2167,7 +2166,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     stored = self.dispatchesids.get(targetid, "")
                     if stored != item.value.message:
                         self.dispatchesids[targetid] = item.value.message
-                embed = Embeds.NewsFeedEmbed(item, "New")
+                embed = Embeds.NewsFeedEmbed(item.value,item, "New")
             elif place == "episode":
                 embed, _ = Embeds.EpisodeEmbed(item, "New")
             elif place == "episodephase":
@@ -2237,7 +2236,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     value, "ended", moid=tag, currstat=self.apistatus
                 )
             elif place == "news":
-                embed = Embeds.NewsFeedEmbed(item, "Retired")
+                embed = Embeds.NewsFeedEmbed(item.value, item, "Retired")
             elif place == "episode":
                 embed, _ = Embeds.EpisodeEmbed(item, "Retired")
             elif place == "episodephase":
@@ -2395,12 +2394,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         self.dispatchesids[targetid] = info.message
                         edit = True
                 if edit:
-                    embed = Embeds.NewsFeedEmbed(info, "Changed")
+                    embed = Embeds.NewsFeedEmbed(info, item, "Changed")
             elif place == "resources":
                 if "currentValue" in dump and len(list(dump.keys())) == 1:
                     if info.retrieved_at.minute % 15 != 0:
                         return None
-                    embed = Embeds.resourceEmbed(info, "changed", "")
+                    embed = Embeds.resourceEmbed(info,item, "changed", "")
                     embed.title = "ResourceChange"
                     embed.set_author(
                         name=f"{embed._author['name']} at wt {item['game_time']}"
