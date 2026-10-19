@@ -1259,7 +1259,7 @@ class Embeds:
                 alleffects = ""
                 for value in evt.effectIds:
                     effect = build_planet_effect(
-                        currstat.statics.effectstatic, value.galacticEffectId
+                        currstat.statics.effectstatic, value
                     )
                     alleffects += str(effect.name) + "\n"
                 emb.add_field(name="Effects", value=alleffects[:1024], inline=False)
