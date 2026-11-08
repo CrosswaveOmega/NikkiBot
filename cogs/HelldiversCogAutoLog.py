@@ -2906,10 +2906,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     currstat.statics.effectstatic,
                     str(effect_id)
                 )
+                gui.gprint(currstat.statics.effectstatic)
 
                 planet = currstat.planets.get(planet_id)
 
-                gui.gprint(effect)
+                gui.gprint(effect_id, effect)
                 if not effect and not planet:
                     continue
 
