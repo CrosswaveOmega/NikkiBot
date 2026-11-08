@@ -2948,11 +2948,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         inline=False,
                     )
 
-                if effect and "Enemies" in effect.name and planet:
+                if effect and planet:
                     matches.append(
                         (
                             effect_id,
-                            effect.name,
+                            effect,
                             mode,
                             planet_id,
                             pn,
@@ -2984,23 +2984,28 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         # Sort oldest to newest
         matches.sort(key=lambda item: parse_date(item[-1]))
         for m in matches:
-            eid, en, mode, pid, pn, place_id,date = m
+            eid, effect, mode, pid, pn, place_id,date = m
 
             add = "leaves" not in mode
 
-            uvar = get_geffect_place_id(
-                last_effect_cache,
-                str(eid),
-                str(pid),
-                add=add,
-                counter_default=172,
-            )
-
-            newtext = (
-                f"Assault Division: {en} {uvar} "
-                f"{mode} {pn} ({date}) "
-                f"[Place ID: {place_id}]"
-            )
+            # uvar = get_geffect_place_id(
+            #     last_effect_cache,
+            #     str(eid),
+            #     str(pid),
+            #     add=add,
+            #     counter_default=172,
+            # )
+            if "Enemies" in effect.name:
+                newtext = (
+                    f"Assault Division: {effect.name} {place_id} "
+                    f"{mode} {pn} ({date}) "
+                    f"[Place ID: {place_id}]"
+                )
+            else:
+                newtext = (
+                    f"{pn} is established as a {effect.name} POI "
+                    f"{mode} {pn} ({date}) "
+                )
 
             await ctx.send(newtext)
 
