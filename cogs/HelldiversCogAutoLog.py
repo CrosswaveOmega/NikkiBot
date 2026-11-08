@@ -2638,14 +2638,11 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     ]
                 )
                 if "Event Details" in text:
-
                     if "Global Event started" in text:
-
                         mode = "deploys to"
-
                     if "Global Event ended" in text:
-
                         mode = "leaves"
+
                 for field in embed.fields:
                     if field.name.lower() != "event details":
                         continue
@@ -2746,6 +2743,255 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 last_effect_cache, str(eid), str(pid), add=add, counter_default=172
             )
             newtext = f"Assault Division: {en} {uvar} {mode} {pn} ({date})"
+            await ctx.send(newtext)
+
+
+
+    @commands.is_owner()
+    @commands.command(name="searchlog_planeteffect")
+    async def LogSearchEvt(
+        self,
+        ctx: commands.Context,
+        start_url: str,
+        end_url: str,
+    ):
+        start_message = await urltomessage(
+            link=start_url,
+            bot=self.bot,
+        )
+        end_message = await urltomessage(
+            link=end_url,
+            bot=self.bot,
+        )
+
+        data_path: str = "./hd2json/planets/planets.json"
+
+        with open(data_path, "r") as file:
+            planets_data_json = json.load(file)
+
+        webhook_servers = {}
+        if not self.loghook:
+            hooks = ServerHDProfile.get_entries_with_webhook()
+            lg = [AssetLookup.get_asset("loghook", "urls")]
+            for h in hooks:
+                lg.append(h)
+            self.redirect_hook = AssetLookup.get_asset("subhook", "urls")
+            self.loghook = lg
+
+        gui.gprint(self.loghook)
+        for webhook in self.loghook:
+            webhook_url = webhook
+
+            if not webhook_url:
+                continue
+
+            try:
+                webhook_id = int(webhook_url.split("/")[-2])
+            except (ValueError, IndexError):
+                continue
+
+            webhook = discord.Webhook.from_url(
+                webhook_url,
+                client=self.bot,
+            )
+            webhook_servers[webhook_id] = {
+                "webhook": webhook,
+            }
+        if start_message is None or end_message is None:
+            await ctx.send("Could not resolve one or both message URLs.")
+            return
+
+        if start_message.channel.id != end_message.channel.id:
+            await ctx.send("Both messages must be in the same channel.")
+            return
+
+        channel = start_message.channel
+
+        start_id = start_message.id
+        end_id = end_message.id
+
+        if start_id > end_id:
+            start_id, end_id = end_id, start_id
+
+        last_effect_cache = {}
+        matches = []
+
+        catch = 0
+
+        def get_from_json(index):
+
+            pval = planets_data_json.get(str(index), None)
+            name = sector = "NA"
+            if pval:
+                name = pval["name"]
+                sector = pval["sector"]
+            return name, sector
+
+        async for message in channel.history(
+            limit=None,
+            after=discord.Object(id=start_id - 1),
+            before=discord.Object(id=end_id + 1),
+            oldest_first=True,
+        ):
+            entry = webhook_servers.get(message.webhook_id)
+            if not entry:
+                continue
+
+            webhook = entry["webhook"]
+
+            # Copy every embed so we can modify only the matching ones.
+            updated_embeds = [
+                discord.Embed.from_dict(embed.to_dict()) for embed in message.embeds
+            ]
+            modified = False
+
+            for embed_index, embed in enumerate(message.embeds):
+                mode = "none"
+                footer = embed.footer.text
+                date = footer.split(",")[-1].strip()
+                text = "\n".join(
+                    [
+                        embed.title or "",
+                        embed.description or "",
+                        *[f"{field.name}: {field.value}" for field in embed.fields],
+                    ]
+                )
+                if "is unknown" not in text:
+                    continue
+                if "Effect" in text:
+                    
+                    if "Effect added" in text:
+                        mode = "deploys to"
+                    if "Effect removed" in text:
+                        mode = "leaves"
+                        
+                effect_id = None
+                place_id = None
+                planet_id = None
+
+                for field in embed.fields:
+                    field_name = field.name.strip().casefold()
+                    field_value = field.value.strip().strip("`").strip()
+
+                    if field_name == "galactic effect id":
+                        if re.fullmatch(r"\d+", field_value):
+                            effect_id = int(field_value)
+
+                    elif field_name == "place id":
+                        place_id = field_value
+
+                # Extract planet ID from Planet P#170:
+                planet_match = re.search(
+                    r"\bPlanet\s+P#(\d+)\s*:",
+                    text,
+                    flags=re.IGNORECASE,
+                )
+
+                if planet_match:
+                    planet_id = int(planet_match.group(1))
+
+                if effect_id is None or place_id is None or planet_id is None:
+                    continue
+
+                catch += 1
+
+                currstat = self.apistatus
+                if not currstat:
+                    continue
+
+                effect = build_planet_effect(
+                    currstat.statics.effectstatic,
+                    effect_id,
+                )
+
+                planet = currstat.planets.get(planet_id)
+
+                if not effect and not planet:
+                    continue
+
+                effect_names = [(effect_id, effect.name)] if effect else []
+
+                planet_names = []
+                planet_json_names = []
+
+                if planet:
+                    planet_names.append(planet.get_name(False))
+
+                    pn, sn = get_from_json(planet_id)
+                    planet_json_names.append((planet_id, pn, sn))
+
+                # Modify only the embed containing the matching event.
+                target_embed = updated_embeds[embed_index]
+
+                existing_fields = {f.name for f in target_embed.fields}
+
+                if effect_names and "Effects" not in existing_fields:
+                    target_embed.add_field(
+                        name="Effects",
+                        value="\n".join(n for _, n in effect_names)[:1024],
+                        inline=False,
+                    )
+
+                if planet_names and "Planets" not in existing_fields:
+                    target_embed.add_field(
+                        name="Planets",
+                        value="\n".join(planet_names)[:1024],
+                        inline=False,
+                    )
+
+                if effect and "Enemies" in effect.name and planet:
+                    matches.append(
+                        (
+                            effect_id,
+                            effect.name,
+                            mode,
+                            planet_id,
+                            pn,
+                            date,
+                            place_id,
+                        )
+                    )
+
+                modified = True
+
+                
+
+            if modified:
+                try:
+                    await webhook.edit_message(
+                        message.id,
+                        embeds=updated_embeds,
+                    )
+                    gui.gprint(f"Updated embeds in {message.jump_url}")
+
+                except discord.HTTPException as exc:
+                    gui.gprint(f"Failed to edit {message.jump_url}: {exc}")
+
+        def parse_date(value):
+            value = re.sub(r"(\d+)(st|nd|rd|th)", r"\1", value)
+            return datetime.datetime.strptime(value, "%I:%M%p UTC %d %b %Y")
+
+        # Sort oldest to newest
+        matches.sort(key=lambda item: parse_date(item[-1]))
+        for m in matches:
+            eid, en, mode, pid, pn, date, place_id = m
+
+            add = "leaves" not in mode
+
+            uvar = get_geffect_place_id(
+                last_effect_cache,
+                str(eid),
+                str(pid),
+                add=add,
+                counter_default=172,
+            )
+
+            newtext = (
+                f"Assault Division: {en} {uvar} "
+                f"{mode} {pn} ({date}) "
+                f"[Place ID: {place_id}]"
+            )
+
             await ctx.send(newtext)
 
     @commands.is_owner()
