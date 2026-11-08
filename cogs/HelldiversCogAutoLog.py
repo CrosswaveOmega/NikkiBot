@@ -2898,6 +2898,8 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
                 currstat = self.apistatus
                 if not currstat:
+                    
+                    gui.gprint("NO STAT")
                     continue
 
                 effect = build_planet_effect(
@@ -2907,6 +2909,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
                 planet = currstat.planets.get(planet_id)
 
+                gui.gprint(effect,planet)
                 if not effect and not planet:
                     continue
 
