@@ -2931,9 +2931,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
                 existing_fields = {f.name for f in target_embed.fields}
 
-                if effect_names and "Effects" not in existing_fields:
+                if effect_names and effect_names[0] not in existing_fields:
                     target_embed.add_field(
-                        name="Effects",
+                        name= effect_names[0],
                         value="\n".join(n for _, n in effect_names)[:1024],
                         inline=False,
                     )
