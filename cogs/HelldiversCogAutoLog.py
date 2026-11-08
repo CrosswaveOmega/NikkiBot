@@ -2904,7 +2904,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
                 effect = build_planet_effect(
                     currstat.statics.effectstatic,
-                    str(effect_id)
+                    int(effect_id)
                 )
                 gui.gprint(currstat.statics.effectstatic)
 
