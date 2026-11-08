@@ -2890,7 +2890,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 if planet_match:
                     planet_id = int(planet_match.group(1))
 
-                gui.gprint(effect_id,place_id,place_id)
+                gui.gprint(effect_id,place_id,planet_id)
                 if effect_id is None or place_id is None or planet_id is None:
                     continue
 
