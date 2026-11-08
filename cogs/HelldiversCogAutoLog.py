@@ -2931,9 +2931,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
                 existing_fields = {f.name for f in target_embed.fields}
 
-                if effect_names and effect_names[0] not in existing_fields:
+                if effect_names and effect_names[0][1] not in existing_fields:
                     target_embed.add_field(
-                        name= effect_names[0],
+                        name= effect_names[0][1],
                         value="\n".join(n for _, n in effect_names)[:1024],
                         inline=False,
                     )
@@ -2956,8 +2956,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                             mode,
                             planet_id,
                             pn,
-                            date,
                             place_id,
+                            
+                            date,
                         )
                     )
 
@@ -2983,7 +2984,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
         # Sort oldest to newest
         matches.sort(key=lambda item: parse_date(item[-1]))
         for m in matches:
-            eid, en, mode, pid, pn, date, place_id = m
+            eid, en, mode, pid, pn, place_id,date = m
 
             add = "leaves" not in mode
 
