@@ -2904,12 +2904,12 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
                 effect = build_planet_effect(
                     currstat.statics.effectstatic,
-                    effect_id,
+                    str(effect_id)
                 )
 
                 planet = currstat.planets.get(planet_id)
 
-                gui.gprint(effect,planet)
+                gui.gprint(effect)
                 if not effect and not planet:
                     continue
 
