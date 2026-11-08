@@ -2915,6 +2915,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
 
                 effect_names = [(effect_id, effect.name)] if effect else []
 
+                gui.gprint(effect_names)
                 planet_names = []
                 planet_json_names = []
 
@@ -2935,6 +2936,9 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         value="\n".join(n for _, n in effect_names)[:1024],
                         inline=False,
                     )
+                    
+                    gui.gprint(f"Updated embeds in {message.jump_url}")
+
 
                 if planet_names and "Planets" not in existing_fields:
                     target_embed.add_field(
