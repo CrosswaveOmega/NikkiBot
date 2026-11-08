@@ -2949,18 +2949,19 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     )
 
                 if effect and planet:
-                    matches.append(
-                        (
-                            effect_id,
-                            effect,
-                            mode,
-                            planet_id,
-                            pn,
-                            place_id,
-                            
-                            date,
+                    if "is unknown" not in effect.description:
+                        matches.append(
+                            (
+                                effect_id,
+                                effect,
+                                mode,
+                                planet_id,
+                                pn,
+                                place_id,
+                                
+                                date,
+                            )
                         )
-                    )
 
                 modified = True
 
@@ -3002,10 +3003,16 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                     f"[Place ID: {place_id}]"
                 )
             else:
-                newtext = (
-                    f"{pn} is established as a {effect.name} POI "
-                    f"{mode} {pn} ({date}) "
-                )
+                if mode=="deploys to":
+                    newtext = (
+                        f"{pn} is established as a {effect.name} POI "
+                        f"({date}) "
+                    )
+                else:
+                     newtext = (
+                        f"{pn} is no longer marked as a {effect.name} POI "
+                        f"({date}) "
+                    )
 
             await ctx.send(newtext)
 
