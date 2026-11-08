@@ -2864,7 +2864,7 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                         mode = "deploys to"
                     if "Effect removed" in text:
                         mode = "leaves"
-                await ctx.send(f"Processing embed for place {message.jump_url} ")
+
                 effect_id = None
                 place_id = None
                 planet_id = None
@@ -3000,7 +3000,6 @@ class HelldiversAutoLog(commands.Cog, TC_Cog_Mixin):
                 newtext = (
                     f"Assault Division: {effect.name} {place_id} "
                     f"{mode} {pn} ({date}) "
-                    f"[Place ID: {place_id}]"
                 )
             else:
                 if mode=="deploys to":
